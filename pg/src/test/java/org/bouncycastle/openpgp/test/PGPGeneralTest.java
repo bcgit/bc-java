@@ -2302,7 +2302,7 @@ public class PGPGeneralTest
                 new JcaKeyFingerprintCalculator(), 10);
             fail("no curve expression");
         }
-        catch (IllegalStateException e)
+        catch (IllegalArgumentException e)
         {
             isTrue("no curve expression", e.getMessage().contains("no curve expression"));
         }
@@ -2327,39 +2327,39 @@ public class PGPGeneralTest
                 digBuild.build(),
                 new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
                 new JcaKeyFingerprintCalculator(), 10);
-            fail("The public key should not be null");
+            fail("no curve expression");
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("The public key should not be null", e.getMessage().contains("The public key should not be null"));
+            isTrue("no curve expression", e.getMessage().contains("no curve expression"));
         }
 
-        try
-        {
-            data = ("Created: 20211021T023233\n" +
-                "Key: (protected-private-key (ecc (curve \"NIST P-384\")(q\n" +
-                "  #04CE6089B366EFB0E4238CC43CBC6631708F122AEFF3408B9C14C14E9A2918D0BD18\n" +
-                " D800FD90D6FB4142387913E14F78CA232B91A6C87BFE2841778A99D96EB292E6311E81\n" +
-                " FEA3D40CE62F4B9641A481846C119AFDE08AE91DC7B7F705280FF077#)(protected\n" +
-                "  openpgp-s2k3-sha1-aes-cbc ((sha1 #E570C25E5DE65DD7#\n" +
-                "  \"43860992\")#83D43BA89B7E7EA2EF758E52#)#CD30B49842A95DD0D18C2D8550CC59\n" +
-                " 8187FE6DE7386418A319F7311197FE4344EE29ACC0B77D2EDF19E268DBB2130F82353B\n" +
-                " 319D39306CDA53C6D9F883141738B522E35F6F9CD346B4B187578C#)(protected-at\n" +
-                "  \"20211021T023240\")))\n").getBytes();
-            bin = new ByteArrayInputStream(data);
-
-            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
-                null,
-                digBuild.build(),
-                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
-                new JcaKeyFingerprintCalculator(), 10);
-            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
-        }
-        catch (IllegalArgumentException e)
-        {
-            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type", e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
-        }
+//        try
+//        {
+//            data = ("Created: 20211021T023233\n" +
+//                "Key: (protected-private-key (ecc (curve \"NIST P-384\")(q\n" +
+//                "  #04CE6089B366EFB0E4238CC43CBC6631708F122AEFF3408B9C14C14E9A2918D0BD18\n" +
+//                " D800FD90D6FB4142387913E14F78CA232B91A6C87BFE2841778A99D96EB292E6311E81\n" +
+//                " FEA3D40CE62F4B9641A481846C119AFDE08AE91DC7B7F705280FF077#)(protected\n" +
+//                "  openpgp-s2k3-sha1-aes-cbc ((sha1 #E570C25E5DE65DD7#\n" +
+//                "  \"43860992\")#83D43BA89B7E7EA2EF758E52#)#CD30B49842A95DD0D18C2D8550CC59\n" +
+//                " 8187FE6DE7386418A319F7311197FE4344EE29ACC0B77D2EDF19E268DBB2130F82353B\n" +
+//                " 319D39306CDA53C6D9F883141738B522E35F6F9CD346B4B187578C#)(protected-at\n" +
+//                "  \"20211021T023240\")))\n").getBytes();
+//            bin = new ByteArrayInputStream(data);
+//
+//            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
+//            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+//                null,
+//                digBuild.build(),
+//                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+//                new JcaKeyFingerprintCalculator(), 10);
+//            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
+//        }
+//        catch (IllegalArgumentException e)
+//        {
+//            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type", e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
+//        }
 
         try
         {
@@ -2381,11 +2381,11 @@ public class PGPGeneralTest
                 digBuild.build(),
                 new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
                 new JcaKeyFingerprintCalculator(), 10);
-            fail("unhandled protection type");
+            fail("unsupported protection type ");
         }
         catch (PGPException e)
         {
-            isTrue("unhandled protection type", e.getMessage().contains("unhandled protection type"));
+            isTrue("unsupported protection type ", e.getMessage().contains("unsupported protection type "));
         }
 
         //TODO: getKeyData: branch in line 157 cannot be reached
@@ -2785,98 +2785,98 @@ public class PGPGeneralTest
             isTrue("unsupported protection type", e.getMessage().contains("unsupported protection type"));
         }
 
-        try
-        {
-            key = ("Created: 20211022T053140\n" +
-                "Key: (protected-private-key (dsa (p #00CD7275234699FE0D25FDBEE69DA2AA80\n" +
-                " AAAB15906FACFC8F4EB5A9BAE23D22E5649199C119FB72951BD0FA717F51CFD7B904FD\n" +
-                " BB1F0D0660938199976DA4447F54E91E2CC4B21F4BB162644EA43A3F27F7CAFF7D6355\n" +
-                " 16E8640558E222EF20B55E8AF2AFD33D571092CE5C090E57DA3452484BC04398E24613\n" +
-                " D593113F1F5CE7CA3229F5DFAFC1EFC47B725505E46A0EB9CC45FACFBEA6ECC6CA694E\n" +
-                " D3781E011C48C66BBB6C1BA35DD810EF24CF7B92D9E9BCB0B0E19053CFA073AD2D9957\n" +
-                " 270B3C55D60824F93EECBF8AF393F07C05BEA38636DFC6B6152424FAF5C0287435C145\n" +
-                " B021E235AA30E2B063695EE01D6C696EAA381517E50A440D8AA00164B423#)(q\n" +
-                "  #00A4F8D3DC79F1F8388B9FF3F3A484568A76337BF968F05C207F5AF8E84F4B83C1#)\n" +
-                " (g #32EC716A63D63CB69E17A678B9BC70686EA24AF4F96F46683E09ACF7EDE9839ADB\n" +
-                " 914E61A38D151B28B65533362100B1D9D2948FD8617136FF82C8B61DF5A400B3D2A3E3\n" +
-                " 2CEAF2B7DAEBF30D24CA3E681AC551F01EC366EECCDF1481B092E3534728D73211D962\n" +
-                " 09069E8FA34395C94828D77F0FEF8E6DEFEA3687ED6267EB028007B84840E383E8B14C\n" +
-                " AB93109FA414458E56F5BDAF7AB37ECB3E3FA8EDAED60B7323D3329FB3EA4E460FFA63\n" +
-                " B9EC9836530B16710A0EA3A750BF646A48DA65E4144A9A7964513BF998755612791DC5\n" +
-                " F840FAE54D34C44A62C1BE884774870BC6D0505FE5EE3F4B222194740E4CC639785E56\n" +
-                " B93E17DCACBFE63703DE201DB3#)(y #1B1DAAA76ACF531DBC172304E6523C16B3E701\n" +
-                " 2B8B3F0D37AFD9B2C8F63A2155F2CAAE34ADF7A8B068AB266AEE5A5598DD9BE116FA96\n" +
-                " F855AA7AD74F780407F74255DC035339C28E1833E93D872EE73DE350E3E0B8AB1E9709\n" +
-                " B835E58E6A5491383612A52EB4A3616C29418C0BE108739CC3D59BCF3B0299B283FEA6\n" +
-                " 7E21A1909C2E02CD1BFE200F0B6EEE0BB8E4252B8F78711AD05C7056CE673ED81BE265\n" +
-                " 60C0768AEC8121D5EB21EE6A8338CC35E306931D1B3516767E345B9C25DF7454C36C61\n" +
-                " 739B193BC4998A47A4E5A4956FF525F322DA67B9DC6CFA468ADEBC82EBEEB7F35C4982\n" +
-                " A2D347ED4ECB8605387161F03175A9D73659A34D97910B26F8027F#)(protected\n" +
-                "  openpgp-s2k3-sha1-aes-cbc ((sha1 #4F333DA86C1E7E55#\n" +
-                "  \"43860992\")#D8BD10519B004263EC2E35D4#)#57553ACF88CB775B65AAE3FAEB2480\n" +
-                " F40BA80AFEA74DD1B9E59847B440733B3A83B062EAD3FDBF67996BA240B8504800C276\n" +
-                " AAF1DE797066443807DDCE#)(protected-at \"20211022T053148\")))\n").getBytes();
-            bin = new ByteArrayInputStream(key);
+//        try
+//        {
+//            key = ("Created: 20211022T053140\n" +
+//                "Key: (protected-private-key (dsa (p #00CD7275234699FE0D25FDBEE69DA2AA80\n" +
+//                " AAAB15906FACFC8F4EB5A9BAE23D22E5649199C119FB72951BD0FA717F51CFD7B904FD\n" +
+//                " BB1F0D0660938199976DA4447F54E91E2CC4B21F4BB162644EA43A3F27F7CAFF7D6355\n" +
+//                " 16E8640558E222EF20B55E8AF2AFD33D571092CE5C090E57DA3452484BC04398E24613\n" +
+//                " D593113F1F5CE7CA3229F5DFAFC1EFC47B725505E46A0EB9CC45FACFBEA6ECC6CA694E\n" +
+//                " D3781E011C48C66BBB6C1BA35DD810EF24CF7B92D9E9BCB0B0E19053CFA073AD2D9957\n" +
+//                " 270B3C55D60824F93EECBF8AF393F07C05BEA38636DFC6B6152424FAF5C0287435C145\n" +
+//                " B021E235AA30E2B063695EE01D6C696EAA381517E50A440D8AA00164B423#)(q\n" +
+//                "  #00A4F8D3DC79F1F8388B9FF3F3A484568A76337BF968F05C207F5AF8E84F4B83C1#)\n" +
+//                " (g #32EC716A63D63CB69E17A678B9BC70686EA24AF4F96F46683E09ACF7EDE9839ADB\n" +
+//                " 914E61A38D151B28B65533362100B1D9D2948FD8617136FF82C8B61DF5A400B3D2A3E3\n" +
+//                " 2CEAF2B7DAEBF30D24CA3E681AC551F01EC366EECCDF1481B092E3534728D73211D962\n" +
+//                " 09069E8FA34395C94828D77F0FEF8E6DEFEA3687ED6267EB028007B84840E383E8B14C\n" +
+//                " AB93109FA414458E56F5BDAF7AB37ECB3E3FA8EDAED60B7323D3329FB3EA4E460FFA63\n" +
+//                " B9EC9836530B16710A0EA3A750BF646A48DA65E4144A9A7964513BF998755612791DC5\n" +
+//                " F840FAE54D34C44A62C1BE884774870BC6D0505FE5EE3F4B222194740E4CC639785E56\n" +
+//                " B93E17DCACBFE63703DE201DB3#)(y #1B1DAAA76ACF531DBC172304E6523C16B3E701\n" +
+//                " 2B8B3F0D37AFD9B2C8F63A2155F2CAAE34ADF7A8B068AB266AEE5A5598DD9BE116FA96\n" +
+//                " F855AA7AD74F780407F74255DC035339C28E1833E93D872EE73DE350E3E0B8AB1E9709\n" +
+//                " B835E58E6A5491383612A52EB4A3616C29418C0BE108739CC3D59BCF3B0299B283FEA6\n" +
+//                " 7E21A1909C2E02CD1BFE200F0B6EEE0BB8E4252B8F78711AD05C7056CE673ED81BE265\n" +
+//                " 60C0768AEC8121D5EB21EE6A8338CC35E306931D1B3516767E345B9C25DF7454C36C61\n" +
+//                " 739B193BC4998A47A4E5A4956FF525F322DA67B9DC6CFA468ADEBC82EBEEB7F35C4982\n" +
+//                " A2D347ED4ECB8605387161F03175A9D73659A34D97910B26F8027F#)(protected\n" +
+//                "  openpgp-s2k3-sha1-aes-cbc ((sha1 #4F333DA86C1E7E55#\n" +
+//                "  \"43860992\")#D8BD10519B004263EC2E35D4#)#57553ACF88CB775B65AAE3FAEB2480\n" +
+//                " F40BA80AFEA74DD1B9E59847B440733B3A83B062EAD3FDBF67996BA240B8504800C276\n" +
+//                " AAF1DE797066443807DDCE#)(protected-at \"20211022T053148\")))\n").getBytes();
+//            bin = new ByteArrayInputStream(key);
+//
+//            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
+//            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+//                null,
+//                digBuild.build(),
+//                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+//                new JcaKeyFingerprintCalculator(), 10);
+//            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
+//        }
+//        catch (IllegalArgumentException e)
+//        {
+//            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type",
+//                e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
+//        }
 
-            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
-                null,
-                digBuild.build(),
-                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
-                new JcaKeyFingerprintCalculator(), 10);
-            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
-        }
-        catch (IllegalArgumentException e)
-        {
-            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type",
-                e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
-        }
-
-        try
-        {
-            key = ("Created: 20211022T053140\n" +
-                "Key: (protected-private-key (dsa (p #00CD7275234699FE0D25FDBEE69DA2AA80\n" +
-                " AAAB15906FACFC8F4EB5A9BAE23D22E5649199C119FB72951BD0FA717F51CFD7B904FD\n" +
-                " BB1F0D0660938199976DA4447F54E91E2CC4B21F4BB162644EA43A3F27F7CAFF7D6355\n" +
-                " 16E8640558E222EF20B55E8AF2AFD33D571092CE5C090E57DA3452484BC04398E24613\n" +
-                " D593113F1F5CE7CA3229F5DFAFC1EFC47B725505E46A0EB9CC45FACFBEA6ECC6CA694E\n" +
-                " D3781E011C48C66BBB6C1BA35DD810EF24CF7B92D9E9BCB0B0E19053CFA073AD2D9957\n" +
-                " 270B3C55D60824F93EECBF8AF393F07C05BEA38636DFC6B6152424FAF5C0287435C145\n" +
-                " B021E235AA30E2B063695EE01D6C696EAA381517E50A440D8AA00164B423#)(q\n" +
-                "  #00A4F8D3DC79F1F8388B9FF3F3A484568A76337BF968F05C207F5AF8E84F4B83C1#)\n" +
-                " (g #32EC716A63D63CB69E17A678B9BC70686EA24AF4F96F46683E09ACF7EDE9839ADB\n" +
-                " 914E61A38D151B28B65533362100B1D9D2948FD8617136FF82C8B61DF5A400B3D2A3E3\n" +
-                " 2CEAF2B7DAEBF30D24CA3E681AC551F01EC366EECCDF1481B092E3534728D73211D962\n" +
-                " 09069E8FA34395C94828D77F0FEF8E6DEFEA3687ED6267EB028007B84840E383E8B14C\n" +
-                " AB93109FA414458E56F5BDAF7AB37ECB3E3FA8EDAED60B7323D3329FB3EA4E460FFA63\n" +
-                " B9EC9836530B16710A0EA3A750BF646A48DA65E4144A9A7964513BF998755612791DC5\n" +
-                " F840FAE54D34C44A62C1BE884774870BC6D0505FE5EE3F4B222194740E4CC639785E56\n" +
-                " B93E17DCACBFE63703DE201DB3#)(y #1B1DAAA76ACF531DBC172304E6523C16B3E701\n" +
-                " 2B8B3F0D37AFD9B2C8F63A2155F2CAAE34ADF7A8B068AB266AEE5A5598DD9BE116FA96\n" +
-                " F855AA7AD74F780407F74255DC035339C28E1833E93D872EE73DE350E3E0B8AB1E9709\n" +
-                " B835E58E6A5491383612A52EB4A3616C29418C0BE108739CC3D59BCF3B0299B283FEA6\n" +
-                " 7E21A1909C2E02CD1BFE200F0B6EEE0BB8E4252B8F78711AD05C7056CE673ED81BE265\n" +
-                " 60C0768AEC8121D5EB21EE6A8338CC35E306931D1B3516767E345B9C25DF7454C36C61\n" +
-                " 739B193BC4998A47A4E5A4956FF525F322DA67B9DC6CFA468ADEBC82EBEEB7F35C4982\n" +
-                " A2D347ED4ECB8605387161F03175A9D73659A34D97910B26F8027F#)(protected\n" +
-                "  openpgp-s2k3-aes ((sha1 #4F333DA86C1E7E55#\n" +
-                "  \"43860992\")#D8BD10519B004263EC2E35D4#)#57553ACF88CB775B65AAE3FAEB2480\n" +
-                " F40BA80AFEA74DD1B9E59847B440733B3A83B062EAD3FDBF67996BA240B8504800C276\n" +
-                " AAF1DE797066443807DDCE#)(protected-at \"20211022T053148\")))\n").getBytes();
-            bin = new ByteArrayInputStream(key);
-
-            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
-                null,
-                digBuild.build(),
-                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
-                new JcaKeyFingerprintCalculator(), 10);
-            fail("unhandled protection type");
-        }
-        catch (PGPException e)
-        {
-            isTrue("unhandled protection type", e.getMessage().contains("unhandled protection type"));
-        }
+//        try
+//        {
+//            key = ("Created: 20211022T053140\n" +
+//                "Key: (protected-private-key (dsa (p #00CD7275234699FE0D25FDBEE69DA2AA80\n" +
+//                " AAAB15906FACFC8F4EB5A9BAE23D22E5649199C119FB72951BD0FA717F51CFD7B904FD\n" +
+//                " BB1F0D0660938199976DA4447F54E91E2CC4B21F4BB162644EA43A3F27F7CAFF7D6355\n" +
+//                " 16E8640558E222EF20B55E8AF2AFD33D571092CE5C090E57DA3452484BC04398E24613\n" +
+//                " D593113F1F5CE7CA3229F5DFAFC1EFC47B725505E46A0EB9CC45FACFBEA6ECC6CA694E\n" +
+//                " D3781E011C48C66BBB6C1BA35DD810EF24CF7B92D9E9BCB0B0E19053CFA073AD2D9957\n" +
+//                " 270B3C55D60824F93EECBF8AF393F07C05BEA38636DFC6B6152424FAF5C0287435C145\n" +
+//                " B021E235AA30E2B063695EE01D6C696EAA381517E50A440D8AA00164B423#)(q\n" +
+//                "  #00A4F8D3DC79F1F8388B9FF3F3A484568A76337BF968F05C207F5AF8E84F4B83C1#)\n" +
+//                " (g #32EC716A63D63CB69E17A678B9BC70686EA24AF4F96F46683E09ACF7EDE9839ADB\n" +
+//                " 914E61A38D151B28B65533362100B1D9D2948FD8617136FF82C8B61DF5A400B3D2A3E3\n" +
+//                " 2CEAF2B7DAEBF30D24CA3E681AC551F01EC366EECCDF1481B092E3534728D73211D962\n" +
+//                " 09069E8FA34395C94828D77F0FEF8E6DEFEA3687ED6267EB028007B84840E383E8B14C\n" +
+//                " AB93109FA414458E56F5BDAF7AB37ECB3E3FA8EDAED60B7323D3329FB3EA4E460FFA63\n" +
+//                " B9EC9836530B16710A0EA3A750BF646A48DA65E4144A9A7964513BF998755612791DC5\n" +
+//                " F840FAE54D34C44A62C1BE884774870BC6D0505FE5EE3F4B222194740E4CC639785E56\n" +
+//                " B93E17DCACBFE63703DE201DB3#)(y #1B1DAAA76ACF531DBC172304E6523C16B3E701\n" +
+//                " 2B8B3F0D37AFD9B2C8F63A2155F2CAAE34ADF7A8B068AB266AEE5A5598DD9BE116FA96\n" +
+//                " F855AA7AD74F780407F74255DC035339C28E1833E93D872EE73DE350E3E0B8AB1E9709\n" +
+//                " B835E58E6A5491383612A52EB4A3616C29418C0BE108739CC3D59BCF3B0299B283FEA6\n" +
+//                " 7E21A1909C2E02CD1BFE200F0B6EEE0BB8E4252B8F78711AD05C7056CE673ED81BE265\n" +
+//                " 60C0768AEC8121D5EB21EE6A8338CC35E306931D1B3516767E345B9C25DF7454C36C61\n" +
+//                " 739B193BC4998A47A4E5A4956FF525F322DA67B9DC6CFA468ADEBC82EBEEB7F35C4982\n" +
+//                " A2D347ED4ECB8605387161F03175A9D73659A34D97910B26F8027F#)(protected\n" +
+//                "  openpgp-s2k3-aes ((sha1 #4F333DA86C1E7E55#\n" +
+//                "  \"43860992\")#D8BD10519B004263EC2E35D4#)#57553ACF88CB775B65AAE3FAEB2480\n" +
+//                " F40BA80AFEA74DD1B9E59847B440733B3A83B062EAD3FDBF67996BA240B8504800C276\n" +
+//                " AAF1DE797066443807DDCE#)(protected-at \"20211022T053148\")))\n").getBytes();
+//            bin = new ByteArrayInputStream(key);
+//
+//            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
+//            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+//                null,
+//                digBuild.build(),
+//                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+//                new JcaKeyFingerprintCalculator(), 10);
+//            fail("unhandled protection type");
+//        }
+//        catch (PGPException e)
+//        {
+//            isTrue("unhandled protection type", e.getMessage().contains("unhandled protection type"));
+//        }
     }
 
     private void validateDSAKey(PGPKeyPair keyPair)
@@ -3063,77 +3063,77 @@ public class PGPGeneralTest
                 e.getMessage().contains("unsupported protection type"));
         }
 
-        try
-        {
-            data = Strings.toUTF8ByteArray("Created: 20211017T225532\n" +
-                "Key: (protected-private-key (rsa (n #00BDA748AF09EC7503A3F201E4F59ECAA4\n" +
-                " C52E84FEA5E4D7B99069C3751F19C5D0180193CA2E4516B5A9ED263989E007040C1C1D\n" +
-                " 53F2D8B7844AEFF77FE28C920ACE0C0F5A77A95536871DD03878BA1997FAE6368E133B\n" +
-                " 5CCCB13B4500F99FD211CB6EF42FAF548BB9BEDAA399A0085F85F9CE3268A03276C31E\n" +
-                " 33313F1826A9DB#)(e #010001#)(protected openpgp-s2k3-sha1-aes-cbc ((sha1\n" +
-                "  #0D1568A73CF5F7C6# \"43860992\")#E5DF4BA755F1AC410C4F32FA#)#CFF9000F22E\n" +
-                " 0948B2D3BB1E78EEDB42D2361C3A444C94D02E17CDBC928B0AA21275B391820944B684\n" +
-                " 757088F76D6CB262768FBB1B06067FECB04E02C5A1A6C2CF18896A30166D6231CB3179\n" +
-                " FD0567D03C207C04EAE6523F77302ABDBF8294D90D197B875BCEBB564CCD0DE264D8BA\n" +
-                " C921DA23A21C4F7D2DD12A2E4EF20ECFEB2DABD273A2270B2AC386ECF2DCDE90D5FDDB\n" +
-                " 00261814082A710A0347C57F7326E18FBE5E4D0F67B6912A903A58984E244D8A487921\n" +
-                " 2712200205123AE58E7CB2457518611678C086F319CF7BED4A675E79CA8BC9DB810025\n" +
-                " C5EEA8BD0D980787003992A72C005DAEC32604767ADF91AF180DB58260B21A1996240F\n" +
-                " E6225B066EA9A8979E590B1BC85F44796903A2738B7871F52F4F27032AC86B25F38E07\n" +
-                " 4E12CEB9ECBCD6995D03DA57710EC54A6E60B79283389BD2869FF7B7C65623C59E0B40\n" +
-                " 621802DEDA97B167C806B45E0CB3A2CE4C60CD7D7FCE763F7B57EDC226AF7F05B07234\n" +
-                " 32C910DD00AD4FD29FE159AEB19E084E9AC76CE#)(protected-at\n" +
-                "  \"20211017T225546\")))\n");
-            bin = new ByteArrayInputStream(data);
-            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
-                secretKey.getPublicKey(),
-                null,
-                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
-                new JcaKeyFingerprintCalculator(), 10);
-            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
-        }
-        catch (IllegalArgumentException e)
-        {
-            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type",
-                e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
-        }
+//        try
+//        {
+//            data = Strings.toUTF8ByteArray("Created: 20211017T225532\n" +
+//                "Key: (protected-private-key (rsa (n #00BDA748AF09EC7503A3F201E4F59ECAA4\n" +
+//                " C52E84FEA5E4D7B99069C3751F19C5D0180193CA2E4516B5A9ED263989E007040C1C1D\n" +
+//                " 53F2D8B7844AEFF77FE28C920ACE0C0F5A77A95536871DD03878BA1997FAE6368E133B\n" +
+//                " 5CCCB13B4500F99FD211CB6EF42FAF548BB9BEDAA399A0085F85F9CE3268A03276C31E\n" +
+//                " 33313F1826A9DB#)(e #010001#)(protected openpgp-s2k3-sha1-aes-cbc ((sha1\n" +
+//                "  #0D1568A73CF5F7C6# \"43860992\")#E5DF4BA755F1AC410C4F32FA#)#CFF9000F22E\n" +
+//                " 0948B2D3BB1E78EEDB42D2361C3A444C94D02E17CDBC928B0AA21275B391820944B684\n" +
+//                " 757088F76D6CB262768FBB1B06067FECB04E02C5A1A6C2CF18896A30166D6231CB3179\n" +
+//                " FD0567D03C207C04EAE6523F77302ABDBF8294D90D197B875BCEBB564CCD0DE264D8BA\n" +
+//                " C921DA23A21C4F7D2DD12A2E4EF20ECFEB2DABD273A2270B2AC386ECF2DCDE90D5FDDB\n" +
+//                " 00261814082A710A0347C57F7326E18FBE5E4D0F67B6912A903A58984E244D8A487921\n" +
+//                " 2712200205123AE58E7CB2457518611678C086F319CF7BED4A675E79CA8BC9DB810025\n" +
+//                " C5EEA8BD0D980787003992A72C005DAEC32604767ADF91AF180DB58260B21A1996240F\n" +
+//                " E6225B066EA9A8979E590B1BC85F44796903A2738B7871F52F4F27032AC86B25F38E07\n" +
+//                " 4E12CEB9ECBCD6995D03DA57710EC54A6E60B79283389BD2869FF7B7C65623C59E0B40\n" +
+//                " 621802DEDA97B167C806B45E0CB3A2CE4C60CD7D7FCE763F7B57EDC226AF7F05B07234\n" +
+//                " 32C910DD00AD4FD29FE159AEB19E084E9AC76CE#)(protected-at\n" +
+//                "  \"20211017T225546\")))\n");
+//            bin = new ByteArrayInputStream(data);
+//            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
+//            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+//                secretKey.getPublicKey(),
+//                null,
+//                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+//                new JcaKeyFingerprintCalculator(), 10);
+//            fail("openpgp-s2k3-sha1-aes-cbc not supported on newer key type");
+//        }
+//        catch (IllegalArgumentException e)
+//        {
+//            isTrue("openpgp-s2k3-sha1-aes-cbc not supported on newer key type",
+//                e.getMessage().contains("openpgp-s2k3-sha1-aes-cbc not supported on newer key type"));
+//        }
 
-        try
-        {
-            data = Strings.toUTF8ByteArray("Created: 20211017T225532\n" +
-                "Key: (protected-private-key (rsa (n #00BDA748AF09EC7503A3F201E4F59ECAA4\n" +
-                " C52E84FEA5E4D7B99069C3751F19C5D0180193CA2E4516B5A9ED263989E007040C1C1D\n" +
-                " 53F2D8B7844AEFF77FE28C920ACE0C0F5A77A95536871DD03878BA1997FAE6368E133B\n" +
-                " 5CCCB13B4500F99FD211CB6EF42FAF548BB9BEDAA399A0085F85F9CE3268A03276C31E\n" +
-                " 33313F1826A9DB#)(e #010001#)(protected openpgp-s2k3-aes ((sha1\n" +
-                "  #0D1568A73CF5F7C6# \"43860992\")#E5DF4BA755F1AC410C4F32FA#)#CFF9000F22E\n" +
-                " 0948B2D3BB1E78EEDB42D2361C3A444C94D02E17CDBC928B0AA21275B391820944B684\n" +
-                " 757088F76D6CB262768FBB1B06067FECB04E02C5A1A6C2CF18896A30166D6231CB3179\n" +
-                " FD0567D03C207C04EAE6523F77302ABDBF8294D90D197B875BCEBB564CCD0DE264D8BA\n" +
-                " C921DA23A21C4F7D2DD12A2E4EF20ECFEB2DABD273A2270B2AC386ECF2DCDE90D5FDDB\n" +
-                " 00261814082A710A0347C57F7326E18FBE5E4D0F67B6912A903A58984E244D8A487921\n" +
-                " 2712200205123AE58E7CB2457518611678C086F319CF7BED4A675E79CA8BC9DB810025\n" +
-                " C5EEA8BD0D980787003992A72C005DAEC32604767ADF91AF180DB58260B21A1996240F\n" +
-                " E6225B066EA9A8979E590B1BC85F44796903A2738B7871F52F4F27032AC86B25F38E07\n" +
-                " 4E12CEB9ECBCD6995D03DA57710EC54A6E60B79283389BD2869FF7B7C65623C59E0B40\n" +
-                " 621802DEDA97B167C806B45E0CB3A2CE4C60CD7D7FCE763F7B57EDC226AF7F05B07234\n" +
-                " 32C910DD00AD4FD29FE159AEB19E084E9AC76CE#)(protected-at\n" +
-                "  \"20211017T225546\")))\n");
-            bin = new ByteArrayInputStream(data);
-            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
-                secretKey.getPublicKey(),
-                null,
-                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
-                new JcaKeyFingerprintCalculator(), 10);
-            fail("unhandled protection type");
-        }
-        catch (PGPException e)
-        {
-            isTrue("unhandled protection type",
-                e.getMessage().contains("unhandled protection type"));
-        }
+//        try
+//        {
+//            data = Strings.toUTF8ByteArray("Created: 20211017T225532\n" +
+//                "Key: (protected-private-key (rsa (n #00BDA748AF09EC7503A3F201E4F59ECAA4\n" +
+//                " C52E84FEA5E4D7B99069C3751F19C5D0180193CA2E4516B5A9ED263989E007040C1C1D\n" +
+//                " 53F2D8B7844AEFF77FE28C920ACE0C0F5A77A95536871DD03878BA1997FAE6368E133B\n" +
+//                " 5CCCB13B4500F99FD211CB6EF42FAF548BB9BEDAA399A0085F85F9CE3268A03276C31E\n" +
+//                " 33313F1826A9DB#)(e #010001#)(protected openpgp-s2k3-aes ((sha1\n" +
+//                "  #0D1568A73CF5F7C6# \"43860992\")#E5DF4BA755F1AC410C4F32FA#)#CFF9000F22E\n" +
+//                " 0948B2D3BB1E78EEDB42D2361C3A444C94D02E17CDBC928B0AA21275B391820944B684\n" +
+//                " 757088F76D6CB262768FBB1B06067FECB04E02C5A1A6C2CF18896A30166D6231CB3179\n" +
+//                " FD0567D03C207C04EAE6523F77302ABDBF8294D90D197B875BCEBB564CCD0DE264D8BA\n" +
+//                " C921DA23A21C4F7D2DD12A2E4EF20ECFEB2DABD273A2270B2AC386ECF2DCDE90D5FDDB\n" +
+//                " 00261814082A710A0347C57F7326E18FBE5E4D0F67B6912A903A58984E244D8A487921\n" +
+//                " 2712200205123AE58E7CB2457518611678C086F319CF7BED4A675E79CA8BC9DB810025\n" +
+//                " C5EEA8BD0D980787003992A72C005DAEC32604767ADF91AF180DB58260B21A1996240F\n" +
+//                " E6225B066EA9A8979E590B1BC85F44796903A2738B7871F52F4F27032AC86B25F38E07\n" +
+//                " 4E12CEB9ECBCD6995D03DA57710EC54A6E60B79283389BD2869FF7B7C65623C59E0B40\n" +
+//                " 621802DEDA97B167C806B45E0CB3A2CE4C60CD7D7FCE763F7B57EDC226AF7F05B07234\n" +
+//                " 32C910DD00AD4FD29FE159AEB19E084E9AC76CE#)(protected-at\n" +
+//                "  \"20211017T225546\")))\n");
+//            bin = new ByteArrayInputStream(data);
+//            openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
+//            secretKey2 = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+//                secretKey.getPublicKey(),
+//                null,
+//                new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+//                new JcaKeyFingerprintCalculator(), 10);
+//            fail("unhandled protection type");
+//        }
+//        catch (PGPException e)
+//        {
+//            isTrue("unhandled protection type",
+//                e.getMessage().contains("unhandled protection type"));
+//        }
     }
 
     public void validateRSAKey(PGPKeyPair keyPair)

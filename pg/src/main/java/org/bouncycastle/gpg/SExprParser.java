@@ -519,7 +519,7 @@ public class SExprParser
         }
         if (flag != 3)
         {
-            throw new IllegalArgumentException("The public key should not be null");
+            throw new IllegalArgumentException("no curve expression");
         }
         else if (curve.startsWith("NIST"))
         {
