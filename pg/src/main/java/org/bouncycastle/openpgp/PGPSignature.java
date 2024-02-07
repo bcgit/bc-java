@@ -30,6 +30,7 @@ import org.bouncycastle.util.Strings;
  * A PGP signature object.
  */
 public class PGPSignature
+    extends PGPDefaultSignatureGenerator
 {
     public static final int BINARY_DOCUMENT = 0x00;
     public static final int CANONICAL_TEXT_DOCUMENT = 0x01;
@@ -49,13 +50,10 @@ public class PGPSignature
     public static final int TIMESTAMP = 0x40;
     public static final int THIRD_PARTY_CONFIRMATION = 0x50;
 
-    private final int signatureType;
     private final SignaturePacket sigPck;
     private final TrustPacket trustPck;
 
     private volatile PGPContentVerifier verifier;
-    private volatile byte lastb;
-    private volatile OutputStream sigOut;
 
     private static SignaturePacket cast(Packet packet)
         throws IOException
@@ -78,7 +76,7 @@ public class PGPSignature
         PGPSignature signature)
     {
         sigPck = signature.sigPck;
-        signatureType = signature.signatureType;
+        sigType = signature.sigType;
         trustPck = signature.trustPck;
     }
 
@@ -93,7 +91,7 @@ public class PGPSignature
         TrustPacket trustPacket)
     {
         this.sigPck = sigPacket;
-        this.signatureType = sigPck.getSignatureType();
+        this.sigType = sigPck.getSignatureType();
         this.trustPck = trustPacket;
     }
 
@@ -168,87 +166,6 @@ public class PGPSignature
         this.sigOut = verifier.getOutputStream();
     }
 
-    public void update(
-        byte b)
-    {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            if (b == '\r')
-            {
-                byteUpdate((byte)'\r');
-                byteUpdate((byte)'\n');
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
-            }
-            else
-            {
-                byteUpdate(b);
-            }
-
-            lastb = b;
-        }
-        else
-        {
-            byteUpdate(b);
-        }
-    }
-
-    public void update(
-        byte[] bytes)
-    {
-        this.update(bytes, 0, bytes.length);
-    }
-
-    public void update(
-        byte[] bytes,
-        int off,
-        int length)
-    {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            int finish = off + length;
-
-            for (int i = off; i != finish; i++)
-            {
-                this.update(bytes[i]);
-            }
-        }
-        else
-        {
-            blockUpdate(bytes, off, length);
-        }
-    }
-
-    private void byteUpdate(byte b)
-    {
-        try
-        {
-            sigOut.write(b);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
-    }
-
-    private void blockUpdate(byte[] block, int off, int len)
-    {
-        try
-        {
-            sigOut.write(block, off, len);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
-    }
-
     public boolean verify()
         throws PGPException
     {
@@ -307,8 +224,8 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
-        if (!PGPSignature.isCertification(signatureType)
-            && PGPSignature.CERTIFICATION_REVOCATION != signatureType)
+        if (!PGPSignature.isCertification(sigType)
+            && PGPSignature.CERTIFICATION_REVOCATION != sigType)
         {
             throw new PGPException("signature is neither a certification signature nor a certification revocation.");
         }
@@ -382,8 +299,8 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
-        if (!PGPSignature.isCertification(signatureType)
-            && PGPSignature.CERTIFICATION_REVOCATION != signatureType)
+        if (!PGPSignature.isCertification(sigType)
+            && PGPSignature.CERTIFICATION_REVOCATION != sigType)
         {
             throw new PGPException("signature is neither a certification signature nor a certification revocation.");
         }
@@ -425,9 +342,9 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
-        if (PGPSignature.SUBKEY_BINDING != signatureType
-            && PGPSignature.PRIMARYKEY_BINDING != signatureType
-            && PGPSignature.SUBKEY_REVOCATION != signatureType)
+        if (PGPSignature.SUBKEY_BINDING != sigType
+            && PGPSignature.PRIMARYKEY_BINDING != sigType
+            && PGPSignature.SUBKEY_REVOCATION != sigType)
         {
             throw new PGPException("signature is not a key binding signature.");
         }
