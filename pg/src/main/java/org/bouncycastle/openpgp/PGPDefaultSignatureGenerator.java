@@ -89,4 +89,43 @@ abstract class PGPDefaultSignatureGenerator
             throw new PGPRuntimeOperationException("unable to update signature: " + e.getMessage(), e);
         }
     }
+
+    protected void updateWithIdData(int header, byte[] idBytes)
+    {
+        this.update((byte)header);
+        this.update((byte)(idBytes.length >> 24));
+        this.update((byte)(idBytes.length >> 16));
+        this.update((byte)(idBytes.length >> 8));
+        this.update((byte)(idBytes.length));
+        this.update(idBytes);
+    }
+
+    protected void updateWithPublicKey(PGPPublicKey key)
+        throws PGPException
+    {
+        byte[] keyBytes = getEncodedPublicKey(key);
+
+        this.update((byte)0x99);
+        this.update((byte)(keyBytes.length >> 8));
+        this.update((byte)(keyBytes.length));
+        this.update(keyBytes);
+    }
+
+    private byte[] getEncodedPublicKey(
+        PGPPublicKey pubKey)
+        throws PGPException
+    {
+        byte[] keyBytes;
+
+        try
+        {
+            keyBytes = pubKey.publicPk.getEncodedContents();
+        }
+        catch (IOException e)
+        {
+            throw new PGPException("exception preparing key.", e);
+        }
+
+        return keyBytes;
+    }
 }
