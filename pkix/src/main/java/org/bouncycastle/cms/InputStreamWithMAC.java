@@ -120,7 +120,7 @@ public final class InputStreamWithMAC
             }
             else
             {
-                System.arraycopy(mac, index, b, off, len - index);
+                System.arraycopy(mac, index, b, off, len);
                 index += len;
                 return len;
             }
