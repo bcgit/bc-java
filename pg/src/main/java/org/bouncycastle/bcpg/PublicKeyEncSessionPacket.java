@@ -41,14 +41,7 @@ public class PublicKeyEncSessionPacket
 
         if (version == VERSION_3)
         {
-            keyID |= (long)in.read() << 56;
-            keyID |= (long)in.read() << 48;
-            keyID |= (long)in.read() << 40;
-            keyID |= (long)in.read() << 32;
-            keyID |= (long)in.read() << 24;
-            keyID |= (long)in.read() << 16;
-            keyID |= (long)in.read() << 8;
-            keyID |= in.read();
+            keyID = StreamUtil.readKeyID(in);
         }
         else if (version == VERSION_6)
         {
@@ -259,14 +252,7 @@ public class PublicKeyEncSessionPacket
 
         if (version == VERSION_3)
         {
-            pOut.write((byte) (keyID >> 56));
-            pOut.write((byte) (keyID >> 48));
-            pOut.write((byte) (keyID >> 40));
-            pOut.write((byte) (keyID >> 32));
-            pOut.write((byte) (keyID >> 24));
-            pOut.write((byte) (keyID >> 16));
-            pOut.write((byte) (keyID >> 8));
-            pOut.write((byte) (keyID));
+            StreamUtil.writeKeyID(pOut, keyID);
         }
         else if (version == VERSION_6)
         {

@@ -34,14 +34,12 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
         case PGPPublicKey.RSA_ENCRYPT:
         case PGPPublicKey.RSA_GENERAL:
+        case PGPPublicKey.ELGAMAL_ENCRYPT:
+        case PGPPublicKey.ELGAMAL_GENERAL:
+        case PGPPublicKey.ECDH:
             break;
         case PGPPublicKey.RSA_SIGN:
             throw new IllegalArgumentException("Can't use an RSA_SIGN key for encryption.");
-        case PGPPublicKey.ELGAMAL_ENCRYPT:
-        case PGPPublicKey.ELGAMAL_GENERAL:
-            break;
-        case PGPPublicKey.ECDH:
-            break;
         case PGPPublicKey.DSA:
             throw new IllegalArgumentException("Can't use DSA for encryption.");
         case PGPPublicKey.ECDSA:

@@ -116,19 +116,13 @@ public class OnePassSignaturePacket
         pOut.write(hashAlgorithm);
         pOut.write(keyAlgorithm);
 
-        pOut.write((byte)(keyID >> 56));
-        pOut.write((byte)(keyID >> 48));
-        pOut.write((byte)(keyID >> 40));
-        pOut.write((byte)(keyID >> 32));
-        pOut.write((byte)(keyID >> 24));
-        pOut.write((byte)(keyID >> 16));
-        pOut.write((byte)(keyID >> 8));
-        pOut.write((byte)(keyID));
-        
+        StreamUtil.writeKeyID(pOut, keyID);
+
         pOut.write(isContaining);
 
         pOut.close();
 
         out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray());
     }
+
 }
