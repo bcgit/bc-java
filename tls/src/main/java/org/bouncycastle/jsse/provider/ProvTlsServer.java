@@ -21,7 +21,6 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCX509Key;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.provider.SignatureSchemeInfo.PerConnection;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
@@ -1075,8 +1074,6 @@ class ProvTlsServer
 
     protected TlsCredentials selectServerCredentials12(Principal[] issuers, int keyExchangeAlgorithm) throws IOException
     {
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-
         final short legacySignatureAlgorithm = TlsUtils.getLegacySignatureAlgorithmServer(keyExchangeAlgorithm);
 
         PerConnection signatureSchemes = jsseSecurityParameters.signatureSchemes;
@@ -1105,8 +1102,8 @@ class ProvTlsServer
                 continue;
             }
 
-            // TODO[jsse] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
-            if (!signatureSchemeInfo.isActive(algorithmConstraints, false, true, jsseSecurityParameters.namedGroups))
+            if (!signatureSchemeInfo.isSupportedPre13() ||
+                !signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
             {
                 continue;
             }
@@ -1159,8 +1156,6 @@ class ProvTlsServer
     protected TlsCredentials selectServerCredentials13(Principal[] issuers, byte[] certificateRequestContext)
         throws IOException
     {
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-
         PerConnection signatureSchemes = jsseSecurityParameters.signatureSchemes;
 
         LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
@@ -1176,8 +1171,8 @@ class ProvTlsServer
                 continue;
             }
 
-            // TODO[jsse] Somewhat redundant if we get all active signature schemes later (for CertificateRequest)
-            if (!signatureSchemeInfo.isActive(algorithmConstraints, true, false, jsseSecurityParameters.namedGroups))
+            if (!signatureSchemeInfo.isSupportedPost13() ||
+                !signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
             {
                 continue;
             }
