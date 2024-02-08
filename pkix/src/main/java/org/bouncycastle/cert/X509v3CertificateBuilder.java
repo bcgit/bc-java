@@ -221,12 +221,10 @@ public class X509v3CertificateBuilder
      *
      * @param extension the full extension value.
      * @return this builder object.
-     * @throws CertIOException if there is an issue with the new extension value.
      * @throws IllegalArgumentException if the OID oid has already been used.
      */
     public X509v3CertificateBuilder addExtension(
         Extension extension)
-        throws CertIOException
     {
         extGenerator.addExtension(extension);
 
