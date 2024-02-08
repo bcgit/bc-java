@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -342,7 +343,7 @@ public class SExprParser
 
     private static SecretKeyPacket getSecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
                                                    SExpression expression, PGPDigestCalculatorProvider digestProvider,
-                                                   HashMap<Integer, String[]> labels, getSecKeyDataOperation operation)
+                                                   Map<Integer, String[]> labels, getSecKeyDataOperation operation)
         throws PGPException, IOException
     {
         byte[] secKeyData = null;

@@ -19,18 +19,19 @@ public class CompositeAlgorithmSpec
 
         public Builder add(String algorithmName)
         {
-            algorithmNames.add(algorithmName);
-            parameterSpecs.add(null);
-
-            return this;
+            return add(algorithmName, null);
         }
 
         public Builder add(String algorithmName, AlgorithmParameterSpec parameterSpec)
         {
-            algorithmNames.add(algorithmName);
-            parameterSpecs.add(parameterSpec);
+            if (!algorithmNames.contains(algorithmName))
+            {
+                algorithmNames.add(algorithmName);
+                parameterSpecs.add(parameterSpec);
 
-            return this;
+                return this;
+            }
+            throw new IllegalStateException("cannot build with the same algorithm name added");
         }
 
         public CompositeAlgorithmSpec build()
@@ -49,8 +50,8 @@ public class CompositeAlgorithmSpec
 
     public CompositeAlgorithmSpec(Builder builder)
     {
-         this.algorithmNames = Collections.unmodifiableList(new ArrayList<String>(builder.algorithmNames));
-         this.parameterSpecs = Collections.unmodifiableList(new ArrayList<AlgorithmParameterSpec>(builder.parameterSpecs));
+        this.algorithmNames = Collections.unmodifiableList(new ArrayList<String>(builder.algorithmNames));
+        this.parameterSpecs = Collections.unmodifiableList(new ArrayList<AlgorithmParameterSpec>(builder.parameterSpecs));
     }
 
     public List<String> getAlgorithmNames()

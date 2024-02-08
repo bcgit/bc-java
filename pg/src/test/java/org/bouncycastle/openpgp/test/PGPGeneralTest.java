@@ -1642,7 +1642,7 @@ public class PGPGeneralTest
     {
         try
         {
-            PGPSecretKeyRing rng = new PGPSecretKeyRing(new ByteArrayInputStream(curve25519Pub), new JcaKeyFingerprintCalculator());
+            new PGPSecretKeyRing(new ByteArrayInputStream(curve25519Pub), new JcaKeyFingerprintCalculator());
             fail("the constructor for this initialisation should fail as the input is a stream of a public key ");
         }
         catch (IOException e)
@@ -1890,7 +1890,6 @@ public class PGPGeneralTest
         PGPKeyPair sgnKeyPair = new BcPGPKeyPair(PGPPublicKey.RSA_SIGN, kpSgn, date);
         PGPKeyPair encKeyPair = new BcPGPKeyPair(PGPPublicKey.RSA_GENERAL, kpEnc, date);
 
-        PGPSignatureSubpacketVector unhashedPcks = null;
         PGPSignatureSubpacketGenerator svg = new PGPSignatureSubpacketGenerator();
 
         int[] aeadAlgs = new int[]{AEADAlgorithmTags.EAX,
@@ -1902,7 +1901,7 @@ public class PGPGeneralTest
 
         PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION,
             sgnKeyPair, identity, new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
-            hashedPcks, unhashedPcks, new BcPGPContentSignerBuilder(PGPPublicKey.RSA_GENERAL, HashAlgorithmTags.SHA1), new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).build(passPhrase));
+            hashedPcks, null, new BcPGPContentSignerBuilder(PGPPublicKey.RSA_GENERAL, HashAlgorithmTags.SHA1), new BcPBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).build(passPhrase));
 
         svg = new PGPSignatureSubpacketGenerator();
         svg.setKeyExpirationTime(true, 2L);
@@ -1911,7 +1910,7 @@ public class PGPGeneralTest
         svg.setFeature(true, Features.FEATURE_MODIFICATION_DETECTION);
         hashedPcks = svg.generate();
 
-        keyRingGen.addSubKey(encKeyPair, hashedPcks, unhashedPcks);
+        keyRingGen.addSubKey(encKeyPair, hashedPcks, null);
 
         byte[] encodedKeyRing = keyRingGen.generatePublicKeyRing().getEncoded();
 
@@ -2427,7 +2426,7 @@ public class PGPGeneralTest
             " 56FFBF0E8DA3B25C9D697E7F0F609E10F1F35A62002BF5DFC930675C1339272267EBDE\n" +
             " 6588E985D0F1AC44F8C59AC50213D3D618F25C8FDF6EB6DFAC7FBA598EEB7CEA#)(x\n" +
             "  #02222A119771B79D3FA0BF2276769DB90D21F88A836064AFA890212504E12CEA#)))\n").getBytes();
-        ;
+
         bin = new ByteArrayInputStream(key);
 
         openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
@@ -2475,7 +2474,7 @@ public class PGPGeneralTest
                 " 56FFBF0E8DA3B25C9D697E7F0F609E10F1F35A62002BF5DFC930675C1339272267EBDE\n" +
                 " 6588E985D0F1AC44F8C59AC50213D3D618F25C8FDF6EB6DFAC7FBA598EEB7CEA#)(x\n" +
                 "  #02222A119771B79D3FA0BF2276769DB90D21F88A836064AFA890212504E12CEA#)))\n").getBytes();
-            ;
+
             bin = new ByteArrayInputStream(key);
 
             openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
@@ -3174,7 +3173,7 @@ public class PGPGeneralTest
             isTrue(PGPSecretKeyParser.isExtendedSExpression(bin));
             digBuild = new JcaPGPDigestCalculatorProviderBuilder();
             openedPGPKeyData = PGPSecretKeyParser.parse(bin, 10);
-            ExtendedPGPSecretKey secretKey = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
+            ExtendedPGPSecretKey secretKey = openedPGPKeyData.getKeyData(
                 null,
                 digBuild.build(),
                 new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
