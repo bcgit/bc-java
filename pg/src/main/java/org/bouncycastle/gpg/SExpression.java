@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ public class SExpression
         add(Characters.valueOf(':'));
     }};
 
-    private static final Set<String> StringLabels = new HashSet<String>()
+    private static final Set<String> stringLabels = new HashSet<String>()
     {
         {
             add("protected");
@@ -96,7 +97,7 @@ public class SExpression
                 throw new IllegalStateException("S-Expression exceeded maximum depth");
             }
 
-            int c = 0;
+            int c;
             for (; ; )
             {
                 // eg (d\n #ABAB#)
@@ -115,16 +116,9 @@ public class SExpression
                             if (size > 0)
                             {
                                 Object object = expr.values.get(size - 1);
-                                if (object instanceof String)
+                                if (object instanceof String && stringLabels.contains(object))
                                 {
-                                    if (StringLabels.contains(object))
-                                    {
-                                        expr.addValue(new String(b, "UTF-8"));
-                                    }
-                                    else
-                                    {
-                                        expr.addValue(b);
-                                    }
+                                    expr.addValue(new String(b, StandardCharsets.UTF_8));
                                 }
                                 else
                                 {
@@ -133,7 +127,7 @@ public class SExpression
                             }
                             else
                             {
-                                expr.addValue(new String(b, "UTF-8"));
+                                expr.addValue(new String(b, StandardCharsets.UTF_8));
                             }
                         }
                         else

@@ -131,7 +131,7 @@ public class PGPUtil
      * Return the EC curve name for the passed in OID.
      *
      * @param oid the EC curve object identifier in the PGP key
-     * @return  a string representation of the OID.
+     * @return a string representation of the OID.
      */
     public static String getCurveName(
         ASN1ObjectIdentifier oid)
@@ -456,7 +456,7 @@ public class PGPUtil
      * @param in the stream to be checked and possibly wrapped.
      * @return a stream that will return PGP binary encoded data.
      * @throws IOException if an error occurs reading the stream, or initialising the
-     * {@link ArmoredInputStream}.
+     *                     {@link ArmoredInputStream}.
      */
     public static InputStream getDecoderStream(
         InputStream in)
@@ -545,44 +545,6 @@ public class PGPUtil
                 throw new IOException(e.getMessage());
             }
         }
-    }
-
-    static byte update(OutputStream sigOut, byte b, byte lastb, int signatureType){
-        try
-        {
-            if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-            {
-                if (b == '\r')
-                {
-                    sigOut.write((byte)'\r');
-                    sigOut.write((byte)'\n');
-                }
-                else if (b == '\n')
-                {
-                    if (lastb != '\r')
-                    {
-                        sigOut.write((byte)'\r');
-                        sigOut.write((byte)'\n');
-                    }
-                }
-                else
-                {
-                    sigOut.write(b);
-                }
-
-                lastb = b;
-            }
-            else
-            {
-                sigOut.write(b);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
-
-        return lastb;
     }
 
     static class BufferedInputStreamExt
