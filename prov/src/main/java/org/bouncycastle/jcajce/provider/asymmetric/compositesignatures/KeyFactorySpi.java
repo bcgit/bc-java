@@ -178,23 +178,23 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
                 algorithmNames.add("Dilithium");
                 algorithmNames.add("Ed25519");
                 break;
-            case MLDSA87_Ed448_SHAKE256:
+            case MLDSA87_Ed448_SHA512:
                 algorithmNames.add("Dilithium");
                 algorithmNames.add("Ed448");
                 break;
             case MLDSA44_RSA2048_PSS_SHA256:
             case MLDSA44_RSA2048_PKCS15_SHA256:
-            case MLDSA65_RSA3072_PSS_SHA256:
-            case MLDSA65_RSA3072_PKCS15_SHA256:
+            case MLDSA65_RSA3072_PSS_SHA512:
+            case MLDSA65_RSA3072_PKCS15_SHA512:
                 algorithmNames.add("Dilithium");
                 algorithmNames.add("RSA");
                 break;
             case MLDSA44_ECDSA_P256_SHA256:
             case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-            case MLDSA65_ECDSA_P256_SHA256:
-            case MLDSA65_ECDSA_brainpoolP256r1_SHA256:
-            case MLDSA87_ECDSA_P384_SHA384:
-            case MLDSA87_ECDSA_brainpoolP384r1_SHA384:
+            case MLDSA65_ECDSA_P256_SHA512:
+            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+            case MLDSA87_ECDSA_P384_SHA512:
+            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
                 algorithmNames.add("Dilithium");
                 algorithmNames.add("ECDSA");
                 break;
@@ -254,28 +254,28 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA65_ECDSA_P256_SHA256:
+            case MLDSA65_ECDSA_P256_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA65_ECDSA_brainpoolP256r1_SHA256:
+            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA65_RSA3072_PSS_SHA256:
-            case MLDSA65_RSA3072_PKCS15_SHA256:
+            case MLDSA65_RSA3072_PSS_SHA512:
+            case MLDSA65_RSA3072_PKCS15_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA87_Ed448_SHAKE256:
+            case MLDSA87_Ed448_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ed448Identifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA87_ECDSA_P384_SHA384:
+            case MLDSA87_ECDSA_P384_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP384Identifier, subjectPublicKeys[1]);
                 break;
-            case MLDSA87_ECDSA_brainpoolP384r1_SHA384:
+            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
                 keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
                 keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP384r1Identifier, subjectPublicKeys[1]);
                 break;

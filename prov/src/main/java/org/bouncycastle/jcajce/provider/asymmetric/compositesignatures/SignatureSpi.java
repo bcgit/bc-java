@@ -12,7 +12,6 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +41,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     //Hash function that is used to pre-hash the input message before it is fed into the component Signature.
     //Each composite signature has a specific hash function https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html
     private final Digest digest;
+    private byte[] OIDBytes;
 
 
     SignatureSpi(CompositeSignaturesConstants.CompositeName algorithmIdentifier)
@@ -59,36 +59,44 @@ public class SignatureSpi extends java.security.SignatureSpi
                     componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
                     this.digest = DigestFactory.createSHA512();
                     break;
-                case MLDSA87_Ed448_SHAKE256:
+                case MLDSA87_Ed448_SHA512:
                     componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
                     componentSignatures.add(Signature.getInstance("Ed448", "BC"));
-                    this.digest = DigestFactory.createSHAKE256();
+                    this.digest = DigestFactory.createSHA512();
                     break;
                 case MLDSA44_RSA2048_PSS_SHA256:
-                case MLDSA65_RSA3072_PSS_SHA256:
                     componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
                     componentSignatures.add(Signature.getInstance("SHA256withRSA/PSS", "BC")); //PSS with SHA-256 as digest algo and MGF.
                     this.digest = DigestFactory.createSHA256();
                     break;
+                case MLDSA65_RSA3072_PSS_SHA512:
+                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                    componentSignatures.add(Signature.getInstance("SHA512withRSA/PSS", "BC")); //PSS with SHA-512 as digest algo and MGF.
+                    this.digest = DigestFactory.createSHA512();
+                    break;
                 case MLDSA44_RSA2048_PKCS15_SHA256:
-                case MLDSA65_RSA3072_PKCS15_SHA256:
                     componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
                     componentSignatures.add(Signature.getInstance("SHA256withRSA", "BC")); //PKCS15
                     this.digest = DigestFactory.createSHA256();
                     break;
+                case MLDSA65_RSA3072_PKCS15_SHA512:
+                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                    componentSignatures.add(Signature.getInstance("SHA512withRSA", "BC")); //PKCS15
+                    this.digest = DigestFactory.createSHA512();
+                    break;
                 case MLDSA44_ECDSA_P256_SHA256:
                 case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                case MLDSA65_ECDSA_P256_SHA256:
-                case MLDSA65_ECDSA_brainpoolP256r1_SHA256:
                     componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
                     componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
                     this.digest = DigestFactory.createSHA256();
                     break;
-                case MLDSA87_ECDSA_P384_SHA384:
-                case MLDSA87_ECDSA_brainpoolP384r1_SHA384:
+                case MLDSA65_ECDSA_P256_SHA512:
+                case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+                case MLDSA87_ECDSA_P384_SHA512:
+                case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
                     componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA384withECDSA", "BC"));
-                    this.digest = DigestFactory.createSHA384();
+                    componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
+                    this.digest = DigestFactory.createSHA512();
                     break;
                 case Falcon512_ECDSA_P256_SHA256:
                 case Falcon512_ECDSA_brainpoolP256r1_SHA256:
@@ -104,8 +112,12 @@ public class SignatureSpi extends java.security.SignatureSpi
                 default:
                     throw new RuntimeException("Unknown composite algorithm.");
             }
+
+            //get bytes of composite signature algorithm OID in DER
+            //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-11.html#name-composite-sign
+            OIDBytes = this.algorithmIdentifierASN1.getEncoded(ASN1Encoding.DER);
         }
-        catch (NoSuchAlgorithmException | NoSuchProviderException e)
+        catch (NoSuchAlgorithmException | NoSuchProviderException | IOException e)
         {
             throw new RuntimeException(e);
         }
@@ -181,13 +193,10 @@ public class SignatureSpi extends java.security.SignatureSpi
             //calculate message digest (pre-hashing of the message)
             byte[] digestResult = new byte[digest.getDigestSize()];
             digest.doFinal(digestResult, 0);
-            //get bytes of composite signature algorithm name
-            //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-composite-sign
-            byte[] OIDBytes = CompositeSignaturesConstants.compositeNameOIDStringMap.get(this.algorithmIdentifier).getBytes(StandardCharsets.US_ASCII);
 
             for (int i = 0; i < this.componentSignatures.size(); i++)
             {
-                this.componentSignatures.get(i).update(OIDBytes);
+                this.componentSignatures.get(i).update(this.OIDBytes);
                 this.componentSignatures.get(i).update(digestResult); //in total, "OID || digest(message)" is the message fed into each component signature
                 byte[] signatureValue = this.componentSignatures.get(i).sign();
                 signatureSequence.add(new DERBitString(signatureValue));
@@ -224,9 +233,6 @@ public class SignatureSpi extends java.security.SignatureSpi
         //calculate message digest (pre-hashing of the message)
         byte[] digestResult = new byte[digest.getDigestSize()];
         digest.doFinal(digestResult, 0);
-        //get bytes of composite signature algorithm name
-        //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-composite-verify
-        byte[] OIDBytes = CompositeSignaturesConstants.compositeNameOIDStringMap.get(this.algorithmIdentifier).getBytes(StandardCharsets.US_ASCII);
 
         // Currently all signatures try to verify even if, e.g., the first is invalid.
         // If each component verify() is constant time, then this is also, otherwise it does not make sense to iterate over all if one of them already fails.
@@ -235,7 +241,7 @@ public class SignatureSpi extends java.security.SignatureSpi
 
         for (int i = 0; i < this.componentSignatures.size(); i++)
         {
-            this.componentSignatures.get(i).update(OIDBytes);
+            this.componentSignatures.get(i).update(this.OIDBytes);
             this.componentSignatures.get(i).update(digestResult); //in total, "OID || digest(message)" is the message fed into each component signature
             if (!this.componentSignatures.get(i).verify(DERBitString.getInstance(signatureSequence.getObjectAt(i)).getBytes()))
             {
@@ -281,7 +287,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA87andEd448()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_Ed448_SHAKE256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_Ed448_SHA512);
         }
     }
 
@@ -305,7 +311,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA65andRSA3072PSS()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PSS_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PSS_SHA512);
         }
     }
 
@@ -313,7 +319,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA65andRSA3072PKCS15()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PKCS15_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PKCS15_SHA512);
         }
     }
 
@@ -337,7 +343,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA65andECDSAP256()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_P256_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_P256_SHA512);
         }
     }
 
@@ -345,7 +351,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA65andECDSAbrainpoolP256r1()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_brainpoolP256r1_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_brainpoolP256r1_SHA512);
         }
     }
 
@@ -353,7 +359,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA87andECDSAP384()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_P384_SHA384);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_P384_SHA512);
         }
     }
 
@@ -361,7 +367,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     {
         public MLDSA87andECDSAbrainpoolP384r1()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_brainpoolP384r1_SHA384);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_brainpoolP384r1_SHA512);
         }
     }
 

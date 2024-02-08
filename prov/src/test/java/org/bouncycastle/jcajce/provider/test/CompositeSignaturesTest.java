@@ -18,22 +18,23 @@ import java.security.spec.X509EncodedKeySpec;
 
 public class CompositeSignaturesTest extends TestCase {
 
-    private static String[] compositeSignaturesOIDs = {"2.16.840.1.114027.80.7.1.1", //id-MLDSA44-RSA2048-PSS-SHA256
-            "2.16.840.1.114027.80.7.1.2", //id-MLDSA44-RSA2048-PKCS15-SHA256
-            "2.16.840.1.114027.80.7.1.3", //id-MLDSA44-Ed25519-SHA512
-            "2.16.840.1.114027.80.7.1.4", //id-MLDSA44-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.7.1.5", //id-MLDSA44-ECDSA-brainpoolP256r1-SHA256
-            "2.16.840.1.114027.80.7.1.6", //id-MLDSA65-RSA3072-PSS-SHA256
-            "2.16.840.1.114027.80.7.1.7", //id-MLDSA65-RSA3072-PKCS15-SHA256
-            "2.16.840.1.114027.80.7.1.8", //id-MLDSA65-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.7.1.9", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA256
-            "2.16.840.1.114027.80.7.1.10", //id-MLDSA65-Ed25519-SHA512
-            "2.16.840.1.114027.80.7.1.11", //id-MLDSA87-ECDSA-P384-SHA384
-            "2.16.840.1.114027.80.7.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA384
-            "2.16.840.1.114027.80.7.1.13", //id-MLDSA87-Ed448-SHAKE256
-            "2.16.840.1.114027.80.7.1.14", //id-Falcon512-ECDSA-P256-SHA256
-            "2.16.840.1.114027.80.7.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
-            "2.16.840.1.114027.80.7.1.16", //id-Falcon512-Ed25519-SHA512
+    private static String[] compositeSignaturesOIDs = {
+            "2.16.840.1.114027.80.8.1.1", //id-MLDSA44-RSA2048-PSS-SHA256
+            "2.16.840.1.114027.80.8.1.2", //id-MLDSA44-RSA2048-PKCS15-SHA256
+            "2.16.840.1.114027.80.8.1.3", //id-MLDSA44-Ed25519-SHA512
+            "2.16.840.1.114027.80.8.1.4", //id-MLDSA44-ECDSA-P256-SHA256
+            "2.16.840.1.114027.80.8.1.5", //id-MLDSA44-ECDSA-brainpoolP256r1-SHA256
+            "2.16.840.1.114027.80.8.1.6", //id-MLDSA65-RSA3072-PSS-SHA512
+            "2.16.840.1.114027.80.8.1.7", //id-MLDSA65-RSA3072-PKCS15-SHA512
+            "2.16.840.1.114027.80.8.1.8", //id-MLDSA65-ECDSA-P256-SHA512
+            "2.16.840.1.114027.80.8.1.9", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
+            "2.16.840.1.114027.80.8.1.10", //id-MLDSA65-Ed25519-SHA512
+            "2.16.840.1.114027.80.8.1.11", //id-MLDSA87-ECDSA-P384-SHA512
+            "2.16.840.1.114027.80.8.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
+            "2.16.840.1.114027.80.8.1.13", //id-MLDSA87-Ed448-SHA512
+            "2.16.840.1.114027.80.8.1.14", //id-Falcon512-ECDSA-P256-SHA256
+            "2.16.840.1.114027.80.8.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
+            "2.16.840.1.114027.80.8.1.16", //id-Falcon512-Ed25519-SHA512
     };
 
     public static final String messageToBeSigned = "Hello, how was your day?";
@@ -80,8 +81,8 @@ public class CompositeSignaturesTest extends TestCase {
                     TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
                     TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
                     break;
-                case MLDSA65_RSA3072_PSS_SHA256:
-                case MLDSA65_RSA3072_PKCS15_SHA256:
+                case MLDSA65_RSA3072_PSS_SHA512:
+                case MLDSA65_RSA3072_PKCS15_SHA512:
                     TestCase.assertEquals("DILITHIUM3", firstPublicKeyAlgorithm);
                     TestCase.assertEquals("DILITHIUM3", firstPrivateKeyAlgorithm);
                     TestCase.assertEquals("RSA", secondPublicKeyAlgorithm);
@@ -97,21 +98,21 @@ public class CompositeSignaturesTest extends TestCase {
                     TestCase.assertEquals("ED25519", secondPublicKeyAlgorithm);
                     TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
                     break;
-                case MLDSA65_ECDSA_P256_SHA256:
-                case MLDSA65_ECDSA_brainpoolP256r1_SHA256:
+                case MLDSA65_ECDSA_P256_SHA512:
+                case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
                     TestCase.assertEquals("DILITHIUM3", firstPublicKeyAlgorithm);
                     TestCase.assertEquals("DILITHIUM3", firstPrivateKeyAlgorithm);
                     TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
                     TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
                     break;
-                case MLDSA87_Ed448_SHAKE256:
+                case MLDSA87_Ed448_SHA512:
                     TestCase.assertEquals("DILITHIUM5", firstPublicKeyAlgorithm);
                     TestCase.assertEquals("DILITHIUM5", firstPrivateKeyAlgorithm);
                     TestCase.assertEquals("ED448", secondPublicKeyAlgorithm);
                     TestCase.assertEquals("ED448", secondPrivateKeyAlgorithm);
                     break;
-                case MLDSA87_ECDSA_P384_SHA384:
-                case MLDSA87_ECDSA_brainpoolP384r1_SHA384:
+                case MLDSA87_ECDSA_P384_SHA512:
+                case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
                     TestCase.assertEquals("DILITHIUM5", firstPublicKeyAlgorithm);
                     TestCase.assertEquals("DILITHIUM5", firstPrivateKeyAlgorithm);
                     TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
