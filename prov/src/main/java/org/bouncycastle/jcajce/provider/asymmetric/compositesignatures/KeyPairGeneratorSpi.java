@@ -73,7 +73,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
                     generators.get(1).initialize(256, this.secureRandom);
                     break;
-                case MLDSA87_Ed448_SHAKE256:
+                case MLDSA87_Ed448_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("Ed448", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
@@ -86,8 +86,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
                     generators.get(1).initialize(2048, this.secureRandom);
                     break;
-                case MLDSA65_RSA3072_PSS_SHA256:
-                case MLDSA65_RSA3072_PKCS15_SHA256:
+                case MLDSA65_RSA3072_PSS_SHA512:
+                case MLDSA65_RSA3072_PKCS15_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
@@ -105,25 +105,25 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
                     generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
                     break;
-                case MLDSA65_ECDSA_P256_SHA256:
+                case MLDSA65_ECDSA_P256_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
                     generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
                     break;
-                case MLDSA65_ECDSA_brainpoolP256r1_SHA256:
+                case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
                     generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
                     break;
-                case MLDSA87_ECDSA_P384_SHA384:
+                case MLDSA87_ECDSA_P384_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
                     generators.get(1).initialize(new ECGenParameterSpec("P-384"), this.secureRandom);
                     break;
-                case MLDSA87_ECDSA_brainpoolP384r1_SHA384:
+                case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
                     generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
                     generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
                     generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
@@ -244,7 +244,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA87andEd448()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_Ed448_SHAKE256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_Ed448_SHA512);
         }
     }
 
@@ -268,7 +268,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA65andRSA3072PSS()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PSS_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PSS_SHA512);
         }
     }
 
@@ -276,7 +276,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA65andRSA3072PKCS15()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PKCS15_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PKCS15_SHA512);
         }
     }
 
@@ -300,7 +300,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA65andECDSAP256()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_P256_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_P256_SHA512);
         }
     }
 
@@ -308,7 +308,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA65andECDSAbrainpoolP256r1()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_brainpoolP256r1_SHA256);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_brainpoolP256r1_SHA512);
         }
     }
 
@@ -316,7 +316,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA87andECDSAP384()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_P384_SHA384);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_P384_SHA512);
         }
     }
 
@@ -324,7 +324,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
     {
         public MLDSA87andECDSAbrainpoolP384r1()
         {
-            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_brainpoolP384r1_SHA384);
+            super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_brainpoolP384r1_SHA512);
         }
     }
 
