@@ -61,6 +61,7 @@ public class ArmoredOutputStreamTest
         throws Exception
     {
         testBuilder();
+        testExceptions();
         PGPPublicKeyRing keyRing = new PGPPublicKeyRing(publicKey, new JcaKeyFingerprintCalculator());
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
@@ -102,6 +103,7 @@ public class ArmoredOutputStreamTest
 
         ArmoredOutputStream aOut = ArmoredOutputStream.builder()
             .setVersion("GnuPG v1.4.2.1 (GNU/Linux)")
+            .setVersion("")
             .setComment("Test comment")
             .setMessageId("Test ID")
             .setCharset("UTF-8")
@@ -137,7 +139,7 @@ public class ArmoredOutputStreamTest
 
         ArmoredInputStream inputStream = new ArmoredInputStream(new ByteArrayInputStream(res));
         isEquals(inputStream.getArmorHeaderLine(), "-----BEGIN PGP PUBLIC KEY BLOCK-----");
-        isEquals(5, inputStream.getArmorHeaders().length);
+        isEquals(4, inputStream.getArmorHeaders().length);
 
         bOut = new ByteArrayOutputStream();
         aOut = ArmoredOutputStream.builder()
@@ -176,10 +178,19 @@ public class ArmoredOutputStreamTest
         res = bOut.toByteArray();
         inputStream = new ArmoredInputStream(new ByteArrayInputStream(res));
         isEquals(hashAlgorithms.length, inputStream.getArmorHeaders().length);
+    }
 
-        testException("unknown hash algorithm tag in beginClearText: ", "IOException", ()->{
-            ArmoredOutputStream aOut2 = new ArmoredOutputStream(new ByteArrayOutputStream());
-            aOut2.beginClearText(HashAlgorithmTags.SM3);
+    public void testExceptions()
+    {
+        testException("unknown hash algorithm tag in beginClearText: ", "IOException", () -> {
+            ArmoredOutputStream aOut = new ArmoredOutputStream(new ByteArrayOutputStream());
+            aOut.beginClearText(HashAlgorithmTags.SM3);
+        });
+
+        testException("Armor header value for key ", "IllegalArgumentException", () -> {
+            ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+                .setVersion("Text\nText")
+                .build(new ByteArrayOutputStream());
         });
     }
 
