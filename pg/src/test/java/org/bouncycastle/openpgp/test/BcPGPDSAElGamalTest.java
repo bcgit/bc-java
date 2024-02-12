@@ -86,8 +86,8 @@ public class BcPGPDSAElGamalTest
          + "4nKx9JvAmZTBIlI5Wsi5qxst/9p5MgP3flXsNi1tRbTmRhqIRgQYEQIABgUC"
          + "QBHyOAAKCRAOtk6iUOgnkBStAJoCZBVM61B1LG2xip294MZecMtCwQCbBbsk"
          + "JVCXP0/Szm05GB+WN+MOCT2wAgAA");
-           
-    byte[] testPrivKeyRing =
+
+    static byte[] testPrivKeyRing =
         Base64.decode(
             "lQHhBEAR8jYRBADNifuSopd20JOQ5x30ljIaY0M6927+vo09NeNxS3KqItba"
          + "nz9o5e2aqdT0W1xgdHYZmdElOHTTsugZxdXTEhghyxoo3KhVcNnTABQyrrvX"
@@ -137,7 +137,7 @@ public class BcPGPDSAElGamalTest
          + "2BnAj7MtnbghiefogacJ891jj8Y2ggJeKDuRz8j2iICaTOy+Y2rXnnJwfYzm"
          + "BMWcd2h1C5+UeBJ9CrrLniCCI8s5u8z36Rno3sfhBnXdRmWSxExXtocbg1Ht"
          + "dyiThf6TK3W29Yy/T6x45Ws5zOasaJdsFKM=");    
-    char[] pass = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' };
+    static char[] pass = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' };
     
     public void performTest()
         throws Exception

@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -66,24 +65,24 @@ public class SExprParser
         this.digestProvider = digestProvider;
     }
 
-    private static final HashMap<Integer, String[]> rsaLabels = new HashMap<Integer, String[]>()
+    private static final Map<Integer, String[]> rsaLabels = new HashMap<Integer, String[]>()
     {{
         put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"rsa", "n", "e", "protected-at"});
         put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"rsa", "n", "e", "d", "p", "q", "u", "protected-at"});
     }};
-    private static final HashMap<Integer, String[]> eccLabels = new HashMap<Integer, String[]>()
+    private static final Map<Integer, String[]> eccLabels = new HashMap<Integer, String[]>()
     {{
         put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"ecc", "curve", "flags", "q", "protected-at"});
         put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"ecc", "curve", "q", "d", "protected-at"});
     }};
 
-    private static final HashMap<Integer, String[]> dsaLabels = new HashMap<Integer, String[]>()
+    private static final Map<Integer, String[]> dsaLabels = new HashMap<Integer, String[]>()
     {{
         put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"dsa", "p", "q", "g", "y", "protected-at"});
         put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"dsa", "p", "q", "g", "y", "x", "protected-at"});
     }};
 
-    private static final HashMap<Integer, String[]> elgLabels = new HashMap<Integer, String[]>()
+    private static final Map<Integer, String[]> elgLabels = new HashMap<Integer, String[]>()
     {{
         //put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"elg", "p", "q", "g", "y", "protected-at"});
         put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"elg", "p", "q", "g", "y", "x", "protected-at"});
@@ -157,30 +156,127 @@ public class SExprParser
 
     public static PublicKeyAlgorithmTags[] getPGPSecretKey(PBEProtectionRemoverFactory keyProtectionRemoverFactory,
                                                            KeyFingerPrintCalculator fingerPrintCalculator, PGPPublicKey pubKey,
-                                                           int maxDepth, int type, SExpression expression, String keyType,
+                                                           int maxDepth, int type, final SExpression expression, String keyType,
                                                            PGPDigestCalculatorProvider digestProvider)
         throws PGPException, IOException
     {
         SecretKeyPacket secretKeyPacket;
         if (keyType.equals("ecc"))
         {
-            pubKey = getECCPublicKey(fingerPrintCalculator, pubKey, expression);
-            secretKeyPacket = getECCSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider);
+            BCPGKey basePubKey = getECCBasePublicKey(expression);
+            if (pubKey != null)
+            {
+                assertEccPublicKeyMath(basePubKey, pubKey);
+            }
+            else
+            {
+                PublicKeyPacket pubPacket = null;
+                if (basePubKey instanceof EdDSAPublicBCPGKey)
+                {
+                    pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA_LEGACY, new Date(), basePubKey);
+                }
+                else if (basePubKey instanceof ECPublicBCPGKey)
+                {
+                    pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), basePubKey);
+                }
+                pubKey = new PGPPublicKey(pubPacket, fingerPrintCalculator);
+            }
+            secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, eccLabels,
+                keyIn -> {
+                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
+                    final String curve = expression.getExpressionWithLabel("curve").getString(1);
+                    if (curve.startsWith("NIST") || curve.startsWith("brain"))
+                    {
+                        return new ECSecretBCPGKey(d).getEncoded();
+                    }
+                    else
+                    {
+                        return new EdSecretBCPGKey(d).getEncoded();
+                    }
+                });
         }
         else if (keyType.equals("dsa"))
         {
-            pubKey = getDSAPublicKey(fingerPrintCalculator, pubKey, expression);
-            secretKeyPacket = getDSASecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider);
+            pubKey = getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.DSA, dsaBigIntegers, new getPublicKeyOperation()
+            {
+                public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
+                {
+                    return new DSAPublicBCPGKey(bigIntegers[0], bigIntegers[1], bigIntegers[2], bigIntegers[3]);
+                }
+
+                public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
+                    throws PGPException
+                {
+                    DSAPublicBCPGKey key1 = (DSAPublicBCPGKey)k1;
+                    DSAPublicBCPGKey key2 = (DSAPublicBCPGKey)k2;
+                    if (!key1.getP().equals(key2.getP()) || !key1.getQ().equals(key2.getQ())
+                        || !key1.getG().equals(key2.getG()) || !key1.getY().equals(key2.getY()))
+                    {
+                        throw new PGPException("passed in public key does not match secret key");
+                    }
+                }
+            });
+            secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, dsaLabels,
+                keyIn -> {
+                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
+                    return new DSASecretBCPGKey(x).getEncoded();
+                });
         }
         else if (keyType.equals("elg"))
         {
-            pubKey = getELGPublicKey(fingerPrintCalculator, pubKey, expression);
-            secretKeyPacket = getELGSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider);
+            pubKey = getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, elgBigIntegers, new getPublicKeyOperation()
+            {
+                public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
+                {
+                    return new ElGamalPublicBCPGKey(bigIntegers[0], bigIntegers[1], bigIntegers[2]);
+                }
+
+                public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
+                    throws PGPException
+                {
+                    ElGamalPublicBCPGKey key1 = (ElGamalPublicBCPGKey)k1;
+                    ElGamalPublicBCPGKey key2 = (ElGamalPublicBCPGKey)k2;
+                    if (!key1.getP().equals(key2.getP()) || !key1.getG().equals(key2.getG()) || !key1.getY().equals(key2.getY()))
+                    {
+                        throw new PGPException("passed in public key does not match secret key");
+                    }
+                }
+            });
+            secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, elgLabels,
+                keyIn -> {
+                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
+                    return new ElGamalSecretBCPGKey(x).getEncoded();
+                });
         }
         else if (keyType.equals("rsa"))
         {
-            pubKey = getRSAPublicKey(fingerPrintCalculator, pubKey, expression);
-            secretKeyPacket = getRSASecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider);
+            // TODO: type of RSA key?
+            pubKey = getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.RSA_GENERAL, rsaBigIntegers, new getPublicKeyOperation()
+            {
+                public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
+                {
+                    return new RSAPublicBCPGKey(bigIntegers[0], bigIntegers[1]);
+                }
+
+                public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
+                    throws PGPException
+                {
+                    RSAPublicBCPGKey key1 = (RSAPublicBCPGKey)k1;
+                    RSAPublicBCPGKey key2 = (RSAPublicBCPGKey)k2;
+                    if (!key1.getModulus().equals(key2.getModulus())
+                        || !key1.getPublicExponent().equals(key2.getPublicExponent()))
+                    {
+                        throw new PGPException("passed in public key does not match secret key");
+                    }
+                }
+            });
+            secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, rsaLabels,
+                keyIn -> {
+                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
+                    BigInteger p = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("p").getBytes(1));
+                    BigInteger q = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("q").getBytes(1));
+                    return new RSASecretBCPGKey(d, p, q).getEncoded();
+                });
         }
         else
         {
@@ -203,9 +299,8 @@ public class SExprParser
     {
         int flag = 0, flag_break = (1 << bigIntegerLabels.length) - 1;
         BigInteger[] bigIntegers = new BigInteger[bigIntegerLabels.length];
-        for (Iterator it = expression.getValues().iterator(); it.hasNext(); )
+        for (Object item : expression.getValues())
         {
-            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;
@@ -236,102 +331,6 @@ public class SExprParser
         else
         {
             pubKey = new PGPPublicKey(new PublicKeyPacket(publicKeyAlgorithmTags, new Date(), basePubKey), fingerPrintCalculator);
-        }
-        return pubKey;
-    }
-
-    private static PGPPublicKey getRSAPublicKey(KeyFingerPrintCalculator fingerPrintCalculator, PGPPublicKey pubKey, SExpression expression)
-        throws PGPException
-    {
-        // TODO: type of RSA key?
-        return getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.RSA_GENERAL, rsaBigIntegers, new getPublicKeyOperation()
-        {
-            public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
-            {
-                return new RSAPublicBCPGKey(bigIntegers[0], bigIntegers[1]);
-            }
-
-            public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
-                throws PGPException
-            {
-                RSAPublicBCPGKey key1 = (RSAPublicBCPGKey)k1;
-                RSAPublicBCPGKey key2 = (RSAPublicBCPGKey)k2;
-                if (!key1.getModulus().equals(key2.getModulus())
-                    || !key1.getPublicExponent().equals(key2.getPublicExponent()))
-                {
-                    throw new PGPException("passed in public key does not match secret key");
-                }
-            }
-        });
-    }
-
-    private static PGPPublicKey getELGPublicKey(KeyFingerPrintCalculator fingerPrintCalculator, PGPPublicKey pubKey, SExpression expression)
-        throws PGPException
-    {
-        return getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, elgBigIntegers, new getPublicKeyOperation()
-        {
-            public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
-            {
-                return new ElGamalPublicBCPGKey(bigIntegers[0], bigIntegers[1], bigIntegers[2]);
-            }
-
-            public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
-                throws PGPException
-            {
-                ElGamalPublicBCPGKey key1 = (ElGamalPublicBCPGKey)k1;
-                ElGamalPublicBCPGKey key2 = (ElGamalPublicBCPGKey)k2;
-                if (!key1.getP().equals(key2.getP()) || !key1.getG().equals(key2.getG()) || !key1.getY().equals(key2.getY()))
-                {
-                    throw new PGPException("passed in public key does not match secret key");
-                }
-            }
-        });
-    }
-
-    private static PGPPublicKey getDSAPublicKey(KeyFingerPrintCalculator fingerPrintCalculator, PGPPublicKey pubKey, SExpression expression)
-        throws PGPException
-    {
-        return getPublicKey(fingerPrintCalculator, pubKey, expression, PublicKeyAlgorithmTags.DSA, dsaBigIntegers, new getPublicKeyOperation()
-        {
-            public BCPGKey getBasePublicKey(BigInteger[] bigIntegers)
-            {
-                return new DSAPublicBCPGKey(bigIntegers[0], bigIntegers[1], bigIntegers[2], bigIntegers[3]);
-            }
-
-            public void assertPublicKeyMatch(BCPGKey k1, BCPGKey k2)
-                throws PGPException
-            {
-                DSAPublicBCPGKey key1 = (DSAPublicBCPGKey)k1;
-                DSAPublicBCPGKey key2 = (DSAPublicBCPGKey)k2;
-                if (!key1.getP().equals(key2.getP()) || !key1.getQ().equals(key2.getQ())
-                    || !key1.getG().equals(key2.getG()) || !key1.getY().equals(key2.getY()))
-                {
-                    throw new PGPException("passed in public key does not match secret key");
-                }
-            }
-        });
-    }
-
-    private static PGPPublicKey getECCPublicKey(KeyFingerPrintCalculator fingerPrintCalculator, PGPPublicKey pubKey, SExpression expression)
-        throws PGPException
-    {
-        BCPGKey basePubKey = getECCBasePublicKey(expression);
-        if (pubKey != null)
-        {
-            assertEccPublicKeyMath(basePubKey, pubKey);
-        }
-        else
-        {
-            PublicKeyPacket pubPacket = null;
-            if (basePubKey instanceof EdDSAPublicBCPGKey)
-            {
-                pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.EDDSA_LEGACY, new Date(), basePubKey);
-            }
-            else if (basePubKey instanceof ECPublicBCPGKey)
-            {
-                pubPacket = new PublicKeyPacket(PublicKeyAlgorithmTags.ECDSA, new Date(), basePubKey);
-            }
-            pubKey = new PGPPublicKey(pubPacket, fingerPrintCalculator);
         }
         return pubKey;
     }
@@ -420,84 +419,13 @@ public class SExprParser
         return new SecretKeyPacket(pubKey.getPublicKeyPacket(), SymmetricKeyAlgorithmTags.NULL, s2K, nonce, secKeyData);
     }
 
-    private static SecretKeyPacket getRSASecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
-                                                      final SExpression expression, PGPDigestCalculatorProvider digestProvider)
-        throws PGPException, IOException
-    {
-        return getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, rsaLabels,
-            new getSecKeyDataOperation()
-            {
-                public byte[] getSecKeyData(SExpression keyIn)
-                {
-                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
-                    BigInteger p = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("p").getBytes(1));
-                    BigInteger q = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("q").getBytes(1));
-                    return new RSASecretBCPGKey(d, p, q).getEncoded();
-                }
-            });
-    }
-
-    private static SecretKeyPacket getDSASecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
-                                                      final SExpression expression, PGPDigestCalculatorProvider digestProvider)
-        throws PGPException, IOException
-    {
-        return getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, dsaLabels,
-            new getSecKeyDataOperation()
-            {
-                public byte[] getSecKeyData(SExpression keyIn)
-                {
-                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
-                    return new DSASecretBCPGKey(x).getEncoded();
-                }
-            });
-    }
-
-    private static SecretKeyPacket getELGSecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
-                                                      final SExpression expression, PGPDigestCalculatorProvider digestProvider)
-        throws PGPException, IOException
-    {
-        return getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, elgLabels,
-            new getSecKeyDataOperation()
-            {
-                public byte[] getSecKeyData(SExpression keyIn)
-                {
-                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
-                    return new ElGamalSecretBCPGKey(x).getEncoded();
-                }
-            });
-    }
-
-    private static SecretKeyPacket getECCSecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
-                                                      final SExpression expression, PGPDigestCalculatorProvider digestProvider)
-        throws PGPException, IOException
-    {
-        return getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, eccLabels,
-            new getSecKeyDataOperation()
-            {
-                public byte[] getSecKeyData(SExpression keyIn)
-                {
-                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
-                    final String curve = expression.getExpressionWithLabel("curve").getString(1);
-                    if (curve.startsWith("NIST") || curve.startsWith("brain"))
-                    {
-                        return new ECSecretBCPGKey(d).getEncoded();
-                    }
-                    else
-                    {
-                        return new EdSecretBCPGKey(d).getEncoded();
-                    }
-                }
-            });
-    }
-
     private static BCPGKey getECCBasePublicKey(SExpression expression)
     {
         byte[] qoint = null;
         String curve = null;
         int flag = 0;
-        for (Iterator it = expression.getValues().iterator(); it.hasNext(); )
+        for (Object item : expression.getValues())
         {
-            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;

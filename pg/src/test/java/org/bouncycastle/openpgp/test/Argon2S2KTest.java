@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
+import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -87,6 +88,7 @@ public class Argon2S2KTest
     public void performTest()
         throws Exception
     {
+        testExceptions();
         // S2K parameter serialization
         encodingTest();
         // Test vectors
@@ -200,6 +202,45 @@ public class Argon2S2KTest
 
         String encrypted = out.toString();
         return encrypted;
+    }
+
+    public void testExceptions()
+        throws Exception
+    {
+        final PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
+            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(TEST_MSG_PASSWORD.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters()));
+        final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final ArmoredOutputStream armorOut = new ArmoredOutputStream(out);
+        final OutputStream encOut = encGen.open(armorOut, new byte[4096]);
+        testException("generator already in open state", "IllegalStateException", () -> encGen.open(armorOut, new byte[4096]));
+
+        OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[4096]);
+        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[4096]));
+
+
+        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", 4096, new Date()));
+
+        ByteArrayInputStream plainIn = new ByteArrayInputStream(Strings.toByteArray(TEST_MSG_PLAIN));
+        Streams.pipeAll(plainIn, litOut);
+        litOut.close();
+
+        armorOut.close();
+
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(TEST_MSG_AES128));
+        ArmoredInputStream armorIn = new ArmoredInputStream(msgIn);
+
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
+        final Iterator it = objectFactory.iterator();
+        testException("Cannot remove element from factory.", "UnsupportedOperationException", () -> it.remove());
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)it.next();
+        testException(null, "NoSuchElementException", () -> it.next());
+
+        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        isEquals(encryptedData.getAlgorithm(), SymmetricKeyAlgorithmTags.AES_128);
+
     }
 
 }

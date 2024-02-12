@@ -61,6 +61,14 @@ public class SecretKeyPacket
      */
     public static final int USAGE_AEAD = 0xfd;
 
+    /**
+     * CFB
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/">
+     *     	Paul Wouters, Daniel Huigens , Justus Winter , Niibe Yutaka
+     *     	draft-ietf-openpgp-crypto-refresh-13
+     *     </a>
+     * */
+
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
