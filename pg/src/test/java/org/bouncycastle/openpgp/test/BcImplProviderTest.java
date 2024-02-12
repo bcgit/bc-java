@@ -44,6 +44,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -114,12 +115,18 @@ public class BcImplProviderTest
             });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
             (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()));
-//        testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
-//            (pub, privKey) -> {
-//                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-//                return new EdSecretBCPGKey(
-//                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
-//            });
+        testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
+            (pub, privKey) -> {
+                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                return new EdSecretBCPGKey(
+                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+            });
+        testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
+            (pub, privKey) -> {
+                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                return new EdSecretBCPGKey(
+                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+            });
     }
 
     private void testCreateDigest(BcPGPDigestCalculatorProvider provider, int algorithm, Digest digest)
@@ -139,19 +146,26 @@ public class BcImplProviderTest
             throws IOException;
     }
 
+
     private void testCreateSigner(int keyAlgorithm, Signer signer, String name, Operation operation)
         throws Exception
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance(name, "BC");
-
-
         if (keyAlgorithm == PublicKeyAlgorithmTags.ECDSA)
         {
             kpGen.initialize(new ECGenParameterSpec("P-256"));
         }
-        else if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+        else if (signer instanceof EdDsaSigner)
         {
-            kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
+            Signer innerSigner = ((EdDsaSigner)signer).getSigner();
+            if (innerSigner instanceof Ed448Signer)
+            {
+                kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448"));
+            }
+            else
+            {
+                kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
+            }
         }
         else
         {
@@ -161,15 +175,8 @@ public class BcImplProviderTest
         KeyPair kp = kpGen.generateKeyPair();
 
         JcaPGPKeyConverter converter = new JcaPGPKeyConverter();
-        PGPPublicKey pubKey;
-        if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
-        {
-            pubKey = converter.getPGPPublicKey(PGPPublicKey.ECDH, kp.getPublic(), new Date());
-        }
-        else
-        {
-            pubKey = converter.getPGPPublicKey(keyAlgorithm, kp.getPublic(), new Date());
-        }
+        PGPPublicKey pubKey = converter.getPGPPublicKey(keyAlgorithm, kp.getPublic(), new Date());
+
         PGPPrivateKey privKey = new PGPPrivateKey(pubKey.getKeyID(), pubKey.getPublicKeyPacket(), operation.getPrivateBCPGKey(pubKey, kp.getPrivate()));
 
 
@@ -184,7 +191,7 @@ public class BcImplProviderTest
         AsymmetricKeyParameter privKeyParam = keyConverter.getPrivateKey(privKey);
         signer.init(true, new ParametersWithRandom(privKeyParam, new FixedSecureRandom(source)));
         isTrue(contentSigner.getKeyAlgorithm() == keyAlgorithm);
-        //isTrue(areEqual(contentSigner.getSignature(), signer.generateSignature()));
+        isTrue(areEqual(contentSigner.getSignature(), signer.generateSignature()));
 
     }
 
@@ -251,5 +258,11 @@ public class BcImplProviderTest
             signer.reset();
             digest.reset();
         }
+
+        Signer getSigner()
+        {
+            return signer;
+        }
+
     }
 }

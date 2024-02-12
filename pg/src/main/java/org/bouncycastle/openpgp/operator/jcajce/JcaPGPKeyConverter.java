@@ -110,8 +110,8 @@ public class JcaPGPKeyConverter
     /**
      * Convert a PrivateKey into a PGPPrivateKey.
      *
-     * @param pub   the corresponding PGPPublicKey to privKey.
-     * @param privKey  the private key for the key in pub.
+     * @param pub     the corresponding PGPPublicKey to privKey.
+     * @param privKey the private key for the key in pub.
      * @return a PGPPrivateKey
      * @throws PGPException
      */
@@ -129,10 +129,11 @@ public class JcaPGPKeyConverter
      * Note: the time passed in affects the value of the key's keyID, so you probably only want
      * to do this once for a JCA key, or make sure you keep track of the time you used.
      * </p>
-     * @param algorithm asymmetric algorithm type representing the public key.
+     *
+     * @param algorithm           asymmetric algorithm type representing the public key.
      * @param algorithmParameters additional parameters to be stored against the public key.
-     * @param pubKey    actual public key to associate.
-     * @param time      date of creation.
+     * @param pubKey              actual public key to associate.
+     * @param time                date of creation.
      * @throws PGPException on key creation problem.
      */
     public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date time)
@@ -149,6 +150,7 @@ public class JcaPGPKeyConverter
      * Note: the time passed in affects the value of the key's keyID, so you probably only want
      * to do this once for a JCA key, or make sure you keep track of the time you used.
      * </p>
+     *
      * @param algorithm asymmetric algorithm type representing the public key.
      * @param pubKey    actual public key to associate.
      * @param time      date of creation.
@@ -457,7 +459,7 @@ public class JcaPGPKeyConverter
             SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
 
             // TODO: should probably match curve by comparison as well
-            ASN1ObjectIdentifier  curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
+            ASN1ObjectIdentifier curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
 
             X9ECParametersHolder params = ECNamedCurveTable.getByOIDLazy(curveOid);
 
@@ -503,6 +505,16 @@ public class JcaPGPKeyConverter
             return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, pointEnc),
                 kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
         }
+        else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED4", 0, 3))
+        {
+            SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+            byte[] pointEnc = new byte[1 + ED25519_KEY_SIZE];
+
+            pointEnc[0] = 0x40;
+            System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
+
+            return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, pointEnc));
+        }
         else
         {
             throw new PGPException("unknown key class");
@@ -542,7 +554,8 @@ public class JcaPGPKeyConverter
         return implGeneratePrivate(keyAlgorithm, pkcs8Spec);
     }
 
-    private PublicKey implGetPublicKeyEC(String keyAlgorithm, ECPublicBCPGKey ecPub) throws GeneralSecurityException, IOException, PGPException
+    private PublicKey implGetPublicKeyEC(String keyAlgorithm, ECPublicBCPGKey ecPub)
+        throws GeneralSecurityException, IOException, PGPException
     {
         ASN1ObjectIdentifier curveOID = ecPub.getCurveOID();
         X9ECParameters x9Params = JcaJcePGPUtil.getX9Parameters(curveOID);
