@@ -620,22 +620,6 @@ class SignatureSchemeInfo
         return all.signatureScheme;
     }
 
-    boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
-        NamedGroupInfo.PerConnection namedGroupInfos)
-    {
-        return enabled
-            && isNamedGroupOK(post13Active && isSupportedPost13(), pre13Active && isSupportedPre13(), namedGroupInfos)
-            && isPermittedBy(algorithmConstraints);
-    }
-
-    boolean isActiveCerts(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
-        NamedGroupInfo.PerConnection namedGroupInfos)
-    {
-        return enabled
-            && isNamedGroupOK(post13Active && isSupportedCerts13(), pre13Active && isSupportedPre13(), namedGroupInfos)
-            && isPermittedBy(algorithmConstraints);
-    }
-
     boolean isEnabled()
     {
         return enabled;
@@ -660,6 +644,22 @@ class SignatureSchemeInfo
     public String toString()
     {
         return all.text;
+    }
+
+//    private boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
+//        NamedGroupInfo.PerConnection namedGroupInfos)
+//    {
+//        return enabled
+//            && isNamedGroupOK(post13Active && isSupportedPost13(), pre13Active && isSupportedPre13(), namedGroupInfos)
+//            && isPermittedBy(algorithmConstraints);
+//    }
+
+    private boolean isActiveCerts(BCAlgorithmConstraints algorithmConstraints, boolean post13Active,
+        boolean pre13Active, NamedGroupInfo.PerConnection namedGroupInfos)
+    {
+        return enabled
+            && isNamedGroupOK(post13Active && isSupportedCerts13(), pre13Active && isSupportedPre13(), namedGroupInfos)
+            && isPermittedBy(algorithmConstraints);
     }
 
     private boolean isNamedGroupOK(boolean post13Allowed, boolean pre13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
