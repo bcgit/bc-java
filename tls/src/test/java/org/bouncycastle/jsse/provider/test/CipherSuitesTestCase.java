@@ -122,7 +122,7 @@ public class CipherSuitesTestCase extends TestCase
     }
 
     private static final String HOST = "localhost";
-    private static final AtomicInteger PORT_NO = new AtomicInteger(9100);
+    private static final AtomicInteger PORT_NO = new AtomicInteger(19000);
 
     static class SimpleClient
         implements TestProtocolUtil.BlockingCallable
