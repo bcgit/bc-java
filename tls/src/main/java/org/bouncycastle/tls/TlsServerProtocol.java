@@ -14,7 +14,6 @@ import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsKEMConfig;
-import org.bouncycastle.tls.crypto.TlsKemMode;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 

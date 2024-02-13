@@ -41,7 +41,6 @@ import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
 import org.bouncycastle.tls.crypto.TlsKEMConfig;
-import org.bouncycastle.tls.crypto.TlsKemMode;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
