@@ -74,7 +74,7 @@ public class HSSTests
     public void testHSSVector_1()
         throws Exception
     {
-        ArrayList<byte[]> blocks = loadVector("testcase_1.txt");
+        List<byte[]> blocks = loadVector("testcase_1.txt");
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
@@ -92,7 +92,7 @@ public class HSSTests
         throws Exception
     {
 
-        ArrayList<byte[]> blocks = loadVector("testcase_2.txt");
+        List<byte[]> blocks = loadVector("testcase_2.txt");
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
@@ -108,13 +108,13 @@ public class HSSTests
     }
 
 
-    private ArrayList<byte[]> loadVector(String vector)
+    private List<byte[]> loadVector(String vector)
         throws Exception
     {
         InputStream inputStream = TestResourceFinder.findTestResource("pqc/crypto/lms", vector);
         BufferedReader bin = new BufferedReader(new InputStreamReader(inputStream));
         String line;
-        ArrayList<byte[]> blocks = new ArrayList<byte[]>();
+        List<byte[]> blocks = new ArrayList<byte[]>();
         StringBuffer sw = new StringBuffer();
         while ((line = bin.readLine()) != null)
         {
@@ -416,7 +416,7 @@ public class HSSTests
                 {
                     HSSSignature signatureFromVector = HSSSignature.getInstance(encodedSigFromVector, d);
                     signatureFromVector.equals(sig);
-                    System.out.println();
+                    // System.out.println();
 
                 }
 
@@ -726,7 +726,7 @@ public class HSSTests
         HSS.generateSignature(keyPair, "Cats".getBytes());
 
 
-        System.out.println();
+        // System.out.println();
 
     }
 
@@ -867,7 +867,7 @@ public class HSSTests
                 ctr++;
 
             }
-            //System.out.println(ctr);
+            //// System.out.println(ctr);
             fail();
         }
         catch (ExhaustedPrivateKeyException ex)

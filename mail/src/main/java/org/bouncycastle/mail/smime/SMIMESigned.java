@@ -3,7 +3,6 @@ package org.bouncycastle.mail.smime;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -61,25 +60,6 @@ public class SMIMESigned
     Object                  message;
     MimeBodyPart            content;
 
-    private static InputStream getInputStream(
-        Part    bodyPart)
-        throws MessagingException
-    {
-        try
-        {
-            if (bodyPart.isMimeType("multipart/signed"))
-            {
-                throw new MessagingException("attempt to create signed data object from multipart content - use MimeMultipart constructor.");
-            }
-            
-            return bodyPart.getInputStream();
-        }
-        catch (IOException e)
-        {
-            throw new MessagingException("can't extract input stream: " + e);
-        }
-    }
-
     static
     {
         final MailcapCommandMap mc = (MailcapCommandMap)CommandMap.getDefaultCommandMap();
@@ -112,7 +92,7 @@ public class SMIMESigned
         MimeMultipart message) 
         throws MessagingException, CMSException
     {
-        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0)), getInputStream(message.getBodyPart(1)));
+        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0)), SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1)));
 
         this.message = message;
         this.content = (MimeBodyPart)message.getBodyPart(0);
@@ -132,7 +112,7 @@ public class SMIMESigned
         String        defaultContentTransferEncoding) 
         throws MessagingException, CMSException
     {
-        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0), defaultContentTransferEncoding), getInputStream(message.getBodyPart(1)));
+        super(new CMSProcessableBodyPartInbound(message.getBodyPart(0), defaultContentTransferEncoding), SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1)));
 
         this.message = message;
         this.content = (MimeBodyPart)message.getBodyPart(0);
@@ -150,7 +130,7 @@ public class SMIMESigned
         Part message) 
         throws MessagingException, CMSException, SMIMEException
     {
-        super(getInputStream(message));
+        super(SMIMEUtil.getInputStreamNoMultipartSigned(message));
 
         this.message = message;
 

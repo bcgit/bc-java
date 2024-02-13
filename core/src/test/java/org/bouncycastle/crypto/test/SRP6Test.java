@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -48,8 +49,8 @@ public class SRP6Test extends SimpleTest
 
     private void rfc5054AppendixBTestVectors() throws Exception
     {
-        byte[] I = "alice".getBytes("UTF8");
-        byte[] P = "password123".getBytes("UTF8");
+        byte[] I = Strings.toUTF8ByteArray("alice");
+        byte[] P = Strings.toUTF8ByteArray("password123");
         byte[] s = Hex.decode("BEB25379D1A8581EB5A727673A2441EE");
         BigInteger N = SRP6StandardGroups.rfc5054_1024.getN();
         BigInteger g = SRP6StandardGroups.rfc5054_1024.getG();

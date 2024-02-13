@@ -258,7 +258,7 @@ public abstract class ASN1External
 
     private static ASN1Primitive getExternalContent(ASN1TaggedObject encoding)
     {
-        ASN1Util.checkContextTag(encoding);
+        ASN1Util.checkContextTagClass(encoding);
 
         switch (encoding.getTagNo())
         {

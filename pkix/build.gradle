@@ -1,20 +1,84 @@
-dependencies {
-  implementation project(':core')
-  implementation project(':util')
-  implementation project(':prov')
+
+sourceSets {
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+
+
 }
+
+dependencies {
+
+    implementation project(':prov')
+    implementation project(':util')
+
+//    implementation files("$bc_prov")
+//    implementation files("$bc_util")
+  //  implementation project(path: ':core')
+
+    java9Implementation project(':prov')
+    java9Implementation project(':util')
+    java9Implementation files(sourceSets.main.output.classesDirs) {
+        builtBy compileJava
+    }
+
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+
+}
+
+compileJava {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    targetCompatibility = 1.8;
+    sourceCompatibility = 1.8;
+}
+
+
+compileJava9Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 9
+    targetCompatibility = 9
+    options.compilerArgs += [
+            '--module-path', "${bc_prov}:${bc_util}"
+    ]
+
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+}
+
 
 jar.archiveBaseName = "bcpkix-$vmrange"
 
+
 task sourcesJar(type: Jar) {
-  archiveBaseName = jar.archiveBaseName
-  classifier = 'sources'
-  from sourceSets.main.allSource
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+    exclude("**/*.so")
+    into('META-INF/versions/9') {
+        from sourceSets.java9.allSource
+    }
 }
+
+jar {
+    from sourceSets.main.output
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
+    manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
+    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+}
+
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   archiveBaseName = jar.archiveBaseName
-  classifier = 'javadoc'
+  archiveClassifier = 'javadoc'
   from javadoc.destinationDir
 }
 
@@ -24,3 +88,7 @@ artifacts {
     archives sourcesJar
 }
 
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
+}

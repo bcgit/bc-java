@@ -67,25 +67,6 @@ public class SMIMESignedParser
     Object                  message;
     MimeBodyPart            content;
 
-    private static InputStream getInputStream(
-        Part    bodyPart)
-        throws MessagingException
-    {
-        try
-        {
-            if (bodyPart.isMimeType("multipart/signed"))
-            {
-                throw new MessagingException("attempt to create signed data object from multipart content - use MimeMultipart constructor.");
-            }
-            
-            return bodyPart.getInputStream();
-        }
-        catch (IOException e)
-        {
-            throw new MessagingException("can't extract input stream: " + e);
-        }
-    }
-
     private static File getTmpFile()
         throws MessagingException
     {
@@ -224,7 +205,7 @@ public class SMIMESignedParser
         File          backingFile)
         throws MessagingException, CMSException
     {
-        super(digCalcProvider, getSignedInputStream(message.getBodyPart(0), defaultContentTransferEncoding, backingFile), getInputStream(message.getBodyPart(1)));
+        super(digCalcProvider, getSignedInputStream(message.getBodyPart(0), defaultContentTransferEncoding, backingFile), SMIMEUtil.getInputStreamNoMultipartSigned(message.getBodyPart(1)));
 
         this.message = message;
         this.content = (MimeBodyPart)message.getBodyPart(0);
@@ -251,7 +232,7 @@ public class SMIMESignedParser
         Part message)
         throws MessagingException, CMSException, SMIMEException
     {
-        super(digCalcProvider, getInputStream(message));
+        super(digCalcProvider, SMIMEUtil.getInputStreamNoMultipartSigned(message));
 
         this.message = message;
 
@@ -283,7 +264,7 @@ public class SMIMESignedParser
         File file)
         throws MessagingException, CMSException, SMIMEException
     {
-        super(digCalcProvider, getInputStream(message));
+        super(digCalcProvider, SMIMEUtil.getInputStreamNoMultipartSigned(message));
 
         this.message = message;
 

@@ -1736,7 +1736,6 @@ public class GF2Polynomial
             throw new RuntimeException();
         }
         value[i >>> 5] |= bitMask[i & 0x1f];
-        return;
     }
 
     /**
@@ -1838,7 +1837,7 @@ public class GF2Polynomial
      */
     public void shiftLeftThis()
     {
-        /** @todo This is untested. */
+        // @todo This is untested.
         int i;
         if ((len & 0x1f) == 0)
         { // check if blocks increases

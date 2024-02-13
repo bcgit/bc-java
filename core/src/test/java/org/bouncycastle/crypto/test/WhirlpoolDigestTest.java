@@ -1,11 +1,10 @@
 package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.SimpleTest;
 
 /**
  * ISO vector test for Whirlpool
@@ -81,7 +80,7 @@ public class WhirlpoolDigestTest
     private void doPerformTest(String testTitle, byte[] inputBytes, String resultsAsHex)
     {
         String resStr = createHexOutputFromDigest(inputBytes);
-        if (!resultsAsHex.equals(resStr.toUpperCase()))
+        if (!resultsAsHex.equals(Strings.toUpperCase(resStr)))
         {
             fail(testTitle, resultsAsHex, resStr);
         }

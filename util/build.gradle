@@ -1,20 +1,95 @@
-dependencies {
-  implementation project(':core')
 
-  testImplementation group: 'junit', name: 'junit', version: '4.11'
-}
 
 jar.archiveBaseName = "bcutil-$vmrange"
 
+
+sourceSets {
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+
+}
+
+
+dependencies {
+    implementation project(':prov')
+    implementation files("${bc_prov}")
+  //  implementation project(path: ':core')
+    implementation project(path: ':prov')
+
+    testImplementation group: 'junit', name: 'junit', version: '4.11'
+
+    java9Implementation files([sourceSets.main.output.classesDirs]) {
+        builtBy compileJava
+    }
+    java9Implementation project(':prov')
+   // java9Implementation project(':core')
+    java9Implementation project(path:':prov')
+
+}
+
+compileJava {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    targetCompatibility = 1.8;
+    sourceCompatibility = 1.8;
+}
+
+
+compileJava9Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+
+    options.compilerArgs += [
+            '--module-path', "${bc_prov}"
+    ]
+
+    sourceCompatibility = 9
+    targetCompatibility = 9
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+}
+
+
+jar {
+    from sourceSets.main.output
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
+
+//    //
+//    // This exists because the above 'sourceSets.java9.output' is randomly
+//    // empty even though the classes have been built and are where
+//    // they should be.
+//    into('META-INF/versions/9') {
+//        from "${projectDir}/build/classes/java/java9"
+//        duplicatesStrategy DuplicatesStrategy.INCLUDE
+//    }
+
+    manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
+    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+}
+
+
+
 task sourcesJar(type: Jar) {
-  archiveBaseName = jar.archiveBaseName
-  classifier = 'sources'
-  from sourceSets.main.allSource
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+    exclude("**/*.so")
+    into('META-INF/versions/9') {
+        from sourceSets.java9.allSource
+    }
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
   archiveBaseName = jar.archiveBaseName
-  classifier = 'javadoc'
+  archiveClassifier = 'javadoc'
   from javadoc.destinationDir
 }
 
@@ -22,5 +97,10 @@ artifacts {
     archives jar
     archives javadocJar
     archives sourcesJar
+}
+
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
 }
 

@@ -21,6 +21,7 @@ check-code:
   
 test-code-8:
   stage: test
+  needs: []
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -38,6 +39,7 @@ test-code-8:
   
 test-code-11:
   stage: test
+  needs: []
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -69,3 +71,20 @@ test-code-17:
       - "mail/build/reports"
       - "util/build/reports"
       - "tls/build/reports"  
+test-code-21:
+  stage: test
+  needs: []
+  script:
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_21.sh\""
+  artifacts:
+    when: always
+    paths:
+      - "core/build/reports"
+      - "prov/build/reports"
+      - "pg/build/reports"
+      - "pkix/build/reports"
+      - "mail/build/reports"
+      - "util/build/reports"
+      - "tls/build/reports"

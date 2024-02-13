@@ -1,0 +1,110 @@
+
+jar.archiveBaseName = "bcjmail-$vmrange"
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['build/src/main/java']
+        }
+    }
+
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+
+}
+
+dependencies {
+    implementation project(':prov')
+    implementation project(':util')
+    implementation project(':pkix')
+
+    implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
+    implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
+    implementation files("$bc_prov")
+    implementation files("$bc_util")
+    implementation files("$bc_pkix")
+    implementation project(path: ':core')
+
+    java9Implementation files("$bc_prov")
+    java9Implementation files("$bc_util")
+    java9Implementation files("$bc_pkix")
+    java9Implementation files(sourceSets.main.output.classesDirs) {
+        builtBy compileJava
+    }
+}
+
+task copyTask(type: Copy) {
+    duplicatesStrategy = 'include'
+    from '../mail/src/main/java'
+    from 'src/main/java'
+    into 'build/src/main/java'
+    filter { String line -> (line.contains('javax.mail') ||  line.contains('javax.activation')) ? line.replace('javax.mail', 'jakarta.mail').replace('javax.activation', 'jakarta.activation') : line }
+}
+
+compileJava.dependsOn(copyTask)
+
+
+compileJava {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    targetCompatibility = 1.8;
+    sourceCompatibility = 1.8;
+}
+
+
+compileJava9Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 9
+    targetCompatibility = 9
+    options.compilerArgs += [
+            '--module-path', "$bc_prov:$bc_util:$bc_pkix:${rootProject.projectDir}/libs/jakarta.mail-2.0.1.jar:${rootProject.projectDir}/libs/jakarta.activation-api-2.0.0.jar"
+    ]
+    options.sourcepath = files(['build/src/main/java', 'src/main/jdk1.9'])
+
+}
+
+
+jar {
+    from sourceSets.main.output
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
+    manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
+    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional;org.bouncycastle.*;version="[2.73,4)"')
+}
+
+task sourcesJar(type: Jar) {
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+    into('META-INF/versions/9') {
+        from sourceSets.java9.allSource
+    }
+}
+
+sourcesJar.dependsOn(copyTask)
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  archiveBaseName = jar.archiveBaseName
+  archiveClassifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+test {
+    forkEvery = 1;
+    maxParallelForks = 8;
+}

@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -63,7 +64,7 @@ public class TraceOptimizer
     {
         int m = curve.getFieldSize();
 
-        ArrayList nonZeroTraceBits = new ArrayList();
+        List nonZeroTraceBits = new ArrayList();
 
         /*
          * Determine which of the bits contribute to the trace.
@@ -162,9 +163,9 @@ public class TraceOptimizer
         throw new IllegalStateException("Internal error in trace calculation");
     }
 
-    private static ArrayList enumToList(Enumeration en)
+    private static List enumToList(Enumeration en)
     {
-        ArrayList rv = new ArrayList();
+        List rv = new ArrayList();
         while (en.hasMoreElements())
         {
             rv.add(en.nextElement());
