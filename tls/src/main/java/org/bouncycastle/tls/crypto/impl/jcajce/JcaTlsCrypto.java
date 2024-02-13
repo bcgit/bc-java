@@ -48,8 +48,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsPQCConfig;
-import org.bouncycastle.tls.crypto.TlsPQCDomain;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKEMDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -438,7 +438,7 @@ public class JcaTlsCrypto
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
-        else if (NamedGroup.refersToASpecificPQC(namedGroup))
+        else if (NamedGroup.refersToASpecificKEM(namedGroup))
         {
             switch (namedGroup)
             {
@@ -572,7 +572,7 @@ public class JcaTlsCrypto
         return true;
     }
     
-    public boolean hasPQCAgreement()
+    public boolean hasKEMAgreement()
     {
         return true;
     }
@@ -841,9 +841,9 @@ public class JcaTlsCrypto
         }
     }
     
-    public TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig)
+    public TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig)
     {
-        return new JceTlsKyberDomain(this, pqcConfig);
+        return new JceTlsKyberDomain(this, kemConfig);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
@@ -1170,7 +1170,7 @@ public class JcaTlsCrypto
                 }
                 }
             }
-            else if (NamedGroup.refersToASpecificPQC(namedGroup))
+            else if (NamedGroup.refersToASpecificKEM(namedGroup))
             {
                 return Boolean.TRUE;
             }

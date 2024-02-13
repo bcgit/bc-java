@@ -1,23 +1,16 @@
 package org.bouncycastle.tls.crypto;
 
-import org.bouncycastle.tls.NamedGroup;
-
-public class TlsPQCConfig
+public class TlsKEMConfig
 {
     protected final int namedGroup;
-    protected final TlsPQCKemMode mode;
-    protected final int pqcNamedGroup;
+    protected final TlsCryptoParameters cryptoParams;
+    protected final int kemNamedGroup;
 
-    public TlsPQCConfig(int namedGroup)
-    {
-        this(namedGroup, TlsPQCKemMode.PQC_KEM_SERVER);
-    }
-
-    public TlsPQCConfig(int namedGroup, TlsPQCKemMode mode)
+    public TlsKEMConfig(int namedGroup, TlsCryptoParameters cryptoParams)
     {
         this.namedGroup = namedGroup;
-        this.mode = mode;
-        this.pqcNamedGroup = getPQCNamedGroup(namedGroup);
+        this.cryptoParams = cryptoParams;
+        this.kemNamedGroup = getKEMNamedGroup(namedGroup);
     }
     
     public int getNamedGroup()
@@ -25,17 +18,17 @@ public class TlsPQCConfig
         return namedGroup;
     }
     
-    public TlsPQCKemMode getTlsPQCKemMode()
+    public boolean isServer()
     {
-        return mode;
+        return cryptoParams.isServer();
     }
 
-    public int getPQCNamedGroup()
+    public int getKEMNamedGroup()
     {
-        return pqcNamedGroup;
+        return kemNamedGroup;
     }
     
-    private int getPQCNamedGroup(int namedGroup)
+    private int getKEMNamedGroup(int namedGroup)
     {
         return namedGroup;
         // switch (namedGroup)

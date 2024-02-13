@@ -54,8 +54,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsPQCConfig;
-import org.bouncycastle.tls.crypto.TlsPQCDomain;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKEMDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -213,9 +213,9 @@ public class BcTlsCrypto
         }
     }
 
-    public TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig)
+    public TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig)
     {
-        return new BcTlsKyberDomain(this, pqcConfig);
+        return new BcTlsKyberDomain(this, kemConfig);
     }
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
@@ -311,7 +311,7 @@ public class BcTlsCrypto
         return true;
     }
 
-    public boolean hasPQCAgreement()
+    public boolean hasKEMAgreement()
     {
         return true;
     }

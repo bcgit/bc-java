@@ -70,11 +70,11 @@ public interface TlsCrypto
     boolean hasECDHAgreement();
 
     /**
-     * Return true if this TlsCrypto can support PQC key agreement.
+     * Return true if this TlsCrypto can support KEM key agreement.
      *
-     * @return true if this instance can support PQC key agreement, false otherwise.
+     * @return true if this instance can support KEM key agreement, false otherwise.
      */
-    boolean hasPQCAgreement();
+    boolean hasKEMAgreement();
 
     /**
      * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
@@ -221,12 +221,12 @@ public interface TlsCrypto
     TlsECDomain createECDomain(TlsECConfig ecConfig);
 
     /**
-     * Create a domain object supporting the domain parameters described in pqcConfig.
+     * Create a domain object supporting the domain parameters described in kemConfig.
      *
-     * @param pqcConfig the config describing the PQC parameters to use.
-     * @return a TlsPQCDomain supporting the parameters in pqcConfig.
+     * @param kemConfig the config describing the KEM parameters to use.
+     * @return a TlsKEMDomain supporting the parameters in kemConfig.
      */
-    TlsPQCDomain createPQCDomain(TlsPQCConfig pqcConfig);
+    TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig);
 
     /**
      * Adopt the passed in secret, creating a new copy of it.

@@ -10,10 +10,11 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.tls.crypto.TlsPQCConfig;
-import org.bouncycastle.tls.crypto.TlsPQCKemMode;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKemMode;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -407,9 +408,9 @@ public class TlsServerProtocol
             {
                 agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
             }
-            else if (NamedGroup.refersToASpecificPQC(namedGroup))
+            else if (NamedGroup.refersToASpecificKEM(namedGroup))
             {
-                agreement = crypto.createPQCDomain(new TlsPQCConfig(namedGroup, TlsPQCKemMode.PQC_KEM_SERVER)).createPQC();
+                agreement = crypto.createKEMDomain(new TlsKEMConfig(namedGroup, new TlsCryptoParameters(tlsServerContext))).createKEM();
             }
             else
             {

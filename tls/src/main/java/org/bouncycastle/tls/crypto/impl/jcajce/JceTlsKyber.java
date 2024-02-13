@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsPQCKemMode;
 import org.bouncycastle.util.Arrays;
 
 public class JceTlsKyber implements TlsAgreement
@@ -25,41 +24,41 @@ public class JceTlsKyber implements TlsAgreement
 
     public byte[] generateEphemeral() throws IOException
     {
-        if (TlsPQCKemMode.PQC_KEM_CLIENT.equals(domain.getTlsPQCConfig().getTlsPQCKemMode()))
+        if (domain.getTlsKEMConfig().isServer())
         {
-            this.localKeyPair = domain.generateKeyPair();
-            return domain.encodePublicKey((KyberPublicKeyParameters)localKeyPair.getPublic());
+            return Arrays.clone(ciphertext);
         }
         else
         {
-            return Arrays.clone(ciphertext);
+            this.localKeyPair = domain.generateKeyPair();
+            return domain.encodePublicKey((KyberPublicKeyParameters)localKeyPair.getPublic());
         }
     }
 
     public void receivePeerValue(byte[] peerValue) throws IOException
     {
-        if (TlsPQCKemMode.PQC_KEM_CLIENT.equals(domain.getTlsPQCConfig().getTlsPQCKemMode()))
-        {
-            this.ciphertext = Arrays.clone(peerValue);
-        }
-        else
+        if (domain.getTlsKEMConfig().isServer())
         {
             this.peerPublicKey = domain.decodePublicKey(peerValue);
             SecretWithEncapsulation encap = domain.enCap(peerPublicKey);
             ciphertext = encap.getEncapsulation();
             secret = encap.getSecret();
         }
+        else
+        {
+            this.ciphertext = Arrays.clone(peerValue);
+        }
     }
 
     public JceTlsSecret calculateSecret() throws IOException
     {
-        if (TlsPQCKemMode.PQC_KEM_CLIENT.equals(domain.getTlsPQCConfig().getTlsPQCKemMode()))
+        if (domain.getTlsKEMConfig().isServer())
         {
-            return domain.adoptLocalSecret(domain.deCap((KyberPrivateKeyParameters)localKeyPair.getPrivate(), ciphertext));
+            return domain.adoptLocalSecret(secret);
         }
         else
         {
-            return domain.adoptLocalSecret(secret);
+            return domain.adoptLocalSecret(domain.deCap((KyberPrivateKeyParameters)localKeyPair.getPrivate(), ciphertext));
         }
     }
 }

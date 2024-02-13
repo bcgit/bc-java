@@ -75,9 +75,9 @@ class NamedGroupInfo
         ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
         ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman"),
 
-        kyber512(NamedGroup.kyber512, "PQC"),
-        kyber768(NamedGroup.kyber768, "PQC"),
-        kyber1024(NamedGroup.kyber1024, "PQC");
+        kyber512(NamedGroup.kyber512, "KEM"),
+        kyber768(NamedGroup.kyber768, "KEM"),
+        kyber1024(NamedGroup.kyber1024, "KEM");
 
         private final int namedGroup;
         private final String name;
@@ -555,7 +555,7 @@ class NamedGroupInfo
         for (NamedGroupInfo namedGroupInfo : local.values())
         {
             if (NamedGroup.refersToAnECDSACurve(namedGroupInfo.getNamedGroup())
-                || NamedGroup.refersToASpecificPQC(namedGroupInfo.getNamedGroup()))
+                || NamedGroup.refersToASpecificKEM(namedGroupInfo.getNamedGroup()))
             {
                 return true;
             }
