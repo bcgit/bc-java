@@ -265,7 +265,7 @@ public class NamedGroup
         return null;
     }
 
-    public static String getPQCName(int namedGroup)
+    public static String getKEMName(int namedGroup)
     {
         switch (namedGroup)
         {
@@ -364,10 +364,10 @@ public class NamedGroup
             return finiteFieldName;
         }
 
-        String pqcName = getPQCName(namedGroup);
-        if (null != pqcName)
+        String kemName = getKEMName(namedGroup);
+        if (null != kemName)
         {
-            return pqcName;
+            return kemName;
         }
 
         return null;
@@ -438,7 +438,7 @@ public class NamedGroup
         return namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192;
     }
 
-    public static boolean refersToASpecificPQC(int namedGroup)
+    public static boolean refersToASpecificKEM(int namedGroup)
     {
         return namedGroup == kyber512 || namedGroup == kyber768 || namedGroup == kyber1024;
     }
@@ -447,6 +447,6 @@ public class NamedGroup
     {
         return refersToASpecificCurve(namedGroup)
             || refersToASpecificFiniteField(namedGroup)
-            || refersToASpecificPQC(namedGroup);
+            || refersToASpecificKEM(namedGroup);
     }
 }

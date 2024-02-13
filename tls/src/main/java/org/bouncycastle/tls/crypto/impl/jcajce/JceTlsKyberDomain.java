@@ -11,14 +11,14 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsPQCConfig;
-import org.bouncycastle.tls.crypto.TlsPQCDomain;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKEMDomain;
 
-public class JceTlsKyberDomain implements TlsPQCDomain
+public class JceTlsKyberDomain implements TlsKEMDomain
 {
-    public static KyberParameters getKyberParameters(TlsPQCConfig pqcConfig)
+    public static KyberParameters getKyberParameters(TlsKEMConfig kemConfig)
     {
-        switch (pqcConfig.getPQCNamedGroup())
+        switch (kemConfig.getKEMNamedGroup())
         {
         case NamedGroup.kyber512:
             return KyberParameters.kyber512;
@@ -32,22 +32,22 @@ public class JceTlsKyberDomain implements TlsPQCDomain
     }
 
     protected final JcaTlsCrypto crypto;
-    protected final TlsPQCConfig pqcConfig;
+    protected final TlsKEMConfig kemConfig;
     protected final KyberParameters kyberParameters;
 
-    public TlsPQCConfig getTlsPQCConfig()
+    public TlsKEMConfig getTlsKEMConfig()
     {
-        return pqcConfig;
+        return kemConfig;
     }
 
-    public JceTlsKyberDomain(JcaTlsCrypto crypto, TlsPQCConfig pqcConfig)
+    public JceTlsKyberDomain(JcaTlsCrypto crypto, TlsKEMConfig kemConfig)
     {
         this.crypto = crypto;
-        this.pqcConfig = pqcConfig;
-        this.kyberParameters = getKyberParameters(pqcConfig);
+        this.kemConfig = kemConfig;
+        this.kyberParameters = getKyberParameters(kemConfig);
     }
 
-    public TlsAgreement createPQC()
+    public TlsAgreement createKEM()
     {
         return new JceTlsKyber(this);
     }
