@@ -14,6 +14,7 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
@@ -209,7 +210,8 @@ public class Argon2S2KTest
     {
         final PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
             new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
-        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(TEST_MSG_PASSWORD.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters()));
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(TEST_MSG_PASSWORD.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters())
+            .setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
         final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

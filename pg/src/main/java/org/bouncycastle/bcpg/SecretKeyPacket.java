@@ -60,15 +60,6 @@ public class SecretKeyPacket
      * Users should migrate to AEAD with all due speed.
      */
     public static final int USAGE_AEAD = 0xfd;
-
-    /**
-     * CFB
-     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/">
-     *     	Paul Wouters, Daniel Huigens , Justus Winter , Niibe Yutaka
-     *     	draft-ietf-openpgp-crypto-refresh-13
-     *     </a>
-     * */
-
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
@@ -140,8 +131,8 @@ public class SecretKeyPacket
             Streams.readFully(in, iv);
         }
         boolean isGNUDummyNoPrivateKey = s2k != null
-                && s2k.getType() == S2K.GNU_DUMMY_S2K
-                && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
+            && s2k.getType() == S2K.GNU_DUMMY_S2K
+            && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
         if (!(isGNUDummyNoPrivateKey))
         {
             if (s2kUsage != 0 && iv == null)

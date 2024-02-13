@@ -182,7 +182,8 @@ public class SExprParser
                 pubKey = new PGPPublicKey(pubPacket, fingerPrintCalculator);
             }
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, eccLabels,
-                keyIn -> {
+                keyIn ->
+                {
                     BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
                     final String curve = expression.getExpressionWithLabel("curve").getString(1);
                     if (curve.startsWith("NIST") || curve.startsWith("brain"))
@@ -217,7 +218,8 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, dsaLabels,
-                keyIn -> {
+                keyIn ->
+                {
                     BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
                     return new DSASecretBCPGKey(x).getEncoded();
                 });
@@ -243,7 +245,8 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, elgLabels,
-                keyIn -> {
+                keyIn ->
+                {
                     BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
                     return new ElGamalSecretBCPGKey(x).getEncoded();
                 });
@@ -271,7 +274,8 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, rsaLabels,
-                keyIn -> {
+                keyIn ->
+                {
                     BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
                     BigInteger p = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("p").getBytes(1));
                     BigInteger q = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("q").getBytes(1));
