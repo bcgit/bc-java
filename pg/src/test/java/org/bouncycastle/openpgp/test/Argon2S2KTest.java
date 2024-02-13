@@ -11,9 +11,12 @@ import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
@@ -37,10 +40,10 @@ public class Argon2S2KTest
 
     private static final SecureRandom RANDOM = new SecureRandom();
 
-    private static final String TEST_MSG_PASSWORD = "password";
+    static final String TEST_MSG_PASSWORD = "password";
 
     // Test message from the crypto-refresh-05 document
-    private static final String TEST_MSG_AES128 = "-----BEGIN PGP MESSAGE-----\n" +
+    static final String TEST_MSG_AES128 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 128-bit key\n" +
         "Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F\n" +
         "\n" +
@@ -72,7 +75,7 @@ public class Argon2S2KTest
         "=n8Ma\n" +
         "-----END PGP MESSAGE-----";
 
-    private static final String TEST_MSG_PLAIN = "Hello, world!";
+    static final String TEST_MSG_PLAIN = "Hello, world!";
 
     public static void main(String[] args)
     {
@@ -89,7 +92,7 @@ public class Argon2S2KTest
     public void performTest()
         throws Exception
     {
-        testExceptions();
+        //testExceptions();
         // S2K parameter serialization
         encodingTest();
         // Test vectors
@@ -204,45 +207,4 @@ public class Argon2S2KTest
         String encrypted = out.toString();
         return encrypted;
     }
-
-    public void testExceptions()
-        throws Exception
-    {
-        final PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
-            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
-        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(TEST_MSG_PASSWORD.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters())
-            .setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
-        final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
-
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        final ArmoredOutputStream armorOut = new ArmoredOutputStream(out);
-        final OutputStream encOut = encGen.open(armorOut, new byte[4096]);
-        testException("generator already in open state", "IllegalStateException", () -> encGen.open(armorOut, new byte[4096]));
-
-        OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[4096]);
-        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[4096]));
-
-
-        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", 4096, new Date()));
-
-        ByteArrayInputStream plainIn = new ByteArrayInputStream(Strings.toByteArray(TEST_MSG_PLAIN));
-        Streams.pipeAll(plainIn, litOut);
-        litOut.close();
-
-        armorOut.close();
-
-        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(TEST_MSG_AES128));
-        ArmoredInputStream armorIn = new ArmoredInputStream(msgIn);
-
-        PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
-        final Iterator it = objectFactory.iterator();
-        testException("Cannot remove element from factory.", "UnsupportedOperationException", () -> it.remove());
-        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)it.next();
-        testException(null, "NoSuchElementException", () -> it.next());
-
-        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
-        isEquals(encryptedData.getAlgorithm(), SymmetricKeyAlgorithmTags.AES_128);
-
-    }
-
 }

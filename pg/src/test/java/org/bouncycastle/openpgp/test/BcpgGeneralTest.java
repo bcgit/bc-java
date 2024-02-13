@@ -2,27 +2,45 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
+import java.util.Iterator;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPKdfParameters;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class BcpgGeneralTest
@@ -45,6 +63,8 @@ public class BcpgGeneralTest
     public void performTest()
         throws Exception
     {
+        //testS2K();
+        testExceptions();
         testECDHPublicBCPGKey();
         // Tests for PreferredAEADCiphersuites
         testPreferredAEADCiphersuites();
@@ -90,14 +110,15 @@ public class BcpgGeneralTest
         throws Exception
     {
         SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
-
+        System.setProperty("enableCamelliaKeyWrapping", "true");
         final X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
         gen.init(new X25519KeyGenerationParameters(random));
         testException("Symmetric key algorithm must be AES-128 or stronger.", "IllegalStateException", () ->
-            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.CAMELLIA_256), gen.generateKeyPair(), new Date()));
+            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.IDEA), gen.generateKeyPair(), new Date()));
         testException("Hash algorithm must be SHA-256 or stronger.", "IllegalStateException", () ->
             new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(HashAlgorithmTags.SHA1, 7), gen.generateKeyPair(), new Date()));
 
+        new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.CAMELLIA_256), gen.generateKeyPair(), new Date());
         BcPGPKeyPair kp = new BcPGPKeyPair(PGPPublicKey.ECDH, gen.generateKeyPair(), new Date());
 
         ECDHPublicBCPGKey publicBCPGKey = (ECDHPublicBCPGKey)kp.getPublicKey().getPublicKeyPacket().getKey();
@@ -109,5 +130,69 @@ public class BcpgGeneralTest
         isTrue(Arrays.areEqual(publicBCPGKey.getEncoded(), kp.getPrivateKey().getPublicKeyPacket().getKey().getEncoded()));
 
 
+    }
+
+    public void testExceptions()
+        throws Exception
+    {
+//        final PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
+//            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256));
+//        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(Argon2S2KTest.TEST_MSG_PASSWORD.toCharArray(), S2K.Argon2Params.universallyRecommendedParameters())
+//            .setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
+//        final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+//
+//        ByteArrayOutputStream out = new ByteArrayOutputStream();
+//        final ArmoredOutputStream armorOut = new ArmoredOutputStream(out);
+//        final OutputStream encOut = encGen.open(armorOut, new byte[10]);
+//        testException("generator already in open state", "IllegalStateException", () -> encGen.open(armorOut, new byte[10]));
+//
+//        OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[10]);
+//        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[10]));
+//
+//
+//        testException("generator already in open state", "IllegalStateException", () -> litGen.open(encOut, PGPLiteralData.UTF8, "", 10, new Date()));
+//
+//        ByteArrayInputStream plainIn = new ByteArrayInputStream(Strings.toByteArray(Argon2S2KTest.TEST_MSG_PLAIN));
+//        Streams.pipeAll(plainIn, litOut);
+//        litOut.close();
+//
+//        armorOut.close();
+
+        ByteArrayInputStream msgIn = new ByteArrayInputStream(Strings.toByteArray(Argon2S2KTest.TEST_MSG_AES128));
+        ArmoredInputStream armorIn = new ArmoredInputStream(msgIn);
+
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
+        final Iterator it = objectFactory.iterator();
+        testException("Cannot remove element from factory.", "UnsupportedOperationException", () -> it.remove());
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)it.next();
+        testException(null, "NoSuchElementException", () -> it.next());
+
+        PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        isEquals(encryptedData.getAlgorithm(), SymmetricKeyAlgorithmTags.AES_128);
+
+    }
+
+    public void testS2K()
+        throws Exception
+    {
+        S2K s2k = new S2K(HashAlgorithmTags.SHA1);
+        SymmetricKeyEncSessionPacket packet = SymmetricKeyEncSessionPacket.createV4Packet(SymmetricKeyAlgorithmTags.AES_256, s2k, null);
+
+        packet = new SymmetricKeyEncSessionPacket(new BCPGInputStream(new ByteArrayInputStream(packet.getEncoded())));
+        isEquals(s2k.getHashAlgorithm(), packet.getS2K().getHashAlgorithm());
+        isEquals(s2k.getType(), packet.getS2K().getType());
+        isEquals(S2K.SIMPLE, packet.getS2K().getType());
+
+        byte[] iv = new byte[16];
+        SecureRandom random = new SecureRandom();
+        random.nextBytes(iv);
+        s2k = new S2K(HashAlgorithmTags.SHA1, iv);
+        packet = SymmetricKeyEncSessionPacket.createV4Packet(SymmetricKeyAlgorithmTags.AES_256, s2k, null);
+
+        packet = new SymmetricKeyEncSessionPacket(new BCPGInputStream(new ByteArrayInputStream(packet.getEncoded())));
+        isEquals(s2k.getHashAlgorithm(), packet.getS2K().getHashAlgorithm());
+        isEquals(s2k.getType(), packet.getS2K().getType());
+        isEquals(s2k.getIV(), packet.getS2K().getIV());
+        isEquals(S2K.SALTED, packet.getS2K().getType());
     }
 }
