@@ -198,12 +198,13 @@ public class BcImplProviderTest
         createBlockCipherTest(SymmetricKeyAlgorithmTags.TRIPLE_DES);
         testException("cannot create cipher", "PGPException", ()-> createBlockCipherTest(SymmetricKeyAlgorithmTags.SAFER));
 
+        System.setProperty("enableCamelliaKeyWrapping", "true");
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_128);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_192);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_256);
-//        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_128);
-//        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_192);
-//        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_256);
+        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_128);
+        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_192);
+        createWrapperTest(SymmetricKeyAlgorithmTags.CAMELLIA_256);
         //testException("unknown wrap algorithm: ", "PGPException", ()-> createWrapperTest(SymmetricKeyAlgorithmTags.BLOWFISH));
     }
 

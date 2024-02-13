@@ -59,7 +59,8 @@ public class RegressionTest
         new BcPGPEncryptedDataTest(),
         new PGPGeneralTest(),
         new BcpgGeneralTest(),
-        new BcImplProviderTest()
+        new BcImplProviderTest(),
+        new OperatorJcajceTest()
     };
 
     public static void main(String[] args)

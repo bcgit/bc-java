@@ -226,7 +226,10 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-                return helper.createCipher("CamelliaWrap");
+                if(Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping")))
+                {
+                    return helper.createCipher("CamelliaWrap");
+                }
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }

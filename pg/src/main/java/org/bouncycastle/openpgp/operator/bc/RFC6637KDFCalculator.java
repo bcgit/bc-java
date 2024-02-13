@@ -86,10 +86,13 @@ class RFC6637KDFCalculator
         switch (algID)
         {
         case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             return 16;
         case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             return 24;
         case SymmetricKeyAlgorithmTags.AES_256:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
             return 32;
         default:
             throw new PGPException("unknown symmetric algorithm ID: " + algID);
