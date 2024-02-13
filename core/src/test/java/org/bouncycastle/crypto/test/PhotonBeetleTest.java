@@ -83,7 +83,7 @@ public class PhotonBeetleTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("PhotonBeetle Hash pass");
+        //System.out.print.println("PhotonBeetle Hash pass");
     }
 
     private void testVectors(PhotonBeetleEngine.PhotonBeetleParameters pbp, String filename)
@@ -147,7 +147,7 @@ public class PhotonBeetleTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("PhotonBeetle AEAD pass");
+        //System.out.print.println("PhotonBeetle AEAD pass");
     }
 
     private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
@@ -420,7 +420,7 @@ public class PhotonBeetleTest
         {
             fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
         }
-        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
+        //System.out.print.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testParameters(PhotonBeetleEngine pb, int keySize, int ivSize, int macSize)
@@ -437,7 +437,7 @@ public class PhotonBeetleTest
         {
             fail(pb.getAlgorithmName() + ": mac bytes of " + pb.getAlgorithmName() + " is not correct");
         }
-        System.out.println(pb.getAlgorithmName() + " test Parameters pass");
+        //System.out.print.println(pb.getAlgorithmName() + " test Parameters pass");
     }
 
 
@@ -466,7 +466,7 @@ public class PhotonBeetleTest
         {
             //expected
         }
-        System.out.println(digest.getAlgorithmName() + " test Exceptions pass");
+        //System.out.print.println(digest.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void mismatch(String name, String expected, byte[] found)

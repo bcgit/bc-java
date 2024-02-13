@@ -22,7 +22,7 @@ public class ObjectIdentifierTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("empty OBJECT IDENTIFIER with no sub-identifiers", e.getMessage());
+            isEquals("invalid OID contents", e.getMessage());
         }
         
         // exercise the object cache

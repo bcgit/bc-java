@@ -112,7 +112,7 @@ public class OpenedPGPKeyData
 
                 if (type.equals("shadowed-private-key"))
                 {
-                    unwrapResult = null;
+                    return new ExtendedPGPSecretKey(headerList, attributeList, null, publicKey);
                 }
                 else if (type.equals("protected-private-key"))
                 {
@@ -201,7 +201,7 @@ public class OpenedPGPKeyData
 
                 if (type.equals("shadowed-private-key"))
                 {
-                    unwrapResult = null;
+                    return new ExtendedPGPSecretKey(headerList, attributeList, null, publicKey);
                 }
                 else if (type.equals("protected-private-key"))
                 {
@@ -232,33 +232,33 @@ public class OpenedPGPKeyData
 
                 BigInteger x = BigIntegers.fromUnsignedByteArray(unwrapResult.expression.getExpressionWithLabelOrFail("x").getBytes(1));
 
-                if (keyExpression.hasLabel("elg"))
-                {
-                    return new ExtendedPGPSecretKey(
-                        headerList,
-                        attributeList,
-                        new SecretKeyPacket(
-                            publicKey.getPublicKeyPacket(),
-                            SymmetricKeyAlgorithmTags.NULL,
-                            unwrapResult.s2K,
-                            unwrapResult.iv,
-                            new ElGamalSecretBCPGKey(x).getEncoded()),
-                        publicKey);
-                }
-                else
-                {
-
-                    return new ExtendedPGPSecretKey(
-                        headerList,
-                        attributeList,
-                        new SecretKeyPacket(
-                            publicKey.getPublicKeyPacket(),
-                            SymmetricKeyAlgorithmTags.NULL,
-                            unwrapResult.s2K,
-                            unwrapResult.iv,
-                            new DSASecretBCPGKey(x).getEncoded()),
-                        publicKey);
-                }
+//                if (keyExpression.hasLabel("elg"))
+//                {
+                return new ExtendedPGPSecretKey(
+                    headerList,
+                    attributeList,
+                    new SecretKeyPacket(
+                        publicKey.getPublicKeyPacket(),
+                        SymmetricKeyAlgorithmTags.NULL,
+                        unwrapResult.s2K,
+                        unwrapResult.iv,
+                        new ElGamalSecretBCPGKey(x).getEncoded()),
+                    publicKey);
+//                }
+//                else
+//                {
+//
+//                    return new ExtendedPGPSecretKey(
+//                        headerList,
+//                        attributeList,
+//                        new SecretKeyPacket(
+//                            publicKey.getPublicKeyPacket(),
+//                            SymmetricKeyAlgorithmTags.NULL,
+//                            unwrapResult.s2K,
+//                            unwrapResult.iv,
+//                            new DSASecretBCPGKey(x).getEncoded()),
+//                        publicKey);
+//                }
 
             }
             else if (keyExpression.hasLabel("dsa"))
@@ -282,7 +282,7 @@ public class OpenedPGPKeyData
 
                 if (type.equals("shadowed-private-key"))
                 {
-                    unwrapResult = null;
+                    return new ExtendedPGPSecretKey(headerList, attributeList, null, publicKey);
                 }
                 else if (type.equals("protected-private-key"))
                 {
@@ -373,7 +373,7 @@ public class OpenedPGPKeyData
                 }
 
 
-                for (Iterator it = keyExpression.filterOut(new String[] { "rsa", "e", "n", "d", "p", "q", "u", "protected" }).getValues().iterator(); it.hasNext();)
+                for (Iterator it = keyExpression.filterOut(new String[]{"rsa", "e", "n", "d", "p", "q", "u", "protected"}).getValues().iterator(); it.hasNext(); )
                 {
                     Object o = it.next();
                     if (o instanceof SExpression)
@@ -770,7 +770,7 @@ public class OpenedPGPKeyData
             //
             SExpression.Builder builder = SExpression.builder().addValue("dsa");
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut(new String[] { "dsa", "p", "q", "g", "y", "protected" }));
+            builder.addContent(keyExpression.filterOut(new String[]{"dsa", "p", "q", "g", "y", "protected"}));
             byte[] aad = builder.build().toCanonicalForm();
 
 
@@ -818,9 +818,9 @@ public class OpenedPGPKeyData
         {
 
             SExpression.Builder builder = SExpression.builder().addValue("ecc");
-            builder.addContent(keyExpression.filterIn(new String[] { "curve", "flags" }));
+            builder.addContent(keyExpression.filterIn(new String[]{"curve", "flags"}));
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut(new String[] { "ecc", "flags", "curve", "q", "protected" }));
+            builder.addContent(keyExpression.filterOut(new String[]{"ecc", "flags", "curve", "q", "protected"}));
             byte[] aad = builder.build().toCanonicalForm();
 
             String curve;
@@ -865,7 +865,7 @@ public class OpenedPGPKeyData
         byte[] qoint = null;
         String curve = null;
 
-        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
+        for (Iterator it = expression.getValues().iterator(); it.hasNext(); )
         {
             Object item = it.next();
             if (item instanceof SExpression)
@@ -911,7 +911,7 @@ public class OpenedPGPKeyData
         {
             ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(curve);
             X9ECParametersHolder holder = CustomNamedCurves.getByNameLazy(curve);
-            if (holder == null)
+            if (holder == null && oid != null)
             {
                 holder = TeleTrusTNamedCurves.getByOIDLazy(oid);
             }
@@ -937,7 +937,7 @@ public class OpenedPGPKeyData
         BigInteger g = null;
         BigInteger y = null;
 
-        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
+        for (Iterator it = expression.getValues().iterator(); it.hasNext(); )
         {
             Object item = it.next();
             if (item instanceof SExpression)
@@ -1002,7 +1002,7 @@ public class OpenedPGPKeyData
 
             SExpression.Builder builder = SExpression.builder().addValue("rsa");
             addPublicKey(publicKey, builder);
-            builder.addContent(keyExpression.filterOut(new String[] { "rsa", "e", "n", "protected" }));
+            builder.addContent(keyExpression.filterOut(new String[]{"rsa", "e", "n", "protected"}));
             byte[] aad = builder.build().toCanonicalForm();
 
 
@@ -1039,7 +1039,7 @@ public class OpenedPGPKeyData
     {
         BigInteger n = null;
         BigInteger e = null;
-        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
+        for (Iterator it = expression.getValues().iterator(); it.hasNext(); )
         {
             Object item = it.next();
             if (item instanceof SExpression)
@@ -1078,6 +1078,10 @@ public class OpenedPGPKeyData
     private SExpression.Builder addPublicKey(PGPPublicKey publicKey, SExpression.Builder builder)
         throws PGPException
     {
+        if (publicKey == null)
+        {
+            throw new IllegalArgumentException("The public key should not be null");
+        }
         PublicKeyPacket publicPk = publicKey.getPublicKeyPacket();
         try
         {
@@ -1234,10 +1238,10 @@ public class OpenedPGPKeyData
 
     public static class Builder
     {
-        private ArrayList<PGPExtendedKeyHeader> headerList = new ArrayList<PGPExtendedKeyHeader>();
+        private List<PGPExtendedKeyHeader> headerList = new ArrayList<PGPExtendedKeyHeader>();
         private SExpression keyExpression;
 
-        public Builder setHeaderList(ArrayList<PGPExtendedKeyHeader> headerList)
+        public Builder setHeaderList(List<PGPExtendedKeyHeader> headerList)
         {
             this.headerList = headerList;
             return this;

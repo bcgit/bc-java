@@ -615,7 +615,7 @@ public class BcPGPRSATest
 
         nKey = PGPPublicKey.removeCertification(nKey, uVec);
         count = 0;
-        for (it = nKey.getUserAttributes(); it.hasNext();)
+        for (it = nKey.getUserAttributes(); it.hasNext(); it.next())
         {
             count++;
         }

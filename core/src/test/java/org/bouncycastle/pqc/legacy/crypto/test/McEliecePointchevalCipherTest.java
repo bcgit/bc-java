@@ -48,7 +48,7 @@ public class McEliecePointchevalCipherTest
 
             for (int k = 1; k <= numPassesEncDec; k++)
             {
-                System.out.println("############### test: " + k);
+                // System.out.println("############### test: " + k);
                 // initialize for encryption
                 mcEliecePointchevalDigestCipher.init(true, param);
 
@@ -82,8 +82,8 @@ public class McEliecePointchevalCipherTest
                 }
                 else
                 {
-                    System.out.println("test okay");
-                    System.out.println();
+                    // System.out.println("test okay");
+                    // System.out.println();
                 }
 
             }

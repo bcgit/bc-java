@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
+import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationKeyTags;
@@ -67,6 +68,10 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setRevocable(boolean isCritical, boolean isRevocable)
     {
+        if (contains(SignatureSubpacketTags.REVOCABLE))
+        {
+            throw new IllegalStateException("Revocable exists in the Signature Subpacket Generator");
+        }
         packets.add(new Revocable(isCritical, isRevocable));
     }
 
@@ -79,6 +84,10 @@ public class PGPSignatureSubpacketGenerator
      */
     public void setExportable(boolean isCritical, boolean isExportable)
     {
+        if (contains(SignatureSubpacketTags.EXPORTABLE))
+        {
+            throw new IllegalStateException("Exportable Certification exists in the Signature Subpacket Generator");
+        }
         packets.add(new Exportable(isCritical, isExportable));
     }
 
@@ -242,7 +251,7 @@ public class PGPSignatureSubpacketGenerator
      * Add a signer user-id to the signature.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
-     * @param rawUserID     signer user-id
+     * @param rawUserID  signer user-id
      * @deprecated use {@link #addSignerUserID(boolean, byte[])} instead.
      */
     public void setSignerUserID(boolean isCritical, byte[] rawUserID)
@@ -254,7 +263,7 @@ public class PGPSignatureSubpacketGenerator
      * Add a signer user-id to the signature.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
-     * @param rawUserID     signer user-id
+     * @param rawUserID  signer user-id
      */
     public void addSignerUserID(boolean isCritical, byte[] rawUserID)
     {
@@ -519,5 +528,32 @@ public class PGPSignatureSubpacketGenerator
     {
         return new PGPSignatureSubpacketVector(
             (SignatureSubpacket[])packets.toArray(new SignatureSubpacket[packets.size()]));
+    }
+
+    private boolean contains(int type)
+    {
+        for (int i = 0; i < packets.size(); ++i)
+        {
+            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adds a regular expression.
+     *
+     * @param isCritical        true if should be treated as critical, false otherwise.
+     * @param regularExpression the regular expression
+     */
+    public void addRegularExpression(boolean isCritical, String regularExpression)
+    {
+        if (regularExpression == null)
+        {
+            throw new IllegalArgumentException("attempt to set null regular expression");
+        }
+        packets.add(new RegularExpression(isCritical, regularExpression));
     }
 }

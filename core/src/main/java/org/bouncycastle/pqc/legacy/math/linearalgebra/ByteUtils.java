@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.legacy.math.linearalgebra;
 
+import org.bouncycastle.util.Strings;
+
 /**
  * This class is a utility class for manipulating byte arrays.
  *
@@ -180,7 +182,7 @@ public final class ByteUtils
      */
     public static byte[] fromHexString(String s)
     {
-        char[] rawChars = s.toUpperCase().toCharArray();
+        char[] rawChars = Strings.toUpperCase(s).toCharArray();
 
         int hexChars = 0;
         for (int i = 0; i < rawChars.length; i++)

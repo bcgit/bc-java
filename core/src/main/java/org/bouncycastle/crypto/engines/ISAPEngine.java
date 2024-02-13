@@ -20,7 +20,6 @@ import org.bouncycastle.util.Pack;
  * ISAP AEAD v2 with reference to C Reference Impl from: https://github.com/isap-lwc/isap-code-package
  * </p>
  */
-
 public class ISAPEngine
     implements AEADCipher
 {
@@ -827,7 +826,7 @@ public class ISAPEngine
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
 
-        /**
+        /*
          * Initialize variables.
          */
         npub = new byte[iv.length];

@@ -4,12 +4,22 @@ import java.io.IOException;
 
 public abstract class ASN1Util
 {
-    static ASN1TaggedObject checkContextTag(ASN1TaggedObject taggedObject)
+    static ASN1TaggedObject checkContextTag(ASN1TaggedObject taggedObject, int tagNo)
+    {
+        return checkTag(taggedObject, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    static ASN1TaggedObjectParser checkContextTag(ASN1TaggedObjectParser taggedObjectParser, int tagNo)
+    {
+        return checkTag(taggedObjectParser, BERTags.CONTEXT_SPECIFIC, tagNo);
+    }
+
+    static ASN1TaggedObject checkContextTagClass(ASN1TaggedObject taggedObject)
     {
         return checkTagClass(taggedObject, BERTags.CONTEXT_SPECIFIC);
     }
 
-    static ASN1TaggedObjectParser checkContextTag(ASN1TaggedObjectParser taggedObjectParser)
+    static ASN1TaggedObjectParser checkContextTagClass(ASN1TaggedObjectParser taggedObjectParser)
     {
         return checkTagClass(taggedObjectParser, BERTags.CONTEXT_SPECIFIC);
     }

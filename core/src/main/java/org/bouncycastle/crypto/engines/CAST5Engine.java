@@ -742,8 +742,6 @@ public class CAST5Engine
 
         result[0] = Ri;
         result[1] = Li;
-
-        return;
     }
 
     protected final void CAST_Decipher(int L16, int R16, int result[])
@@ -792,8 +790,6 @@ public class CAST5Engine
 
         result[0] = Ri;
         result[1] = Li;
-
-        return;
     }
 
     protected final void Bits32ToInts(int in,  int[] b, int offset)

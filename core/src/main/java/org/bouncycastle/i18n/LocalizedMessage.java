@@ -1,10 +1,5 @@
 package org.bouncycastle.i18n;
 
-import org.bouncycastle.i18n.filter.Filter;
-import org.bouncycastle.i18n.filter.TrustedInput;
-import org.bouncycastle.i18n.filter.UntrustedInput;
-import org.bouncycastle.i18n.filter.UntrustedUrlInput;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
@@ -14,6 +9,11 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
+
+import org.bouncycastle.i18n.filter.Filter;
+import org.bouncycastle.i18n.filter.TrustedInput;
+import org.bouncycastle.i18n.filter.UntrustedInput;
+import org.bouncycastle.i18n.filter.UntrustedUrlInput;
 
 public class LocalizedMessage 
 {
@@ -151,7 +151,7 @@ public class LocalizedMessage
             String result = bundle.getString(entry);
             if (!encoding.equals(DEFAULT_ENCODING))
             {
-                result = new String(result.getBytes(DEFAULT_ENCODING), encoding);
+                result = new String(result.getBytes(Charset.forName(DEFAULT_ENCODING)), encoding);
             }
             if (!arguments.isEmpty())
             {

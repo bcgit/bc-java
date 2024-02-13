@@ -33,12 +33,7 @@ class DLTaggedObjectParser
     {
         if (declaredExplicit)
         {
-            if (!_constructed)
-            {
-                throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-            }
-
-            return _parser.parseObject(baseTagNo);
+            return checkConstructed().parseObject(baseTagNo);
         }
 
         return _constructed
@@ -48,26 +43,26 @@ class DLTaggedObjectParser
 
     public ASN1Encodable parseExplicitBaseObject() throws IOException
     {
-        if (!_constructed)
-        {
-            throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-        }
-
-        return _parser.readObject();
+        return checkConstructed().readObject();
     }
 
     public ASN1TaggedObjectParser parseExplicitBaseTagged() throws IOException
     {
-        if (!_constructed)
-        {
-            throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
-        }
-
-        return _parser.parseTaggedObject();
+        return checkConstructed().parseTaggedObject();
     }
 
     public ASN1TaggedObjectParser parseImplicitBaseTagged(int baseTagClass, int baseTagNo) throws IOException
     {
         return new DLTaggedObjectParser(baseTagClass, baseTagNo, _constructed, _parser);
+    }
+
+    private ASN1StreamParser checkConstructed() throws IOException
+    {
+        if (!_constructed)
+        {
+            throw new IOException("Explicit tags must be constructed (see X.690 8.14.2)");
+        }
+
+        return _parser;
     }
 }

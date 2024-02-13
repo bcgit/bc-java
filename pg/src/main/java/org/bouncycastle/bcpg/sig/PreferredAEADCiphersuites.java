@@ -1,12 +1,11 @@
 package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
-import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
 public class PreferredAEADCiphersuites
-    extends SignatureSubpacket
+    extends PreferredAlgorithms
 {
 
     private final Combination[] algorithms;

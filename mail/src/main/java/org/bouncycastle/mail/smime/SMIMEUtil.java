@@ -1,5 +1,6 @@
 package org.bouncycastle.mail.smime;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FilterOutputStream;
@@ -16,6 +17,7 @@ import javax.mail.Multipart;
 import javax.mail.Part;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
@@ -33,18 +35,18 @@ public class SMIMEUtil
     public static boolean isMultipartContent(Part part)
         throws MessagingException
     {
-        String          partType = Strings.toLowerCase(part.getContentType());
+        String partType = Strings.toLowerCase(part.getContentType());
 
         return partType.startsWith(MULTIPART);
     }
 
     static boolean isCanonicalisationRequired(
-        MimeBodyPart   bodyPart,
-        String defaultContentTransferEncoding) 
+        MimeBodyPart bodyPart,
+        String defaultContentTransferEncoding)
         throws MessagingException
     {
-        String[]        cte = bodyPart.getHeader("Content-Transfer-Encoding");
-        String          contentTransferEncoding;
+        String[] cte = bodyPart.getHeader("Content-Transfer-Encoding");
+        String contentTransferEncoding;
 
         if (cte == null)
         {
@@ -58,7 +60,8 @@ public class SMIMEUtil
         return !contentTransferEncoding.equalsIgnoreCase("binary");
     }
 
-    static class LineOutputStream extends FilterOutputStream
+    static class LineOutputStream
+        extends FilterOutputStream
     {
         private static byte newline[];
 
@@ -72,11 +75,11 @@ public class SMIMEUtil
         {
             try
             {
-                byte abyte0[] = getBytes(s);
+                byte abyte0[] = Strings.toByteArray(s);
                 super.out.write(abyte0);
                 super.out.write(newline);
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 throw new MessagingException("IOException", exception);
             }
@@ -89,32 +92,17 @@ public class SMIMEUtil
             {
                 super.out.write(newline);
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 throw new MessagingException("IOException", exception);
             }
         }
 
-        static 
+        static
         {
             newline = new byte[2];
             newline[0] = 13;
             newline[1] = 10;
-        }
-        
-        private static byte[] getBytes(String s)
-        {
-            char ac[] = s.toCharArray();
-            int i = ac.length;
-            byte abyte0[] = new byte[i];
-            int j = 0;
-
-            while (j < i)
-            {
-                abyte0[j] = (byte)ac[j++];
-            }
-
-            return abyte0;
         }
     }
 
@@ -182,7 +170,7 @@ public class SMIMEUtil
             if (line.startsWith(boundary))
             {
                 boundaries--;
-  
+
                 if (boundaries == 0)
                 {
                     break;
@@ -194,7 +182,7 @@ public class SMIMEUtil
         {
             lOut.writeln(line);
         }
-        
+
         in.close();
 
         if (boundaries != 0)
@@ -264,51 +252,28 @@ public class SMIMEUtil
         {
             return null;
         }
-        
+
         return b.toString();
     }
 
     static void outputBodyPart(
         OutputStream out,
-        boolean      topLevel,
-        BodyPart     bodyPart,
-        String       defaultContentTransferEncoding) 
+        boolean topLevel,
+        BodyPart bodyPart,
+        String defaultContentTransferEncoding)
         throws MessagingException, IOException
     {
         if (bodyPart instanceof MimeBodyPart)
         {
-            MimeBodyPart    mimePart = (MimeBodyPart)bodyPart;
-            String[]        cte = mimePart.getHeader("Content-Transfer-Encoding");
-            String          contentTransferEncoding;
+            MimeBodyPart mimePart = (MimeBodyPart)bodyPart;
+            String[] cte = mimePart.getHeader("Content-Transfer-Encoding");
+            String contentTransferEncoding;
 
             if (isMultipartContent(mimePart))
             {
-                Object content = bodyPart.getContent();
-                Multipart mp;
-                if (content instanceof Multipart)
-                {
-                    mp = (Multipart)content;
-                }
-                else
-                {
-                    mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
-                }
-
-                ContentType contentType = new ContentType(mp.getContentType());
-                String boundary = "--" + contentType.getParameter("boundary");
-
-                SMIMEUtil.LineOutputStream lOut = new SMIMEUtil.LineOutputStream(out);
-
-                Enumeration headers = mimePart.getAllHeaderLines();
-                while (headers.hasMoreElements())
-                {
-                    String header = (String)headers.nextElement();
-                    lOut.writeln(header);
-                }
-
-                lOut.writeln();      // CRLF separator
-
-                outputPreamble(lOut, mimePart, boundary);
+                Multipart mp = SMIMEUtil.getMultipart(mimePart);
+                String boundary = "--" + new ContentType(mp.getContentType()).getParameter("boundary");
+                SMIMEUtil.LineOutputStream lOut = SMIMEUtil.writeMultipartContentBodyPart(out, mimePart, boundary);
 
                 for (int i = 0; i < mp.getCount(); i++)
                 {
@@ -345,7 +310,7 @@ public class SMIMEUtil
             }
 
             if (!contentTransferEncoding.equalsIgnoreCase("base64")
-                   && !contentTransferEncoding.equalsIgnoreCase("quoted-printable"))
+                && !contentTransferEncoding.equalsIgnoreCase("quoted-printable"))
             {
                 if (!contentTransferEncoding.equalsIgnoreCase("binary"))
                 {
@@ -381,10 +346,10 @@ public class SMIMEUtil
             // Write headers
             //
             LineOutputStream outLine = new LineOutputStream(out);
-            for (Enumeration e = mimePart.getAllHeaderLines(); e.hasMoreElements();) 
+            for (Enumeration e = mimePart.getAllHeaderLines(); e.hasMoreElements(); )
             {
                 String header = (String)e.nextElement();
-  
+
                 outLine.writeln(header);
             }
 
@@ -393,7 +358,7 @@ public class SMIMEUtil
 
 
             OutputStream outCRLF;
-              
+
             if (base64)
             {
                 outCRLF = new Base64CRLFOutputStream(out);
@@ -403,7 +368,7 @@ public class SMIMEUtil
                 outCRLF = new CRLFOutputStream(out);
             }
 
-            byte[]      buf = new byte[BUF_SIZE];
+            byte[] buf = new byte[BUF_SIZE];
 
             int len;
             while ((len = inRaw.read(buf, 0, buf.length)) > 0)
@@ -433,17 +398,17 @@ public class SMIMEUtil
      * return the MimeBodyPart described in the raw bytes provided in content
      */
     public static MimeBodyPart toMimeBodyPart(
-        byte[]    content)
+        byte[] content)
         throws SMIMEException
     {
         return toMimeBodyPart(new ByteArrayInputStream(content));
     }
-    
+
     /**
      * return the MimeBodyPart described in the input stream content
      */
     public static MimeBodyPart toMimeBodyPart(
-        InputStream    content)
+        InputStream content)
         throws SMIMEException
     {
         try
@@ -457,7 +422,7 @@ public class SMIMEUtil
     }
 
     static FileBackedMimeBodyPart toWriteOnceBodyPart(
-        CMSTypedStream    content)
+        CMSTypedStream content)
         throws SMIMEException
     {
         try
@@ -478,7 +443,7 @@ public class SMIMEUtil
      * return a file backed MimeBodyPart described in {@link CMSTypedStream} content.
      */
     public static FileBackedMimeBodyPart toMimeBodyPart(
-        CMSTypedStream    content)
+        CMSTypedStream content)
         throws SMIMEException
     {
         try
@@ -490,19 +455,19 @@ public class SMIMEUtil
             throw new SMIMEException("IOException creating tmp file:" + e.getMessage(), e);
         }
     }
-    
+
     /**
      * Return a file based MimeBodyPart represented by content and backed
      * by the file represented by file.
-     * 
+     *
      * @param content content stream containing body part.
-     * @param file file to store the decoded body part in.
+     * @param file    file to store the decoded body part in.
      * @return the decoded body part.
      * @throws SMIMEException
      */
     public static FileBackedMimeBodyPart toMimeBodyPart(
-        CMSTypedStream    content,
-        File              file)
+        CMSTypedStream content,
+        File file)
         throws SMIMEException
     {
         try
@@ -518,10 +483,10 @@ public class SMIMEUtil
             throw new SMIMEException("can't create part: " + e, e);
         }
     }
-    
+
     /**
      * Return a CMS IssuerAndSerialNumber structure for the passed in X.509 certificate.
-     * 
+     *
      * @param cert the X.509 certificate to get the issuer and serial number for.
      * @return an IssuerAndSerialNumber structure representing the certificate.
      */
@@ -557,7 +522,8 @@ public class SMIMEUtil
         }
     }
 
-    static class Base64CRLFOutputStream extends FilterOutputStream
+    static class Base64CRLFOutputStream
+        extends FilterOutputStream
     {
         protected int lastb;
         protected static byte newline[];
@@ -624,6 +590,110 @@ public class SMIMEUtil
             newline = new byte[2];
             newline[0] = '\r';
             newline[1] = '\n';
+        }
+    }
+
+    static InputStream getInputStream(
+        Part bodyPart,
+        int bufferSize)
+        throws MessagingException
+    {
+        try
+        {
+            InputStream in = bodyPart.getInputStream();
+
+            if (bufferSize == 0)
+            {
+                return new BufferedInputStream(in);
+            }
+            else
+            {
+                return new BufferedInputStream(in, bufferSize);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new MessagingException("can't extract input stream: " + e);
+        }
+    }
+
+    static Multipart getMultipart(MimeBodyPart bodyPart)
+        throws MessagingException, IOException
+    {
+        Object content = bodyPart.getContent();
+        Multipart mp;
+        if (content instanceof Multipart)
+        {
+            mp = (Multipart)content;
+        }
+        else
+        {
+            mp = new MimeMultipart(bodyPart.getDataHandler().getDataSource());
+        }
+        return mp;
+    }
+
+    static LineOutputStream writeMultipartContentBodyPart(OutputStream out, MimeBodyPart bodyPart, String boundary)
+        throws MessagingException, IOException
+    {
+
+        LineOutputStream lOut = new LineOutputStream(out);
+
+        Enumeration headers = bodyPart.getAllHeaderLines();
+        while (headers.hasMoreElements())
+        {
+            lOut.writeln((String)headers.nextElement());
+        }
+
+        lOut.writeln();      // CRLF separator
+
+        outputPreamble(lOut, bodyPart, boundary);
+        return lOut;
+    }
+
+    static InputStream getInputStreamNoMultipartSigned(
+        Part bodyPart)
+        throws MessagingException
+    {
+        try
+        {
+            if (bodyPart.isMimeType("multipart/signed"))
+            {
+                throw new MessagingException("attempt to create signed data object from multipart content - use MimeMultipart constructor.");
+            }
+
+            return bodyPart.getInputStream();
+        }
+        catch (IOException e)
+        {
+            throw new MessagingException("can't extract input stream: " + e);
+        }
+    }
+
+    static InputStream getInputStream(
+        Part    bodyPart)
+        throws MessagingException
+    {
+        try
+        {
+            return bodyPart.getInputStream();
+        }
+        catch (IOException e)
+        {
+            throw new MessagingException("can't extract input stream: " + e);
+        }
+    }
+
+    static void messageSaveChanges(MimeMessage message)
+        throws SMIMEException
+    {
+        try
+        {
+            message.saveChanges();      // make sure we're up to date.
+        }
+        catch (MessagingException e)
+        {
+            throw new SMIMEException("unable to save message", e);
         }
     }
 }

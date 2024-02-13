@@ -787,8 +787,8 @@ public class TestCACertsFetch
         }
         catch (Exception ex)
         {
-            Assert.assertEquals("Must be EST Exception", ESTException.class, ex.getClass());
-            Assert.assertEquals("Cause is IO Exception.", IOException.class, IOException.class);
+            Assert.assertTrue("Must be EST Exception", ex.getClass().equals(ESTException.class));
+            Assert.assertTrue("Cause is IO Exception.", ex.getCause().getClass().equals(IOException.class));
         }
     }
 

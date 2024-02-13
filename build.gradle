@@ -1,224 +1,253 @@
 buildscript {
-  repositories {
-    maven {
-      url "https://plugins.gradle.org/m2/"
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
-  }
+
 }
 
 plugins {
-  id "io.spring.nohttp" version "0.0.8"
-  id "checkstyle"
-  id "jacoco"
-  id "net.ltgt.errorprone" version "2.0.2"
+    id "io.spring.nohttp" version "0.0.11"
+    id "checkstyle"
+    id "jacoco"
+    id "net.ltgt.errorprone" version "3.1.0"
 }
 
-if (JavaVersion.current().isJava8Compatible())
-{
-  allprojects {
-    tasks.withType(Javadoc) {
-      options.addStringOption('Xdoclint:none', '-quiet')
+println("Environment setup:")
+["BC_JDK8", "BC_JDK11", "BC_JDK17", "BC_JDK21"].each({ it ->
+    println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
+    if (System.getenv(it) == null) {
+        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
     }
-  }
+})
+
+
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
 }
+
 
 // this needs to go here, otherwise it can't find config
 apply plugin: 'io.spring.nohttp'
 
 allprojects {
-  apply plugin: 'java'
-  apply plugin: 'idea'
-  apply plugin: 'checkstyle'
-  apply plugin: 'jacoco'
-  apply plugin: 'net.ltgt.errorprone'
+    apply plugin: 'java'
+    apply plugin: 'idea'
+    apply plugin: 'checkstyle'
+    apply plugin: 'jacoco'
+    apply plugin: 'net.ltgt.errorprone'
 
-  repositories {
-    mavenCentral()
-  }
-
-  dependencies {
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
-  }
-
-  tasks.withType(JavaCompile).configureEach {   
-    options.errorprone {
-      // Checks that cannot be enabled because implementing their suggestions
-      // would break backward compatibility.
-      check('ComparableType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('JdkObsolete', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-
-      // ERROR
-      check('BadShiftAmount', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('BanJNDI', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('BoxedPrimitiveEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ChainingConstructorIgnoresParameter', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ConstantOverflow', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EqualsHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EqualsNull', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('HashtableContains', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ReturnValueIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('SelfEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-
-      // WARNING
-      check('AlmostJavadoc', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('AlreadyChecked', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('AmbiguousMethodReference', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('AssertionFailureIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('BadImport', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('BadInstanceof', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('BoxedPrimitiveConstructor', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('CatchAndPrintStackTrace', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('CatchFail', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ClassNewInstance', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('CompareToZero', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('DefaultCharset', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('DoubleBraceInitialization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EmptyCatch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('EqualsIncompatibleType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ErroneousBitwiseExpression', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('FallThrough', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('FloatingPointLiteralPrecision', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('HidingField', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InconsistentCapitalization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InconsistentHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('IncrementInForLoopAndHeader', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InputStreamSlowMultibyteRead', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InstanceOfAndCastMatchWrongType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('IntLongMath', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InvalidBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InvalidInlineTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InvalidParam', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('InvalidThrows', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('IsInstanceIncompatibleType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('IsInstanceOfClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('JavaLangClash', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('JavaUtilDate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MalformedInlineTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MathAbsoluteRandom', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingCasesInEnumSwitch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingFail', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingImplementsComparable', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingOverride', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MixedMutabilityReturnType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ModifiedButNotUsed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('MutablePublicArray', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('NarrowCalculation', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('NarrowingCompoundAssignment', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('NestedInstanceOfConditions', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('NonAtomicVolatileUpdate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('NonOverridingEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('OperatorPrecedence', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ProtectedMembersInFinalClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ReferenceEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ReturnFromVoid', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ShortCircuitBoolean', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('StringSplitter', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('SynchronizeOnNonFinalField', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ThreadLocalUsage', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('ThreadPriorityCheck', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('TypeParameterUnusedInFormals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UndefinedEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnescapedEntity', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnicodeEscape', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnnecessaryParentheses', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnrecognisedJavadocTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnsynchronizedOverridesSynchronized', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnusedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnusedNestedClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UnusedVariable', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('VariableNameSameAsType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+    repositories {
+        mavenCentral()
     }
-  }
 
-}
 
-ext {
-  bcTestDataHome = file('core/src/test/data').absolutePath
+    dependencies {
+        testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    }
+    tasks.withType(JavaCompile).configureEach {
+        options.errorprone {
+            // Checks that cannot be enabled because implementing their suggestions
+            // would break backward compatibility.
+            check('ComparableType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('JdkObsolete', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+            // ERROR
+            check('BadShiftAmount', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('BanJNDI', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('BoxedPrimitiveEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ChainingConstructorIgnoresParameter', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ConstantOverflow', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EqualsHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EqualsNull', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('HashtableContains', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ReturnValueIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('SelfEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+
+            // WARNING
+            check('AlmostJavadoc', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('AlreadyChecked', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('AmbiguousMethodReference', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('AssertionFailureIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('BadImport', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('BadInstanceof', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('BoxedPrimitiveConstructor', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('CanIgnoreReturnValueSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('CatchAndPrintStackTrace', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('CatchFail', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ClassNewInstance', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('CompareToZero', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('DefaultCharset', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('DoubleBraceInitialization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EmptyCatch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EqualsIncompatibleType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ErroneousBitwiseExpression', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('FallThrough', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('FloatingPointLiteralPrecision', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('HidingField', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InconsistentCapitalization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InconsistentHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('IncrementInForLoopAndHeader', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InputStreamSlowMultibyteRead', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InstanceOfAndCastMatchWrongType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('IntLongMath', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InvalidBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InvalidInlineTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InvalidParam', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InvalidThrows', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('IsInstanceIncompatibleType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('IsInstanceOfClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('JavaLangClash', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('JavaUtilDate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MalformedInlineTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MathAbsoluteRandom', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MissingCasesInEnumSwitch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MissingFail', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MissingImplementsComparable', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MissingOverride', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MissingSummary', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MixedMutabilityReturnType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ModifiedButNotUsed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('MutablePublicArray', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NarrowCalculation', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NarrowingCompoundAssignment', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NestedInstanceOfConditions', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NonAtomicVolatileUpdate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('NonOverridingEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('OperatorPrecedence', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ProtectedMembersInFinalClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ReferenceEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ReturnFromVoid', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ShortCircuitBoolean', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('StringSplitter', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('SynchronizeOnNonFinalField', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ThreadLocalUsage', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('ThreadPriorityCheck', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('TypeParameterUnusedInFormals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UndefinedEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnescapedEntity', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnicodeEscape', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnnecessaryParentheses', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnrecognisedJavadocTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnsynchronizedOverridesSynchronized', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnusedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnusedNestedClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UnusedVariable', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('UseCorrectAssertInTests', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('VariableNameSameAsType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+        }
+    }
+
 }
 
 task printProperties {
-  doLast {
-    println bcTestDataHome
-  }
+    doLast {
+        println bcTestDataHome
+    }
 }
+
+ext {
+    bcTestDataHome = file('core/src/test/data').absolutePath
+
+    JavaVersion current = JavaVersion.current();
+    if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
+        ext.vmrange = 'jdk15to18'
+    } else {
+        ext.vmrange = 'jdk18on'
+    }
+
+    bc_prov = "${rootProject.projectDir}/prov/build/libs/bcprov-${vmrange}-${version}.jar"
+    bc_util = "${rootProject.projectDir}/util/build/libs/bcutil-${vmrange}-${version}.jar"
+    bc_pkix = "${rootProject.projectDir}/pkix/build/libs/bcpkix-${vmrange}-${version}.jar"
+
+}
+
+
 
 subprojects {
-  apply plugin: 'eclipse'
+    apply plugin: 'eclipse'
 
-  JavaVersion current = JavaVersion.current();
-  if (current.compareTo(JavaVersion.VERSION_1_8) <= 0)
-  {
-    ext.vmrange = 'jdk15to18'
-    sourceCompatibility = 1.5
-    targetCompatibility = 1.5
-  }
-  else
-  {
-    ext.vmrange = 'jdk18on'
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
-  }
-
- task testFull(type:Test) {
-    systemProperties = [
-            'bc.test.data.home': bcTestDataHome,
-            'test.full':'true'
-    ]
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-
-    finalizedBy jacocoTestReport
-
-    filter {
-      includeTestsMatching "AllTest*"
+    JavaVersion current = JavaVersion.current();
+    if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
+        sourceCompatibility = 1.5
+        targetCompatibility = 1.5
+    } else {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
     }
-  }
 
-  test {
-    systemProperty 'bc.test.data.home', bcTestDataHome
-    maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
 
-    finalizedBy jacocoTestReport
+    task testFull(type: Test) {
+        systemProperties = [
+                'bc.test.data.home': bcTestDataHome,
+                'test.full'        : 'true'
+        ]
+        systemProperty 'bc.test.data.home', bcTestDataHome
+        maxHeapSize = "1536m"
 
-    filter {
-      includeTestsMatching "AllTest*"
-      if (project.hasProperty('excludeTests')) {
-        excludeTestsMatching "${excludeTests}"
-      }
+        finalizedBy jacocoTestReport
+
+        filter {
+            includeTestsMatching "AllTest*"
+        }
     }
-  }
+
+    test {
+        forkEvery = 1;
+        maxParallelForks = 1;
+        systemProperty 'bc.test.data.home', bcTestDataHome
+        maxHeapSize = "1536m"
+        testLogging.showStandardStreams = true
+
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(8)
+        }
+
+        jvmArgs = ['-Dtest.java.version.prefix=1.8']
 
 
-  dependencies {
-    checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
-    checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
-    errorprone "com.google.errorprone:error_prone_core:2.15.0"
-  }
+        finalizedBy jacocoTestReport
 
-  checkstyle {
-    configFile file("$rootDir/config/checkstyle/checkstyle.xml");
-    toolVersion '9.0'; // your choice here
-    sourceSets = [project.sourceSets.main]
-  }
+        filter {
+            includeTestsMatching "AllTest*"
+            if (project.hasProperty('excludeTests')) {
+                excludeTestsMatching "${excludeTests}"
+            }
+        }
+    }
 
-  nohttp {
-    source.exclude '**/*.rsp'
-  }
 
-  jacocoTestReport {
-    dependsOn test // tests are required to run before generating the report
-  }
+    dependencies {
+        checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
+        checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
+        errorprone "com.google.errorprone:error_prone_core:2.24.1"
+    }
 
-  jacoco {
-    reportsDirectory =  layout.buildDirectory.dir("jacoco")
-  }
+    checkstyle {
+        configFile file("$rootDir/config/checkstyle/checkstyle.xml");
+        toolVersion '9.0'; // your choice here
+        sourceSets = [project.sourceSets.main]
+    }
+
+    nohttp {
+        source.exclude '**/*.rsp'
+    }
+
+    jacocoTestReport {
+        dependsOn test // tests are required to run before generating the report
+    }
+
+    jacoco {
+        reportsDirectory = layout.buildDirectory.dir("jacoco")
+    }
 
 }
 
-test.dependsOn([':core:test', ':prov:test', ':pkix:test', ':mail:test', 'pg:test', ':tls:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test17', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])

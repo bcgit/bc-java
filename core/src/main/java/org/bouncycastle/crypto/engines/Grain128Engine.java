@@ -51,7 +51,7 @@ public class Grain128Engine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
+        /*
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
@@ -88,7 +88,7 @@ public class Grain128Engine
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
                 this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
 
-        /**
+        /*
          * Initialize variables.
          */
         workingIV = new byte[keyBytes.length];
@@ -226,7 +226,7 @@ public class Grain128Engine
         workingKey = keyBytes;
         workingIV = ivBytes;
 
-        /**
+        /*
          * Load NFSR and LFSR
          */
         int j = 0;

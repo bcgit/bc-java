@@ -55,7 +55,7 @@ public class McElieceCipherTest
 
             for (int k = 1; k <= numPassesEncDec; k++)
             {
-                System.out.println("############### test: " + k);
+                // System.out.println("############### test: " + k);
                 // initialize for encryption
                 mcEliecePKCSDigestCipher.init(true, param);
 
@@ -88,8 +88,8 @@ public class McElieceCipherTest
                 }
                 else
                 {
-                    System.out.println("test okay");
-                    System.out.println();
+                    // System.out.println("test okay");
+                    // System.out.println();
                 }
 
             }
