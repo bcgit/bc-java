@@ -18,7 +18,6 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
-import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -219,23 +218,7 @@ public class PGPSignature
     {
         updateWithPublicKey(key);
 
-        //
-        // hash in the userAttributes
-        //
-        try
-        {
-            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-            UserAttributeSubpacket[] packets = userAttributes.toSubpacketArray();
-            for (int i = 0; i != packets.length; i++)
-            {
-                packets[i].encode(bOut);
-            }
-            updateWithIdData(0xd1, bOut.toByteArray());
-        }
-        catch (IOException e)
-        {
-            throw new PGPException("cannot encode subpacket array", e);
-        }
+        getAttriubtesHash(userAttributes);
 
         addTrailer();
 

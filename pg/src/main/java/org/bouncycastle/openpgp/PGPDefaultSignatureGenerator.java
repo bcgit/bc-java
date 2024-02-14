@@ -1,7 +1,10 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+
+import org.bouncycastle.bcpg.UserAttributeSubpacket;
 
 abstract class PGPDefaultSignatureGenerator
 {
@@ -127,5 +130,27 @@ abstract class PGPDefaultSignatureGenerator
         }
 
         return keyBytes;
+    }
+
+    protected void getAttriubtesHash(PGPUserAttributeSubpacketVector userAttributes)
+        throws PGPException
+    {
+        //
+        // hash in the attributes
+        //
+        try
+        {
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            UserAttributeSubpacket[] packets = userAttributes.toSubpacketArray();
+            for (int i = 0; i != packets.length; i++)
+            {
+                packets[i].encode(bOut);
+            }
+            updateWithIdData(0xd1, bOut.toByteArray());
+        }
+        catch (IOException e)
+        {
+            throw new PGPException("cannot encode subpacket array", e);
+        }
     }
 }

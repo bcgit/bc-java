@@ -40,7 +40,6 @@ public class PGPOnePassSignature
     
     PGPOnePassSignature(
         OnePassSignaturePacket sigPack)
-        throws PGPException
     {
         this.sigPack = sigPack;
         this.sigType = sigPack.getSignatureType();
