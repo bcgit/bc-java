@@ -4,6 +4,9 @@ import java.security.Security;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
@@ -41,7 +44,7 @@ public class OpenpgpTest
     }
 
     public void testPGPUtil()
-        throws PGPException
+        throws Exception
     {
         isEquals("SHA1", PGPUtil.getDigestName(HashAlgorithmTags.SHA1));
         isEquals("MD2", PGPUtil.getDigestName(HashAlgorithmTags.MD2));
@@ -58,8 +61,24 @@ public class OpenpgpTest
         isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA224));
         isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_224));
         isEquals("TIGER", PGPUtil.getDigestName(HashAlgorithmTags.TIGER_192));
-        testException("unknown hash algorithm tag in getDigestName: ", "PGPException", ()->PGPUtil.getDigestName(HashAlgorithmTags.MD4));
+        testException("unknown hash algorithm tag in getDigestName: ", "PGPException", () -> PGPUtil.getDigestName(HashAlgorithmTags.MD4));
 
         testException("unable to map ", "IllegalArgumentException", () -> PGPUtil.getDigestIDForName("Test"));
+
+        isEquals("SHA1withRSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1));
+        isEquals("SHA1withRSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1));
+        isEquals("SHA1withDSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1));
+        isEquals("SHA1withElGamal", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, HashAlgorithmTags.SHA1));
+        isEquals("SHA1withElGamal", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, HashAlgorithmTags.SHA1));
+        testException("unknown algorithm tag in signature:", "PGPException", () -> PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_ENCRYPT, HashAlgorithmTags.SHA1));
+
+        isTrue(PGPUtil.getSymmetricCipherName(SymmetricKeyAlgorithmTags.NULL) == null);
+        testException("unknown symmetric algorithm: ", "IllegalArgumentException", () -> PGPUtil.getSymmetricCipherName(101));
+
+        isTrue(!PGPUtil.isKeyBox(new byte[11]));
+
+        isTrue(PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.DES, CryptoServicesRegistrar.getSecureRandom()).length == 8);
+        testException("unknown symmetric algorithm: ", "PGPException", ()->PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.NULL, CryptoServicesRegistrar.getSecureRandom()));
+
     }
 }
