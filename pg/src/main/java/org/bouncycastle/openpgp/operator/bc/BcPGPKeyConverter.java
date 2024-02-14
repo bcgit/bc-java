@@ -48,6 +48,7 @@ import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
@@ -124,6 +125,13 @@ public class BcPGPKeyConverter
                     // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
+                        new DEROctetString(Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
+                }
+                else if (EdECObjectIdentifiers.id_X448.equals(ecdhPub.getCurveOID()))
+                {
+                    // 'reverse' because the native format for X448 private keys is little-endian
+                    return implGetPrivateKeyPKCS8(new PrivateKeyInfo(
+                        new AlgorithmIdentifier(EdECObjectIdentifiers.id_X448),
                         new DEROctetString(Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(ecdhK.getX())))));
                 }
                 else
@@ -218,6 +226,20 @@ public class BcPGPKeyConverter
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
                         Arrays.copyOfRange(pEnc, 1, pEnc.length)));
                 }
+                else if (ecdhK.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
+
+                    // skip the 0x40 header byte.
+                    if (pEnc.length < 1)
+                    {
+                        throw new IllegalArgumentException("Invalid Curve448 public key");
+                    }
+
+                    return implGetPublicKeyX509(new SubjectPublicKeyInfo(
+                        new AlgorithmIdentifier(EdECObjectIdentifiers.id_X448),
+                        Arrays.copyOfRange(pEnc, 0, pEnc.length)));
+                }
                 else
                 {
                     return implGetPublicKeyEC(ecdhK);
@@ -299,10 +321,16 @@ public class BcPGPKeyConverter
                 ECPrivateKeyParameters ecK = (ECPrivateKeyParameters)privKey;
                 return new ECSecretBCPGKey(ecK.getD());
             }
-            else
+            else if(privKey instanceof X25519PrivateKeyParameters)
             {
                 // 'reverse' because the native format for X25519 private keys is little-endian
                 X25519PrivateKeyParameters xK = (X25519PrivateKeyParameters)privKey;
+                return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverseInPlace(xK.getEncoded())));
+            }
+            else if(privKey instanceof X448PrivateKeyParameters)
+            {
+                // 'reverse' because the native format for X448 private keys is little-endian
+                X448PrivateKeyParameters xK = (X448PrivateKeyParameters)privKey;
                 return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverseInPlace(xK.getEncoded())));
             }
         }
