@@ -65,7 +65,7 @@ public class BcPGPDSAElGamalTest
     extends SimpleTest
 {
 
-    byte[] testPubKeyRing =
+    static byte[] testPubKeyRing =
         Base64.decode(
             "mQGiBEAR8jYRBADNifuSopd20JOQ5x30ljIaY0M6927+vo09NeNxS3KqItba"
                 + "nz9o5e2aqdT0W1xgdHYZmdElOHTTsugZxdXTEhghyxoo3KhVcNnTABQyrrvX"
