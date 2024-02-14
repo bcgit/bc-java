@@ -85,6 +85,8 @@ public class JcaPGPKeyConverter
 {
     private static final int X25519_KEY_SIZE = 32;
     private static final int ED25519_KEY_SIZE = 32;
+    private static final int ED448_KEY_SIZE = 57;
+    private static final int X448_KEY_SIZE = 56;
 
     // We default to these as they are specified as mandatory in RFC 6631.
     private static final PGPKdfParameters DEFAULT_KDF_PARAMETERS = new PGPKdfParameters(HashAlgorithmTags.SHA256,
@@ -508,12 +510,21 @@ public class JcaPGPKeyConverter
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED4", 0, 3))
         {
             SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
-            byte[] pointEnc = new byte[1 + ED25519_KEY_SIZE];
+            byte[] pointEnc = new byte[ED448_KEY_SIZE];
 
-            pointEnc[0] = 0x40;
-            System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
+            System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
 
             return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, pointEnc));
+        }
+        else if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
+        {
+            SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+            byte[] pointEnc = new byte[X448_KEY_SIZE];
+
+            System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
+            PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
+            return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, pointEnc),
+                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
         }
         else
         {

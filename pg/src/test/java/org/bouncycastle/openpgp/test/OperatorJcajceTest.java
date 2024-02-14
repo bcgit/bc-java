@@ -13,8 +13,11 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -40,6 +43,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testJcaPGPDigestCalculatorProviderBuilder();
         testJcePGPDataEncryptorBuilder();
         testJcaKeyFingerprintCalculator();
     }
@@ -89,6 +93,14 @@ public class OperatorJcajceTest
         testException("minimum chunkSize is 6", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5));
 
         isEquals(16, new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setProvider(new BouncyCastleProvider()).setWithAEAD(AEADAlgorithmTags.OCB, 6).build(new byte[32]).getBlockSize());
+    }
+
+    public void testJcaPGPDigestCalculatorProviderBuilder()
+        throws Exception
+    {
+        PGPDigestCalculatorProvider provider =new JcaPGPDigestCalculatorProviderBuilder().setProvider(new BouncyCastlePQCProvider()).build();
+        testException("exception on setup: " , "PGPException", ()->provider.get(SymmetricKeyAlgorithmTags.AES_256));
+
 
     }
 }

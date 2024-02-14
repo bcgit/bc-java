@@ -311,7 +311,7 @@ public class BcImplProviderTest
         keyRing.getSecretKey().extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(passPhrase));
 
         PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
-
+        sha1Calc.reset();
         PGPPublicKey vKey = null;
         PGPPublicKey sKey = null;
 
