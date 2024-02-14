@@ -84,7 +84,9 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
+import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
@@ -174,6 +176,11 @@ public class BcImplProviderTest
                     new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
             },
             (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519")));
+
+        testException("cannot recognise keyAlgorithm:", "PGPException", ()->
+            new BcPGPContentVerifierBuilderProvider().get(PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA1)
+                .build(((PGPPublicKeyRing) new JcaPGPObjectFactory(BcPGPDSAElGamalTest.testPubKeyRing).nextObject()).getPublicKey()));
+
 //        testException("cannot recognise keyAlgorithm: ", "PGPException", ()->
 //        {
 //            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("X448", "BC");
@@ -196,7 +203,10 @@ public class BcImplProviderTest
         createBlockCipherTest(SymmetricKeyAlgorithmTags.IDEA);
         createBlockCipherTest(SymmetricKeyAlgorithmTags.TWOFISH);
         createBlockCipherTest(SymmetricKeyAlgorithmTags.TRIPLE_DES);
-        testException("cannot create cipher", "PGPException", ()-> createBlockCipherTest(SymmetricKeyAlgorithmTags.SAFER));
+        testException("cannot create cipher", "PGPException", () -> createBlockCipherTest(SymmetricKeyAlgorithmTags.SAFER));
+
+        final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
+        testException("cannot recognise cipher", "PGPException", () -> decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.NULL, new byte[32], new byte[12], new byte[16], 0, 16));
 
         System.setProperty("enableCamelliaKeyWrapping", "true");
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_128);
@@ -392,10 +402,11 @@ public class BcImplProviderTest
             fail("wrong plain text in generated packet");
         }
     }
+
     private void createWrapperTest(int tag)
         throws Exception
     {
-        SecureRandom    random = CryptoServicesRegistrar.getSecureRandom();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
 
         X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
         gen.init(new X25519KeyGenerationParameters(random));
@@ -404,6 +415,7 @@ public class BcImplProviderTest
 
         encryptDecryptBcTest(dsaKeyPair.getPublicKey(), dsaKeyPair.getPrivateKey());
     }
+
     public static void main(
         String[] args)
     {

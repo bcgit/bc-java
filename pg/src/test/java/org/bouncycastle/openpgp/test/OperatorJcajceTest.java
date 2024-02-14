@@ -5,14 +5,18 @@ import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.util.Date;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -36,6 +40,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testJcePGPDataEncryptorBuilder();
         testJcaKeyFingerprintCalculator();
     }
 
@@ -72,5 +77,18 @@ public class OperatorJcajceTest
 
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
+    }
+
+    public void testJcePGPDataEncryptorBuilder()
+        throws Exception
+    {
+        testException("null cipher specified", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL));
+
+        testException("AEAD algorithms can only be used with AES", "IllegalStateException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.IDEA).setWithAEAD(AEADAlgorithmTags.OCB, 6));
+
+        testException("minimum chunkSize is 6", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5));
+
+        isEquals(16, new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setProvider(new BouncyCastleProvider()).setWithAEAD(AEADAlgorithmTags.OCB, 6).build(new byte[32]).getBlockSize());
+
     }
 }
