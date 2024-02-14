@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp;
 
-import java.io.EOFException;
 import java.io.InputStream;
 
 import org.bouncycastle.bcpg.AEADEncDataPacket;
@@ -15,7 +14,6 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * A public key encrypted data object.
@@ -173,38 +171,7 @@ public class PGPPublicKeyEncryptedData
 
                     BCPGInputStream encIn = encData.getInputStream();
 
-                    encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
-
-                    if (withIntegrityPacket)
-                    {
-                        truncStream = new TruncatedStream(encStream);
-
-                        integrityCalculator = dataDecryptor.getIntegrityCalculator();
-
-                        encStream = new TeeInputStream(truncStream, integrityCalculator.getOutputStream());
-                    }
-
-                    byte[] iv = new byte[dataDecryptor.getBlockSize()];
-
-                    for (int i = 0; i != iv.length; i++)
-                    {
-                        int ch = encStream.read();
-
-                        if (ch < 0)
-                        {
-                            throw new EOFException("unexpected end of stream.");
-                        }
-
-                        iv[i] = (byte)ch;
-                    }
-
-                    int v1 = encStream.read();
-                    int v2 = encStream.read();
-
-                    if (v1 < 0 || v2 < 0)
-                    {
-                        throw new EOFException("unexpected end of stream.");
-                    }
+                    processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn);
 
                     //
                     // some versions of PGP appear to produce 0 for the extra
