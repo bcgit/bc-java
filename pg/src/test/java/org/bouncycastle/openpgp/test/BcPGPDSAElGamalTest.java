@@ -21,6 +21,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
 import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -406,7 +407,7 @@ public class BcPGPDSAElGamalTest
             PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.TRIPLE_DES).setSecureRandom(new SecureRandom()));
             PGPPublicKey puK = sKey.getSecretKey(pgpKeyID).getPublicKey();
 
-            cPk.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(puK));
+            cPk.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(puK).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
 
             OutputStream cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
 
