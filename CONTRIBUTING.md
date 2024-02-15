@@ -39,4 +39,4 @@ Don't forget to self-review. Please follow these simple guidelines:
 
 For acceptance, pull requests need to meet specific quality criteria, including tests for anything substantial. Someone on the Bouncy Castle core team will review the pull request when there is time, and let you know if something is missing or suggest improvements. If it is a useful and generic feature it will be integrated in Bouncy Castle to be available in a later release.
 
-For substantial, non-trivial contributions, you will be asked to sign a contributor assignment agreement. Optionally, you can also have your name and contact information listed in [Contributors](CONTRIBUTORS.md). 
+For substantial, non-trivial contributions, you will be asked to sign a contributor assignment agreement. Optionally, you can also have your name and contact information listed in [Contributors](https://www.bouncycastle.org/contributors.html). 
