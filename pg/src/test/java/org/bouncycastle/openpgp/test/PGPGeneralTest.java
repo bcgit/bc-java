@@ -1499,7 +1499,7 @@ public class PGPGeneralTest
             "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.DSA, HashAlgorithmTags.SHA1), new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256).setProvider("BC").build(passPhrase));
 
 
-        keyRingGen.addSubKey(elgKeyPair);
+        keyRingGen.addSubKey(elgKeyPair, null);
 
         PGPSecretKeyRing keyRing = keyRingGen.generateSecretKeyRing();
 

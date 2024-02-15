@@ -3,8 +3,11 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.util.Date;
+import java.util.Iterator;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -19,15 +22,27 @@ import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPPadding;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureVerifier;
+import org.bouncycastle.openpgp.PGPSignatureVerifierBuilder;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -52,6 +67,7 @@ public class OpenpgpTest
     public void performTest()
         throws Exception
     {
+        testPGPSignatureVerifierBuilder();
         testPGPLiteralDataGenerator();
         testContruction();
         testPGPUtil();
@@ -99,7 +115,7 @@ public class OpenpgpTest
         isTrue(!PGPUtil.isKeyBox(new byte[11]));
 
         isTrue(PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.DES, CryptoServicesRegistrar.getSecureRandom()).length == 8);
-        testException("unknown symmetric algorithm: ", "PGPException", ()->PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.NULL, CryptoServicesRegistrar.getSecureRandom()));
+        testException("unknown symmetric algorithm: ", "PGPException", () -> PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.NULL, CryptoServicesRegistrar.getSecureRandom()));
 
     }
 
@@ -119,13 +135,13 @@ public class OpenpgpTest
         //PGPLiteralData lData = new PGPLiteralData(new ByteArrayInputStream(bOut.toByteArray()));
 
         //PGPLiteralData
-        testException("unexpected packet in stream: ", "IOException", ()-> new PGPCompressedData(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", () -> new PGPCompressedData(new BCPGInputStream(new ByteArrayInputStream(input))));
         //testException("unexpected packet in stream: ", "IOException", ()-> new PGPEncryptedDataList(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", ()-> new PGPMarker(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", ()-> new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", ()-> new PGPPadding(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", () -> new PGPMarker(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", () -> new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", () -> new PGPPadding(new BCPGInputStream(new ByteArrayInputStream(input))));
         //testException("unexpected packet in stream: ", "IOException", ()-> new PGPPublicKeyRing(new BCPGInputStream(new ByteArrayInputStream(input)), new BcKeyFingerprintCalculator()));
-        testException("unexpected packet in stream: ", "IOException", ()-> new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", () -> new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
     }
 
     public void testPGPLiteralDataGenerator()
@@ -145,18 +161,96 @@ public class OpenpgpTest
             "_CONSOLE",
             data.getBytes().length,
             testDate);
-        testException("generator already in open state", "IllegalStateException", ()->lGen.open(
+        testException("generator already in open state", "IllegalStateException", () -> lGen.open(
             new UncloseableOutputStream(bcOut),
             PGPLiteralData.BINARY,
             "_CONSOLE",
             data.getBytes().length,
             testDate));
-        testException("generator already in open state", "IllegalStateException", ()->lGen.open(
+        testException("generator already in open state", "IllegalStateException", () -> lGen.open(
             new UncloseableOutputStream(bcOut),
             PGPLiteralData.BINARY,
             "_CONSOLE",
             testDate,
             new byte[10]));
+    }
+
+    public void testPGPSignatureVerifierBuilder()
+        throws Exception
+    {
+        PGPPublicKeyRing pgpPub = new PGPPublicKeyRing(PGPKeyRingTest.pub7, new JcaKeyFingerprintCalculator());
+        Iterator it = pgpPub.getPublicKeys();
+        PGPPublicKey masterKey = null;
+
+        while (it.hasNext())
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+
+            if (k.isMasterKey())
+            {
+                masterKey = k;
+            }
+        }
+
+        int count = 0;
+        PGPSignature sig = null;
+        Iterator sIt = masterKey.getSignaturesOfType(PGPSignature.KEY_REVOCATION);
+
+        while (sIt.hasNext())
+        {
+            sig = (PGPSignature)sIt.next();
+            count++;
+        }
+
+        if (count != 1)
+        {
+            fail("wrong number of revocations in test7.");
+        }
+
+        sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), masterKey);
+
+        if (!sig.verifyCertification(masterKey))
+        {
+            fail("failed to verify revocation certification");
+        }
+
+        pgpPub = new PGPPublicKeyRing(PGPKeyRingTest.pub7sub, new JcaKeyFingerprintCalculator());
+        it = pgpPub.getPublicKeys();
+        masterKey = null;
+
+        while (it.hasNext())
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+
+            if (k.isMasterKey())
+            {
+                masterKey = k;
+                continue;
+            }
+
+            count = 0;
+            sig = null;
+            sIt = k.getSignaturesOfType(PGPSignature.SUBKEY_REVOCATION);
+
+            while (sIt.hasNext())
+            {
+                sig = (PGPSignature)sIt.next();
+                count++;
+            }
+
+            if (count != 1)
+            {
+                fail("wrong number of revocations in test7 subkey.");
+            }
+
+            //isTrue(verifier.getSignatureType() == PGPSignature.KEY_REVOCATION);
+
+            PGPSignatureVerifierBuilder builder = new PGPSignatureVerifierBuilder(new JcaPGPContentVerifierBuilderProvider(), masterKey);
+
+            PGPSignatureVerifier verifier = builder.buildSubKeyRevocationVerifier(sig, masterKey, k);
+
+            isTrue(verifier.isVerified());
+        }
 
     }
 }
