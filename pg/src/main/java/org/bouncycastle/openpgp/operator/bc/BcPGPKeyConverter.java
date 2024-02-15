@@ -230,12 +230,6 @@ public class BcPGPKeyConverter
                 {
                     byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
 
-                    // skip the 0x40 header byte.
-                    if (pEnc.length < 1)
-                    {
-                        throw new IllegalArgumentException("Invalid Curve448 public key");
-                    }
-
                     return implGetPublicKeyX509(new SubjectPublicKeyInfo(
                         new AlgorithmIdentifier(EdECObjectIdentifiers.id_X448),
                         Arrays.copyOfRange(pEnc, 0, pEnc.length)));

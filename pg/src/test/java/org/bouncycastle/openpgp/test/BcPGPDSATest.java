@@ -592,7 +592,7 @@ public class BcPGPDSATest
         char[] passPhrase = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
         sKey = new PGPSecretKeyRing(testPrivKey2, new BcKeyFingerprintCalculator());
-        pgpPrivKey = sKey.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase));
+        pgpPrivKey = sKey.getSecretKey().extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider(new BouncyCastleProvider()).build(passPhrase));
 
         byte[] bytes = new JcaPGPKeyConverter().setProvider("BC").getPrivateKey(pgpPrivKey).getEncoded();
 
