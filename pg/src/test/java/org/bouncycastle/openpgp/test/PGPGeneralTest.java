@@ -40,6 +40,7 @@ import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.bcpg.sig.SignerUserID;
 import org.bouncycastle.bcpg.sig.TrustSignature;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -1096,7 +1097,9 @@ public class PGPGeneralTest
         RSAKeyPairGenerator kpg = new RSAKeyPairGenerator();
         kpg.init(new RSAKeyGenerationParameters(BigInteger.valueOf(0x11), new SecureRandom(), 1024, 25));
         AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
-        PGPSecretKey secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, new BcPGPKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, kp, new Date()), "fred", null, null, new BcPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1), new BcPBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).build(passPhrase));
+        PGPSecretKey secretKey = new PGPSecretKey(PGPSignature.DEFAULT_CERTIFICATION, new BcPGPKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL,
+            kp, new Date()), "fred", null, null, new BcPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_GENERAL,
+            HashAlgorithmTags.SHA1), new BcPBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()).build(passPhrase));
 
         PGPPublicKey key = secretKey.getPublicKey();
         Iterator it = key.getUserIDs();

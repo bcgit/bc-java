@@ -7,16 +7,19 @@ import java.util.Date;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.BCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
@@ -43,6 +46,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testJcaPGPContentVerifierBuilderProvider();
         testJcaPGPDigestCalculatorProviderBuilder();
         testJcePGPDataEncryptorBuilder();
         testJcaKeyFingerprintCalculator();
@@ -81,6 +85,8 @@ public class OperatorJcajceTest
 
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
+
+        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", () -> calculator.calculateFingerprint(new PublicKeyPacket(7, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
     }
 
     public void testJcePGPDataEncryptorBuilder()
@@ -98,9 +104,22 @@ public class OperatorJcajceTest
     public void testJcaPGPDigestCalculatorProviderBuilder()
         throws Exception
     {
-        PGPDigestCalculatorProvider provider =new JcaPGPDigestCalculatorProviderBuilder().setProvider(new BouncyCastlePQCProvider()).build();
-        testException("exception on setup: " , "PGPException", ()->provider.get(SymmetricKeyAlgorithmTags.AES_256));
+        PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new BouncyCastlePQCProvider()).build();
+        testException("exception on setup: ", "PGPException", () -> provider.get(SymmetricKeyAlgorithmTags.AES_256));
+    }
 
-
+    public void testJcaPGPContentVerifierBuilderProvider()
+        throws Exception
+    {
+//        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+//        kpGen.initialize(1024);
+//        KeyPair kp = kpGen.generateKeyPair();
+//
+//        JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
+//        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
+//        PGPContentVerifier verifier = new JcaPGPContentVerifierBuilderProvider().setProvider(new BouncyCastleProvider()).get(HashAlgorithmTags.SHA256, PublicKeyAlgorithmTags.RSA_GENERAL).build(pubKey);
+//        isTrue(verifier.getHashAlgorithm() == HashAlgorithmTags.SHA256);
+//        isTrue(verifier.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL);
+//        isTrue(verifier.getKeyID() == pubKey.getKeyID());
     }
 }
