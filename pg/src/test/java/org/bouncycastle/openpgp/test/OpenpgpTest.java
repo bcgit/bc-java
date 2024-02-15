@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -21,7 +22,10 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
@@ -40,8 +44,11 @@ import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
+import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPadding;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -52,7 +59,10 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPSignatureVerifier;
 import org.bouncycastle.openpgp.PGPSignatureVerifierBuilder;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
+import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVectorGenerator;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPPublicKeyRing;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -64,11 +74,13 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -78,6 +90,8 @@ import org.bouncycastle.util.test.UncloseableOutputStream;
 public class OpenpgpTest
     extends SimpleTest
 {
+    static char[] pass = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+
     public static void main(String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
@@ -95,6 +109,9 @@ public class OpenpgpTest
     public void performTest()
         throws Exception
     {
+//        testPGPV3SignatureGenerator();
+        testPGPUserAttributeSubpacketVector();
+        testPGPLiteralData();
         testPGPEncryptedDataGenerator();
         testPGPSignatureVerifierBuilder();
         testPGPLiteralDataGenerator();
@@ -454,7 +471,7 @@ public class OpenpgpTest
         final PGPSignature finalSig2 = sig;
         final PGPPublicKey finalPubKey2 = pubKey;
 
-        PGPPublicKeyRing pgpRing = new JcaPGPPublicKeyRing(PGPKeyRingTest.problemUserID);
+        PGPPublicKeyRing pgpRing = new JcaPGPPublicKeyRing(new ByteArrayInputStream(PGPKeyRingTest.problemUserID));
 
         byte[] enc = pgpRing.getEncoded();
 
@@ -624,17 +641,77 @@ public class OpenpgpTest
     public void testPGPEncryptedDataGenerator()
         throws Exception
     {
-        char[] pass = { 'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd' };
+
 
         ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         final PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()));
         final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-        testException("no encryption methods specified", "IllegalStateException", () ->cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
+        testException("no encryption methods specified", "IllegalStateException", () -> cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
 
         cPk.addMethod(new BcPBEKeyEncryptionMethodGenerator(pass, 2).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
         cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
-        testException("generator already in open state", "IllegalStateException", () ->cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
+        testException("generator already in open state", "IllegalStateException", () -> cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
 
     }
+
+    public void testPGPLiteralData()
+        throws Exception
+    {
+        PGPObjectFactory pgpF = new PGPObjectFactory(BcPGPRSATest.enc1, new BcKeyFingerprintCalculator());
+
+        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(BcPGPRSATest.subKey, new BcKeyFingerprintCalculator());
+        PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
+
+        PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+
+        PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));
+
+        InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(pgpPrivKey));
+
+        PGPObjectFactory pgpFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
+
+        PGPCompressedData c1 = (PGPCompressedData)pgpFact.nextObject();
+
+        PGPLiteralData ld = new PGPLiteralData(c1.getDataStream());
+
+        if (!ld.getFileName().equals("test.txt"))
+        {
+            throw new RuntimeException("wrong filename in packet");
+        }
+    }
+
+    public void testPGPUserAttributeSubpacketVector()
+    {
+        PGPUserAttributeSubpacketVector vector = PGPUserAttributeSubpacketVector.fromSubpackets(null);
+        isTrue(vector.getSubpacket(0) == null);
+        isTrue(vector.getImageAttribute() == null);
+
+        testException("attempt to set null image", "IllegalArgumentException", () -> new PGPUserAttributeSubpacketVectorGenerator().setImageAttribute(0, null));
+    }
+
+//    public void testPGPV3SignatureGenerator()
+//        throws Exception
+//    {
+//        char[] passPhrase = "hello".toCharArray();
+//        String data = "hello world!";
+//        String  newPass = "newPass";
+//        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+//
+//        kpg.initialize(1024);
+//
+//        KeyPair kp = kpg.generateKeyPair();
+//        PGPSecretKey secretKey = new PGPSecretKey(
+//            PGPSignature.DEFAULT_CERTIFICATION,
+//            new JcaPGPKeyPair(PublicKeyAlgorithmTags.RSA_SIGN, kp, new Date()), "fred",
+//            null, null, new JcaPGPContentSignerBuilder(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1).setProvider("BC"),
+//            new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(passPhrase));
+//        secretKey = PGPSecretKey.copyWithNewPassword(secretKey, new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(passPhrase), new JcePBESecretKeyEncryptorBuilder(secretKey.getKeyEncryptionAlgorithm()).setProvider("BC").setSecureRandom(new SecureRandom()).build(newPass.toCharArray()));
+//
+//        final PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass.toCharArray()));
+//
+//        final PGPV3SignatureGenerator sGenV3 = new PGPV3SignatureGenerator(new JcaPGPContentSignerBuilder(PGPPublicKey.DSA, PGPUtil.SHA1).setProvider("BC"));
+//
+//        testException("key algorithm mismatch", "PGPException", ()->sGenV3.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey));
+//    }
 }

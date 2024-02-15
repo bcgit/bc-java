@@ -136,7 +136,7 @@ public class BcPGPRSATest
 
     byte[] sig1crc = Base64.decode("+3i0");
 
-    byte[] subKey = Base64.decode(
+    static byte[] subKey = Base64.decode(
         "lQH8BD89pyQBBADk1aljL6mBOvd6k4Myr/0yaSI94SPC5WDwuptXZNM92wy8FVZP"
             + "RRQAfglkvEXRTlrfxRt7RL9p83KDXUb47/VgC8iBjWsLWnuDJeqAE9Ov+ddclM1x"
             + "zpPvcSt8JFzeY3c1IX+HANqBqS0lf6WZaHLCAy/owlELbplD8BaHZkh4cwAGKf4D"
@@ -186,7 +186,7 @@ public class BcPGPRSATest
             + "AQIXgAAKCRDNI/XpxMo0QwJcAJ40447eezSiIMspuzkwsMyFN8YBaQCdFTuZuT30"
             + "CphiUYWnsC0mQ+J15B4=");
 
-    byte[] enc1 = Base64.decode(
+    static byte[] enc1 = Base64.decode(
         "hIwDKwfQexPJboABA/4/7prhYYMORTiQ5avQKx0XYpCLujzGefYjnyuWZnx3Iev8"
             + "Pmsguumm+OLLvtXhhkXQmkJRXbIg6Otj2ubPYWflRPgpJSgOrNOreOl5jeABOrtw"
             + "bV6TJb9OTtZuB7cTQSCq2gmYiSZkluIiDjNs3R3mEanILbYzOQ3zKSggKpzlv9JQ"
