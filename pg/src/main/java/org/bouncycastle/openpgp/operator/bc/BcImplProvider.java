@@ -194,6 +194,7 @@ class BcImplProvider
         case PGPPublicKey.ECDSA:
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.ECDH:
+        case PGPPublicKey.X25519:
             throw new PGPException("Not implemented.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
