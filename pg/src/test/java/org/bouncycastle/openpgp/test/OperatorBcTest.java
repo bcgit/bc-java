@@ -4,6 +4,8 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Arrays;
@@ -149,7 +151,10 @@ public class OperatorBcTest
         testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA");
         testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
-        //testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448");
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
     }
 
 
@@ -168,6 +173,10 @@ public class OperatorBcTest
 
         PGPKeyPair bcKeyPair = new BcPGPKeyPair(algorithm, asymKeyPair, creationDate);
 
+        JcaPGPKeyConverter jcaPGPKeyConverter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
+        PrivateKey privKey = jcaPGPKeyConverter.getPrivateKey(jcaPgpPair.getPrivateKey());
+        PublicKey pubKey = jcaPGPKeyConverter.getPublicKey(jcaPgpPair.getPublicKey());
+
         if (!Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
             bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded()))
         {
@@ -179,7 +188,18 @@ public class OperatorBcTest
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair public keys are not equal.");
         }
-//        BcPGPKeyPair bcKP = new BcPGPKeyPair(keyAlgorithm, new PGPKdfParameters(HashAlgorithmTags.SHA1, SymmetricKeyAlgorithmTags.AES_128),
-//            gen.generateKeyPair(), new Date());
+//        byte[] b1 = privKey.getEncoded();
+//        byte[] b2 = keyPair.getPrivate().getEncoded();
+//        for (int i = 0; i < b1.length; ++i)
+//        {
+//            if (b1[i] != b2[i])
+//            {
+//                System.out.println(i + " " + b1[i] + " " + b2[i]);
+//            }
+//        }
+
+        isTrue( Arrays.equals(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
+        isTrue(privKey.toString().equals(keyPair.getPrivate().toString()));
+        //isTrue(Arrays.equals(privKey.getEncoded(), keyPair.getPrivate().getEncoded()));
     }
 }
