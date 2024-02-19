@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -15,8 +16,10 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
+import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
+import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -25,6 +28,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
@@ -46,7 +51,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     /**
      * Create a public key encryption method generator with the method to be based on the passed in key.
      *
-     * @param key   the public key to use for encryption.
+     * @param key the public key to use for encryption.
      */
     public BcPublicKeyKeyEncryptionMethodGenerator(PGPPublicKey key)
     {
@@ -56,8 +61,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     /**
      * Provide a user defined source of randomness.
      *
-     * @param random  the secure random to be used.
-     * @return  the current generator.
+     * @param random the secure random to be used.
+     * @return the current generator.
      */
     public BcPublicKeyKeyEncryptionMethodGenerator setSecureRandom(SecureRandom random)
     {
@@ -72,8 +77,9 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         try
         {
             AsymmetricKeyParameter cryptoPublicKey = keyConverter.getPublicKey(pubKey);
-
-            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
+            //TODO: X448
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519
+                || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
@@ -97,6 +103,25 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
                     ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
+
+                    return encryptSessionInfo(ecPubKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
+                }
+                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    X448KeyPairGenerator gen = new X448KeyPairGenerator();
+                    gen.init(new X448KeyGenerationParameters(random));
+
+                    AsymmetricCipherKeyPair ephKp = gen.generateKeyPair();
+
+                    X448Agreement agreement = new X448Agreement();
+                    agreement.init(ephKp.getPrivate());
+
+                    byte[] secret = new byte[agreement.getAgreementSize()];
+                    agreement.calculateAgreement(cryptoPublicKey, secret, 0);
+
+                    byte[] ephPubEncoding = new byte[X448PublicKeyParameters.KEY_SIZE];
+
+                    ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 0);
 
                     return encryptSessionInfo(ecPubKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
                 }
@@ -139,7 +164,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     }
 
     private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecPubKey, byte[] sessionInfo, byte[] secret,
-        byte[] userKeyingMaterial, byte[] ephPubEncoding) throws IOException, PGPException
+                                      byte[] userKeyingMaterial, byte[] ephPubEncoding)
+        throws IOException, PGPException
     {
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
             new BcPGPDigestCalculatorProvider().get(ecPubKey.getHashAlgorithm()), ecPubKey.getSymmetricKeyAlgorithm());

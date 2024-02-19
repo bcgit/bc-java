@@ -20,6 +20,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -96,7 +97,8 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         {
             PublicKey cryptoPublicKey = keyConverter.getPublicKey(pubKey);
 
-            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448
+                || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
@@ -120,7 +122,24 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                     SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
                     byte[] ephPubEncoding = Arrays.prepend(epPubKey.getPublicKeyData().getBytes(), X_HDR);
 
-                    return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding); 
+                    return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding);
+                }
+                else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    KeyPairGenerator kpGen = helper.createKeyPairGenerator("X448");
+                    kpGen.initialize(448, random);
+
+                    KeyPair ephKP = kpGen.generateKeyPair();
+
+                    KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyPacket));
+                    agreement.init(ephKP.getPrivate(), ukmSpec);
+                    agreement.doPhase(cryptoPublicKey, true);
+                    Key secret = agreement.generateSecret(keyEncryptionOID);
+
+                    SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
+                    byte[] ephPubEncoding = epPubKey.getPublicKeyData().getBytes();
+
+                    return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding);
                 }
                 else
                 {
@@ -146,7 +165,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                         ephPubEncoding = x9Params.getCurve().decodePoint(ephPubEncoding).getEncoded(false);
                     }
 
-                    return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding); 
+                    return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding);
                 }
             }
             else
@@ -179,6 +198,30 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             throw new PGPException("unable to set up ephemeral keys: " + e.getMessage(), e);
         }
     }
+
+    @FunctionalInterface
+    private interface KeyPairGeneratorOperation
+    {
+        KeyPairGenerator initialize();
+    }
+
+//    private byte[] getEncryptSessionInfo(KeyPairGeneratorOperation kpOperation)
+//        throws GeneralSecurityException, IOException, PGPException
+//    {
+//        KeyPairGenerator kpGen = kpOperation.initialize();
+//
+//        KeyPair ephKP = kpGen.generateKeyPair();
+//
+//        KeyAgreement agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyPacket));
+//        agreement.init(ephKP.getPrivate(), ukmSpec);
+//        agreement.doPhase(cryptoPublicKey, true);
+//        Key secret = agreement.generateSecret(keyEncryptionOID);
+//
+//        SubjectPublicKeyInfo epPubKey = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded());
+//        byte[] ephPubEncoding = epPubKey.getPublicKeyData().getBytes();
+//
+//        return encryptSessionInfo(ecKey, sessionInfo, secret, ephPubEncoding);
+//    }
 
     private byte[] encryptSessionInfo(ECDHPublicBCPGKey ecKey, byte[] sessionInfo, Key secret, byte[] ephPubEncoding)
         throws GeneralSecurityException, IOException, PGPException

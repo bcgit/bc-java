@@ -121,12 +121,10 @@ public class BcPGPKeyConverter
 
                 if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
                 {
-                    // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_X25519, privPk);
                 }
                 else if (EdECObjectIdentifiers.id_X448.equals(ecdhPub.getCurveOID()))
                 {
-                    // 'reverse' because the native format for X448 private keys is little-endian
                     return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_X448, privPk);
                 }
                 else
@@ -357,24 +355,20 @@ public class BcPGPKeyConverter
             }
             else if (privKey instanceof X25519PrivateKeyParameters)
             {
-                // 'reverse' because the native format for X25519 private keys is little-endian
-                return getEdSecretBCPGKey(Arrays.reverseInPlace(((X25519PrivateKeyParameters)privKey).getEncoded()));
+                return getECSecretBCPGKey(((X25519PrivateKeyParameters)privKey).getEncoded());
             }
             else if (privKey instanceof X448PrivateKeyParameters)
             {
-                // 'reverse' because the native format for X448 private keys is little-endian
-                return getEdSecretBCPGKey(Arrays.reverseInPlace(((X448PrivateKeyParameters)privKey).getEncoded()));
+                return getECSecretBCPGKey(((X448PrivateKeyParameters)privKey).getEncoded());
             }
         }
         case PublicKeyAlgorithmTags.X25519:
         {
-            // 'reverse' because the native format for X25519 private keys is little-endian
-            return getEdSecretBCPGKey(Arrays.reverseInPlace(((X25519PrivateKeyParameters)privKey).getEncoded()));
+            return getECSecretBCPGKey(((X25519PrivateKeyParameters)privKey).getEncoded());
         }
         case PublicKeyAlgorithmTags.X448:
         {
-            // 'reverse' because the native format for X448 private keys is little-endian
-            return getEdSecretBCPGKey(Arrays.reverseInPlace(((X448PrivateKeyParameters)privKey).getEncoded()));
+            return getECSecretBCPGKey(((X448PrivateKeyParameters)privKey).getEncoded());
         }
 
         case PublicKeyAlgorithmTags.ECDSA:
@@ -425,6 +419,12 @@ public class BcPGPKeyConverter
     private BCPGKey getEdSecretBCPGKey(byte[] x)
     {
         return new EdSecretBCPGKey(new BigInteger(1, x));
+    }
+
+    private BCPGKey getECSecretBCPGKey(byte[] x)
+    {
+        // 'reverse' because the native format for X25519/X448 private keys is little-endian
+        return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverseInPlace(x)));
     }
 
     private BCPGKey getPublicBCPGKey(int algorithm, PGPAlgorithmParameters algorithmParameters,

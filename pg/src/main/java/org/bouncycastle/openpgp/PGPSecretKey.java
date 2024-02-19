@@ -403,7 +403,9 @@ public class PGPSecretKey
         int algorithm = pub.getAlgorithm();
 
         return ((algorithm == PGPPublicKey.RSA_GENERAL) || (algorithm == PGPPublicKey.RSA_SIGN)
-            || (algorithm == PGPPublicKey.DSA) || (algorithm == PGPPublicKey.ECDSA) || (algorithm == PGPPublicKey.EDDSA_LEGACY) || (algorithm == PGPPublicKey.ELGAMAL_GENERAL));
+            || (algorithm == PGPPublicKey.DSA) || (algorithm == PGPPublicKey.ECDSA) || (algorithm == PGPPublicKey.EDDSA_LEGACY)
+            || (algorithm == PGPPublicKey.ELGAMAL_GENERAL) || (algorithm == PGPPublicKey.Ed448) || (algorithm == PGPPublicKey.X448)
+            || (algorithm == PGPPublicKey.Ed25519) || (algorithm == PGPPublicKey.X25519));
     }
 
     /**
@@ -665,21 +667,25 @@ public class PGPSecretKey
                 return new PGPPrivateKey(this.getKeyID(), pubPk, elPriv);
             case PGPPublicKey.ECDH:
             case PGPPublicKey.ECDSA:
+            case PGPPublicKey.X25519:
+            case PGPPublicKey.X448:
                 ECSecretBCPGKey ecPriv = new ECSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, ecPriv);
             case PGPPublicKey.EDDSA_LEGACY:
+            case PGPPublicKey.Ed25519:
+            case PGPPublicKey.Ed448:
                 EdSecretBCPGKey edPriv = new EdSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, edPriv);
-            case PGPPublicKey.X25519:
-                return new PGPPrivateKey(this.getKeyID(), pubPk, new X25519SecretBCPGKey(in));
-            case PGPPublicKey.X448:
-                return new PGPPrivateKey(this.getKeyID(), pubPk, new X448SecretBCPGKey(in));
-            case PGPPublicKey.Ed25519:
-                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed25519SecretBCPGKey(in));
-            case PGPPublicKey.Ed448:
-                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed448SecretBCPGKey(in));
+//            case PGPPublicKey.X25519:
+//                return new PGPPrivateKey(this.getKeyID(), pubPk, new X25519SecretBCPGKey(in));
+//            case PGPPublicKey.X448:
+//                return new PGPPrivateKey(this.getKeyID(), pubPk, new X448SecretBCPGKey(in));
+//            case PGPPublicKey.Ed25519:
+//                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed25519SecretBCPGKey(in));
+//            case PGPPublicKey.Ed448:
+//                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed448SecretBCPGKey(in));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -15,6 +16,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
+import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -22,6 +24,7 @@ import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSessionKey;
@@ -54,7 +57,7 @@ public class BcPublicKeyDataDecryptorFactory
         {
             AsymmetricKeyParameter privKey = KEY_CONVERTER.getPrivateKey(pgpPrivKey);
 
-            if (keyAlgorithm != PublicKeyAlgorithmTags.ECDH)
+            if (keyAlgorithm != PublicKeyAlgorithmTags.ECDH && keyAlgorithm != PublicKeyAlgorithmTags.X448 && keyAlgorithm != PublicKeyAlgorithmTags.X25519)
             {
                 AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(keyAlgorithm);
 
@@ -146,6 +149,21 @@ public class BcPublicKeyDataDecryptorFactory
                     secret = new byte[agreement.getAgreementSize()];
                     agreement.calculateAgreement(ephPub, secret, 0);
                 }
+                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    if (pEnc.length != (X448PublicKeyParameters.KEY_SIZE))
+                    {
+                        throw new IllegalArgumentException("Invalid Curve448 public key");
+                    }
+
+                    X448PublicKeyParameters ephPub = new X448PublicKeyParameters(pEnc, 0);
+
+                    X448Agreement agreement = new X448Agreement();
+                    agreement.init(privKey);
+
+                    secret = new byte[agreement.getAgreementSize()];
+                    agreement.calculateAgreement(ephPub, secret, 0);
+                }
                 else
                 {
                     ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
@@ -204,7 +222,7 @@ public class BcPublicKeyDataDecryptorFactory
     // OpenPGP v6
     @Override
     public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
-            throws PGPException
+        throws PGPException
     {
         return BcAEADUtil.createOpenPgpV6DataDecryptor(seipd, sessionKey);
     }

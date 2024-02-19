@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -26,15 +27,23 @@ public class RFC6637Utils
     public static String getXDHAlgorithm(PublicKeyPacket pubKeyData)
     {
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-
+        String curve;
+        if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+        {
+            curve = "X448";
+        }
+        else
+        {
+            curve = "X25519";
+        }
         switch (ecKey.getHashAlgorithm())
         {
         case HashAlgorithmTags.SHA256:
-            return "X25519withSHA256CKDF";
+            return curve + "withSHA256CKDF";
         case HashAlgorithmTags.SHA384:
-            return "X25519withSHA384CKDF";
+            return curve + "withSHA384CKDF";
         case HashAlgorithmTags.SHA512:
-            return "X25519withSHA512CKDF";
+            return curve + "withSHA512CKDF";
         default:
             throw new IllegalArgumentException("Unknown hash algorithm specified: " + ecKey.getHashAlgorithm());
         }

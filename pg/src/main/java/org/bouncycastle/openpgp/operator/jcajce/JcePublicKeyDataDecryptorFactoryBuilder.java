@@ -18,6 +18,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHKey;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -29,6 +30,8 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -46,8 +49,6 @@ import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
-    private static final int X25519_KEY_SIZE = 32;
-
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
     private JceAEADUtil aeadHelper = new JceAEADUtil(contentHelper);
@@ -61,8 +62,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     /**
      * Set the provider object to use for creating cryptographic primitives in the resulting factory the builder produces.
      *
-     * @param provider  provider object for cryptographic primitives.
-     * @return  the current builder.
+     * @param provider provider object for cryptographic primitives.
+     * @return the current builder.
      */
     public JcePublicKeyDataDecryptorFactoryBuilder setProvider(Provider provider)
     {
@@ -77,8 +78,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     /**
      * Set the provider name to use for creating cryptographic primitives in the resulting factory the builder produces.
      *
-     * @param providerName  the name of the provider to reference for cryptographic primitives.
-     * @return  the current builder.
+     * @param providerName the name of the provider to reference for cryptographic primitives.
+     * @return the current builder.
      */
     public JcePublicKeyDataDecryptorFactoryBuilder setProvider(String providerName)
     {
@@ -128,89 +129,89 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public PublicKeyDataDecryptorFactory build(final PrivateKey privKey)
     {
-         return new PublicKeyDataDecryptorFactory()
-         {
-             final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
+        return new PublicKeyDataDecryptorFactory()
+        {
+            final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
 
-             @Override
-             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
-                 throws PGPException
-             {
-                 if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
-                 {
-                     throw new PGPException("ECDH requires use of PGPPrivateKey for decryption");
-                 }
-                 return decryptSessionData(keyAlgorithm, privKey, expectedPayLoadSize, secKeyData);
-             }
+            @Override
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+                throws PGPException
+            {
+                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH || keyAlgorithm == PublicKeyAlgorithmTags.X25519 || keyAlgorithm == PublicKeyAlgorithmTags.X448)
+                {
+                    throw new PGPException("ECDH requires use of PGPPrivateKey for decryption");
+                }
+                return decryptSessionData(keyAlgorithm, privKey, expectedPayLoadSize, secKeyData);
+            }
 
-             // OpenPGP v4
-             @Override
-             public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
-                 throws PGPException
-             {
-                 return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
-             }
+            // OpenPGP v4
+            @Override
+            public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
+                throws PGPException
+            {
+                return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
+            }
 
-             // OpenPGP v5
-             @Override
-             public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
-                 throws PGPException
-             {
-                 return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
-             }
+            // OpenPGP v5
+            @Override
+            public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
+                throws PGPException
+            {
+                return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
+            }
 
-             // OpenPGP v6
-             @Override
-             public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
-                     throws PGPException
-             {
-                 return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
-             }
-         };
+            // OpenPGP v6
+            @Override
+            public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
+                throws PGPException
+            {
+                return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
+            }
+        };
     }
 
     public PublicKeyDataDecryptorFactory build(final PGPPrivateKey privKey)
     {
-         return new PublicKeyDataDecryptorFactory()
-         {
-             @Override
-             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
-                 throws PGPException
-             {
-                 if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
-                 {
-                     return decryptSessionData(keyConverter, privKey, secKeyData);
-                 }
-                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
-                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
+        return new PublicKeyDataDecryptorFactory()
+        {
+            @Override
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+                throws PGPException
+            {
+                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH || keyAlgorithm == PublicKeyAlgorithmTags.X25519 || keyAlgorithm == PublicKeyAlgorithmTags.X448)
+                {
+                    return decryptSessionData(keyConverter, privKey, secKeyData);
+                }
+                PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
+                int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
 
-                 return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
-             }
+                return decryptSessionData(keyAlgorithm, jcePrivKey, expectedPayLoadSize, secKeyData);
+            }
 
-             // OpenPGP v4
-             @Override
-             public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
-                 throws PGPException
-             {
-                 return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
-             }
+            // OpenPGP v4
+            @Override
+            public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
+                throws PGPException
+            {
+                return contentHelper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
+            }
 
-             // OpenPGP v5
-             @Override
-             public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
-                 throws PGPException
-             {
-                 return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
-             }
+            // OpenPGP v5
+            @Override
+            public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
+                throws PGPException
+            {
+                return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
+            }
 
-             // OpenPGP v6
-             @Override
-             public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
-                     throws PGPException
-             {
-                 return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
-             }
-         };
+            // OpenPGP v6
+            @Override
+            public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
+                throws PGPException
+            {
+                return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
+            }
+        };
     }
 
     private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[][] secKeyData)
@@ -248,19 +249,14 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
             {
                 agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-
-                KeyFactory keyFact = helper.createKeyFactory("XDH");
-
-                // skip the 0x40 header byte.
-                if (pEnc.length != (1 + X25519_KEY_SIZE) || 0x40 != pEnc[0])
-                {
-                    throw new IllegalArgumentException("Invalid Curve25519 public key");
-                }
-
-                publicKey = keyFact.generatePublic(
-                    new X509EncodedKeySpec(
-                              new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
-                                  Arrays.copyOfRange(pEnc, 1, pEnc.length)).getEncoded()));
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1,
+                    pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0], "25519");
+            }
+            else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+            {
+                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0,
+                    pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
             }
             else
             {
@@ -311,6 +307,23 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         {
             throw new PGPException("error setting asymmetric cipher", e);
         }
+    }
+
+    private PublicKey getPublicKey(byte[] pEnc, ASN1ObjectIdentifier algprithmIdentifier, int pEncOff,
+                                   boolean condition, String curve)
+        throws PGPException, GeneralSecurityException, IOException
+    {
+        KeyFactory keyFact = helper.createKeyFactory("XDH");
+
+        if (condition)
+        {
+            throw new IllegalArgumentException("Invalid Curve" + curve + " public key");
+        }
+
+        return keyFact.generatePublic(
+            new X509EncodedKeySpec(
+                new SubjectPublicKeyInfo(new AlgorithmIdentifier(algprithmIdentifier),
+                    Arrays.copyOfRange(pEnc, pEncOff, pEnc.length)).getEncoded()));
     }
 
     private void updateWithMPI(Cipher c, int expectedPayloadSize, byte[] encMPI)
