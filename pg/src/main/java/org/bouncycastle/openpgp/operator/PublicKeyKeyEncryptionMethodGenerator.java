@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -37,12 +38,16 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         case PGPPublicKey.ELGAMAL_ENCRYPT:
         case PGPPublicKey.ELGAMAL_GENERAL:
         case PGPPublicKey.ECDH:
+        case PGPPublicKey.X25519:
+        case PGPPublicKey.X448:
             break;
         case PGPPublicKey.RSA_SIGN:
             throw new IllegalArgumentException("Can't use an RSA_SIGN key for encryption.");
         case PGPPublicKey.DSA:
             throw new IllegalArgumentException("Can't use DSA for encryption.");
         case PGPPublicKey.ECDSA:
+        case PublicKeyAlgorithmTags.Ed448:
+        case PublicKeyAlgorithmTags.Ed25519:
             throw new IllegalArgumentException("Can't use ECDSA for encryption.");
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
@@ -57,6 +62,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * <p>
      * The default behaviour can be configured using the system property "", or else it will default to enabled.
      * </p>
+     *
      * @return the current generator.
      */
     public PublicKeyKeyEncryptionMethodGenerator setSessionKeyObfuscation(boolean enabled)
@@ -106,6 +112,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             data[1] = convertToEncodedMPI(b2);
             break;
         case PGPPublicKey.ECDH:
+        case PGPPublicKey.X448:
+        case PGPPublicKey.X25519:
             data = new byte[1][];
 
             data[0] = encryptedSessionInfo;
@@ -147,7 +155,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     @Override
     public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
+        throws PGPException
     {
         // TODO: Implement
         return null;
@@ -155,7 +163,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     @Override
     public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
+        throws PGPException
     {
         // TODO: Implement
         return null;

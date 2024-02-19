@@ -178,7 +178,9 @@ public class PGPSignatureGenerator
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));
         }
-        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY ||
+            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519 ||
+            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
         {
             byte[] enc = contentSigner.getSignature();
             sigValues = new MPInteger[]{

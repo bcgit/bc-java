@@ -161,6 +161,10 @@ public class SignaturePacket
             break;
         case ECDSA:
         case EDDSA_LEGACY:
+        case Ed448:
+        case Ed25519:
+        case X448:
+        case X25519:
             MPInteger    ecR = new MPInteger(in);
             MPInteger    ecS = new MPInteger(in);
 

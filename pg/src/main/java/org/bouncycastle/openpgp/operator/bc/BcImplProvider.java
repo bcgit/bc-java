@@ -88,7 +88,7 @@ class BcImplProvider
     static Signer createSigner(int keyAlgorithm, int hashAlgorithm, CipherParameters keyParam)
         throws PGPException
     {
-        switch(keyAlgorithm)
+        switch (keyAlgorithm)
         {
         case PublicKeyAlgorithmTags.RSA_GENERAL:
         case PublicKeyAlgorithmTags.RSA_SIGN:
@@ -103,6 +103,10 @@ class BcImplProvider
                 return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
             }
             return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
+        case PublicKeyAlgorithmTags.Ed448:
+            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
+        case PublicKeyAlgorithmTags.Ed25519:
+            return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
         default:
             throw new PGPException("cannot recognise keyAlgorithm: " + keyAlgorithm);
         }
@@ -195,6 +199,7 @@ class BcImplProvider
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.ECDH:
         case PGPPublicKey.X25519:
+        case PGPPublicKey.X448:
             throw new PGPException("Not implemented.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
@@ -246,7 +251,7 @@ class BcImplProvider
         public boolean verifySignature(byte[] signature)
         {
             digest.doFinal(digBuf, 0);
-            
+
             signer.update(digBuf, 0, digBuf.length);
 
             return signer.verifySignature(signature);

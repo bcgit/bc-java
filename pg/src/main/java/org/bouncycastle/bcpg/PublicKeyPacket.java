@@ -74,16 +74,16 @@ public class PublicKeyPacket
             key = new EdDSAPublicBCPGKey(in);
             break;
         case X25519:
-            key = new X25519PublicBCPGKey(in);
+            key = new ECDHPublicBCPGKey(in);
             break;
         case X448:
-            key = new X448PublicBCPGKey(in);
+            key = new ECDHPublicBCPGKey(in);
             break;
         case Ed25519:
-            key = new Ed25519PublicBCPGKey(in);
+            key = new EdDSAPublicBCPGKey(in);
             break;
         case Ed448:
-            key = new Ed448PublicBCPGKey(in);
+            key = new EdDSAPublicBCPGKey(in);
             break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);

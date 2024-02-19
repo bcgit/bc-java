@@ -24,11 +24,11 @@ import org.bouncycastle.util.io.TeeOutputStream;
 public class JcaPGPContentSignerBuilder
     implements PGPContentSignerBuilder
 {
-    private OperatorHelper              helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
-    private JcaPGPKeyConverter          keyConverter = new JcaPGPKeyConverter();
-    private int                         hashAlgorithm;
-    private SecureRandom                random;
+    private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
+    private int hashAlgorithm;
+    private SecureRandom random;
     private int keyAlgorithm;
 
     public JcaPGPContentSignerBuilder(int keyAlgorithm, int hashAlgorithm)
@@ -94,7 +94,16 @@ public class JcaPGPContentSignerBuilder
     {
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
-        final Signature           signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+        final Signature signature;
+        if (privateKey.getAlgorithm().toLowerCase().equals("ed448") && keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+        {
+            signature = helper.createSignature(PublicKeyAlgorithmTags.Ed448, hashAlgorithm);
+        }
+        else
+        {
+            signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+        }
+
 
         try
         {
@@ -109,7 +118,7 @@ public class JcaPGPContentSignerBuilder
         }
         catch (InvalidKeyException e)
         {
-           throw new PGPException("invalid key.", e);
+            throw new PGPException("invalid key.", e);
         }
 
         return new PGPContentSigner()
@@ -136,7 +145,7 @@ public class JcaPGPContentSignerBuilder
 
             public OutputStream getOutputStream()
             {
-                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
                 {
                     return new TeeOutputStream(edDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
                 }
@@ -147,9 +156,9 @@ public class JcaPGPContentSignerBuilder
             {
                 try
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
                     {
-                         signature.update(edDigestCalculator.getDigest());
+                        signature.update(edDigestCalculator.getDigest());
                     }
                     return signature.sign();
                 }
