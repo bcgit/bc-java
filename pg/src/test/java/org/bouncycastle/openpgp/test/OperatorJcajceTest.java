@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -22,6 +23,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.test.SimpleTest;
@@ -46,6 +48,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testJcePBESecretKeyEncryptorBuilder();
         testJcaPGPContentVerifierBuilderProvider();
         testJcaPGPDigestCalculatorProviderBuilder();
         testJcePGPDataEncryptorBuilder();
@@ -121,6 +124,13 @@ public class OperatorJcajceTest
         isTrue(verifier.getHashAlgorithm() == HashAlgorithmTags.SHA256);
         isTrue(verifier.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL);
         isTrue(verifier.getKeyID() == pubKey.getKeyID());
+    }
+
+    public void testJcePBESecretKeyEncryptorBuilder()
+        throws Exception
+    {
+        final PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+        testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", () -> new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1));
     }
 
 }

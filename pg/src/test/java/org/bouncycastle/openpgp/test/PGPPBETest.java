@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
@@ -71,7 +72,7 @@ public class PGPPBETest
         PGPEncryptedDataList     enc = (PGPEncryptedDataList)pgpF.nextObject();
         PGPPBEEncryptedData      pbe = (PGPPBEEncryptedData)enc.get(0);
 
-        InputStream clear = pbe.getDataStream(new JcePBEDataDecryptorFactoryBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(pass));
+        InputStream clear = pbe.getDataStream(new JcePBEDataDecryptorFactoryBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider(new BouncyCastleProvider()).build(pass));
         
         JcaPGPObjectFactory         pgpFact = new JcaPGPObjectFactory(clear);
         PGPCompressedData        cData = (PGPCompressedData)pgpFact.nextObject();
@@ -198,7 +199,7 @@ public class PGPPBETest
         ByteArrayOutputStream        cbOut = new ByteArrayOutputStream();
         PGPEncryptedDataGenerator    cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()).setProvider("BC"));
         
-        cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider("BC"));
+        cPk.addMethod(new JcePBEKeyEncryptionMethodGenerator(pass).setProvider(new BouncyCastleProvider()).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
         
         OutputStream    cOut = cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
 

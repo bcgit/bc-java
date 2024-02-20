@@ -1854,7 +1854,8 @@ public class PGPGeneralTest
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpFact.nextObject();
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
         PGPPublicKey publicKey = new JcaPGPPublicKeyRing(testPubKey2).getPublicKey(encP.getKeyID());
-        PGPSecretKey secretKey = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeySub), new JcePBEProtectionRemoverFactory("test".toCharArray()), publicKey);
+        JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
+        PGPSecretKey secretKey = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeySub), new JcePBEProtectionRemoverFactory("test".toCharArray(),digBuild.build()).setProvider("BC"), publicKey);
         InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secretKey.extractPrivateKey(null)));
         PGPObjectFactory plainFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
         PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
@@ -1865,7 +1866,7 @@ public class PGPGeneralTest
             fail("wrong file name detected");
         }
 
-        PGPSecretKey key = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeyMaster), new JcePBEProtectionRemoverFactory("test".toCharArray()), new JcaKeyFingerprintCalculator());
+        PGPSecretKey key = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeyMaster), new JcePBEProtectionRemoverFactory("test".toCharArray(), digBuild.build()).setProvider(new BouncyCastleProvider()), new JcaKeyFingerprintCalculator());
         PGPSignatureGenerator signGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(PGPPublicKey.ECDSA, HashAlgorithmTags.SHA256).setProvider("BC"));
         signGen.init(PGPSignature.BINARY_DOCUMENT, key.extractPrivateKey(null));
         signGen.update("hello world!".getBytes());

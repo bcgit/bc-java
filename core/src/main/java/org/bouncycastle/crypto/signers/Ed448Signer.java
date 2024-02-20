@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;

@@ -260,17 +260,8 @@ public class BcPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.Ed25519:
             {
-                EdDSAPublicBCPGKey eddsaK = (EdDSAPublicBCPGKey)publicPk.getKey();
-
-                byte[] pEnc = BigIntegers.asUnsignedByteArray(eddsaK.getEncodedPoint());
-
-                if (pEnc.length < 1 || pEnc[0] != 0x40)
-                {
-                    throw new IllegalArgumentException("Invalid Ed25519 public key");
-                }
-
+                byte[] pEnc = get25519EncodedPoint(((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint(), "Ed");
                 return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed25519, pEnc, 1);
-
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
@@ -280,7 +271,6 @@ public class BcPGPKeyConverter
 
                 return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed448, pEnc, 0);
             }
-
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
             case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
                 ElGamalPublicBCPGKey elK = (ElGamalPublicBCPGKey)publicPk.getKey();
@@ -314,17 +304,21 @@ public class BcPGPKeyConverter
         return implGetPublicKeyX509(EdECObjectIdentifiers.id_X448, BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint()), 0);
     }
 
-    private AsymmetricKeyParameter getX25519PublicKey(ECDHPublicBCPGKey ecdhK)
-        throws IOException
+    private byte[] get25519EncodedPoint(BigInteger x, String title)
     {
-        byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
-
+        byte[] pEnc = BigIntegers.asUnsignedByteArray(x);
         // skip the 0x40 header byte.
         if (pEnc.length < 1 || 0x40 != pEnc[0])
         {
-            throw new IllegalArgumentException("Invalid Curve25519 public key");
+            throw new IllegalArgumentException("Invalid " + title + "25519 public key");
         }
+        return pEnc;
+    }
 
+    private AsymmetricKeyParameter getX25519PublicKey(ECDHPublicBCPGKey ecdhK)
+        throws IOException
+    {
+        byte[] pEnc = get25519EncodedPoint(ecdhK.getEncodedPoint(), "Curve");
         return implGetPublicKeyX509(EdECObjectIdentifiers.id_X25519, pEnc, 1);
     }
 

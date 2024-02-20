@@ -397,7 +397,7 @@ public class SExpression
     /**
      * This function expects the labels is in order
      */
-    public static SExpression buildExpression(SExpression expression, String[] labels)
+    static SExpression buildExpression(SExpression expression, String[] labels)
     {
         SExpression rlt = new SExpression();
         rlt.addValue(labels[0]);
@@ -412,7 +412,7 @@ public class SExpression
         return rlt;
     }
 
-    public static SExpression buildExpression(SExpression expr1, SExpression expr2, String[] labels)
+    static SExpression buildExpression(SExpression expr1, SExpression expr2, String[] labels)
     {
         SExpression rlt = new SExpression();
         rlt.addValue(labels[0]);
