@@ -111,15 +111,16 @@ public class OperatorJcajceTest
     public void testJcaPGPContentVerifierBuilderProvider()
         throws Exception
     {
-//        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
-//        kpGen.initialize(1024);
-//        KeyPair kp = kpGen.generateKeyPair();
-//
-//        JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
-//        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
-//        PGPContentVerifier verifier = new JcaPGPContentVerifierBuilderProvider().setProvider(new BouncyCastleProvider()).get(HashAlgorithmTags.SHA256, PublicKeyAlgorithmTags.RSA_GENERAL).build(pubKey);
-//        isTrue(verifier.getHashAlgorithm() == HashAlgorithmTags.SHA256);
-//        isTrue(verifier.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL);
-//        isTrue(verifier.getKeyID() == pubKey.getKeyID());
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
+        kpGen.initialize(1024);
+        KeyPair kp = kpGen.generateKeyPair();
+
+        JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
+        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
+        PGPContentVerifier verifier = new JcaPGPContentVerifierBuilderProvider().setProvider(new BouncyCastleProvider()).get(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA256).build(pubKey);
+        isTrue(verifier.getHashAlgorithm() == HashAlgorithmTags.SHA256);
+        isTrue(verifier.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL);
+        isTrue(verifier.getKeyID() == pubKey.getKeyID());
     }
+
 }

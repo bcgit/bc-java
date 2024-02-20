@@ -121,9 +121,17 @@ public class OpenpgpTest
     }
 
     public void testPGPCompressedDataGenerator()
+        throws IOException
     {
         testException("unknown compression algorithm", "IllegalArgumentException", () -> new PGPCompressedDataGenerator(110));
         testException("unknown compression level:", "IllegalArgumentException", () -> new PGPCompressedDataGenerator(CompressionAlgorithmTags.UNCOMPRESSED, 10));
+
+        final PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
+
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        cGen.open(new UncloseableOutputStream(bOut));
+        testException("generator already in open state", "IllegalStateException", () -> cGen.open(new UncloseableOutputStream(bOut)));
+        testException("generator already in open state", "IllegalStateException", () -> cGen.open(new UncloseableOutputStream(bOut), new byte[10]));
     }
 
     public void testPGPUtil()
@@ -664,7 +672,8 @@ public class OpenpgpTest
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
-
+        isEquals(encP.getAlgorithm(), 1);
+        isEquals(encP.getVersion(), 3);
         PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));
 
         InputStream clear = encP.getDataStream(new BcPublicKeyDataDecryptorFactory(pgpPrivKey));
