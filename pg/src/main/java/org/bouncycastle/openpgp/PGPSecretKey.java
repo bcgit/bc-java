@@ -678,14 +678,6 @@ public class PGPSecretKey
                 EdSecretBCPGKey edPriv = new EdSecretBCPGKey(in);
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, edPriv);
-//            case PGPPublicKey.X25519:
-//                return new PGPPrivateKey(this.getKeyID(), pubPk, new X25519SecretBCPGKey(in));
-//            case PGPPublicKey.X448:
-//                return new PGPPrivateKey(this.getKeyID(), pubPk, new X448SecretBCPGKey(in));
-//            case PGPPublicKey.Ed25519:
-//                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed25519SecretBCPGKey(in));
-//            case PGPPublicKey.Ed448:
-//                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed448SecretBCPGKey(in));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }
