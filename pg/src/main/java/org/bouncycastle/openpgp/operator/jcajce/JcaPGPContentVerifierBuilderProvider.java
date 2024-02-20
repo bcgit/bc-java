@@ -98,7 +98,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
             return new PGPContentVerifier()
             {
-                private boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
+                private final boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
                 public int getHashAlgorithm()
                 {
                     return hashAlgorithm;
