@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
@@ -77,7 +76,6 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         try
         {
             AsymmetricKeyParameter cryptoPublicKey = keyConverter.getPublicKey(pubKey);
-            //TODO: X448
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519
                 || pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
@@ -177,12 +175,6 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         c.init(true, new ParametersWithRandom(key, random));
         byte[] C = c.wrap(paddedSessionData, 0, paddedSessionData.length);
 
-        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
-
-        byte[] rv = new byte[VB.length + 1 + C.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)C.length;
-        System.arraycopy(C, 0, rv, VB.length + 1, C.length);
-        return rv;
+        return getSessionInfo(ephPubEncoding, C);
     }
 }

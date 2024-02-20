@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
@@ -140,14 +141,7 @@ public class BcPublicKeyDataDecryptorFactory
                     {
                         throw new IllegalArgumentException("Invalid Curve25519 public key");
                     }
-
-                    X25519PublicKeyParameters ephPub = new X25519PublicKeyParameters(pEnc, 1);
-
-                    X25519Agreement agreement = new X25519Agreement();
-                    agreement.init(privKey);
-
-                    secret = new byte[agreement.getAgreementSize()];
-                    agreement.calculateAgreement(ephPub, secret, 0);
+                    secret = getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
                 }
                 else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
                 {
@@ -155,14 +149,7 @@ public class BcPublicKeyDataDecryptorFactory
                     {
                         throw new IllegalArgumentException("Invalid Curve448 public key");
                     }
-
-                    X448PublicKeyParameters ephPub = new X448PublicKeyParameters(pEnc, 0);
-
-                    X448Agreement agreement = new X448Agreement();
-                    agreement.init(privKey);
-
-                    secret = new byte[agreement.getAgreementSize()];
-                    agreement.calculateAgreement(ephPub, secret, 0);
+                    secret = getSecret(new X448Agreement(), privKey, new X448PublicKeyParameters(pEnc, 0));
                 }
                 else
                 {
@@ -199,6 +186,14 @@ public class BcPublicKeyDataDecryptorFactory
             throw new PGPException("exception decrypting session info: " + e.getMessage(), e);
         }
 
+    }
+
+    private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
+    {
+        agreement.init(privKey);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(ephPub, secret, 0);
+        return secret;
     }
 
     // OpenPGP v4

@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -23,9 +22,7 @@ import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -205,12 +202,6 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         c.init(Cipher.WRAP_MODE, secret, random);
         byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
 
-        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
-
-        byte[] rv = new byte[VB.length + 1 + C.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)C.length;
-        System.arraycopy(C, 0, rv, VB.length + 1, C.length);
-        return rv;
+        return getSessionInfo(ephPubEncoding, C);
     }
 }
