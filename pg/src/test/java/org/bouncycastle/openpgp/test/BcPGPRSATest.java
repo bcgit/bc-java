@@ -871,7 +871,7 @@ public class BcPGPRSATest
 
         pgpFact = new PGPObjectFactory(c1.getDataStream(), new BcKeyFingerprintCalculator());
 
-        PGPOnePassSignatureList p1 = (PGPOnePassSignatureList)pgpFact.nextObject();
+        PGPOnePassSignatureList p1 = new PGPOnePassSignatureList(((PGPOnePassSignatureList)pgpFact.nextObject()).get(0));
 
         PGPOnePassSignature ops = p1.get(0);
 
