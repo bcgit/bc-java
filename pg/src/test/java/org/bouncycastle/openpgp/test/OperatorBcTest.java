@@ -174,6 +174,14 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X448, "X448");
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.X448, PublicKeyAlgorithmTags.ECDH, "X448");
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed448, "Ed448");
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
         testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
         testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA");
@@ -189,8 +197,13 @@ public class OperatorBcTest
         testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
     }
 
-
     private void testCreateKeyPair(int algorithm, String name)
+        throws Exception
+    {
+        testCreateKeyPair(algorithm, algorithm, name);
+    }
+
+    private void testCreateKeyPair(int algorithm1, int algorithm2, String name)
         throws Exception
     {
         Date creationDate = new Date();
@@ -198,12 +211,12 @@ public class OperatorBcTest
         KeyPair keyPair = gen.generateKeyPair();
 
         BcPGPKeyConverter converter = new BcPGPKeyConverter();
-        PGPKeyPair jcaPgpPair = new JcaPGPKeyPair(algorithm, keyPair, creationDate);
+        PGPKeyPair jcaPgpPair = new JcaPGPKeyPair(algorithm1, keyPair, creationDate);
         AsymmetricKeyParameter publicKey = converter.getPublicKey(jcaPgpPair.getPublicKey());
         AsymmetricKeyParameter privateKey = converter.getPrivateKey(jcaPgpPair.getPrivateKey()); // This line threw previously.
         AsymmetricCipherKeyPair asymKeyPair = new AsymmetricCipherKeyPair(publicKey, privateKey);
 
-        PGPKeyPair bcKeyPair = new BcPGPKeyPair(algorithm, asymKeyPair, creationDate);
+        PGPKeyPair bcKeyPair = new BcPGPKeyPair(algorithm2, asymKeyPair, creationDate);
 
         JcaPGPKeyConverter jcaPGPKeyConverter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         PrivateKey privKey = jcaPGPKeyConverter.getPrivateKey(jcaPgpPair.getPrivateKey());
@@ -215,7 +228,7 @@ public class OperatorBcTest
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair private keys are not equal.");
         }
 
-        if (!Arrays.equals(jcaPgpPair.getPublicKey().getPublicKeyPacket().getEncoded(),
+        if (algorithm1 == algorithm2 && !Arrays.equals(jcaPgpPair.getPublicKey().getPublicKeyPacket().getEncoded(),
             bcKeyPair.getPublicKey().getPublicKeyPacket().getEncoded()))
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair public keys are not equal.");
@@ -232,6 +245,7 @@ public class OperatorBcTest
 
         isTrue(Arrays.equals(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
         isTrue(privKey.toString().equals(keyPair.getPrivate().toString()));
+        // getEncoded() are Not equal as privKey.hasPublicKey is false but keyPair.getPrivate().hasPublicKey is true
         //isTrue(Arrays.equals(privKey.getEncoded(), keyPair.getPrivate().getEncoded()));
     }
 
