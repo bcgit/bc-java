@@ -16,6 +16,7 @@ import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -1452,7 +1453,7 @@ public class PGPGeneralTest
                 PGPSecretKey newPgpKey = pgpPriv3.getSecretKey(oldKeyID);
 
                 // this should succeed
-                PGPPrivateKey privTmp = newPgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider("BC").build(newPass));
+                PGPPrivateKey privTmp = newPgpKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder(new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build()).setProvider(new BouncyCastleProvider()).build(newPass));
 
                 if (newPgpKey.getKeyID() != oldKeyID)
                 {
@@ -2171,7 +2172,7 @@ public class PGPGeneralTest
         ExtendedPGPSecretKey secretKey = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
             null,
             digBuild.build(),
-            new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+            new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()).setProvider("BC"),
             new JcaKeyFingerprintCalculator(), 10);
 
         PGPPublicKey publicKey = secretKey.getPublicKey();
@@ -2405,7 +2406,7 @@ public class PGPGeneralTest
         ExtendedPGPSecretKey secretKey = (ExtendedPGPSecretKey)openedPGPKeyData.getKeyData(
             null,
             digBuild.build(),
-            new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()),
+            new JcePBEProtectionRemoverFactory("foobar".toCharArray(), digBuild.build()).setProvider(new BouncyCastleProvider()),
             new JcaKeyFingerprintCalculator(), 10);
 
         bin = new ByteArrayInputStream(key);
@@ -2440,8 +2441,9 @@ public class PGPGeneralTest
             new JcaKeyFingerprintCalculator(), 10);
 
         ElGamalSecretBCPGKey priv = (ElGamalSecretBCPGKey)pair.getPrivateKey().getPrivateKeyDataPacket();
-        ElGamalPublicBCPGKey pub = (ElGamalPublicBCPGKey)secretKey2.getPublicKey().getPublicKeyPacket().getKey();
-
+        ElGamalPublicBCPGKey pub = new ElGamalPublicBCPGKey(new BCPGInputStream(new ByteArrayInputStream(secretKey2.getPublicKey().getPublicKeyPacket().getKey().getEncoded())));
+        isTrue(pub.getFormat().equals("PGP"));
+        isTrue(priv.getFormat().equals("PGP"));
         if (!pub.getG().modPow(priv.getX(), pub.getP()).equals(pub.getY()))
         {
             throw new IllegalArgumentException("DSA public key not consistent with DSA private key");
@@ -2693,6 +2695,9 @@ public class PGPGeneralTest
 
         DSASecretBCPGKey priv = (DSASecretBCPGKey)pair.getPrivateKey().getPrivateKeyDataPacket();
         DSAPublicBCPGKey pub = (DSAPublicBCPGKey)secretKey2.getPublicKey().getPublicKeyPacket().getKey();
+        isTrue(priv.getFormat().equals("PGP"));
+        isTrue(pub.getFormat().equals("PGP"));
+        pub = new DSAPublicBCPGKey(new BCPGInputStream(new ByteArrayInputStream(pub.getEncoded())));
 
         if (!pub.getG().modPow(priv.getX(), pub.getP()).equals(pub.getY()))
         {
@@ -3142,6 +3147,9 @@ public class PGPGeneralTest
     {
         RSASecretBCPGKey priv = (RSASecretBCPGKey)keyPair.getPrivateKey().getPrivateKeyDataPacket();
         RSAPublicBCPGKey pub = (RSAPublicBCPGKey)keyPair.getPublicKey().getPublicKeyPacket().getKey();
+        isTrue(pub.getFormat().equals("PGP"));
+        isTrue(priv.getFormat().equals("PGP"));
+
         if (!priv.getModulus().equals(pub.getModulus()))
         {
             throw new IllegalArgumentException("RSA keys do not have the same modulus");
