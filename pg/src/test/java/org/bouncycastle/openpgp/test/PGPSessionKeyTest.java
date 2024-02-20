@@ -175,7 +175,7 @@ public class PGPSessionKeyTest
         PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
         SessionKeyDataDecryptorFactory decryptorFactory =
-            new JceSessionKeyDataDecryptorFactoryBuilder().build(new PGPSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY)));
+            new JceSessionKeyDataDecryptorFactoryBuilder().setProvider("BC").build(new PGPSessionKey(PK_ENC_SESSIONKEY_ALG, Hex.decode(PK_ENC_SESSIONKEY)));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);
@@ -216,7 +216,7 @@ public class PGPSessionKeyTest
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
         PGPSessionKeyEncryptedData encryptedData = encryptedDataList.extractSessionKeyEncryptedData();
 
-        SessionKeyDataDecryptorFactory decryptorFactory = new JceSessionKeyDataDecryptorFactoryBuilder().build(new PGPSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY)));
+        SessionKeyDataDecryptorFactory decryptorFactory = new JceSessionKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(new PGPSessionKey(PBE_ENC_SESSIONKEY_ALG, Hex.decode(PBE_ENC_SESSIONKEY)));
         InputStream decrypted = encryptedData.getDataStream(decryptorFactory);
 
         objectFactory = new BcPGPObjectFactory(decrypted);

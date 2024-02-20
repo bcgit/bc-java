@@ -338,7 +338,7 @@ public class OperatorBcTest
             if (pubKey.isEncryptionKey())
             {
                 privKey = secRing.getSecretKey(pubKey.getKeyID()).extractPrivateKey(
-                    new JcePBESecretKeyDecryptorBuilder().build(passPhrase));
+                    new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(passPhrase));
                 break;
             }
         }
@@ -422,7 +422,7 @@ public class OperatorBcTest
 
         PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.CAST5).setProvider("BC").setSecureRandom(new SecureRandom()));
 
-        cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pubKey).setProvider("BC"));
+        cPk.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(pubKey).setProvider(new BouncyCastleProvider()).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
 
         OutputStream cOut = cPk.open(new UncloseableOutputStream(cbOut), data.length);
 
@@ -436,7 +436,7 @@ public class OperatorBcTest
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secKey));
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(secKey));
 
         pgpF = new JcaPGPObjectFactory(clear);
 
