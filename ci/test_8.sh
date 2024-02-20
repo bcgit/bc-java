@@ -18,7 +18,7 @@ export BC_JDK21=`openjdk_21`
 export JAVA_HOME=`openjdk_17`
 export PATH=$JAVA_HOME/bin:$PATH
 
-./gradlew -stacktrace clean build -x test 11 test17 test21
+./gradlew -stacktrace clean build -x test11 test17 test21
 
 
 
