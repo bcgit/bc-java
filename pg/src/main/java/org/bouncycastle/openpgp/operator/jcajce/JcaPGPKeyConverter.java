@@ -301,8 +301,7 @@ public class JcaPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.X25519:
             {
-                ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
-                return get25519PublicKey(ecdhK.getEncodedPoint(), EdECObjectIdentifiers.id_X25519, "XDH", "Curve");
+                return get25519PublicKey(((ECDHPublicBCPGKey)publicPk.getKey()).getEncodedPoint(), EdECObjectIdentifiers.id_X25519, "XDH", "Curve");
             }
             case PublicKeyAlgorithmTags.X448:
             {
@@ -530,12 +529,12 @@ public class JcaPGPKeyConverter
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED4", 0, 3))
         {
-            return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEnc(pubKey, new byte[Ed448.PUBLIC_KEY_SIZE])));
+            return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEnc(pubKey, Ed448.PUBLIC_KEY_SIZE)));
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
         {
             PGPKdfParameters kdfParams = implGetKdfParameters(algorithmParameters);
-            return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEnc(pubKey, new byte[X448.SCALAR_SIZE])),
+            return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEnc(pubKey, X448.SCALAR_SIZE)),
                 kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
         }
         else
@@ -544,10 +543,10 @@ public class JcaPGPKeyConverter
         }
     }
 
-    private static byte[] getPointEnc(PublicKey pubKey, byte[] publicKeySize)
+    private static byte[] getPointEnc(PublicKey pubKey, int publicKeySize)
     {
         SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
-        byte[] pointEnc = publicKeySize;
+        byte[] pointEnc = new byte[publicKeySize];
 
         System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
         return pointEnc;
