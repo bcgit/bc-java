@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -109,6 +110,7 @@ public class OpenpgpTest
     public void performTest()
         throws Exception
     {
+        testPGPCanonicalizedDataGenerator();
 //        testPGPV3SignatureGenerator();
         testPGPUserAttributeSubpacketVector();
         testPGPLiteralData();
@@ -697,6 +699,20 @@ public class OpenpgpTest
         isTrue(vector.getImageAttribute() == null);
 
         testException("attempt to set null image", "IllegalArgumentException", () -> new PGPUserAttributeSubpacketVectorGenerator().setImageAttribute(0, null));
+    }
+
+    public void testPGPCanonicalizedDataGenerator()
+        throws IOException
+    {
+        final PGPCanonicalizedDataGenerator canGen = new PGPCanonicalizedDataGenerator(false);
+        final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        final File bcFile = File.createTempFile("bcpgp", ".back");
+        canGen.open(bOut, PGPLiteralData.TEXT, bcFile);
+        testException("generator already in open state", "IllegalStateException", ()->canGen.open(bOut, PGPLiteralData.TEXT, bcFile));
+        testException("generator already in open state", "IllegalStateException", ()->canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
+            new Date(bcFile.lastModified()), bcFile));
+        testException("generator already in open state", "IllegalStateException", ()->canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
+            new Date(bcFile.lastModified()), new byte[10]));
     }
 
 //    public void testPGPV3SignatureGenerator()
