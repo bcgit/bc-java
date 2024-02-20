@@ -90,7 +90,6 @@ public class PublicKeyEncSessionPacket
 
             data[0] = Streams.readAll(in);
             break;
-        // TODO: Add Ed25519, Ed448, X25519, X448 etc.
         default:
             throw new IOException("unknown PGP public key algorithm encountered");
         }

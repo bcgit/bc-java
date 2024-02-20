@@ -171,4 +171,16 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
         throws PGPException;
+
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] c)
+        throws IOException
+    {
+        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
+
+        byte[] rv = new byte[VB.length + 1 + c.length];
+        System.arraycopy(VB, 0, rv, 0, VB.length);
+        rv[VB.length] = (byte)c.length;
+        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
+        return rv;
+    }
 }

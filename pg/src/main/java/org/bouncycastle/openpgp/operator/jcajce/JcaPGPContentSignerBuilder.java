@@ -95,7 +95,7 @@ public class JcaPGPContentSignerBuilder
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final Signature signature;
-        if (privateKey.getAlgorithm().toLowerCase().equals("ed448") && keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+        if (privateKey.getAlgorithm().equalsIgnoreCase("ed448") && keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
         {
             signature = helper.createSignature(PublicKeyAlgorithmTags.Ed448, hashAlgorithm);
         }
@@ -123,6 +123,7 @@ public class JcaPGPContentSignerBuilder
 
         return new PGPContentSigner()
         {
+            private boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
             public int getType()
             {
                 return signatureType;
@@ -145,7 +146,7 @@ public class JcaPGPContentSignerBuilder
 
             public OutputStream getOutputStream()
             {
-                if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
+                if (isEdDsa)
                 {
                     return new TeeOutputStream(edDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
                 }
@@ -156,7 +157,7 @@ public class JcaPGPContentSignerBuilder
             {
                 try
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
+                    if (isEdDsa)
                     {
                         signature.update(edDigestCalculator.getDigest());
                     }

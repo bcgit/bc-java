@@ -98,6 +98,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
             return new PGPContentVerifier()
             {
+                private boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
                 public int getHashAlgorithm()
                 {
                     return hashAlgorithm;
@@ -131,7 +132,7 @@ public class JcaPGPContentVerifierBuilderProvider
                                 return signature.verify(tmp);
                             }
                         }
-                        if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
+                        if (isEdDsa)
                         {
                             signature.update(digestCalculator.getDigest());
 
@@ -147,7 +148,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
                 public OutputStream getOutputStream()
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519)
+                    if (isEdDsa)
                     {
                         return digestCalculator.getOutputStream();
                     }
