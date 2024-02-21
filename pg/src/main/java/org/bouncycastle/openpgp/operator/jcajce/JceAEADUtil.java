@@ -437,18 +437,7 @@ class JceAEADUtil
 
             if (dataLen != chunkLength)     // it's our last block
             {
-                if (v5StyleAEAD)
-                {
-                    adata = new byte[13];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    xorChunkId(adata, chunkIndex);
-                }
-                else
-                {
-                    adata = new byte[aaData.length + 8];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-                }
+                adata = PGPAeadOutputStream.getAdata(v5StyleAEAD, aaData, chunkIndex, totalBytes);
                 try
                 {
                     if (v5StyleAEAD)
@@ -638,19 +627,7 @@ class JceAEADUtil
                 writeBlock();
             }
 
-            byte[] adata;
-            if (isV5AEAD)
-            {
-                adata = new byte[13];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                xorChunkId(adata, chunkIndex);
-            }
-            else
-            {
-                adata = new byte[aaData.length + 8];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-            }
+            byte[] adata = getAdata(isV5AEAD, aaData, chunkIndex, totalBytes);
 
             try
             {
@@ -670,6 +647,24 @@ class JceAEADUtil
                 throw new IOException("exception processing final tag: " + e.getMessage());
             }
             out.close();
+        }
+
+        private static byte[] getAdata(boolean isV5AEAD, byte[] aaData, long chunkIndex, long totalBytes)
+        {
+            byte[] adata;
+            if (isV5AEAD)
+            {
+                adata = new byte[13];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                xorChunkId(adata, chunkIndex);
+            }
+            else
+            {
+                adata = new byte[aaData.length + 8];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
+            }
+            return adata;
         }
     }
 }

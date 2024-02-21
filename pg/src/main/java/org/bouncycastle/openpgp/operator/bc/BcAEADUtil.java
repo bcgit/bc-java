@@ -10,6 +10,7 @@ import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -115,36 +116,37 @@ public class BcAEADUtil
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_192
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_256)
         {
-            switch (aeadAlgorithm)
-            {
-            case AEADAlgorithmTags.EAX:
-                return new EAXBlockCipher(AESEngine.newInstance());
-            case AEADAlgorithmTags.OCB:
-                return new OCBBlockCipher(AESEngine.newInstance(), AESEngine.newInstance());
-            case AEADAlgorithmTags.GCM:
-                return GCMBlockCipher.newInstance(AESEngine.newInstance());
-            default:
-                throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
-            }
+            return createAEADCipher(aeadAlgorithm, AESEngine::newInstance);
         }
         else if (enableCamellia && (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128
             || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192
             || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256))
         {
-            switch (aeadAlgorithm)
-            {
-            case AEADAlgorithmTags.EAX:
-                return new EAXBlockCipher(new CamelliaEngine());
-            case AEADAlgorithmTags.OCB:
-                return new OCBBlockCipher(new CamelliaEngine(), new CamelliaEngine());
-            case AEADAlgorithmTags.GCM:
-                return GCMBlockCipher.newInstance(new CamelliaEngine());
-            default:
-                throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
-            }
+            return createAEADCipher(aeadAlgorithm, CamelliaEngine::new);
         }
         // Block Cipher must work on 16 byte blocks
         throw new PGPException("AEAD only supported for AES" + (enableCamellia ? " and Camellia" : "") + " based algorithms");
+    }
+
+    private interface Engine
+    {
+        BlockCipher newInstance();
+    }
+
+    private static AEADBlockCipher createAEADCipher(int aeadAlgorithm, Engine engine)
+        throws PGPException
+    {
+        switch (aeadAlgorithm)
+        {
+        case AEADAlgorithmTags.EAX:
+            return new EAXBlockCipher(engine.newInstance());
+        case AEADAlgorithmTags.OCB:
+            return new OCBBlockCipher(engine.newInstance(), engine.newInstance());
+        case AEADAlgorithmTags.GCM:
+            return GCMBlockCipher.newInstance(engine.newInstance());
+        default:
+            throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+        }
     }
 
     /**
@@ -426,18 +428,7 @@ public class BcAEADUtil
 
             if (dataLen != chunkLength)     // it's our last block
             {
-                if (isV5StyleAEAD)
-                {
-                    adata = new byte[13];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    xorChunkId(adata, chunkIndex);
-                }
-                else
-                {
-                    adata = new byte[aaData.length + 8];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-                }
+                adata = getAdata(isV5StyleAEAD, aaData, chunkIndex, totalBytes);
 
                 try
                 {
@@ -464,6 +455,24 @@ public class BcAEADUtil
             }
 
             return decData;
+        }
+
+        private static byte[] getAdata(boolean isV5StyleAEAD, byte[] aaData, long chunkIndex, long totalBytes)
+        {
+            byte[] adata;
+            if (isV5StyleAEAD)
+            {
+                adata = new byte[13];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                xorChunkId(adata, chunkIndex);
+            }
+            else
+            {
+                adata = new byte[aaData.length + 8];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
+            }
+            return adata;
         }
     }
 
@@ -625,22 +634,8 @@ public class BcAEADUtil
             {
                 writeBlock();
             }
-
-
-            byte[] adata;
             boolean v5StyleAEAD = isV5StyleAEAD;
-            if (v5StyleAEAD)
-            {
-                adata = new byte[13];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                xorChunkId(adata, chunkIndex);
-            }
-            else
-            {
-                adata = new byte[aaData.length + 8];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-            }
+            byte[] adata = PGPAeadInputStream.getAdata(v5StyleAEAD, aaData, chunkIndex, totalBytes);
             try
             {
                 c.init(true, new AEADParameters(secretKey, 128, getNonce(iv, chunkIndex)));  // always full tag.
