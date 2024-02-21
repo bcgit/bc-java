@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.EAXBlockCipher;
@@ -103,31 +104,46 @@ public class BcAEADUtil
         byte[] messageKeyAndIv = new byte[keyLen + ivLen - 8];
         hkdfGen.generateBytes(messageKeyAndIv, 0, messageKeyAndIv.length);
 
-        return new byte[][] { Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen) };
+        return new byte[][]{Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen)};
     }
 
     public static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
         throws PGPException
     {
-        if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+        if (encAlgorithm == SymmetricKeyAlgorithmTags.AES_128
+            || encAlgorithm == SymmetricKeyAlgorithmTags.AES_192
+            || encAlgorithm == SymmetricKeyAlgorithmTags.AES_256)
         {
-            // Block Cipher must work on 16 byte blocks
-            throw new PGPException("AEAD only supported for AES based algorithms");
+            switch (aeadAlgorithm)
+            {
+            case AEADAlgorithmTags.EAX:
+                return new EAXBlockCipher(AESEngine.newInstance());
+            case AEADAlgorithmTags.OCB:
+                return new OCBBlockCipher(AESEngine.newInstance(), AESEngine.newInstance());
+            case AEADAlgorithmTags.GCM:
+                return GCMBlockCipher.newInstance(AESEngine.newInstance());
+            default:
+                throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+            }
         }
-
-        switch (aeadAlgorithm)
+        else if (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128 ||
+            encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192 ||
+            encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256)
         {
-        case AEADAlgorithmTags.EAX:
-            return new EAXBlockCipher(AESEngine.newInstance());
-        case AEADAlgorithmTags.OCB:
-            return new OCBBlockCipher(AESEngine.newInstance(), AESEngine.newInstance());
-        case AEADAlgorithmTags.GCM:
-            return GCMBlockCipher.newInstance(AESEngine.newInstance());
-        default:
-            throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+            switch (aeadAlgorithm)
+            {
+            case AEADAlgorithmTags.EAX:
+                return new EAXBlockCipher(new CamelliaEngine());
+            case AEADAlgorithmTags.OCB:
+                return new OCBBlockCipher(new CamelliaEngine(), new CamelliaEngine());
+            case AEADAlgorithmTags.GCM:
+                return GCMBlockCipher.newInstance(new CamelliaEngine());
+            default:
+                throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
+            }
         }
+        // Block Cipher must work on 16 byte blocks
+        throw new PGPException("AEAD only supported for AES based algorithms");
     }
 
     /**
@@ -260,7 +276,7 @@ public class BcAEADUtil
         /**
          * InputStream for decrypting AEAD encrypted data.
          *
-         * @param isV5StyleAEAD       flavour of AEAD (OpenPGP v5 or v6)
+         * @param isV5StyleAEAD flavour of AEAD (OpenPGP v5 or v6)
          * @param in            underlying InputStream
          * @param c             decryption cipher
          * @param secretKey     decryption key
