@@ -87,6 +87,7 @@ public class BcpgGeneralTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         SignatureSubpacketInputStream subpacketIn = new SignatureSubpacketInputStream(bIn);
+        isEquals(subpacketIn.available(), 0);
         SignatureSubpacket subpacket = subpacketIn.readPacket();
         assert subpacket != null;
         assert subpacket instanceof PreferredAEADCiphersuites;
