@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
@@ -10,7 +9,6 @@ import java.util.Iterator;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
-import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
@@ -26,21 +24,15 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPKdfParameters;
-import org.bouncycastle.openpgp.PGPLiteralData;
-import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
-import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class BcpgGeneralTest
@@ -87,7 +79,7 @@ public class BcpgGeneralTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         SignatureSubpacketInputStream subpacketIn = new SignatureSubpacketInputStream(bIn);
-        isEquals(subpacketIn.available(), 0);
+        isEquals(subpacketIn.available(), 8);
         SignatureSubpacket subpacket = subpacketIn.readPacket();
         assert subpacket != null;
         assert subpacket instanceof PreferredAEADCiphersuites;
