@@ -252,13 +252,20 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH);
-        keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
     }
 
-    private void keyringTest(String ed_str, int ed_num, String x_str, int x_num)
+    private void keyringTest(String ed_str, int ed_num, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
         throws Exception
     {
 
@@ -275,7 +282,7 @@ public class OperatorBcTest
 
         dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
 
-        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, dhKp.generateKeyPair(), new Date());
+        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm),dhKp.generateKeyPair(), new Date());
 
         encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
         encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
