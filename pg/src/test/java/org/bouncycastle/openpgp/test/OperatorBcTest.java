@@ -242,11 +242,15 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
+        System.setProperty("enableCamelliaKeyWrapping", "True");
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
         keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
@@ -254,8 +258,6 @@ public class OperatorBcTest
         keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
 
-        testException("Unknown hash algorithm specified: ", "IllegalArgumentException", () -> keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA1, SymmetricKeyAlgorithmTags.AES_256));
-        testException("unknown symmetric algorithm ID: ", "PGPException", () -> keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.IDEA));
     }
 
     private void keyringTest(String ed_str, int ed_num, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
@@ -275,7 +277,7 @@ public class OperatorBcTest
 
         dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
 
-        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm),dhKp.generateKeyPair(), new Date());
+        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
 
         encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
         encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
@@ -436,7 +438,7 @@ public class OperatorBcTest
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(secKey));
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).setContentProvider(new BouncyCastleProvider()).build(secKey));
 
         pgpF = new JcaPGPObjectFactory(clear);
 

@@ -1856,7 +1856,7 @@ public class PGPGeneralTest
         PGPPublicKey publicKey = new JcaPGPPublicKeyRing(testPubKey2).getPublicKey(encP.getKeyID());
         JcaPGPDigestCalculatorProviderBuilder digBuild = new JcaPGPDigestCalculatorProviderBuilder();
         PGPSecretKey secretKey = PGPSecretKey.parseSecretKeyFromSExpr(new ByteArrayInputStream(sExprKeySub), new JcePBEProtectionRemoverFactory("test".toCharArray(),digBuild.build()).setProvider("BC"), publicKey);
-        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(secretKey.extractPrivateKey(null)));
+        InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").setContentProvider("BC").build(secretKey.extractPrivateKey(null)));
         PGPObjectFactory plainFact = new PGPObjectFactory(clear, new BcKeyFingerprintCalculator());
         PGPCompressedData cData = (PGPCompressedData)plainFact.nextObject();
         PGPObjectFactory compFact = new PGPObjectFactory(cData.getDataStream(), new BcKeyFingerprintCalculator());
@@ -2442,7 +2442,9 @@ public class PGPGeneralTest
             new JcaKeyFingerprintCalculator(), 10);
 
         ElGamalSecretBCPGKey priv = (ElGamalSecretBCPGKey)pair.getPrivateKey().getPrivateKeyDataPacket();
-        ElGamalPublicBCPGKey pub = new ElGamalPublicBCPGKey(new BCPGInputStream(new ByteArrayInputStream(secretKey2.getPublicKey().getPublicKeyPacket().getKey().getEncoded())));
+        BCPGInputStream inputStream = new BCPGInputStream(new ByteArrayInputStream(secretKey2.getPublicKey().getPublicKeyPacket().getKey().getEncoded()));
+        isTrue(inputStream.markSupported());
+        ElGamalPublicBCPGKey pub = new ElGamalPublicBCPGKey(inputStream);
         isTrue(pub.getFormat().equals("PGP"));
         isTrue(priv.getFormat().equals("PGP"));
         if (!pub.getG().modPow(priv.getX(), pub.getP()).equals(pub.getY()))
