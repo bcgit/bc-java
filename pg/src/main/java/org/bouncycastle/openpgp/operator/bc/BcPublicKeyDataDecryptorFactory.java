@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -91,10 +92,7 @@ public class BcPublicKeyDataDecryptorFactory
                     }
 
                     bi = secKeyData[1];  // encoded MPI
-                    for (int i = 0; i != tmp.length; i++)
-                    {
-                        tmp[i] = 0;
-                    }
+                    Arrays.fill(tmp, (byte)0);
 
                     if (bi.length - 2 > size) // leading Zero? Shouldn't happen but...
                     {
@@ -137,19 +135,11 @@ public class BcPublicKeyDataDecryptorFactory
                 if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
                 {
                     // skip the 0x40 header byte.
-                    if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
-                    {
-                        throw new IllegalArgumentException("Invalid Curve25519 public key");
-                    }
-                    secret = getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
+                    secret = getSecret(new X25519Agreement(), pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0], privKey, new X25519PublicKeyParameters(pEnc, 1), "25519");
                 }
                 else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
                 {
-                    if (pEnc.length != (X448PublicKeyParameters.KEY_SIZE))
-                    {
-                        throw new IllegalArgumentException("Invalid Curve448 public key");
-                    }
-                    secret = getSecret(new X448Agreement(), privKey, new X448PublicKeyParameters(pEnc, 0));
+                    secret = getSecret(new X448Agreement(), pEnc.length != X448PublicKeyParameters.KEY_SIZE, privKey, new X448PublicKeyParameters(pEnc, 0), "448");
                 }
                 else
                 {
@@ -188,8 +178,12 @@ public class BcPublicKeyDataDecryptorFactory
 
     }
 
-    private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
+    private static byte[] getSecret(RawAgreement agreement, boolean condition, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub, String curve)
     {
+        if (condition)
+        {
+            throw new IllegalArgumentException("Invalid Curve" + curve + " public key");
+        }
         agreement.init(privKey);
         byte[] secret = new byte[agreement.getAgreementSize()];
         agreement.calculateAgreement(ephPub, secret, 0);
