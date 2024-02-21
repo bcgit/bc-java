@@ -110,6 +110,7 @@ public class BcAEADUtil
     public static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
         throws PGPException
     {
+        boolean enableCamellia = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         if (encAlgorithm == SymmetricKeyAlgorithmTags.AES_128
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_192
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_256)
@@ -126,9 +127,9 @@ public class BcAEADUtil
                 throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
             }
         }
-        else if (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128 ||
-            encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192 ||
-            encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256)
+        else if (enableCamellia && (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128
+            || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192
+            || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256))
         {
             switch (aeadAlgorithm)
             {
@@ -143,7 +144,7 @@ public class BcAEADUtil
             }
         }
         // Block Cipher must work on 16 byte blocks
-        throw new PGPException("AEAD only supported for AES based algorithms");
+        throw new PGPException("AEAD only supported for AES" + (enableCamellia ? " and Camellia" : "") + " based algorithms");
     }
 
     /**
