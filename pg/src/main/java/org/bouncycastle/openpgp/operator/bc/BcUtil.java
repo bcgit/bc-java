@@ -43,7 +43,7 @@ public class BcUtil
 
         if (withIntegrityPacket)
         {
-            c.init(forEncryption, new ParametersWithIV(keyParameter, BcAEADUtil.getDefaultIV(engine)));
+            c.init(forEncryption, new ParametersWithIV(keyParameter, new byte[engine.getBlockSize()]));
         }
         else
         {

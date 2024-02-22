@@ -57,8 +57,7 @@ public class BcPBEDataDecryptorFactory
             if (secKeyData != null && secKeyData.length > 0)
             {
                 BlockCipher engine = BcImplProvider.createBlockCipher(keyAlgorithm);
-                byte[] iv = BcAEADUtil.getDefaultIV(engine);
-                BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(false, engine, key, iv);
+                BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(false, engine, key, new byte[engine.getBlockSize()]);
 
                 byte[] out = new byte[secKeyData.length];
 

@@ -118,8 +118,7 @@ public class JcePBEKeyEncryptionMethodGenerator
             String cName = PGPUtil.getSymmetricCipherName(encAlgorithm);
             Cipher c = helper.createCipher(cName + "/CFB/NoPadding");
             SecretKey sKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
-            byte[] iv = JceAEADUtil.getDefaultIV(c);
-            c.init(Cipher.ENCRYPT_MODE, sKey, new IvParameterSpec(iv));
+            c.init(Cipher.ENCRYPT_MODE, sKey, new IvParameterSpec(new byte[c.getBlockSize()]));
 
             return c.doFinal(sessionInfo, 0, sessionInfo.length);
         }
