@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
-import java.util.Locale;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
