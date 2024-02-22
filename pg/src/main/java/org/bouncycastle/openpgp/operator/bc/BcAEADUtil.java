@@ -34,6 +34,8 @@ import org.bouncycastle.util.io.Streams;
 
 public class BcAEADUtil
 {
+    final static byte[] defaultIV = new byte[]{-90, -90, -90, -90, -90, -90, -90, -90};
+
     /**
      * Generate a nonce by xor-ing the given iv with the chunk index.
      *
@@ -256,6 +258,17 @@ public class BcAEADUtil
                 return new SHA1PGPDigestCalculator();
             }
         };
+    }
+
+    static byte[] getDefaultIV(BlockCipher engine)
+    {
+        byte[] iv = new byte[engine.getBlockSize()];
+        if(engine instanceof CamelliaEngine)
+        {
+            // RFC3657 section 3.4.1 default initial value
+            System.arraycopy(defaultIV, 0, iv, 0,defaultIV.length);
+        }
+        return iv;
     }
 
     protected static class PGPAeadInputStream

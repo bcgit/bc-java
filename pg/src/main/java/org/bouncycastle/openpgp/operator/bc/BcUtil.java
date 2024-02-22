@@ -43,7 +43,7 @@ public class BcUtil
 
         if (withIntegrityPacket)
         {
-            c.init(forEncryption, new ParametersWithIV(keyParameter, new byte[engine.getBlockSize()]));
+            c.init(forEncryption, new ParametersWithIV(keyParameter, BcAEADUtil.getDefaultIV(engine)));
         }
         else
         {
@@ -59,10 +59,11 @@ public class BcUtil
      * Data (SEIPD) packets.
      * For AEAD packets, see {@link BcAEADUtil#createOpenPgpV5DataDecryptor(AEADEncDataPacket, PGPSessionKey)} and
      * {@link BcAEADUtil#createOpenPgpV6DataDecryptor(SymmetricEncIntegrityPacket, PGPSessionKey)}.
+     *
      * @param withIntegrityPacket if true, the data is contained in a SEIPD v1 packet, if false it is contained in a
      *                            SED packet.
-     * @param engine decryption engine
-     * @param key decryption key
+     * @param engine              decryption engine
+     * @param key                 decryption key
      * @return decryptor
      */
     public static PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, BlockCipher engine, byte[] key)
