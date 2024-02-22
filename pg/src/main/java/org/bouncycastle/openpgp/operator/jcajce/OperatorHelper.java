@@ -128,9 +128,7 @@ class OperatorHelper
 
             if (withIntegrityPacket)
             {
-                byte[] iv = JceAEADUtil.getDefaultIV(c);
-
-                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(new byte[c.getBlockSize()]));
             }
             else
             {

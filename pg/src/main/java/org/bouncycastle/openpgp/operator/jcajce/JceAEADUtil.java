@@ -31,8 +31,6 @@ import org.bouncycastle.util.io.Streams;
 
 class JceAEADUtil
 {
-    final static byte[] defaultIV = new byte[]{-90, -90, -90, -90, -90, -90, -90, -90};
-
     private final OperatorHelper helper;
 
     public JceAEADUtil(OperatorHelper helper)
@@ -273,19 +271,6 @@ class JceAEADUtil
 
         return helper.createCipher(cName);
     }
-
-    static byte[] getDefaultIV(Cipher c)
-    {
-        byte[] iv = new byte[c.getBlockSize()];
-        String algorithm = c.getAlgorithm().toLowerCase(Locale.getDefault());
-        if (algorithm.contains("camellia"))
-        {
-            // RFC3657 section 3.4.1 default initial value
-            System.arraycopy(defaultIV, 0, iv, 0, defaultIV.length);
-        }
-        return iv;
-    }
-
 
     static class PGPAeadInputStream
         extends InputStream

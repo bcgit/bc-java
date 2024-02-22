@@ -113,8 +113,7 @@ public class JcePBEDataDecryptorFactoryBuilder
                     {
                         String cipherName = PGPUtil.getSymmetricCipherName(keyAlgorithm);
                         Cipher keyCipher = helper.createCipher(cipherName + "/CFB/NoPadding");
-                        byte[] iv = JceAEADUtil.getDefaultIV(keyCipher);
-                        keyCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherName), new IvParameterSpec(iv));
+                        keyCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherName), new IvParameterSpec(new byte[keyCipher.getBlockSize()]));
 
                         return keyCipher.doFinal(secKeyData);
                     }
