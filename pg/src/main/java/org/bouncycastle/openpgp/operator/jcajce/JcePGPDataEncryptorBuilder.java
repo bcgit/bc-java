@@ -220,7 +220,7 @@ public class JcePGPDataEncryptorBuilder
             {
                 if (withIntegrityPacket)
                 {
-                    byte[] iv = new byte[c.getBlockSize()];
+                    byte[] iv = JceAEADUtil.getDefaultIV(c);
 
                     c.init(Cipher.ENCRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, keyBytes), new IvParameterSpec(iv));
                 }
