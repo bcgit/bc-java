@@ -1,10 +1,9 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
+import org.bouncycastle.pqc.jcajce.provider.Util;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KEM;
@@ -52,35 +51,28 @@ class SNTRUPrimeEncapsulatorSpi
 
         // Only use KDF when ktsParameterSpec is provided
         // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean wrapKey = !(parameterSpec.getKeyAlgorithmName().equals("Generic") && algorithm.equals("Generic"));
+        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
         byte[] encapsulation = secEnc.getEncapsulation();
         byte[] secret = secEnc.getSecret();
 
-        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+        byte[] secretKey;
 
-        if (wrapKey)
+        if (useKDF)
         {
             try
             {
-                KTSParameterSpec spec = parameterSpec;
-                // Generate a new ktsParameterSpec if spec is generic but algorithm is not generic
-                if (parameterSpec.getKeyAlgorithmName().equals("Generic"))
-                {
-                    spec = new KTSParameterSpec.Builder(algorithm, secretKey.length * 8).withNoKdf().build();
-                }
-
-                Wrapper kWrap = WrapUtil.getKeyWrapper(spec, secret);
-                secretKey = kWrap.wrap(secretKey, 0, secretKey.length);
-//                 secretKey = Arrays.concatenate(encapsulation, kWrap.wrap(secretKey, 0, secretKey.length));
+                secret = Util.makeKeyBytes(parameterSpec, secret);
             }
             catch (InvalidKeyException e)
             {
                 throw new RuntimeException(e);
             }
         }
+
+        secretKey = Arrays.copyOfRange(secret, from, to);
 
         return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, parameterSpec.getOtherInfo());
 

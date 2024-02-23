@@ -1,10 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
+import org.bouncycastle.pqc.jcajce.provider.Util;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.DecapsulateException;
@@ -58,36 +56,23 @@ class SNTRUPrimeDecapsulatorSpi
 
         // Only use KDF when ktsParameterSpec is provided
         // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean wrapKey = !(parameterSpec.getKeyAlgorithmName().equals("Generic") && algorithm.equals("Generic"));
+        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         byte[] secret = kemExt.extractSecret(encapsulation);
-        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
 
-        if (wrapKey)
+        if (useKDF)
         {
             try
             {
-                KTSParameterSpec spec = parameterSpec;
-                // Generate a new ktsParameterSpec if spec is generic but algorithm is not generic
-                if (parameterSpec.getKeyAlgorithmName().equals("Generic"))
-                {
-                    spec = new KTSParameterSpec.Builder(algorithm, secretKey.length * 8).withNoKdf().build();
-                }
-
-                Wrapper kWrap = WrapUtil.getKeyUnwrapper(spec, secretKey);
-                secretKey = kWrap.unwrap(secretKey, 0, secretKey.length);
-
-            }
-            catch (InvalidCipherTextException e)
-            {
-                throw new RuntimeException(e);
+                secret = Util.makeKeyBytes(parameterSpec, secret);
             }
             catch (InvalidKeyException e)
             {
                 throw new RuntimeException(e);
             }
-
         }
+        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+
         return new SecretKeySpec(secretKey, algorithm);
     }
 
