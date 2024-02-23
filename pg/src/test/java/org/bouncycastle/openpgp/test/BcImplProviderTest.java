@@ -23,6 +23,8 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
+import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -145,14 +147,7 @@ public class BcImplProviderTest
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
             (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
             (kpGen) -> new ECGenParameterSpec("P-256"));
-        testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
-            (pub, privKey) ->
-            {
-                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new EdSecretBCPGKey(
-                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
-            },
-            (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448")));
+
         testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
             (pub, privKey) ->
             {
@@ -165,16 +160,14 @@ public class BcImplProviderTest
             (pub, privKey) ->
             {
                 PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new EdSecretBCPGKey(
-                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+                return new Ed448SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
             },
             (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448")));
         testCreateSigner(PublicKeyAlgorithmTags.Ed25519, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
             (pub, privKey) ->
             {
                 PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new EdSecretBCPGKey(
-                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+                return new Ed25519SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
             },
             (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519")));
         testException("cannot recognise keyAlgorithm:", "PGPException", ()->

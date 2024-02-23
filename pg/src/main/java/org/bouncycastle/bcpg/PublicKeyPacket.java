@@ -65,9 +65,13 @@ public class PublicKeyPacket
             key = new ElGamalPublicBCPGKey(in);
             break;
         case ECDH:
-        case X25519:
-        case X448:
             key = new ECDHPublicBCPGKey(in);
+            break;
+        case X25519:
+            key = new X25519PublicBCPGKey(in);
+            break;
+        case X448:
+            key = new X448PublicBCPGKey(in);
             break;
         case ECDSA:
             key = new ECDSAPublicBCPGKey(in);

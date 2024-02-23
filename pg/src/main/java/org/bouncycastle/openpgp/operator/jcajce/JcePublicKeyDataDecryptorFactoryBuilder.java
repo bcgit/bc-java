@@ -27,9 +27,12 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -218,7 +221,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         throws PGPException
     {
         PublicKeyPacket pubKeyData = privKey.getPublicKeyPacket();
-        ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+
 
         byte[] enc = secKeyData[0];
 
@@ -244,32 +247,52 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         {
             KeyAgreement agreement;
             PublicKey publicKey;
+            int symmetricKeyAlgorithm, hashALgorithm;
+            ASN1ObjectIdentifier curveID;
+            if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
+            {
+                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+                symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
+                hashALgorithm = ecKey.getHashAlgorithm();
+                curveID = ecKey.getCurveOID();
+                // XDH
+                if (curveID.equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                    publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1,
+                        pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0], "25519");
+                }
+                else
+                {
+                    X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
+                    ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
-            // XDH
-            if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                    agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+
+                    publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                        new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
+                }
+            }
+            else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
             {
                 agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1,
-                    pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0], "25519");
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 0,
+                    pEnc.length != (X25519PublicKeyParameters.KEY_SIZE), "25519");
+                hashALgorithm = HashAlgorithmTags.SHA256;
+                symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+                curveID = CryptlibObjectIdentifiers.curvey25519;
             }
-            else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+            else
             {
                 agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
                 publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0,
                     pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
-            }
-            else
-            {
-                X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
-                ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
-
-                agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
-
-                publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
-                    new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
+                hashALgorithm = HashAlgorithmTags.SHA512;
+                symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
+                curveID = EdECObjectIdentifiers.id_X448;
             }
 
-            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
+            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator, curveID, hashALgorithm, symmetricKeyAlgorithm);
 
             PrivateKey privateKey = converter.getPrivateKey(privKey);
 
@@ -277,9 +300,9 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             agreement.doPhase(publicKey, true);
 
-            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId());
+            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
 
-            Cipher c = helper.createKeyWrapper(ecKey.getSymmetricKeyAlgorithm());
+            Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
 
             c.init(Cipher.UNWRAP_MODE, key);
 

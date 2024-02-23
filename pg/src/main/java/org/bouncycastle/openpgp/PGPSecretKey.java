@@ -667,11 +667,12 @@ public class PGPSecretKey
                 return new PGPPrivateKey(this.getKeyID(), pubPk, elPriv);
             case PGPPublicKey.ECDH:
             case PGPPublicKey.ECDSA:
-            case PGPPublicKey.X25519:
-            case PGPPublicKey.X448:
                 ECSecretBCPGKey ecPriv = new ECSecretBCPGKey(in);
-
                 return new PGPPrivateKey(this.getKeyID(), pubPk, ecPriv);
+            case PGPPublicKey.X25519:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new X25519SecretBCPGKey(in));
+            case PGPPublicKey.X448:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new X448SecretBCPGKey(in));
             case PGPPublicKey.EDDSA_LEGACY:
                 return new PGPPrivateKey(this.getKeyID(), pubPk, new EdSecretBCPGKey(in));
             case PGPPublicKey.Ed25519:

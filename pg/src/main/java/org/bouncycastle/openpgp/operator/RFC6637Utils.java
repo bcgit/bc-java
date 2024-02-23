@@ -11,6 +11,8 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -27,24 +29,23 @@ public class RFC6637Utils
 
     public static String getXDHAlgorithm(PublicKeyPacket pubKeyData)
     {
+        if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
+        {
+            return "X25519withSHA256CKDF";
+        }
+        else if (pubKeyData.getKey() instanceof X448PublicBCPGKey)
+        {
+            return "X448withSHA512CKDF";
+        }
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-        String curve;
-        if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
-        {
-            curve = "X448";
-        }
-        else
-        {
-            curve = "X25519";
-        }
         switch (ecKey.getHashAlgorithm())
         {
         case HashAlgorithmTags.SHA256:
-            return curve + "withSHA256CKDF";
+            return "X25519withSHA256CKDF";
         case HashAlgorithmTags.SHA384:
-            return curve + "withSHA384CKDF";
+            return "X25519withSHA384CKDF";
         case HashAlgorithmTags.SHA512:
-            return curve + "withSHA512CKDF";
+            return "X25519withSHA512CKDF";
         default:
             throw new IllegalArgumentException("Unknown hash algorithm specified: " + ecKey.getHashAlgorithm());
         }
@@ -111,6 +112,25 @@ public class RFC6637Utils
         pOut.write(0x01);
         pOut.write(ecKey.getHashAlgorithm());
         pOut.write(ecKey.getSymmetricKeyAlgorithm());
+        pOut.write(ANONYMOUS_SENDER);
+        pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
+
+        return pOut.toByteArray();
+    }
+
+    public static byte[] createUserKeyingMaterial(PublicKeyPacket pubKeyData, KeyFingerPrintCalculator fingerPrintCalculator,
+                                                  ASN1ObjectIdentifier cuiveOID, int hashAlgorithm, int symmetricKeyAlgorithm)
+        throws IOException, PGPException
+    {
+        ByteArrayOutputStream pOut = new ByteArrayOutputStream();
+        byte[] encOid = cuiveOID.getEncoded();
+
+        pOut.write(encOid, 1, encOid.length - 1);
+        pOut.write(pubKeyData.getAlgorithm());
+        pOut.write(0x03);
+        pOut.write(0x01);
+        pOut.write(hashAlgorithm);
+        pOut.write(symmetricKeyAlgorithm);
         pOut.write(ANONYMOUS_SENDER);
         pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
 
