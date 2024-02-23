@@ -17,7 +17,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -67,11 +69,15 @@ public class PGPUtil
     {
         {
             put(CryptlibObjectIdentifiers.curvey25519, "Curve25519");
+            put(GNUObjectIdentifiers.Ed25519, "Ed25519Legacy");
             put(EdECObjectIdentifiers.id_X25519, "Curve25519");
             put(EdECObjectIdentifiers.id_Ed25519, "Ed25519");
             put(SECObjectIdentifiers.secp256r1, "NIST P-256");
             put(SECObjectIdentifiers.secp384r1, "NIST P-384");
             put(SECObjectIdentifiers.secp521r1, "NIST P-521");
+            put(TeleTrusTObjectIdentifiers.brainpoolP256r1, "brainpoolP256r1");
+            put(TeleTrusTObjectIdentifiers.brainpoolP384r1, "brainpoolP384r1");
+            put(TeleTrusTObjectIdentifiers.brainpoolP512r1, "brainpoolP512r1");
         }
     };
 

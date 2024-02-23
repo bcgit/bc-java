@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -164,36 +165,53 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
-        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448");
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
-        testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA");
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA");
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
-
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519");
+        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-256")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-384")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-521")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-256")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-384")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-521")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen)-> {});
 
     }
 
-    private void testCreateKeyPair(int algorithm, String name)
+    private void testCreateKeyPair(int algorithm, String name, KeyPairGeneratorOperation kpgen)
         throws Exception
     {
-        testCreateKeyPair(algorithm, algorithm, name);
+        testCreateKeyPair(algorithm, algorithm, name, kpgen);
     }
 
-    private void testCreateKeyPair(int algorithm1, int algorithm2, String name)
+    private interface KeyPairGeneratorOperation
+    {
+        void initialize(KeyPairGenerator gen) throws Exception;
+    }
+
+    private void testCreateKeyPair(int algorithm1, int algorithm2, String name, KeyPairGeneratorOperation kpgen)
         throws Exception
     {
         Date creationDate = new Date();
         KeyPairGenerator gen = KeyPairGenerator.getInstance(name, "BC");
+        kpgen.initialize(gen);
         KeyPair keyPair = gen.generateKeyPair();
 
         BcPGPKeyConverter converter = new BcPGPKeyConverter();
@@ -208,7 +226,7 @@ public class OperatorBcTest
         PrivateKey privKey = jcaPGPKeyConverter.getPrivateKey(jcaPgpPair.getPrivateKey());
         PublicKey pubKey = jcaPGPKeyConverter.getPublicKey(jcaPgpPair.getPublicKey());
 
-        if (algorithm1 == algorithm2 &&!Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
+        if (algorithm1 == algorithm2 && !Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
             bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded()))
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair private keys are not equal.");
