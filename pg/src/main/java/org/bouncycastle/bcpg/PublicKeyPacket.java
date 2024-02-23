@@ -74,8 +74,10 @@ public class PublicKeyPacket
             break;
         case EDDSA_LEGACY:
         case Ed25519:
-        case Ed448:
             key = new EdDSAPublicBCPGKey(in);
+            break;
+        case Ed448:
+            key = new Ed448PublicBCPGKey(in);
             break;
         default:
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);

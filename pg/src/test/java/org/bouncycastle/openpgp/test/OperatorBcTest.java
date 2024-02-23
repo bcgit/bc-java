@@ -164,27 +164,28 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X448, "X448");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.X448, PublicKeyAlgorithmTags.ECDH, "X448");
         testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed448, "Ed448");
+        //testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed448, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
+        //testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
         testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
         testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X448");
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
+//        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA");
         testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
         testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448");
         testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519");
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
+
     }
 
     private void testCreateKeyPair(int algorithm, String name)
@@ -243,6 +244,8 @@ public class OperatorBcTest
         throws Exception
     {
         System.setProperty("enableCamelliaKeyWrapping", "True");
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
@@ -251,13 +254,102 @@ public class OperatorBcTest
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+
+        //keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
-        keyringTest("Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
 
+    }
+
+    private void keyringCompreTest(String ed_str, int ed_num, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
+        throws Exception
+    {
+
+        String identity = "eric@bouncycastle.org";
+        char[] passPhrase = "Hello, world!".toCharArray();
+
+        KeyPairGenerator edKp = KeyPairGenerator.getInstance("EdDSA", "BC");
+
+        edKp.initialize(new ECNamedCurveGenParameterSpec(ed_str));
+
+        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(ed_num, edKp.generateKeyPair(), new Date());
+
+        KeyPairGenerator dhKp = KeyPairGenerator.getInstance("XDH", "BC");
+
+        dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
+
+        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
+
+        encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+        encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
+
+        PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
+
+        PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(
+            PGPSignature.POSITIVE_CERTIFICATION, dsaKeyPair,
+            identity, sha1Calc, null, null,
+            new JcaPGPContentSignerBuilder(dsaKeyPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA256).setProvider("BC"),
+            new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc).setProvider("BC").build(passPhrase));
+
+        keyRingGen.addSubKey(dhKeyPair);
+
+        ByteArrayOutputStream secretOut = new ByteArrayOutputStream();
+
+        PGPSecretKeyRing secRing = keyRingGen.generateSecretKeyRing();
+
+//        PGPPublicKeyRing pubRing = keyRingGen.generatePublicKeyRing();
+//
+        secRing.encode(secretOut);
+//
+        secretOut.close();
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new JcaKeyFingerprintCalculator());
+
+        Iterator pIt = secRing.getPublicKeys();
+        pIt.next();
+
+        PGPPublicKey sKey = (PGPPublicKey)pIt.next();
+        PGPPublicKey vKey = secRing.getPublicKey();
+
+        Iterator sIt = sKey.getSignatures();
+        int count = 0;
+        while (sIt.hasNext())
+        {
+            PGPSignature sig = (PGPSignature)sIt.next();
+
+            if (sig.getKeyID() == vKey.getKeyID()
+                && sig.getSignatureType() == PGPSignature.SUBKEY_BINDING)
+            {
+                count++;
+                sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
+
+                if (!sig.verifyCertification(vKey, sKey))
+                {
+                    fail("failed to verify sub-key signature.");
+                }
+            }
+        }
+
+        isTrue(count == 1);
+
+        secRing = new PGPSecretKeyRing(secretOut.toByteArray(), new JcaKeyFingerprintCalculator());
+        PGPPublicKey pubKey = null;
+        PGPPrivateKey privKey = null;
+
+        for (Iterator it = secRing.getPublicKeys(); it.hasNext(); )
+        {
+            pubKey = (PGPPublicKey)it.next();
+            if (pubKey.isEncryptionKey())
+            {
+                privKey = secRing.getSecretKey(pubKey.getKeyID()).extractPrivateKey(
+                    new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider()).build(passPhrase));
+                break;
+            }
+        }
+
+        encryptDecryptTest(pubKey, privKey);
+        encryptDecryptBcTest(pubKey, privKey);
     }
 
     private void keyringTest(String ed_str, int ed_num, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)

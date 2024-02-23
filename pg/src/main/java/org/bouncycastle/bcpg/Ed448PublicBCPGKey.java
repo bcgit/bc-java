@@ -3,13 +3,14 @@ package org.bouncycastle.bcpg;
 import java.io.IOException;
 
 public class Ed448PublicBCPGKey
-        extends OctetArrayBCPGKey
+    extends OctetArrayBCPGKey
 {
     public static final int LENGTH = 57;
 
     public Ed448PublicBCPGKey(BCPGInputStream in)
-            throws IOException
+        throws IOException
     {
+        //super(in);
         super(LENGTH, in);
     }
 

@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -30,6 +31,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -157,7 +159,9 @@ public class BcPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
-                return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_Ed448, Ed448.SECRET_KEY_SIZE, privPk);
+                return PrivateKeyFactory.createKey((new PrivateKeyInfo(
+                    new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448),
+                    new DEROctetString(BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX())))));
             }
 
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
@@ -265,9 +269,9 @@ public class BcPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
-                EdDSAPublicBCPGKey eddsaK = (EdDSAPublicBCPGKey)publicPk.getKey();
+                Ed448PublicBCPGKey eddsaK = (Ed448PublicBCPGKey)publicPk.getKey();
 
-                byte[] pEnc = BigIntegers.asUnsignedByteArray(eddsaK.getEncodedPoint());
+                byte[] pEnc = eddsaK.getKey().clone();
 
                 return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed448, pEnc, 0);
             }
@@ -476,7 +480,7 @@ public class BcPGPKeyConverter
         {
             byte[] pointEnc = new byte[Ed448PublicKeyParameters.KEY_SIZE];
             ((Ed448PublicKeyParameters)pubKey).encode(pointEnc, 0);
-            return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, pointEnc));
+            return new Ed448PublicBCPGKey(pointEnc);
         }
         else if (pubKey instanceof X25519PublicKeyParameters)
         {
