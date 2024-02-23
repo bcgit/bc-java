@@ -20,7 +20,10 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
 import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -147,21 +150,19 @@ public class BcPGPKeyConverter
 
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
-                if (((EdDSAPublicBCPGKey)pubPk.getKey()).getCurveOID().equals(EdECObjectIdentifiers.id_Ed448))
-                {
-                    return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_Ed448, Ed448.SECRET_KEY_SIZE, privPk);
-                }
                 return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_Ed25519, Ed25519.SECRET_KEY_SIZE, privPk);
             }
             case PublicKeyAlgorithmTags.Ed25519:
             {
-                return implGetPrivateKeyPKCS8(EdECObjectIdentifiers.id_Ed25519, Ed25519.SECRET_KEY_SIZE, privPk);
+                return PrivateKeyFactory.createKey((new PrivateKeyInfo(
+                    new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
+                    new DEROctetString(BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, new BigInteger(1, privPk.getEncoded()))))));
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
                 return PrivateKeyFactory.createKey((new PrivateKeyInfo(
                     new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448),
-                    new DEROctetString(BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX())))));
+                    new DEROctetString(BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, new BigInteger(1, privPk.getEncoded()))))));
             }
 
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
@@ -246,33 +247,22 @@ public class BcPGPKeyConverter
 
                 byte[] pEnc = BigIntegers.asUnsignedByteArray(eddsaK.getEncodedPoint());
 
-                if (pEnc.length < 1)
+                if (pEnc.length < 1 || pEnc[0] != 0x40)
                 {
                     throw new IllegalArgumentException("Invalid EdDSA public key");
                 }
-
-                if (pEnc[0] == 0x40 && !eddsaK.getCurveOID().equals(EdECObjectIdentifiers.id_Ed448))
-                {
-                    return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed25519, pEnc, 1);
-                }
-                else if (eddsaK.getCurveOID().equals(EdECObjectIdentifiers.id_Ed448))
-                {
-                    return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed448, pEnc, 0);
-                }
-
-                throw new IllegalArgumentException("Invalid EdDSA public key");
+                return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed25519, pEnc, 1);
             }
             case PublicKeyAlgorithmTags.Ed25519:
             {
-                byte[] pEnc = get25519EncodedPoint(((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint(), "Ed");
-                return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed25519, pEnc, 1);
+                Ed25519PublicBCPGKey eddsaK = (Ed25519PublicBCPGKey)publicPk.getKey();
+                byte[] pEnc = eddsaK.getKey().clone();
+                return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed25519, pEnc, 0);
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
                 Ed448PublicBCPGKey eddsaK = (Ed448PublicBCPGKey)publicPk.getKey();
-
                 byte[] pEnc = eddsaK.getKey().clone();
-
                 return implGetPublicKeyX509(EdECObjectIdentifiers.id_Ed448, pEnc, 0);
             }
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
@@ -377,22 +367,15 @@ public class BcPGPKeyConverter
 
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
         {
-            if (privKey instanceof Ed25519PrivateKeyParameters)
-            {
-                return getEdSecretBCPGKey(((Ed25519PrivateKeyParameters)privKey).getEncoded());
-            }
-            else
-            {
-                return getEdSecretBCPGKey(((Ed448PrivateKeyParameters)privKey).getEncoded());
-            }
+            return getEdSecretBCPGKey(((Ed25519PrivateKeyParameters)privKey).getEncoded());
         }
         case PublicKeyAlgorithmTags.Ed25519:
         {
-            return getEdSecretBCPGKey(((Ed25519PrivateKeyParameters)privKey).getEncoded());
+            return new Ed25519SecretBCPGKey(((Ed25519PrivateKeyParameters)privKey).getEncoded());
         }
         case PublicKeyAlgorithmTags.Ed448:
         {
-            return getEdSecretBCPGKey(((Ed448PrivateKeyParameters)privKey).getEncoded());
+            return new Ed448SecretBCPGKey(((Ed448PrivateKeyParameters)privKey).getEncoded());
         }
         case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
         case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
@@ -468,6 +451,12 @@ public class BcPGPKeyConverter
             {
                 throw new PGPException("unknown EC algorithm");
             }
+        }
+        else if (algorithm == PublicKeyAlgorithmTags.Ed25519)
+        {
+            byte[] pointEnc = new byte[Ed25519PublicKeyParameters.KEY_SIZE];
+            ((Ed25519PublicKeyParameters)pubKey).encode(pointEnc, 0);
+            return new Ed25519PublicBCPGKey(pointEnc);
         }
         else if (pubKey instanceof Ed25519PublicKeyParameters)
         {

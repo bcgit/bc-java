@@ -98,15 +98,10 @@ class BcImplProvider
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
-            if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
-            {
-                return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
-            }
-            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
-        case PublicKeyAlgorithmTags.Ed448:
-            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed25519:
             return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+        case PublicKeyAlgorithmTags.Ed448:
+            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         default:
             throw new PGPException("cannot recognise keyAlgorithm: " + keyAlgorithm);
         }

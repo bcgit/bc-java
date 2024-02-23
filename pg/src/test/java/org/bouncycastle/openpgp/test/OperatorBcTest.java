@@ -164,13 +164,13 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X448, "X448");
         testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.X448, PublicKeyAlgorithmTags.ECDH, "X448");
         testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519");
         //testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed448, "Ed448");
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
         //testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed448");
         testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
         testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
@@ -213,7 +213,7 @@ public class OperatorBcTest
         PrivateKey privKey = jcaPGPKeyConverter.getPrivateKey(jcaPgpPair.getPrivateKey());
         PublicKey pubKey = jcaPGPKeyConverter.getPublicKey(jcaPgpPair.getPublicKey());
 
-        if (!Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
+        if (algorithm1 == algorithm2 &&!Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
             bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded()))
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair private keys are not equal.");
@@ -244,10 +244,9 @@ public class OperatorBcTest
         throws Exception
     {
         System.setProperty("enableCamelliaKeyWrapping", "True");
-        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
