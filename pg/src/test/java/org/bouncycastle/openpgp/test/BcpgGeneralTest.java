@@ -170,7 +170,7 @@ public class BcpgGeneralTest
     {
         S2K s2k = new S2K(HashAlgorithmTags.SHA1);
         SymmetricKeyEncSessionPacket packet = SymmetricKeyEncSessionPacket.createV4Packet(SymmetricKeyAlgorithmTags.AES_256, s2k, null);
-
+//PGPObjectFactory
         packet = new SymmetricKeyEncSessionPacket(new BCPGInputStream(new ByteArrayInputStream(packet.getEncoded())));
         isEquals(s2k.getHashAlgorithm(), packet.getS2K().getHashAlgorithm());
         isEquals(s2k.getType(), packet.getS2K().getType());

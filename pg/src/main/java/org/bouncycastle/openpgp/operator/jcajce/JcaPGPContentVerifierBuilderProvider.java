@@ -73,17 +73,8 @@ public class JcaPGPContentVerifierBuilderProvider
         public PGPContentVerifier build(final PGPPublicKey publicKey)
             throws PGPException
         {
-            final Signature signature;
-            if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY &&
-                publicKey.getPublicKeyPacket().getKey() instanceof EdDSAPublicBCPGKey
-                && ((EdDSAPublicBCPGKey)publicKey.getPublicKeyPacket().getKey()).getCurveOID().equals(EdECObjectIdentifiers.id_Ed448))
-            {
-                signature = helper.createSignature(PublicKeyAlgorithmTags.Ed448, hashAlgorithm);
-            }
-            else
-            {
-                signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
-            }
+            final Signature signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+
             final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
             final PublicKey jcaKey = keyConverter.getPublicKey(publicKey);
 
@@ -99,6 +90,7 @@ public class JcaPGPContentVerifierBuilderProvider
             return new PGPContentVerifier()
             {
                 private final boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
+
                 public int getHashAlgorithm()
                 {
                     return hashAlgorithm;

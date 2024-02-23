@@ -57,6 +57,7 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
@@ -329,7 +330,16 @@ public class JcaPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.Ed448:
             {
-                return implGetPublicKeyX509("EdDSA", EdECObjectIdentifiers.id_Ed448, ((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint());
+                BCPGKey key = publicPk.getKey();
+                if (key instanceof Ed448PublicBCPGKey)
+                {
+                    return implGetPublicKeyX509("EdDSA", EdECObjectIdentifiers.id_Ed448, new BigInteger(1,((Ed448PublicBCPGKey)publicPk.getKey()).getEncoded()));
+                }
+                else
+                {
+                    return implGetPublicKeyX509("EdDSA", EdECObjectIdentifiers.id_Ed448, ((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint());
+                }
+
             }
 
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
@@ -529,7 +539,12 @@ public class JcaPGPKeyConverter
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED4", 0, 3))
         {
-            return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEnc(pubKey, Ed448.PUBLIC_KEY_SIZE)));
+            SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+            byte[] pointEnc = new byte[Ed448.PUBLIC_KEY_SIZE];
+
+            System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
+            return new Ed448PublicBCPGKey(pointEnc);
+            //return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEnc(pubKey, Ed448.PUBLIC_KEY_SIZE)));
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
         {

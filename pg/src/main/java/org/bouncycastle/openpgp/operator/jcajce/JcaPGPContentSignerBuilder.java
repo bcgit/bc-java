@@ -95,15 +95,7 @@ public class JcaPGPContentSignerBuilder
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final Signature signature;
-        if (privateKey.getAlgorithm().equalsIgnoreCase("ed448") && keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
-        {
-            signature = helper.createSignature(PublicKeyAlgorithmTags.Ed448, hashAlgorithm);
-        }
-        else
-        {
-            signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
-        }
-
+        signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
 
         try
         {
@@ -124,6 +116,7 @@ public class JcaPGPContentSignerBuilder
         return new PGPContentSigner()
         {
             private final boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
+
             public int getType()
             {
                 return signatureType;
