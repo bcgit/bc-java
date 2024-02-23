@@ -8,8 +8,12 @@ import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
@@ -109,7 +113,7 @@ public class BcPublicKeyDataDecryptorFactory
             }
             else
             {
-                ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
+
                 byte[] enc = secKeyData[0];
 
                 int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
@@ -131,40 +135,61 @@ public class BcPublicKeyDataDecryptorFactory
                 System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
 
                 byte[] secret;
-                // XDH
-                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                RFC6637KDFCalculator rfc6637KDFCalculator;
+                byte[] userKeyingMaterial;
+                int symmetricKeyAlgorithm, hashAlgorithm;
+                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
                 {
-                    // skip the 0x40 header byte.
-                    secret = getSecret(new X25519Agreement(), pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0], privKey, new X25519PublicKeyParameters(pEnc, 1), "25519");
+                    ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
+                    // XDH
+                    if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                    {
+                        // skip the 0x40 header byte.
+                        secret = getSecret(new X25519Agreement(), pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0], privKey, new X25519PublicKeyParameters(pEnc, 1), "25519");
+                    }
+                    else
+                    {
+                        ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
+
+                        ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
+                            ecParameters);
+
+                        ECDHBasicAgreement agreement = new ECDHBasicAgreement();
+                        agreement.init(privKey);
+                        BigInteger S = agreement.calculateAgreement(ephPub);
+                        secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+                    }
+
+                    userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(),
+                        new BcKeyFingerprintCalculator());
+                    symmetricKeyAlgorithm = ecPubKey.getSymmetricKeyAlgorithm();
+                    hashAlgorithm = ecPubKey.getHashAlgorithm();
                 }
-                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
                 {
-                    secret = getSecret(new X448Agreement(), pEnc.length != X448PublicKeyParameters.KEY_SIZE, privKey, new X448PublicKeyParameters(pEnc, 0), "448");
+                    secret = getSecret(new X25519Agreement(), pEnc.length != X25519PublicKeyParameters.KEY_SIZE, privKey, new X25519PublicKeyParameters(pEnc, 0), "25519");
+                    symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+                    hashAlgorithm = HashAlgorithmTags.SHA256;
+                    userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(),
+                        new BcKeyFingerprintCalculator(), CryptlibObjectIdentifiers.curvey25519, hashAlgorithm, symmetricKeyAlgorithm);
                 }
                 else
                 {
-                    ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
-
-                    ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
-                        ecParameters);
-
-                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-                    agreement.init(privKey);
-                    BigInteger S = agreement.calculateAgreement(ephPub);
-                    secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+                    //PublicKeyAlgorithmTags.X448
+                    secret = getSecret(new X448Agreement(), pEnc.length != X448PublicKeyParameters.KEY_SIZE, privKey, new X448PublicKeyParameters(pEnc, 0), "448");
+                    symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
+                    hashAlgorithm = HashAlgorithmTags.SHA512;
+                    userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(),
+                        new BcKeyFingerprintCalculator(), EdECObjectIdentifiers.id_X448, hashAlgorithm, symmetricKeyAlgorithm);
                 }
-
-                RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
-                    new BcPGPDigestCalculatorProvider().get(ecPubKey.getHashAlgorithm()),
-                    ecPubKey.getSymmetricKeyAlgorithm());
-                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(),
-                    new BcKeyFingerprintCalculator());
-
+                rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm),
+                    symmetricKeyAlgorithm);
                 KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
 
-                Wrapper c = BcImplProvider.createWrapper(ecPubKey.getSymmetricKeyAlgorithm());
+                Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
                 c.init(false, key);
                 return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
+
             }
         }
         catch (IOException e)
