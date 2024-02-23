@@ -673,11 +673,11 @@ public class PGPSecretKey
 
                 return new PGPPrivateKey(this.getKeyID(), pubPk, ecPriv);
             case PGPPublicKey.EDDSA_LEGACY:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new EdSecretBCPGKey(in));
             case PGPPublicKey.Ed25519:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed25519SecretBCPGKey(in));
             case PGPPublicKey.Ed448:
-                EdSecretBCPGKey edPriv = new EdSecretBCPGKey(in);
-
-                return new PGPPrivateKey(this.getKeyID(), pubPk, edPriv);
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed448SecretBCPGKey(in));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }

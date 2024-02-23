@@ -73,8 +73,10 @@ public class PublicKeyPacket
             key = new ECDSAPublicBCPGKey(in);
             break;
         case EDDSA_LEGACY:
-        case Ed25519:
             key = new EdDSAPublicBCPGKey(in);
+            break;
+        case Ed25519:
+            key = new Ed25519PublicBCPGKey(in);
             break;
         case Ed448:
             key = new Ed448PublicBCPGKey(in);
