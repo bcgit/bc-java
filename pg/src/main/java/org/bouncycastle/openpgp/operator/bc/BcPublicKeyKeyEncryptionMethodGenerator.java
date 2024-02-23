@@ -106,25 +106,6 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                     return encryptSessionInfo(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
-//                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
-//                {
-//                    X448KeyPairGenerator gen = new X448KeyPairGenerator();
-//                    gen.init(new X448KeyGenerationParameters(random));
-//
-//                    AsymmetricCipherKeyPair ephKp = gen.generateKeyPair();
-//
-//                    X448Agreement agreement = new X448Agreement();
-//                    agreement.init(ephKp.getPrivate());
-//
-//                    byte[] secret = new byte[agreement.getAgreementSize()];
-//                    agreement.calculateAgreement(cryptoPublicKey, secret, 0);
-//
-//                    byte[] ephPubEncoding = new byte[X448PublicKeyParameters.KEY_SIZE];
-//
-//                    ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 0);
-//
-//                    return encryptSessionInfo(ecPubKey, sessionInfo, secret, userKeyingMaterial, ephPubEncoding);
-//                }
                 else
                 {
                     ECDomainParameters ecParams = ((ECPublicKeyParameters)cryptoPublicKey).getParameters();

@@ -147,6 +147,21 @@ public class BcImplProviderTest
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
             (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
             (kpGen) -> new ECGenParameterSpec("P-256"));
+        testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
+            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
+            (kpGen) -> new ECGenParameterSpec("P-384"));
+        testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
+            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
+            (kpGen) -> new ECGenParameterSpec("P-521"));
+        testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
+            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
+            (kpGen) -> new ECGenParameterSpec("brainpoolP256r1"));
+        testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
+            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
+            (kpGen) -> new ECGenParameterSpec("brainpoolP384r1"));
+        testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
+            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
+            (kpGen) -> new ECGenParameterSpec("brainpoolP512r1"));
 
         testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
             (pub, privKey) ->
