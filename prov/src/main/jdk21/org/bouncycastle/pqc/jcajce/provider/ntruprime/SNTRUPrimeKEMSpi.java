@@ -1,18 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
-import org.bouncycastle.util.Arrays;
 
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KEMSpi;
-import javax.security.auth.DestroyFailedException;
-import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
@@ -33,8 +23,8 @@ public class SNTRUPrimeKEMSpi
         }
         if (spec == null)
         {
-            // TODO: default should probably use shake.
-            spec = new KTSParameterSpec.Builder("AES-KWP", 256).build();
+            // Do not wrap key, no KDF
+            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
         }
         if (!(spec instanceof KTSParameterSpec))
         {
@@ -56,8 +46,8 @@ public class SNTRUPrimeKEMSpi
         }
         if (spec == null)
         {
-            // TODO: default should probably use shake.
-            spec = new KTSParameterSpec.Builder("AES-KWP", 256).build();
+            // Do not unwrap key, no KDF
+            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
         }
         if (!(spec instanceof KTSParameterSpec))
         {
