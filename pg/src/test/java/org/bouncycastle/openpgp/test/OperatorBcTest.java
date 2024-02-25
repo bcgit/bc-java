@@ -257,35 +257,41 @@ public class OperatorBcTest
         throws Exception
     {
         System.setProperty("enableCamelliaKeyWrapping", "True");
-        keyringTest("ED25519", PublicKeyAlgorithmTags.Ed25519, "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.Ed25519, "XDH","X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
-        keyringTest("Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
+        keyringTest("ECDSA","NIST P-256", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-256", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ECDSA","NIST P-384", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-384", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("ECDSA","NIST P-521", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-521", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("ECDSA","brainpoolP256r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP256r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ECDSA","brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("ECDSA","brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
 
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
 
-        keyringTest("Ed448", PublicKeyAlgorithmTags.Ed448, "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("EdDSA","Ed448", PublicKeyAlgorithmTags.Ed448, "XDH","X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
     }
 
-    private void keyringTest(String ed_str, int ed_num, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
+    private void keyringTest(String algorithmName1, String ed_str, int ed_num, String algorithmName2, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
         throws Exception
     {
 
         String identity = "eric@bouncycastle.org";
         char[] passPhrase = "Hello, world!".toCharArray();
 
-        KeyPairGenerator edKp = KeyPairGenerator.getInstance("EdDSA", "BC");
+        KeyPairGenerator edKp = KeyPairGenerator.getInstance(algorithmName1, "BC");
 
         edKp.initialize(new ECNamedCurveGenParameterSpec(ed_str));
 
         PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(ed_num, edKp.generateKeyPair(), new Date());
 
-        KeyPairGenerator dhKp = KeyPairGenerator.getInstance("XDH", "BC");
+        KeyPairGenerator dhKp = KeyPairGenerator.getInstance(algorithmName2, "BC");
 
         dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
 

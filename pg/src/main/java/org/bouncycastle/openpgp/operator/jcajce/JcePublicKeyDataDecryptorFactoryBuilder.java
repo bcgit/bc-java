@@ -27,12 +27,12 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -224,36 +224,65 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
 
         byte[] enc = secKeyData[0];
-
-        int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-        if ((2 + pLen + 1) > enc.length)
+        int pLen;
+        byte[] pEnc;
+        byte[] keyEnc;
+        if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
         {
-            throw new PGPException("encoded length out of range");
+            pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
+            if ((2 + pLen + 1) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+
+            pEnc = new byte[pLen];
+            System.arraycopy(enc, 2, pEnc, 0, pLen);
+            int keyLen = enc[pLen + 2] & 0xff;
+            if ((2 + pLen + 1 + keyLen) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+
+            keyEnc = new byte[keyLen];
+            System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
         }
-
-        byte[] pEnc = new byte[pLen];
-        System.arraycopy(enc, 2, pEnc, 0, pLen);
-
-        int keyLen = enc[pLen + 2] & 0xff;
-        if ((2 + pLen + 1 + keyLen) > enc.length)
+        else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
         {
-            throw new PGPException("encoded length out of range");
+            pLen = X25519PublicBCPGKey.LENGTH;
+            pEnc = new byte[pLen];
+            System.arraycopy(enc, 0, pEnc, 0, pLen);
+            int keyLen = enc[pLen] & 0xff;
+            if ((pLen + 1 + keyLen) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+            keyEnc = new byte[keyLen];
+            System.arraycopy(enc,  pLen + 1, keyEnc, 0, keyLen);
         }
-
-        byte[] keyEnc = new byte[keyLen];
-        System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
+        else
+        {
+            pLen = X448PublicBCPGKey.LENGTH;
+            pEnc = new byte[pLen];
+            System.arraycopy(enc, 0, pEnc, 0, pLen);
+            int keyLen = enc[pLen] & 0xff;
+            if ((pLen + 1 + keyLen) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+            keyEnc = new byte[keyLen];
+            System.arraycopy(enc,  pLen + 1, keyEnc, 0, keyLen);
+        }
 
         try
         {
             KeyAgreement agreement;
             PublicKey publicKey;
-            int symmetricKeyAlgorithm, hashALgorithm;
+            int symmetricKeyAlgorithm;
             ASN1ObjectIdentifier curveID;
             if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
             {
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
                 symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
-                hashALgorithm = ecKey.getHashAlgorithm();
                 curveID = ecKey.getCurveOID();
                 // XDH
                 if (curveID.equals(CryptlibObjectIdentifiers.curvey25519))
@@ -276,23 +305,17 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
             {
                 agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 0,
-                    pEnc.length != (X25519PublicKeyParameters.KEY_SIZE), "25519");
-                hashALgorithm = HashAlgorithmTags.SHA256;
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 0, pEnc.length != (X25519PublicKeyParameters.KEY_SIZE), "25519");
                 symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
-                curveID = CryptlibObjectIdentifiers.curvey25519;
             }
             else
             {
                 agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0,
-                    pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
-                hashALgorithm = HashAlgorithmTags.SHA512;
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0, pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
                 symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
-                curveID = EdECObjectIdentifiers.id_X448;
             }
 
-            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator, curveID, hashALgorithm, symmetricKeyAlgorithm);
+            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
 
             PrivateKey privateKey = converter.getPrivateKey(privKey);
 

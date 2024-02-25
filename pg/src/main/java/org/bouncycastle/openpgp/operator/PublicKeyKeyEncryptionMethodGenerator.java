@@ -49,6 +49,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             throw new IllegalArgumentException("Can't use ECDSA for encryption.");
         case PublicKeyAlgorithmTags.Ed448:
         case PublicKeyAlgorithmTags.Ed25519:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             throw new IllegalArgumentException("Can't use EdDSA for encryption.");
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
@@ -178,6 +179,15 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     {
         byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
 
+        byte[] rv = new byte[VB.length + 1 + c.length];
+        System.arraycopy(VB, 0, rv, 0, VB.length);
+        rv[VB.length] = (byte)c.length;
+        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
+        return rv;
+    }
+
+    protected static byte[] getSessionInfo_25519or448(byte[] VB, byte[] c)
+    {
         byte[] rv = new byte[VB.length + 1 + c.length];
         System.arraycopy(VB, 0, rv, 0, VB.length);
         rv[VB.length] = (byte)c.length;

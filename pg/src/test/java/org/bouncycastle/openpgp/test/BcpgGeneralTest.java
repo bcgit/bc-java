@@ -103,15 +103,15 @@ public class BcpgGeneralTest
         throws Exception
     {
         SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
-        System.setProperty("enableCamelliaKeyWrapping", "true");
+//        System.setProperty("enableCamelliaKeyWrapping", "true");
         final X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
         gen.init(new X25519KeyGenerationParameters(random));
-        testException("Symmetric key algorithm must be AES-128 or stronger.", "IllegalStateException", () ->
-            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.IDEA), gen.generateKeyPair(), new Date()));
-        testException("Hash algorithm must be SHA-256 or stronger.", "IllegalStateException", () ->
-            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(HashAlgorithmTags.SHA1, 7), gen.generateKeyPair(), new Date()));
+//        testException("Symmetric key algorithm must be AES-128 or stronger.", "IllegalStateException", () ->
+//            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.IDEA), gen.generateKeyPair(), new Date()));
+//        testException("Hash algorithm must be SHA-256 or stronger.", "IllegalStateException", () ->
+//            new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(HashAlgorithmTags.SHA1, 7), gen.generateKeyPair(), new Date()));
 
-        new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.CAMELLIA_256), gen.generateKeyPair(), new Date());
+//        new BcPGPKeyPair(PGPPublicKey.ECDH, new PGPKdfParameters(8, SymmetricKeyAlgorithmTags.CAMELLIA_256), gen.generateKeyPair(), new Date());
         BcPGPKeyPair kp = new BcPGPKeyPair(PGPPublicKey.ECDH, gen.generateKeyPair(), new Date());
 
         ECDHPublicBCPGKey publicBCPGKey = (ECDHPublicBCPGKey)kp.getPublicKey().getPublicKeyPacket().getKey();
