@@ -121,3 +121,22 @@ extractIncludeTestProto {
 
 createStartScripts('org.bouncycastle.mls.client.impl.MLSClient')
 
+task sourcesJar(type: Jar) {
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveBaseName = jar.archiveBaseName
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
