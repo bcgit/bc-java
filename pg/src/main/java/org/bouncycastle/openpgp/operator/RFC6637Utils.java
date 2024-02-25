@@ -4,9 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -103,28 +105,31 @@ public class RFC6637Utils
         throws IOException, PGPException
     {
         ByteArrayOutputStream pOut = new ByteArrayOutputStream();
-        ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-        byte[] encOid = ecKey.getCurveOID().getEncoded();
-
-        pOut.write(encOid, 1, encOid.length - 1);
-        pOut.write(pubKeyData.getAlgorithm());
-        pOut.write(0x03);
-        pOut.write(0x01);
-        pOut.write(ecKey.getHashAlgorithm());
-        pOut.write(ecKey.getSymmetricKeyAlgorithm());
-        pOut.write(ANONYMOUS_SENDER);
-        pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
-
-        return pOut.toByteArray();
-    }
-
-    public static byte[] createUserKeyingMaterial(PublicKeyPacket pubKeyData, KeyFingerPrintCalculator fingerPrintCalculator,
-                                                  ASN1ObjectIdentifier cuiveOID, int hashAlgorithm, int symmetricKeyAlgorithm)
-        throws IOException, PGPException
-    {
-        ByteArrayOutputStream pOut = new ByteArrayOutputStream();
-        byte[] encOid = cuiveOID.getEncoded();
-
+        BCPGKey key = pubKeyData.getKey();
+        ASN1ObjectIdentifier curveID;
+        int hashAlgorithm, symmetricKeyAlgorithm;
+        if (key instanceof X25519PublicBCPGKey)
+        {
+            curveID = CryptlibObjectIdentifiers.curvey25519;
+            symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+            hashAlgorithm = HashAlgorithmTags.SHA256;
+        }
+        else if (key instanceof X448PublicBCPGKey)
+        {
+            curveID = EdECObjectIdentifiers.id_X448;
+            symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
+            hashAlgorithm = HashAlgorithmTags.SHA512;
+//            pOut.write(key.getEncoded());
+//            pOut.write(EdECObjectIdentifiers.id_X448.getEncoded());
+        }
+        else
+        {
+            ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+            curveID = ecKey.getCurveOID();
+            hashAlgorithm = ecKey.getHashAlgorithm();
+            symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
+        }
+        byte[] encOid = curveID.getEncoded();
         pOut.write(encOid, 1, encOid.length - 1);
         pOut.write(pubKeyData.getAlgorithm());
         pOut.write(0x03);
