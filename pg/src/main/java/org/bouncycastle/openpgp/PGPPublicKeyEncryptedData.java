@@ -5,6 +5,7 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -78,7 +79,7 @@ public class PGPPublicKeyEncryptedData
         else if (keyData.getVersion() == PublicKeyEncSessionPacket.VERSION_6)
         {
             // PKESK v5 stores the cipher algorithm in the SEIPD v2 packet fields.
-            return ((SymmetricEncIntegrityPacket) encData).getCipherAlgorithm();
+            return ((SymmetricEncIntegrityPacket)encData).getCipherAlgorithm();
         }
         else
         {
@@ -98,11 +99,14 @@ public class PGPPublicKeyEncryptedData
         throws PGPException
     {
         byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
-        if (!confirmCheckSum(sessionData))
+        if (!(keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448) && !confirmCheckSum(sessionData))
         {
             throw new PGPKeyValidationException("key checksum failed");
         }
-
+        if (keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448)
+        {
+            return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length));
+        }
         return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
     }
 

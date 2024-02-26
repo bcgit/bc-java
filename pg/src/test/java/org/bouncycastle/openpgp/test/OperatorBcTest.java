@@ -259,6 +259,10 @@ public class OperatorBcTest
         System.setProperty("enableCamelliaKeyWrapping", "True");
         keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.Ed25519, "XDH","X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
+        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+
+
+
         keyringTest("ECDSA","NIST P-256", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-256", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ECDSA","NIST P-384", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-384", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("ECDSA","NIST P-521", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-521", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
@@ -266,7 +270,7 @@ public class OperatorBcTest
         keyringTest("ECDSA","brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("ECDSA","brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
 
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+
         keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
