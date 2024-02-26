@@ -80,18 +80,25 @@ public class SExprParser
 
                 SXprUtils.skipCloseParenthesis(inputStream);
 
-                byte[] qVal;
+                byte[] qVal = null;
 
-                SXprUtils.skipOpenParenthesis(inputStream);
+                while (qVal == null)
+                {
+                    SXprUtils.skipOpenParenthesis(inputStream);
 
-                type = SXprUtils.readString(inputStream, inputStream.read());
-                if (type.equals("q"))
-                {
-                    qVal = SXprUtils.readBytes(inputStream, inputStream.read());
-                }
-                else
-                {
-                    throw new PGPException("no q value found");
+                    type = SXprUtils.readString(inputStream, inputStream.read());
+                    if (type.equals("q"))
+                    {
+                        qVal = SXprUtils.readBytes(inputStream, inputStream.read());
+                    }
+                    else if (type.equals("flags"))
+                    {
+                        SXprUtils.skipCloseParenthesis(inputStream);
+                    }
+                    else
+                    {
+                        throw new PGPException("no q value found");
+                    }
                 }
 
                 SXprUtils.skipCloseParenthesis(inputStream);
