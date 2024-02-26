@@ -34,7 +34,6 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -181,9 +180,19 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                 throws PGPException
             {
-                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH || keyAlgorithm == PublicKeyAlgorithmTags.X25519 || keyAlgorithm == PublicKeyAlgorithmTags.X448)
+                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData);
+                }
+                else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
+                {
+                    return decryptSessionData(keyConverter, privKey, secKeyData[0], X25519PublicBCPGKey.LENGTH, "X25519withSHA256HKDF",
+                        SymmetricKeyAlgorithmTags.AES_128, EdECObjectIdentifiers.id_X25519);
+                }
+                else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
+                {
+                    return decryptSessionData(keyConverter, privKey, secKeyData[0], X448PublicBCPGKey.LENGTH, "X448withSHA512HKDF",
+                        SymmetricKeyAlgorithmTags.AES_256, EdECObjectIdentifiers.id_X448);
                 }
                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
@@ -222,170 +231,112 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         PublicKeyPacket pubKeyData = privKey.getPublicKeyPacket();
 
-        int symmetricKeyAlgorithm = 0;
         byte[] enc = secKeyData[0];
         int pLen;
         byte[] pEnc;
         byte[] keyEnc;
-        if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
-        {
-            pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-            if ((2 + pLen + 1) > enc.length)
-            {
-                throw new PGPException("encoded length out of range");
-            }
 
-            pEnc = new byte[pLen];
-            System.arraycopy(enc, 2, pEnc, 0, pLen);
-            int keyLen = enc[pLen + 2] & 0xff;
-            if ((2 + pLen + 1 + keyLen) > enc.length)
-            {
-                throw new PGPException("encoded length out of range");
-            }
+        pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
+        if ((2 + pLen + 1) > enc.length)
+        {
+            throw new PGPException("encoded length out of range");
+        }
 
-            keyEnc = new byte[keyLen];
-            System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
-        }
-        else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
+        pEnc = new byte[pLen];
+        System.arraycopy(enc, 2, pEnc, 0, pLen);
+        int keyLen = enc[pLen + 2] & 0xff;
+        if ((2 + pLen + 1 + keyLen) > enc.length)
         {
-            pLen = X25519PublicBCPGKey.LENGTH;
-            pEnc = new byte[pLen];
-            System.arraycopy(enc, 0, pEnc, 0, pLen);
-            int keyLen = enc[pLen] & 0xff;
-            if ((pLen + 1 + keyLen) > enc.length)
-            {
-                throw new PGPException("encoded length out of range");
-            }
-//            symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
-            keyEnc = new byte[keyLen - 1];
-            System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
+            throw new PGPException("encoded length out of range");
         }
-        else
-        {
-            pLen = X448PublicBCPGKey.LENGTH;
-            pEnc = new byte[pLen];
-            System.arraycopy(enc, 0, pEnc, 0, pLen);
-            int keyLen = enc[pLen] & 0xff;
-            if ((pLen + 1 + keyLen) > enc.length)
-            {
-                throw new PGPException("encoded length out of range");
-            }
-//            symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
-            keyEnc = new byte[keyLen - 1];
-            System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
-        }
+
+        keyEnc = new byte[keyLen];
+        System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
 
         try
         {
             KeyAgreement agreement;
             PublicKey publicKey;
-            ASN1ObjectIdentifier curveID;
-            if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
+
+            ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+            // XDH
+            if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
             {
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-                symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
-                curveID = ecKey.getCurveOID();
-                // XDH
-                if (curveID.equals(CryptlibObjectIdentifiers.curvey25519))
+                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
                 {
-                    agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
-                    publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1,
-                        pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0], "25519");
+                    throw new IllegalArgumentException("Invalid Curve25519 public key");
                 }
-                else
-                {
-                    X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
-                    ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
-
-                    agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
-
-                    publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
-                        new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
-                }
-                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
-
-                PrivateKey privateKey = converter.getPrivateKey(privKey);
-
-                agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
-
-                agreement.doPhase(publicKey, true);
-
-                Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
-
-                Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
-
-                c.init(Cipher.UNWRAP_MODE, key);
-
-                Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
-
-                return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
-            }
-            else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
-            {
-                agreement = helper.createKeyAgreement("X25519withSHA256HKDF");
-                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 0, pEnc.length != (X25519PublicKeyParameters.KEY_SIZE), "25519");
-                symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1);
             }
             else
             {
-                agreement = helper.createKeyAgreement("X448withSHA512HKDF");
-                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0, pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
-                symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
+                X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
+                ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
+
+                agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+
+                publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                    new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
             }
+            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
 
-            PrivateKey privateKey = converter.getPrivateKey(privKey);
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, userKeyingMaterial, publicKey, ecKey.getSymmetricKeyAlgorithm(), keyEnc);
 
-            agreement.init(privateKey);
-
-            agreement.doPhase(publicKey, true);
-
-            Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
-
-            Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
-
-            c.init(Cipher.UNWRAP_MODE, key);
-
-            Key paddedSessionKey = c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
-            symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
-            return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
+            return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
-        catch (InvalidKeyException e)
-        {
-            throw new PGPException("error setting asymmetric cipher", e);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new PGPException("error setting asymmetric cipher", e);
-        }
-        catch (InvalidAlgorithmParameterException e)
-        {
-            throw new PGPException("error setting asymmetric cipher", e);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new PGPException("error setting asymmetric cipher", e);
-        }
-        catch (IOException e)
+        catch (GeneralSecurityException | IOException e)
         {
             throw new PGPException("error setting asymmetric cipher", e);
         }
     }
 
-    private PublicKey getPublicKey(byte[] pEnc, ASN1ObjectIdentifier algprithmIdentifier, int pEncOff,
-                                   boolean condition, String curve)
+    private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[] enc, int pLen, String agreementAlgorithm,
+                                      int symmetricKeyAlgorithm, ASN1ObjectIdentifier algprithmIdentifier)
+        throws PGPException
+    {
+        try
+        {
+            byte[] pEnc = new byte[pLen];
+            System.arraycopy(enc, 0, pEnc, 0, pLen);
+            int keyLen = enc[pLen] & 0xff;
+            if ((pLen + 1 + keyLen) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+            byte[] keyEnc = new byte[keyLen - 1];
+            System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
+            KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
+            PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, Arrays.concatenate(privKey.getPublicKeyPacket().getKey().getEncoded(), pEnc), publicKey, symmetricKeyAlgorithm, keyEnc);
+            symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
+            return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
+        }
+        catch (GeneralSecurityException | IOException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+    }
+
+    private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, KeyAgreement agreement, byte[] privKey1, PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc)
+        throws PGPException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException
+    {
+        PrivateKey privateKey = converter.getPrivateKey(privKey);
+        agreement.init(privateKey, new UserKeyingMaterialSpec(privKey1));
+        agreement.doPhase(publicKey, true);
+        Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
+        Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
+        c.init(Cipher.UNWRAP_MODE, key);
+        return c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
+    }
+
+    private PublicKey getPublicKey(byte[] pEnc, ASN1ObjectIdentifier algprithmIdentifier, int pEncOff)
         throws PGPException, GeneralSecurityException, IOException
     {
         KeyFactory keyFact = helper.createKeyFactory("XDH");
 
-        if (condition)
-        {
-            throw new IllegalArgumentException("Invalid Curve" + curve + " public key");
-        }
-
-        return keyFact.generatePublic(
-            new X509EncodedKeySpec(
-                new SubjectPublicKeyInfo(new AlgorithmIdentifier(algprithmIdentifier),
-                    Arrays.copyOfRange(pEnc, pEncOff, pEnc.length)).getEncoded()));
+        return keyFact.generatePublic(new X509EncodedKeySpec(new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(algprithmIdentifier), Arrays.copyOfRange(pEnc, pEncOff, pEnc.length)).getEncoded()));
     }
 
     private void updateWithMPI(Cipher c, int expectedPayloadSize, byte[] encMPI)

@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Arrays;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
@@ -37,6 +36,7 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -62,7 +62,78 @@ public class BcPublicKeyDataDecryptorFactory
         {
             AsymmetricKeyParameter privKey = KEY_CONVERTER.getPrivateKey(pgpPrivKey);
 
-            if (keyAlgorithm != PublicKeyAlgorithmTags.ECDH && keyAlgorithm != PublicKeyAlgorithmTags.X448 && keyAlgorithm != PublicKeyAlgorithmTags.X25519)
+            if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
+            {
+                return getSessionData(secKeyData, privKey, X25519PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA256,
+                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(),
+                    X25519PublicKeyParameters::new);
+            }
+            else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
+            {
+                return getSessionData(secKeyData, privKey, X448PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA512,
+                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(),
+                    X448PublicKeyParameters::new);
+            }
+            else if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
+            {
+                byte[] enc = secKeyData[0];
+                byte[] pEnc;
+                byte[] keyEnc;
+                int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
+                if ((2 + pLen + 1) > enc.length)
+                {
+                    throw new PGPException("encoded length out of range");
+                }
+
+                pEnc = new byte[pLen];
+                System.arraycopy(enc, 2, pEnc, 0, pLen);
+
+                int keyLen = enc[pLen + 2] & 0xff;
+                if ((2 + pLen + 1 + keyLen) > enc.length)
+                {
+                    throw new PGPException("encoded length out of range");
+                }
+
+                keyEnc = new byte[keyLen];
+                System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
+
+                byte[] secret;
+                RFC6637KDFCalculator rfc6637KDFCalculator;
+                byte[] userKeyingMaterial;
+                int symmetricKeyAlgorithm, hashAlgorithm;
+
+                ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
+                // XDH
+                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    if (pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0])
+                    {
+                        throw new IllegalArgumentException("Invalid Curve25519 public key");
+                    }
+                    // skip the 0x40 header byte.
+                    secret = getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
+                }
+                else
+                {
+                    ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
+
+                    ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
+                        ecParameters);
+
+                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
+                    agreement.init(privKey);
+                    BigInteger S = agreement.calculateAgreement(ephPub);
+                    secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+                }
+                hashAlgorithm = ecPubKey.getHashAlgorithm();
+                symmetricKeyAlgorithm = ecPubKey.getSymmetricKeyAlgorithm();
+                userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator());
+                rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
+                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
+
+                return PGPPad.unpadSessionData(getUnwrap(keyEnc, symmetricKeyAlgorithm, key));
+            }
+            else
             {
                 AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(keyAlgorithm);
 
@@ -110,115 +181,6 @@ public class BcPublicKeyDataDecryptorFactory
 
                 return c1.doFinal();
             }
-            else
-            {
-                byte[] enc = secKeyData[0];
-                byte[] pEnc;
-                byte[] keyEnc;
-                int pLen;
-                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
-                {
-                    pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-                    if ((2 + pLen + 1) > enc.length)
-                    {
-                        throw new PGPException("encoded length out of range");
-                    }
-
-                    pEnc = new byte[pLen];
-                    System.arraycopy(enc, 2, pEnc, 0, pLen);
-
-                    int keyLen = enc[pLen + 2] & 0xff;
-                    if ((2 + pLen + 1 + keyLen) > enc.length)
-                    {
-                        throw new PGPException("encoded length out of range");
-                    }
-
-                    keyEnc = new byte[keyLen];
-                    System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
-                }
-                else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
-                {
-                    pLen = X25519PublicBCPGKey.LENGTH;
-                    pEnc = new byte[pLen];
-                    System.arraycopy(enc, 0, pEnc, 0, pLen);
-                    int keyLen = enc[pLen] & 0xff;
-                    if ((pLen + 1 + keyLen) > enc.length)
-                    {
-                        throw new PGPException("encoded length out of range");
-                    }
-                    keyEnc = new byte[keyLen - 1];
-                    System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
-                }
-                else
-                {
-                    pLen = X448PublicBCPGKey.LENGTH;
-                    pEnc = new byte[pLen];
-                    System.arraycopy(enc, 0, pEnc, 0, pLen);
-                    int keyLen = enc[pLen] & 0xff;
-                    if ((pLen + 1 + keyLen) > enc.length)
-                    {
-                        throw new PGPException("encoded length out of range");
-                    }
-                    keyEnc = new byte[keyLen - 1];
-                    System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
-                }
-
-                byte[] secret;
-                RFC6637KDFCalculator rfc6637KDFCalculator;
-                byte[] userKeyingMaterial;
-                int symmetricKeyAlgorithm, hashAlgorithm;
-                if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
-                {
-                    ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
-                    // XDH
-                    if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
-                    {
-                        // skip the 0x40 header byte.
-                        secret = getSecret(new X25519Agreement(), pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0], privKey, new X25519PublicKeyParameters(pEnc, 1), "25519");
-                    }
-                    else
-                    {
-                        ECDomainParameters ecParameters = ((ECPrivateKeyParameters)privKey).getParameters();
-
-                        ECPublicKeyParameters ephPub = new ECPublicKeyParameters(ecParameters.getCurve().decodePoint(pEnc),
-                            ecParameters);
-
-                        ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-                        agreement.init(privKey);
-                        BigInteger S = agreement.calculateAgreement(ephPub);
-                        secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
-                    }
-                    hashAlgorithm = ecPubKey.getHashAlgorithm();
-                    symmetricKeyAlgorithm = ecPubKey.getSymmetricKeyAlgorithm();
-                    userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator());
-                    rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
-                    KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
-
-                    Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
-                    c.init(false, key);
-                    return PGPPad.unpadSessionData(c.unwrap(keyEnc, 0, keyEnc.length));
-                }
-                else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
-                {
-                    secret = getSecret(new X25519Agreement(), pEnc.length != X25519PublicKeyParameters.KEY_SIZE, privKey, new X25519PublicKeyParameters(pEnc, 0), "25519");
-                    symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
-                    hashAlgorithm = HashAlgorithmTags.SHA256;
-                }
-                else
-                {
-                    //PublicKeyAlgorithmTags.X448
-                    secret = getSecret(new X448Agreement(), pEnc.length != X448PublicKeyParameters.KEY_SIZE, privKey, new X448PublicKeyParameters(pEnc, 0), "448");
-                    symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
-                    hashAlgorithm = HashAlgorithmTags.SHA512;
-                }
-                userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pgpPrivKey.getPublicKeyPacket(), new BcKeyFingerprintCalculator());
-                rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
-                KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
-
-                Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
-                c.init(false, key);
-                return org.bouncycastle.util.Arrays.concatenate(new byte[]{enc[pLen + 1]}, c.unwrap(keyEnc, 0, keyEnc.length));
-            }
         }
         catch (IOException e)
         {
@@ -228,19 +190,6 @@ public class BcPublicKeyDataDecryptorFactory
         {
             throw new PGPException("exception decrypting session info: " + e.getMessage(), e);
         }
-
-    }
-
-    private static byte[] getSecret(RawAgreement agreement, boolean condition, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub, String curve)
-    {
-        if (condition)
-        {
-            throw new IllegalArgumentException("Invalid Curve" + curve + " public key");
-        }
-        agreement.init(privKey);
-        byte[] secret = new byte[agreement.getAgreementSize()];
-        agreement.calculateAgreement(ephPub, secret, 0);
-        return secret;
     }
 
     // OpenPGP v4
@@ -267,5 +216,52 @@ public class BcPublicKeyDataDecryptorFactory
         throws PGPException
     {
         return BcAEADUtil.createOpenPgpV6DataDecryptor(seipd, sessionKey);
+    }
+
+    @FunctionalInterface
+    private interface PublicKeyParametersOperation
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(byte[] pEnc, int pEncOff);
+    }
+
+    private byte[] getSessionData(byte[][] secKeyData, AsymmetricKeyParameter privKey, int pLen, int hashAlgorithm,
+                                  int symmetricKeyAlgorithm, RawAgreement agreement, PublicKeyParametersOperation pkp
+    )
+        throws PGPException, InvalidCipherTextException
+    {
+        byte[] enc = secKeyData[0];
+        byte[] pEnc = new byte[pLen];
+        byte[] keyEnc;
+        System.arraycopy(enc, 0, pEnc, 0, pLen);
+        int keyLen = enc[pLen] & 0xff;
+        if ((pLen + 1 + keyLen) > enc.length)
+        {
+            throw new PGPException("encoded length out of range");
+        }
+        keyEnc = new byte[keyLen - 1];
+        System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
+        byte[] secret = getSecret(agreement, privKey, pkp.getPublicKeyParameters(pEnc, 0));
+
+        RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
+
+        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), pEnc, secret)));
+
+        return Arrays.concatenate(new byte[]{enc[pLen + 1]}, getUnwrap(keyEnc, symmetricKeyAlgorithm, key));
+    }
+
+    private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
+    {
+        agreement.init(privKey);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(ephPub, secret, 0);
+        return secret;
+    }
+
+    private static byte[] getUnwrap(byte[] keyEnc, int symmetricKeyAlgorithm, KeyParameter key)
+        throws PGPException, InvalidCipherTextException
+    {
+        Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
+        c.init(false, key);
+        return c.unwrap(keyEnc, 0, keyEnc.length);
     }
 }

@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
+import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -352,7 +353,18 @@ public abstract class BaseAgreementSpi
             }
             else if (kdf instanceof HKDFBytesGenerator)
             {
-                kdf.init(HKDFParameters.skipExtractParameters(secret, null));
+                byte[] info = null;
+                if (secret.length == 56)
+                {
+                    //X448Agreement
+                    info = "OpenPGP X448".getBytes();
+                }
+                else if (secret.length == 32)
+                {
+                    //X25519Agreement
+                    info = "OpenPGP X25519".getBytes();
+                }
+                kdf.init(HKDFParameters.skipExtractParameters(Arrays.concatenate(ukmParameters, secret), info));
             }
             else
             {
