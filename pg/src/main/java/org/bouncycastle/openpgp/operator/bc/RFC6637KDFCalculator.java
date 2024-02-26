@@ -46,6 +46,20 @@ class RFC6637KDFCalculator
         }
     }
 
+    public byte[] createKey(byte[] secret)
+        throws PGPException
+    {
+        try
+        {
+            // RFC 7748
+            return HKDF(digCalc, secret, getKeyLen(keyAlgorithm));
+        }
+        catch (IOException e)
+        {
+            throw new PGPException("Exception performing KDF: " + e.getMessage(), e);
+        }
+    }
+
     // RFC 6637 - Section 7
     //   Implements KDF( X, oBits, Param );
     //   Input: point X = (x,y)
@@ -71,6 +85,20 @@ class RFC6637KDFCalculator
         dOut.write(ZB);
         dOut.write(param);
 
+        byte[] digest = digCalc.getDigest();
+
+        byte[] key = new byte[keyLen];
+
+        System.arraycopy(digest, 0, key, 0, key.length);
+
+        return key;
+    }
+
+    private static byte[] HKDF(PGPDigestCalculator digCalc, byte[] ZB, int keyLen)
+        throws IOException
+    {
+        OutputStream dOut = digCalc.getOutputStream();
+        dOut.write(ZB);
         byte[] digest = digCalc.getDigest();
 
         byte[] key = new byte[keyLen];
