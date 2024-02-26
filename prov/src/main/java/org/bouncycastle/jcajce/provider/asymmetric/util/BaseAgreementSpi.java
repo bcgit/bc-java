@@ -27,7 +27,9 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.DESParameters;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -149,7 +151,7 @@ public abstract class BaseAgreementSpi
     protected final String kaAlgorithm;
     protected final DerivationFunction kdf;
 
-    protected byte[]     ukmParameters;
+    protected byte[] ukmParameters;
     private HybridValueParameterSpec hybridSpec;
 
     public BaseAgreementSpi(String kaAlgorithm, DerivationFunction kdf)
@@ -223,8 +225,8 @@ public abstract class BaseAgreementSpi
     }
 
     protected void engineInit(
-        Key             key,
-        SecureRandom    random)
+        Key key,
+        SecureRandom random)
         throws InvalidKeyException
     {
         try
@@ -276,8 +278,8 @@ public abstract class BaseAgreementSpi
     }
 
     protected int engineGenerateSecret(
-        byte[]  sharedSecret,
-        int     offset)
+        byte[] sharedSecret,
+        int offset)
         throws IllegalStateException, ShortBufferException
     {
         byte[] secret = engineGenerateSecret();
@@ -304,7 +306,7 @@ public abstract class BaseAgreementSpi
             oidAlgorithm = ((ASN1ObjectIdentifier)oids.get(algKey)).getId();
         }
 
-        int    keySize = getKeySize(oidAlgorithm);
+        int keySize = getKeySize(oidAlgorithm);
 
         byte[] secret = getSharedSecretBytes(calcSecret(), oidAlgorithm, keySize);
 
@@ -347,6 +349,10 @@ public abstract class BaseAgreementSpi
                 DHKDFParameters params = new DHKDFParameters(oid, keySize, secret, ukmParameters);
 
                 kdf.init(params);
+            }
+            else if (kdf instanceof HKDFBytesGenerator)
+            {
+                kdf.init(HKDFParameters.skipExtractParameters(secret, null));
             }
             else
             {
