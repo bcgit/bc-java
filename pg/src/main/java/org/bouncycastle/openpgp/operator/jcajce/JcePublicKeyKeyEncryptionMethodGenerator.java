@@ -126,15 +126,15 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
-                return getEncryptSessionInfo_25519or448(pubKey, "X25519", cryptoPublicKey, NISTObjectIdentifiers.id_aes128_wrap.getId(),
-                    SymmetricKeyAlgorithmTags.AES_128, sessionInfo,  (kpGen) -> kpGen.initialize(255, random),
-                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm);
+                return getEncryptSessionInfo_25519or448("X25519", cryptoPublicKey, NISTObjectIdentifiers.id_aes128_wrap.getId(),
+                    SymmetricKeyAlgorithmTags.AES_128, sessionInfo, "X25519withSHA256HKDF", (kpGen) -> kpGen.initialize(255, random),
+                    (ephPubEncoding) -> ephPubEncoding);
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
-                return getEncryptSessionInfo_25519or448(pubKey, "X448", cryptoPublicKey, NISTObjectIdentifiers.id_aes256_wrap.getId(),
-                    SymmetricKeyAlgorithmTags.AES_256, sessionInfo, (kpGen) -> kpGen.initialize(448, random),
-                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm);
+                return getEncryptSessionInfo_25519or448("X448", cryptoPublicKey, NISTObjectIdentifiers.id_aes256_wrap.getId(),
+                    SymmetricKeyAlgorithmTags.AES_256, sessionInfo, "X448withSHA512HKDF", (kpGen) -> kpGen.initialize(448, random),
+                    (ephPubEncoding) -> ephPubEncoding);
             }
             else
             {
@@ -220,22 +220,21 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
      * algorithm used MUST be AES-128, AES-192 or AES-256 (algorithm ID 7, 8
      * or 9).
      */
-    private byte[] getEncryptSessionInfo_25519or448(PGPPublicKey pubKey, String algorithmName, PublicKey cryptoPublicKey, String keyEncryptionOID,
-                                                    int symmetricKeyAlgorithm, byte[] sessionInfo, KeyPairGeneratorOperation kpOperation,
-                                                    EphPubEncoding getEncoding, CheckAlgorithmName checkAlgorithmName)
+    private byte[] getEncryptSessionInfo_25519or448(String algorithmName, PublicKey cryptoPublicKey, String keyEncryptionOID,
+                                                    int symmetricKeyAlgorithm, byte[] sessionInfo, String agreementAlgorithmName,
+                                                    KeyPairGeneratorOperation kpOperation, EphPubEncoding getEncoding)
         throws GeneralSecurityException, IOException, PGPException
     {
-        PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
-        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKeyPacket,
-            new JcaKeyFingerprintCalculator()));
         KeyPairGenerator kpGen = helper.createKeyPairGenerator(algorithmName);
         kpOperation.initialize(kpGen);
         KeyPair ephKP = kpGen.generateKeyPair();
-        KeyAgreement agreement = helper.createKeyAgreement(checkAlgorithmName.getAlgorithmName(pubKeyPacket));
-        agreement.init(ephKP.getPrivate(), ukmSpec);
+
+        byte[] ephPubEncoding = getEncoding.getEphPubEncoding(SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes());
+
+        KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithmName);
+        agreement.init(ephKP.getPrivate());
         agreement.doPhase(cryptoPublicKey, true);
         Key secret = agreement.generateSecret(keyEncryptionOID);
-        byte[] ephPubEncoding = getEncoding.getEphPubEncoding(SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes());
         //No checksum
         byte[] paddedSessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, paddedSessionData, 0, paddedSessionData.length);

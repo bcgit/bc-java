@@ -279,7 +279,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         {
             KeyAgreement agreement;
             PublicKey publicKey;
-
             ASN1ObjectIdentifier curveID;
             if (pubKeyData.getKey() instanceof ECDHPublicBCPGKey)
             {
@@ -323,22 +322,20 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             }
             else if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
             {
-                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                agreement = helper.createKeyAgreement("X25519withSHA256HKDF");
                 publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 0, pEnc.length != (X25519PublicKeyParameters.KEY_SIZE), "25519");
                 symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
             }
             else
             {
-                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                agreement = helper.createKeyAgreement("X448withSHA512HKDF");
                 publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 0, pEnc.length != X448PublicKeyParameters.KEY_SIZE, "448");
                 symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
             }
 
-            byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
-
             PrivateKey privateKey = converter.getPrivateKey(privKey);
 
-            agreement.init(privateKey, new UserKeyingMaterialSpec(userKeyingMaterial));
+            agreement.init(privateKey);
 
             agreement.doPhase(publicKey, true);
 

@@ -15,7 +15,16 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.hpke.HPKE;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 
@@ -119,8 +128,6 @@ public class RFC6637Utils
             curveID = EdECObjectIdentifiers.id_X448;
             symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
             hashAlgorithm = HashAlgorithmTags.SHA512;
-//            pOut.write(key.getEncoded());
-//            pOut.write(EdECObjectIdentifiers.id_X448.getEncoded());
         }
         else
         {
@@ -128,7 +135,20 @@ public class RFC6637Utils
             curveID = ecKey.getCurveOID();
             hashAlgorithm = ecKey.getHashAlgorithm();
             symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
+            byte[] encOid = curveID.getEncoded();
+            pOut.write(encOid, 1, encOid.length - 1);
+            pOut.write(pubKeyData.getAlgorithm());
+            pOut.write(0x03);
+            pOut.write(0x01);
+            pOut.write(hashAlgorithm);
+            pOut.write(symmetricKeyAlgorithm);
+            pOut.write(ANONYMOUS_SENDER);
+            pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
+
+            return pOut.toByteArray();
         }
+//        HKDF hkdf = new HKDF(kdfId);
+
         byte[] encOid = curveID.getEncoded();
         pOut.write(encOid, 1, encOid.length - 1);
         pOut.write(pubKeyData.getAlgorithm());
@@ -138,7 +158,7 @@ public class RFC6637Utils
         pOut.write(symmetricKeyAlgorithm);
         pOut.write(ANONYMOUS_SENDER);
         pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
-
         return pOut.toByteArray();
     }
+
 }

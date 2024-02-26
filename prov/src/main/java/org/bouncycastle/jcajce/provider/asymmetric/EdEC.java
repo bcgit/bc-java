@@ -69,6 +69,9 @@ public class EdEC
             provider.addAlgorithm("KeyAgreement.X25519UWITHSHA256KDF", PREFIX + "KeyAgreementSpi$X25519UwithSHA256KDF");
             provider.addAlgorithm("KeyAgreement.X448UWITHSHA512KDF", PREFIX + "KeyAgreementSpi$X448UwithSHA512KDF");
 
+            provider.addAlgorithm("KeyAgreement.X448withSHA512HKDF", PREFIX + "KeyAgreementSpi$X448withSHA512HKDF");
+            provider.addAlgorithm("KeyAgreement.X25519withSHA256HKDF", PREFIX + "KeyAgreementSpi$X25519withSHA256HKDF");
+
             provider.addAlgorithm("KeyPairGenerator.XDH", PREFIX + "KeyPairGeneratorSpi$XDH");
             provider.addAlgorithm("KeyPairGenerator.X448", PREFIX + "KeyPairGeneratorSpi$X448");
             provider.addAlgorithm("KeyPairGenerator.X25519", PREFIX + "KeyPairGeneratorSpi$X25519");

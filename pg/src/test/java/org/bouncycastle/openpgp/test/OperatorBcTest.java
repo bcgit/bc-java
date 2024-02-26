@@ -257,6 +257,7 @@ public class OperatorBcTest
         throws Exception
     {
         System.setProperty("enableCamelliaKeyWrapping", "True");
+        keyringTest("EdDSA","Ed448", PublicKeyAlgorithmTags.Ed448, "XDH","X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.Ed25519, "XDH","X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
         keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
@@ -279,7 +280,7 @@ public class OperatorBcTest
         keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
         keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
 
-        keyringTest("EdDSA","Ed448", PublicKeyAlgorithmTags.Ed448, "XDH","X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+
     }
 
     private void keyringTest(String algorithmName1, String ed_str, int ed_num, String algorithmName2, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
