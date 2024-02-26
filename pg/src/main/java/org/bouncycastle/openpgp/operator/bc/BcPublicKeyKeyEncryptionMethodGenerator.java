@@ -202,14 +202,16 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
             new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
         KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
-
-        byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
+        //No checksum
+        byte[] paddedSessionData = new byte[sessionInfo.length - 3];
+        System.arraycopy(sessionInfo, 1, paddedSessionData, 0, paddedSessionData.length);
+        //byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo_withoutChecksum, sessionKeyObfuscation);
 
         Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
         c.init(true, new ParametersWithRandom(key, random));
         byte[] C = c.wrap(paddedSessionData, 0, paddedSessionData.length);
 
-        return getSessionInfo_25519or448(ephPubEncoding, C);
+        return getSessionInfo_25519or448(ephPubEncoding, sessionInfo[0], C);
     }
 
     private byte[] encryptSessionInfo(byte[] sessionInfo, byte[] secret,

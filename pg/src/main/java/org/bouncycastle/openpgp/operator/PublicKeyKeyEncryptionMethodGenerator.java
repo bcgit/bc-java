@@ -186,12 +186,13 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return rv;
     }
 
-    protected static byte[] getSessionInfo_25519or448(byte[] VB, byte[] c)
+    protected static byte[] getSessionInfo_25519or448(byte[] VB, int sysmmetricKeyAlgorithm, byte[] c)
     {
-        byte[] rv = new byte[VB.length + 1 + c.length];
+        byte[] rv = new byte[VB.length + 2 + c.length];
         System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)c.length;
-        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
+        rv[VB.length] = (byte)(c.length + 1);
+        rv[VB.length + 1] = (byte)sysmmetricKeyAlgorithm;
+        System.arraycopy(c, 0, rv, VB.length + 2, c.length);
         return rv;
     }
 }

@@ -104,8 +104,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 {
                     return getEncryptSessionInfo(pubKey, "X25519", cryptoPublicKey, keyEncryptionOID,
                         ecKey.getSymmetricKeyAlgorithm(), sessionInfo, (kpGen) -> kpGen.initialize(255, random),
-                        (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR), RFC6637Utils::getXDHAlgorithm,
-                        PublicKeyKeyEncryptionMethodGenerator::getSessionInfo);
+                        (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR), RFC6637Utils::getXDHAlgorithm);
                 }
                 else
                 {
@@ -122,20 +121,20 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                                 ephPubEncoding = JcaJcePGPUtil.getX9Parameters(ecKey.getCurveOID()).getCurve().decodePoint(ephPubEncoding).getEncoded(false);
                             }
                             return ephPubEncoding;
-                        }, RFC6637Utils::getAgreementAlgorithm, PublicKeyKeyEncryptionMethodGenerator::getSessionInfo);
+                        }, RFC6637Utils::getAgreementAlgorithm);
                 }
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
-                return getEncryptSessionInfo(pubKey, "X25519", cryptoPublicKey, NISTObjectIdentifiers.id_aes128_wrap.getId(),
-                    SymmetricKeyAlgorithmTags.AES_128, sessionInfo, (kpGen) -> kpGen.initialize(255, random),
-                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm, PublicKeyKeyEncryptionMethodGenerator::getSessionInfo_25519or448);
+                return getEncryptSessionInfo_25519or448(pubKey, "X25519", cryptoPublicKey, NISTObjectIdentifiers.id_aes128_wrap.getId(),
+                    SymmetricKeyAlgorithmTags.AES_128, sessionInfo,  (kpGen) -> kpGen.initialize(255, random),
+                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm);
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
-                return getEncryptSessionInfo(pubKey, "X448", cryptoPublicKey, NISTObjectIdentifiers.id_aes256_wrap.getId(),
+                return getEncryptSessionInfo_25519or448(pubKey, "X448", cryptoPublicKey, NISTObjectIdentifiers.id_aes256_wrap.getId(),
                     SymmetricKeyAlgorithmTags.AES_256, sessionInfo, (kpGen) -> kpGen.initialize(448, random),
-                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm, PublicKeyKeyEncryptionMethodGenerator::getSessionInfo_25519or448);
+                    (ephPubEncoding) -> ephPubEncoding, RFC6637Utils::getXDHAlgorithm);
             }
             else
             {
@@ -187,16 +186,9 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         String getAlgorithmName(PublicKeyPacket pubKeyData);
     }
 
-    @FunctionalInterface
-    private interface GetSessionInfo
-    {
-        byte[] getSessionInfo(byte[] ephPubEncoding, byte[] C)
-            throws IOException;
-    }
-
     private byte[] getEncryptSessionInfo(PGPPublicKey pubKey, String algorithmName, PublicKey cryptoPublicKey, String keyEncryptionOID,
                                          int symmetricKeyAlgorithm, byte[] sessionInfo, KeyPairGeneratorOperation kpOperation,
-                                         EphPubEncoding getEncoding, CheckAlgorithmName checkAlgorithmName, GetSessionInfo getSessionInfo)
+                                         EphPubEncoding getEncoding, CheckAlgorithmName checkAlgorithmName)
         throws GeneralSecurityException, IOException, PGPException
     {
         PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
@@ -216,6 +208,42 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         c.init(Cipher.WRAP_MODE, secret, random);
         byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
 
-        return getSessionInfo.getSessionInfo(ephPubEncoding, C);
+        return getSessionInfo(ephPubEncoding, C);
+    }
+
+    /**
+     * Note that unlike ECDH, no checksum or padding are appended to the
+     * session key before key wrapping.  Finally, note that unlike the other
+     * public-key algorithms, in the case of a v3 PKESK packet, the
+     * symmetric algorithm ID is not encrypted.  Instead, it is prepended to
+     * the encrypted session key in plaintext.  In this case, the symmetric
+     * algorithm used MUST be AES-128, AES-192 or AES-256 (algorithm ID 7, 8
+     * or 9).
+     */
+    private byte[] getEncryptSessionInfo_25519or448(PGPPublicKey pubKey, String algorithmName, PublicKey cryptoPublicKey, String keyEncryptionOID,
+                                                    int symmetricKeyAlgorithm, byte[] sessionInfo, KeyPairGeneratorOperation kpOperation,
+                                                    EphPubEncoding getEncoding, CheckAlgorithmName checkAlgorithmName)
+        throws GeneralSecurityException, IOException, PGPException
+    {
+        PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
+        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKeyPacket,
+            new JcaKeyFingerprintCalculator()));
+        KeyPairGenerator kpGen = helper.createKeyPairGenerator(algorithmName);
+        kpOperation.initialize(kpGen);
+        KeyPair ephKP = kpGen.generateKeyPair();
+        KeyAgreement agreement = helper.createKeyAgreement(checkAlgorithmName.getAlgorithmName(pubKeyPacket));
+        agreement.init(ephKP.getPrivate(), ukmSpec);
+        agreement.doPhase(cryptoPublicKey, true);
+        Key secret = agreement.generateSecret(keyEncryptionOID);
+        byte[] ephPubEncoding = getEncoding.getEphPubEncoding(SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes());
+        //No checksum
+        byte[] paddedSessionData = new byte[sessionInfo.length - 3];
+        System.arraycopy(sessionInfo, 1, paddedSessionData, 0, paddedSessionData.length);
+
+        Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
+        c.init(Cipher.WRAP_MODE, secret, random);
+        byte[] C = c.wrap(new SecretKeySpec(paddedSessionData, PGPUtil.getSymmetricCipherName(sessionInfo[0])));
+
+        return getSessionInfo_25519or448(ephPubEncoding, sessionInfo[0], C);
     }
 }
