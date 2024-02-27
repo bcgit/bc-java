@@ -404,8 +404,7 @@ public class PGPSecretKey
 
         return ((algorithm == PGPPublicKey.RSA_GENERAL) || (algorithm == PGPPublicKey.RSA_SIGN)
             || (algorithm == PGPPublicKey.DSA) || (algorithm == PGPPublicKey.ECDSA) || (algorithm == PGPPublicKey.EDDSA_LEGACY)
-            || (algorithm == PGPPublicKey.ELGAMAL_GENERAL) || (algorithm == PGPPublicKey.Ed448) || (algorithm == PGPPublicKey.X448)
-            || (algorithm == PGPPublicKey.Ed25519) || (algorithm == PGPPublicKey.X25519));
+            || (algorithm == PGPPublicKey.ELGAMAL_GENERAL) || (algorithm == PGPPublicKey.Ed448) || (algorithm == PGPPublicKey.Ed25519));
     }
 
     /**

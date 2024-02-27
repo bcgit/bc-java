@@ -99,13 +99,13 @@ public class PGPPublicKeyEncryptedData
         throws PGPException
     {
         byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
-        if (!(keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448) && !confirmCheckSum(sessionData))
-        {
-            throw new PGPKeyValidationException("key checksum failed");
-        }
         if (keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448)
         {
             return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length));
+        }
+        if (!confirmCheckSum(sessionData))
+        {
+            throw new PGPKeyValidationException("key checksum failed");
         }
         return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
     }

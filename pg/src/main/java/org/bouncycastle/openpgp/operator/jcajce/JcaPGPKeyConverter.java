@@ -216,8 +216,9 @@ public class JcaPGPKeyConverter
                     X448SecretBCPGKey.LENGTH, Arrays.reverseInPlace(privPk.getEncoded())));
             }
             case PublicKeyAlgorithmTags.ECDSA:
+            {
                 return implGetPrivateKeyEC("ECDSA", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
-
+            }
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
                 return implGeneratePrivate("EdDSA", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
@@ -438,14 +439,12 @@ public class JcaPGPKeyConverter
         {
             return getPrivateBCPGKey(privKey, Ed448SecretBCPGKey::new);
         }
-
         case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
         case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
         {
             DHPrivateKey esK = (DHPrivateKey)privKey;
             return new ElGamalSecretBCPGKey(esK.getX());
         }
-
         case PublicKeyAlgorithmTags.RSA_ENCRYPT:
         case PublicKeyAlgorithmTags.RSA_GENERAL:
         case PublicKeyAlgorithmTags.RSA_SIGN:
@@ -453,7 +452,6 @@ public class JcaPGPKeyConverter
             RSAPrivateCrtKey rsK = (RSAPrivateCrtKey)privKey;
             return new RSASecretBCPGKey(rsK.getPrivateExponent(), rsK.getPrimeP(), rsK.getPrimeQ());
         }
-
         default:
             throw new PGPException("unknown key class");
         }
