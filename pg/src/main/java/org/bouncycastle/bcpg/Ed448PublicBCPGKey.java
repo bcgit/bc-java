@@ -10,7 +10,6 @@ public class Ed448PublicBCPGKey
     public Ed448PublicBCPGKey(BCPGInputStream in)
         throws IOException
     {
-        //super(in);
         super(LENGTH, in);
     }
 

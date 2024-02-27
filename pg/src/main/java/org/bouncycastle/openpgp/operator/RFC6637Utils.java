@@ -15,16 +15,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.hpke.HPKE;
-import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 
@@ -114,50 +105,19 @@ public class RFC6637Utils
         throws IOException, PGPException
     {
         ByteArrayOutputStream pOut = new ByteArrayOutputStream();
-        BCPGKey key = pubKeyData.getKey();
-        ASN1ObjectIdentifier curveID;
-        int hashAlgorithm, symmetricKeyAlgorithm;
-        if (key instanceof X25519PublicBCPGKey)
-        {
-            curveID = CryptlibObjectIdentifiers.curvey25519;
-            symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
-            hashAlgorithm = HashAlgorithmTags.SHA256;
-        }
-        else if (key instanceof X448PublicBCPGKey)
-        {
-            curveID = EdECObjectIdentifiers.id_X448;
-            symmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_256;
-            hashAlgorithm = HashAlgorithmTags.SHA512;
-        }
-        else
-        {
-            ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-            curveID = ecKey.getCurveOID();
-            hashAlgorithm = ecKey.getHashAlgorithm();
-            symmetricKeyAlgorithm = ecKey.getSymmetricKeyAlgorithm();
-            byte[] encOid = curveID.getEncoded();
-            pOut.write(encOid, 1, encOid.length - 1);
-            pOut.write(pubKeyData.getAlgorithm());
-            pOut.write(0x03);
-            pOut.write(0x01);
-            pOut.write(hashAlgorithm);
-            pOut.write(symmetricKeyAlgorithm);
-            pOut.write(ANONYMOUS_SENDER);
-            pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
 
-            return pOut.toByteArray();
-        }
-//        HKDF hkdf = new HKDF(kdfId);
+        ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+        byte[] encOid = ecKey.getCurveOID().getEncoded();
 
-        byte[] encOid = curveID.getEncoded();
         pOut.write(encOid, 1, encOid.length - 1);
         pOut.write(pubKeyData.getAlgorithm());
         pOut.write(0x03);
         pOut.write(0x01);
-        pOut.write(hashAlgorithm);
-        pOut.write(symmetricKeyAlgorithm);
+        pOut.write(ecKey.getHashAlgorithm());
+        pOut.write(ecKey.getSymmetricKeyAlgorithm());
         pOut.write(ANONYMOUS_SENDER);
         pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
+
         return pOut.toByteArray();
     }
 
