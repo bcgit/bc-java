@@ -1,12 +1,8 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
+import org.bouncycastle.pqc.jcajce.provider.Util;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.DecapsulateException;
@@ -14,10 +10,7 @@ import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
-
-import static org.bouncycastle.pqc.jcajce.provider.Util.makeKeyBytes;
 
 class SNTRUPrimeDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
@@ -47,33 +40,46 @@ class SNTRUPrimeDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        KTSParameterSpec.Builder builder = new KTSParameterSpec.Builder(parameterSpec.getKeyAlgorithmName(), parameterSpec.getKeySize());
-
-        if (!algorithm.equals("Generic"))
+        // if algorithm is Generic then use parameterSpec to wrap key
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                algorithm.equals("Generic"))
         {
-            //TODO:
-//            builder.withKdfAlgorithm(AlgorithmIdentifier.getInstance(algorithm));
+            algorithm = parameterSpec.getKeyAlgorithmName();
         }
-        KTSParameterSpec spec = builder.build();
+
+        // check spec algorithm mismatch provided algorithm
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
+        {
+            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
+        }
+
+        // Only use KDF when ktsParameterSpec is provided
+        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
+        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         byte[] secret = kemExt.extractSecret(encapsulation);
 
-        byte[] kdfKey = Arrays.copyOfRange(secret, from, to);
+        if (useKDF)
+        {
+            try
+            {
+                secret = Util.makeKeyBytes(parameterSpec, secret);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
 
-        try
-        {
-            return new SecretKeySpec(makeKeyBytes(spec, kdfKey), algorithm);
-        }
-        catch (InvalidKeyException e)
-        {
-            throw new RuntimeException(e);
-        }
+        return new SecretKeySpec(secretKey, algorithm);
     }
 
     @Override
     public int engineSecretSize()
     {
-        return privateKey.getKeyParams().getParameters().getSessionKeySize() / 8;
+        return parameterSpec.getKeySize() / 8;
     }
 
     @Override
