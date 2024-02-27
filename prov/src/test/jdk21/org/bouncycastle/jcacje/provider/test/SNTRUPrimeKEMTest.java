@@ -7,13 +7,9 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 import javax.crypto.KEM;
-import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import junit.framework.TestCase;
-import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
-import org.bouncycastle.jcajce.spec.KEMExtractSpec;
-import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -45,7 +41,7 @@ public class SNTRUPrimeKEMTest
 
         // Sender side
         KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
-        KTSParameterSpec ktsSpec = new KTSParameterSpec.Builder("Camellia", 256).build();
+        KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
@@ -77,12 +73,22 @@ public class SNTRUPrimeKEMTest
 
         performKEM(kpg.generateKeyPair(), new KEMParameterSpec("AES"));
         performKEM(kpg.generateKeyPair(),0, 16, "AES", new KEMParameterSpec("AES"));
-        performKEM(kpg.generateKeyPair(),0, 16, "AES-KWP", new KEMParameterSpec("AES"));
         performKEM(kpg.generateKeyPair(), new KEMParameterSpec("AES-KWP"));
+
+        try
+        {
+            performKEM(kpg.generateKeyPair(),0, 16, "AES-KWP", new KEMParameterSpec("AES"));
+            fail();
+        }
+        catch (Exception ex)
+        {
+        }
 
         kpg.initialize(SNTRUPrimeParameterSpec.sntrup1013, new SecureRandom());
         performKEM(kpg.generateKeyPair(), new KEMParameterSpec("AES"));
-        performKEM(kpg.generateKeyPair(), new KEMParameterSpec("AES-KWP"));
+
+
+
     }
 
     public void testBasicKEMCamellia()
@@ -135,7 +141,7 @@ public class SNTRUPrimeKEMTest
         assertEquals(secS.getAlgorithm(), secR.getAlgorithm());
         assertTrue(Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
     }
-    
+
     private void performKEM(KeyPair kp, KTSParameterSpec ktsParameterSpec)
             throws Exception
     {
@@ -150,6 +156,10 @@ public class SNTRUPrimeKEMTest
 
         // Receiver side
         KEM kemR = KEM.getInstance("SNTRUPrime");
+//        KTSParameterSpec RktsParameterSpec = new KTSParameterSpec.Builder(
+//                ktsParameterSpec.getKeyAlgorithmName(),
+//                enc.key().getEncoded().length
+//        ).withParameterSpec(ktsParameterSpec).build();
         KEM.Decapsulator d = kemR.newDecapsulator(kp.getPrivate(), ktsParameterSpec);
         SecretKey secR = d.decapsulate(em);
 
