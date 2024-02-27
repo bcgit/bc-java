@@ -158,9 +158,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
         byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
-        byte[] C = getWrapper(symmetricKeyAlgorithm, key, paddedSessionData);
-
-        return getSessionInfo(ephPubEncoding, C);
+        return getSessionInfo(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
     private byte[] encryptSessionInfo(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm,
@@ -179,9 +177,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);
 
-        byte[] C = getWrapper(symmetricKeyAlgorithm, key, sessionData);
-
-        return getSessionInfo_25519or448(ephPubEncoding, sessionInfo[0], C);
+        return getSessionInfo(ephPubEncoding, sessionInfo[0], getWrapper(symmetricKeyAlgorithm, key, sessionData));
     }
 
     private byte[] getWrapper(int symmetricKeyAlgorithm, KeyParameter key, byte[] sessionData)
@@ -189,8 +185,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     {
         Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
         c.init(true, new ParametersWithRandom(key, random));
-        byte[] C = c.wrap(sessionData, 0, sessionData.length);
-        return C;
+        return c.wrap(sessionData, 0, sessionData.length);
     }
 
     private AsymmetricCipherKeyPair getAsymmetricCipherKeyPair(AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters)
