@@ -113,13 +113,13 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
-                return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128,
+                return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
                     new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random), new X25519Agreement(), cryptoPublicKey, X25519PublicKeyParameters.KEY_SIZE,
                     (publicKey, ephPubEncoding) -> ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0));
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
-                return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256,
+                return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
                     new X448KeyPairGenerator(), new X448KeyGenerationParameters(random), new X448Agreement(), cryptoPublicKey, X448PublicKeyParameters.KEY_SIZE,
                     (publicKey, ephPubEncoding) -> ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0));
             }
@@ -161,7 +161,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         return getSessionInfo(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
-    private byte[] encryptSessionInfo(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm,
+    private byte[] encryptSessionInfo(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
                                       AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
                                       int keySize, ephPubEncodingOperation ephPubEncodingOperation)
         throws PGPException, IOException
@@ -172,7 +172,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         ephPubEncodingOperation.getEphPubEncoding(ephKp.getPublic(), ephPubEncoding);
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
             new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
-        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pubKeyPacket.getKey().getEncoded(), ephPubEncoding, secret)));
+        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pubKeyPacket.getKey().getEncoded(), ephPubEncoding, secret), algorithmName));
         //No checksum and padding
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);

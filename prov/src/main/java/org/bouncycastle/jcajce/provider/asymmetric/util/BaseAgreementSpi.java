@@ -153,6 +153,7 @@ public abstract class BaseAgreementSpi
     protected final DerivationFunction kdf;
 
     protected byte[] ukmParameters;
+    protected byte[] ukmParametersSalt;
     private HybridValueParameterSpec hybridSpec;
 
     public BaseAgreementSpi(String kaAlgorithm, DerivationFunction kdf)
@@ -353,18 +354,7 @@ public abstract class BaseAgreementSpi
             }
             else if (kdf instanceof HKDFBytesGenerator)
             {
-                byte[] info = null;
-                if (secret.length == 56)
-                {
-                    //X448Agreement
-                    info = "OpenPGP X448".getBytes();
-                }
-                else if (secret.length == 32)
-                {
-                    //X25519Agreement
-                    info = "OpenPGP X25519".getBytes();
-                }
-                kdf.init(HKDFParameters.skipExtractParameters(Arrays.concatenate(ukmParameters, secret), info));
+                kdf.init(new HKDFParameters(Arrays.concatenate(ukmParameters, secret), null, ukmParametersSalt));
             }
             else
             {
