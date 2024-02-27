@@ -84,7 +84,8 @@ public class SExprParser
 
     private static final Map<Integer, String[]> elgLabels = new HashMap<Integer, String[]>()
     {{
-        //put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"elg", "p", "q", "g", "y", "protected-at"});
+        //https://github.com/gpg/gnupg/blob/40227e42ea0f2f1cf9c9f506375446648df17e8d/agent/cvt-openpgp.c#L217
+        put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"elg", "p", "q", "g", "y", "protected-at"});
         put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"elg", "p", "q", "g", "y", "x", "protected-at"});
     }};
 
