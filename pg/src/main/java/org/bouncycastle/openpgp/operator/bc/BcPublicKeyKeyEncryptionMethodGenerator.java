@@ -132,11 +132,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                 return c.processBlock(sessionInfo, 0, sessionInfo.length);
             }
         }
-        catch (InvalidCipherTextException e)
-        {
-            throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
-        }
-        catch (IOException e)
+        catch (InvalidCipherTextException | IOException e)
         {
             throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
         }
@@ -170,9 +166,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         byte[] secret = getSecret(agreement, cryptoPublicKey, ephKp);
         byte[] ephPubEncoding = new byte[keySize];
         ephPubEncodingOperation.getEphPubEncoding(ephKp.getPublic(), ephPubEncoding);
-        RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(
-            new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
-        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pubKeyPacket.getKey().getEncoded(), ephPubEncoding, secret), algorithmName));
+        KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
+            Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), algorithmName));
         //No checksum and padding
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);

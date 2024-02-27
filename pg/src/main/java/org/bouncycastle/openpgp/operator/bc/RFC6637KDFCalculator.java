@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -46,18 +48,15 @@ class RFC6637KDFCalculator
         }
     }
 
-    public byte[] createKey(byte[] secret, String info)
+    public static byte[] createKey(int algorithm, int keyAlgorithm, byte[] secret, String info)
         throws PGPException
     {
-        try
-        {
-            // RFC 7748
-            return HKDF(digCalc, secret, getKeyLen(keyAlgorithm), "OpenPGP " + info);
-        }
-        catch (IOException e)
-        {
-            throw new PGPException("Exception performing KDF: " + e.getMessage(), e);
-        }
+        // RFC 7748
+        HKDFBytesGenerator hkdf = new HKDFBytesGenerator(BcImplProvider.createDigest(algorithm));
+        hkdf.init(new HKDFParameters(secret, null, info.getBytes()));
+        byte[] key = new byte[getKeyLen(keyAlgorithm)];
+        hkdf.generateBytes(key, 0, key.length);
+        return key;
     }
 
     // RFC 6637 - Section 7
@@ -85,21 +84,6 @@ class RFC6637KDFCalculator
         dOut.write(ZB);
         dOut.write(param);
 
-        byte[] digest = digCalc.getDigest();
-
-        byte[] key = new byte[keyLen];
-
-        System.arraycopy(digest, 0, key, 0, key.length);
-
-        return key;
-    }
-
-    private static byte[] HKDF(PGPDigestCalculator digCalc, byte[] ZB, int keyLen, String info)
-        throws IOException
-    {
-        OutputStream dOut = digCalc.getOutputStream();
-        dOut.write(ZB);
-        dOut.write(info.getBytes());
         byte[] digest = digCalc.getDigest();
 
         byte[] key = new byte[keyLen];
