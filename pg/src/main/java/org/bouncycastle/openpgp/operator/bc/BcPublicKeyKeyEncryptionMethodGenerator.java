@@ -167,7 +167,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         byte[] ephPubEncoding = new byte[keySize];
         ephPubEncodingOperation.getEphPubEncoding(ephKp.getPublic(), ephPubEncoding);
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
-            Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), algorithmName));
+            Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
         //No checksum and padding
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);
