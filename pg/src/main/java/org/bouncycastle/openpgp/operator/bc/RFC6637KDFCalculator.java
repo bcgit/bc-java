@@ -46,13 +46,13 @@ class RFC6637KDFCalculator
         }
     }
 
-    public byte[] createKey(byte[] secret)
+    public byte[] createKey(byte[] secret, String info)
         throws PGPException
     {
         try
         {
             // RFC 7748
-            return HKDF(digCalc, secret, getKeyLen(keyAlgorithm));
+            return HKDF(digCalc, secret, getKeyLen(keyAlgorithm), "OpenPGP " + info);
         }
         catch (IOException e)
         {
@@ -94,11 +94,12 @@ class RFC6637KDFCalculator
         return key;
     }
 
-    private static byte[] HKDF(PGPDigestCalculator digCalc, byte[] ZB, int keyLen)
+    private static byte[] HKDF(PGPDigestCalculator digCalc, byte[] ZB, int keyLen, String info)
         throws IOException
     {
         OutputStream dOut = digCalc.getOutputStream();
         dOut.write(ZB);
+        dOut.write(info.getBytes());
         byte[] digest = digCalc.getDigest();
 
         byte[] key = new byte[keyLen];

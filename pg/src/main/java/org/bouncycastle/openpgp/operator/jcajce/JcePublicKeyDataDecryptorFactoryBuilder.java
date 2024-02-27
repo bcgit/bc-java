@@ -187,12 +187,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                 else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData[0], X25519PublicBCPGKey.LENGTH, "X25519withSHA256HKDF",
-                        SymmetricKeyAlgorithmTags.AES_128, EdECObjectIdentifiers.id_X25519);
+                        SymmetricKeyAlgorithmTags.AES_128, EdECObjectIdentifiers.id_X25519, "X25519");
                 }
                 else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData[0], X448PublicBCPGKey.LENGTH, "X448withSHA512HKDF",
-                        SymmetricKeyAlgorithmTags.AES_256, EdECObjectIdentifiers.id_X448);
+                        SymmetricKeyAlgorithmTags.AES_256, EdECObjectIdentifiers.id_X448, "X448");
                 }
                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
@@ -281,7 +281,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             }
             byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
 
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, userKeyingMaterial, publicKey, ecKey.getSymmetricKeyAlgorithm(), keyEnc);
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, publicKey, ecKey.getSymmetricKeyAlgorithm(), keyEnc, new UserKeyingMaterialSpec(userKeyingMaterial));
 
             return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
@@ -292,7 +292,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     }
 
     private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[] enc, int pLen, String agreementAlgorithm,
-                                      int symmetricKeyAlgorithm, ASN1ObjectIdentifier algprithmIdentifier)
+                                      int symmetricKeyAlgorithm, ASN1ObjectIdentifier algprithmIdentifier, String algorithmName)
         throws PGPException
     {
         try
@@ -308,7 +308,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
             KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
             PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, Arrays.concatenate(privKey.getPublicKeyPacket().getKey().getEncoded(), pEnc), publicKey, symmetricKeyAlgorithm, keyEnc);
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreement,  publicKey, symmetricKeyAlgorithm, keyEnc,
+                new UserKeyingMaterialSpec(Arrays.concatenate(privKey.getPublicKeyPacket().getKey().getEncoded(), pEnc), ("OpenPGP " + algorithmName).getBytes()));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
             return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
         }
@@ -318,11 +319,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
     }
 
-    private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, KeyAgreement agreement, byte[] privKey1, PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc)
+    private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, KeyAgreement agreement,
+                              PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc, UserKeyingMaterialSpec ukms)
         throws PGPException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException
     {
         PrivateKey privateKey = converter.getPrivateKey(privKey);
-        agreement.init(privateKey, new UserKeyingMaterialSpec(privKey1));
+        agreement.init(privateKey, ukms);
         agreement.doPhase(publicKey, true);
         Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
         Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);

@@ -65,12 +65,12 @@ public class BcPublicKeyDataDecryptorFactory
             if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
             {
                 return getSessionData(secKeyData[0], privKey, X25519PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA256,
-                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(), X25519PublicKeyParameters::new);
+                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(), "X25519", X25519PublicKeyParameters::new);
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
             {
                 return getSessionData(secKeyData[0], privKey, X448PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA512,
-                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(), X448PublicKeyParameters::new);
+                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(), "X448", X448PublicKeyParameters::new);
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
             {
@@ -216,8 +216,8 @@ public class BcPublicKeyDataDecryptorFactory
         AsymmetricKeyParameter getPublicKeyParameters(byte[] pEnc, int pEncOff);
     }
 
-    private byte[] getSessionData(byte[] enc, AsymmetricKeyParameter privKey, int pLen, int hashAlgorithm,
-                                  int symmetricKeyAlgorithm, RawAgreement agreement, PublicKeyParametersOperation pkp)
+    private byte[] getSessionData(byte[] enc, AsymmetricKeyParameter privKey, int pLen, int hashAlgorithm, int symmetricKeyAlgorithm,
+                                  RawAgreement agreement, String algorithmName, PublicKeyParametersOperation pkp)
         throws PGPException, InvalidCipherTextException
     {
         byte[] pEnc = new byte[pLen];
@@ -231,7 +231,7 @@ public class BcPublicKeyDataDecryptorFactory
 
         RFC6637KDFCalculator rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
 
-        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), pEnc, secret)));
+        KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), pEnc, secret), algorithmName));
 
         return Arrays.concatenate(new byte[]{enc[pLen + 1]}, unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
     }

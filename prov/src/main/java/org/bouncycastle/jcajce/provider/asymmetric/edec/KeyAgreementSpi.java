@@ -73,6 +73,7 @@ public class KeyAgreementSpi
         }
 
         ukmParameters = null;
+        ukmParametersSalt = null;
         if (params instanceof DHUParameterSpec)
         {
             if (kaAlgorithm.indexOf('U') < 0)
@@ -99,6 +100,7 @@ public class KeyAgreementSpi
                     throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
                 }
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
+                ukmParametersSalt = ((UserKeyingMaterialSpec)params).getSalt();
             }
             else
             {
