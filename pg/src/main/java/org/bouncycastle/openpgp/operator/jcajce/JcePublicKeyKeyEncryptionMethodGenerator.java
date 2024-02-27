@@ -215,7 +215,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         KeyPair ephKP = kpGen.generateKeyPair();
 
         byte[] ephPubEncoding = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes();
-        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(Arrays.concatenate(pgpPublicKey.getPublicKeyPacket().getKey().getEncoded(), ephPubEncoding),
+        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(Arrays.concatenate(ephPubEncoding, pgpPublicKey.getPublicKeyPacket().getKey().getEncoded()),
             ("OpenPGP " + algorithmName).getBytes());
         Key secret = getSecret(cryptoPublicKey, keyEncryptionOID, agreementAlgorithmName, ukmSpec, ephKP);
         //No checksum or padding

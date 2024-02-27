@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.KeyPair;
@@ -10,7 +11,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
-import java.util.Arrays;
+
 import java.util.Date;
 import java.util.Iterator;
 
@@ -21,8 +22,18 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.edec.KeyAgreementSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -47,6 +58,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
@@ -62,6 +74,8 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
 
@@ -85,6 +99,7 @@ public class OperatorBcTest
     public void performTest()
         throws Exception
     {
+        testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
         testBcPGPDataEncryptorBuilder();
@@ -165,33 +180,48 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
-        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-256")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-384")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("P-521")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-256")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-384")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("P-521")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen)-> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen)-> {});
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen)-> {});
+        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-256")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-384")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-521")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-256")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-384")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-521")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
+        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen) -> {
+        });
+        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen) -> {
+        });
 
     }
 
@@ -203,7 +233,8 @@ public class OperatorBcTest
 
     private interface KeyPairGeneratorOperation
     {
-        void initialize(KeyPairGenerator gen) throws Exception;
+        void initialize(KeyPairGenerator gen)
+            throws Exception;
     }
 
     private void testCreateKeyPair(int algorithm1, int algorithm2, String name, KeyPairGeneratorOperation kpgen)
@@ -226,13 +257,13 @@ public class OperatorBcTest
         PrivateKey privKey = jcaPGPKeyConverter.getPrivateKey(jcaPgpPair.getPrivateKey());
         PublicKey pubKey = jcaPGPKeyConverter.getPublicKey(jcaPgpPair.getPublicKey());
 
-        if (algorithm1 == algorithm2 && !Arrays.equals(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
+        if (algorithm1 == algorithm2 && !Arrays.areEqual(jcaPgpPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(),
             bcKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded()))
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair private keys are not equal.");
         }
 
-        if (algorithm1 == algorithm2 && !Arrays.equals(jcaPgpPair.getPublicKey().getPublicKeyPacket().getEncoded(),
+        if (algorithm1 == algorithm2 && !Arrays.areEqual(jcaPgpPair.getPublicKey().getPublicKeyPacket().getEncoded(),
             bcKeyPair.getPublicKey().getPublicKeyPacket().getEncoded()))
         {
             throw new PGPException("JcaPGPKeyPair and BcPGPKeyPair public keys are not equal.");
@@ -247,7 +278,7 @@ public class OperatorBcTest
 //            }
 //        }
 
-        isTrue(Arrays.equals(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
+        isTrue(Arrays.areEqual(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
         isTrue(privKey.toString().equals(keyPair.getPrivate().toString()));
         // getEncoded() are Not equal as privKey.hasPublicKey is false but keyPair.getPrivate().hasPublicKey is true
         //isTrue(Arrays.equals(privKey.getEncoded(), keyPair.getPrivate().getEncoded()));
@@ -257,30 +288,28 @@ public class OperatorBcTest
         throws Exception
     {
         System.setProperty("enableCamelliaKeyWrapping", "True");
-        keyringTest("EdDSA","Ed448", PublicKeyAlgorithmTags.Ed448, "XDH","X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.Ed448, "XDH", "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
 
-        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.Ed25519, "XDH","X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.Ed25519, "XDH", "X25519", PublicKeyAlgorithmTags.X25519, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
 
+        keyringTest("ECDSA", "NIST P-256", PublicKeyAlgorithmTags.ECDSA, "ECDH", "NIST P-256", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ECDSA", "NIST P-384", PublicKeyAlgorithmTags.ECDSA, "ECDH", "NIST P-384", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("ECDSA", "NIST P-521", PublicKeyAlgorithmTags.ECDSA, "ECDH", "NIST P-521", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("ECDSA", "brainpoolP256r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP256r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("ECDSA", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("ECDSA", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
 
 
-        keyringTest("ECDSA","NIST P-256", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-256", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("ECDSA","NIST P-384", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-384", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
-        keyringTest("ECDSA","NIST P-521", PublicKeyAlgorithmTags.ECDSA, "ECDH","NIST P-521", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
-        keyringTest("ECDSA","brainpoolP256r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP256r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("ECDSA","brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
-        keyringTest("ECDSA","brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH","brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
-
-
-        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("EdDSA","ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
-        keyringTest("EdDSA","Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH","X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
+        keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_256);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
+        keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
 
 
     }
@@ -485,4 +514,39 @@ public class OperatorBcTest
             fail("wrong plain text in generated packet");
         }
     }
+
+    public void testX25519HKDF()
+        throws Exception
+    {
+        byte[] ephmeralKey = Hex.decode("87 cf 18 d5 f1 b5 3f 81 7c ce 5a 00 4c f3 93 cc\n" +
+            "     89 58 bd dc 06 5f 25 f8 4a f5 09 b1 7d d3 67 64");
+        byte[] ephmeralSecretKey = Hex.decode("af 1e 43 c0 d1 23 ef e8 93 a7 d4 d3 90 f3 a7 61\n" +
+            "     e3 fa c3 3d fc 7f 3e da a8 30 c9 01 13 52 c7 79");
+        byte[] publicKey = Hex.decode("86 93 24 83 67 f9 e5 01 5d b9 22 f8 f4 80 95 dd\n" +
+            "     a7 84 98 7f 2d 59 85 b1 2f ba d1 6c af 5e 44 35");
+        byte[] privKey = Hex.decode("4d 60 0a 4f 79 4d 44 77 5c 57 a2 6e 0f ee fe d5\n" +
+            "     58 e9 af ff d6 ad 0d 58 2d 57 fb 2b a2 dc ed b8" +
+            "67 e3 0e 69 cd c7 ba b2 a2 68 0d 78 ac a4 6a 2f\n" +
+            "     8b 6e 2a e4 4d 39 8b dc 6f 92 c5 ad 4a 49 25 14");
+        byte[] expectedHKDF = Hex.decode("f6 6d ad cf f6 45 92 23 9b 25 45 39 b6 4f f6 07\n");
+//        byte[] expectedDecryptedSessionKey = Hex.decode("dd 70 8f 6f a1 ed 65 11 4d 68 d2 34 3e 7c 2f 1d");
+        X25519PrivateKeyParameters ephmeralprivateKeyParameters = new X25519PrivateKeyParameters(ephmeralSecretKey);
+        X25519PublicKeyParameters publicKeyParameters = new X25519PublicKeyParameters(publicKey);
+        X25519Agreement agreement = new X25519Agreement();
+        agreement.init(ephmeralprivateKeyParameters);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(publicKeyParameters, secret, 0);
+        byte[] output2 = new byte[16];
+        HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+        hkdf.init(new HKDFParameters(Arrays.concatenate(ephmeralKey, publicKey, secret), null, "OpenPGP X25519".getBytes()));
+        hkdf.generateBytes(output2, 0, 16);
+        isTrue(Arrays.areEqual(output2, expectedHKDF));
+//        Wrapper c = new RFC3394WrapEngine(AESEngine.newInstance());
+//        c.init(false, new KeyParameter(output2));
+//        byte[] keyEnc = new byte[32];
+//        keyEnc = c.unwrap(keyEnc, 0, keyEnc.length);
+//        System.out.println(Hex.toHexString(output2));
+        //hkdf.init(new HKDFParameters(Arrays.concatenate()));
+    }
+
 }

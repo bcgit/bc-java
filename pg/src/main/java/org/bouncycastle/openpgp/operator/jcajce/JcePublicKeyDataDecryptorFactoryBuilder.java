@@ -308,8 +308,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
             KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
             PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreement,  publicKey, symmetricKeyAlgorithm, keyEnc,
-                new UserKeyingMaterialSpec(Arrays.concatenate(privKey.getPublicKeyPacket().getKey().getEncoded(), pEnc), ("OpenPGP " + algorithmName).getBytes()));
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, publicKey, symmetricKeyAlgorithm, keyEnc,
+                new UserKeyingMaterialSpec(Arrays.concatenate(pEnc, privKey.getPublicKeyPacket().getKey().getEncoded()), ("OpenPGP " + algorithmName).getBytes()));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
             return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
         }
