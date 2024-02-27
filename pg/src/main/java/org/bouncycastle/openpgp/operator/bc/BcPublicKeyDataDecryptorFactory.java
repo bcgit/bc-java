@@ -64,15 +64,13 @@ public class BcPublicKeyDataDecryptorFactory
 
             if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
             {
-                return getSessionData(secKeyData, privKey, X25519PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA256,
-                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(),
-                    X25519PublicKeyParameters::new);
+                return getSessionData(secKeyData[0], privKey, X25519PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA256,
+                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(), X25519PublicKeyParameters::new);
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
             {
-                return getSessionData(secKeyData, privKey, X448PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA512,
-                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(),
-                    X448PublicKeyParameters::new);
+                return getSessionData(secKeyData[0], privKey, X448PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA512,
+                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(), X448PublicKeyParameters::new);
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
             {
@@ -80,19 +78,13 @@ public class BcPublicKeyDataDecryptorFactory
                 byte[] pEnc;
                 byte[] keyEnc;
                 int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-                if ((2 + pLen + 1) > enc.length)
-                {
-                    throw new PGPException("encoded length out of range");
-                }
+                assertOutOfRange(2 + pLen + 1, enc);
 
                 pEnc = new byte[pLen];
                 System.arraycopy(enc, 2, pEnc, 0, pLen);
 
                 int keyLen = enc[pLen + 2] & 0xff;
-                if ((2 + pLen + 1 + keyLen) > enc.length)
-                {
-                    throw new PGPException("encoded length out of range");
-                }
+                assertOutOfRange(2 + pLen + 1 + keyLen, enc);
 
                 keyEnc = new byte[keyLen];
                 System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
@@ -131,7 +123,7 @@ public class BcPublicKeyDataDecryptorFactory
                 rfc6637KDFCalculator = new RFC6637KDFCalculator(new BcPGPDigestCalculatorProvider().get(hashAlgorithm), symmetricKeyAlgorithm);
                 KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(secret, userKeyingMaterial));
 
-                return PGPPad.unpadSessionData(getUnwrap(keyEnc, symmetricKeyAlgorithm, key));
+                return PGPPad.unpadSessionData(unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
             }
             else
             {
@@ -224,20 +216,15 @@ public class BcPublicKeyDataDecryptorFactory
         AsymmetricKeyParameter getPublicKeyParameters(byte[] pEnc, int pEncOff);
     }
 
-    private byte[] getSessionData(byte[][] secKeyData, AsymmetricKeyParameter privKey, int pLen, int hashAlgorithm,
-                                  int symmetricKeyAlgorithm, RawAgreement agreement, PublicKeyParametersOperation pkp
-    )
+    private byte[] getSessionData(byte[] enc, AsymmetricKeyParameter privKey, int pLen, int hashAlgorithm,
+                                  int symmetricKeyAlgorithm, RawAgreement agreement, PublicKeyParametersOperation pkp)
         throws PGPException, InvalidCipherTextException
     {
-        byte[] enc = secKeyData[0];
         byte[] pEnc = new byte[pLen];
         byte[] keyEnc;
         System.arraycopy(enc, 0, pEnc, 0, pLen);
         int keyLen = enc[pLen] & 0xff;
-        if ((pLen + 1 + keyLen) > enc.length)
-        {
-            throw new PGPException("encoded length out of range");
-        }
+        assertOutOfRange(pLen + 1 + keyLen, enc);
         keyEnc = new byte[keyLen - 1];
         System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
         byte[] secret = getSecret(agreement, privKey, pkp.getPublicKeyParameters(pEnc, 0));
@@ -246,7 +233,7 @@ public class BcPublicKeyDataDecryptorFactory
 
         KeyParameter key = new KeyParameter(rfc6637KDFCalculator.createKey(Arrays.concatenate(pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), pEnc, secret)));
 
-        return Arrays.concatenate(new byte[]{enc[pLen + 1]}, getUnwrap(keyEnc, symmetricKeyAlgorithm, key));
+        return Arrays.concatenate(new byte[]{enc[pLen + 1]}, unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
     }
 
     private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
@@ -257,11 +244,20 @@ public class BcPublicKeyDataDecryptorFactory
         return secret;
     }
 
-    private static byte[] getUnwrap(byte[] keyEnc, int symmetricKeyAlgorithm, KeyParameter key)
+    private static byte[] unwrapSessionData(byte[] keyEnc, int symmetricKeyAlgorithm, KeyParameter key)
         throws PGPException, InvalidCipherTextException
     {
         Wrapper c = BcImplProvider.createWrapper(symmetricKeyAlgorithm);
         c.init(false, key);
         return c.unwrap(keyEnc, 0, keyEnc.length);
+    }
+
+    private static void assertOutOfRange(int pLen, byte[] enc)
+        throws PGPException
+    {
+        if (pLen > enc.length)
+        {
+            throw new PGPException("encoded length out of range");
+        }
     }
 }
