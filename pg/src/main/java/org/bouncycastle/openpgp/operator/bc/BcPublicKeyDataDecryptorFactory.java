@@ -229,7 +229,7 @@ public class BcPublicKeyDataDecryptorFactory
         System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
         byte[] secret = getSecret(agreement, privKey, pkp.getPublicKeyParameters(pEnc, 0));
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
-            Arrays.concatenate(pEnc, pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), secret), algorithmName));
+            Arrays.concatenate(pEnc, pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
 
         return Arrays.concatenate(new byte[]{enc[pLen + 1]}, unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
     }
