@@ -2,11 +2,9 @@ package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -15,7 +13,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -255,14 +252,13 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
         try
         {
-            KeyAgreement agreement;
             PublicKey publicKey;
-
+            String agreementName;
             ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
             // XDH
             if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
             {
-                agreement = helper.createKeyAgreement(RFC6637Utils.getXDHAlgorithm(pubKeyData));
+                agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
                 if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
                 {
                     throw new IllegalArgumentException("Invalid Curve25519 public key");
@@ -274,14 +270,14 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                 X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
                 ECPoint publicPoint = x9Params.getCurve().decodePoint(pEnc);
 
-                agreement = helper.createKeyAgreement(RFC6637Utils.getAgreementAlgorithm(pubKeyData));
+                agreementName = RFC6637Utils.getAgreementAlgorithm(pubKeyData);
 
                 publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
                     new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
             }
             byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);
 
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, publicKey, ecKey.getSymmetricKeyAlgorithm(), keyEnc, new UserKeyingMaterialSpec(userKeyingMaterial));
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreementName, publicKey, ecKey.getSymmetricKeyAlgorithm(), keyEnc, new UserKeyingMaterialSpec(userKeyingMaterial));
 
             return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
@@ -306,10 +302,9 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             }
             byte[] keyEnc = new byte[keyLen - 1];
             System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
-            KeyAgreement agreement = helper.createKeyAgreement(agreementAlgorithm);
             PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreement, publicKey, symmetricKeyAlgorithm, keyEnc,
-                new UserKeyingMaterialSpec(Arrays.concatenate(pEnc, privKey.getPublicKeyPacket().getKey().getEncoded()), ("OpenPGP " + algorithmName).getBytes()));
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, publicKey, symmetricKeyAlgorithm, keyEnc,
+                JcaJcePGPUtil.getUserKeyingMaterialSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
             return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
         }
@@ -319,14 +314,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
     }
 
-    private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, KeyAgreement agreement,
+    private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, String agreementName,
                               PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc, UserKeyingMaterialSpec ukms)
-        throws PGPException, InvalidKeyException, InvalidAlgorithmParameterException, NoSuchAlgorithmException
+        throws PGPException, GeneralSecurityException
     {
         PrivateKey privateKey = converter.getPrivateKey(privKey);
-        agreement.init(privateKey, ukms);
-        agreement.doPhase(publicKey, true);
-        Key key = agreement.generateSecret(RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId());
+        Key key = JcaJcePGPUtil.getSecret(helper, publicKey, RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId(),  agreementName, ukms, privateKey);
         Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);

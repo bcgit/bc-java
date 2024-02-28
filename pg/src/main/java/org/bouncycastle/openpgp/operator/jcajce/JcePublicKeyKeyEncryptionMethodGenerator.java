@@ -15,7 +15,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
@@ -27,6 +26,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -190,7 +190,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         KeyPair ephKP = kpGen.generateKeyPair();
         UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(RFC6637Utils.createUserKeyingMaterial(pubKeyPacket,
             new JcaKeyFingerprintCalculator()));
-        Key secret = getSecret(cryptoPublicKey, keyEncryptionOID, agreementName, ukmSpec, ephKP);
+        Key secret = JcaJcePGPUtil.getSecret(helper, cryptoPublicKey, keyEncryptionOID, agreementName, ukmSpec, ephKP.getPrivate());
         byte[] ephPubEncoding = getEncoding.getEphPubEncoding(SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes());
         byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
@@ -215,23 +215,13 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         KeyPair ephKP = kpGen.generateKeyPair();
 
         byte[] ephPubEncoding = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes();
-        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(Arrays.concatenate(ephPubEncoding, pgpPublicKey.getPublicKeyPacket().getKey().getEncoded()),
-            ("OpenPGP " + algorithmName).getBytes());
-        Key secret = getSecret(cryptoPublicKey, keyEncryptionOID, agreementAlgorithmName, ukmSpec, ephKP);
+        UserKeyingMaterialSpecWithPrepend ukmSpec = JcaJcePGPUtil.getUserKeyingMaterialSpecWithPrepend(ephPubEncoding, pgpPublicKey.getPublicKeyPacket(), algorithmName);
+        Key secret = JcaJcePGPUtil.getSecret(helper, cryptoPublicKey, keyEncryptionOID, agreementAlgorithmName, ukmSpec, ephKP.getPrivate());
         //No checksum or padding
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);
 
         return getSessionInfo(ephPubEncoding, sessionInfo[0], getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, sessionData));
-    }
-
-    private Key getSecret(PublicKey cryptoPublicKey, String keyEncryptionOID, String agreementName, UserKeyingMaterialSpec ukmSpec, KeyPair ephKP)
-        throws GeneralSecurityException
-    {
-        KeyAgreement agreement = helper.createKeyAgreement(agreementName);
-        agreement.init(ephKP.getPrivate(), ukmSpec);
-        agreement.doPhase(cryptoPublicKey, true);
-        return agreement.generateSecret(keyEncryptionOID);
     }
 
     private byte[] getWrapper(int symmetricKeyAlgorithm, byte[] sessionInfo, Key secret, byte[] sessionData)

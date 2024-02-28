@@ -89,7 +89,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                 {
                     AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random));
 
-                    byte[] secret = getSecret(new X25519Agreement(), cryptoPublicKey, ephKp);
+                    byte[] secret = BcUtil.getSecret(new X25519Agreement(), ephKp.getPrivate(), cryptoPublicKey);
 
                     byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
@@ -163,7 +163,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         throws PGPException, IOException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);
-        byte[] secret = getSecret(agreement, cryptoPublicKey, ephKp);
+        byte[] secret = BcUtil.getSecret(agreement, ephKp.getPrivate(), cryptoPublicKey);
         byte[] ephPubEncoding = new byte[keySize];
         ephPubEncodingOperation.getEphPubEncoding(ephKp.getPublic(), ephPubEncoding);
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
@@ -187,13 +187,5 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     {
         gen.init(parameters);
         return gen.generateKeyPair();
-    }
-
-    private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey, AsymmetricCipherKeyPair ephKp)
-    {
-        agreement.init(ephKp.getPrivate());
-        byte[] secret = new byte[agreement.getAgreementSize()];
-        agreement.calculateAgreement(cryptoPublicKey, secret, 0);
-        return secret;
     }
 }
