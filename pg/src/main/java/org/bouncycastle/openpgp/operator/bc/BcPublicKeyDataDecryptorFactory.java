@@ -103,7 +103,7 @@ public class BcPublicKeyDataDecryptorFactory
                         throw new IllegalArgumentException("Invalid Curve25519 public key");
                     }
                     // skip the 0x40 header byte.
-                    secret = getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
+                    secret = BcUtil.getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
                 }
                 else
                 {
@@ -227,19 +227,11 @@ public class BcPublicKeyDataDecryptorFactory
         assertOutOfRange(pLen + 1 + keyLen, enc);
         keyEnc = new byte[keyLen - 1];
         System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
-        byte[] secret = getSecret(agreement, privKey, pkp.getPublicKeyParameters(pEnc, 0));
+        byte[] secret = BcUtil.getSecret(agreement, privKey, pkp.getPublicKeyParameters(pEnc, 0));
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
             Arrays.concatenate(pEnc, pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
 
         return Arrays.concatenate(new byte[]{enc[pLen + 1]}, unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
-    }
-
-    private static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
-    {
-        agreement.init(privKey);
-        byte[] secret = new byte[agreement.getAgreementSize()];
-        agreement.calculateAgreement(ephPub, secret, 0);
-        return secret;
     }
 
     private static byte[] unwrapSessionData(byte[] keyEnc, int symmetricKeyAlgorithm, KeyParameter key)

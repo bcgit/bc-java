@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -48,12 +49,29 @@ class RFC6637KDFCalculator
         }
     }
 
-    public static byte[] createKey(int algorithm, int keyAlgorithm, byte[] secret, String info)
+    /**
+     * Creates a session key for X25519 or X448 encryption based on the provided algorithm and key algorithm.
+     * <p>
+     * The method follows the specifications outlined in the OpenPGP standards, specifically sections 5.1.6 and 5.1.7
+     * of draft-ietf-openpgp-crypto-refresh-13.
+     *
+     * @param algorithm    The algorithm to use for key derivation, such as SHA256 or SHA512.
+     * @param keyAlgorithm The key algorithm identifier, representing AES-128 or AES-256.
+     * @param prepend      The bytes to prepend before deriving the key, which should include:
+     *                     - 32/56 octets of the ephemeral X25519 or X448 public key
+     *                     - 32/56 octets of the recipient public key material
+     *                     - 32/56 octets of the shared secret
+     * @param info         The info parameter used in the HKDF function. For X25519, use "OpenPGP X25519".
+     *                     For X448, use "OpenPGP X448".
+     * @return The derived key for encryption.
+     * @throws PGPException If an error occurs during key derivation.
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/13/">draft-ietf-openpgp-crypto-refresh-13</a>
+     */
+    public static byte[] createKey(int algorithm, int keyAlgorithm, byte[] prepend, String info)
         throws PGPException
     {
-        // RFC 7748
         HKDFBytesGenerator hkdf = new HKDFBytesGenerator(BcImplProvider.createDigest(algorithm));
-        hkdf.init(new HKDFParameters(secret, null, info.getBytes()));
+        hkdf.init(new HKDFParameters(prepend, null, Strings.toByteArray(info)));
         byte[] key = new byte[getKeyLen(keyAlgorithm)];
         hkdf.generateBytes(key, 0, key.length);
         return key;

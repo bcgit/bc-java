@@ -11,10 +11,12 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
+import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.OpenPGPCFBBlockCipher;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.math.ec.ECCurve;
@@ -114,5 +116,13 @@ public class BcUtil
         ECCurve curve)
     {
         return curve.decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
+    }
+
+    static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
+    {
+        agreement.init(privKey);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(ephPub, secret, 0);
+        return secret;
     }
 }

@@ -154,6 +154,7 @@ public abstract class BaseAgreementSpi
 
     protected byte[] ukmParameters;
     protected byte[] ukmParametersSalt;
+    protected byte[] ukmParametersPrepend;
     private HybridValueParameterSpec hybridSpec;
 
     public BaseAgreementSpi(String kaAlgorithm, DerivationFunction kdf)
@@ -354,7 +355,7 @@ public abstract class BaseAgreementSpi
             }
             else if (kdf instanceof HKDFBytesGenerator)
             {
-                kdf.init(new HKDFParameters(Arrays.concatenate(ukmParameters, secret), null, ukmParametersSalt));
+                kdf.init(new HKDFParameters(Arrays.concatenate(ukmParametersPrepend, secret), ukmParametersSalt, ukmParameters));
             }
             else
             {
