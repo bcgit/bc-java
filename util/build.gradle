@@ -74,7 +74,7 @@ jar {
 
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Export-Package': 'org.bouncycastle.asn1.{bsi|cmc|cmp|cms|crmf|dvcs|eac|esf|ess|est|icao|isismtt|smime|tsp}.*;org.bouncycastle.oer.*')
     manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
 }
 
