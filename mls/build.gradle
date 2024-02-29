@@ -3,18 +3,14 @@ plugins {
 // OSGI
     id "biz.aQute.bnd.builder" version "7.0.0"
 //     Provide convenience executables for trying out the examples.
-    id 'application'
+//    id 'application'
     id 'com.google.protobuf' version '0.9.4'
 //     Generate IntelliJ IDEA's .idea & .iml project files
-    id 'idea'
+//    id 'idea'
 }
 
-apply plugin: 'java'
-apply plugin: 'com.google.protobuf'
-
-// Set Java version to 1.8
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+//apply plugin: 'java'
+//apply plugin: 'com.google.protobuf'
 
 dependencies {
     implementation project(':core')
@@ -48,6 +44,14 @@ dependencies {
 //    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 //    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 //    implementation "com.google.protobuf:protobuf-java-util:${protocVersion}"
+
+    java9Implementation project(':core')
+    java9Implementation project(':prov')
+    java9Implementation project(':util')
+    java9Implementation project(':pkix')
+    java9Implementation files(sourceSets.main.output.classesDirs) {
+        builtBy compileJava
+    }
 }
 
 def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
@@ -59,9 +63,25 @@ checkstyleMain {
 }
 
 compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgs = ["-Xep:IgnoredPureGetter:OFF"]
     options.errorprone.errorproneArgs.add("-XepExcludedPaths:.*/build/generated/.*")
+}
+
+compileJava9Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 9
+    targetCompatibility = 9
+    options.compilerArgs += [
+            '--module-path', "${bc_prov}:${bc_util}:${bc_pkix}"
+    ]
+
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
 }
 
 protobuf {
@@ -87,6 +107,11 @@ sourceSets {
         java {
             srcDirs 'build/generated/source/proto/main/grpc'
             srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
         }
     }
 }
@@ -137,6 +162,9 @@ task sourcesJar(type: Jar) {
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    into('META-INF/versions/9') {
+        from sourceSets.java9.allSource
+    }
 }
 
 
