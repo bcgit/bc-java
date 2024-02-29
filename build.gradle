@@ -245,6 +245,9 @@ subprojects {
         reportsDirectory = layout.buildDirectory.dir("jacoco")
     }
 
+    tasks.withType(JavaCompile).configureEach {
+        options.debug = true;
+    }
 }
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test17', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
