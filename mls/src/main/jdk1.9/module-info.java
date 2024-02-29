@@ -1,7 +1,5 @@
 module org.bouncycastle.mls
 {
-    provides java.security.Provider with org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-    
     requires java.logging;
     requires org.bouncycastle.provider;
     requires org.bouncycastle.util;
