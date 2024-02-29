@@ -3,14 +3,30 @@ plugins {
 // OSGI
     id "biz.aQute.bnd.builder" version "7.0.0"
 //     Provide convenience executables for trying out the examples.
-//    id 'application'
+    id 'application'
     id 'com.google.protobuf' version '0.9.4'
 //     Generate IntelliJ IDEA's .idea & .iml project files
 //    id 'idea'
 }
 
-//apply plugin: 'java'
-//apply plugin: 'com.google.protobuf'
+apply plugin: 'java'
+apply plugin: 'com.google.protobuf'
+
+sourceSets {
+
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+}
 
 dependencies {
     implementation project(':core')
@@ -102,19 +118,6 @@ protobuf {
 
 jar.archiveBaseName = "bcmls-$vmrange"
 
-sourceSets {
-    main {
-        java {
-            srcDirs 'build/generated/source/proto/main/grpc'
-            srcDirs 'build/generated/source/proto/main/java'
-        }
-    }
-    java9 {
-        java {
-            srcDirs = ['src/main/jdk1.9']
-        }
-    }
-}
 
 startScripts.enabled = false
 
