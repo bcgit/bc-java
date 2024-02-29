@@ -121,6 +121,17 @@ extractIncludeTestProto {
 
 createStartScripts('org.bouncycastle.mls.client.impl.MLSClient')
 
+jar {
+    from sourceSets.main.output
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
+    manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
+    manifest.attributes('Export-Package': 'org.bouncycastle.mls.*')
+    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+}
+
 task sourcesJar(type: Jar) {
     archiveBaseName = jar.archiveBaseName
     archiveClassifier = 'sources'
