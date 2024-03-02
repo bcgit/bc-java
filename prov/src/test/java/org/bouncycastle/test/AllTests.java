@@ -4,7 +4,6 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.Security;
 
@@ -36,12 +35,12 @@ public class AllTests
 
         protected void setUp()
         {
-            Security.addProvider(new BouncyCastleProvider());
+//            Security.addProvider(new BouncyCastleProvider());
         }
 
         protected void tearDown()
         {
-            Security.removeProvider("BC");
+ //           Security.removeProvider("BC");
         }
     }
 }
