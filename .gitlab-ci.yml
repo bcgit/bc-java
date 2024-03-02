@@ -17,7 +17,8 @@ check-code:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
+      - "tls/build/reports"
+      - "mls/build/reports"    
   
 test-code-8:
   stage: test
