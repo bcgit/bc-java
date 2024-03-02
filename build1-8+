@@ -17,6 +17,12 @@ export JAVA_HOME
 PATH=$JDKPATH/bin:$PATH
 export PATH
 
+if [ "${JAVA_VERSION_PREFIX}" = "" ] 
+then
+    JAVA_VERSION_PREFIX=1.8
+    export JAVA_VERSION_PREFIX
+fi
+
 if [ "$1" = "test" ]
 then
     ant -f ant/jdk18+.xml test
