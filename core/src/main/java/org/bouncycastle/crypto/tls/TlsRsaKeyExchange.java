@@ -25,9 +25,9 @@ public abstract class TlsRsaKeyExchange
     public static byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret, RSAKeyParameters privateKey,
         int protocolVersion, SecureRandom secureRandom)
     {
-        if (encryptedPreMasterSecret == null)
+        if (Arrays.isNullOrEmpty(encryptedPreMasterSecret))
         {
-            throw new NullPointerException("'encryptedPreMasterSecret' cannot be null");
+            throw new IllegalArgumentException("'encryptedPreMasterSecret' cannot be null or empty");
         }
 
         if (!privateKey.isPrivate())
@@ -61,20 +61,13 @@ public abstract class TlsRsaKeyExchange
 
         try
         {
-            int pkcs1Length = (bitLength - 1) / 8;
-            int plainTextOffset = pkcs1Length - 48;
-
             BigInteger input = convertInput(modulus, encryptedPreMasterSecret);
-            BigInteger output = rsaBlinded(privateKey, input, secureRandom);
-            byte[] block = convertOutput(output);
+            byte[] encoding = rsaBlinded(privateKey, input, secureRandom);
 
-            byte[] encoding = block;
-            if (block.length != pkcs1Length)
-            {
-                encoding = new byte[pkcs1Length];
-            }
+            int pkcs1Length = (bitLength - 1) / 8;
+            int plainTextOffset = encoding.length - 48;
 
-            int badEncodingMask = checkPkcs1Encoding2(encoding, 48);
+            int badEncodingMask = checkPkcs1Encoding2(encoding, pkcs1Length, 48);
             int badVersionMask = -((Pack.bigEndianToShort(encoding, plainTextOffset) ^ protocolVersion) & 0xFFFF) >> 31;
             int fallbackMask = badEncodingMask | badVersionMask;
 
@@ -83,7 +76,7 @@ public abstract class TlsRsaKeyExchange
                 result[i] = (byte)((result[i] & fallbackMask) | (encoding[plainTextOffset + i] & ~fallbackMask));
             }
 
-            Arrays.fill(block, (byte)0);
+            Arrays.fill(encoding, (byte)0);
         }
         catch (Exception e)
         {
@@ -99,33 +92,55 @@ public abstract class TlsRsaKeyExchange
         return result;
     }
 
+    private static int caddTo(int len, int cond, byte[] x, byte[] z)
+    {
+//        assert cond == 0 || cond == -1;
+        int mask = cond & 0xFF;
+
+        int c = 0;
+        for (int i = len - 1; i >= 0; --i)
+        {
+            c += (z[i] & 0xFF) + (x[i] & mask);
+            z[i] = (byte)c;
+            c >>>= 8;
+        }
+        return c;
+    }
+
     /**
      * Check the argument is a valid encoding with type 2 of a plaintext with the given length. Returns 0 if
      * valid, or -1 if invalid.
      */
-    private static int checkPkcs1Encoding2(byte[] buf, int plaintextLength)
+    private static int checkPkcs1Encoding2(byte[] buf, int pkcs1Length, int plaintextLength)
     {
-        // The first byte should be 0x02
-        int badPadSign = -((buf[0] & 0xFF) ^ 0x02);
+        // The header should be at least 10 bytes
+        int errorSign = pkcs1Length - plaintextLength - 10;
 
+        int firstPadPos = buf.length - pkcs1Length;
         int lastPadPos = buf.length - 1 - plaintextLength;
 
-        // The header should be at least 10 bytes
-        badPadSign |= lastPadPos - 9;
+        // Any leading bytes should be zero
+        for (int i = 0; i < firstPadPos; ++i)
+        {
+            errorSign |= -(buf[i] & 0xFF);
+        }
+
+        // The first byte should be 0x02
+        errorSign |= -((buf[firstPadPos] & 0xFF) ^ 0x02);
 
         // All pad bytes before the last one should be non-zero
-        for (int i = 1; i < lastPadPos; ++i)
+        for (int i = firstPadPos + 1; i < lastPadPos; ++i)
         {
-            badPadSign |= (buf[i] & 0xFF) - 1;
+            errorSign |= (buf[i] & 0xFF) - 1;
         }
 
         // Last pad byte should be zero
-        badPadSign |= -(buf[lastPadPos] & 0xFF);
+        errorSign |= -(buf[lastPadPos] & 0xFF);
 
-        return badPadSign >> 31;
+        return errorSign >> 31;
     }
 
-    public static BigInteger convertInput(BigInteger modulus, byte[] input)
+    private static BigInteger convertInput(BigInteger modulus, byte[] input)
     {
         int inputLimit = (modulus.bitLength() + 7) / 8;
 
@@ -141,81 +156,16 @@ public abstract class TlsRsaKeyExchange
         throw new DataLengthException("input too large for RSA cipher.");
     }
 
-    public static byte[] convertOutput(BigInteger result)
-    {
-        byte[] output = result.toByteArray();
-
-        byte[] rv;
-        if (output[0] == 0) // have ended up with an extra zero byte, copy down.
-        {
-            rv = new byte[output.length - 1];
-
-            System.arraycopy(output, 1, rv, 0, rv.length);
-        }
-        else // maintain decryption time
-        {
-            rv = new byte[output.length];
-
-            System.arraycopy(output, 0, rv, 0, rv.length);
-        }
-
-        Arrays.fill(output, (byte) 0);
-
-        return rv;
-    }
-
     private static BigInteger rsa(RSAKeyParameters privateKey, BigInteger input)
     {
-        if (privateKey instanceof RSAPrivateCrtKeyParameters)
-        {
-            //
-            // we have the extra factors, use the Chinese Remainder Theorem - the author
-            // wishes to express his thanks to Dirk Bonekaemper at rtsffm.com for
-            // advice regarding the expression of this.
-            //
-            RSAPrivateCrtKeyParameters crtKey = (RSAPrivateCrtKeyParameters)privateKey;
-
-            BigInteger e = crtKey.getPublicExponent();
-            if (e != null)   // can't apply fault-attack countermeasure without public exponent
-            {
-                BigInteger p = crtKey.getP();
-                BigInteger q = crtKey.getQ();
-                BigInteger dP = crtKey.getDP();
-                BigInteger dQ = crtKey.getDQ();
-                BigInteger qInv = crtKey.getQInv();
-
-                BigInteger mP, mQ, h, m;
-
-                // mP = ((input mod p) ^ dP)) mod p
-                mP = (input.remainder(p)).modPow(dP, p);
-
-                // mQ = ((input mod q) ^ dQ)) mod q
-                mQ = (input.remainder(q)).modPow(dQ, q);
-
-                // h = qInv * (mP - mQ) mod p
-                h = mP.subtract(mQ);
-                h = h.multiply(qInv);
-                h = h.mod(p);               // mod (in Java) returns the positive residual
-
-                // m = h * q + mQ
-                m = h.multiply(q).add(mQ);
-
-                // defence against Arjen Lenstra’s CRT attack
-                BigInteger check = m.modPow(e, crtKey.getModulus()); 
-                if (!check.equals(input))
-                {
-                    throw new IllegalStateException("RSA engine faulty decryption/signing detected");
-                }
-
-                return m;
-            }
-        }
-
         return input.modPow(privateKey.getExponent(), privateKey.getModulus());
     }
 
-    private static BigInteger rsaBlinded(RSAKeyParameters privateKey, BigInteger input, SecureRandom secureRandom)
+    private static byte[] rsaBlinded(RSAKeyParameters privateKey, BigInteger input, SecureRandom secureRandom)
     {
+        BigInteger modulus = privateKey.getModulus();
+        int resultSize = modulus.bitLength() / 8 + 1;
+
         if (privateKey instanceof RSAPrivateCrtKeyParameters)
         {
             RSAPrivateCrtKeyParameters crtKey = (RSAPrivateCrtKeyParameters)privateKey;
@@ -223,18 +173,94 @@ public abstract class TlsRsaKeyExchange
             BigInteger e = crtKey.getPublicExponent();
             if (e != null)   // can't do blinding without a public exponent
             {
-                BigInteger m = crtKey.getModulus();
+                BigInteger r = BigIntegers.createRandomInRange(ONE, modulus.subtract(ONE), secureRandom);
+                BigInteger blind = r.modPow(e, modulus);
+                BigInteger unblind = BigIntegers.modOddInverse(modulus, r);
 
-                BigInteger r = BigIntegers.createRandomInRange(ONE, m.subtract(ONE), secureRandom);
-                BigInteger blind = r.modPow(e, m);
-                BigInteger unblind = BigIntegers.modOddInverse(m, r);
+                BigInteger blindedInput = blind.multiply(input).mod(modulus);
+                BigInteger blindedResult = rsaCrt(crtKey, blindedInput);
+                BigInteger offsetResult = unblind.add(ONE).multiply(blindedResult).mod(modulus);
 
-                BigInteger blindedInput = blind.multiply(input).mod(m);
-                BigInteger blindedResult = rsa(privateKey, blindedInput);
-                return unblind.multiply(blindedResult).mod(m);
+                /*
+                 * BigInteger conversion time is not constant, but is only done for blinded or public values.
+                 */
+                byte[] blindedResultBytes = toBytes(blindedResult, resultSize);
+                byte[] modulusBytes = toBytes(modulus, resultSize);
+                byte[] resultBytes = toBytes(offsetResult, resultSize);
+
+                /*
+                 * A final modular subtraction is done without timing dependencies on the final result. 
+                 */
+                int carry = subFrom(resultSize, blindedResultBytes, resultBytes);
+                caddTo(resultSize, carry, modulusBytes, resultBytes);
+
+                return resultBytes;
             }
         }
 
-        return rsa(privateKey, input);
+        return toBytes(rsa(privateKey, input), resultSize);
+    }
+
+    private static BigInteger rsaCrt(RSAPrivateCrtKeyParameters crtKey, BigInteger input)
+    {
+        //
+        // we have the extra factors, use the Chinese Remainder Theorem - the author
+        // wishes to express his thanks to Dirk Bonekaemper at rtsffm.com for
+        // advice regarding the expression of this.
+        //
+        BigInteger e = crtKey.getPublicExponent();
+//        assert e != null;
+
+        BigInteger p = crtKey.getP();
+        BigInteger q = crtKey.getQ();
+        BigInteger dP = crtKey.getDP();
+        BigInteger dQ = crtKey.getDQ();
+        BigInteger qInv = crtKey.getQInv();
+
+        BigInteger mP, mQ, h, m;
+
+        // mP = ((input mod p) ^ dP)) mod p
+        mP = (input.remainder(p)).modPow(dP, p);
+
+        // mQ = ((input mod q) ^ dQ)) mod q
+        mQ = (input.remainder(q)).modPow(dQ, q);
+
+        // h = qInv * (mP - mQ) mod p
+        h = mP.subtract(mQ);
+        h = h.multiply(qInv);
+        h = h.mod(p);               // mod (in Java) returns the positive residual
+
+        // m = h * q + mQ
+        m = h.multiply(q).add(mQ);
+
+        // defence against Arjen Lenstra’s CRT attack
+        BigInteger check = m.modPow(e, crtKey.getModulus()); 
+        if (!check.equals(input))
+        {
+            throw new IllegalStateException("RSA engine faulty decryption/signing detected");
+        }
+
+        return m;
+    }
+
+    private static int subFrom(int len, byte[] x, byte[] z)
+    {
+        int c = 0;
+        for (int i = len - 1; i >= 0; --i)
+        {
+            c += (z[i] & 0xFF) - (x[i] & 0xFF);
+            z[i] = (byte)c;
+            c >>= 8;
+        }
+        return c;
+    }
+
+    private static byte[] toBytes(BigInteger output, int fixedSize)
+    {
+        byte[] bytes = output.toByteArray();
+
+        byte[] result = new byte[fixedSize];
+        System.arraycopy(bytes, 0, result, result.length - bytes.length, bytes.length);
+        return result;
     }
 }
