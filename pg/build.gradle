@@ -13,9 +13,9 @@ sourceSets {
 
 
 dependencies {
-
+    implementation project(':core')
     implementation project(':prov')
-
+    implementation project(':util')
     implementation files("$bc_prov")
     implementation project(path: ':core')
 

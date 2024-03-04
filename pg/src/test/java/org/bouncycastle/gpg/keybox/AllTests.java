@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp.test;
+package org.bouncycastle.gpg.keybox;
 
 import java.security.Security;
 
@@ -7,6 +7,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.test.RegressionTest;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 
@@ -40,8 +41,6 @@ public class AllTests
         TestSuite suite = new TestSuite("OpenPGP Tests");
 
         suite.addTestSuite(AllTests.class);
-        suite.addTestSuite(DSA2Test.class);
-        suite.addTestSuite(PGPUnicodeTest.class);
 
         return new BCTestSetup(suite);
     }
@@ -65,3 +64,4 @@ public class AllTests
         }
     }
 }
+

@@ -24,63 +24,30 @@ class PGPUtil
         char[] passPhrase)
         throws PGPException
     {
-        // TODO: Never used
-        String algName = null;
-        int keySize = 0;
+        int keySize;
 
         switch (algorithm)
         {
         case SymmetricKeyAlgorithmTags.TRIPLE_DES:
+        case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             keySize = 192;
-            algName = "DES_EDE";
             break;
         case SymmetricKeyAlgorithmTags.IDEA:
-            keySize = 128;
-            algName = "IDEA";
-            break;
         case SymmetricKeyAlgorithmTags.CAST5:
-            keySize = 128;
-            algName = "CAST5";
-            break;
         case SymmetricKeyAlgorithmTags.BLOWFISH:
-            keySize = 128;
-            algName = "Blowfish";
-            break;
         case SymmetricKeyAlgorithmTags.SAFER:
+        case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             keySize = 128;
-            algName = "SAFER";
             break;
         case SymmetricKeyAlgorithmTags.DES:
             keySize = 64;
-            algName = "DES";
-            break;
-        case SymmetricKeyAlgorithmTags.AES_128:
-            keySize = 128;
-            algName = "AES";
-            break;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            keySize = 192;
-            algName = "AES";
             break;
         case SymmetricKeyAlgorithmTags.AES_256:
-            keySize = 256;
-            algName = "AES";
-            break;
         case SymmetricKeyAlgorithmTags.TWOFISH:
-            keySize = 256;
-            algName = "Twofish";
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            keySize = 128;
-            algName = "Camellia";
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            keySize = 192;
-            algName = "Camellia";
-            break;
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
             keySize = 256;
-            algName = "Camellia";
             break;
         default:
             throw new PGPException("unknown symmetric algorithm: " + algorithm);

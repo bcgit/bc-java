@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.agreement.XDHUnifiedAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
@@ -24,6 +25,7 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
 import org.bouncycastle.util.Properties;
 
 public class KeyAgreementSpi
@@ -72,6 +74,7 @@ public class KeyAgreementSpi
         }
 
         ukmParameters = null;
+        ukmParametersSalt = null;
         if (params instanceof DHUParameterSpec)
         {
             if (kaAlgorithm.indexOf('U') < 0)
@@ -98,6 +101,15 @@ public class KeyAgreementSpi
                     throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
                 }
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
+                this.ukmParametersSalt = ((UserKeyingMaterialSpec)params).getSalt();
+                if (params instanceof UserKeyingMaterialSpecWithPrepend)
+                {
+                    this.ukmParametersPrepend = ((UserKeyingMaterialSpecWithPrepend)params).getPrepend();
+                }
+                else
+                {
+                    this.ukmParametersPrepend = null;
+                }
             }
             else
             {
@@ -313,6 +325,24 @@ public class KeyAgreementSpi
         public X448UwithSHA512KDF()
         {
             super("X448UwithSHA512KDF", new KDF2BytesGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    public final static class X448withSHA512HKDF
+        extends KeyAgreementSpi
+    {
+        public X448withSHA512HKDF()
+        {
+            super("X448withSHA512HKDF", new HKDFBytesGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    public final static class X25519withSHA256HKDF
+        extends KeyAgreementSpi
+    {
+        public X25519withSHA256HKDF()
+        {
+            super("X25519withSHA256HKDF", new HKDFBytesGenerator(DigestFactory.createSHA256()));
         }
     }
 }
