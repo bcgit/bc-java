@@ -29,15 +29,16 @@ test-code-8:
    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
   artifacts:
     when: always
-    paths:
-      - "core/build/reports"
-      - "prov/build/reports"
-      - "pg/build/reports"
-      - "pkix/build/reports"
-      - "mail/build/reports"
-      - "util/build/reports"
-      - "tls/build/reports"
-      - "mls/build/reports"
+    reports:
+      junit:
+      - "core/build/test-results/**/*.xml"
+      - "prov/build/test-results/**/*.xml"
+      - "pg/build/test-results/**/*.xml"
+      - "pkix/build/test-results/**/*.xml"
+      - "mail/build/test-results/**/*.xml"
+      - "util/build/test-results/**/*.xml"
+      - "tls/build/test-results/**/*.xml"
+      - "mls/build/test-results/**/*.xml"
 
 test-code-11:
   stage: test
