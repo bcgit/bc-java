@@ -1,11 +1,11 @@
 package org.bouncycastle.openpgp;
 
-import java.io.EOFException;
 import java.io.InputStream;
 
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -15,7 +15,6 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * A public key encrypted data object.
@@ -80,7 +79,7 @@ public class PGPPublicKeyEncryptedData
         else if (keyData.getVersion() == PublicKeyEncSessionPacket.VERSION_6)
         {
             // PKESK v5 stores the cipher algorithm in the SEIPD v2 packet fields.
-            return ((SymmetricEncIntegrityPacket) encData).getCipherAlgorithm();
+            return ((SymmetricEncIntegrityPacket)encData).getCipherAlgorithm();
         }
         else
         {
@@ -100,11 +99,14 @@ public class PGPPublicKeyEncryptedData
         throws PGPException
     {
         byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+        if (keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448)
+        {
+            return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length));
+        }
         if (!confirmCheckSum(sessionData))
         {
             throw new PGPKeyValidationException("key checksum failed");
         }
-
         return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
     }
 
@@ -173,38 +175,7 @@ public class PGPPublicKeyEncryptedData
 
                     BCPGInputStream encIn = encData.getInputStream();
 
-                    encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
-
-                    if (withIntegrityPacket)
-                    {
-                        truncStream = new TruncatedStream(encStream);
-
-                        integrityCalculator = dataDecryptor.getIntegrityCalculator();
-
-                        encStream = new TeeInputStream(truncStream, integrityCalculator.getOutputStream());
-                    }
-
-                    byte[] iv = new byte[dataDecryptor.getBlockSize()];
-
-                    for (int i = 0; i != iv.length; i++)
-                    {
-                        int ch = encStream.read();
-
-                        if (ch < 0)
-                        {
-                            throw new EOFException("unexpected end of stream.");
-                        }
-
-                        iv[i] = (byte)ch;
-                    }
-
-                    int v1 = encStream.read();
-                    int v2 = encStream.read();
-
-                    if (v1 < 0 || v2 < 0)
-                    {
-                        throw new EOFException("unexpected end of stream.");
-                    }
+                    processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn);
 
                     //
                     // some versions of PGP appear to produce 0 for the extra

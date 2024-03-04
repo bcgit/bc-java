@@ -67,17 +67,17 @@ public class PublicKeyPacket
         case ECDH:
             key = new ECDHPublicBCPGKey(in);
             break;
-        case ECDSA:
-            key = new ECDSAPublicBCPGKey(in);
-            break;
-        case EDDSA_LEGACY:
-            key = new EdDSAPublicBCPGKey(in);
-            break;
         case X25519:
             key = new X25519PublicBCPGKey(in);
             break;
         case X448:
             key = new X448PublicBCPGKey(in);
+            break;
+        case ECDSA:
+            key = new ECDSAPublicBCPGKey(in);
+            break;
+        case EDDSA_LEGACY:
+            key = new EdDSAPublicBCPGKey(in);
             break;
         case Ed25519:
             key = new Ed25519PublicBCPGKey(in);
@@ -158,10 +158,7 @@ public class PublicKeyPacket
 
         pOut.write(version);
 
-        pOut.write((byte)(time >> 24));
-        pOut.write((byte)(time >> 16));
-        pOut.write((byte)(time >> 8));
-        pOut.write((byte)time);
+        StreamUtil.writeTime(pOut, time);
 
         if (version <= VERSION_3)
         {

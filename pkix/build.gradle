@@ -14,7 +14,7 @@ sourceSets {
 }
 
 dependencies {
-
+    implementation project(':core')
     implementation project(':prov')
     implementation project(':util')
 

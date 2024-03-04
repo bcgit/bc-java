@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -29,8 +30,8 @@ public class BcPBEDataDecryptorFactory
     /**
      * Base constructor.
      *
-     * @param pass  the passphrase to use as the primary source of key material.
-     * @param calculatorProvider   a digest calculator provider to provide calculators to support the key generation calculation required.
+     * @param pass               the passphrase to use as the primary source of key material.
+     * @param calculatorProvider a digest calculator provider to provide calculators to support the key generation calculation required.
      */
     public BcPBEDataDecryptorFactory(char[] pass, BcPGPDigestCalculatorProvider calculatorProvider)
     {
@@ -41,9 +42,9 @@ public class BcPBEDataDecryptorFactory
      * Recover the session key from a version 4 SKESK packet used in OpenPGP v4.
      *
      * @param keyAlgorithm the {@link SymmetricKeyAlgorithmTags encryption algorithm} used to
-     *            encrypt the session data.
-     * @param key the key bytes for the encryption algorithm.
-     * @param secKeyData the encrypted session data to decrypt.
+     *                     encrypt the session data.
+     * @param key          the key bytes for the encryption algorithm.
+     * @param secKeyData   the encrypted session data to decrypt.
      * @return session key
      * @throws PGPException
      */
@@ -84,7 +85,7 @@ public class BcPBEDataDecryptorFactory
 
     @Override
     public byte[] recoverAEADEncryptedSessionData(SymmetricKeyEncSessionPacket keyData, byte[] ikm)
-            throws PGPException
+        throws PGPException
     {
         if (keyData.getVersion() < SymmetricKeyEncSessionPacket.VERSION_5)
         {
@@ -111,7 +112,7 @@ public class BcPBEDataDecryptorFactory
 
         // sessionData := AEAD(secretKey).decrypt(encSessionKey || authTag)
         AEADParameters parameters = new AEADParameters(secretKey,
-                aeadMacLen, aeadIv, keyData.getAAData());
+            aeadMacLen, aeadIv, keyData.getAAData());
         aead.init(false, parameters);
         int sessionKeyLen = aead.getOutputSize(encSessionKey.length + authTag.length);
         byte[] sessionData = new byte[sessionKeyLen];
@@ -151,7 +152,7 @@ public class BcPBEDataDecryptorFactory
     // OpenPGP v6
     @Override
     public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
-            throws PGPException
+        throws PGPException
     {
         return BcAEADUtil.createOpenPgpV6DataDecryptor(seipd, sessionKey);
     }

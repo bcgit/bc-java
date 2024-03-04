@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.operator;
 
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -34,18 +35,22 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
         case PGPPublicKey.RSA_ENCRYPT:
         case PGPPublicKey.RSA_GENERAL:
+        case PGPPublicKey.ELGAMAL_ENCRYPT:
+        case PGPPublicKey.ELGAMAL_GENERAL:
+        case PGPPublicKey.ECDH:
+        case PGPPublicKey.X25519:
+        case PGPPublicKey.X448:
             break;
         case PGPPublicKey.RSA_SIGN:
             throw new IllegalArgumentException("Can't use an RSA_SIGN key for encryption.");
-        case PGPPublicKey.ELGAMAL_ENCRYPT:
-        case PGPPublicKey.ELGAMAL_GENERAL:
-            break;
-        case PGPPublicKey.ECDH:
-            break;
         case PGPPublicKey.DSA:
             throw new IllegalArgumentException("Can't use DSA for encryption.");
         case PGPPublicKey.ECDSA:
             throw new IllegalArgumentException("Can't use ECDSA for encryption.");
+        case PublicKeyAlgorithmTags.Ed448:
+        case PublicKeyAlgorithmTags.Ed25519:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+            throw new IllegalArgumentException("Can't use EdDSA for encryption.");
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
         }
@@ -59,6 +64,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * <p>
      * The default behaviour can be configured using the system property "", or else it will default to enabled.
      * </p>
+     *
      * @return the current generator.
      */
     public PublicKeyKeyEncryptionMethodGenerator setSessionKeyObfuscation(boolean enabled)
@@ -108,6 +114,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             data[1] = convertToEncodedMPI(b2);
             break;
         case PGPPublicKey.ECDH:
+        case PGPPublicKey.X448:
+        case PGPPublicKey.X25519:
             data = new byte[1][];
 
             data[0] = encryptedSessionInfo;
@@ -149,7 +157,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     @Override
     public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
+        throws PGPException
     {
         // TODO: Implement
         return null;
@@ -157,7 +165,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     @Override
     public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-            throws PGPException
+        throws PGPException
     {
         // TODO: Implement
         return null;
@@ -165,4 +173,26 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
         throws PGPException;
+
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] c)
+        throws IOException
+    {
+        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
+
+        byte[] rv = new byte[VB.length + 1 + c.length];
+        System.arraycopy(VB, 0, rv, 0, VB.length);
+        rv[VB.length] = (byte)c.length;
+        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
+        return rv;
+    }
+
+    protected static byte[] getSessionInfo(byte[] VB, int sysmmetricKeyAlgorithm, byte[] c)
+    {
+        byte[] rv = new byte[VB.length + 2 + c.length];
+        System.arraycopy(VB, 0, rv, 0, VB.length);
+        rv[VB.length] = (byte)(c.length + 1);
+        rv[VB.length + 1] = (byte)sysmmetricKeyAlgorithm;
+        System.arraycopy(c, 0, rv, VB.length + 2, c.length);
+        return rv;
+    }
 }

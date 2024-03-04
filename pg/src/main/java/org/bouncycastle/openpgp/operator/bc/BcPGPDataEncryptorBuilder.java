@@ -78,7 +78,7 @@ public class BcPGPDataEncryptorBuilder
 
     /**
      * Sets whether the resulting encrypted data will be protected using an AEAD mode.
-     *
+     * <p>
      * The chunkSize is used as a power of two, result in blocks (1 &lt;&lt; chunkSize) containing data
      * with an extra 16 bytes for the tag. The minimum chunkSize is 6.
      *
@@ -89,11 +89,15 @@ public class BcPGPDataEncryptorBuilder
     @Override
     public BcPGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
+        boolean enableCamellia = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256
+            && (enableCamellia && (encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)))
         {
-            throw new IllegalStateException("AEAD algorithms can only be used with AES");
+            throw new IllegalStateException("AEAD algorithms can only be used with AES" + (enableCamellia ? " and Camellia" : ""));
         }
 
         if (chunkSize < 6)

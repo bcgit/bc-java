@@ -90,6 +90,10 @@ public class PGPObjectFactory
         case -1:
             return null;
         case PacketTags.RESERVED:
+        case PacketTags.EXPERIMENTAL_1:
+        case PacketTags.EXPERIMENTAL_2:
+        case PacketTags.EXPERIMENTAL_3:
+        case PacketTags.EXPERIMENTAL_4:
             return in.readPacket();
         case PacketTags.SIGNATURE:
             l = new ArrayList();
@@ -163,11 +167,6 @@ public class PGPObjectFactory
             return new PGPMarker(in);
         case PacketTags.PADDING:
             return new PGPPadding(in);
-        case PacketTags.EXPERIMENTAL_1:
-        case PacketTags.EXPERIMENTAL_2:
-        case PacketTags.EXPERIMENTAL_3:
-        case PacketTags.EXPERIMENTAL_4:
-            return in.readPacket();
         }
 
         int tag = in.nextPacketTag();
