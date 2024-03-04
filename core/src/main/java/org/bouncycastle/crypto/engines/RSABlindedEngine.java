@@ -30,40 +30,20 @@ public class RSABlindedEngine
      * @param forEncryption true if we are encrypting, false otherwise.
      * @param param the necessary RSA key parameters.
      */
-    public void init(
-        boolean             forEncryption,
-        CipherParameters    param)
+    public void init(boolean forEncryption, CipherParameters parameters)
     {
-        core.init(forEncryption, param);
-
-        if (param instanceof ParametersWithRandom)
+        SecureRandom providedRandom = null;
+        if (parameters instanceof ParametersWithRandom)
         {
-            ParametersWithRandom rParam = (ParametersWithRandom)param;
-
-            this.key = (RSAKeyParameters)rParam.getParameters();
-
-            if (key instanceof RSAPrivateCrtKeyParameters)
-            {
-                this.random = rParam.getRandom();
-            }
-            else
-            {
-                this.random = null;
-            }
+            ParametersWithRandom withRandom = (ParametersWithRandom)parameters;
+            providedRandom = withRandom.getRandom();
+            parameters = withRandom.getParameters();
         }
-        else
-        {
-            this.key = (RSAKeyParameters)param;
 
-            if (key instanceof RSAPrivateCrtKeyParameters)
-            {
-                this.random = CryptoServicesRegistrar.getSecureRandom();
-            }
-            else
-            {
-                this.random = null;
-            }
-        }
+        core.init(forEncryption, parameters);
+
+        this.key = (RSAKeyParameters)parameters;
+        this.random = initSecureRandom(key instanceof RSAPrivateCrtKeyParameters, providedRandom);
     }
 
     /**
@@ -99,10 +79,7 @@ public class RSABlindedEngine
      * @return the result of the RSA process.
      * @exception DataLengthException the input block is too large.
      */
-    public byte[] processBlock(
-        byte[]  in,
-        int     inOff,
-        int     inLen)
+    public byte[] processBlock(byte[] in, int inOff, int inLen)
     {
         if (key == null)
         {
@@ -112,6 +89,11 @@ public class RSABlindedEngine
         BigInteger input = core.convertInput(in, inOff, inLen);
         BigInteger result = processInput(input);
         return core.convertOutput(result);
+    }
+
+    protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
+    {
+        return needed ? CryptoServicesRegistrar.getSecureRandom(provided) : null;
     }
 
     private BigInteger processInput(BigInteger input)
