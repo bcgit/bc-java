@@ -165,7 +165,7 @@ public class EccP256CurvePoint
             choice = compressedY1;
         }
         byte[] copy = new byte[encoded.length - 1];
-        System.arraycopy(encoded, 0, copy, 0, copy.length);
+        System.arraycopy(encoded, 1, copy, 0, copy.length);
         return new EccP256CurvePoint(choice, new DEROctetString(copy));
     }
 
