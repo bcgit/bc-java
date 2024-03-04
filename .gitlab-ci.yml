@@ -22,7 +22,7 @@ check-code:
   
 test-code-8:
   stage: test
-  needs: []
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -36,11 +36,12 @@ test-code-8:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
-  
+      - "tls/build/reports"
+      - "mls/build/reports"
+
 test-code-11:
   stage: test
-  needs: []
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -54,10 +55,12 @@ test-code-11:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
-  
+      - "tls/build/reports"
+      - "mls/build/reports"
+
 test-code-17:
   stage: test
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -71,10 +74,12 @@ test-code-17:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
+      - "tls/build/reports"
+      - "mls/build/reports"
+
 test-code-21:
   stage: test
-  needs: []
+  needs: ["check-code"]
   script:
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
@@ -89,3 +94,4 @@ test-code-21:
       - "mail/build/reports"
       - "util/build/reports"
       - "tls/build/reports"
+      - "mls/build/reports"
