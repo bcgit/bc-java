@@ -9,6 +9,12 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 public class SignatureExpirationTime 
     extends SignatureSubpacket
 {
+    protected static byte[] timeToBytes(
+        long    t)
+    {
+        return Utils.timeToBytes(t);
+    }
+    
     public SignatureExpirationTime(
         boolean    critical,
         boolean    isLongLength,

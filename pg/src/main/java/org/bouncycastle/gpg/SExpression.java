@@ -192,7 +192,7 @@ public class SExpression
 
     }
 
-    public static SExpression parseCanonical(InputStream _src, int maxDepth)
+    static SExpression parseCanonical(InputStream _src, int maxDepth)
         throws IOException
     {
         SExpression expr = new SExpression();

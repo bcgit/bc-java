@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
-import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.agreement.kdf.DHKDFParameters;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
@@ -154,7 +153,6 @@ public abstract class BaseAgreementSpi
 
     protected byte[] ukmParameters;
     protected byte[] ukmParametersSalt;
-    protected byte[] ukmParametersPrepend;
     private HybridValueParameterSpec hybridSpec;
 
     public BaseAgreementSpi(String kaAlgorithm, DerivationFunction kdf)
@@ -252,6 +250,7 @@ public abstract class BaseAgreementSpi
         if (params instanceof HybridValueParameterSpec)
         {
             this.hybridSpec = (HybridValueParameterSpec)params;
+
             doInitFromKey(key, hybridSpec.getBaseParameterSpec(), random);
         }
         else
@@ -355,7 +354,7 @@ public abstract class BaseAgreementSpi
             }
             else if (kdf instanceof HKDFBytesGenerator)
             {
-                kdf.init(new HKDFParameters(Arrays.concatenate(ukmParametersPrepend, secret), ukmParametersSalt, ukmParameters));
+                kdf.init(new HKDFParameters(secret, ukmParametersSalt, ukmParameters));
             }
             else
             {
@@ -393,7 +392,16 @@ public abstract class BaseAgreementSpi
         {
             // Set Z' to Z || T
             byte[] s = doCalcSecret();
-            byte[] sec = Arrays.concatenate(s, hybridSpec.getT());
+            byte[] sec;
+
+            if (hybridSpec.isPrependedT())
+            {
+                sec = Arrays.concatenate(hybridSpec.getT(), s);
+            }
+            else
+            {
+                sec = Arrays.concatenate(s, hybridSpec.getT());
+            }
 
             Arrays.clear(s);
 

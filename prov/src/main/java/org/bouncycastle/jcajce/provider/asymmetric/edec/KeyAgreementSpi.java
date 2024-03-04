@@ -25,7 +25,6 @@ import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
 import org.bouncycastle.util.Properties;
 
 public class KeyAgreementSpi
@@ -102,14 +101,6 @@ public class KeyAgreementSpi
                 }
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
                 this.ukmParametersSalt = ((UserKeyingMaterialSpec)params).getSalt();
-                if (params instanceof UserKeyingMaterialSpecWithPrepend)
-                {
-                    this.ukmParametersPrepend = ((UserKeyingMaterialSpecWithPrepend)params).getPrepend();
-                }
-                else
-                {
-                    this.ukmParametersPrepend = null;
-                }
             }
             else
             {
