@@ -15,33 +15,23 @@ import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
-import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.params.HKDFParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
@@ -175,7 +165,7 @@ public class OperatorJcajceTest
         PrivateKey privKey = keyfact.generatePrivate(new PKCS8EncodedKeySpec(PrivateKeyInfoFactory.createPrivateKeyInfo(ephmeralprivateKeyParameters).getEncoded()));
         PublicKey pubKey = keyfact.generatePublic(new X509EncodedKeySpec(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(publicKeyParameters).getEncoded()));
         KeyAgreement agreement = KeyAgreement.getInstance("X25519withSHA256HKDF", "BC");
-        agreement.init(privKey, new UserKeyingMaterialSpecWithPrepend(Arrays.concatenate(ephmeralKey, publicKey), Strings.toByteArray("OpenPGP X25519")));
+        agreement.init(privKey, new HybridValueParameterSpec(Arrays.concatenate(ephmeralKey, publicKey), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP X25519"))));
         agreement.doPhase(pubKey, true);
         Key secretKey= agreement.generateSecret(NISTObjectIdentifiers.id_aes128_wrap.getId());
 
@@ -188,7 +178,7 @@ public class OperatorJcajceTest
 //        hkdf.init(new HKDFParameters(Arrays.concatenate(ephmeralKey, publicKey, secret), null, "OpenPGP X25519".getBytes()));
 //        hkdf.generateBytes(output2, 0, 16);
 //
-        isTrue(Arrays.areEqual(output2, expectedHKDF));
+        isTrue("hkdf failed", Arrays.areEqual(output2, expectedHKDF));
 //        Wrapper c = new RFC3394WrapEngine(AESEngine.newInstance());
 //        c.init(false, new KeyParameter(output2));
 //        byte[] output = c.unwrap(keyEnc, 0, keyEnc.length);

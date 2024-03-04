@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.interfaces.RSAKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 
@@ -304,7 +305,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
             PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
             Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, publicKey, symmetricKeyAlgorithm, keyEnc,
-                JcaJcePGPUtil.getUserKeyingMaterialSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
+                JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
             return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
         }
@@ -315,7 +316,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     }
 
     private Key getSessionKey(JcaPGPKeyConverter converter, PGPPrivateKey privKey, String agreementName,
-                              PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc, UserKeyingMaterialSpec ukms)
+                              PublicKey publicKey, int symmetricKeyAlgorithm, byte[] keyEnc, AlgorithmParameterSpec ukms)
         throws PGPException, GeneralSecurityException
     {
         PrivateKey privateKey = converter.getPrivateKey(privKey);

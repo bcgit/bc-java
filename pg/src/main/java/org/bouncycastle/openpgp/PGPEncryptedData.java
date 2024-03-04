@@ -254,7 +254,7 @@ public abstract class PGPEncryptedData
         throw new UnsupportedOperationException("not supported - override required");
     }
 
-    protected boolean processSymmetricEncIntegrityPacketDataStream(boolean withIntegrityPacket, PGPDataDecryptor dataDecryptor, BCPGInputStream encIn)
+    boolean processSymmetricEncIntegrityPacketDataStream(boolean withIntegrityPacket, PGPDataDecryptor dataDecryptor, BCPGInputStream encIn)
         throws IOException
     {
         encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));

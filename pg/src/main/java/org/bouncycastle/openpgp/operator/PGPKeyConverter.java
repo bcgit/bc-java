@@ -19,6 +19,11 @@ import org.bouncycastle.util.BigIntegers;
 
 public abstract class PGPKeyConverter
 {
+    protected PGPKeyConverter()
+    {
+        
+    }
+
     /**
      * Reference: <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/13/">RFC Draft-ietf-openpgp-crypto-refresh-13</a>
      * <p>

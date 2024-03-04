@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
@@ -15,8 +16,8 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
@@ -64,13 +65,13 @@ class JcaJcePGPUtil
         return x9Params;
     }
 
-    static UserKeyingMaterialSpecWithPrepend getUserKeyingMaterialSpecWithPrepend(byte[] ephmeralPublicKey, PublicKeyPacket pkp, String algorithmName)
+    static HybridValueParameterSpec getHybridValueParameterSpecWithPrepend(byte[] ephmeralPublicKey, PublicKeyPacket pkp, String algorithmName)
         throws IOException
     {
-        return new UserKeyingMaterialSpecWithPrepend(Arrays.concatenate(ephmeralPublicKey, pkp.getEncoded()), Strings.toByteArray("OpenPGP " + algorithmName));
+        return new HybridValueParameterSpec(Arrays.concatenate(ephmeralPublicKey, pkp.getEncoded()), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP " + algorithmName)));
     }
 
-    static Key getSecret(OperatorHelper helper, PublicKey cryptoPublicKey, String keyEncryptionOID, String agreementName, UserKeyingMaterialSpec ukmSpec, Key privKey)
+    static Key getSecret(OperatorHelper helper, PublicKey cryptoPublicKey, String keyEncryptionOID, String agreementName, AlgorithmParameterSpec ukmSpec, Key privKey)
         throws GeneralSecurityException
     {
         KeyAgreement agreement = helper.createKeyAgreement(agreementName);

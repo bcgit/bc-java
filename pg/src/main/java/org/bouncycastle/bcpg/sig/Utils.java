@@ -1,6 +1,6 @@
 package org.bouncycastle.bcpg.sig;
 
-public class Utils
+class Utils
 {
     /**
      * Convert the given boolean value into a one-entry byte array, where true is represented by a 1 and false is a 0.
@@ -19,7 +19,7 @@ public class Utils
         return data;
     }
 
-    protected static byte[] timeToBytes(
+    static byte[] timeToBytes(
         long    t)
     {
         byte[]    data = new byte[4];
