@@ -68,13 +68,13 @@ class SNTRUPrimeEncapsulatorSpi
             }
             catch (InvalidKeyException e)
             {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
 
         secretKey = Arrays.copyOfRange(secret, from, to);
 
-        return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, parameterSpec.getOtherInfo());
+        return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, null); //TODO: DER encoding for params
 
     }
 

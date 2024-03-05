@@ -68,7 +68,7 @@ class SNTRUPrimeDecapsulatorSpi
             }
             catch (InvalidKeyException e)
             {
-                throw new RuntimeException(e);
+                throw new IllegalStateException(e);
             }
         }
         byte[] secretKey = Arrays.copyOfRange(secret, from, to);
