@@ -125,7 +125,7 @@ public class CompositePublicKey implements PublicKey
      * Returns the composite public key encoded as a SubjectPublicKeyInfo.
      * If the composite public key is legacy (MiscObjectIdentifiers.id_composite_key),
      * it each component public key is wrapped in its own SubjectPublicKeyInfo.
-     * Other composite public keys are encoded according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-compositesignaturepublickey
+     * Other composite public keys are encoded according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignaturepublickey
      * where each component public key is a BIT STRING which contains the result of calling
      * getEncoded() for each component public key.
      *

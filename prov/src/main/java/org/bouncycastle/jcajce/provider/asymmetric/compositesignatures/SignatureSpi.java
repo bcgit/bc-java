@@ -39,7 +39,7 @@ public class SignatureSpi extends java.security.SignatureSpi
     private final List<Signature> componentSignatures;
 
     //Hash function that is used to pre-hash the input message before it is fed into the component Signature.
-    //Each composite signature has a specific hash function https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html
+    //Each composite signature has a specific hash function https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
     private final Digest digest;
     private byte[] OIDBytes;
 
@@ -114,7 +114,7 @@ public class SignatureSpi extends java.security.SignatureSpi
             }
 
             //get bytes of composite signature algorithm OID in DER
-            //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-11.html#name-composite-sign
+            //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-composite-sign
             OIDBytes = this.algorithmIdentifierASN1.getEncoded(ASN1Encoding.DER);
         }
         catch (NoSuchAlgorithmException | NoSuchProviderException | IOException e)
@@ -180,7 +180,7 @@ public class SignatureSpi extends java.security.SignatureSpi
 
     /**
      * Method which calculates each component signature and constructs a composite signature
-     * which is a sequence of BIT STRINGs https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-compositesignaturevalue
+     * which is a sequence of BIT STRINGs https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignaturevalue
      *
      * @return composite signature bytes
      * @throws SignatureException

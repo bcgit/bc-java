@@ -45,7 +45,7 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
 
     /**
      * Creates a list of KeyPairGenerators based on the selected composite algorithm (algorithmIdentifier).
-     * Each component generator is initialized with parameters according to the specification https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html.
+     * Each component generator is initialized with parameters according to the specification https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html.
      * Called after initialize() method or right before keypair generation in case initialize() was not called by the user.
      */
     private void initializeParameters()

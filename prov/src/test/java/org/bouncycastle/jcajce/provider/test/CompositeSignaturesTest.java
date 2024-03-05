@@ -32,6 +32,7 @@ public class CompositeSignaturesTest extends TestCase {
             "2.16.840.1.114027.80.8.1.11", //id-MLDSA87-ECDSA-P384-SHA512
             "2.16.840.1.114027.80.8.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
             "2.16.840.1.114027.80.8.1.13", //id-MLDSA87-Ed448-SHA512
+            // Falcon composites below were excluded from the draft. See MiscObjectIdentifiers for details.
             "2.16.840.1.114027.80.8.1.14", //id-Falcon512-ECDSA-P256-SHA256
             "2.16.840.1.114027.80.8.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
             "2.16.840.1.114027.80.8.1.16", //id-Falcon512-Ed25519-SHA512

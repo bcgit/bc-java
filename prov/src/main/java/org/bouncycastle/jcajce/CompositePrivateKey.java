@@ -122,7 +122,7 @@ public class CompositePrivateKey implements PrivateKey
 
     /**
      * Returns the encoding of the composite private key.
-     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html#name-compositesignatureprivateke
+     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-compositesignatureprivateke
      * as each component is encoded as a PrivateKeyInfo (older name for OneAsymmetricKey).
      *
      * @return
