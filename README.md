@@ -25,7 +25,6 @@ export BC_JDK17=/path/to/java17
 export BC_JDK21=/path/to/java21
 ```
 
-
 ## Building
 
 The project now uses ```gradlew``` which can be invoked for example:
@@ -41,6 +40,21 @@ The project now uses ```gradlew``` which can be invoked for example:
 ```
 
 The gradle script will endeavour to verify their existence but not the correctness of their value.
+
+
+## Multi-release jars and testing
+Some subprojects produce multi-release jars and these jars are tested in different jvm versions.
+Default testing on these projects is done on java 1.8 and there are specific test tasks for other versions.
+
+1. test11 test on java 11 JVM
+2. test17 test on java 17 JVM
+3. test21 test on java 21 JVM
+
+To run all of them:
+
+```
+./gradlew clean build test11 test17 test21
+```
 
 
 ## Code Organisation

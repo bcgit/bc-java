@@ -11,6 +11,7 @@ import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.UDPTransport;
+import org.bouncycastle.util.Strings;
 
 /**
  * A simple test designed to conduct a DTLS handshake with an external DTLS server.
@@ -40,7 +41,7 @@ public class DTLSClientTest
 
         // Send and hopefully receive a packet back
 
-        byte[] request = "Hello World!\n".getBytes("UTF-8");
+        byte[] request = Strings.toUTF8ByteArray("Hello World!\n");
         dtls.send(request, 0, request.length);
 
         byte[] response = new byte[dtls.getReceiveLimit()];

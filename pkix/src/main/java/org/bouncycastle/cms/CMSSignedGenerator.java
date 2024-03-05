@@ -56,7 +56,7 @@ public class CMSSignedGenerator
     public static final String  ENCRYPTION_ECGOST3410_2012_256 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId();
     public static final String  ENCRYPTION_ECGOST3410_2012_512 = RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId();
 
-    private static final String  ENCRYPTION_ECDSA_WITH_SHA1 = X9ObjectIdentifiers.ecdsa_with_SHA1.getId();
+    private static final String  ENCRYPTION_ECDSA_WITH_SHA1 = ENCRYPTION_ECDSA;
     private static final String  ENCRYPTION_ECDSA_WITH_SHA224 = X9ObjectIdentifiers.ecdsa_with_SHA224.getId();
     private static final String  ENCRYPTION_ECDSA_WITH_SHA256 = X9ObjectIdentifiers.ecdsa_with_SHA256.getId();
     private static final String  ENCRYPTION_ECDSA_WITH_SHA384 = X9ObjectIdentifiers.ecdsa_with_SHA384.getId();
@@ -69,7 +69,7 @@ public class CMSSignedGenerator
     {
         NO_PARAMS.add(ENCRYPTION_DSA);
         NO_PARAMS.add(ENCRYPTION_ECDSA);
-        NO_PARAMS.add(ENCRYPTION_ECDSA_WITH_SHA1);
+//        NO_PARAMS.add(ENCRYPTION_ECDSA_WITH_SHA1);
         NO_PARAMS.add(ENCRYPTION_ECDSA_WITH_SHA224);
         NO_PARAMS.add(ENCRYPTION_ECDSA_WITH_SHA256);
         NO_PARAMS.add(ENCRYPTION_ECDSA_WITH_SHA384);

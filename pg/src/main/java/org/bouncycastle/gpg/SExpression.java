@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -32,8 +33,19 @@ public class SExpression
         add(Characters.valueOf('\"'));
         add(Characters.valueOf(':'));
     }};
+
+    private static final Set<String> stringLabels = new HashSet<String>()
+    {
+        {
+            add("protected");
+            add("protected-at");
+            add("curve");
+        }
+    };
     private final ArrayList<Object> values = new ArrayList<Object>();
     private boolean canonical = false;
+
+    private boolean parseCanonical = false;
 
     public SExpression(List<Object> values)
     {
@@ -63,23 +75,18 @@ public class SExpression
     public static SExpression parse(InputStream _src, int maxDepth)
         throws IOException
     {
-        SExpression expr = null;
-        return parseExpression(_src, expr, new ByteArrayOutputStream(), maxDepth);
+        return parseExpression(_src, null, new ByteArrayOutputStream(), maxDepth);
     }
 
     private static SExpression parseExpression(InputStream src, SExpression expr, ByteArrayOutputStream accumulator, int maxDepth)
         throws IOException
     {
-        String key = null;
         if (accumulator == null)
         {
             accumulator = new ByteArrayOutputStream();
         }
-
-
         try
         {
-
             //
             // While we are using the callstack we want to artificially limit depth so
             // a malformed message cannot cause a denial service via the callstack.
@@ -90,7 +97,7 @@ public class SExpression
                 throw new IllegalStateException("S-Expression exceeded maximum depth");
             }
 
-            int c = 0;
+            int c;
             for (; ; )
             {
                 // eg (d\n #ABAB#)
@@ -98,11 +105,41 @@ public class SExpression
 
                 if (c == ':')
                 {
-                    int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
-                    byte[] b = new byte[len];
-                    Streams.readFully(src, b);
-                    expr.addValue(b);
-                    expr.setCanonical(true);
+                    try
+                    {
+                        int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
+                        byte[] b = new byte[len];
+                        Streams.readFully(src, b);
+                        if (expr.parseCanonical)
+                        {
+                            int size = expr.values.size();
+                            if (size > 0)
+                            {
+                                Object object = expr.values.get(size - 1);
+                                if (object instanceof String && stringLabels.contains(object))
+                                {
+                                    expr.addValue(new String(b, StandardCharsets.UTF_8));
+                                }
+                                else
+                                {
+                                    expr.addValue(b);
+                                }
+                            }
+                            else
+                            {
+                                expr.addValue(new String(b, StandardCharsets.UTF_8));
+                            }
+                        }
+                        else
+                        {
+                            expr.addValue(b);
+                            expr.setCanonical(true);
+                        }
+                    }
+                    catch (NumberFormatException e)
+                    {
+                        expr.addValue(accumulator.toByteArray());
+                    }
                     continue;
                 }
 
@@ -115,14 +152,15 @@ public class SExpression
                 {
                     if (expr == null)
                     {
-
                         expr = new SExpression();
                         parseExpression(src, expr, accumulator, maxDepth);
                         return expr;
                     }
                     else
                     {
-                        expr.addValue(parseExpression(src, new SExpression(), accumulator, maxDepth));
+                        SExpression subExpression = new SExpression();
+                        subExpression.parseCanonical = expr.parseCanonical;
+                        expr.addValue(parseExpression(src, subExpression, accumulator, maxDepth));
                     }
                 }
                 else if (c == '#')
@@ -154,20 +192,28 @@ public class SExpression
 
     }
 
-    private static void consumeUntil(InputStream src, ByteArrayOutputStream accumulator, char item)
+    static SExpression parseCanonical(InputStream _src, int maxDepth)
         throws IOException
     {
-        accumulator.reset();
-        int c;
-        while ((c = src.read()) > -1)
-        {
-            if (c == item)
-            {
-                return;
-            }
-            accumulator.write(c);
-        }
+        SExpression expr = new SExpression();
+        expr.parseCanonical = true;
+        return parseExpression(_src, expr, new ByteArrayOutputStream(), maxDepth).getExpression(0);
     }
+
+//    private static void consumeUntil(InputStream src, ByteArrayOutputStream accumulator, char item)
+//        throws IOException
+//    {
+//        accumulator.reset();
+//        int c;
+//        while ((c = src.read()) > -1)
+//        {
+//            if (c == item)
+//            {
+//                return;
+//            }
+//            accumulator.write(c);
+//        }
+//    }
 
     private static void consumeUntilSkipWhiteSpace(InputStream src, ByteArrayOutputStream accumulator, char item)
         throws IOException
@@ -306,7 +352,7 @@ public class SExpression
     {
 
         PGPExtendedKeyAttribute.Builder builder = PGPExtendedKeyAttribute.builder();
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             builder.addAttribute(it.next());
         }
@@ -320,7 +366,7 @@ public class SExpression
         set.addAll(Arrays.asList(keys));
 
         SExpression expr = new SExpression();
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             Object item = it.next();
             if (set.contains(item.toString()))
@@ -348,6 +394,47 @@ public class SExpression
         return expr;
     }
 
+    /**
+     * This function expects the labels is in order
+     */
+    static SExpression buildExpression(SExpression expression, String[] labels)
+    {
+        SExpression rlt = new SExpression();
+        rlt.addValue(labels[0]);
+        for (int i = 1; i < labels.length; ++i)
+        {
+            SExpression item = expression.getExpressionWithLabel(labels[i]);
+            if (item != null)
+            {
+                rlt.values.add(item);
+            }
+        }
+        return rlt;
+    }
+
+    static SExpression buildExpression(SExpression expr1, SExpression expr2, String[] labels)
+    {
+        SExpression rlt = new SExpression();
+        rlt.addValue(labels[0]);
+        for (int i = 1; i < labels.length; ++i)
+        {
+            SExpression item = expr1.getExpressionWithLabel(labels[i]);
+            if (item != null)
+            {
+                rlt.values.add(item);
+            }
+            else
+            {
+                item = expr2.getExpressionWithLabel(labels[i]);
+                if (item != null)
+                {
+                    rlt.values.add(item);
+                }
+            }
+        }
+        return rlt;
+    }
+
     public SExpression filterIn(String... keys)
     {
 
@@ -355,7 +442,7 @@ public class SExpression
         set.addAll(Arrays.asList(keys));
 
         SExpression expr = new SExpression();
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             Object item = it.next();
             if (item instanceof SExpression)
@@ -403,8 +490,7 @@ public class SExpression
         throws IOException
     {
         out.write('(');
-        boolean space = false;
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             Object value = it.next();
             if (value instanceof QuotedString)
@@ -461,7 +547,7 @@ public class SExpression
 
     public SExpression getExpressionWithLabel(String label)
     {
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             Object o = it.next();
             if (o instanceof SExpression)
@@ -477,7 +563,7 @@ public class SExpression
 
     public SExpression getExpressionWithLabelOrFail(String label)
     {
-        for (Iterator it = values.iterator(); it.hasNext();)
+        for (Iterator it = values.iterator(); it.hasNext(); )
         {
             Object o = it.next();
             if (o instanceof SExpression)
@@ -523,7 +609,7 @@ public class SExpression
 
         public Builder addContent(SExpression other)
         {
-            for (Iterator it = other.values.iterator(); it.hasNext();)
+            for (Iterator it = other.values.iterator(); it.hasNext(); )
             {
                 values.add(it.next());
             }
@@ -532,6 +618,4 @@ public class SExpression
         }
 
     }
-
-
 }

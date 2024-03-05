@@ -4,15 +4,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedDataParser;
 import org.bouncycastle.asn1.cms.CMSAttributes;
@@ -53,12 +50,12 @@ import org.bouncycastle.util.Arrays;
  *          }
  *      }
  *  </pre>
- *  Note: this class does not introduce buffering - if you are processing large files you should create
- *  the parser with:
- *  <pre>
+ * Note: this class does not introduce buffering - if you are processing large files you should create
+ * the parser with:
+ * <pre>
  *          CMSAuthenticatedDataParser     ep = new CMSAuthenticatedDataParser(new BufferedInputStream(inputStream, bufSize));
  *  </pre>
- *  where bufSize is a suitably large buffer size.
+ * where bufSize is a suitably large buffer size.
  */
 public class CMSAuthenticatedDataParser
     extends CMSContentInfoParser
@@ -75,6 +72,8 @@ public class CMSAuthenticatedDataParser
     private boolean authAttrNotRead;
     private boolean unauthAttrNotRead;
     private OriginatorInformation originatorInfo;
+
+    private CMSSecureReadable secureReadable;
 
     public CMSAuthenticatedDataParser(
         byte[] envelopedData)
@@ -145,27 +144,9 @@ public class CMSAuthenticatedDataParser
 
             try
             {
-                CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), data.getContentType(), readable);
+                secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), data.getContentType(), readable);
 
-                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable, new AuthAttributesProvider()
-                {
-                    public ASN1Set getAuthAttributes()
-                    {
-                        try
-                        {
-                            return getAuthAttrSet();
-                        }
-                        catch (IOException e)
-                        {
-                            throw new IllegalStateException("can't parse authenticated attributes!");
-                        }
-                    }
-
-                    public boolean isAead()
-                    {
-                        return false;
-                    }
-                });
+                this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
             }
             catch (OperatorCreationException e)
             {
@@ -181,7 +162,7 @@ public class CMSAuthenticatedDataParser
             CMSReadable readable = new CMSProcessableInputStream(
                 ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
 
-            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthenticatedSecureReadable(this.macAlg, data.getContentType(), readable);
+            secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(this.macAlg, data.getContentType(), readable);
 
             this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
         }
@@ -225,7 +206,7 @@ public class CMSAuthenticatedDataParser
     {
         try
         {
-            return encodeObj(macAlg.getParameters());
+            return CMSUtils.encodeObj(macAlg.getParameters());
         }
         catch (Exception e)
         {
@@ -265,6 +246,7 @@ public class CMSAuthenticatedDataParser
             }
 
             authAttrNotRead = false;
+            secureReadable.setAuthAttrSet(authAttrSet);
         }
 
         return authAttrSet;
@@ -273,7 +255,8 @@ public class CMSAuthenticatedDataParser
     /**
      * return a table of the unauthenticated attributes indexed by
      * the OID of the attribute.
-     * @exception java.io.IOException
+     *
+     * @throws java.io.IOException
      */
     public AttributeTable getAuthAttrs()
         throws IOException
@@ -294,46 +277,19 @@ public class CMSAuthenticatedDataParser
     /**
      * return a table of the unauthenticated attributes indexed by
      * the OID of the attribute.
-     * @exception java.io.IOException
+     *
+     * @throws java.io.IOException
      */
     public AttributeTable getUnauthAttrs()
         throws IOException
     {
         if (unauthAttrs == null && unauthAttrNotRead)
         {
-            ASN1SetParser set = authData.getUnauthAttrs();
-
             unauthAttrNotRead = false;
-
-            if (set != null)
-            {
-                ASN1EncodableVector v = new ASN1EncodableVector();
-                ASN1Encodable o;
-
-                while ((o = set.readObject()) != null)
-                {
-                    ASN1SequenceParser seq = (ASN1SequenceParser)o;
-
-                    v.add(seq.toASN1Primitive());
-                }
-
-                unauthAttrs = new AttributeTable(new DERSet(v));
-            }
+            unauthAttrs = CMSUtils.getAttributesTable(authData.getUnauthAttrs());
         }
 
         return unauthAttrs;
-    }
-
-    private byte[] encodeObj(
-        ASN1Encodable obj)
-        throws IOException
-    {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive().getEncoded();
-        }
-
-        return null;
     }
 
     /**

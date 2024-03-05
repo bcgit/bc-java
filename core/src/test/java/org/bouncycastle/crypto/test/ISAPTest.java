@@ -113,7 +113,7 @@ public class ISAPTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println(filename + " pass");
+        //System.out.print.println(filename + " pass");
     }
 
     private void testVectors()
@@ -154,7 +154,7 @@ public class ISAPTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("ISAP Hash pass");
+        //System.out.print.println("ISAP Hash pass");
     }
 
     private void testExceptions(Digest digest, int digestsize)
@@ -182,7 +182,7 @@ public class ISAPTest
         {
             //expected
         }
-        System.out.println(digest.getAlgorithmName() + " test Exceptions pass");
+        //System.out.print.println(digest.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
@@ -453,7 +453,7 @@ public class ISAPTest
         {
             fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
         }
-        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
+        //System.out.print.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testParameters(ISAPEngine isap, int keySize, int ivSize, int macSize)
@@ -470,7 +470,7 @@ public class ISAPTest
         {
             fail(isap.getAlgorithmName() + ": mac bytes of " + isap.getAlgorithmName() + " is not correct");
         }
-        System.out.println(isap.getAlgorithmName() + " test Parameters pass");
+        //System.out.print.println(isap.getAlgorithmName() + " test Parameters pass");
     }
 
 

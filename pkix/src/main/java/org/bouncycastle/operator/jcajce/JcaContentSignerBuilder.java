@@ -297,7 +297,7 @@ public class JcaContentSignerBuilder
             }
             else if (sigSpec instanceof PSSParameterSpec)
             {
-                v.add(createPSSParams((PSSParameterSpec)sigSpec));
+                v.add(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams((PSSParameterSpec)sigSpec)));
             }
             else
             {

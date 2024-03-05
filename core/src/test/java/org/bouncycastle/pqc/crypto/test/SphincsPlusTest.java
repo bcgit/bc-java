@@ -53,7 +53,7 @@ public class SphincsPlusTest
             String name = fileList[i];
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/sphincs_plus", "subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-            System.out.println(name);
+            // System.out.println(name);
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)

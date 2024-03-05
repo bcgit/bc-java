@@ -47,7 +47,7 @@ public class JcePBEDataDecryptorFactoryBuilder
     /**
      * Base constructor.
      *
-     * @param calculatorProvider   a digest calculator provider to provide calculators to support the key generation calculation required.
+     * @param calculatorProvider a digest calculator provider to provide calculators to support the key generation calculation required.
      */
     public JcePBEDataDecryptorFactoryBuilder(PGPDigestCalculatorProvider calculatorProvider)
     {
@@ -57,8 +57,8 @@ public class JcePBEDataDecryptorFactoryBuilder
     /**
      * Set the provider object to use for creating cryptographic primitives in the resulting factory the builder produces.
      *
-     * @param provider  provider object for cryptographic primitives.
-     * @return  the current builder.
+     * @param provider provider object for cryptographic primitives.
+     * @return the current builder.
      */
     public JcePBEDataDecryptorFactoryBuilder setProvider(Provider provider)
     {
@@ -71,8 +71,8 @@ public class JcePBEDataDecryptorFactoryBuilder
     /**
      * Set the provider name to use for creating cryptographic primitives in the resulting factory the builder produces.
      *
-     * @param providerName  the name of the provider to reference for cryptographic primitives.
-     * @return  the current builder.
+     * @param providerName the name of the provider to reference for cryptographic primitives.
+     * @return the current builder.
      */
     public JcePBEDataDecryptorFactoryBuilder setProvider(String providerName)
     {
@@ -105,7 +105,7 @@ public class JcePBEDataDecryptorFactoryBuilder
         {
             @Override
             public byte[] recoverSessionData(int keyAlgorithm, byte[] key, byte[] secKeyData)
-                    throws PGPException
+                throws PGPException
             {
                 try
                 {
@@ -113,7 +113,6 @@ public class JcePBEDataDecryptorFactoryBuilder
                     {
                         String cipherName = PGPUtil.getSymmetricCipherName(keyAlgorithm);
                         Cipher keyCipher = helper.createCipher(cipherName + "/CFB/NoPadding");
-
                         keyCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, cipherName), new IvParameterSpec(new byte[keyCipher.getBlockSize()]));
 
                         return keyCipher.doFinal(secKeyData);
@@ -136,7 +135,7 @@ public class JcePBEDataDecryptorFactoryBuilder
 
             @Override
             public byte[] recoverAEADEncryptedSessionData(SymmetricKeyEncSessionPacket keyData, byte[] ikm)
-                    throws PGPException
+                throws PGPException
             {
                 if (keyData.getVersion() < SymmetricKeyEncSessionPacket.VERSION_5)
                 {
@@ -186,7 +185,7 @@ public class JcePBEDataDecryptorFactoryBuilder
             // OpenPGP v4
             @Override
             public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
-                    throws PGPException
+                throws PGPException
             {
                 return helper.createDataDecryptor(withIntegrityPacket, encAlgorithm, key);
             }
@@ -194,7 +193,7 @@ public class JcePBEDataDecryptorFactoryBuilder
             // OpenPGP v5
             @Override
             public PGPDataDecryptor createDataDecryptor(AEADEncDataPacket aeadEncDataPacket, PGPSessionKey sessionKey)
-                    throws PGPException
+                throws PGPException
             {
                 return aeadHelper.createOpenPgpV5DataDecryptor(aeadEncDataPacket, sessionKey);
             }
@@ -202,7 +201,7 @@ public class JcePBEDataDecryptorFactoryBuilder
             // OpenPGP v6
             @Override
             public PGPDataDecryptor createDataDecryptor(SymmetricEncIntegrityPacket seipd, PGPSessionKey sessionKey)
-                    throws PGPException
+                throws PGPException
             {
                 return aeadHelper.createOpenPgpV6DataDecryptor(seipd, sessionKey);
             }

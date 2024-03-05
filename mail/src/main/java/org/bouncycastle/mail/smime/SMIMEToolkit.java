@@ -36,14 +36,14 @@ public class SMIMEToolkit
 
     /**
      * Base constructor.
-     * 
-     * @param digestCalculatorProvider  provider for any digest calculations required.
+     *
+     * @param digestCalculatorProvider provider for any digest calculations required.
      */
     public SMIMEToolkit(DigestCalculatorProvider digestCalculatorProvider)
     {
         this.digestCalculatorProvider = digestCalculatorProvider;
     }
-    
+
     /**
      * Return true if the passed in message (MimeBodyPart or MimeMessage) is encrypted.
      *
@@ -75,7 +75,7 @@ public class SMIMEToolkit
      * Return true if the passed in MimeMultipart is a signed one.
      *
      * @param message message of interest
-     * @return  true if the multipart has an attached signature, false otherwise.
+     * @return true if the multipart has an attached signature, false otherwise.
      * @throws MessagingException on a message processing issue.
      */
     public boolean isSigned(MimeMultipart message)
@@ -87,10 +87,10 @@ public class SMIMEToolkit
     /**
      * Return true if there is a signature on the message that can be verified by the verifier.
      *
-     * @param message a MIME part representing a signed message.
+     * @param message  a MIME part representing a signed message.
      * @param verifier the verifier we want to find a signer for.
      * @return true if cert verifies message, false otherwise.
-     * @throws SMIMEException on a SMIME handling issue.
+     * @throws SMIMEException     on a SMIME handling issue.
      * @throws MessagingException on a basic message processing exception
      */
     public boolean isValidSignature(Part message, SignerInformationVerifier verifier)
@@ -140,7 +140,7 @@ public class SMIMEToolkit
 
         while (it.hasNext())
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)it.next();
 
             if (signer.verify(verifier))
             {
@@ -154,10 +154,10 @@ public class SMIMEToolkit
     /**
      * Return true if there is a signature on the message that can be verified by verifier..
      *
-     * @param message a MIME part representing a signed message.
+     * @param message  a MIME part representing a signed message.
      * @param verifier the verifier we want to find a signer for.
      * @return true if cert verifies message, false otherwise.
-     * @throws SMIMEException on a SMIME handling issue.
+     * @throws SMIMEException     on a SMIME handling issue.
      * @throws MessagingException on a basic message processing exception
      */
     public boolean isValidSignature(MimeMultipart message, SignerInformationVerifier verifier)
@@ -179,7 +179,7 @@ public class SMIMEToolkit
     /**
      * Extract the signer's signing certificate from the message.
      *
-     * @param message a MIME part/MIME message representing a signed message.
+     * @param message           a MIME part/MIME message representing a signed message.
      * @param signerInformation the signer information identifying the signer of interest.
      * @return the signing certificate, null if not found.
      */
@@ -199,14 +199,7 @@ public class SMIMEToolkit
                 s = new SMIMESignedParser(digestCalculatorProvider, message);
             }
 
-            Collection certCollection = s.getCertificates().getMatches(signerInformation.getSID());
-
-            Iterator certIt = certCollection.iterator();
-            if (certIt.hasNext())
-            {
-                return (X509CertificateHolder)certIt.next();
-            }
-            return null;
+            return getX509CertificateHolder(s, signerInformation);
         }
         catch (CMSException e)
         {
@@ -218,10 +211,23 @@ public class SMIMEToolkit
         }
     }
 
+    private static X509CertificateHolder getX509CertificateHolder(SMIMESignedParser s, SignerInformation signerInformation)
+        throws CMSException
+    {
+        Collection certCollection = s.getCertificates().getMatches(signerInformation.getSID());
+
+        Iterator certIt = certCollection.iterator();
+        if (certIt.hasNext())
+        {
+            return (X509CertificateHolder)certIt.next();
+        }
+        return null;
+    }
+
     /**
      * Extract the signer's signing certificate from Multipart message content.
      *
-     * @param message a MIME Multipart part representing a signed message.
+     * @param message           a MIME Multipart part representing a signed message.
      * @param signerInformation the signer information identifying the signer of interest.
      * @return the signing certificate, null if not found.
      */
@@ -230,16 +236,7 @@ public class SMIMEToolkit
     {
         try
         {
-            SMIMESignedParser s = new SMIMESignedParser(digestCalculatorProvider, message);
-
-            Collection certCollection = s.getCertificates().getMatches(signerInformation.getSID());
-
-            Iterator certIt = certCollection.iterator();
-            if (certIt.hasNext())
-            {
-                return (X509CertificateHolder)certIt.next();
-            }
-            return null;
+            return getX509CertificateHolder(new SMIMESignedParser(digestCalculatorProvider, message), signerInformation);
         }
         catch (CMSException e)
         {
@@ -250,7 +247,7 @@ public class SMIMEToolkit
     /**
      * Produce a signed message in multi-part format with the second part containing a detached signature for the first.
      *
-     * @param message the message to be signed.
+     * @param message             the message to be signed.
      * @param signerInfoGenerator the generator to be used to generate the signature.
      * @return the resulting MimeMultipart
      * @throws SMIMEException on an exception calculating or creating the signed data.
@@ -258,32 +255,10 @@ public class SMIMEToolkit
     public MimeMultipart sign(MimeBodyPart message, SignerInfoGenerator signerInfoGenerator)
         throws SMIMEException
     {
-        SMIMESignedGenerator gen = new SMIMESignedGenerator();
-
-        if (signerInfoGenerator.hasAssociatedCertificate())
-        {
-            List certList = new ArrayList();
-
-            certList.add(signerInfoGenerator.getAssociatedCertificate());
-
-            gen.addCertificates(new CollectionStore(certList));
-        }
-
-        gen.addSignerInfoGenerator(signerInfoGenerator);
-
-        return gen.generate(message);
+        return getSMIMESignedGenerator(signerInfoGenerator).generate(message);
     }
 
-    /**
-     * Produce a signed message in encapsulated format where the message is encoded in the signature..
-     *
-     * @param message the message to be signed.
-     * @param signerInfoGenerator the generator to be used to generate the signature.
-     * @return a BodyPart containing the encapsulated message.
-     * @throws SMIMEException on an exception calculating or creating the signed data.
-     */
-    public MimeBodyPart signEncapsulated(MimeBodyPart message, SignerInfoGenerator signerInfoGenerator)
-        throws SMIMEException
+    private static SMIMESignedGenerator getSMIMESignedGenerator(SignerInfoGenerator signerInfoGenerator)
     {
         SMIMESignedGenerator gen = new SMIMESignedGenerator();
 
@@ -298,15 +273,29 @@ public class SMIMEToolkit
 
         gen.addSignerInfoGenerator(signerInfoGenerator);
 
-        return gen.generateEncapsulated(message);
+        return gen;
+    }
+
+    /**
+     * Produce a signed message in encapsulated format where the message is encoded in the signature..
+     *
+     * @param message             the message to be signed.
+     * @param signerInfoGenerator the generator to be used to generate the signature.
+     * @return a BodyPart containing the encapsulated message.
+     * @throws SMIMEException on an exception calculating or creating the signed data.
+     */
+    public MimeBodyPart signEncapsulated(MimeBodyPart message, SignerInfoGenerator signerInfoGenerator)
+        throws SMIMEException
+    {
+        return getSMIMESignedGenerator(signerInfoGenerator).generateEncapsulated(message);
     }
 
     /**
      * Encrypt the passed in MIME part returning a new encrypted MIME part.
      *
-     * @param mimePart the part to be encrypted.
-     * @param contentEncryptor the encryptor to use for the actual message content.
-     * @param recipientGenerator  the generator for the target recipient.
+     * @param mimePart           the part to be encrypted.
+     * @param contentEncryptor   the encryptor to use for the actual message content.
+     * @param recipientGenerator the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
@@ -323,9 +312,9 @@ public class SMIMEToolkit
     /**
      * Encrypt the passed in MIME multi-part returning a new encrypted MIME part.
      *
-     * @param multiPart the multi-part to be encrypted.
-     * @param contentEncryptor the encryptor to use for the actual message content.
-     * @param recipientGenerator  the generator for the target recipient.
+     * @param multiPart          the multi-part to be encrypted.
+     * @param contentEncryptor   the encryptor to use for the actual message content.
+     * @param recipientGenerator the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
@@ -346,9 +335,9 @@ public class SMIMEToolkit
     /**
      * Encrypt the passed in MIME message returning a new encrypted MIME part.
      *
-     * @param message the multi-part to be encrypted.
-     * @param contentEncryptor the encryptor to use for the actual message content.
-     * @param recipientGenerator  the generator for the target recipient.
+     * @param message            the multi-part to be encrypted.
+     * @param contentEncryptor   the encryptor to use for the actual message content.
+     * @param recipientGenerator the generator for the target recipient.
      * @return an encrypted MIME part.
      * @throws SMIMEException in the event of an exception creating the encrypted part.
      */
@@ -365,11 +354,11 @@ public class SMIMEToolkit
     /**
      * Decrypt the passed in MIME part returning a part representing the decrypted content.
      *
-     * @param mimePart the part containing the encrypted data.
+     * @param mimePart    the part containing the encrypted data.
      * @param recipientId the recipient id in the date to be matched.
-     * @param recipient the recipient to be used if a match is found.
+     * @param recipient   the recipient to be used if a match is found.
      * @return a MIME part containing the decrypted content or null if the recipientId cannot be matched.
-     * @throws SMIMEException on an exception doing the decryption.
+     * @throws SMIMEException     on an exception doing the decryption.
      * @throws MessagingException on an exception parsing the message,
      */
     public MimeBodyPart decrypt(MimeBodyPart mimePart, RecipientId recipientId, Recipient recipient)
@@ -377,17 +366,7 @@ public class SMIMEToolkit
     {
         try
         {
-            SMIMEEnvelopedParser m = new SMIMEEnvelopedParser(mimePart);
-
-            RecipientInformationStore recipients = m.getRecipientInfos();
-            RecipientInformation recipientInformation = recipients.get(recipientId);
-
-            if (recipientInformation == null)
-            {
-                return null;
-            }
-
-            return SMIMEUtil.toMimeBodyPart(recipientInformation.getContent(recipient));
+            return getMimeBodyPart(recipientId, recipient, new SMIMEEnvelopedParser(mimePart));
         }
         catch (CMSException e)
         {
@@ -399,14 +378,28 @@ public class SMIMEToolkit
         }
     }
 
+    private static MimeBodyPart getMimeBodyPart(RecipientId recipientId, Recipient recipient, SMIMEEnvelopedParser m)
+        throws SMIMEException, CMSException
+    {
+        RecipientInformationStore recipients = m.getRecipientInfos();
+        RecipientInformation recipientInformation = recipients.get(recipientId);
+
+        if (recipientInformation == null)
+        {
+            return null;
+        }
+
+        return SMIMEUtil.toMimeBodyPart(recipientInformation.getContent(recipient));
+    }
+
     /**
      * Decrypt the passed in MIME message returning a part representing the decrypted content.
      *
-     * @param message the message containing the encrypted data.
+     * @param message     the message containing the encrypted data.
      * @param recipientId the recipient id in the date to be matched.
-     * @param recipient the recipient to be used if a match is found.
+     * @param recipient   the recipient to be used if a match is found.
      * @return a MIME part containing the decrypted content, or null if the recipientId cannot be matched.
-     * @throws SMIMEException on an exception doing the decryption.
+     * @throws SMIMEException     on an exception doing the decryption.
      * @throws MessagingException on an exception parsing the message,
      */
     public MimeBodyPart decrypt(MimeMessage message, RecipientId recipientId, Recipient recipient)
@@ -414,17 +407,7 @@ public class SMIMEToolkit
     {
         try
         {
-            SMIMEEnvelopedParser m = new SMIMEEnvelopedParser(message);
-
-            RecipientInformationStore recipients = m.getRecipientInfos();
-            RecipientInformation recipientInformation = recipients.get(recipientId);
-
-            if (recipientInformation == null)
-            {
-                return null;
-            }
-
-            return SMIMEUtil.toMimeBodyPart(recipientInformation.getContent(recipient));
+            return getMimeBodyPart(recipientId, recipient, new SMIMEEnvelopedParser(message));
         }
         catch (CMSException e)
         {

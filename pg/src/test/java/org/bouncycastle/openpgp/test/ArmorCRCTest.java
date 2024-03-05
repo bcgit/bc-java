@@ -79,6 +79,7 @@ public class ArmorCRCTest
         ArmoredInputStream armorIn = ArmoredInputStream.builder()
             .setParseForHeaders(true)
             .setIgnoreCRC(true)
+            .setDetectMissingCRC(false)
             .build(bIn);
 
 

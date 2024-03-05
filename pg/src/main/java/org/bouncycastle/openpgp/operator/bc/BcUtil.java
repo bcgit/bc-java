@@ -11,10 +11,12 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
+import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
 import org.bouncycastle.crypto.modes.OpenPGPCFBBlockCipher;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.math.ec.ECCurve;
@@ -59,10 +61,11 @@ public class BcUtil
      * Data (SEIPD) packets.
      * For AEAD packets, see {@link BcAEADUtil#createOpenPgpV5DataDecryptor(AEADEncDataPacket, PGPSessionKey)} and
      * {@link BcAEADUtil#createOpenPgpV6DataDecryptor(SymmetricEncIntegrityPacket, PGPSessionKey)}.
+     *
      * @param withIntegrityPacket if true, the data is contained in a SEIPD v1 packet, if false it is contained in a
      *                            SED packet.
-     * @param engine decryption engine
-     * @param key decryption key
+     * @param engine              decryption engine
+     * @param key                 decryption key
      * @return decryptor
      */
     public static PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, BlockCipher engine, byte[] key)
@@ -113,5 +116,13 @@ public class BcUtil
         ECCurve curve)
     {
         return curve.decodePoint(BigIntegers.asUnsignedByteArray(encodedPoint));
+    }
+
+    static byte[] getSecret(RawAgreement agreement, AsymmetricKeyParameter privKey, AsymmetricKeyParameter ephPub)
+    {
+        agreement.init(privKey);
+        byte[] secret = new byte[agreement.getAgreementSize()];
+        agreement.calculateAgreement(ephPub, secret, 0);
+        return secret;
     }
 }

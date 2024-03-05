@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import javax.activation.ActivationDataFlavor;
 import javax.activation.DataContentHandler;
 import javax.activation.DataSource;
-import javax.mail.MessagingException;
 import javax.mail.internet.MimeBodyPart;
 
 public class x_pkcs7_signature 
@@ -38,15 +37,8 @@ public class x_pkcs7_signature
     
     public Object getTransferData(DataFlavor _df, DataSource _ds) 
         throws IOException 
-    {    
-        if (ADF.equals(_df)) 
-        {
-            return getContent(_ds);
-        }
-        else 
-        {
-            return null;
-        }
+    {
+        return HandlerUtil.getTransferData(this, ADF, _df, _ds);
     }
     
     public DataFlavor[] getTransferDataFlavors() 
@@ -59,14 +51,7 @@ public class x_pkcs7_signature
     {
         if (_obj instanceof MimeBodyPart) 
         {
-            try 
-            {
-                ((MimeBodyPart)_obj).writeTo(_os);
-            } 
-            catch (MessagingException ex) 
-            {
-                throw new IOException(ex.getMessage());
-            }
+            HandlerUtil.writeFromMimeBodyPart((MimeBodyPart)_obj, _os);
         }
         else if (_obj instanceof byte[]) 
         {
@@ -74,13 +59,7 @@ public class x_pkcs7_signature
         }
         else if (_obj instanceof InputStream)
         {
-            int            b;
-            InputStream    in = (InputStream)_obj;
-
-            while ((b = in.read()) >= 0)
-            {
-                _os.write(b);
-            }
+            HandlerUtil.writeFromInputStream((InputStream)_obj, _os);
         }
         else
         {

@@ -32,6 +32,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jsse.BCExtendedSSLSession;
 import org.bouncycastle.jsse.BCSSLSocket;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -260,7 +261,7 @@ public class BCJSSEClientTest
     private static void writeUTF8Line(OutputStream output, String line)
         throws IOException
     {
-        output.write((line + "\r\n").getBytes("UTF-8"));
+        output.write(Strings.toUTF8ByteArray(line + "\r\n"));
         System.out.println(">>> " + line);
     }
 

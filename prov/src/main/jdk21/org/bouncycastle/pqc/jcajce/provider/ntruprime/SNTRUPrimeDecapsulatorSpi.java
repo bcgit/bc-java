@@ -2,14 +2,17 @@ package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
+import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.util.Arrays;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.InvalidKeyException;
 import java.util.Objects;
 
-public class SNTRUPrimeDecapsulatorSpi
+class SNTRUPrimeDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
     BCSNTRUPrimePrivateKey privateKey;
@@ -36,14 +39,47 @@ public class SNTRUPrimeDecapsulatorSpi
         {
             throw new DecapsulateException("incorrect encapsulation size");
         }
+
+        // if algorithm is Generic then use parameterSpec to wrap key
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                algorithm.equals("Generic"))
+        {
+            algorithm = parameterSpec.getKeyAlgorithmName();
+        }
+
+        // check spec algorithm mismatch provided algorithm
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
+        {
+            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
+        }
+
+        // Only use KDF when ktsParameterSpec is provided
+        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
+        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
+
         byte[] secret = kemExt.extractSecret(encapsulation);
-        return new SecretKeySpec(secret, from, to - from, algorithm);
+
+        if (useKDF)
+        {
+            try
+            {
+                secret = Util.makeKeyBytes(parameterSpec, secret);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+
+        return new SecretKeySpec(secretKey, algorithm);
     }
 
     @Override
     public int engineSecretSize()
     {
-        return privateKey.getKeyParams().getParameters().getSessionKeySize();
+        return parameterSpec.getKeySize() / 8;
     }
 
     @Override

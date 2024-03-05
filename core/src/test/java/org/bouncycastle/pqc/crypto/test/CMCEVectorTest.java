@@ -75,7 +75,7 @@ public class CMCEVectorTest
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/cmce", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -98,7 +98,7 @@ public class CMCEVectorTest
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for cmce secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
                         byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
@@ -151,7 +151,7 @@ public class CMCEVectorTest
 
 
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
 
     }
