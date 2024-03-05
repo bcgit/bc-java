@@ -9,6 +9,9 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Experimental implementation of composite signatures according to https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.
+ */
 public class CompositeSignatures
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".compositesignatures.";

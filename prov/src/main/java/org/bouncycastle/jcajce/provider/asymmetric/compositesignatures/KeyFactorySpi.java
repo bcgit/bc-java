@@ -77,7 +77,7 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
 
     /**
      * Creates a CompositePrivateKey from its PrivateKeyInfo encoded form.
-     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html where
+     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html where
      * CompositeSignaturePrivateKey is a sequence of two OneAsymmetricKey which a newer name for PrivateKeyInfo.
      *
      * @param keyInfo PrivateKeyInfo containing a sequence of PrivateKeyInfos corresponding to each component.
@@ -110,7 +110,7 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
 
     /**
      * Creates a CompositePublicKey from its SubjectPublicKeyInfo encoded form.
-     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-10.html where
+     * It is compliant with https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html where
      * CompositeSignaturePublicKey is a sequence of two BIT STRINGs which contain the encoded component public keys.
      * In BC implementation - CompositePublicKey is encoded into a BIT STRING in the form of SubjectPublicKeyInfo.
      *
