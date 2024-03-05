@@ -3,21 +3,21 @@ package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
+import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.util.Arrays;
 
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
+import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 import java.util.Objects;
 
-public class SNTRUPrimeEncapsulatorSpi
+class SNTRUPrimeEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
     private final BCSNTRUPrimePublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
-    private final SecureRandom random;
     private final SNTRUPrimeKEMGenerator kemGen;
 
 
@@ -25,7 +25,6 @@ public class SNTRUPrimeEncapsulatorSpi
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
-        this.random = random;
 
         kemGen = new SNTRUPrimeKEMGenerator(random);
     }
@@ -33,31 +32,56 @@ public class SNTRUPrimeEncapsulatorSpi
     @Override
     public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm)
     {
-        Objects.checkFromToIndex(from, to, engineEncapsulationSize());
+        Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        try
+        // if algorithm is Generic then use parameterSpec to wrap key
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                algorithm.equals("Generic"))
         {
-            SNTRUPrimeKeyPairGeneratorSpi kpGen = new SNTRUPrimeKeyPairGeneratorSpi();
-            kpGen.initialize(parameterSpec, random);
-
-            KeyPair kp = kpGen.generateKeyPair();
-            BCNTRULPRimePublicKey pk = (BCNTRULPRimePublicKey) kp.getPublic();
-
-            SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pk.getKeyParams());
-
-            return new KEM.Encapsulated(new SecretKeySpec(secEnc.getSecret(), from, to - from, algorithm), secEnc.getEncapsulation(), pk.getKeyParams().getEncoded());
+            algorithm = parameterSpec.getKeyAlgorithmName();
         }
-        catch (InvalidAlgorithmParameterException e)
+
+        // check spec algorithm mismatch provided algorithm
+        if (!parameterSpec.getKeyAlgorithmName().equals("Generic") &&
+                !parameterSpec.getKeyAlgorithmName().equals(algorithm))
         {
-            throw new RuntimeException(e);
+            throw new UnsupportedOperationException(parameterSpec.getKeyAlgorithmName() + " does not match " + algorithm);
         }
+
+        // Only use KDF when ktsParameterSpec is provided
+        // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
+        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
+
+        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
+
+        byte[] encapsulation = secEnc.getEncapsulation();
+        byte[] secret = secEnc.getSecret();
+
+        byte[] secretKey;
+
+        if (useKDF)
+        {
+            try
+            {
+                secret = Util.makeKeyBytes(parameterSpec, secret);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        secretKey = Arrays.copyOfRange(secret, from, to);
+
+        return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, parameterSpec.getOtherInfo());
+
     }
 
     @Override
     public int engineSecretSize()
     {
-        return publicKey.getKeyParams().getParameters().getSessionKeySize();
+        return parameterSpec.getKeySize() / 8;
     }
 
     @Override

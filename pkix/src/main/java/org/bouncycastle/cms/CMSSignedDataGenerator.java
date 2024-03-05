@@ -217,33 +217,9 @@ public class CMSSignedDataGenerator
             }
         }
 
-        ASN1Set certificates = null;
+        ASN1Set certificates = createSetFromList(certs, isDefiniteLength);
 
-        if (certs.size() != 0)
-        {
-            if (isDefiniteLength)
-            {
-                certificates = CMSUtils.createDlSetFromList(certs);
-            }
-            else
-            {
-                certificates = CMSUtils.createBerSetFromList(certs);
-            }
-        }
-
-        ASN1Set certrevlist = null;
-
-        if (crls.size() != 0)
-        {
-            if (isDefiniteLength)
-            {
-                certrevlist = CMSUtils.createDlSetFromList(crls);
-            }
-            else
-            {
-                certrevlist = CMSUtils.createBerSetFromList(crls);
-            }
-        }
+        ASN1Set certrevlist = createSetFromList(crls, isDefiniteLength);
 
         ContentInfo encInfo = new ContentInfo(contentTypeOID, octs);
 
@@ -258,6 +234,15 @@ public class CMSSignedDataGenerator
             CMSObjectIdentifiers.signedData, sd);
 
         return new CMSSignedData(content, contentInfo);
+    }
+
+    private static ASN1Set createSetFromList(List list, boolean isDefiniteLength)
+    {
+        if(list.size()!=0)
+        {
+            return isDefiniteLength ? CMSUtils.createDlSetFromList(list) : CMSUtils.createBerSetFromList(list);
+        }
+        return null;
     }
 
     /**

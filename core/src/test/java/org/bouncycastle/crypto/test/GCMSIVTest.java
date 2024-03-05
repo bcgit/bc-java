@@ -14,6 +14,9 @@ import org.bouncycastle.util.test.SimpleTest;
 public class GCMSIVTest
         extends SimpleTest
 {
+    @SuppressWarnings("InlineTrivialConstant")
+    private static final String EMPTY       = "";
+
     public String getName()
     {
         return "GCM-SIV";
@@ -106,7 +109,6 @@ public class GCMSIVTest
      */
     static class AESGCMSIV128Test1
     {
-        private static final String EMPTY       = "";
         private static final String KEY_1       = "01000000000000000000000000000000";
         private static final String NONCE_1     = "030000000000000000000000";
         private static final String DATA_8      = "0100000000000000";
@@ -206,7 +208,6 @@ public class GCMSIVTest
      */
     static class AESGCMSIV128Test3
     {
-        private static final String EMPTY       = "";
         private static final String KEY_1       = "e66021d5eb8e4f4066d4adb9c33560e4";
         private static final String KEY_2       = "36864200e0eaf5284d884a0e77d31646";
         private static final String KEY_3       = "aedb64a6c590bc84d1a5e269e4b47801";
@@ -271,7 +272,6 @@ public class GCMSIVTest
      */
     static class AESGCMSIV256Test1
     {
-        private static final String EMPTY       = "";
         private static final String KEY_1       = "01000000000000000000000000000000" + "00000000000000000000000000000000";
         private static final String NONCE_1     = "030000000000000000000000";
         private static final String DATA_8      = "0100000000000000";
@@ -371,7 +371,6 @@ public class GCMSIVTest
      */
     static class AESGCMSIV256Test3
     {
-        private static final String EMPTY       = "";
         private static final String KEY_1       = "e66021d5eb8e4f4066d4adb9c33560e4" + "f46e44bb3da0015c94f7088736864200";
         private static final String KEY_2       = "bae8e37fc83441b16034566b7a806c46" + "bb91c3c5aedb64a6c590bc84d1a5e269";
         private static final String KEY_3       = "6545fc880c94a95198874296d5cc1fd1" + "61320b6920ce07787f86743b275d1ab3";
@@ -436,7 +435,6 @@ public class GCMSIVTest
      */
     static class AESGCMSIV256Test4
     {
-        private static final String EMPTY       = "";
         private static final String KEY_1       = "00000000000000000000000000000000" + "00000000000000000000000000000000";
         private static final String NONCE_1     = "000000000000000000000000";
         private static final String DATA_1      = "00000000000000000000000000000000" + "4db923dc793ee6497c76dcc03a98e108";

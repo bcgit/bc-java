@@ -40,8 +40,8 @@ import org.bouncycastle.test.TestResourceFinder;
 class PKITSTest
 {
     private Set trustAnchors = new HashSet();
-    private ArrayList certs = new ArrayList();
-    private ArrayList crls = new ArrayList();
+    private List certs = new ArrayList();
+    private List crls = new ArrayList();
     private Set policies = new HashSet();
 
     //
@@ -293,12 +293,12 @@ class PKITSTest
         return trustAnchors;
     }
 
-    public ArrayList getCerts()
+    public List getCerts()
     {
         return certs;
     }
 
-    public ArrayList getCrls()
+    public List getCrls()
     {
         return crls;
     }

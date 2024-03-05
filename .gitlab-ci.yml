@@ -17,27 +17,32 @@ check-code:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
+      - "tls/build/reports"
+      - "mls/build/reports"    
   
 test-code-8:
   stage: test
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
   artifacts:
     when: always
-    paths:
-      - "core/build/reports"
-      - "prov/build/reports"
-      - "pg/build/reports"
-      - "pkix/build/reports"
-      - "mail/build/reports"
-      - "util/build/reports"
-      - "tls/build/reports"  
-  
+    reports:
+      junit:
+      - "core/build/test-results/**/*.xml"
+      - "prov/build/test-results/**/*.xml"
+      - "pg/build/test-results/**/*.xml"
+      - "pkix/build/test-results/**/*.xml"
+      - "mail/build/test-results/**/*.xml"
+      - "util/build/test-results/**/*.xml"
+      - "tls/build/test-results/**/*.xml"
+      - "mls/build/test-results/**/*.xml"
+
 test-code-11:
   stage: test
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -51,10 +56,12 @@ test-code-11:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
-  
+      - "tls/build/reports"
+      - "mls/build/reports"
+
 test-code-17:
   stage: test
+  needs: ["check-code"]
   script:
    - "ecr_login"
    - "ecr_pull vm_base_intel latest"
@@ -68,9 +75,12 @@ test-code-17:
       - "pkix/build/reports"
       - "mail/build/reports"
       - "util/build/reports"
-      - "tls/build/reports"  
+      - "tls/build/reports"
+      - "mls/build/reports"
+
 test-code-21:
   stage: test
+  needs: ["check-code"]
   script:
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
@@ -85,3 +95,4 @@ test-code-21:
       - "mail/build/reports"
       - "util/build/reports"
       - "tls/build/reports"
+      - "mls/build/reports"

@@ -16,6 +16,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
 import java.io.InputStream;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
@@ -127,9 +128,7 @@ class OperatorHelper
 
             if (withIntegrityPacket)
             {
-                byte[] iv = new byte[c.getBlockSize()];
-
-                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(new byte[c.getBlockSize()]));
             }
             else
             {
@@ -206,6 +205,8 @@ class OperatorHelper
         case PGPPublicKey.ECDSA:
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.EDDSA_LEGACY:
+        case PGPPublicKey.Ed448:
+        case PGPPublicKey.Ed25519:
             throw new PGPException("Can't use EDDSA for encryption.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
@@ -226,7 +227,10 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-                return helper.createCipher("CamelliaWrap");
+                if (Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping")))
+                {
+                    return helper.createCipher("CamelliaWrap");
+                }
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }
@@ -272,7 +276,10 @@ class OperatorHelper
             encAlg = "ECDSA";
             break;
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+        case PublicKeyAlgorithmTags.Ed25519:
             return createSignature("Ed25519");
+        case PublicKeyAlgorithmTags.Ed448:
+            return createSignature("Ed448");
         default:
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
         }

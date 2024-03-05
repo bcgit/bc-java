@@ -199,27 +199,11 @@ public abstract class PBEKeyEncryptionMethodGenerator
                 (byte) aeadAlgorithm
         };
 
-        // remove algorithm-id and checksum from sessionInfo
-        byte[] sessionKey = new byte[sessionInfo.length - 3];
-        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
-
         byte[] iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
         random.nextBytes(iv);
 
-        AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
-        aeadCipher.init(true, new AEADParameters(new KeyParameter(ikm), 128, iv, info));
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
-        int outLen = aeadCipher.getOutputSize(sessionKey.length);
-        byte[] eskAndTag = new byte[outLen];
-        int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
-        try
-        {
-            len += aeadCipher.doFinal(eskAndTag, len);
-        }
-        catch (InvalidCipherTextException e)
-        {
-            throw new PGPException("cannot encrypt session info", e);
-        }
+        byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionInfo, ikm, iv, info);
         byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
         byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
 
@@ -243,16 +227,25 @@ public abstract class PBEKeyEncryptionMethodGenerator
         byte[] kek = new byte[kekLen];
         hkdf.generateBytes(kek, 0, kek.length);
 
-        // remove algorithm-id and checksum from sessionInfo
-        byte[] sessionKey = new byte[sessionInfo.length - 3];
-        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
-
         byte[] iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
         random.nextBytes(iv);
 
-        AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
-        aeadCipher.init(true, new AEADParameters(new KeyParameter(kek), 128, iv, info));
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+        byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionInfo, kek, iv, info);
+        byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
+        byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
+
+        return SymmetricKeyEncSessionPacket.createV6Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
+    }
+
+    private byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo, byte[] key, byte[] iv, byte[] info)
+        throws PGPException
+    {
+        byte[] sessionKey = new byte[sessionInfo.length - 3];
+        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
+
+        AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
+        aeadCipher.init(true, new AEADParameters(new KeyParameter(key), 128, iv, info));
         int outLen = aeadCipher.getOutputSize(sessionKey.length);
         byte[] eskAndTag = new byte[outLen];
         int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
@@ -264,10 +257,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         {
             throw new PGPException("cannot encrypt session info", e);
         }
-        byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
-        byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
-
-        return SymmetricKeyEncSessionPacket.createV6Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
+        return eskAndTag;
     }
     /**
      * Generate a V4 SKESK packet.

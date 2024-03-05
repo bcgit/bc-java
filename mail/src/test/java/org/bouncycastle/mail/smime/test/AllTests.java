@@ -53,6 +53,7 @@ public class AllTests
         suite.addTestSuite(SMIMECompressedTest.class);
         suite.addTestSuite(SMIMEMiscTest.class);
         suite.addTestSuite(SMIMEToolkitTest.class);
+        suite.addTestSuite(MailGeneralTest.class);
 
         return new BCTestSetup(suite);
     }

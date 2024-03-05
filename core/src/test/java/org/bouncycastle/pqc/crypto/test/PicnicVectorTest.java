@@ -95,7 +95,7 @@ public class PicnicVectorTest
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/picnic", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -118,7 +118,7 @@ public class PicnicVectorTest
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed"));      // seed for picnic secure random
                         int mlen = Integer.parseInt((String)buf.get("mlen"));   // message length
                         byte[] msg = Hex.decode((String)buf.get("msg"));        // message
@@ -127,7 +127,7 @@ public class PicnicVectorTest
                         int smlen = Integer.parseInt((String)buf.get("smlen")); // signature length
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));          // signature
 
-//                        System.out.println("message: " + Hex.toHexString(msg));
+//                        // System.out.println("message: " + Hex.toHexString(msg));
                         NISTSecureRandom random = new NISTSecureRandom(seed, null);
                         PicnicParameters parameters = params[fileIndex];
 
@@ -144,8 +144,8 @@ public class PicnicVectorTest
                         PicnicPublicKeyParameters pubParams = (PicnicPublicKeyParameters) PublicKeyFactory.createKey(SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
                         PicnicPrivateKeyParameters privParams = (PicnicPrivateKeyParameters) PrivateKeyFactory.createKey(PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
 
-//                        System.out.println("pk = " + Hex.toHexString(pubParams.getEncoded()).toUpperCase());
-//                        System.out.println("sk = " + Hex.toHexString(privParams.getEncoded()).toUpperCase());
+//                        // System.out.println("pk = " + Hex.toHexString(pubParams.getEncoded()).toUpperCase());
+//                        // System.out.println("sk = " + Hex.toHexString(privParams.getEncoded()).toUpperCase());
 
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
                         assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
@@ -161,9 +161,9 @@ public class PicnicVectorTest
                         byte[] sigGenerated = signer.generateSignature(msg);
                         byte[] attachedSig = Arrays.concatenate(Pack.intToLittleEndian(sigGenerated.length), msg, sigGenerated);
 
-//                        System.out.println("expected:\t" + Hex.toHexString(sigExpected));
-//                        System.out.println("generated:\t" + Hex.toHexString(sigGenerated));
-//                        System.out.println("attached:\t" + Hex.toHexString(attachedSig));
+//                        // System.out.println("expected:\t" + Hex.toHexString(sigExpected));
+//                        // System.out.println("generated:\t" + Hex.toHexString(sigGenerated));
+//                        // System.out.println("attached:\t" + Hex.toHexString(attachedSig));
 
                         assertEquals(name + " " + count + ": signature length", smlen, attachedSig.length);
 
@@ -184,7 +184,7 @@ public class PicnicVectorTest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 

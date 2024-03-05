@@ -62,7 +62,7 @@ public class FrodoVectorTest
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/frodo", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -85,7 +85,7 @@ public class FrodoVectorTest
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for nist secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -140,7 +140,7 @@ public class FrodoVectorTest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 }

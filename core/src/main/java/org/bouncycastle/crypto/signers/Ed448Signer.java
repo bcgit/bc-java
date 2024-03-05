@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 
@@ -33,7 +34,10 @@ public class Ed448Signer
     public void init(boolean forSigning, CipherParameters parameters)
     {
         this.forSigning = forSigning;
-
+        if (parameters instanceof ParametersWithRandom)
+        {
+            parameters = ((ParametersWithRandom)parameters).getParameters();
+        }
         if (forSigning)
         {
             this.privateKey = (Ed448PrivateKeyParameters)parameters;

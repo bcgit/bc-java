@@ -123,7 +123,7 @@ public class CompositeKeyTest
 
         CompositePublicKey compPubKey = (CompositePublicKey)keyFact.generatePublic(new X509EncodedKeySpec(expPubKey));
 
-        System.out.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(expPubKey)));
+       // System.out.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(expPubKey)));
         CompositePrivateKey compPrivKey = (CompositePrivateKey)keyFact.generatePrivate(new PKCS8EncodedKeySpec(expPrivKey));
     }
 }

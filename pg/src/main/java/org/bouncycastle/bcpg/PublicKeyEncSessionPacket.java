@@ -9,8 +9,9 @@ import org.bouncycastle.util.io.Streams;
 /**
  * basic packet for a PGP public key
  */
-public class PublicKeyEncSessionPacket 
-    extends ContainedPacket implements PublicKeyAlgorithmTags
+public class PublicKeyEncSessionPacket
+    extends ContainedPacket
+    implements PublicKeyAlgorithmTags
 {
     /**
      * Version 3 PKESK packet.
@@ -24,15 +25,15 @@ public class PublicKeyEncSessionPacket
      */
     public static final int VERSION_6 = 6;
 
-    private int            version;         // v3, v6
-    private long           keyID;           // v3
-    private int            algorithm;       // v3, v6
-    private byte[][]       data;            // v3, v6
-    private int            keyVersion;      // v6
-    private byte[]         keyFingerprint;  // v6
+    private int version;         // v3, v6
+    private long keyID;           // v3
+    private int algorithm;       // v3, v6
+    private byte[][] data;            // v3, v6
+    private int keyVersion;      // v6
+    private byte[] keyFingerprint;  // v6
 
     PublicKeyEncSessionPacket(
-        BCPGInputStream    in)
+        BCPGInputStream in)
         throws IOException
     {
         super(PUBLIC_KEY_ENC_SESSION);
@@ -41,14 +42,7 @@ public class PublicKeyEncSessionPacket
 
         if (version == VERSION_3)
         {
-            keyID |= (long)in.read() << 56;
-            keyID |= (long)in.read() << 48;
-            keyID |= (long)in.read() << 40;
-            keyID |= (long)in.read() << 32;
-            keyID |= (long)in.read() << 24;
-            keyID |= (long)in.read() << 16;
-            keyID |= (long)in.read() << 8;
-            keyID |= in.read();
+            keyID = StreamUtil.readKeyID(in);
         }
         else if (version == VERSION_6)
         {
@@ -76,27 +70,28 @@ public class PublicKeyEncSessionPacket
 
         switch (algorithm)
         {
-            case RSA_ENCRYPT:
-            case RSA_GENERAL:
-                data = new byte[1][];
+        case RSA_ENCRYPT:
+        case RSA_GENERAL:
+            data = new byte[1][];
 
-                data[0] = new MPInteger(in).getEncoded();
-                break;
-            case ELGAMAL_ENCRYPT:
-            case ELGAMAL_GENERAL:
-                data = new byte[2][];
+            data[0] = new MPInteger(in).getEncoded();
+            break;
+        case ELGAMAL_ENCRYPT:
+        case ELGAMAL_GENERAL:
+            data = new byte[2][];
 
-                data[0] = new MPInteger(in).getEncoded();
-                data[1] = new MPInteger(in).getEncoded();
-                break;
-            case ECDH:
-                data = new byte[1][];
+            data[0] = new MPInteger(in).getEncoded();
+            data[1] = new MPInteger(in).getEncoded();
+            break;
+        case ECDH:
+        case X448:
+        case X25519:
+            data = new byte[1][];
 
-                data[0] = Streams.readAll(in);
-                break;
-            // TODO: Add Ed25519, Ed448, X25519, X448 etc.
-            default:
-                throw new IOException("unknown PGP public key algorithm encountered");
+            data[0] = Streams.readAll(in);
+            break;
+        default:
+            throw new IOException("unknown PGP public key algorithm encountered");
         }
 
     }
@@ -104,14 +99,14 @@ public class PublicKeyEncSessionPacket
     /**
      * Create a new V3 PKESK packet.
      *
-     * @param keyID ID of the recipient key, 0 for anonymous
+     * @param keyID     ID of the recipient key, 0 for anonymous
      * @param algorithm public key algorithm
-     * @param data session data
+     * @param data      session data
      */
     public PublicKeyEncSessionPacket(
-        long           keyID,
-        int            algorithm,
-        byte[][]       data)
+        long keyID,
+        int algorithm,
+        byte[][] data)
     {
         super(PUBLIC_KEY_ENC_SESSION);
 
@@ -129,16 +124,16 @@ public class PublicKeyEncSessionPacket
     /**
      * Create a new V6 PKESK packet.
      *
-     * @param keyVersion version of the key
+     * @param keyVersion     version of the key
      * @param keyFingerprint fingerprint of the key
-     * @param algorithm public key algorithm
-     * @param data session data
+     * @param algorithm      public key algorithm
+     * @param data           session data
      */
     public PublicKeyEncSessionPacket(
-            int keyVersion,
-            byte[] keyFingerprint,
-            int algorithm,
-            byte[][] data)
+        int keyVersion,
+        byte[] keyFingerprint,
+        int algorithm,
+        byte[][] data)
     {
 
         super(PUBLIC_KEY_ENC_SESSION);
@@ -156,17 +151,16 @@ public class PublicKeyEncSessionPacket
     }
 
     /**
-     *
      * Create a new V3 PKESK packet.
      *
-     * @param keyID ID of the recipient key, 0 for anonymous
+     * @param keyID     ID of the recipient key, 0 for anonymous
      * @param algorithm public key algorithm
-     * @param data session data
+     * @param data      session data
      */
     public static PublicKeyEncSessionPacket createV3PKESKPacket(
-            long keyID,
-            int algorithm,
-            byte[][] data)
+        long keyID,
+        int algorithm,
+        byte[][] data)
     {
         return new PublicKeyEncSessionPacket(keyID, algorithm, data);
     }
@@ -174,16 +168,16 @@ public class PublicKeyEncSessionPacket
     /**
      * Create a new V6 PKESK packet.
      *
-     * @param keyVersion version of the key
+     * @param keyVersion     version of the key
      * @param keyFingerprint fingerprint of the key
-     * @param algorithm public key algorithm
-     * @param data session data
+     * @param algorithm      public key algorithm
+     * @param data           session data
      */
     public static PublicKeyEncSessionPacket createV6PKESKPacket(
-            int keyVersion,
-            byte[] keyFingerprint,
-            int algorithm,
-            byte[][] data)
+        int keyVersion,
+        byte[] keyFingerprint,
+        int algorithm,
+        byte[][] data)
     {
         return new PublicKeyEncSessionPacket(keyVersion, keyFingerprint, algorithm, data);
     }
@@ -242,31 +236,24 @@ public class PublicKeyEncSessionPacket
     {
         return algorithm;
     }
-    
+
     public byte[][] getEncSessionKey()
     {
         return data;
     }
 
     public void encode(
-        BCPGOutputStream    out)
+        BCPGOutputStream out)
         throws IOException
     {
-        ByteArrayOutputStream  bOut = new ByteArrayOutputStream();
-        BCPGOutputStream       pOut = new BCPGOutputStream(bOut);
-  
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut);
+
         pOut.write(version);
 
         if (version == VERSION_3)
         {
-            pOut.write((byte) (keyID >> 56));
-            pOut.write((byte) (keyID >> 48));
-            pOut.write((byte) (keyID >> 40));
-            pOut.write((byte) (keyID >> 32));
-            pOut.write((byte) (keyID >> 24));
-            pOut.write((byte) (keyID >> 16));
-            pOut.write((byte) (keyID >> 8));
-            pOut.write((byte) (keyID));
+            StreamUtil.writeKeyID(pOut, keyID);
         }
         else if (version == VERSION_6)
         {
@@ -274,9 +261,9 @@ public class PublicKeyEncSessionPacket
             pOut.write(keyVersion);
             pOut.write(keyFingerprint);
         }
-        
+
         pOut.write(algorithm);
-        
+
         for (int i = 0; i != data.length; i++)
         {
             pOut.write(data[i]);
@@ -284,6 +271,6 @@ public class PublicKeyEncSessionPacket
 
         pOut.close();
 
-        out.writePacket(PUBLIC_KEY_ENC_SESSION , bOut.toByteArray());
+        out.writePacket(PUBLIC_KEY_ENC_SESSION, bOut.toByteArray());
     }
 }

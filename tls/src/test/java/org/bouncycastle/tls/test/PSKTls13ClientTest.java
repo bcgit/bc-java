@@ -10,6 +10,7 @@ import java.net.Socket;
 
 import org.bouncycastle.tls.TlsClient;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.util.Strings;
 
 public class PSKTls13ClientTest
 {
@@ -27,7 +28,7 @@ public class PSKTls13ClientTest
         System.out.println("Elapsed: " + (time1 - time0) + "ms");
 
         OutputStream output = protocol.getOutputStream();
-        output.write("GET / HTTP/1.1\r\n\r\n".getBytes("UTF-8"));
+        output.write(Strings.toUTF8ByteArray("GET / HTTP/1.1\r\n\r\n"));
         output.flush();
 
         InputStream input = protocol.getInputStream();

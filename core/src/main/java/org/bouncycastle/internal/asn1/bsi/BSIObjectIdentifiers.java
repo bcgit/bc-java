@@ -93,24 +93,24 @@ public interface BSIObjectIdentifiers
     static final ASN1ObjectIdentifier ecka_eg_SessionKDF_AES192  = ecka_eg_SessionKDF.branch("3");
     static final ASN1ObjectIdentifier ecka_eg_SessionKDF_AES256  = ecka_eg_SessionKDF.branch("4");
 
-    /** AES encryption (CBC) and authentication (CMAC)
-     * OID: 0.4.0.127.0.7.1.x */
+//    /** AES encryption (CBC) and authentication (CMAC)
+//     * OID: 0.4.0.127.0.7.1.x */
     //TODO: replace "1" with correct OID
     //static final ASN1ObjectIdentifier aes_cbc_cmac = algorithm.branch("1");
 
-    /** AES encryption (CBC) and authentication (CMAC) with 128 bit
-     * OID: 0.4.0.127.0.7.1.x.y1 */
+//    /** AES encryption (CBC) and authentication (CMAC) with 128 bit
+//     * OID: 0.4.0.127.0.7.1.x.y1 */
     //TODO:  replace "1" with correct OID
     //static final ASN1ObjectIdentifier id_aes128_CBC_CMAC = aes_cbc_cmac.branch("1");
 
 
-    /** AES encryption (CBC) and authentication (CMAC) with 192 bit
-     * OID: 0.4.0.127.0.7.1.x.y2 */
+//    /** AES encryption (CBC) and authentication (CMAC) with 192 bit
+//     * OID: 0.4.0.127.0.7.1.x.y2 */
     //TODO:  replace "1" with correct OID
     //static final ASN1ObjectIdentifier id_aes192_CBC_CMAC = aes_cbc_cmac.branch("1");
 
-    /** AES encryption (CBC) and authentication (CMAC) with 256 bit
-     * OID: 0.4.0.127.0.7.1.x.y3 */
+//    /** AES encryption (CBC) and authentication (CMAC) with 256 bit
+//     * OID: 0.4.0.127.0.7.1.x.y3 */
     //TODO:  replace "1" with correct OID
     //static final ASN1ObjectIdentifier id_aes256_CBC_CMAC = aes_cbc_cmac.branch("1");
 }

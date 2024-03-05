@@ -1,11 +1,8 @@
 package org.bouncycastle.mail.smime;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import javax.mail.MessagingException;
-import javax.mail.Part;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimePart;
@@ -20,30 +17,6 @@ public class SMIMEEnvelopedParser
     extends CMSEnvelopedDataParser
 {
     private final MimePart message;
-
-    private static InputStream getInputStream(
-        Part    bodyPart,
-        int     bufferSize)
-        throws MessagingException
-    {
-        try
-        {
-            InputStream in = bodyPart.getInputStream();
-            
-            if (bufferSize == 0)
-            {
-                return new BufferedInputStream(in);
-            }
-            else
-            {
-                return new BufferedInputStream(in, bufferSize);
-            }
-        }
-        catch (IOException e)
-        {
-            throw new MessagingException("can't extract input stream: " + e);
-        }
-    }
 
     public SMIMEEnvelopedParser(
         MimeBodyPart    message) 
@@ -71,7 +44,7 @@ public class SMIMEEnvelopedParser
         int             bufferSize) 
         throws IOException, MessagingException, CMSException
     {
-        super(getInputStream(message, bufferSize));
+        super(SMIMEUtil.getInputStream(message, bufferSize));
 
         this.message = message;
     }
@@ -88,7 +61,7 @@ public class SMIMEEnvelopedParser
         int            bufferSize) 
         throws IOException, MessagingException, CMSException
     {
-        super(getInputStream(message, bufferSize));
+        super(SMIMEUtil.getInputStream(message, bufferSize));
 
         this.message = message;
     }

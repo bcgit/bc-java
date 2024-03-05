@@ -441,12 +441,13 @@ public class CBZip2OutputStream
 
     boolean closed = false;
 
-    protected void finalize()
-        throws Throwable
-    {
-        close();
-        super.finalize();
-    }
+    // as of Java 13 this is a very bad idea
+//    protected void finalize()
+//        throws Throwable
+//    {
+//        close();
+//        super.finalize();
+//    }
 
     public void close()
         throws IOException

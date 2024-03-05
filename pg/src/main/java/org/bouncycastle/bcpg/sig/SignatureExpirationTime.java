@@ -10,16 +10,9 @@ public class SignatureExpirationTime
     extends SignatureSubpacket
 {
     protected static byte[] timeToBytes(
-        long      t)
+        long    t)
     {
-        byte[]    data = new byte[4];
-        
-        data[0] = (byte)(t >> 24);
-        data[1] = (byte)(t >> 16);
-        data[2] = (byte)(t >> 8);
-        data[3] = (byte)t;
-        
-        return data;
+        return Utils.timeToBytes(t);
     }
     
     public SignatureExpirationTime(
@@ -34,7 +27,7 @@ public class SignatureExpirationTime
         boolean    critical,
         long       seconds)
     {
-        super(SignatureSubpacketTags.EXPIRE_TIME, critical, false, timeToBytes(seconds));
+        super(SignatureSubpacketTags.EXPIRE_TIME, critical, false, Utils.timeToBytes(seconds));
     }
     
     /**

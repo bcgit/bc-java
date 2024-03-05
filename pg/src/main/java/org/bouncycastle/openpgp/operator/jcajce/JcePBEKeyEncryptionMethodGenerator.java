@@ -33,7 +33,7 @@ public class JcePBEKeyEncryptionMethodGenerator
      * Create a PBE encryption method generator using the provided digest and the default S2K count
      * for key generation.
      *
-     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param passPhrase          the passphrase to use as the primary source of key material.
      * @param s2kDigestCalculator the digest calculator to use for key calculation.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator)
@@ -56,9 +56,9 @@ public class JcePBEKeyEncryptionMethodGenerator
      * Create a PBE encryption method generator using the provided calculator and S2K count for key
      * generation.
      *
-     * @param passPhrase the passphrase to use as the primary source of key material.
+     * @param passPhrase          the passphrase to use as the primary source of key material.
      * @param s2kDigestCalculator the digest calculator to use for key calculation.
-     * @param s2kCount the single byte {@link S2K} count to use.
+     * @param s2kCount            the single byte {@link S2K} count to use.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, PGPDigestCalculator s2kDigestCalculator, int s2kCount)
     {
@@ -70,7 +70,7 @@ public class JcePBEKeyEncryptionMethodGenerator
      * count other than the default for key generation.
      *
      * @param passPhrase the passphrase to use as the primary source of key material.
-     * @param s2kCount the single byte {@link S2K} count to use.
+     * @param s2kCount   the single byte {@link S2K} count to use.
      */
     public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, int s2kCount)
     {
@@ -118,7 +118,6 @@ public class JcePBEKeyEncryptionMethodGenerator
             String cName = PGPUtil.getSymmetricCipherName(encAlgorithm);
             Cipher c = helper.createCipher(cName + "/CFB/NoPadding");
             SecretKey sKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
-
             c.init(Cipher.ENCRYPT_MODE, sKey, new IvParameterSpec(new byte[c.getBlockSize()]));
 
             return c.doFinal(sessionInfo, 0, sessionInfo.length);

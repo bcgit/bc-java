@@ -51,7 +51,7 @@ public class Grainv1Engine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        /**
+        /*
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
@@ -85,7 +85,7 @@ public class Grainv1Engine
                   "Grain v1 key must be 80 bits long");
         }
 
-        /**
+        /*
          * Initialize variables.
          */
         workingIV = new byte[keyBytes.length];
@@ -219,7 +219,7 @@ public class Grainv1Engine
         workingKey = keyBytes;
         workingIV = ivBytes;
 
-        /**
+        /*
          * Load NFSR and LFSR
          */
         int j = 0;

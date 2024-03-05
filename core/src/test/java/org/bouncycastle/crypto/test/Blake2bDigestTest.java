@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import java.io.UnsupportedEncodingException;
-
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.util.Arrays;
@@ -124,23 +122,15 @@ public class Blake2bDigestTest
         for (int i = 0; i < unkeyedTestVectors.length; i++)
         {
 
-            try
+            // blake2bunkeyed.update(
+            // unkeyedTestVectors[i][1].getBytes("UTF-8"));
+            // test update(byte b)
+            byte[] unkeyedInput = Strings.toUTF8ByteArray(unkeyedTestVectors[i][1]);
+            for (int j = 0; j < unkeyedInput.length; j++)
             {
-                // blake2bunkeyed.update(
-                // unkeyedTestVectors[i][1].getBytes("UTF-8"));
-                // test update(byte b)
-                byte[] unkeyedInput = unkeyedTestVectors[i][1]
-                    .getBytes("UTF-8");
-                for (int j = 0; j < unkeyedInput.length; j++)
-                {
-                    blake2bunkeyed.update(unkeyedInput[j]);
-                }
+                blake2bunkeyed.update(unkeyedInput[j]);
             }
-            catch (UnsupportedEncodingException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+
             byte[] unkeyedHash = new byte[64];
             blake2bunkeyed.doFinal(unkeyedHash, 0);
             blake2bunkeyed.reset();

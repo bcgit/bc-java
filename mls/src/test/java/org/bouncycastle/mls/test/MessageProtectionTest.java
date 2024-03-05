@@ -202,7 +202,7 @@ public class MessageProtectionTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                   // System.out.println("test case: " + count);
                     cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                     group_id = Hex.decode(buf.get("group_id"));
                     epoch = Long.parseLong(buf.get("epoch"));

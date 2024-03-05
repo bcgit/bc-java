@@ -3,7 +3,6 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -12,42 +11,25 @@ import org.bouncycastle.util.io.Streams;
 public abstract class RecipientInformation
 {
     protected RecipientId rid;
-    protected AlgorithmIdentifier   keyEncAlg;
-    protected AlgorithmIdentifier   messageAlgorithm;
-    protected CMSSecureReadable     secureReadable;
-
-    private AuthAttributesProvider additionalData;
-
+    protected AlgorithmIdentifier keyEncAlg;
+    protected AlgorithmIdentifier messageAlgorithm;
+    protected CMSSecureReadable secureReadable;
     private byte[] resultMac;
-    private RecipientOperator     operator;
+    private RecipientOperator operator;
 
     RecipientInformation(
         AlgorithmIdentifier keyEncAlg,
         AlgorithmIdentifier messageAlgorithm,
-        CMSSecureReadable secureReadable,
-        AuthAttributesProvider additionalData)
+        CMSSecureReadable secureReadable)
     {
         this.keyEncAlg = keyEncAlg;
         this.messageAlgorithm = messageAlgorithm;
         this.secureReadable = secureReadable;
-        this.additionalData = additionalData;
     }
 
     public RecipientId getRID()
     {
         return rid;
-    }
-
-    private byte[] encodeObj(
-        ASN1Encodable obj)
-        throws IOException
-    {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive().getEncoded();
-        }
-
-        return null;
     }
 
     /**
@@ -80,7 +62,7 @@ public abstract class RecipientInformation
     {
         try
         {
-            return encodeObj(keyEncAlg.getParameters());
+            return CMSUtils.encodeObj(keyEncAlg.getParameters());
         }
         catch (Exception e)
         {
@@ -100,7 +82,6 @@ public abstract class RecipientInformation
         {
             return ((CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable)secureReadable).getDigest();
         }
-
         return null;
     }
 
@@ -108,29 +89,25 @@ public abstract class RecipientInformation
      * Return the MAC calculated for the recipient. Note: this call is only meaningful once all
      * the content has been read.
      *
-     * @return  byte array containing the mac.
+     * @return byte array containing the mac.
      */
     public byte[] getMac()
     {
         if (resultMac == null)
         {
-            if (operator.isMacBased())
+            if (operator.isMacBased() && secureReadable.hasAdditionalData())
             {
-                if (additionalData != null)
+                try
                 {
-                    try
-                    {
-                        Streams.drain(operator.getInputStream(new ByteArrayInputStream(additionalData.getAuthAttributes().getEncoded(ASN1Encoding.DER))));
-                    }
-                    catch (IOException e)
-                    {
-                        throw new IllegalStateException("unable to drain input: " + e.getMessage());
-                    }
+                    Streams.drain(operator.getInputStream(new ByteArrayInputStream(secureReadable.getAuthAttrSet().getEncoded(ASN1Encoding.DER))));
                 }
-                resultMac = operator.getMac();
+                catch (IOException e)
+                {
+                    throw new IllegalStateException("unable to drain input: " + e.getMessage());
+                }
             }
+            resultMac = operator.getMac();
         }
-
         return resultMac;
     }
 
@@ -139,7 +116,7 @@ public abstract class RecipientInformation
      * encryption/MAC key using the passed in Recipient.
      *
      * @param recipient recipient object to use to recover content encryption key
-     * @return  the content inside the EnvelopedData this RecipientInformation is associated with.
+     * @return the content inside the EnvelopedData this RecipientInformation is associated with.
      * @throws CMSException if the content-encryption/MAC key cannot be recovered.
      */
     public byte[] getContent(
@@ -171,7 +148,7 @@ public abstract class RecipientInformation
      * encryption/MAC key using the passed in Recipient.
      *
      * @param recipient recipient object to use to recover content encryption key
-     * @return  the content inside the EnvelopedData this RecipientInformation is associated with.
+     * @return the content inside the EnvelopedData this RecipientInformation is associated with.
      * @throws CMSException if the content-encryption/MAC key cannot be recovered.
      */
     public CMSTypedStream getContentStream(Recipient recipient)
@@ -179,19 +156,13 @@ public abstract class RecipientInformation
     {
         operator = getRecipientOperator(recipient);
 
-        if (additionalData != null)
+        if (operator.isAEADBased())
         {
-            if (additionalData.isAead())
-            {
-                // TODO: this needs to be done after reading the encrypted data
-                operator.getAADStream().write(additionalData.getAuthAttributes().getEncoded(ASN1Encoding.DER));
-
-                return new CMSTypedStream(secureReadable.getContentType(), operator.getInputStream(secureReadable.getInputStream()));
-            }
-            else
-            {
-                return new CMSTypedStream(secureReadable.getContentType(), secureReadable.getInputStream());
-            }
+            ((CMSSecureReadableWithAAD)secureReadable).setAADStream(operator.getAADStream());
+        }
+        else if (secureReadable.hasAdditionalData())
+        {
+            return new CMSTypedStream(secureReadable.getContentType(), secureReadable.getInputStream());
         }
 
         return new CMSTypedStream(secureReadable.getContentType(), operator.getInputStream(secureReadable.getInputStream()));

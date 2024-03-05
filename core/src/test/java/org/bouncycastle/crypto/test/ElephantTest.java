@@ -106,7 +106,7 @@ public class ElephantTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        System.out.println("Elephant AEAD pass");
+       // System.out.println("Elephant AEAD pass");
     }
 
     private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
@@ -380,7 +380,7 @@ public class ElephantTest
         {
             fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
         }
-        System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
+       // System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
     private void testParameters(ElephantEngine isap, int keySize, int ivSize, int macSize)
@@ -397,7 +397,7 @@ public class ElephantTest
         {
             fail(isap.getAlgorithmName() + ": mac bytes of " + isap.getAlgorithmName() + " is not correct");
         }
-        System.out.println(isap.getAlgorithmName() + " test Parameters pass");
+       // System.out.println(isap.getAlgorithmName() + " test Parameters pass");
     }
 
 

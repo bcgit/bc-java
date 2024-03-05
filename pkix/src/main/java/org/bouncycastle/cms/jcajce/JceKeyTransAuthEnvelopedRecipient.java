@@ -10,6 +10,7 @@ import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.InputStreamWithMAC;
 import org.bouncycastle.cms.RecipientOperator;
 import org.bouncycastle.jcajce.io.CipherInputStream;
 import org.bouncycastle.operator.InputAEADDecryptor;
@@ -31,6 +32,8 @@ public class JceKeyTransAuthEnvelopedRecipient
 
         return new RecipientOperator(new InputAEADDecryptor()
         {
+            private InputStream inputStream;
+
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
                 return contentEncryptionAlgorithm;
@@ -38,6 +41,7 @@ public class JceKeyTransAuthEnvelopedRecipient
 
             public InputStream getInputStream(InputStream dataIn)
             {
+                inputStream = dataIn;
                 return new CipherInputStream(dataIn, dataCipher);
             }
 
@@ -48,8 +52,11 @@ public class JceKeyTransAuthEnvelopedRecipient
 
             public byte[] getMAC()
             {
-                // TODO
-                return new byte[0];
+                if (inputStream instanceof InputStreamWithMAC)
+                {
+                    return ((InputStreamWithMAC)inputStream).getMAC();
+                }
+                return null;
             }
         });
     }
@@ -64,7 +71,7 @@ public class JceKeyTransAuthEnvelopedRecipient
         {
             this.cipher = cipher;
         }
-        
+
         public void write(byte[] buf, int off, int len)
             throws IOException
         {
