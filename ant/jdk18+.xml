@@ -107,6 +107,14 @@
         <ant antfile="ant/bc+-build.xml" dir="." target="javadoc-provider" />
     </target>
 
+    <target name="build-util" depends="init, build-provider, checkstyle-on, checkstyle-off">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-util" />
+    </target>
+
+    <target name="build-pkix" depends="init, build-util, checkstyle-on, checkstyle-off">
+        <ant antfile="ant/bc+-build.xml" dir="." target="build-pkix" />
+    </target>
+
     <target name="build-test" depends="init">
         <ant antfile="ant/bc+-build.xml" dir="." target="build-test" />
     </target>
