@@ -148,12 +148,14 @@ public class ValidateSignedMail
             {
                 ErrorBundle errMsg = new ErrorBundle(RESOURCE_NAME,
                         "SignedMailValidator.sigValid");
+                errMsg.setClassLoader(SignedMailValidator.class.getClassLoader());
                 System.out.println(errMsg.getText(loc));
             }
             else
             {
                 ErrorBundle errMsg = new ErrorBundle(RESOURCE_NAME,
                         "SignedMailValidator.sigInvalid");
+                errMsg.setClassLoader(SignedMailValidator.class.getClassLoader());
                 System.out.println(errMsg.getText(loc));
                 // print errors
                 System.out.println("Errors:");
