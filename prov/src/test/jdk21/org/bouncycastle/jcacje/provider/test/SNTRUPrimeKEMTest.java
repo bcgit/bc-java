@@ -14,6 +14,7 @@ import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec;
+import org.bouncycastle.pqc.jcajce.interfaces.SNTRUPrimeKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -50,7 +51,7 @@ public class SNTRUPrimeKEMTest
         KeyPairGenerator g = KeyPairGenerator.getInstance("SNTRUPrime");
         g.initialize(SNTRUPrimeParameterSpec.sntrup653, fixedRandom);
         KeyPair kp = g.generateKeyPair();
-        BCSNTRUPrimePublicKey pkR = (BCSNTRUPrimePublicKey) kp.getPublic();
+        SNTRUPrimeKey pkR = (SNTRUPrimeKey)kp.getPublic();
 
         // Sender side
         KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
