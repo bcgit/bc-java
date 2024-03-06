@@ -56,7 +56,7 @@ public class SNTRUPrimeKEMTest
         // Sender side
         KEM kemS = KEM.getInstance("SNTRUPrime"); //Should the name be "SNTRUPrime-KEM" ?
         KTSParameterSpec ktsSpec = null;
-        KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, fixedRandom);
+        KEM.Encapsulator e = kemS.newEncapsulator((PublicKey)pkR, ktsSpec, fixedRandom);
         KEM.Encapsulated enc = e.encapsulate();
         SecretKey secS = enc.key();
         byte[] em = enc.encapsulation();
