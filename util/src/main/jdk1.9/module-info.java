@@ -14,11 +14,14 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.esf;
     exports org.bouncycastle.asn1.ess;
     exports org.bouncycastle.asn1.est;
+    exports org.bouncycastle.asn1.gnu;
+    exports org.bouncycastle.asn1.iana;
     exports org.bouncycastle.asn1.icao;
     exports org.bouncycastle.asn1.isismtt;
     exports org.bouncycastle.asn1.isismtt.ocsp;
     exports org.bouncycastle.asn1.isismtt.x509;
     exports org.bouncycastle.asn1.mozilla;
+    exports org.bouncycastle.asn1.ntt;
     exports org.bouncycastle.asn1.oiw;
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
