@@ -17,10 +17,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.cryptopro;
     exports org.bouncycastle.asn1.edec;
     exports org.bouncycastle.asn1.gm;
-    exports org.bouncycastle.asn1.isara;
-    exports org.bouncycastle.asn1.iso;
-    exports org.bouncycastle.asn1.kisa;
-    exports org.bouncycastle.asn1.microsoft;
     exports org.bouncycastle.asn1.misc;
     exports org.bouncycastle.asn1.nist;
     exports org.bouncycastle.asn1.nsri;
