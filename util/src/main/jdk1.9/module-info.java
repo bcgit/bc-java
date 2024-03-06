@@ -8,6 +8,7 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.cms;
     exports org.bouncycastle.asn1.cms.ecc;
     exports org.bouncycastle.asn1.crmf;
+    exports org.bouncycastle.asn1.cryptlib;
     exports org.bouncycastle.asn1.dvcs;
     exports org.bouncycastle.asn1.eac;
     exports org.bouncycastle.asn1.esf;
@@ -17,6 +18,8 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.isismtt;
     exports org.bouncycastle.asn1.isismtt.ocsp;
     exports org.bouncycastle.asn1.isismtt.x509;
+    exports org.bouncycastle.asn1.mozilla;
+    exports org.bouncycastle.asn1.oiw;
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
     exports org.bouncycastle.oer;

@@ -13,7 +13,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.anssi;
     exports org.bouncycastle.asn1.bc;
     exports org.bouncycastle.asn1.cryptopro;
-    exports org.bouncycastle.asn1.cryptlib;
     exports org.bouncycastle.asn1.edec;
     exports org.bouncycastle.asn1.gm;
     exports org.bouncycastle.asn1.gnu;
@@ -23,12 +22,10 @@ module org.bouncycastle.provider
     exports org.bouncycastle.asn1.kisa;
     exports org.bouncycastle.asn1.microsoft;
     exports org.bouncycastle.asn1.misc;
-    exports org.bouncycastle.asn1.mozilla;
     exports org.bouncycastle.asn1.nist;
     exports org.bouncycastle.asn1.nsri;
     exports org.bouncycastle.asn1.ntt;
     exports org.bouncycastle.asn1.ocsp;
-    exports org.bouncycastle.asn1.oiw;
     exports org.bouncycastle.asn1.pkcs;
     exports org.bouncycastle.asn1.rosstandart;
     exports org.bouncycastle.asn1.sec;
