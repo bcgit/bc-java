@@ -11,6 +11,7 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.cryptlib;
     exports org.bouncycastle.asn1.dvcs;
     exports org.bouncycastle.asn1.eac;
+    exports org.bouncycastle.asn1.edec;
     exports org.bouncycastle.asn1.esf;
     exports org.bouncycastle.asn1.ess;
     exports org.bouncycastle.asn1.est;
@@ -24,9 +25,12 @@ module org.bouncycastle.util
     exports org.bouncycastle.asn1.iso;
     exports org.bouncycastle.asn1.kisa;
     exports org.bouncycastle.asn1.microsoft;
+    exports org.bouncycastle.asn1.misc;
     exports org.bouncycastle.asn1.mozilla;
+    exports org.bouncycastle.asn1.nsri;
     exports org.bouncycastle.asn1.ntt;
     exports org.bouncycastle.asn1.oiw;
+    exports org.bouncycastle.asn1.rosstandart;
     exports org.bouncycastle.asn1.smime;
     exports org.bouncycastle.asn1.tsp;
     exports org.bouncycastle.oer;

@@ -3,7 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.edec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
