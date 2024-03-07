@@ -32,6 +32,9 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.4 Notes.</h3>
 <ul>
 <li>Both versions of NTRUPrime have been updated to produce 256 bit secrets in line with Kyber. This should also bring them into line with other implementations such as those used in OpenSSH now.</li>
+<li>BCJSSE: The boolean system property 'org.bouncycastle.jsse.fips.allowRSAKeyExchange" now defaults to false. All RSA
+key exchange cipher suites will therefore be disabled when the BCJSSE provider is used in FIPS mode, unless this system
+property is explicitly set to true.</li>
 </ul>
 
 <a id="r1rv77"><h3>2.2.1 Version</h3></a>
