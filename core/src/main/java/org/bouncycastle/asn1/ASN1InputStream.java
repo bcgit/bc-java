@@ -553,7 +553,8 @@ public class ASN1InputStream
             case PRINTABLE_STRING:
                 return ASN1PrintableString.createPrimitive(defIn.toByteArray());
             case RELATIVE_OID:
-                return ASN1RelativeOID.createPrimitive(defIn.toByteArray(), false);
+                // TODO Ideally only clone if we used a buffer
+                return ASN1RelativeOID.createPrimitive(getBuffer(defIn, tmpBuffers), true);
             case T61_STRING:
                 return ASN1T61String.createPrimitive(defIn.toByteArray());
             case UNIVERSAL_STRING:

@@ -421,7 +421,7 @@ public class ASN1ObjectIdentifier
         return oid;
     }
 
-    private static class OidHandle
+    static class OidHandle
     {
         private final int key;
         private final byte[] contents;
@@ -452,10 +452,10 @@ public class ASN1ObjectIdentifier
     {
         final OidHandle hdl = new OidHandle(contents);
         ASN1ObjectIdentifier oid = pool.get(hdl);
-        if (oid == null)
+        if (oid != null)
         {
-            return new ASN1ObjectIdentifier(contents, clone);
+            return oid;
         }
-        return oid;
+        return new ASN1ObjectIdentifier(contents, clone);
     }
 }
