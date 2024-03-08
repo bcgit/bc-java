@@ -3,6 +3,8 @@ package org.bouncycastle.asn1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
 
@@ -77,6 +79,9 @@ public class ASN1RelativeOID
     }
 
     private static final long LONG_LIMIT = (Long.MAX_VALUE >> 7) - 0x7F;
+
+    private static final ConcurrentMap<ASN1ObjectIdentifier.OidHandle, ASN1RelativeOID> pool =
+        new ConcurrentHashMap<ASN1ObjectIdentifier.OidHandle, ASN1RelativeOID>();
 
     private final byte[] contents;
     private String identifier;
@@ -180,6 +185,12 @@ public class ASN1RelativeOID
 
     static ASN1RelativeOID createPrimitive(byte[] contents, boolean clone)
     {
+        final ASN1ObjectIdentifier.OidHandle hdl = new ASN1ObjectIdentifier.OidHandle(contents);
+        ASN1RelativeOID oid = pool.get(hdl);
+        if (oid != null)
+        {
+            return oid;
+        }
         return new ASN1RelativeOID(contents, clone);
     }
 
