@@ -4,7 +4,6 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.tls.TlsRsaKeyExchange;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
@@ -79,9 +78,9 @@ public class BcDefaultTlsCredentialedDecryptor
     {
         ProtocolVersion expectedVersion = cryptoParams.getRSAPreMasterSecretVersion();
 
-        byte[] M = TlsRsaKeyExchange.decryptPreMasterSecret(encryptedPreMasterSecret, rsaServerPrivateKey,
-            expectedVersion.getFullVersion(), crypto.getSecureRandom());
+        byte[] preMasterSecret = org.bouncycastle.crypto.tls.TlsRsaKeyExchange.decryptPreMasterSecret(
+            encryptedPreMasterSecret, rsaServerPrivateKey, expectedVersion.getFullVersion(), crypto.getSecureRandom());
 
-        return crypto.createSecret(M);
+        return crypto.createSecret(preMasterSecret);
     }
 }
