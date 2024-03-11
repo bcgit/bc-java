@@ -23,9 +23,9 @@ dependencies {
     implementation files("$bc_pkix")
     implementation project(path: ':core')
 
-    java9Implementation files(":prov")
-    java9Implementation files(":util")
-    java9Implementation files(":pkix")
+    java9Implementation files("$bc_prov")
+    java9Implementation files("$bc_util")
+    java9Implementation files("$bc_pkix")
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }

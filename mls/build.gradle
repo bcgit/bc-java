@@ -61,10 +61,9 @@ dependencies {
 //    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 //    implementation "com.google.protobuf:protobuf-java-util:${protocVersion}"
 
-    java9Implementation project(':core')
-    java9Implementation project(':prov')
-    java9Implementation project(':util')
-    java9Implementation project(':pkix')
+    java9Implementation files("$bc_prov")
+    java9Implementation files("$bc_util")
+    java9Implementation files("$bc_pkix")
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }
