@@ -47,7 +47,7 @@ compileJava9Java {
     sourceCompatibility = 9
     targetCompatibility = 9
     options.compilerArgs += [
-            '--module-path', "${bc_prov}:${bc_util}:${bc_pkix}"
+            '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}${File.pathSeparator}${bc_pkix}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
