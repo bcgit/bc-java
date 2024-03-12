@@ -660,27 +660,28 @@ public class X509Name
         this(reverse, lookUp, dirName, new X509DefaultEntryConverter());
     }
 
-    private ASN1ObjectIdentifier decodeOID(
-        String      name,
-        Hashtable   lookUp)
+    private ASN1ObjectIdentifier decodeOID(String name, Hashtable lookUp)
     {
         name = name.trim();
-        if (Strings.toUpperCase(name).startsWith("OID."))
+
+        if (name.regionMatches(true, 0, "OID.", 0, 4))
         {
             return new ASN1ObjectIdentifier(name.substring(4));
         }
-        else if (name.charAt(0) >= '0' && name.charAt(0) <= '9')
+
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(name);
+        if (oid != null)
         {
-            return new ASN1ObjectIdentifier(name);
+            return oid;
         }
 
-        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)lookUp.get(Strings.toLowerCase(name));
-        if (oid == null)
+        oid = (ASN1ObjectIdentifier)lookUp.get(Strings.toLowerCase(name));
+        if (oid != null)
         {
-            throw new IllegalArgumentException("Unknown object id - " + name + " - passed to distinguished name");
+            return oid;
         }
 
-        return oid;
+        throw new IllegalArgumentException("Unknown object id - " + name + " - passed to distinguished name");
     }
 
     private String unescape(String elt)
