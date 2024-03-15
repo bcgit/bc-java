@@ -57,15 +57,14 @@ public class ClientVectorTest
     {
         runPassiveClientTest("passive-client-welcome.txt");
     }
-    //TODO: Replace with new test vectors when available
-//    public void testPassiveClientRandom() throws Exception
-//    {
-//        runPassiveClientTest("passive-client-random.txt");
-//    }
-//    public void testPassiveClientHandlingCommit() throws Exception
-//    {
-//        runPassiveClientTest("passive-client-handling-commit.txt");
-//    }
+    public void testPassiveClientRandom() throws Exception
+    {
+        runPassiveClientTest("passive-client-random.txt");
+    }
+    public void testPassiveClientHandlingCommit() throws Exception
+    {
+        runPassiveClientTest("passive-client-handling-commit.txt");
+    }
 
     private void runPassiveClientTest(String filename)
             throws Exception
