@@ -261,17 +261,28 @@ public class BCECGOST3410_2012PublicKey
         {
             if (ecSpec instanceof ECNamedCurveSpec)
             {
+                ASN1ObjectIdentifier gostCurveOid = ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName());
                 if (is512)
                 {
                     params = new GOST3410PublicKeyAlgParameters(
-                        ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                        gostCurveOid,
                         RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
                 }
                 else
                 {
-                    params = new GOST3410PublicKeyAlgParameters(
-                        ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
-                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+                    if (gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB)
+                        || gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC)
+                        || gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD))
+                    {
+                        // RFC 9215
+                        params = new GOST3410PublicKeyAlgParameters(gostCurveOid, null);
+                    }
+                    else
+                    {
+                        params = new GOST3410PublicKeyAlgParameters(
+                            gostCurveOid,
+                            RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+                    }
                 }
             }
             else
@@ -438,17 +449,29 @@ public class BCECGOST3410_2012PublicKey
 
             // need to detect key size
             boolean is512 = (bX.bitLength() > 256);
+            ASN1ObjectIdentifier gostCurveOid = ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName());
             if (is512)
             {
                 this.gostParams = new GOST3410PublicKeyAlgParameters(
-                    ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
+                    gostCurveOid,
                     RosstandartObjectIdentifiers.id_tc26_gost_3411_12_512);
             }
             else
             {
-                this.gostParams = new GOST3410PublicKeyAlgParameters(
-                    ECGOST3410NamedCurves.getOID(((ECNamedCurveSpec)ecSpec).getName()),
-                    RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+                if (gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB)
+                    || gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC)
+                    || gostCurveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD))
+                {
+                    this.gostParams = new GOST3410PublicKeyAlgParameters(
+                        gostCurveOid,
+                        null);
+                }
+                else
+                {
+                    this.gostParams = new GOST3410PublicKeyAlgParameters(
+                        gostCurveOid,
+                        RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256);
+                }
             }
         }
         return gostParams;
