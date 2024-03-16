@@ -127,7 +127,14 @@ public class GOST3410ParameterSpec
         }
         else
         {
-            return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), params.getDigestParamSet().getId());
+            if (params.getDigestParamSet() != null)
+            {
+                return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), params.getDigestParamSet().getId());
+            }
+            else
+            {
+                return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), null);
+            }
         }
     }
 }
