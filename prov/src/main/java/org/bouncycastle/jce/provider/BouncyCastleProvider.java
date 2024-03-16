@@ -121,7 +121,7 @@ public final class BouncyCastleProvider extends Provider
     // later ones configure it.
     private static final String[] ASYMMETRIC_GENERIC =
     {
-        "X509", "IES", "COMPOSITE", "EXTERNAL"
+        "X509", "IES", "COMPOSITE", "EXTERNAL", "CompositeSignatures"
     };
 
     private static final String[] ASYMMETRIC_CIPHERS =
@@ -519,7 +519,6 @@ public final class BouncyCastleProvider extends Provider
         {
             return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
         }
-        
         AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
         if (converter == null)
