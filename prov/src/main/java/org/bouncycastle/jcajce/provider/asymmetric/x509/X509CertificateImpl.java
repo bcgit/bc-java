@@ -716,7 +716,8 @@ abstract class X509CertificateImpl
         {
             Signature signature = signatureCreator.createSignature(getSigAlgName());
 
-            if (key instanceof CompositePublicKey)
+            //Use this only for legacy composite public keys (they have this identifier)
+            if (key instanceof CompositePublicKey && ((CompositePublicKey) key).getAlgorithmIdentifier().equals(MiscObjectIdentifiers.id_composite_key))
             {
                 List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
 
