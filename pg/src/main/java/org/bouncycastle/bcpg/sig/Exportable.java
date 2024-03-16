@@ -26,6 +26,6 @@ public class Exportable
     
     public boolean isExportable()
     {
-        return data[0] != 0;
+        return Utils.booleanFromByteArray(data);
     }
 }

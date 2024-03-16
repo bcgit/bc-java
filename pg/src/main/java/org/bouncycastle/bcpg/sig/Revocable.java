@@ -26,6 +26,6 @@ public class Revocable
     
     public boolean isRevocable()
     {
-        return data[0] != 0;
+        return Utils.booleanFromByteArray(data);
     }
 }
