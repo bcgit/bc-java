@@ -1,10 +1,10 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
-
 import java.util.HashMap;
 import java.util.Map.Entry;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 
 
 /**
@@ -17,22 +17,22 @@ public abstract class CompositeSignaturesConstants
      * An array of supported identifiers of composite signature schemes.
      */
     public static final ASN1ObjectIdentifier[] supportedIdentifiers = {
-            MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256,
-            MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256,
-            MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512,
-            MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256,
-            MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256,
-            MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512,
-            MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512,
-            MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512,
-            MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512,
-            MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512,
-            MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512,
-            MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512,
-            MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512,
-            MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256,
-            MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256,
-            MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512,
+        MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256,
+        MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256,
+        MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512,
+        MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256,
+        MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256,
+        MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512,
+        MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512,
+        MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512,
+        MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512,
+        MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512,
+        MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512,
+        MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512,
+        MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512,
+        MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256,
+        MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256,
+        MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512,
     };
 
     /**

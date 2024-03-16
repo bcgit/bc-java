@@ -1,30 +1,31 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.jcajce.CompositePrivateKey;
-import org.bouncycastle.jcajce.CompositePublicKey;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
-
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.jcajce.CompositePrivateKey;
+import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+
 
 /**
  * KeyPairGenerator class for composite signatures. Selected algorithm is set by the "subclasses" at the end of this file.
  */
-public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
+public class KeyPairGeneratorSpi
+    extends java.security.KeyPairGeneratorSpi
 {
     //Enum value of the selected composite signature algorithm.
     private final CompositeSignaturesConstants.CompositeName algorithmIdentifier;
@@ -61,94 +62,94 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         {
             switch (this.algorithmIdentifier)
             {
-                case MLDSA44_Ed25519_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
-                    generators.get(1).initialize(256, this.secureRandom);
-                    break;
-                case MLDSA65_Ed25519_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
-                    generators.get(1).initialize(256, this.secureRandom);
-                    break;
-                case MLDSA87_Ed448_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("Ed448", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
-                    generators.get(1).initialize(448, this.secureRandom);
-                    break;
-                case MLDSA44_RSA2048_PSS_SHA256:
-                case MLDSA44_RSA2048_PKCS15_SHA256:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
-                    generators.get(1).initialize(2048, this.secureRandom);
-                    break;
-                case MLDSA65_RSA3072_PSS_SHA512:
-                case MLDSA65_RSA3072_PKCS15_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
-                    generators.get(1).initialize(3072, this.secureRandom);
-                    break;
-                case MLDSA44_ECDSA_P256_SHA256:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
-                    break;
-                case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
-                    break;
-                case MLDSA65_ECDSA_P256_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
-                    break;
-                case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
-                    break;
-                case MLDSA87_ECDSA_P384_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("P-384"), this.secureRandom);
-                    break;
-                case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("brainpoolP384r1"), this.secureRandom);
-                    break;
-                case Falcon512_ECDSA_P256_SHA256:
-                    generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
-                    break;
-                case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-                    generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                    generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
-                    generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
-                    break;
-                case Falcon512_Ed25519_SHA512:
-                    generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
-                    generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
-                    generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
-                    generators.get(1).initialize(256, this.secureRandom);
-                    break;
-                default:
-                    throw new IllegalStateException("Generators not correctly initialized. Unsupported composite algorithm.");
+            case MLDSA44_Ed25519_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(1).initialize(256, this.secureRandom);
+                break;
+            case MLDSA65_Ed25519_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(1).initialize(256, this.secureRandom);
+                break;
+            case MLDSA87_Ed448_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("Ed448", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(1).initialize(448, this.secureRandom);
+                break;
+            case MLDSA44_RSA2048_PSS_SHA256:
+            case MLDSA44_RSA2048_PKCS15_SHA256:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(1).initialize(2048, this.secureRandom);
+                break;
+            case MLDSA65_RSA3072_PSS_SHA512:
+            case MLDSA65_RSA3072_PKCS15_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(1).initialize(3072, this.secureRandom);
+                break;
+            case MLDSA44_ECDSA_P256_SHA256:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
+                break;
+            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
+                break;
+            case MLDSA65_ECDSA_P256_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
+                break;
+            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
+                break;
+            case MLDSA87_ECDSA_P384_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("P-384"), this.secureRandom);
+                break;
+            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("brainpoolP384r1"), this.secureRandom);
+                break;
+            case Falcon512_ECDSA_P256_SHA256:
+                generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
+                break;
+            case Falcon512_ECDSA_brainpoolP256r1_SHA256:
+                generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
+                generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
+                generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
+                break;
+            case Falcon512_Ed25519_SHA512:
+                generators.add(KeyPairGenerator.getInstance("Falcon", "BC"));
+                generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
+                generators.get(0).initialize(FalconParameterSpec.falcon_512, this.secureRandom);
+                generators.get(1).initialize(256, this.secureRandom);
+                break;
+            default:
+                throw new IllegalStateException("Generators not correctly initialized. Unsupported composite algorithm.");
             }
         }
         catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e)
@@ -182,7 +183,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
      * @param secureRandom A SecureRandom used by component key generators.
      * @throws InvalidAlgorithmParameterException
      */
-    public void initialize(AlgorithmParameterSpec paramSpec, SecureRandom secureRandom) throws InvalidAlgorithmParameterException
+    public void initialize(AlgorithmParameterSpec paramSpec, SecureRandom secureRandom)
+        throws InvalidAlgorithmParameterException
     {
         if (paramSpec != null)
         {
@@ -224,7 +226,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         return new KeyPair(compositePublicKey, compositePrivateKey);
     }
 
-    public static final class MLDSA44andEd25519 extends KeyPairGeneratorSpi
+    public static final class MLDSA44andEd25519
+        extends KeyPairGeneratorSpi
     {
         public MLDSA44andEd25519()
         {
@@ -232,7 +235,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA65andEd25519 extends KeyPairGeneratorSpi
+    public static final class MLDSA65andEd25519
+        extends KeyPairGeneratorSpi
     {
         public MLDSA65andEd25519()
         {
@@ -240,7 +244,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA87andEd448 extends KeyPairGeneratorSpi
+    public static final class MLDSA87andEd448
+        extends KeyPairGeneratorSpi
     {
         public MLDSA87andEd448()
         {
@@ -248,7 +253,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA44andRSA2048PSS extends KeyPairGeneratorSpi
+    public static final class MLDSA44andRSA2048PSS
+        extends KeyPairGeneratorSpi
     {
         public MLDSA44andRSA2048PSS()
         {
@@ -256,7 +262,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA44andRSA2048PKCS15 extends KeyPairGeneratorSpi
+    public static final class MLDSA44andRSA2048PKCS15
+        extends KeyPairGeneratorSpi
     {
         public MLDSA44andRSA2048PKCS15()
         {
@@ -264,7 +271,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA65andRSA3072PSS extends KeyPairGeneratorSpi
+    public static final class MLDSA65andRSA3072PSS
+        extends KeyPairGeneratorSpi
     {
         public MLDSA65andRSA3072PSS()
         {
@@ -272,7 +280,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA65andRSA3072PKCS15 extends KeyPairGeneratorSpi
+    public static final class MLDSA65andRSA3072PKCS15
+        extends KeyPairGeneratorSpi
     {
         public MLDSA65andRSA3072PKCS15()
         {
@@ -280,7 +289,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA44andECDSAP256 extends KeyPairGeneratorSpi
+    public static final class MLDSA44andECDSAP256
+        extends KeyPairGeneratorSpi
     {
         public MLDSA44andECDSAP256()
         {
@@ -288,7 +298,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA44andECDSAbrainpoolP256r1 extends KeyPairGeneratorSpi
+    public static final class MLDSA44andECDSAbrainpoolP256r1
+        extends KeyPairGeneratorSpi
     {
         public MLDSA44andECDSAbrainpoolP256r1()
         {
@@ -296,7 +307,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA65andECDSAP256 extends KeyPairGeneratorSpi
+    public static final class MLDSA65andECDSAP256
+        extends KeyPairGeneratorSpi
     {
         public MLDSA65andECDSAP256()
         {
@@ -304,7 +316,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA65andECDSAbrainpoolP256r1 extends KeyPairGeneratorSpi
+    public static final class MLDSA65andECDSAbrainpoolP256r1
+        extends KeyPairGeneratorSpi
     {
         public MLDSA65andECDSAbrainpoolP256r1()
         {
@@ -312,7 +325,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA87andECDSAP384 extends KeyPairGeneratorSpi
+    public static final class MLDSA87andECDSAP384
+        extends KeyPairGeneratorSpi
     {
         public MLDSA87andECDSAP384()
         {
@@ -320,7 +334,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLDSA87andECDSAbrainpoolP384r1 extends KeyPairGeneratorSpi
+    public static final class MLDSA87andECDSAbrainpoolP384r1
+        extends KeyPairGeneratorSpi
     {
         public MLDSA87andECDSAbrainpoolP384r1()
         {
@@ -328,7 +343,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class Falcon512andEd25519 extends KeyPairGeneratorSpi
+    public static final class Falcon512andEd25519
+        extends KeyPairGeneratorSpi
     {
         public Falcon512andEd25519()
         {
@@ -336,7 +352,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class Falcon512andECDSAP256 extends KeyPairGeneratorSpi
+    public static final class Falcon512andECDSAP256
+        extends KeyPairGeneratorSpi
     {
         public Falcon512andECDSAP256()
         {
@@ -344,7 +361,8 @@ public class KeyPairGeneratorSpi extends java.security.KeyPairGeneratorSpi
         }
     }
 
-    public static final class Falcon512andECDSAbrainpoolP256r1 extends KeyPairGeneratorSpi
+    public static final class Falcon512andECDSAbrainpoolP256r1
+        extends KeyPairGeneratorSpi
     {
         public Falcon512andECDSAbrainpoolP256r1()
         {

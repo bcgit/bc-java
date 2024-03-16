@@ -1,33 +1,13 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.X962Parameters;
-import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.jcajce.CompositePrivateKey;
-import org.bouncycastle.jcajce.CompositePublicKey;
-import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
-
 import java.io.IOException;
-import java.security.PrivateKey;
+import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.PublicKey;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -35,10 +15,31 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X962Parameters;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.jcajce.CompositePrivateKey;
+import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+
 /**
  * KeyFactory for composite signatures. List of supported combinations is in CompositeSignaturesConstants
  */
-public class KeyFactorySpi extends BaseKeyFactorySpi
+public class KeyFactorySpi
+    extends BaseKeyFactorySpi
 {
 
     //Specific algorithm identifiers of all component signature algorithms for SubjectPublicKeyInfo. These do not need to be all initialized here but makes the code more readable IMHO.
@@ -54,7 +55,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
     private static final AlgorithmIdentifier ecdsaP384Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp384r1));
     private static final AlgorithmIdentifier ecdsaBrainpoolP384r1Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP384r1));
 
-    protected Key engineTranslateKey(Key key) throws InvalidKeyException
+    protected Key engineTranslateKey(Key key)
+        throws InvalidKeyException
     {
         try
         {
@@ -84,7 +86,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
      * @return A CompositePrivateKey created from all components in the sequence.
      * @throws IOException
      */
-    public PrivateKey generatePrivate(PrivateKeyInfo keyInfo) throws IOException
+    public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
+        throws IOException
     {
         ASN1Sequence seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
@@ -118,7 +121,8 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
      * @return
      * @throws IOException
      */
-    public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo) throws IOException
+    public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
+        throws IOException
     {
         ASN1Sequence seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getAlgorithm().getAlgorithm();
@@ -134,11 +138,11 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
                 // but currently the example public keys are OCTET STRING. So we leave it for interoperability.
                 if (seq.getObjectAt(i) instanceof DEROctetString)
                 {
-                    componentBitStrings[i] = new DERBitString(((DEROctetString) seq.getObjectAt(i)).getOctets());
+                    componentBitStrings[i] = new DERBitString(((DEROctetString)seq.getObjectAt(i)).getOctets());
                 }
                 else
                 {
-                    componentBitStrings[i] = (DERBitString) seq.getObjectAt(i);
+                    componentBitStrings[i] = (DERBitString)seq.getObjectAt(i);
                 }
             }
 
@@ -166,49 +170,50 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
      * @throws NoSuchAlgorithmException
      * @throws NoSuchProviderException
      */
-    private List<KeyFactory> getKeyFactoriesFromIdentifier(ASN1ObjectIdentifier algorithmIdentifier) throws NoSuchAlgorithmException, NoSuchProviderException
+    private List<KeyFactory> getKeyFactoriesFromIdentifier(ASN1ObjectIdentifier algorithmIdentifier)
+        throws NoSuchAlgorithmException, NoSuchProviderException
     {
         List<KeyFactory> factories = new ArrayList<>();
         List<String> algorithmNames = new ArrayList<>();
 
         switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(algorithmIdentifier))
         {
-            case MLDSA44_Ed25519_SHA512:
-            case MLDSA65_Ed25519_SHA512:
-                algorithmNames.add("Dilithium");
-                algorithmNames.add("Ed25519");
-                break;
-            case MLDSA87_Ed448_SHA512:
-                algorithmNames.add("Dilithium");
-                algorithmNames.add("Ed448");
-                break;
-            case MLDSA44_RSA2048_PSS_SHA256:
-            case MLDSA44_RSA2048_PKCS15_SHA256:
-            case MLDSA65_RSA3072_PSS_SHA512:
-            case MLDSA65_RSA3072_PKCS15_SHA512:
-                algorithmNames.add("Dilithium");
-                algorithmNames.add("RSA");
-                break;
-            case MLDSA44_ECDSA_P256_SHA256:
-            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-            case MLDSA65_ECDSA_P256_SHA512:
-            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-            case MLDSA87_ECDSA_P384_SHA512:
-            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                algorithmNames.add("Dilithium");
-                algorithmNames.add("ECDSA");
-                break;
-            case Falcon512_Ed25519_SHA512:
-                algorithmNames.add("Falcon");
-                algorithmNames.add("Ed25519");
-                break;
-            case Falcon512_ECDSA_P256_SHA256:
-            case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-                algorithmNames.add("Falcon");
-                algorithmNames.add("ECDSA");
-                break;
-            default:
-                throw new IllegalArgumentException("Cannot create KeyFactories. Unsupported algorithm identifier.");
+        case MLDSA44_Ed25519_SHA512:
+        case MLDSA65_Ed25519_SHA512:
+            algorithmNames.add("Dilithium");
+            algorithmNames.add("Ed25519");
+            break;
+        case MLDSA87_Ed448_SHA512:
+            algorithmNames.add("Dilithium");
+            algorithmNames.add("Ed448");
+            break;
+        case MLDSA44_RSA2048_PSS_SHA256:
+        case MLDSA44_RSA2048_PKCS15_SHA256:
+        case MLDSA65_RSA3072_PSS_SHA512:
+        case MLDSA65_RSA3072_PKCS15_SHA512:
+            algorithmNames.add("Dilithium");
+            algorithmNames.add("RSA");
+            break;
+        case MLDSA44_ECDSA_P256_SHA256:
+        case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
+        case MLDSA65_ECDSA_P256_SHA512:
+        case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+        case MLDSA87_ECDSA_P384_SHA512:
+        case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
+            algorithmNames.add("Dilithium");
+            algorithmNames.add("ECDSA");
+            break;
+        case Falcon512_Ed25519_SHA512:
+            algorithmNames.add("Falcon");
+            algorithmNames.add("Ed25519");
+            break;
+        case Falcon512_ECDSA_P256_SHA256:
+        case Falcon512_ECDSA_brainpoolP256r1_SHA256:
+            algorithmNames.add("Falcon");
+            algorithmNames.add("ECDSA");
+            break;
+        default:
+            throw new IllegalArgumentException("Cannot create KeyFactories. Unsupported algorithm identifier.");
         }
 
         factories.add(KeyFactory.getInstance(algorithmNames.get(0), "BC"));
@@ -226,73 +231,74 @@ public class KeyFactorySpi extends BaseKeyFactorySpi
      * @return An array of X509EncodedKeySpecs
      * @throws IOException
      */
-    private X509EncodedKeySpec[] getKeysSpecs(ASN1ObjectIdentifier algorithmIdentifier, ASN1BitString[] subjectPublicKeys) throws IOException
+    private X509EncodedKeySpec[] getKeysSpecs(ASN1ObjectIdentifier algorithmIdentifier, ASN1BitString[] subjectPublicKeys)
+        throws IOException
     {
         X509EncodedKeySpec[] specs = new X509EncodedKeySpec[subjectPublicKeys.length];
         SubjectPublicKeyInfo[] keyInfos = new SubjectPublicKeyInfo[subjectPublicKeys.length];
 
         switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(algorithmIdentifier))
         {
-            case MLDSA44_Ed25519_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA44_ECDSA_P256_SHA256:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA44_RSA2048_PSS_SHA256:
-            case MLDSA44_RSA2048_PKCS15_SHA256:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA65_Ed25519_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA65_ECDSA_P256_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA65_RSA3072_PSS_SHA512:
-            case MLDSA65_RSA3072_PKCS15_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA87_Ed448_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ed448Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA87_ECDSA_P384_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP384Identifier, subjectPublicKeys[1]);
-                break;
-            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP384r1Identifier, subjectPublicKeys[1]);
-                break;
-            case Falcon512_Ed25519_SHA512:
-                keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
-                break;
-            case Falcon512_ECDSA_P256_SHA256:
-                keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
-                break;
-            case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-                keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
-                keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
-                break;
-            default:
-                throw new IllegalArgumentException("Cannot create key specs. Unsupported algorithm identifier.");
+        case MLDSA44_Ed25519_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA44_ECDSA_P256_SHA256:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA44_RSA2048_PSS_SHA256:
+        case MLDSA44_RSA2048_PKCS15_SHA256:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium2Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA65_Ed25519_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA65_ECDSA_P256_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA65_RSA3072_PSS_SHA512:
+        case MLDSA65_RSA3072_PKCS15_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium3Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(rsaIdentifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA87_Ed448_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ed448Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA87_ECDSA_P384_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP384Identifier, subjectPublicKeys[1]);
+            break;
+        case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(dilithium5Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP384r1Identifier, subjectPublicKeys[1]);
+            break;
+        case Falcon512_Ed25519_SHA512:
+            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ed25519Identifier, subjectPublicKeys[1]);
+            break;
+        case Falcon512_ECDSA_P256_SHA256:
+            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaP256Identifier, subjectPublicKeys[1]);
+            break;
+        case Falcon512_ECDSA_brainpoolP256r1_SHA256:
+            keyInfos[0] = new SubjectPublicKeyInfo(falcon512Identifier, subjectPublicKeys[0]);
+            keyInfos[1] = new SubjectPublicKeyInfo(ecdsaBrainpoolP256r1Identifier, subjectPublicKeys[1]);
+            break;
+        default:
+            throw new IllegalArgumentException("Cannot create key specs. Unsupported algorithm identifier.");
         }
 
         specs[0] = new X509EncodedKeySpec(keyInfos[0].getEncoded());
