@@ -1,34 +1,35 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import java.io.IOException;
+import java.security.AlgorithmParameters;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 
-import java.io.IOException;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
-import java.security.Signature;
-import java.security.InvalidParameterException;
-import java.security.AlgorithmParameters;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
  * Signature class for composite signatures. Selected algorithm is set by the "subclasses" at the end of this file.
  */
-public class SignatureSpi extends java.security.SignatureSpi
+public class SignatureSpi
+    extends java.security.SignatureSpi
 {
     //Enum value of the selected composite signature algorithm.
     private final CompositeSignaturesConstants.CompositeName algorithmIdentifier;
@@ -53,64 +54,64 @@ public class SignatureSpi extends java.security.SignatureSpi
         {
             switch (this.algorithmIdentifier)
             {
-                case MLDSA44_Ed25519_SHA512:
-                case MLDSA65_Ed25519_SHA512:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                case MLDSA87_Ed448_SHA512:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("Ed448", "BC"));
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                case MLDSA44_RSA2048_PSS_SHA256:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA256withRSA/PSS", "BC")); //PSS with SHA-256 as digest algo and MGF.
-                    this.digest = DigestFactory.createSHA256();
-                    break;
-                case MLDSA65_RSA3072_PSS_SHA512:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA512withRSA/PSS", "BC")); //PSS with SHA-512 as digest algo and MGF.
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                case MLDSA44_RSA2048_PKCS15_SHA256:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA256withRSA", "BC")); //PKCS15
-                    this.digest = DigestFactory.createSHA256();
-                    break;
-                case MLDSA65_RSA3072_PKCS15_SHA512:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA512withRSA", "BC")); //PKCS15
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                case MLDSA44_ECDSA_P256_SHA256:
-                case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
-                    this.digest = DigestFactory.createSHA256();
-                    break;
-                case MLDSA65_ECDSA_P256_SHA512:
-                case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                case MLDSA87_ECDSA_P384_SHA512:
-                case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                    componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                case Falcon512_ECDSA_P256_SHA256:
-                case Falcon512_ECDSA_brainpoolP256r1_SHA256:
-                    componentSignatures.add(Signature.getInstance("Falcon", "BC"));
-                    componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
-                    this.digest = DigestFactory.createSHA256();
-                    break;
-                case Falcon512_Ed25519_SHA512:
-                    componentSignatures.add(Signature.getInstance("Falcon", "BC"));
-                    componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
-                    this.digest = DigestFactory.createSHA512();
-                    break;
-                default:
-                    throw new RuntimeException("Unknown composite algorithm.");
+            case MLDSA44_Ed25519_SHA512:
+            case MLDSA65_Ed25519_SHA512:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
+            case MLDSA87_Ed448_SHA512:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("Ed448", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
+            case MLDSA44_RSA2048_PSS_SHA256:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA256withRSA/PSS", "BC")); //PSS with SHA-256 as digest algo and MGF.
+                this.digest = DigestFactory.createSHA256();
+                break;
+            case MLDSA65_RSA3072_PSS_SHA512:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA512withRSA/PSS", "BC")); //PSS with SHA-512 as digest algo and MGF.
+                this.digest = DigestFactory.createSHA512();
+                break;
+            case MLDSA44_RSA2048_PKCS15_SHA256:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA256withRSA", "BC")); //PKCS15
+                this.digest = DigestFactory.createSHA256();
+                break;
+            case MLDSA65_RSA3072_PKCS15_SHA512:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA512withRSA", "BC")); //PKCS15
+                this.digest = DigestFactory.createSHA512();
+                break;
+            case MLDSA44_ECDSA_P256_SHA256:
+            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
+                this.digest = DigestFactory.createSHA256();
+                break;
+            case MLDSA65_ECDSA_P256_SHA512:
+            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+            case MLDSA87_ECDSA_P384_SHA512:
+            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
+                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
+            case Falcon512_ECDSA_P256_SHA256:
+            case Falcon512_ECDSA_brainpoolP256r1_SHA256:
+                componentSignatures.add(Signature.getInstance("Falcon", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
+                this.digest = DigestFactory.createSHA256();
+                break;
+            case Falcon512_Ed25519_SHA512:
+                componentSignatures.add(Signature.getInstance("Falcon", "BC"));
+                componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
+            default:
+                throw new RuntimeException("Unknown composite algorithm.");
             }
 
             //get bytes of composite signature algorithm OID in DER
@@ -124,7 +125,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         this.componentSignatures = Collections.unmodifiableList(componentSignatures);
     }
 
-    protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException
+    protected void engineInitVerify(PublicKey publicKey)
+        throws InvalidKeyException
     {
 
         if (!(publicKey instanceof CompositePublicKey))
@@ -132,7 +134,7 @@ public class SignatureSpi extends java.security.SignatureSpi
             throw new InvalidKeyException("Public key is not composite.");
         }
 
-        CompositePublicKey compositePublicKey = (CompositePublicKey) publicKey;
+        CompositePublicKey compositePublicKey = (CompositePublicKey)publicKey;
 
         if (!compositePublicKey.getAlgorithmIdentifier().equals(this.algorithmIdentifierASN1))
         {
@@ -146,14 +148,15 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException
+    protected void engineInitSign(PrivateKey privateKey)
+        throws InvalidKeyException
     {
         if (!(privateKey instanceof CompositePrivateKey))
         {
             throw new InvalidKeyException("Private key is not composite.");
         }
 
-        CompositePrivateKey compositePrivateKey = (CompositePrivateKey) privateKey;
+        CompositePrivateKey compositePrivateKey = (CompositePrivateKey)privateKey;
 
         if (!compositePrivateKey.getAlgorithmIdentifier().equals(this.algorithmIdentifierASN1))
         {
@@ -168,12 +171,14 @@ public class SignatureSpi extends java.security.SignatureSpi
     }
 
 
-    protected void engineUpdate(byte b) throws SignatureException
+    protected void engineUpdate(byte b)
+        throws SignatureException
     {
         digest.update(b);
     }
 
-    protected void engineUpdate(byte[] bytes, int off, int len) throws SignatureException
+    protected void engineUpdate(byte[] bytes, int off, int len)
+        throws SignatureException
     {
         digest.update(bytes, off, len);
     }
@@ -185,7 +190,8 @@ public class SignatureSpi extends java.security.SignatureSpi
      * @return composite signature bytes
      * @throws SignatureException
      */
-    protected byte[] engineSign() throws SignatureException
+    protected byte[] engineSign()
+        throws SignatureException
     {
         ASN1EncodableVector signatureSequence = new ASN1EncodableVector();
         try
@@ -220,7 +226,8 @@ public class SignatureSpi extends java.security.SignatureSpi
      * @return
      * @throws SignatureException
      */
-    protected boolean engineVerify(byte[] signature) throws SignatureException
+    protected boolean engineVerify(byte[] signature)
+        throws SignatureException
     {
 
         ASN1Sequence signatureSequence = DERSequence.getInstance(signature);
@@ -252,12 +259,14 @@ public class SignatureSpi extends java.security.SignatureSpi
         return !fail;
     }
 
-    protected void engineSetParameter(String s, Object o) throws InvalidParameterException
+    protected void engineSetParameter(String s, Object o)
+        throws InvalidParameterException
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
-    protected Object engineGetParameter(String s) throws InvalidParameterException
+    protected Object engineGetParameter(String s)
+        throws InvalidParameterException
     {
         throw new UnsupportedOperationException("engineGetParameter unsupported");
     }
@@ -267,7 +276,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         return null;
     }
 
-    public final static class MLDSA44andEd25519 extends SignatureSpi
+    public final static class MLDSA44andEd25519
+        extends SignatureSpi
     {
         public MLDSA44andEd25519()
         {
@@ -275,7 +285,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA65andEd25519 extends SignatureSpi
+    public final static class MLDSA65andEd25519
+        extends SignatureSpi
     {
         public MLDSA65andEd25519()
         {
@@ -283,7 +294,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA87andEd448 extends SignatureSpi
+    public final static class MLDSA87andEd448
+        extends SignatureSpi
     {
         public MLDSA87andEd448()
         {
@@ -291,7 +303,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA44andRSA2048PSS extends SignatureSpi
+    public final static class MLDSA44andRSA2048PSS
+        extends SignatureSpi
     {
         public MLDSA44andRSA2048PSS()
         {
@@ -299,7 +312,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA44andRSA2048PKCS15 extends SignatureSpi
+    public final static class MLDSA44andRSA2048PKCS15
+        extends SignatureSpi
     {
         public MLDSA44andRSA2048PKCS15()
         {
@@ -307,7 +321,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA65andRSA3072PSS extends SignatureSpi
+    public final static class MLDSA65andRSA3072PSS
+        extends SignatureSpi
     {
         public MLDSA65andRSA3072PSS()
         {
@@ -315,7 +330,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA65andRSA3072PKCS15 extends SignatureSpi
+    public final static class MLDSA65andRSA3072PKCS15
+        extends SignatureSpi
     {
         public MLDSA65andRSA3072PKCS15()
         {
@@ -323,7 +339,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA44andECDSAP256 extends SignatureSpi
+    public final static class MLDSA44andECDSAP256
+        extends SignatureSpi
     {
         public MLDSA44andECDSAP256()
         {
@@ -331,7 +348,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA44andECDSAbrainpoolP256r1 extends SignatureSpi
+    public final static class MLDSA44andECDSAbrainpoolP256r1
+        extends SignatureSpi
     {
         public MLDSA44andECDSAbrainpoolP256r1()
         {
@@ -339,7 +357,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA65andECDSAP256 extends SignatureSpi
+    public final static class MLDSA65andECDSAP256
+        extends SignatureSpi
     {
         public MLDSA65andECDSAP256()
         {
@@ -347,7 +366,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA65andECDSAbrainpoolP256r1 extends SignatureSpi
+    public final static class MLDSA65andECDSAbrainpoolP256r1
+        extends SignatureSpi
     {
         public MLDSA65andECDSAbrainpoolP256r1()
         {
@@ -355,7 +375,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA87andECDSAP384 extends SignatureSpi
+    public final static class MLDSA87andECDSAP384
+        extends SignatureSpi
     {
         public MLDSA87andECDSAP384()
         {
@@ -363,7 +384,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class MLDSA87andECDSAbrainpoolP384r1 extends SignatureSpi
+    public final static class MLDSA87andECDSAbrainpoolP384r1
+        extends SignatureSpi
     {
         public MLDSA87andECDSAbrainpoolP384r1()
         {
@@ -371,7 +393,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class Falcon512andEd25519 extends SignatureSpi
+    public final static class Falcon512andEd25519
+        extends SignatureSpi
     {
         public Falcon512andEd25519()
         {
@@ -379,7 +402,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class Falcon512andECDSAP256 extends SignatureSpi
+    public final static class Falcon512andECDSAP256
+        extends SignatureSpi
     {
         public Falcon512andECDSAP256()
         {
@@ -387,7 +411,8 @@ public class SignatureSpi extends java.security.SignatureSpi
         }
     }
 
-    public final static class Falcon512andECDSAbrainpoolP256r1 extends SignatureSpi
+    public final static class Falcon512andECDSAbrainpoolP256r1
+        extends SignatureSpi
     {
         public Falcon512andECDSAbrainpoolP256r1()
         {
