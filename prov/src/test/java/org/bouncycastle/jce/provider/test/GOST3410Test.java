@@ -491,7 +491,7 @@ public class GOST3410Test
         kp = kpGen.generateKeyPair();
 
         expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
-                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB, null));
 
         checkKeyPairAlgId(kp, expectedAlgId);
 
@@ -500,7 +500,7 @@ public class GOST3410Test
         kp = kpGen.generateKeyPair();
 
         expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
-                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC, null));
 
         checkKeyPairAlgId(kp, expectedAlgId);
 
@@ -509,7 +509,7 @@ public class GOST3410Test
         kp = kpGen.generateKeyPair();
 
         expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
-                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD, RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256));
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD, null));
 
         checkKeyPairAlgId(kp, expectedAlgId);
         
@@ -899,7 +899,7 @@ public class GOST3410Test
             ecGOST2012VerifyTest("ECGOST3410-2012-256", ecgostData, ecgost2012_256Key, ecgost2012_256Sig);
             ecGOST2012VerifyTest("ECGOST3410-2012-512", ecgostData, ecgost2012_512Key, ecgost2012_512Sig);
         }
-        
+
         generationTest();
         parametersTest();
     }

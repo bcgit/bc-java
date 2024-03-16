@@ -179,7 +179,7 @@ public class BCGOST3410PrivateKey
 
         return this.getX().equals(other.getX())
             && this.getParameters().getPublicKeyParameters().equals(other.getParameters().getPublicKeyParameters())
-            && this.getParameters().getDigestParamSetOID().equals(other.getParameters().getDigestParamSetOID())
+            && compareObj(this.getParameters().getDigestParamSetOID(), other.getParameters().getDigestParamSetOID())
             && compareObj(this.getParameters().getEncryptionParamSetOID(), other.getParameters().getEncryptionParamSetOID());
     }
 
