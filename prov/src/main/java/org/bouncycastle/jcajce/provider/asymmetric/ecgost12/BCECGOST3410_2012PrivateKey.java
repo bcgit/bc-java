@@ -200,7 +200,8 @@ public class BCECGOST3410_2012PrivateKey
     {
         ASN1Primitive p = info.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
 
-        if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
+        if (p instanceof ASN1Sequence &&
+            (ASN1Sequence.getInstance(p).size() <= 3))
         {
             gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 
