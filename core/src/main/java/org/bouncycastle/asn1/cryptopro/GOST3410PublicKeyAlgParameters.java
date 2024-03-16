@@ -79,6 +79,13 @@ public class GOST3410PublicKeyAlgParameters
                 throw new IllegalArgumentException("digestParamSet expected to be absent");
             }
         }
+        else
+        {
+            if (seq.size() > 1)
+            {
+                digestParamSet = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
+            }
+        }
         
         if (seq.size() > 2)
         {
