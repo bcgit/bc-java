@@ -11,7 +11,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
-
 import java.util.Date;
 import java.util.Iterator;
 
@@ -33,7 +32,6 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.edec.KeyAgreementSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -55,6 +53,7 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
@@ -75,6 +74,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -106,6 +106,37 @@ public class OperatorBcTest
         testBcPGPContentVerifierBuilderProvider();
         //testBcPBESecretKeyDecryptorBuilder();
         testBcKeyFingerprintCalculator();
+        testBcStandardDigests();
+    }
+
+    private void testBcStandardDigests()
+        throws Exception
+    {
+        PGPDigestCalculatorProvider digCalcBldr = new BcPGPDigestCalculatorProvider();
+
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.MD5), Hex.decode("900150983cd24fb0d6963f7d28e17f72"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.RIPEMD160), Hex.decode("8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA384), Hex.decode("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA512), Hex.decode("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA224), Hex.decode("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_256), Hex.decode("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_512), Hex.decode("b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"));
+    }
+
+    private void testDigestCalc(PGPDigestCalculator digCalc, byte[] expected)
+        throws IOException
+    {
+        OutputStream dOut = digCalc.getOutputStream();
+
+        dOut.write(Strings.toByteArray("abc"));
+
+        dOut.close();
+
+        byte[] res = digCalc.getDigest();
+
+        isTrue(Arrays.areEqual(res, expected));
     }
 
     public void testBcKeyFingerprintCalculator()
