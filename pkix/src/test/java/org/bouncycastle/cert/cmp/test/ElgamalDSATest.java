@@ -3,14 +3,8 @@ package org.bouncycastle.cert.cmp.test;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.DSAParameterSpec;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.cmp.CMPCertificate;
@@ -19,16 +13,9 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.asn1.cmp.PKIStatusInfo;
 import org.bouncycastle.asn1.crmf.CertTemplate;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.CertException;
-import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContent;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContentBuilder;
 import org.bouncycastle.cert.cmp.ProtectedPKIMessage;
@@ -42,13 +29,10 @@ import org.bouncycastle.cert.crmf.CertificateResponse;
 import org.bouncycastle.cert.crmf.CertificateResponseBuilder;
 import org.bouncycastle.cert.crmf.jcajce.JcaCertificateRequestMessageBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSProcessableByteArray;
-import org.bouncycastle.cms.RecipientInformation;
-import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
@@ -58,9 +42,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.PBEMacCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
@@ -98,7 +80,7 @@ public class ElgamalDSATest
 
         KeyPair dsaKp = dsaKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=DSA Issuer", dsaKp);
+        X509CertificateHolder caCert = TestUtils.makeV3Certificate("CN=DSA Issuer", dsaKp);
 
         KeyPairGenerator elgKpGen = KeyPairGenerator.getInstance("Elgamal", "BC");
 
@@ -140,7 +122,7 @@ public class ElgamalDSATest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dsaKp, "CN=DSA Issuer");
+        X509CertificateHolder cert = TestUtils.makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dsaKp, "CN=DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -204,57 +186,4 @@ public class ElgamalDSATest
         assertTrue(recContent.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
     }
 
-    private static X509CertificateHolder makeV3Certificate(String _subDN, KeyPair issKP)
-        throws OperatorCreationException, CertException, CertIOException
-    {
-        PrivateKey issPriv = issKP.getPrivate();
-        PublicKey  issPub  = issKP.getPublic();
-
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
-            new X500Name(_subDN),
-            BigInteger.valueOf(System.currentTimeMillis()),
-            new Date(System.currentTimeMillis()),
-            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
-            new X500Name(_subDN),
-            issKP.getPublic());
-
-        certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withDSA").build(issPriv);
-
-        X509CertificateHolder certHolder = certGen.build(signer);
-
-        ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().build(issPub);
-
-        assertTrue(certHolder.isSignatureValid(verifier));
-
-        return certHolder;
-    }
-
-    private static X509CertificateHolder makeV3Certificate(SubjectPublicKeyInfo pubKey, X500Name _subDN, KeyPair issKP, String _issDN)
-        throws OperatorCreationException, CertException, CertIOException
-    {
-        PrivateKey issPriv = issKP.getPrivate();
-        PublicKey  issPub  = issKP.getPublic();
-
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
-            new X500Name(_issDN),
-            BigInteger.valueOf(System.currentTimeMillis()),
-            new Date(System.currentTimeMillis()),
-            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
-            _subDN,
-            pubKey);
-
-        certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
-
-        ContentSigner signer = new JcaContentSignerBuilder("SHA256withDSA").build(issPriv);
-
-        X509CertificateHolder certHolder = certGen.build(signer);
-
-        ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().build(issPub);
-
-        assertTrue(certHolder.isSignatureValid(verifier));
-
-        return certHolder;
-    }
 }
