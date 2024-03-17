@@ -157,7 +157,7 @@ public class SignatureSpi
         }
 
         CompositePrivateKey compositePrivateKey = (CompositePrivateKey)privateKey;
-
+        
         if (!compositePrivateKey.getAlgorithmIdentifier().equals(this.algorithmIdentifierASN1))
         {
             throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
@@ -276,145 +276,145 @@ public class SignatureSpi
         return null;
     }
 
-    public final static class MLDSA44andEd25519
+    public final static class MLDSA44_Ed25519_SHA512
         extends SignatureSpi
     {
-        public MLDSA44andEd25519()
+        public MLDSA44_Ed25519_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA44_Ed25519_SHA512);
         }
     }
 
-    public final static class MLDSA65andEd25519
+    public final static class MLDSA65_Ed25519_SHA512
         extends SignatureSpi
     {
-        public MLDSA65andEd25519()
+        public MLDSA65_Ed25519_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA65_Ed25519_SHA512);
         }
     }
 
-    public final static class MLDSA87andEd448
+    public final static class MLDSA87_Ed448_SHA512
         extends SignatureSpi
     {
-        public MLDSA87andEd448()
+        public MLDSA87_Ed448_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA87_Ed448_SHA512);
         }
     }
 
-    public final static class MLDSA44andRSA2048PSS
+    public final static class MLDSA44_RSA2048_PSS_SHA256
         extends SignatureSpi
     {
-        public MLDSA44andRSA2048PSS()
+        public MLDSA44_RSA2048_PSS_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA44_RSA2048_PSS_SHA256);
         }
     }
 
-    public final static class MLDSA44andRSA2048PKCS15
+    public final static class MLDSA44_RSA2048_PKCS15_SHA256
         extends SignatureSpi
     {
-        public MLDSA44andRSA2048PKCS15()
+        public MLDSA44_RSA2048_PKCS15_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA44_RSA2048_PKCS15_SHA256);
         }
     }
 
-    public final static class MLDSA65andRSA3072PSS
+    public final static class MLDSA65_RSA3072_PSS_SHA512
         extends SignatureSpi
     {
-        public MLDSA65andRSA3072PSS()
+        public MLDSA65_RSA3072_PSS_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PSS_SHA512);
         }
     }
 
-    public final static class MLDSA65andRSA3072PKCS15
+    public final static class MLDSA65_RSA3072_PKCS15_SHA512
         extends SignatureSpi
     {
-        public MLDSA65andRSA3072PKCS15()
+        public MLDSA65_RSA3072_PKCS15_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA65_RSA3072_PKCS15_SHA512);
         }
     }
 
-    public final static class MLDSA44andECDSAP256
+    public final static class MLDSA44_ECDSA_P256_SHA256
         extends SignatureSpi
     {
-        public MLDSA44andECDSAP256()
+        public MLDSA44_ECDSA_P256_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA44_ECDSA_P256_SHA256);
         }
     }
 
-    public final static class MLDSA44andECDSAbrainpoolP256r1
+    public final static class MLDSA44_ECDSA_brainpoolP256r1_SHA256
         extends SignatureSpi
     {
-        public MLDSA44andECDSAbrainpoolP256r1()
+        public MLDSA44_ECDSA_brainpoolP256r1_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA44_ECDSA_brainpoolP256r1_SHA256);
         }
     }
 
-    public final static class MLDSA65andECDSAP256
+    public final static class MLDSA65_ECDSA_P256_SHA512
         extends SignatureSpi
     {
-        public MLDSA65andECDSAP256()
+        public MLDSA65_ECDSA_P256_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_P256_SHA512);
         }
     }
 
-    public final static class MLDSA65andECDSAbrainpoolP256r1
+    public final static class MLDSA65_ECDSA_brainpoolP256r1_SHA512
         extends SignatureSpi
     {
-        public MLDSA65andECDSAbrainpoolP256r1()
+        public MLDSA65_ECDSA_brainpoolP256r1_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA65_ECDSA_brainpoolP256r1_SHA512);
         }
     }
 
-    public final static class MLDSA87andECDSAP384
+    public final static class MLDSA87_ECDSA_P384_SHA512
         extends SignatureSpi
     {
-        public MLDSA87andECDSAP384()
+        public MLDSA87_ECDSA_P384_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_P384_SHA512);
         }
     }
 
-    public final static class MLDSA87andECDSAbrainpoolP384r1
+    public final static class MLDSA87_ECDSA_brainpoolP384r1_SHA512
         extends SignatureSpi
     {
-        public MLDSA87andECDSAbrainpoolP384r1()
+        public MLDSA87_ECDSA_brainpoolP384r1_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.MLDSA87_ECDSA_brainpoolP384r1_SHA512);
         }
     }
 
-    public final static class Falcon512andEd25519
+    public final static class Falcon512_Ed25519_SHA512
         extends SignatureSpi
     {
-        public Falcon512andEd25519()
+        public Falcon512_Ed25519_SHA512()
         {
             super(CompositeSignaturesConstants.CompositeName.Falcon512_Ed25519_SHA512);
         }
     }
 
-    public final static class Falcon512andECDSAP256
+    public final static class Falcon512_ECDSA_P256_SHA256
         extends SignatureSpi
     {
-        public Falcon512andECDSAP256()
+        public Falcon512_ECDSA_P256_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.Falcon512_ECDSA_P256_SHA256);
         }
     }
 
-    public final static class Falcon512andECDSAbrainpoolP256r1
+    public final static class Falcon512_ECDSA_brainpoolP256r1_SHA256
         extends SignatureSpi
     {
-        public Falcon512andECDSAbrainpoolP256r1()
+        public Falcon512_ECDSA_brainpoolP256r1_SHA256()
         {
             super(CompositeSignaturesConstants.CompositeName.Falcon512_ECDSA_brainpoolP256r1_SHA256);
         }

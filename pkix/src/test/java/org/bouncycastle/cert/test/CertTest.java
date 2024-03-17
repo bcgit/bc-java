@@ -1367,8 +1367,6 @@ public class CertTest
             Certificate cert = fact.generateCertificate(bIn);
 
             PublicKey k = cert.getPublicKey();
-//            System.out.println("****** " + id + " ******");
-//            System.out.println(cert);
         }
         catch (Exception e)
         {
@@ -5426,29 +5424,49 @@ public class CertTest
 
     // TESTS REGARDING COMPOSITES https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
     private static String[] compositeSignaturesOIDs = {
-        "2.16.840.1.114027.80.8.1.1", //id-MLDSA44-RSA2048-PSS-SHA256
-        "2.16.840.1.114027.80.8.1.2", //id-MLDSA44-RSA2048-PKCS15-SHA256
-        "2.16.840.1.114027.80.8.1.3", //id-MLDSA44-Ed25519-SHA512
-        "2.16.840.1.114027.80.8.1.4", //id-MLDSA44-ECDSA-P256-SHA256
-        "2.16.840.1.114027.80.8.1.5", //id-MLDSA44-ECDSA-brainpoolP256r1-SHA256
-        "2.16.840.1.114027.80.8.1.6", //id-MLDSA65-RSA3072-PSS-SHA512
-        "2.16.840.1.114027.80.8.1.7", //id-MLDSA65-RSA3072-PKCS15-SHA512
-        "2.16.840.1.114027.80.8.1.8", //id-MLDSA65-ECDSA-P256-SHA512
-        "2.16.840.1.114027.80.8.1.9", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
-        "2.16.840.1.114027.80.8.1.10", //id-MLDSA65-Ed25519-SHA512
-        "2.16.840.1.114027.80.8.1.11", //id-MLDSA87-ECDSA-P384-SHA512
-        "2.16.840.1.114027.80.8.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
-        "2.16.840.1.114027.80.8.1.13", //id-MLDSA87-Ed448-SHA512
-        // Falcon composites below were excluded from the draft. See MiscObjectIdentifiers for details.
-        "2.16.840.1.114027.80.8.1.14", //id-Falcon512-ECDSA-P256-SHA256
-        "2.16.840.1.114027.80.8.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
-        "2.16.840.1.114027.80.8.1.16", //id-Falcon512-Ed25519-SHA512
+            "2.16.840.1.114027.80.8.1.1", //id-MLDSA44-RSA2048-PSS-SHA256
+            "2.16.840.1.114027.80.8.1.2", //id-MLDSA44-RSA2048-PKCS15-SHA256
+            "2.16.840.1.114027.80.8.1.3", //id-MLDSA44-Ed25519-SHA512
+            "2.16.840.1.114027.80.8.1.4", //id-MLDSA44-ECDSA-P256-SHA256
+            "2.16.840.1.114027.80.8.1.5", //id-MLDSA44-ECDSA-brainpoolP256r1-SHA256
+            "2.16.840.1.114027.80.8.1.6", //id-MLDSA65-RSA3072-PSS-SHA512
+            "2.16.840.1.114027.80.8.1.7", //id-MLDSA65-RSA3072-PKCS15-SHA512
+            "2.16.840.1.114027.80.8.1.8", //id-MLDSA65-ECDSA-P256-SHA512
+            "2.16.840.1.114027.80.8.1.9", //id-MLDSA65-ECDSA-brainpoolP256r1-SHA512
+            "2.16.840.1.114027.80.8.1.10", //id-MLDSA65-Ed25519-SHA512
+            "2.16.840.1.114027.80.8.1.11", //id-MLDSA87-ECDSA-P384-SHA512
+            "2.16.840.1.114027.80.8.1.12", //id-MLDSA87-ECDSA-brainpoolP384r1-SHA512
+            "2.16.840.1.114027.80.8.1.13", //id-MLDSA87-Ed448-SHA512
+            // Falcon composites below were excluded from the draft. See MiscObjectIdentifiers for details.
+            "2.16.840.1.114027.80.8.1.14", //id-Falcon512-ECDSA-P256-SHA256
+            "2.16.840.1.114027.80.8.1.15", //id-Falcon512-ECDSA-brainpoolP256r1-SHA256
+            "2.16.840.1.114027.80.8.1.16", //id-Falcon512-Ed25519-SHA512
+        };
+
+    private static String[] compositeSignaturesIDs = {
+        "MLDSA44-RSA2048-PSS-SHA256",
+        "MLDSA44-RSA2048-PKCS15-SHA256",
+        "MLDSA44-ED25519-SHA512",
+        "MLDSA44-ECDSA-P256-SHA256", 
+        "MLDSA44-ECDSA-BRAINPOOLP256R1-SHA256",
+        "MLDSA65-RSA3072-PSS-SHA512", 
+        "MLDSA65-RSA3072-PKCS15-SHA512",
+        "MLDSA65-ECDSA-P256-SHA512",
+        "MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512",
+        "MLDSA65-ED25519-SHA512", 
+        "MLDSA87-ECDSA-P384-SHA512", 
+        "MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", 
+        "MLDSA87-ED448-SHA512", 
+        "FALCON512-ECDSA-P256-SHA256", 
+        "FALCON512-ECDSA-BRAINPOOLP256R1-SHA256", 
+        "FALCON512-ED25519-SHA512"
     };
 
     private void checkCompositeSignatureCertificateCreation()
     {
         try
         {
+            int index = 0;
             for (String oid : compositeSignaturesOIDs)
             {
                 KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
@@ -5462,22 +5480,23 @@ public class CertTest
                 X500Name subject = new X500Name(subjectName);
 
                 JcaX509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(issuer, serial, notBefore, notAfter, subject, keyPair.getPublic());
-                X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(oid).build(keyPair.getPrivate()));
+                X509CertificateHolder certHolder = certificateBuilder.build(new JcaContentSignerBuilder(compositeSignaturesIDs[index]).build(keyPair.getPrivate()));
                 X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 
                 isEquals(oid, cert.getSigAlgOID());
                 CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
-                isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)), compositePublicKey.getAlgorithm());
 
+                isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
+    
                 isEquals(subjectName, cert.getSubjectX500Principal().getName());
 
                 cert.verify(cert.getPublicKey());
-
+                index++;
             }
         }
         catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateException | OperatorCreationException |
             SignatureException | InvalidKeyException | TestFailedException e)
-        {
+        {                       e.printStackTrace();
             fail("checkCompositeSignatureCertificateCreation failed: " + e.getMessage());
         }
     }
