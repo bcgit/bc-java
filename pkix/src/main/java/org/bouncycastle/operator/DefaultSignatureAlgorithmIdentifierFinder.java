@@ -26,7 +26,6 @@ import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.util.Strings;
 
 public class DefaultSignatureAlgorithmIdentifierFinder
@@ -235,12 +234,22 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
 
-        //Load composite signatures
-        for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers)
-        {
-            algorithms.put(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(oid).toUpperCase(), oid);
-            algorithms.put(oid.toString(), oid);
-        }
+        algorithms.put("MLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        algorithms.put("MLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        algorithms.put("MLDSA44-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        algorithms.put("MLDSA44-ECDSA-BRAINPOOLP256R1-SHA256", MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256);
+        algorithms.put("MLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        algorithms.put("MLDSA65-RSA3072-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        algorithms.put("MLDSA65-RSA3072-PKCS15-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        algorithms.put("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        algorithms.put("MLDSA65-ECDSA-P256-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        algorithms.put("MLDSA65-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        algorithms.put("MLDSA87-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        algorithms.put("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        algorithms.put("MLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+        algorithms.put("FALCON512-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256);
+        algorithms.put("FALCON512-ECDSA-BRAINPOOLP256R1-SHA256", MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256);
+        algorithms.put("FALCON512-ED25519-SHA512", MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
