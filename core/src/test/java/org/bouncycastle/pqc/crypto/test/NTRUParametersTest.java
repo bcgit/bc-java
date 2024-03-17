@@ -14,8 +14,10 @@ public class NTRUParametersTest
         assertEquals(256, NTRUParameters.ntruhps2048509.getSessionKeySize());
         assertEquals(256, NTRUParameters.ntruhps2048677.getSessionKeySize());
         assertEquals(256, NTRUParameters.ntruhps4096821.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps40961229.getSessionKeySize());
 
         assertEquals(256, NTRUParameters.ntruhrss701.getSessionKeySize());
+//        assertEquals(256, NTRUParameters.ntruhrss1373.getSessionKeySize());
     }
 
     public void testHpsParameters()

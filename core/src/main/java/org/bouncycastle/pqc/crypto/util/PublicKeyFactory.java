@@ -188,7 +188,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhps2048509, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps2048677, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps4096821, new NtruConverter());
+        converters.put(BCObjectIdentifiers.ntruhps40961229, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhrss701, new NtruConverter());
+        converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
         converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());

@@ -13,7 +13,9 @@ public class NTRUParameterSpec
     public static final NTRUParameterSpec ntruhps2048509 = new NTRUParameterSpec(NTRUParameters.ntruhps2048509);
     public static final NTRUParameterSpec ntruhps2048677 = new NTRUParameterSpec(NTRUParameters.ntruhps2048677);
     public static final NTRUParameterSpec ntruhps4096821 = new NTRUParameterSpec(NTRUParameters.ntruhps4096821);
+    public static final NTRUParameterSpec ntruhps40961229 = new NTRUParameterSpec(NTRUParameters.ntruhps40961229);
     public static final NTRUParameterSpec ntruhrss701 = new NTRUParameterSpec(NTRUParameters.ntruhrss701);
+//    public static final NTRUParameterSpec ntruhrss1373 = new NTRUParameterSpec(NTRUParameters.ntruhrss1373);
 
     private static Map parameters = new HashMap();
 

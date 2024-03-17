@@ -376,6 +376,8 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntruhps2048677 = pqc_kem_ntru.branch("2");
     ASN1ObjectIdentifier ntruhps4096821 = pqc_kem_ntru.branch("3");
     ASN1ObjectIdentifier ntruhrss701 = pqc_kem_ntru.branch("4");
+    ASN1ObjectIdentifier ntruhps40961229 = pqc_kem_ntru.branch("5");
+    ASN1ObjectIdentifier ntruhrss1373 = pqc_kem_ntru.branch("6");
 
     /**
      * Kyber
