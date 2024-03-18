@@ -38,7 +38,7 @@ public class NTRUTest
         NTRUParameters.ntruhps4096821,
         NTRUParameters.ntruhps40961229,
         NTRUParameters.ntruhrss701,
-//        NTRUParameters.ntruhrss1373
+        NTRUParameters.ntruhrss1373
     };
 
     private final String[] katBase = {
@@ -47,7 +47,7 @@ public class NTRUTest
         "ntruhps4096821",
         "ntruhps40961229",
         "ntruhrss701",
-//        "ntruhrss1373"
+        "ntruhrss1373"
     };
 
     private final String[] katFiles = {
