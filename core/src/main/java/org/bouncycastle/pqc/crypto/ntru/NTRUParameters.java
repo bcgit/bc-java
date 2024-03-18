@@ -42,8 +42,7 @@ public class NTRUParameters
     /**
      * NTRU-HRSS parameter set with n = 1373.
      */
-    // TODO
-    // public static final NTRUParameters ntruhrss1373 = new NTRUParameters("ntruhrss1373", new NTRUHRSS1373());
+    public static final NTRUParameters ntruhrss1373 = new NTRUParameters("ntruhrss1373", new NTRUHRSS1373());
 
     private final String name;
     /**
