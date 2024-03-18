@@ -151,7 +151,7 @@ public class BCPGInputStream
         {
             try
             {
-                nextB = in.read();
+                nextB = this.read();
             }
             catch (EOFException e)
             {
