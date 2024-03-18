@@ -162,34 +162,4 @@ public class HRSSPolynomial
             this.coeffs[i + 1] = (short)(b.coeffs[i] - b.coeffs[i + 1]);
         }
     }
-
-    @Override
-    public void r2Inv(Polynomial a)
-    {
-        Polynomial f = this.params.createPolynomial();
-        Polynomial g = this.params.createPolynomial();
-        Polynomial v = this.params.createPolynomial();
-        Polynomial w = this.params.createPolynomial();
-        this.r2Inv(a, f, g, v, w);
-    }
-
-    @Override
-    public void rqInv(Polynomial a)
-    {
-        Polynomial ai2 = this.params.createPolynomial();
-        Polynomial b = this.params.createPolynomial();
-        Polynomial c = this.params.createPolynomial();
-        Polynomial s = this.params.createPolynomial();
-        this.rqInv(a, ai2, b, c, s);
-    }
-
-    @Override
-    public void s3Inv(Polynomial a)
-    {
-        Polynomial f = this.params.createPolynomial();
-        Polynomial g = this.params.createPolynomial();
-        Polynomial v = this.params.createPolynomial();
-        Polynomial w = this.params.createPolynomial();
-        this.s3Inv(a, f, g, v, w);
-    }
 }
