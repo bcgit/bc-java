@@ -8,23 +8,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  */
 public class PrimaryUserID 
     extends SignatureSubpacket
-{    
-    private static byte[] booleanToByteArray(
-        boolean    value)
-    {
-        byte[]    data = new byte[1];
-            
-        if (value)
-        {
-            data[0] = 1;
-            return data;
-        }
-        else
-        {
-            return data;
-        }
-    }
-    
+{
     public PrimaryUserID(
         boolean    critical,
         boolean    isLongLength,
@@ -37,11 +21,11 @@ public class PrimaryUserID
         boolean    critical,
         boolean    isPrimaryUserID)
     {
-        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, false, booleanToByteArray(isPrimaryUserID));
+        super(SignatureSubpacketTags.PRIMARY_USER_ID, critical, false, Utils.booleanToByteArray(isPrimaryUserID));
     }
     
     public boolean isPrimaryUserID()
     {
-        return data[0] != 0;
+        return Utils.booleanFromByteArray(data);
     }
 }

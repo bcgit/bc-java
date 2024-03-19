@@ -37,6 +37,10 @@ public class AllTests
 
         suite.addTest(BcEnvelopedDataTest.suite());
         suite.addTest(BcSignedDataTest.suite());
+        suite.addTest(CMSAuthEnvelopedDataStreamGeneratorTest.suite());
+        suite.addTest(InputStreamWithMACTest.suite());
+        
+        suite.addTest(new CMSTestSetup(new TestSuite(GOSTR3410_2012_256CmsSignVerifyDetached.class)));
 
         try
         {

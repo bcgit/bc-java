@@ -758,7 +758,8 @@ class ProvTlsClient
                 continue;
             }
 
-            if (!signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
+            if (!signatureSchemeInfo.isSupportedPre13() ||
+                !signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
             {
                 continue;
             }
@@ -816,14 +817,14 @@ class ProvTlsClient
         LinkedHashMap<String, SignatureSchemeInfo> keyTypeMap = new LinkedHashMap<String, SignatureSchemeInfo>();
         for (SignatureSchemeInfo signatureSchemeInfo : signatureSchemes.getPeerSigSchemes())
         {
-            if (!signatureSchemeInfo.isSupportedPost13() ||
-                !signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
+            String keyType = signatureSchemeInfo.getKeyType13();
+            if (keyTypeMap.containsKey(keyType))
             {
                 continue;
             }
 
-            String keyType = signatureSchemeInfo.getKeyType13();
-            if (keyTypeMap.containsKey(keyType))
+            if (!signatureSchemeInfo.isSupportedPost13() ||
+                !signatureSchemes.hasLocalSignatureScheme(signatureSchemeInfo))
             {
                 continue;
             }

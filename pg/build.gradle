@@ -1,4 +1,8 @@
 
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
+
 sourceSets {
     java9 {
         java {
@@ -9,9 +13,9 @@ sourceSets {
 
 
 dependencies {
-
+    implementation project(':core')
     implementation project(':prov')
-
+    implementation project(':util')
     implementation files("$bc_prov")
     implementation project(path: ':core')
 
@@ -66,7 +70,7 @@ jar {
     }
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Export-Package': 'org.bouncycastle.{apache|bcpg|gpg|openpgp}.*')
     manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
 }
 

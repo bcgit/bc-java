@@ -23,7 +23,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -31,6 +30,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
@@ -200,7 +200,8 @@ public class BCECGOST3410_2012PrivateKey
     {
         ASN1Primitive p = info.getPrivateKeyAlgorithm().getParameters().toASN1Primitive();
 
-        if (p instanceof ASN1Sequence && (ASN1Sequence.getInstance(p).size() == 2 || ASN1Sequence.getInstance(p).size() == 3))
+        if (p instanceof ASN1Sequence &&
+            (ASN1Sequence.getInstance(p).size() <= 3))
         {
             gostParams = GOST3410PublicKeyAlgParameters.getInstance(info.getPrivateKeyAlgorithm().getParameters());
 

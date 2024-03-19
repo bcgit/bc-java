@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.Vector;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
@@ -32,10 +31,6 @@ import org.bouncycastle.asn1.cryptopro.ECGOST3410ParamSetParameters;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410ParamSetParameters;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
-
-import org.bouncycastle.asn1.misc.CAST5CBCParameters;
-import org.bouncycastle.asn1.misc.IDEACBCPar;
-import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.ocsp.CertStatus;
@@ -51,7 +46,6 @@ import org.bouncycastle.asn1.ocsp.RevokedInfo;
 import org.bouncycastle.asn1.ocsp.Signature;
 import org.bouncycastle.asn1.ocsp.SingleResponse;
 import org.bouncycastle.asn1.ocsp.TBSRequest;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
@@ -139,6 +133,9 @@ import org.bouncycastle.asn1.x9.DHPublicKey;
 import org.bouncycastle.asn1.x9.DHValidationParms;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
+import org.bouncycastle.internal.asn1.misc.IDEACBCPar;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Base64;
 
@@ -362,7 +359,6 @@ public class GetInstanceTest
 
         CAST5CBCParameters.getInstance(null);
         IDEACBCPar.getInstance(null);
-        PublicKeyAndChallenge.getInstance(null);
         BasicOCSPResponse.getInstance(null);
         BasicOCSPResponse.getInstance(null);
 

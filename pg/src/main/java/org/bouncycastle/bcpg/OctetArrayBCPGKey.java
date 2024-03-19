@@ -1,7 +1,6 @@
 package org.bouncycastle.bcpg;
 
 import java.io.IOException;
-
 import org.bouncycastle.util.Arrays;
 
 /**

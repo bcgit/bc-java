@@ -43,10 +43,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.asn1.misc.NetscapeCertType;
-import org.bouncycastle.asn1.misc.NetscapeRevocationURL;
-import org.bouncycastle.asn1.misc.VerisignCzagExtension;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
@@ -57,6 +53,10 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.TBSCertificate;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.internal.asn1.misc.NetscapeCertType;
+import org.bouncycastle.internal.asn1.misc.NetscapeRevocationURL;
+import org.bouncycastle.internal.asn1.misc.VerisignCzagExtension;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
@@ -716,7 +716,8 @@ abstract class X509CertificateImpl
         {
             Signature signature = signatureCreator.createSignature(getSigAlgName());
 
-            if (key instanceof CompositePublicKey)
+            //Use this only for legacy composite public keys (they have this identifier)
+            if (key instanceof CompositePublicKey && ((CompositePublicKey) key).getAlgorithmIdentifier().equals(MiscObjectIdentifiers.id_composite_key))
             {
                 List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
 

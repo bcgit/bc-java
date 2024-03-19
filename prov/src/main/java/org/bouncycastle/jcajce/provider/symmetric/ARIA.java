@@ -9,7 +9,6 @@ import java.security.spec.InvalidParameterSpecException;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
@@ -27,6 +26,7 @@ import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.OFBBlockCipher;
 import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
+import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;

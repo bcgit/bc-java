@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 
 public class GOST3410PublicKeyAlgParameters
     extends ASN1Object
@@ -60,8 +61,31 @@ public class GOST3410PublicKeyAlgParameters
     private GOST3410PublicKeyAlgParameters(
         ASN1Sequence  seq)
     {
-        this.publicKeyParamSet = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        this.digestParamSet = (ASN1ObjectIdentifier)seq.getObjectAt(1);
+        this.publicKeyParamSet = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+
+        if (publicKeyParamSet.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetA))
+        {
+            if (seq.size() > 1)
+            {
+                digestParamSet = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
+            }
+        }
+        else if (publicKeyParamSet.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB)
+            || publicKeyParamSet.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC)
+            || publicKeyParamSet.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD))
+        {
+            if (seq.size() > 1)
+            {
+                throw new IllegalArgumentException("digestParamSet expected to be absent");
+            }
+        }
+        else
+        {
+            if (seq.size() > 1)
+            {
+                digestParamSet = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
+            }
+        }
         
         if (seq.size() > 2)
         {
@@ -89,7 +113,11 @@ public class GOST3410PublicKeyAlgParameters
         ASN1EncodableVector v = new ASN1EncodableVector(3);
 
         v.add(publicKeyParamSet);
-        v.add(digestParamSet);
+
+        if (digestParamSet != null)
+        {
+            v.add(digestParamSet);
+        }
         
         if (encryptionParamSet != null)
         {

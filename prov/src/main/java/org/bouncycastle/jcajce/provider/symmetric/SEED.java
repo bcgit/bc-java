@@ -7,7 +7,6 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.spec.IvParameterSpec;
 
-import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -18,6 +17,7 @@ import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;

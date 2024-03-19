@@ -991,6 +991,7 @@
                 </fileset>
             </classpath>
             <sysproperty key="bc.test.data.home" value="../../core/src/test/data" />
+            <sysproperty key="test.java.version.prefix" value="${env.JAVA_VERSION_PREFIX}" />
 
             <formatter type="xml" />
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">

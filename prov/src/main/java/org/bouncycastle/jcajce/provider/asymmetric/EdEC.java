@@ -3,7 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.edec.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -68,6 +68,9 @@ public class EdEC
 
             provider.addAlgorithm("KeyAgreement.X25519UWITHSHA256KDF", PREFIX + "KeyAgreementSpi$X25519UwithSHA256KDF");
             provider.addAlgorithm("KeyAgreement.X448UWITHSHA512KDF", PREFIX + "KeyAgreementSpi$X448UwithSHA512KDF");
+
+            provider.addAlgorithm("KeyAgreement.X448withSHA512HKDF", PREFIX + "KeyAgreementSpi$X448withSHA512HKDF");
+            provider.addAlgorithm("KeyAgreement.X25519withSHA256HKDF", PREFIX + "KeyAgreementSpi$X25519withSHA256HKDF");
 
             provider.addAlgorithm("KeyPairGenerator.XDH", PREFIX + "KeyPairGeneratorSpi$XDH");
             provider.addAlgorithm("KeyPairGenerator.X448", PREFIX + "KeyPairGeneratorSpi$X448");

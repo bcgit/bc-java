@@ -571,6 +571,7 @@ abstract class Scalar448
         int[] Nu = new int[28];     System.arraycopy(LSq, 0, Nu, 0, 28);
         int[] Nv = new int[28];     Nat448.square(k, Nv); ++Nv[0];
         int[] p  = new int[28];     Nat448.mul(L, k, p);
+        int[] t  = new int[28];     // temp array
         int[] u0 = new int[8];      System.arraycopy(L, 0, u0, 0, 8);
         int[] u1 = new int[8];
         int[] v0 = new int[8];      System.arraycopy(k, 0, v0, 0, 8);
@@ -587,12 +588,12 @@ abstract class Scalar448
 
             if (p[last] < 0)
             {
-                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.addShifted_UV(7, s, u0, u1, v0, v1);
             }
             else
             {
-                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.subShifted_UV(7, s, u0, u1, v0, v1);
             }
 

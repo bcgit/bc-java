@@ -7,12 +7,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
@@ -203,12 +203,16 @@ class Utils
         ntruOids.put(NTRUParameters.ntruhps2048509, BCObjectIdentifiers.ntruhps2048509);
         ntruOids.put(NTRUParameters.ntruhps2048677, BCObjectIdentifiers.ntruhps2048677);
         ntruOids.put(NTRUParameters.ntruhps4096821, BCObjectIdentifiers.ntruhps4096821);
+        ntruOids.put(NTRUParameters.ntruhps40961229, BCObjectIdentifiers.ntruhps40961229);
         ntruOids.put(NTRUParameters.ntruhrss701, BCObjectIdentifiers.ntruhrss701);
+        ntruOids.put(NTRUParameters.ntruhrss1373, BCObjectIdentifiers.ntruhrss1373);
 
         ntruParams.put(BCObjectIdentifiers.ntruhps2048509, NTRUParameters.ntruhps2048509);
         ntruParams.put(BCObjectIdentifiers.ntruhps2048677, NTRUParameters.ntruhps2048677);
         ntruParams.put(BCObjectIdentifiers.ntruhps4096821, NTRUParameters.ntruhps4096821);
+        ntruParams.put(BCObjectIdentifiers.ntruhps40961229, NTRUParameters.ntruhps40961229);
         ntruParams.put(BCObjectIdentifiers.ntruhrss701, NTRUParameters.ntruhrss701);
+        ntruParams.put(BCObjectIdentifiers.ntruhrss1373, NTRUParameters.ntruhrss1373);
 
         falconOids.put(FalconParameters.falcon_512, BCObjectIdentifiers.falcon_512);
         falconOids.put(FalconParameters.falcon_1024, BCObjectIdentifiers.falcon_1024);

@@ -5,10 +5,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;

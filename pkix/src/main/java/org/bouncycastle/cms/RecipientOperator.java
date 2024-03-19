@@ -51,6 +51,14 @@ public class RecipientOperator
 
     public byte[] getMac()
     {
-        return ((MacCalculator)operator).getMac();
+        if (operator instanceof MacCalculator)
+        {
+            return ((MacCalculator)operator).getMac();
+        }
+        else if (operator instanceof InputAEADDecryptor)
+        {
+            return ((InputAEADDecryptor)operator).getMAC();
+        }
+        return null;
     }
 }

@@ -6,8 +6,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -112,7 +110,7 @@ public class CompositeKeyTest
         KeyFactory keyFact = KeyFactory.getInstance("COMPOSITE", "BC");
 
         CompositePublicKey compPubKey = (CompositePublicKey)keyFact.generatePublic(new X509EncodedKeySpec(genPubKey));
-         System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(genPrivKey))) ;
+        
         CompositePrivateKey compPrivKey = (CompositePrivateKey)keyFact.generatePrivate(new PKCS8EncodedKeySpec(genPrivKey));
     }
 

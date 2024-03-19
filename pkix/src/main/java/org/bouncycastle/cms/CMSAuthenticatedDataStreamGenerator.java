@@ -3,7 +3,6 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -12,7 +11,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequenceGenerator;
-import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -139,14 +137,7 @@ public class CMSAuthenticatedDataStreamGenerator
 
         try
         {
-            ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
-
-            for (Iterator it = recipientInfoGenerators.iterator(); it.hasNext();)
-            {
-                RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
-
-                recipientInfos.add(recipient.generate(macCalculator.getKey()));
-            }
+            ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(macCalculator.getKey(), recipientInfoGenerators);
 
             //
             // ContentInfo
@@ -162,19 +153,9 @@ public class CMSAuthenticatedDataStreamGenerator
 
             authGen.addObject(new ASN1Integer(AuthenticatedData.calculateVersion(originatorInfo)));
 
-            if (originatorInfo != null)
-            {
-                authGen.addObject(new DERTaggedObject(false, 0, originatorInfo));
-            }
+            CMSUtils.addOriginatorInfoToGenerator(authGen, originatorInfo);
 
-            if (berEncodeRecipientSet)
-            {
-                authGen.getRawOutputStream().write(new BERSet(recipientInfos).getEncoded());
-            }
-            else
-            {
-                authGen.getRawOutputStream().write(new DERSet(recipientInfos).getEncoded());
-            }
+            CMSUtils.addRecipientInfosToGenerator(recipientInfos, authGen, berEncodeRecipientSet);
 
             AlgorithmIdentifier macAlgId = macCalculator.getAlgorithmIdentifier();
 
@@ -297,10 +278,7 @@ public class CMSAuthenticatedDataStreamGenerator
 
             envGen.addObject(new DEROctetString(macCalculator.getMac()));
 
-            if (unauthGen != null)
-            {
-                envGen.addObject(new DERTaggedObject(false, 3, new BERSet(unauthGen.getAttributes(parameters).toASN1EncodableVector())));
-            }
+            CMSUtils.addAttriSetToGenerator(envGen, unauthGen, 3 , parameters);
 
             envGen.close();
             cGen.close();

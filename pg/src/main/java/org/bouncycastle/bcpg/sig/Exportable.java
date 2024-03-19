@@ -8,23 +8,7 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  */
 public class Exportable 
     extends SignatureSubpacket
-{    
-    private static byte[] booleanToByteArray(
-        boolean    value)
-    {
-        byte[]    data = new byte[1];
-        
-        if (value)
-        {
-            data[0] = 1;
-            return data;
-        }
-        else
-        {
-            return data;
-        }
-    }
-    
+{
     public Exportable(
         boolean    critical,
         boolean    isLongLength,
@@ -37,11 +21,11 @@ public class Exportable
         boolean    critical,
         boolean    isExportable)
     {
-        super(SignatureSubpacketTags.EXPORTABLE, critical, false,  booleanToByteArray(isExportable));
+        super(SignatureSubpacketTags.EXPORTABLE, critical, false,  Utils.booleanToByteArray(isExportable));
     }
     
     public boolean isExportable()
     {
-        return data[0] != 0;
+        return Utils.booleanFromByteArray(data);
     }
 }

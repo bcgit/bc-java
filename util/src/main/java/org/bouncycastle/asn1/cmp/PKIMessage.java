@@ -34,7 +34,14 @@ public class PKIMessage
         Enumeration en = seq.getObjects();
 
         header = PKIHeader.getInstance(en.nextElement());
-        body = PKIBody.getInstance(en.nextElement());
+        if (en.hasMoreElements())
+        {
+            body = PKIBody.getInstance(en.nextElement());
+        }
+        else
+        {
+            throw new IllegalArgumentException("PKIMessage missing PKIBody structure");
+        }
 
         ASN1BitString protection = null;
         ASN1Sequence extraCerts = null;

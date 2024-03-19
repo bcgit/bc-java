@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECGenParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -18,6 +19,7 @@ import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jcajce.spec.GOST3410ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -118,7 +120,17 @@ public class KeyPairGeneratorSpi
                 curveName = ((ECNamedCurveGenParameterSpec)params).getName();
             }
 
-            init(new GOST3410ParameterSpec(curveName), random);
+            ASN1ObjectIdentifier curveOid = ECGOST3410NamedCurves.getOID(curveName);
+            if (curveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB)
+                || curveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC)
+                || curveOid.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD))
+            {
+                init(new GOST3410ParameterSpec(ECGOST3410NamedCurves.getOID(curveName), null), random);
+            }
+            else
+            {
+                init(new GOST3410ParameterSpec(curveName), random);
+            }
         }
         else if (params == null && BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa() != null)
         {

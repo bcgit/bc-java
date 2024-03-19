@@ -3,12 +3,12 @@ package org.bouncycastle.jce.provider.test;
 import java.security.MessageDigest;
 import java.security.Security;
 
-import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;

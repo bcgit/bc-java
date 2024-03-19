@@ -67,7 +67,7 @@ import org.bouncycastle.util.test.UncloseableOutputStream;
 public class PGPEdDSATest
     extends SimpleTest
 {
-    private static final String edDSASampleKey =
+    static final String edDSASampleKey =
         "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
             "Comment: Alice's OpenPGP certificate\n" +
             "Comment: https://www.ietf.org/id/draft-bre-openpgp-samples-01.html\n" +
@@ -84,7 +84,7 @@ public class PGPEdDSATest
             "=iIGO\n" +
             "-----END PGP PUBLIC KEY BLOCK-----\n";
 
-    private static final String edDSASecretKey =
+    static final String edDSASecretKey =
         "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "Comment: Alice's OpenPGP Transferable Secret Key\n" +
             "Comment: https://www.ietf.org/id/draft-bre-openpgp-samples-01.html\n" +

@@ -19,10 +19,9 @@ public class KeyTransRecipientInformation
     KeyTransRecipientInformation(
         KeyTransRecipientInfo   info,
         AlgorithmIdentifier     messageAlgorithm,
-        CMSSecureReadable       secureReadable,
-        AuthAttributesProvider  additionalData)
+        CMSSecureReadable       secureReadable)
     {
-        super(info.getKeyEncryptionAlgorithm(), messageAlgorithm, secureReadable, additionalData);
+        super(info.getKeyEncryptionAlgorithm(), messageAlgorithm, secureReadable);
 
         this.info = info;
 

@@ -26,7 +26,7 @@ public class ECDHPublicBCPGKey
         super(in);
 
         int length = in.read();
-        byte[] kdfParameters =  new byte[length];
+        byte[] kdfParameters = new byte[length];
         if (kdfParameters.length != 3)
         {
             throw new IllegalStateException("kdf parameters size of 3 expected.");
@@ -122,7 +122,15 @@ public class ECDHPublicBCPGKey
         case SymmetricKeyAlgorithmTags.AES_192:
         case SymmetricKeyAlgorithmTags.AES_256:
             break;
-
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            if (Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping")))
+            {
+                //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
+                //   is usable, and it is subject to the same usage requirements
+                break;
+            }
         default:
             throw new IllegalStateException("Symmetric key algorithm must be AES-128 or stronger.");
         }

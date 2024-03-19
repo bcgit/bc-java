@@ -135,7 +135,7 @@ public abstract class JceKeyAgreeRecipient
     }
 
     private SecretKey calculateAgreedWrapKey(AlgorithmIdentifier keyEncAlg, AlgorithmIdentifier wrapAlg,
-        PublicKey senderPublicKey, ASN1OctetString userKeyingMaterial, PrivateKey receiverPrivateKey, KeyMaterialGenerator kmGen)
+                                             PublicKey senderPublicKey, ASN1OctetString userKeyingMaterial, PrivateKey receiverPrivateKey, KeyMaterialGenerator kmGen)
         throws CMSException, GeneralSecurityException, IOException
     {
         receiverPrivateKey = CMSUtils.cleanPrivateKey(receiverPrivateKey);
@@ -173,18 +173,16 @@ public abstract class JceKeyAgreeRecipient
 
             if (CMSUtils.isEC(keyEncAlg.getAlgorithm()))
             {
+                byte[] ukmKeyingMaterial;
                 if (userKeyingMaterial != null)
                 {
-                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
-
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
                 }
                 else
                 {
-                    byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
-
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
                 }
+                userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
             }
             else if (CMSUtils.isRFC2631(keyEncAlg.getAlgorithm()))
             {
@@ -243,7 +241,7 @@ public abstract class JceKeyAgreeRecipient
                 {
                     Gost2814789EncryptedKey encKey = Gost2814789EncryptedKey.getInstance(encryptedContentEncryptionKey);
                     Gost2814789KeyWrapParameters wrapParams = Gost2814789KeyWrapParameters.getInstance(wrapAlg.getParameters());
-             
+
                     Cipher keyCipher = helper.createCipher(wrapAlg.getAlgorithm());
 
                     keyCipher.init(Cipher.UNWRAP_MODE, agreedWrapKey, new GOST28147WrapParameterSpec(wrapParams.getEncryptionParamSet(), userKeyingMaterial.getOctets()));
@@ -340,6 +338,6 @@ public abstract class JceKeyAgreeRecipient
             return userKeyMaterialParameters;
         }
     };
-    
+
     private static KeyMaterialGenerator ecc_cms_Generator = new RFC5753KeyMaterialGenerator();
 }

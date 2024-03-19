@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -12,7 +11,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
-import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
@@ -27,7 +25,7 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
  * General class for generating a CMS authenticated-data message.
- *
+ * <p>
  * A simple example of usage.
  *
  * <pre>
@@ -52,7 +50,7 @@ public class CMSAuthenticatedDataGenerator
     /**
      * Generate an authenticated data object from the passed in typedData and MacCalculator.
      *
-     * @param typedData the data to have a MAC attached.
+     * @param typedData     the data to have a MAC attached.
      * @param macCalculator the calculator of the MAC to be attached.
      * @return the resulting CMSAuthenticatedData object.
      * @throws CMSException on failure in encoding data or processing recipients.
@@ -66,25 +64,19 @@ public class CMSAuthenticatedDataGenerator
     /**
      * Generate an authenticated data object from the passed in typedData and MacCalculator.
      *
-     * @param typedData the data to have a MAC attached.
-     * @param macCalculator the calculator of the MAC to be attached.
+     * @param typedData        the data to have a MAC attached.
+     * @param macCalculator    the calculator of the MAC to be attached.
      * @param digestCalculator calculator for computing digest of the encapsulated data.
      * @return the resulting CMSAuthenticatedData object.
-     * @throws CMSException on failure in encoding data or processing recipients.    
+     * @throws CMSException on failure in encoding data or processing recipients.
      */
     public CMSAuthenticatedData generate(CMSTypedData typedData, MacCalculator macCalculator, final DigestCalculator digestCalculator)
         throws CMSException
     {
-        ASN1EncodableVector     recipientInfos = new ASN1EncodableVector();
-        ASN1OctetString         encContent;
-        ASN1OctetString         macResult;
+        ASN1OctetString encContent;
+        ASN1OctetString macResult;
 
-        for (Iterator it = recipientInfoGenerators.iterator(); it.hasNext();)
-        {
-            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
-
-            recipientInfos.add(recipient.generate(macCalculator.getKey()));
-        }
+        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(macCalculator.getKey(), recipientInfoGenerators);
 
         AuthenticatedData authData;
 
@@ -128,11 +120,11 @@ public class CMSAuthenticatedDataGenerator
             {
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
-            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(parameters).toASN1EncodableVector()) : null;
+            ASN1Set unauthed = CMSUtils.getAttrBERSet(unauthGen);
 
-            ContentInfo  eci = new ContentInfo(
-                            typedData.getContentType(),
-                            encContent);
+            ContentInfo eci = new ContentInfo(
+                typedData.getContentType(),
+                encContent);
 
             authData = new AuthenticatedData(originatorInfo, new DERSet(recipientInfos), macCalculator.getAlgorithmIdentifier(), digestCalculator.getAlgorithmIdentifier(), eci, authed, macResult, unauthed);
         }
@@ -140,7 +132,7 @@ public class CMSAuthenticatedDataGenerator
         {
             try
             {
-                ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
+                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
                 OutputStream mOut = new TeeOutputStream(bOut, macCalculator.getOutputStream());
 
                 typedData.write(mOut);
@@ -156,17 +148,17 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
 
-            ASN1Set unauthed = (unauthGen != null) ? new BERSet(unauthGen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+            ASN1Set unauthed = CMSUtils.getAttrBERSet(unauthGen);
 
-            ContentInfo  eci = new ContentInfo(
-                            typedData.getContentType(),
-                            encContent);
+            ContentInfo eci = new ContentInfo(
+                typedData.getContentType(),
+                encContent);
 
             authData = new AuthenticatedData(originatorInfo, new DERSet(recipientInfos), macCalculator.getAlgorithmIdentifier(), null, eci, null, macResult, unauthed);
         }
 
         ContentInfo contentInfo = new ContentInfo(
-                CMSObjectIdentifiers.authenticatedData, authData);
+            CMSObjectIdentifiers.authenticatedData, authData);
 
         return new CMSAuthenticatedData(contentInfo, new DigestCalculatorProvider()
         {

@@ -1,3 +1,6 @@
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
 
 jar.archiveBaseName = "bcmail-$vmrange"
 
@@ -20,9 +23,9 @@ dependencies {
     implementation files("$bc_pkix")
     implementation project(path: ':core')
 
-    java9Implementation files(":prov")
-    java9Implementation files(":util")
-    java9Implementation files(":pkix")
+    java9Implementation files("$bc_prov")
+    java9Implementation files("$bc_util")
+    java9Implementation files("$bc_pkix")
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }
@@ -44,7 +47,7 @@ compileJava9Java {
     sourceCompatibility = 9
     targetCompatibility = 9
     options.compilerArgs += [
-            '--module-path', "${bc_prov}:${bc_util}:${bc_pkix}"
+            '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}${File.pathSeparator}${bc_pkix}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
@@ -58,7 +61,7 @@ jar {
     }
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Export-Package': 'org.bouncycastle.mail.*')
     manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional;org.bouncycastle.*;version="[2.73,4)"')
 }
 

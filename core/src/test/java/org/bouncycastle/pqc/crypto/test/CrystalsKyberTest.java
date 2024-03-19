@@ -9,11 +9,11 @@ import java.util.HashMap;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.util.DEROtherInfo;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;

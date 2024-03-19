@@ -3,7 +3,9 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -23,23 +25,26 @@ public class CMSAuthEnvelopedData
     RecipientInformationStore recipientInfoStore;
     ContentInfo contentInfo;
 
-    private OriginatorInformation  originatorInfo;
-    private AlgorithmIdentifier    authEncAlg;
-    private ASN1Set                authAttrs;
-    private byte[]                 mac;
-    private ASN1Set                unauthAttrs;
+    private OriginatorInformation originatorInfo;
+    private AlgorithmIdentifier authEncAlg;
+    private ASN1Set authAttrs;
+    private byte[] mac;
+    private ASN1Set unauthAttrs;
 
-    public CMSAuthEnvelopedData(byte[] authEnvData) throws CMSException
+    public CMSAuthEnvelopedData(byte[] authEnvData)
+        throws CMSException
     {
         this(CMSUtils.readContentInfo(authEnvData));
     }
 
-    public CMSAuthEnvelopedData(InputStream authEnvData) throws CMSException
+    public CMSAuthEnvelopedData(InputStream authEnvData)
+        throws CMSException
     {
         this(CMSUtils.readContentInfo(authEnvData));
     }
 
-    public CMSAuthEnvelopedData(ContentInfo contentInfo) throws CMSException
+    public CMSAuthEnvelopedData(ContentInfo contentInfo)
+        throws CMSException
     {
         this.contentInfo = contentInfo;
 
@@ -63,17 +68,58 @@ public class CMSAuthEnvelopedData
 
         this.mac = authEnvData.getMac().getOctets();
 
-        CMSSecureReadable secureReadable = new CMSSecureReadable()
+        CMSSecureReadable secureReadable = new CMSSecureReadableWithAAD()
         {
+            private OutputStream aadStream;
+
+            @Override
+            public ASN1Set getAuthAttrSet()
+            {
+                return authAttrs;
+            }
+
+            @Override
+            public void setAuthAttrSet(ASN1Set set)
+            {
+
+            }
+
+            @Override
+            public boolean hasAdditionalData()
+            {
+                return (aadStream != null && authAttrs != null);
+            }
+
             public ASN1ObjectIdentifier getContentType()
             {
                 return authEncInfo.getContentType();
             }
 
             public InputStream getInputStream()
-                throws IOException, CMSException
+                throws IOException
             {
-                return new ByteArrayInputStream(Arrays.concatenate(authEncInfo.getEncryptedContent().getOctets(), mac));
+                if (aadStream != null && authAttrs != null)
+                {
+                    aadStream.write(authAttrs.getEncoded(ASN1Encoding.DER));
+                }
+                return new InputStreamWithMAC(new ByteArrayInputStream(authEncInfo.getEncryptedContent().getOctets()), mac);
+            }
+
+            @Override
+            public void setAADStream(OutputStream stream)
+            {
+                aadStream = stream;
+            }
+
+            public OutputStream getAADStream()
+            {
+                return aadStream;
+            }
+
+            @Override
+            public byte[] getMAC()
+            {
+                return Arrays.clone(mac);
             }
         };
 
@@ -84,27 +130,8 @@ public class CMSAuthEnvelopedData
         //
         // build the RecipientInformationStore
         //
-        if (authAttrs != null)
-        {
-            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
-                recipientInfos, this.authEncAlg, secureReadable, new AuthAttributesProvider()
-                {
-                    public ASN1Set getAuthAttributes()
-                    {
-                        return authAttrs;
-                    }
-
-                    public boolean isAead()
-                    {
-                        return true;
-                    }
-                });
-        }
-        else
-        {
-            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
-                recipientInfos, this.authEncAlg, secureReadable);
-        }
+        this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+            recipientInfos, this.authEncAlg, secureReadable);
     }
 
     /**
@@ -128,6 +155,7 @@ public class CMSAuthEnvelopedData
     /**
      * return a table of the authenticated attributes (as in those used to provide associated data) indexed by
      * the OID of the attribute.
+     *
      * @return the authenticated attributes.
      */
     public AttributeTable getAuthAttrs()
@@ -143,6 +171,7 @@ public class CMSAuthEnvelopedData
     /**
      * return a table of the unauthenticated attributes indexed by
      * the OID of the attribute.
+     *
      * @return the unauthenticated attributes.
      */
     public AttributeTable getUnauthAttrs()
@@ -157,6 +186,7 @@ public class CMSAuthEnvelopedData
 
     /**
      * Return the MAC value that was originally calculated for this AuthEnveloped data.
+     *
      * @return the MAC data associated with the stream.
      */
     public byte[] getMac()
