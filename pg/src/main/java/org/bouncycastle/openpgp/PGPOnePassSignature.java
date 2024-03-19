@@ -16,13 +16,10 @@ import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
  * A one pass signature object.
  */
 public class PGPOnePassSignature
+    extends PGPDefaultSignatureGenerator
 {
     private OnePassSignaturePacket sigPack;
-    private int signatureType;
-
     private PGPContentVerifier verifier;
-    private byte lastb;
-    private OutputStream sigOut;
 
     private static OnePassSignaturePacket cast(Packet packet)
         throws IOException
@@ -43,10 +40,9 @@ public class PGPOnePassSignature
     
     PGPOnePassSignature(
         OnePassSignaturePacket sigPack)
-        throws PGPException
     {
         this.sigPack = sigPack;
-        this.signatureType = sigPack.getSignatureType();
+        this.sigType = sigPack.getSignatureType();
     }
 
     /**
@@ -65,97 +61,6 @@ public class PGPOnePassSignature
 
         lastb = 0;
         sigOut = verifier.getOutputStream();
-    }
-
-    public void update(
-        byte b)
-    {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            if (b == '\r')
-            {
-                byteUpdate((byte)'\r');
-                byteUpdate((byte)'\n');
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
-            }
-            else
-            {
-                byteUpdate(b);
-            }
-
-            lastb = b;
-        }
-        else
-        {
-            byteUpdate(b);
-        }
-    }
-
-    public void update(
-        byte[] bytes)
-    {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            for (int i = 0; i != bytes.length; i++)
-            {
-                this.update(bytes[i]);
-            }
-        }
-        else
-        {
-            blockUpdate(bytes, 0, bytes.length);
-        }
-    }
-
-    public void update(
-        byte[] bytes,
-        int off,
-        int length)
-    {
-        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
-        {
-            int finish = off + length;
-
-            for (int i = off; i != finish; i++)
-            {
-                this.update(bytes[i]);
-            }
-        }
-        else
-        {
-            blockUpdate(bytes, off, length);
-        }
-    }
-
-    private void byteUpdate(byte b)
-    {
-        try
-        {
-            sigOut.write(b);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
-    }
-
-    private void blockUpdate(byte[] block, int off, int len)
-    {
-        try
-        {
-            sigOut.write(block, off, len);
-        }
-        catch (IOException e)
-        {
-            throw new PGPRuntimeOperationException(e.getMessage(), e);
-        }
     }
 
     /**

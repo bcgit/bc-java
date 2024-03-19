@@ -1,7 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;

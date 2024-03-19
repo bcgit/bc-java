@@ -11,11 +11,11 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.oiw.ElGamalParameter;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
+import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 import org.bouncycastle.jce.spec.ElGamalPublicKeySpec;

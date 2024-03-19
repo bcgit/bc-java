@@ -1,5 +1,6 @@
 package org.bouncycastle.gpg.keybox;
 
+import java.io.IOException;
 import java.security.Security;
 import java.util.Arrays;
 
@@ -98,6 +99,7 @@ public class KeyBoxByteBufferTest
     {
         KeyBoxByteBuffer buf = KeyBoxByteBuffer.wrap(new byte[4]);
         buf.consume(3);
+        isEquals(-16, buf.size());
         try
         {
             buf.consume(2);
@@ -107,6 +109,27 @@ public class KeyBoxByteBufferTest
         {
 
         }
+        buf.position(0);
+    }
+
+    public void testExceptions()
+        throws IOException
+    {
+        testException("Could not convert ", "IllegalStateException", () -> KeyBoxByteBuffer.wrap(new Object()));
+        final KeyBoxByteBuffer buf = KeyBoxByteBuffer.wrap(new byte[4]);
+        testException("invalid range ", "IllegalArgumentException", () -> buf.rangeOf(-1, 2));
+
+        testException("range exceeds buffer remaining", "IllegalArgumentException", () -> buf.rangeOf(0, 24));
+
+        testException("size exceeds buffer remaining", "IllegalArgumentException", () -> buf.consume(buf.remaining() + 1));
+
+        testException("size less than 0", "IllegalArgumentException", () -> buf.consume(buf.size()));
+
+        testException("size exceeds buffer remaining", "IllegalArgumentException", () -> {
+            KeyBoxByteBuffer buf1 = KeyBoxByteBuffer.wrap(new byte[21]);
+            buf1.consume(buf1.getBuffer().remaining() + 1);
+        });
+
     }
 
     @Override
@@ -122,5 +145,6 @@ public class KeyBoxByteBufferTest
         testConsumeReadPastEnd();
         testRangeReadPastEnd();
         testReadPastEnd();
+        testExceptions();
     }
 }

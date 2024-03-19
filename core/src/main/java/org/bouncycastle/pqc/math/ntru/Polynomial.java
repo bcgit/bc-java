@@ -257,9 +257,35 @@ public abstract class Polynomial
         this.mod3PhiN();
     }
 
-
     // defined in poly_r2_inv.c
-    public abstract void r2Inv(Polynomial a);
+    public void r2Inv(Polynomial a)
+    {
+        Polynomial f = this.params.createPolynomial();
+        Polynomial g = this.params.createPolynomial();
+        Polynomial v = this.params.createPolynomial();
+        Polynomial w = this.params.createPolynomial();
+        this.r2Inv(a, f, g, v, w);
+    }
+
+    // defined in poly.c
+    public void rqInv(Polynomial a)
+    {
+        Polynomial ai2 = this.params.createPolynomial();
+        Polynomial b = this.params.createPolynomial();
+        Polynomial c = this.params.createPolynomial();
+        Polynomial s = this.params.createPolynomial();
+        this.rqInv(a, ai2, b, c, s);
+    }
+
+    // defined in poly_s3_inv.c
+    public void s3Inv(Polynomial a)
+    {
+        Polynomial f = this.params.createPolynomial();
+        Polynomial g = this.params.createPolynomial();
+        Polynomial v = this.params.createPolynomial();
+        Polynomial w = this.params.createPolynomial();
+        this.s3Inv(a, f, g, v, w);
+    }
 
     void r2Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
@@ -326,9 +352,6 @@ public abstract class Polynomial
         this.coeffs[n - 1] = 0;
     }
 
-    // defined in poly.c
-    public abstract void rqInv(Polynomial a);
-
     void rqInv(Polynomial a, Polynomial ai2, Polynomial b, Polynomial c, Polynomial s)
     {
         ai2.r2Inv(a);
@@ -365,10 +388,7 @@ public abstract class Polynomial
         c.coeffs[0] += 2;
         this.rqMul(c, s);
     }
-
-    // defined in poly_s3_inv.c
-    public abstract void s3Inv(Polynomial a);
-
+    
     void s3Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
         int n = this.coeffs.length;

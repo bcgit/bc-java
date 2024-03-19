@@ -7,7 +7,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -140,18 +139,6 @@ public class SignerInformation
         return this.contentType;
     }
 
-    private byte[] encodeObj(
-        ASN1Encodable obj)
-        throws IOException
-    {
-        if (obj != null)
-        {
-            return obj.toASN1Primitive().getEncoded();
-        }
-
-        return null;
-    }
-
     public SignerId getSID()
     {
         return sid;
@@ -185,7 +172,7 @@ public class SignerInformation
     {
         try
         {
-            return encodeObj(digestAlgorithm.getParameters());
+            return CMSUtils.encodeObj(digestAlgorithm.getParameters());
         }
         catch (Exception e)
         {
@@ -222,7 +209,7 @@ public class SignerInformation
     {
         try
         {
-            return encodeObj(encryptionAlgorithm.getParameters());
+            return CMSUtils.encodeObj(encryptionAlgorithm.getParameters());
         }
         catch (Exception e)
         {

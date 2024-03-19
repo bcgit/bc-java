@@ -54,7 +54,7 @@ import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.bc.SecretKeyData;
 import org.bouncycastle.internal.asn1.cms.CCMParameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;

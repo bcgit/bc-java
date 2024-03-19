@@ -25,7 +25,6 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -49,6 +48,7 @@ import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V2TBSCertListGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 
 public class TestCertificateGen
 {

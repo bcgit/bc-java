@@ -2,7 +2,7 @@ package org.bouncycastle.jcajce.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
 
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 
 /**
  * ParameterSpec for EdDSA signature algorithms.

@@ -103,8 +103,9 @@ public class GOST3410ParameterSpec
         {
             GOST3410ParameterSpec other = (GOST3410ParameterSpec)o;
             
-            return this.keyParameters.equals(other.keyParameters) 
-                && this.digestParamSetOID.equals(other.digestParamSetOID)
+            return this.keyParameters.equals(other.keyParameters)
+                && (this.digestParamSetOID == other.digestParamSetOID
+                    || (this.digestParamSetOID != null && this.digestParamSetOID.equals(other.digestParamSetOID)))
                 && (this.encryptionParamSetOID == other.encryptionParamSetOID
                     || (this.encryptionParamSetOID != null && this.encryptionParamSetOID.equals(other.encryptionParamSetOID)));
         }
@@ -127,7 +128,14 @@ public class GOST3410ParameterSpec
         }
         else
         {
-            return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), params.getDigestParamSet().getId());
+            if (params.getDigestParamSet() != null)
+            {
+                return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), params.getDigestParamSet().getId());
+            }
+            else
+            {
+                return new GOST3410ParameterSpec(params.getPublicKeyParamSet().getId(), null);
+            }
         }
     }
 }

@@ -8,6 +8,8 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -72,6 +74,7 @@ public class JcaPGPContentVerifierBuilderProvider
             throws PGPException
         {
             final Signature signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+
             final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
             final PublicKey jcaKey = keyConverter.getPublicKey(publicKey);
 
@@ -86,6 +89,8 @@ public class JcaPGPContentVerifierBuilderProvider
 
             return new PGPContentVerifier()
             {
+                private final boolean isEdDsa = keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY || keyAlgorithm == PublicKeyAlgorithmTags.Ed448 || keyAlgorithm == PublicKeyAlgorithmTags.Ed25519;
+
                 public int getHashAlgorithm()
                 {
                     return hashAlgorithm;
@@ -115,14 +120,14 @@ public class JcaPGPContentVerifierBuilderProvider
                                 byte[] tmp = new byte[modLength];
 
                                 System.arraycopy(expected, 0, tmp, tmp.length - expected.length, expected.length);
-           
+
                                 return signature.verify(tmp);
                             }
                         }
-                        if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+                        if (isEdDsa)
                         {
                             signature.update(digestCalculator.getDigest());
-                            
+
                             return signature.verify(expected);
                         }
                         return signature.verify(expected);
@@ -135,9 +140,9 @@ public class JcaPGPContentVerifierBuilderProvider
 
                 public OutputStream getOutputStream()
                 {
-                    if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+                    if (isEdDsa)
                     {
-                         return digestCalculator.getOutputStream();
+                        return digestCalculator.getOutputStream();
                     }
                     return OutputStreamFactory.createStream(signature);
                 }

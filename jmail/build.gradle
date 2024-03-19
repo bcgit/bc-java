@@ -1,4 +1,8 @@
 
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
+
 jar.archiveBaseName = "bcjmail-$vmrange"
 
 sourceSets {
@@ -63,7 +67,7 @@ compileJava9Java {
     sourceCompatibility = 9
     targetCompatibility = 9
     options.compilerArgs += [
-            '--module-path', "$bc_prov:$bc_util:$bc_pkix:${rootProject.projectDir}/libs/jakarta.mail-2.0.1.jar:${rootProject.projectDir}/libs/jakarta.activation-api-2.0.0.jar"
+            '--module-path', "$bc_prov${File.pathSeparator}$bc_util${File.pathSeparator}$bc_pkix${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.mail-2.0.1.jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.activation-api-2.0.0.jar"
     ]
     options.sourcepath = files(['build/src/main/java', 'src/main/jdk1.9'])
 
@@ -77,7 +81,7 @@ jar {
     }
     manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.*')
+    manifest.attributes('Export-Package': 'org.bouncycastle.mail.*')
     manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional;org.bouncycastle.*;version="[2.73,4)"')
 }
 

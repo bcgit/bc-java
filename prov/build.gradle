@@ -1,3 +1,6 @@
+plugins {
+  id "biz.aQute.bnd.builder" version "7.0.0"
+}
 
 dependencies {
     implementation project(':core')
@@ -160,10 +163,7 @@ artifacts {
     archives sourcesJar
 }
 
-test {
-    forkEvery = 1;
-    maxParallelForks = 8;
-}
+
 
 sourceSets {
     test11 {
@@ -201,6 +201,40 @@ dependencies {
     test11Implementation(project(":core"))
     test17Implementation(project(":core"))
     test21Implementation(project(":core"))
+}
+
+
+
+
+compileTest11Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 11
+    targetCompatibility = 11
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
+}
+
+compileTest17Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    sourceCompatibility = 17
+    targetCompatibility = 17
+    options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
+}
+
+compileTest21Java {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    sourceCompatibility = 21
+    targetCompatibility = 21
+    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
+}
+
+test {
+    jvmArgs = ['-Dtest.java.version.prefix=1.8']
 }
 
 
@@ -266,33 +300,6 @@ task test17(type: Test) {
             excludeTestsMatching "${excludeTests}"
         }
     }
-}
-
-compileTest11Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 11
-    targetCompatibility = 11
-    options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
-}
-
-compileTest17Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 17
-    targetCompatibility = 17
-    options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
-}
-
-compileTest21Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-    sourceCompatibility = 21
-    targetCompatibility = 21
-    options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
 task test21(type: Test) {

@@ -71,7 +71,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                 //   System.out.println("test case: " + count);
                     long n_leaves = Long.parseLong((String)buf.get("n_leaves"));
                     long n_nodes = Long.parseLong((String)buf.get("n_nodes"));
                     long root = Long.parseLong((String)buf.get("root"));
@@ -159,7 +159,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                  //  System.out.println("test case: " + count);
                     short cipherSuite = Short.parseShort(buf.get("cipherSuite"));
                     String refHash_label = buf.get("refHash_label");
                     byte[] refHash_value = Hex.decode(buf.get("refHash_value"));
@@ -303,7 +303,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                    //System.out.println("test case: " + count);
                     short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] encryption_secret = Hex.decode(buf.get("encryption_secret"));
                     byte[] sender_data_secret = Hex.decode(buf.get("sender_data_secret"));
@@ -420,7 +420,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                 //   System.out.println("test case: " + count);
                     buf.clear();
                     bufEpoch.clear();
                     count++;
@@ -566,7 +566,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                  //  System.out.println("test case: " + count);
                     short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] psk_secret = Hex.decode(buf.get("psk_secret"));
                     MlsCipherSuite suite = MlsCipherSuite.getSuite(cipher_suite);
@@ -640,7 +640,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                  //  System.out.println("test case: " + count);
                     short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] confirmation_key = Hex.decode(buf.get("confirmation_key"));
                     byte[] authenticated_content = Hex.decode(buf.get("authenticated_content"));
@@ -686,7 +686,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                   // System.out.println("test case: " + count);
                     short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] init_priv = Hex.decode(buf.get("init_priv"));
                     byte[] key_package = Hex.decode(buf.get("key_package"));
@@ -758,7 +758,7 @@ public class VectorTest
                 if (buf.size() > 0)
                 {
 
-                    System.out.println("test case: " + count);
+                 //   System.out.println("test case: " + count);
                     byte[] tree_before = Hex.decode(buf.get("tree_before"));
                     byte[] proposal = Hex.decode(buf.get("proposal"));
                     int proposal_sender = Integer.parseInt(buf.get("proposal_sender"));
@@ -829,7 +829,7 @@ public class VectorTest
             {
                 if (buf.size() > 0)
                 {
-                    System.out.println("test case: " + count);
+                   // System.out.println("test case: " + count);
                     short cipherSuite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] treeBytes = Hex.decode(buf.get("tree"));
                     byte[] group_id = Hex.decode(buf.get("group_id"));
@@ -1015,7 +1015,7 @@ public class VectorTest
             {
                 if (buf.size() > 0 && reading.equals(prevReading))
                 {
-                    System.out.println("test case: " + count);
+                   // System.out.println("test case: " + count);
                     short cipher_suite = Short.parseShort(buf.get("cipher_suite"));
                     byte[] confirmed_transcript_hash = Hex.decode(buf.get("confirmed_transcript_hash"));
                     long epoch = Long.parseLong(buf.get("epoch"));
@@ -1228,7 +1228,7 @@ public class VectorTest
                 if (buf.size() > 0)
                 {
 
-                    System.out.println("test case: " + count);
+                 //   System.out.println("test case: " + count);
                     byte[] mls_welcome = Hex.decode(buf.get("mls_welcome"));
                     byte[] mls_group_info = Hex.decode(buf.get("mls_group_info"));
                     byte[] mls_key_package = Hex.decode(buf.get("mls_key_package"));

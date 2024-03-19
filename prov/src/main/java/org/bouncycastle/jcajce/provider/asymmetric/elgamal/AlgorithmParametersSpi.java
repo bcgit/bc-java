@@ -8,7 +8,7 @@ import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.oiw.ElGamalParameter;
+import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 

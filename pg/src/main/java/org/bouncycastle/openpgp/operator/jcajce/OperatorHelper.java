@@ -1,5 +1,21 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.InputStream;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Signature;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -10,21 +26,6 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Signature;
 
 class OperatorHelper
 {
@@ -64,6 +65,16 @@ class OperatorHelper
             return "SHA-512";
         case HashAlgorithmTags.SHA224:
             return "SHA-224";
+        case HashAlgorithmTags.SHA3_256:
+        case HashAlgorithmTags.SHA3_256_OLD:
+            return "SHA3-256";
+        case HashAlgorithmTags.SHA3_384: // OLD
+            return "SHA3-384";
+        case HashAlgorithmTags.SHA3_512:
+        case HashAlgorithmTags.SHA3_512_OLD:
+            return "SHA3-512";
+        case HashAlgorithmTags.SHA3_224:
+            return "SHA3-224";
         case HashAlgorithmTags.TIGER_192:
             return "TIGER";
         default:
@@ -127,9 +138,7 @@ class OperatorHelper
 
             if (withIntegrityPacket)
             {
-                byte[] iv = new byte[c.getBlockSize()];
-
-                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(new byte[c.getBlockSize()]));
             }
             else
             {
@@ -206,6 +215,8 @@ class OperatorHelper
         case PGPPublicKey.ECDSA:
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.EDDSA_LEGACY:
+        case PGPPublicKey.Ed448:
+        case PGPPublicKey.Ed25519:
             throw new PGPException("Can't use EDDSA for encryption.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
@@ -226,7 +237,10 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-                return helper.createCipher("CamelliaWrap");
+                if (Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping")))
+                {
+                    return helper.createCipher("CamelliaWrap");
+                }
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }
@@ -272,7 +286,10 @@ class OperatorHelper
             encAlg = "ECDSA";
             break;
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+        case PublicKeyAlgorithmTags.Ed25519:
             return createSignature("Ed25519");
+        case PublicKeyAlgorithmTags.Ed448:
+            return createSignature("Ed448");
         default:
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
         }

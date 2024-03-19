@@ -169,7 +169,7 @@ public class SignedMailValidator
             }
             else
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                     "SignedMailValidator.noSignedMessage");
                 throw new SignedMailValidatorException(msg);
             }
@@ -215,7 +215,7 @@ public class SignedMailValidator
                 throw (SignedMailValidatorException)e;
             }
             // exception reading message
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.exceptionReadingMessage",
                 new Object[]{e.getMessage(), e, e.getClass().getName()});
             throw new SignedMailValidatorException(msg, e);
@@ -258,7 +258,7 @@ public class SignedMailValidator
             }
             catch (CertStoreException cse)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                     "SignedMailValidator.exceptionRetrievingSignerCert",
                     new Object[]{cse.getMessage(), cse, cse.getClass().getName()});
                 errors.add(msg);
@@ -273,14 +273,14 @@ public class SignedMailValidator
                     validSignature = signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert.getPublicKey()));
                     if (!validSignature)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                        ErrorBundle msg = createErrorBundle(
                             "SignedMailValidator.signatureNotVerified");
                         errors.add(msg);
                     }
                 }
                 catch (Exception e)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                    ErrorBundle msg = createErrorBundle(
                         "SignedMailValidator.exceptionVerifyingSignature",
                         new Object[]{e.getMessage(), e, e.getClass().getName()});
                     errors.add(msg);
@@ -296,7 +296,7 @@ public class SignedMailValidator
                     Attribute attr = atab.get(PKCSObjectIdentifiers.id_aa_receiptRequest);
                     if (attr != null)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                        ErrorBundle msg = createErrorBundle(
                             "SignedMailValidator.signedReceiptRequest");
                         notifications.add(msg);
                     }
@@ -309,7 +309,7 @@ public class SignedMailValidator
                 Date signTime = getSignatureTime(signer);
                 if (signTime == null) // no signing time was found
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                    ErrorBundle msg = createErrorBundle(
                         "SignedMailValidator.noSigningTime");
                     notifications.add(msg);
                     signTime = pkixParam.getDate();
@@ -327,14 +327,14 @@ public class SignedMailValidator
                     }
                     catch (CertificateExpiredException e)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                        ErrorBundle msg = createErrorBundle(
                             "SignedMailValidator.certExpired",
                             new Object[]{new TrustedInput(signTime), new TrustedInput(cert.getNotAfter())});
                         errors.add(msg);
                     }
                     catch (CertificateNotYetValidException e)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                        ErrorBundle msg = createErrorBundle(
                             "SignedMailValidator.certNotYetValid",
                             new Object[]{new TrustedInput(signTime), new TrustedInput(cert.getNotBefore())});
                         errors.add(msg);
@@ -373,7 +373,7 @@ public class SignedMailValidator
                     review.init(certPath, usedParameters);
                     if (!review.isValidCertPath())
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                        ErrorBundle msg = createErrorBundle(
                             "SignedMailValidator.certPathInvalid");
                         errors.add(msg);
                     }
@@ -383,7 +383,7 @@ public class SignedMailValidator
                 catch (GeneralSecurityException gse)
                 {
                     // cannot create cert path
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                    ErrorBundle msg = createErrorBundle(
                         "SignedMailValidator.exceptionCreateCertPath",
                         new Object[]{gse.getMessage(), gse, gse.getClass().getName()});
                     errors.add(msg);
@@ -401,7 +401,7 @@ public class SignedMailValidator
             else
             // no signer certificate found
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                     "SignedMailValidator.noSignerCert");
                 errors.add(msg);
                 results.put(signer, new ValidationResult(null, false, errors,
@@ -478,7 +478,7 @@ public class SignedMailValidator
         }
         if (keyLength != -1 && keyLength <= shortKeyLength)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.shortSigningKey",
                 new Object[]{Integers.valueOf(keyLength)});
             notifications.add(msg);
@@ -488,7 +488,7 @@ public class SignedMailValidator
         long validityPeriod = cert.getNotAfter().getTime() - cert.getNotBefore().getTime();
         if (validityPeriod > THIRTY_YEARS_IN_MILLI_SEC)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.longValidity",
                 new Object[]{new TrustedInput(cert.getNotBefore()), new TrustedInput(cert.getNotAfter())});
             notifications.add(msg);
@@ -498,7 +498,7 @@ public class SignedMailValidator
         boolean[] keyUsage = cert.getKeyUsage();
         if (keyUsage != null && !keyUsage[0] && !keyUsage[1])
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.signingNotPermitted");
             errors.add(msg);
         }
@@ -516,7 +516,7 @@ public class SignedMailValidator
                     && !extKeyUsage
                     .hasKeyPurposeId(KeyPurposeId.id_kp_emailProtection))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                    ErrorBundle msg = createErrorBundle(
                         "SignedMailValidator.extKeyUsageNotPermitted");
                     errors.add(msg);
                 }
@@ -524,7 +524,7 @@ public class SignedMailValidator
         }
         catch (Exception e)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.extKeyUsageError", new Object[]{
                 e.getMessage(), e, e.getClass().getName()}
             );
@@ -538,7 +538,7 @@ public class SignedMailValidator
             if (certEmails.isEmpty())
             {
                 // error no email address in signing certificate
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                     "SignedMailValidator.noEmailInCert");
                 errors.add(msg);
             }
@@ -557,7 +557,7 @@ public class SignedMailValidator
                 }
                 if (!equalsFrom)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                    ErrorBundle msg = createErrorBundle(
                         "SignedMailValidator.emailFromCertMismatch",
                         new Object[]{
                             new UntrustedInput(
@@ -570,7 +570,7 @@ public class SignedMailValidator
         }
         catch (Exception e)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.certGetEmailError", new Object[]{
                 e.getMessage(), e, e.getClass().getName()}
             );
@@ -854,7 +854,7 @@ public class SignedMailValidator
         {
             // the signer is not part of the SignerInformationStore
             // he has not signed the message
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                 "SignedMailValidator.wrongSigner");
             throw new SignedMailValidatorException(msg);
         }
@@ -961,10 +961,25 @@ public class SignedMailValidator
         }
     }
 
-
     private static TBSCertificate getTBSCert(X509Certificate cert)
         throws CertificateEncodingException
     {
         return TBSCertificate.getInstance(cert.getTBSCertificate());
+    }
+    
+    private static ErrorBundle createErrorBundle(String id)
+    {
+        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, id);
+        msg.setClassLoader(SignedMailValidator.class.getClassLoader());
+        
+        return msg;
+    }
+    
+    private static ErrorBundle createErrorBundle(String id, Object[] arguments)
+    {
+        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, id, arguments);
+        msg.setClassLoader(SignedMailValidator.class.getClassLoader());
+        
+        return msg;
     }
 }

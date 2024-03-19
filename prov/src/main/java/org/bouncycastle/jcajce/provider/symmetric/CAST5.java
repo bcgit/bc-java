@@ -10,12 +10,12 @@ import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.misc.CAST5CBCParameters;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.engines.CAST5Engine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameterGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;

@@ -14,14 +14,10 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
-import org.bouncycastle.asn1.oiw.ElGamalParameter;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DSAParameter;
@@ -47,6 +43,10 @@ import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.util.Arrays;
 
 /**

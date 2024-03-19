@@ -7,6 +7,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -14,6 +15,7 @@ import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.TeeInputStream;
 
 /**
  * A PGP encrypted data object.
@@ -250,5 +252,52 @@ public abstract class PGPEncryptedData
     public int getAlgorithm()
     {
         throw new UnsupportedOperationException("not supported - override required");
+    }
+
+    boolean processSymmetricEncIntegrityPacketDataStream(boolean withIntegrityPacket, PGPDataDecryptor dataDecryptor, BCPGInputStream encIn)
+        throws IOException
+    {
+        encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+
+        if (withIntegrityPacket)
+        {
+            truncStream = new TruncatedStream(encStream);
+
+            integrityCalculator = dataDecryptor.getIntegrityCalculator();
+
+            encStream = new TeeInputStream(truncStream, integrityCalculator.getOutputStream());
+        }
+
+        byte[] iv = new byte[dataDecryptor.getBlockSize()];
+
+        for (int i = 0; i != iv.length; i++)
+        {
+            int ch = encStream.read();
+
+            if (ch < 0)
+            {
+                throw new EOFException("unexpected end of stream.");
+            }
+
+            iv[i] = (byte)ch;
+        }
+        int v1 = encStream.read();
+        int v2 = encStream.read();
+
+        if (v1 < 0 || v2 < 0)
+        {
+            throw new EOFException("unexpected end of stream.");
+        }
+
+        // Note: the oracle attack on "quick check" bytes is not deemed
+        // a security risk for PBE (see PGPPublicKeyEncryptedData)
+
+        boolean repeatCheckPassed = iv[iv.length - 2] == (byte)v1
+            && iv[iv.length - 1] == (byte)v2;
+
+        // Note: some versions of PGP appear to produce 0 for the extra
+        // bytes rather than repeating the two previous bytes
+        boolean zeroesCheckPassed = v1 == 0 && v2 == 0;
+        return !repeatCheckPassed && !zeroesCheckPassed;
     }
 }

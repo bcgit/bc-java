@@ -306,6 +306,7 @@ abstract class Scalar25519
         int[] Nu = new int[16];     System.arraycopy(LSq, 0, Nu, 0, 16);
         int[] Nv = new int[16];     Nat256.square(k, Nv); ++Nv[0];
         int[] p  = new int[16];     Nat256.mul(L, k, p);
+        int[] t  = new int[16];     // temp array
         int[] u0 = new int[4];      System.arraycopy(L, 0, u0, 0, 4);
         int[] u1 = new int[4];
         int[] v0 = new int[4];      System.arraycopy(k, 0, v0, 0, 4);
@@ -322,12 +323,12 @@ abstract class Scalar25519
 
             if (p[last] < 0)
             {
-                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.addShifted_UV(3, s, u0, u1, v0, v1);
             }
             else
             {
-                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.subShifted_UV(3, s, u0, u1, v0, v1);
             }
 

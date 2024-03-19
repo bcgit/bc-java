@@ -17,7 +17,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -67,11 +69,15 @@ public class PGPUtil
     {
         {
             put(CryptlibObjectIdentifiers.curvey25519, "Curve25519");
+            put(GNUObjectIdentifiers.Ed25519, "Ed25519Legacy");
             put(EdECObjectIdentifiers.id_X25519, "Curve25519");
             put(EdECObjectIdentifiers.id_Ed25519, "Ed25519");
             put(SECObjectIdentifiers.secp256r1, "NIST P-256");
             put(SECObjectIdentifiers.secp384r1, "NIST P-384");
             put(SECObjectIdentifiers.secp521r1, "NIST P-521");
+            put(TeleTrusTObjectIdentifiers.brainpoolP256r1, "brainpoolP256r1");
+            put(TeleTrusTObjectIdentifiers.brainpoolP384r1, "brainpoolP384r1");
+            put(TeleTrusTObjectIdentifiers.brainpoolP512r1, "brainpoolP512r1");
         }
     };
 
@@ -97,21 +103,17 @@ public class PGPUtil
         case HashAlgorithmTags.RIPEMD160:
             return "RIPEMD160";
         case HashAlgorithmTags.SHA256:
-            return "SHA256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA224";
         case HashAlgorithmTags.SHA3_256:
         case HashAlgorithmTags.SHA3_256_OLD:
             return "SHA256";
+        case HashAlgorithmTags.SHA384:
         case HashAlgorithmTags.SHA3_384:
             return "SHA384";
+        case HashAlgorithmTags.SHA512:
         case HashAlgorithmTags.SHA3_512:
         case HashAlgorithmTags.SHA3_512_OLD:
             return "SHA512";
+        case HashAlgorithmTags.SHA224:
         case HashAlgorithmTags.SHA3_224:
             return "SHA224";
         case HashAlgorithmTags.TIGER_192:
@@ -135,7 +137,7 @@ public class PGPUtil
      * Return the EC curve name for the passed in OID.
      *
      * @param oid the EC curve object identifier in the PGP key
-     * @return  a string representation of the OID.
+     * @return a string representation of the OID.
      */
     public static String getCurveName(
         ASN1ObjectIdentifier oid)
@@ -213,15 +215,11 @@ public class PGPUtil
         case SymmetricKeyAlgorithmTags.DES:
             return "DES";
         case SymmetricKeyAlgorithmTags.AES_128:
-            return "AES";
         case SymmetricKeyAlgorithmTags.AES_192:
-            return "AES";
         case SymmetricKeyAlgorithmTags.AES_256:
             return "AES";
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            return "Camellia";
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            return "Camellia";
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
             return "Camellia";
         case SymmetricKeyAlgorithmTags.TWOFISH:
@@ -335,46 +333,28 @@ public class PGPUtil
         SecureRandom random)
         throws PGPException
     {
-        int keySize = 0;
+        int keySize;
 
         switch (algorithm)
         {
         case SymmetricKeyAlgorithmTags.TRIPLE_DES:
+        case SymmetricKeyAlgorithmTags.AES_192:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             keySize = 192;
             break;
         case SymmetricKeyAlgorithmTags.IDEA:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.CAST5:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.BLOWFISH:
-            keySize = 128;
-            break;
         case SymmetricKeyAlgorithmTags.SAFER:
+        case SymmetricKeyAlgorithmTags.AES_128:
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             keySize = 128;
             break;
         case SymmetricKeyAlgorithmTags.DES:
             keySize = 64;
             break;
-        case SymmetricKeyAlgorithmTags.AES_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_192:
-            keySize = 192;
-            break;
         case SymmetricKeyAlgorithmTags.AES_256:
-            keySize = 256;
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            keySize = 192;
-            break;
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            keySize = 256;
-            break;
         case SymmetricKeyAlgorithmTags.TWOFISH:
             keySize = 256;
             break;
@@ -482,7 +462,7 @@ public class PGPUtil
      * @param in the stream to be checked and possibly wrapped.
      * @return a stream that will return PGP binary encoded data.
      * @throws IOException if an error occurs reading the stream, or initialising the
-     * {@link ArmoredInputStream}.
+     *                     {@link ArmoredInputStream}.
      */
     public static InputStream getDecoderStream(
         InputStream in)

@@ -143,7 +143,8 @@ public class JcaContentVerifierProviderBuilder
                     return createCompositeVerifier(algorithm, publicKey);
                 }
 
-                if (publicKey instanceof CompositePublicKey)
+                //Use this legacy method only for composite public keys (they have that identifier)
+                if (publicKey instanceof CompositePublicKey && ((CompositePublicKey)publicKey).getAlgorithmIdentifier().equals(MiscObjectIdentifiers.id_composite_key))
                 {
                     List<PublicKey> keys = ((CompositePublicKey)publicKey).getPublicKeys();
 

@@ -1,5 +1,6 @@
 package org.bouncycastle.operator;
 
+
 /**
  * Base interface for an input consuming AEAD Decryptor supporting associated text.
  */

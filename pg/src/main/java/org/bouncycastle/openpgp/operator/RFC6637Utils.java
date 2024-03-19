@@ -5,10 +5,13 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -25,8 +28,15 @@ public class RFC6637Utils
 
     public static String getXDHAlgorithm(PublicKeyPacket pubKeyData)
     {
+        if (pubKeyData.getKey() instanceof X25519PublicBCPGKey)
+        {
+            return "X25519withSHA256CKDF";
+        }
+        else if (pubKeyData.getKey() instanceof X448PublicBCPGKey)
+        {
+            return "X448withSHA512CKDF";
+        }
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
-
         switch (ecKey.getHashAlgorithm())
         {
         case HashAlgorithmTags.SHA256:
@@ -69,6 +79,13 @@ public class RFC6637Utils
             return NISTObjectIdentifiers.id_aes192_wrap;
         case SymmetricKeyAlgorithmTags.AES_256:
             return NISTObjectIdentifiers.id_aes256_wrap;
+        //RFC3657
+        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
+            return NTTObjectIdentifiers.id_camellia128_wrap;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
+            return NTTObjectIdentifiers.id_camellia192_wrap;
+        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            return NTTObjectIdentifiers.id_camellia256_wrap;
         default:
             throw new PGPException("unknown symmetric algorithm ID: " + algID);
         }
@@ -85,6 +102,7 @@ public class RFC6637Utils
         throws IOException, PGPException
     {
         ByteArrayOutputStream pOut = new ByteArrayOutputStream();
+
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
         byte[] encOid = ecKey.getCurveOID().getEncoded();
 
@@ -99,4 +117,5 @@ public class RFC6637Utils
 
         return pOut.toByteArray();
     }
+
 }

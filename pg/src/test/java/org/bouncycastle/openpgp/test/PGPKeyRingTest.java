@@ -708,7 +708,7 @@ public class PGPKeyRingTest
     //
     // revoked master key
     //
-    byte[] pub7 = Base64.decode(
+    static byte[] pub7 = Base64.decode(
         "mQGiBFKQDEMRBACtcEzu15gGDrZKLuO2zgDJ9qFkweOxKyeO45LKIfUGBful"
       + "lheoFHbsJIeNGjWbSOfWWtphTaSu9//BJt4xxg2pqVLYqzR+hEPpDy9kXxnZ"
       + "LwwxjAP2TcOvuZKWe+JzoYQxDunOH4Zu9CPJhZhF3RNPw+tbv0jHfTV/chtb"
@@ -733,7 +733,7 @@ public class PGPKeyRingTest
       + "SL04AJ9VceD1DtcEDaWPDzFPgpe3ZfiXiQCfe5azYl26JpHSJvNKZRLi0I8H"
       + "shCwAgAD");
 
-    byte[] pub7sub = Base64.decode(
+    static byte[] pub7sub = Base64.decode(
         "mQGiBFKQFFURBAD7CTE4RYPD7O+ki7pl/vXSZsSR0kQhCD9BR4lwE/Iffzmr"
       + "vK8tmr2yLKWoXyoc3VF0Gdg/VATDcawBnKSjuCIsFZ58Edacb7uVRl4+ACiu"
       + "OsvCKl9JuZ54SQ/tbD+NFS+HWNyVlWn7vDv8l+37DWNxuQRIYtQR+drAnIwQ"
@@ -1199,7 +1199,7 @@ public class PGPKeyRingTest
         "tXV/Z3H/Ot4u3E7H+6fHPElFYbQUdGVzdCA8dGVzdEBrZXkudGVzdD4="
     );
 
-    private static final byte[] problemUserID = Base64.decode(
+    static final byte[] problemUserID = Base64.decode(
         "mQGiBDfzC2IRBADjnqYxAM1LPqFZCpF9ULb4G7L88E/p4sNo4k1LkzGtNOiroEHcacEAcTeP" +
         "ljhgTA06l9jpnwx/dE0MEAiEtYexvkBv3LR2qXvuF67TKKlvanB32g0AmxNijHDdN2d+79ZA" +
         "heZ4rY702W6DZh6FuKMAsTBfAFW5jLCWyJ4FwsLILwCg/3mjYePND5l0UcxaV0RKRBGnhqsE" +
