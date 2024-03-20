@@ -123,11 +123,11 @@ public class KeyBoxByteBufferTest
 
         testException("size exceeds buffer remaining", "IllegalArgumentException", () -> buf.consume(buf.remaining() + 1));
 
-        testException("size less than 0", "IllegalArgumentException", () -> buf.consume(buf.size()));
+        testException("size less than 0", "IllegalArgumentException", () -> buf.bN(-1));
 
         testException("size exceeds buffer remaining", "IllegalArgumentException", () -> {
             KeyBoxByteBuffer buf1 = KeyBoxByteBuffer.wrap(new byte[21]);
-            buf1.consume(buf1.getBuffer().remaining() + 1);
+            buf1.consume(22);
         });
 
     }
