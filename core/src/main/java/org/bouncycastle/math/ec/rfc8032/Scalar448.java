@@ -560,7 +560,7 @@ abstract class Scalar448
         return r;
     }
 
-    static void reduceBasisVar(int[] k, int[] z0, int[] z1)
+    static boolean reduceBasisVar(int[] k, int[] z0, int[] z1)
     {
         /*
          * Split scalar k into two half-size scalars z0 and z1, such that z1 * k == z0 mod L.
@@ -577,11 +577,18 @@ abstract class Scalar448
         int[] v0 = new int[8];      System.arraycopy(k, 0, v0, 0, 8);
         int[] v1 = new int[8];      v1[0] = 1;
 
+        // Conservative upper bound on the number of loop iterations needed
+        int iterations = TARGET_LENGTH * 4;
         int last = 27;
         int len_Nv = ScalarUtil.getBitLengthPositive(last, Nv);
 
         while (len_Nv > TARGET_LENGTH)
         {
+            if (--iterations < 0)
+            {
+                return false;
+            }
+
             int len_p = ScalarUtil.getBitLength(last, p);
             int s = len_p - len_Nv;
             s &= ~(s >> 31);
@@ -614,6 +621,7 @@ abstract class Scalar448
         // v1 * k == v0 mod L
         System.arraycopy(v0, 0, z0, 0, 8);
         System.arraycopy(v1, 0, z1, 0, 8);
+        return true;
     }
 
     static void toSignedDigits(int bits, int[] x, int[] z)

@@ -1,7 +1,8 @@
-package org.bouncycastle.util.utiltest;
+package org.bouncycastle.openpgp.test;
+
+import org.bouncycastle.bcpg.sig.PrimaryUserID;
 
 import junit.framework.TestCase;
-import org.bouncycastle.bcpg.sig.PrimaryUserID;
 
 public class BytesBooleansTest
     extends TestCase

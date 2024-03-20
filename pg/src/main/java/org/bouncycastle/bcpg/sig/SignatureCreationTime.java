@@ -11,20 +11,16 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 public class SignatureCreationTime 
     extends SignatureSubpacket
 {
+    /**
+     * @deprecated Will be removed
+     */
     protected static byte[] timeToBytes(
         Date    date)
     {
-        byte[]    data = new byte[4];
-        long        t = date.getTime() / 1000;
-        
-        data[0] = (byte)(t >> 24);
-        data[1] = (byte)(t >> 16);
-        data[2] = (byte)(t >> 8);
-        data[3] = (byte)t;
-        
-        return data;
+        long t = date.getTime() / 1000;
+        return Utils.timeToBytes(t);
     }
-    
+
     public SignatureCreationTime(
         boolean    critical,
         boolean    isLongLength,
@@ -32,18 +28,17 @@ public class SignatureCreationTime
     {
         super(SignatureSubpacketTags.CREATION_TIME, critical, isLongLength, data);
     }
-    
+
     public SignatureCreationTime(
         boolean    critical,
         Date       date)
     {
         super(SignatureSubpacketTags.CREATION_TIME, critical, false, timeToBytes(date));
     }
-    
+
     public Date getTime()
     {
-        long    time = ((long)(data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) | ((data[2] & 0xff) << 8) | (data[3] & 0xff);
-        
+        long time = Utils.timeFromBytes(data);
         return new Date(time * 1000);
     }
 }

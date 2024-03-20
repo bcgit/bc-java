@@ -510,7 +510,12 @@ public abstract class Ed448
 
         int[] v0 = new int[8];
         int[] v1 = new int[8];
-        Scalar448.reduceBasisVar(nA, v0, v1);
+
+        if (!Scalar448.reduceBasisVar(nA, v0, v1))
+        {
+            throw new IllegalStateException();
+        }
+
         Scalar448.multiply225Var(nS, v1, nS);
 
         PointProjective pZ = new PointProjective();
@@ -569,7 +574,12 @@ public abstract class Ed448
 
         int[] v0 = new int[8];
         int[] v1 = new int[8];
-        Scalar448.reduceBasisVar(nA, v0, v1);
+
+        if (!Scalar448.reduceBasisVar(nA, v0, v1))
+        {
+            throw new IllegalStateException();
+        }
+
         Scalar448.multiply225Var(nS, v1, nS);
 
         PointProjective pZ = new PointProjective();
