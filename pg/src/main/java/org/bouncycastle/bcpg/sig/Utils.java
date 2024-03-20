@@ -48,16 +48,26 @@ class Utils
         }
     }
 
-    static byte[] timeToBytes(
-        long    t)
+    static long timeFromBytes(byte[] bytes)
     {
-        byte[]    data = new byte[4];
+        if (bytes.length != 4)
+        {
+            throw new IllegalStateException("Byte array has unexpected length. Expected length 4, got " + bytes.length);
+        }
 
+        return ((long)(bytes[0] & 0xff) << 24)
+            |  ((bytes[1] & 0xff) << 16)
+            |  ((bytes[2] & 0xff) << 8)
+            |   (bytes[3] & 0xff);
+    }
+
+    static byte[] timeToBytes(long t)
+    {
+        byte[] data = new byte[4];
         data[0] = (byte)(t >> 24);
         data[1] = (byte)(t >> 16);
         data[2] = (byte)(t >> 8);
         data[3] = (byte)t;
-
         return data;
     }
 }
