@@ -22,11 +22,11 @@ abstract class ScalarUtil
 
                 cc_p += p_i & M;
                 cc_p += Nv[i] & M;
-                p_i    = (int)cc_p; cc_p >>= 32;
-                p[i]   = p_i;
+                p_i   = (int)cc_p; cc_p >>>= 32;
+                p[i]  = p_i;
 
                 cc_Nu += p_i & M;
-                Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
             }
         }
         else if (s < 32)
@@ -50,20 +50,20 @@ abstract class ScalarUtil
 
                 cc_p += p_i & M;
                 cc_p += v_s & M;
-                p_i   = (int)cc_p; cc_p >>= 32;
+                p_i   = (int)cc_p; cc_p >>>= 32;
                 p[i]  = p_i;
 
                 int q_s = (p_i << s) | (prev_q >>> -s);
-                prev_q =p_i;
+                prev_q = p_i;
 
                 cc_Nu += q_s & M;
-                Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
             }
         }
         else
         {
-            // Keep the original value of p in t.
-            System.arraycopy(p, 0, t, 0, p.length);
+            // Copy the low limbs of the original p
+            System.arraycopy(p, 0, t, 0, last);
 
             int sWords = s >>> 5; int sBits = s & 31;
             if (sBits == 0)
@@ -75,10 +75,10 @@ abstract class ScalarUtil
 
                     cc_p += p[i] & M;
                     cc_p += Nv[i - sWords] & M;
-                    p[i]  = (int)cc_p; cc_p >>= 32;
+                    p[i]  = (int)cc_p; cc_p >>>= 32;
 
                     cc_Nu += p[i - sWords] & M;
-                    Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
                 }
             }
             else
@@ -102,14 +102,14 @@ abstract class ScalarUtil
 
                     cc_p += p[i] & M;
                     cc_p += v_s & M;
-                    p[i]  = (int)cc_p; cc_p >>= 32;
+                    p[i]  = (int)cc_p; cc_p >>>= 32;
 
                     int next_q = p[i - sWords];
                     int q_s = (next_q << sBits) | (prev_q >>> -sBits);
                     prev_q = next_q;
 
                     cc_Nu += q_s & M;
-                    Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
                 }
             }
         }
@@ -251,8 +251,8 @@ abstract class ScalarUtil
         }
         else
         {
-            // Keep the original value of p in t.
-            System.arraycopy(p, 0, t, 0, p.length);
+            // Copy the low limbs of the original p
+            System.arraycopy(p, 0, t, 0, last);
 
             int sWords = s >>> 5; int sBits = s & 31;
             if (sBits == 0)
