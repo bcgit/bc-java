@@ -31,9 +31,13 @@ import org.bouncycastle.crypto.encodings.ISO9796d1Encoding;
 import org.bouncycastle.crypto.encodings.OAEPEncoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.tls.TlsRsaKeyExchange;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.spec.TLSRSAPremasterSecretParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Strings;
@@ -49,6 +53,8 @@ public class CipherSpi
     private boolean                 publicKeyOnly = false;
     private boolean                 privateKeyOnly = false;
     private ErasableOutputStream    bOut = new ErasableOutputStream();
+    private TLSRSAPremasterSecretParameterSpec tlsRsaSpec = null;
+    private CipherParameters param = null;
 
     public CipherSpi(
         AsymmetricBlockCipher engine)
@@ -262,9 +268,12 @@ public class CipherSpi
         SecureRandom random)
     throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        CipherParameters param;
 
-        if (params == null || params instanceof OAEPParameterSpec)
+        this.tlsRsaSpec = null;
+
+        if (params == null
+            || params instanceof OAEPParameterSpec
+            || params instanceof TLSRSAPremasterSecretParameterSpec)
         {
             if (key instanceof RSAPublicKey)
             {
@@ -291,7 +300,7 @@ public class CipherSpi
                 throw new InvalidKeyException("unknown key type passed to RSA");
             }
             
-            if (params != null)
+            if (params instanceof OAEPParameterSpec)
             {
                 OAEPParameterSpec spec = (OAEPParameterSpec)params;
                 
@@ -323,6 +332,14 @@ public class CipherSpi
                 }
 
                 cipher = new OAEPEncoding(new RSABlindedEngine(), digest, mgfDigest, ((PSource.PSpecified)spec.getPSource()).getValue());
+            }
+            else if (params instanceof TLSRSAPremasterSecretParameterSpec)
+            {
+                if (!(param instanceof RSAPrivateCrtKeyParameters))
+                {
+                    throw new InvalidKeyException("RSA private key required for TLS decryption");
+                }
+                this.tlsRsaSpec = (TLSRSAPremasterSecretParameterSpec)params;
             }
         }
         else
@@ -403,6 +420,11 @@ public class CipherSpi
         int     inputOffset,
         int     inputLen) 
     {
+        if (tlsRsaSpec != null)
+        {
+            throw new IllegalStateException("RSA cipher initialized for TLS only");
+        }
+
         bOut.write(input, inputOffset, inputLen);
 
         if (cipher instanceof RSABlindedEngine)
@@ -430,6 +452,11 @@ public class CipherSpi
         byte[]  output,
         int     outputOffset) 
     {
+        if (tlsRsaSpec != null)
+        {
+            throw new IllegalStateException("RSA cipher initialized for TLS only");
+        }
+
         bOut.write(input, inputOffset, inputLen);
 
         if (cipher instanceof RSABlindedEngine)
@@ -456,6 +483,12 @@ public class CipherSpi
         int     inputLen) 
         throws IllegalBlockSizeException, BadPaddingException
     {
+        if (tlsRsaSpec != null)
+        {
+            ParametersWithRandom pWithR = (ParametersWithRandom)param;
+            return TlsRsaKeyExchange.decryptPreMasterSecret(input, (RSAKeyParameters)pWithR.getParameters(), tlsRsaSpec.getProtocolVersion(), pWithR.getRandom());
+        }
+
         if (input != null)
         {
             bOut.write(input, inputOffset, inputLen);
@@ -487,6 +520,11 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
+        if (tlsRsaSpec != null)
+        {
+            throw new IllegalStateException("RSA cipher initialized for TLS only");
+        }
+        
         if (outputOffset + engineGetOutputSize(inputLen) > output.length)
         {
             throw new ShortBufferException("output buffer too short for input.");
