@@ -32,7 +32,6 @@ import org.bouncycastle.crypto.encodings.OAEPEncoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
-import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.tls.TlsRsaKeyExchange;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
@@ -335,10 +334,11 @@ public class CipherSpi
             }
             else if (params instanceof TLSRSAPremasterSecretParameterSpec)
             {
-                if (!(param instanceof RSAPrivateCrtKeyParameters))
+                if (!(param instanceof RSAKeyParameters) || !((RSAKeyParameters)param).isPrivate())
                 {
                     throw new InvalidKeyException("RSA private key required for TLS decryption");
                 }
+
                 this.tlsRsaSpec = (TLSRSAPremasterSecretParameterSpec)params;
             }
         }
