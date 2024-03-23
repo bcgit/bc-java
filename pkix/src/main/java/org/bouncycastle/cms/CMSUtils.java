@@ -423,14 +423,19 @@ class CMSUtils
     }
 
     static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor, byte[] encryptedContent)
-        throws CMSException
     {
-        AlgorithmIdentifier encAlgId = contentEncryptor.getAlgorithmIdentifier();
+        return getEncryptedContentInfo(
+            content.getContentType(),
+            contentEncryptor.getAlgorithmIdentifier(),
+            encryptedContent);
+    }
 
+    static EncryptedContentInfo getEncryptedContentInfo(ASN1ObjectIdentifier encryptedContentType, AlgorithmIdentifier encAlgId, byte[] encryptedContent)
+    {
         ASN1OctetString encContent = new BEROctetString(encryptedContent);
 
         return new EncryptedContentInfo(
-            content.getContentType(),
+            encryptedContentType,
             encAlgId,
             encContent);
     }
