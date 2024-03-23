@@ -1,4 +1,4 @@
-package org.bouncycastle.internal.asn1.misc.test;
+package org.bouncycastle.asn1.misc.test;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
