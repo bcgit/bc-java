@@ -102,7 +102,7 @@ public abstract class JceKEKRecipient
 
         try
         {
-            Key key =  helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedContentEncryptionKey));
+            Key key =  helper.getJceKey(encryptedKeyAlgorithm, unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedContentEncryptionKey));
 
             if (validateKeySize)
             {

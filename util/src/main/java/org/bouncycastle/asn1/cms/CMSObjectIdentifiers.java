@@ -59,4 +59,10 @@ public interface CMSObjectIdentifiers
     ASN1ObjectIdentifier id_ori = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.13");
 
     ASN1ObjectIdentifier id_ori_kem = id_ori.branch("3");
+
+    /**
+     *    id-alg-cek-hkdf-sha256 OBJECT IDENTIFIER ::= { iso(1) member-body(2)
+     *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 31 }
+     */
+    ASN1ObjectIdentifier id_alg_cek_hkdf_sha256 = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.31");
 }

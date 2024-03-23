@@ -70,10 +70,10 @@ public class CMSEncryptedDataGenerator
 
         encContent = new BEROctetString(encryptedContent);
 
-        EncryptedContentInfo  eci = new EncryptedContentInfo(
+        EncryptedContentInfo  eci = CMSUtils.getEncryptedContentInfo(
                         content.getContentType(),
                         encAlgId,
-                        encContent);
+                        encryptedContent);
 
         ASN1Set unprotectedAttrSet = CMSUtils.getAttrBERSet(unprotectedAttributeGenerator);
 

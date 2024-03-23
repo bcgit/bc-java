@@ -138,7 +138,7 @@ public abstract class JceKTSKeyTransRecipient
 
         try
         {
-            Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
+            Key key = helper.getJceKey(encryptedKeyAlgorithm, unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
 
             if (validateKeySize)
             {

@@ -209,7 +209,7 @@ public abstract class JceKeyTransRecipient
 
             try
             {
-                Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
+                Key key = helper.getJceKey(encryptedKeyAlgorithm, unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
 
                 if (validateKeySize)
                 {
@@ -239,11 +239,19 @@ public abstract class JceKeyTransRecipient
 
             try
             {
-                Key key = helper.getJceKey(encryptedKeyAlgorithm.getAlgorithm(), unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
+                Key key = helper.getJceKey(encryptedKeyAlgorithm, unwrapper.generateUnwrappedKey(encryptedKeyAlgorithm, encryptedEncryptionKey));
 
                 if (validateKeySize)
                 {
-                    helper.keySizeCheck(encryptedKeyAlgorithm, key);
+                    if (encryptedEncryptionKey.equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
+                    {
+                        helper.keySizeCheck(
+                            AlgorithmIdentifier.getInstance(encryptedKeyAlgorithm.getParameters()), key);
+                    }
+                    else
+                    {
+                        helper.keySizeCheck(encryptedKeyAlgorithm, key);
+                    }
                 }
 
                 return key;

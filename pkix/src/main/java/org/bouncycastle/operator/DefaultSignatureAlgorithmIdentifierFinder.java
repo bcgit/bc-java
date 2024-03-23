@@ -413,6 +413,26 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(CMSObjectIdentifiers.id_ecdsa_with_shake256);
 
         //
+        // Composite - Draft 13
+        //
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512);
+
+        //
         // PKCS 1.5 encrypted  algorithms
         //
         pkcs15RsaEncryption.add(PKCSObjectIdentifiers.sha1WithRSAEncryption);
