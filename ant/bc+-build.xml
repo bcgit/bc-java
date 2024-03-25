@@ -954,6 +954,7 @@
         </copy>
 
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 
