@@ -1,5 +1,6 @@
 stages:
   - check
+  - build
   - test
 
 check-code:
@@ -18,35 +19,44 @@ check-code:
       - "mail/build/reports"
       - "util/build/reports"
       - "tls/build/reports"
-      - "mls/build/reports"    
-  
+      - "mls/build/reports"
+
+ant-build:
+  stage: build
+  needs: [ "check-code" ]
+  script:
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/build_1_8.sh\""
+
+
 test-code-8:
   stage: test
-  needs: ["check-code"]
+  needs: [ "check-code" ]
   script:
-   - "ecr_login"
-   - "ecr_pull vm_base_intel latest"
-   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
   artifacts:
     when: always
     reports:
       junit:
-      - "core/build/test-results/**/*.xml"
-      - "prov/build/test-results/**/*.xml"
-      - "pg/build/test-results/**/*.xml"
-      - "pkix/build/test-results/**/*.xml"
-      - "mail/build/test-results/**/*.xml"
-      - "util/build/test-results/**/*.xml"
-      - "tls/build/test-results/**/*.xml"
-      - "mls/build/test-results/**/*.xml"
+        - "core/build/test-results/**/*.xml"
+        - "prov/build/test-results/**/*.xml"
+        - "pg/build/test-results/**/*.xml"
+        - "pkix/build/test-results/**/*.xml"
+        - "mail/build/test-results/**/*.xml"
+        - "util/build/test-results/**/*.xml"
+        - "tls/build/test-results/**/*.xml"
+        - "mls/build/test-results/**/*.xml"
 
 test-code-11:
   stage: test
-  needs: ["check-code"]
+  needs: [ "check-code" ]
   script:
-   - "ecr_login"
-   - "ecr_pull vm_base_intel latest"
-   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_11.sh\""
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_11.sh\""
   artifacts:
     when: always
     reports:
@@ -63,11 +73,11 @@ test-code-11:
 
 test-code-17:
   stage: test
-  needs: ["check-code"]
+  needs: [ "check-code" ]
   script:
-   - "ecr_login"
-   - "ecr_pull vm_base_intel latest"
-   - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_17.sh\""
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_17.sh\""
   artifacts:
     when: always
     reports:
@@ -84,7 +94,7 @@ test-code-17:
 
 test-code-21:
   stage: test
-  needs: ["check-code"]
+  needs: [ "check-code" ]
   script:
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
