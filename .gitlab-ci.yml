@@ -6,7 +6,6 @@ stages:
 check-code:
   stage: check
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/check_java.sh\""
@@ -26,7 +25,6 @@ ant-build:
   stage: build
   needs: [ "check-code" ]
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/build_1_8.sh\""
@@ -36,7 +34,6 @@ test-code-8:
   stage: test
   needs: [ "check-code" ]
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_8.sh\""
@@ -57,7 +54,6 @@ test-code-11:
   stage: test
   needs: [ "check-code" ]
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_11.sh\""
@@ -79,7 +75,6 @@ test-code-17:
   stage: test
   needs: [ "check-code" ]
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_17.sh\""
@@ -101,7 +96,6 @@ test-code-21:
   stage: test
   needs: [ "check-code" ]
   script:
-    - "gitlab_wait.sh"
     - "ecr_login"
     - "ecr_pull vm_base_intel latest"
     - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/test_21.sh\""
