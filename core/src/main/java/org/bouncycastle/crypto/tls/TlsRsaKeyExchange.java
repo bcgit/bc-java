@@ -16,18 +16,20 @@ import org.bouncycastle.util.Pack;
 
 public abstract class TlsRsaKeyExchange
 {
+    public static final int PRE_MASTER_SECRET_LENGTH = 48;
+
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     private TlsRsaKeyExchange()
     {
     }
 
-    public static byte[] decryptPreMasterSecret(byte[] encryptedPreMasterSecret, RSAKeyParameters privateKey,
+    public static byte[] decryptPreMasterSecret(byte[] in, int inOff, int inLen, RSAKeyParameters privateKey,
         int protocolVersion, SecureRandom secureRandom)
     {
-        if (Arrays.isNullOrEmpty(encryptedPreMasterSecret))
+        if (in == null || inLen < 1 || inLen > getInputLimit(privateKey) || inOff < 0 || inOff > in.length - inLen)
         {
-            throw new IllegalArgumentException("'encryptedPreMasterSecret' cannot be null or empty");
+            throw new IllegalArgumentException("input not a valid EncryptedPreMasterSecret");
         }
 
         if (!privateKey.isPrivate())
@@ -61,7 +63,7 @@ public abstract class TlsRsaKeyExchange
 
         try
         {
-            BigInteger input = convertInput(modulus, encryptedPreMasterSecret);
+            BigInteger input = convertInput(modulus, in, inOff, inLen);
             byte[] encoding = rsaBlinded(privateKey, input, secureRandom);
 
             int pkcs1Length = (bitLength - 1) / 8;
@@ -90,6 +92,11 @@ public abstract class TlsRsaKeyExchange
         }
 
         return result;
+    }
+
+    public static int getInputLimit(RSAKeyParameters privateKey)
+    {
+        return (privateKey.getModulus().bitLength() + 7) / 8;
     }
 
     private static int caddTo(int len, int cond, byte[] x, byte[] z)
@@ -140,17 +147,12 @@ public abstract class TlsRsaKeyExchange
         return errorSign >> 31;
     }
 
-    private static BigInteger convertInput(BigInteger modulus, byte[] input)
+    private static BigInteger convertInput(BigInteger modulus, byte[] in, int inOff, int inLen)
     {
-        int inputLimit = (modulus.bitLength() + 7) / 8;
-
-        if (input.length <= inputLimit)
+        BigInteger result = BigIntegers.fromUnsignedByteArray(in, inOff, inLen);
+        if (result.compareTo(modulus) < 0)
         {
-            BigInteger result = new BigInteger(1, input);
-            if (result.compareTo(modulus) < 0)
-            {
-                return result;
-            }
+            return result;
         }
 
         throw new DataLengthException("input too large for RSA cipher.");
