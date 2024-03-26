@@ -7,6 +7,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -40,7 +41,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -109,7 +109,7 @@ public class OperatorJcajceTest
     public void testJcaKeyFingerprintCalculator()
         throws Exception
     {
-        final JcaKeyFingerprintCalculator calculator = new JcaKeyFingerprintCalculator().setProvider(new BouncyCastlePQCProvider());
+        final JcaKeyFingerprintCalculator calculator = new JcaKeyFingerprintCalculator().setProvider(new NullProvider());
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
         kpGen.initialize(1024);
         KeyPair kp = kpGen.generateKeyPair();
@@ -158,7 +158,7 @@ public class OperatorJcajceTest
     public void testJcaPGPDigestCalculatorProviderBuilder()
         throws Exception
     {
-        PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new BouncyCastlePQCProvider()).build();
+        PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NullProvider()).build();
         testException("exception on setup: ", "PGPException", () -> provider.get(SymmetricKeyAlgorithmTags.AES_256));
     }
 
@@ -219,4 +219,12 @@ public class OperatorJcajceTest
         //isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
     }
 
+    private class NullProvider
+        extends Provider
+    {
+        NullProvider()
+        {
+             super("NULL", 0.0, "Null Provider");
+        }
+    }
 }
