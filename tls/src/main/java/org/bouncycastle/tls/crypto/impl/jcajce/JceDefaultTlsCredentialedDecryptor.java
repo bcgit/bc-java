@@ -86,6 +86,9 @@ public class JceDefaultTlsCredentialedDecryptor
 
         try
         {
+            // The use of the TLSRSAPremasterSecretParameterSpec signals to the BC provider that
+            // that the underlying implementation should not throw exceptions but return a random
+            // value on failures where the plaintext turns out to be invalid.
             Cipher c = crypto.createRSAEncryptionCipher();
 
             c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey, new TLSRSAPremasterSecretParameterSpec(expectedVersion.getFullVersion()), secureRandom);
@@ -93,7 +96,9 @@ public class JceDefaultTlsCredentialedDecryptor
         }
         catch (Exception ex)
         {
-            // Fallback
+            // Fallback - note this will likely result in some level of a timing signal as traditionally
+            // JCE RSA providers will signal padding errors by throwing exceptions. The real answer to this
+            // problem is not to use RSA encryption based cipher suites.
 
             /*
              * Generate 48 random bytes we can use as a Pre-Master-Secret, if the PKCS1 padding check should fail.
