@@ -52,7 +52,7 @@ public class CompositePublicKey implements PublicKey
 
         if (keys == null || keys.length == 0)
         {
-            throw new IllegalArgumentException("At least one public key must be provided for the composite public key.");
+            throw new IllegalArgumentException("at least one public key must be provided for the composite public key");
         }
 
         List<PublicKey> keyList = new ArrayList<>(keys.length);
