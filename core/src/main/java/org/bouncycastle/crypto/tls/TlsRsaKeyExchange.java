@@ -56,9 +56,9 @@ public abstract class TlsRsaKeyExchange
         secureRandom = CryptoServicesRegistrar.getSecureRandom(secureRandom);
 
         /*
-         * Generate 48 random bytes we can use as a Pre-Master-Secret if the decrypted value is invalid.
+         * Generate random bytes we can use as a Pre-Master-Secret if the decrypted value is invalid.
          */
-        byte[] result = new byte[48];
+        byte[] result = new byte[PRE_MASTER_SECRET_LENGTH];
         secureRandom.nextBytes(result);
 
         try
@@ -67,13 +67,13 @@ public abstract class TlsRsaKeyExchange
             byte[] encoding = rsaBlinded(privateKey, input, secureRandom);
 
             int pkcs1Length = (bitLength - 1) / 8;
-            int plainTextOffset = encoding.length - 48;
+            int plainTextOffset = encoding.length - PRE_MASTER_SECRET_LENGTH;
 
-            int badEncodingMask = checkPkcs1Encoding2(encoding, pkcs1Length, 48);
+            int badEncodingMask = checkPkcs1Encoding2(encoding, pkcs1Length, PRE_MASTER_SECRET_LENGTH);
             int badVersionMask = -((Pack.bigEndianToShort(encoding, plainTextOffset) ^ protocolVersion) & 0xFFFF) >> 31;
             int fallbackMask = badEncodingMask | badVersionMask;
 
-            for (int i = 0; i < 48; ++i)
+            for (int i = 0; i < PRE_MASTER_SECRET_LENGTH; ++i)
             {
                 result[i] = (byte)((result[i] & fallbackMask) | (encoding[plainTextOffset + i] & ~fallbackMask));
             }
