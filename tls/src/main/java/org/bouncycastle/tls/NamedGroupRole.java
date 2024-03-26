@@ -9,4 +9,5 @@ public class NamedGroupRole
     public static final int dh = 1;
     public static final int ecdh = 2;
     public static final int ecdsa = 3;
+    public static final int kem = 4;
 }

@@ -10,8 +10,10 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -405,16 +407,21 @@ public class TlsServerProtocol
             {
                 agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
             }
+            else if (NamedGroup.refersToASpecificKEM(namedGroup))
+            {
+                agreement = crypto.createKEMDomain(new TlsKEMConfig(namedGroup, new TlsCryptoParameters(tlsServerContext))).createKEM();
+            }
             else
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
+            agreement.receivePeerValue(clientShare.getKeyExchange());
+
             byte[] key_exchange = agreement.generateEphemeral();
             KeyShareEntry serverShare = new KeyShareEntry(namedGroup, key_exchange);
             TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
 
-            agreement.receivePeerValue(clientShare.getKeyExchange());
             sharedSecret = agreement.calculateSecret();
         }
 

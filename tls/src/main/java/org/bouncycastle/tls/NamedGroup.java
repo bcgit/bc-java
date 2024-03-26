@@ -102,6 +102,10 @@ public class NamedGroup
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
+    public static final int kyber512 = 0x023A;
+    public static final int kyber768 = 0x023C;
+    public static final int kyber1024 = 0x023D;
+
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
@@ -130,7 +134,8 @@ public class NamedGroup
         else
         {
             if ((namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
-                || (namedGroup == curveSM2))
+                || (namedGroup == curveSM2)
+                || (namedGroup == kyber512 || namedGroup == kyber768 || namedGroup == kyber1024))
             {
                 return false;
             }
@@ -260,6 +265,21 @@ public class NamedGroup
         return null;
     }
 
+    public static String getKEMName(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case kyber512:
+            return "kyber512";
+        case kyber768:
+            return "kyber768";
+        case kyber1024:
+            return "kyber1024";
+        default:
+            return null;
+        }
+    }
+    
     public static int getMaximumChar2CurveBits()
     {
         return 571;
@@ -344,6 +364,12 @@ public class NamedGroup
             return finiteFieldName;
         }
 
+        String kemName = getKEMName(namedGroup);
+        if (null != kemName)
+        {
+            return kemName;
+        }
+
         return null;
     }
 
@@ -412,9 +438,15 @@ public class NamedGroup
         return namedGroup >= ffdhe2048 && namedGroup <= ffdhe8192;
     }
 
+    public static boolean refersToASpecificKEM(int namedGroup)
+    {
+        return namedGroup == kyber512 || namedGroup == kyber768 || namedGroup == kyber1024;
+    }
+
     public static boolean refersToASpecificGroup(int namedGroup)
     {
         return refersToASpecificCurve(namedGroup)
-            || refersToASpecificFiniteField(namedGroup);
+            || refersToASpecificFiniteField(namedGroup)
+            || refersToASpecificKEM(namedGroup);
     }
 }
