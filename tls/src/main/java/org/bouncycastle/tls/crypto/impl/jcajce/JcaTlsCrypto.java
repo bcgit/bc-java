@@ -48,6 +48,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKEMDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -436,6 +438,16 @@ public class JcaTlsCrypto
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
+        else if (NamedGroup.refersToASpecificKEM(namedGroup))
+        {
+            switch (namedGroup)
+            {
+            case NamedGroup.kyber512:
+            case NamedGroup.kyber768:
+            case NamedGroup.kyber1024:
+                return null;
+            }
+        }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
@@ -556,6 +568,11 @@ public class JcaTlsCrypto
     }
 
     public boolean hasECDHAgreement()
+    {
+        return true;
+    }
+    
+    public boolean hasKEMAgreement()
     {
         return true;
     }
@@ -822,6 +839,11 @@ public class JcaTlsCrypto
         default:
             return new JceTlsECDomain(this, ecConfig);
         }
+    }
+    
+    public TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig)
+    {
+        return new JceTlsKyberDomain(this, kemConfig);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
@@ -1147,6 +1169,10 @@ public class JcaTlsCrypto
                     return Boolean.TRUE;
                 }
                 }
+            }
+            else if (NamedGroup.refersToASpecificKEM(namedGroup))
+            {
+                return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {

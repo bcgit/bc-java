@@ -40,6 +40,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
+import org.bouncycastle.tls.crypto.TlsKEMConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -4022,6 +4023,7 @@ public class TlsUtils
                 // TODO[tls13] We're conservatively adding both here, though maybe only one is needed
                 addToSet(result, NamedGroupRole.dh);
                 addToSet(result, NamedGroupRole.ecdh);
+                addToSet(result, NamedGroupRole.kem);
                 break;
             }
             }
@@ -5303,7 +5305,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(3);
         Vector clientShares = new Vector(2);
 
-        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         // TODO[tls13-psk] When clientShares empty, consider not adding extension if pre_shared_key in use
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
@@ -5319,7 +5321,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(1, 1.0f);
         Vector clientShares = new Vector(1);
 
-        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
 
@@ -5332,9 +5334,10 @@ public class TlsUtils
         return clientAgreements;
     }
 
-    private static void collectKeyShares(TlsCrypto crypto, int[] supportedGroups, Vector keyShareGroups,
+    private static void collectKeyShares(TlsClientContext clientContext, int[] supportedGroups, Vector keyShareGroups,
         Hashtable clientAgreements, Vector clientShares) throws IOException
     {
+        TlsCrypto crypto = clientContext.getCrypto();
         if (isNullOrEmpty(supportedGroups))
         {
             return;
@@ -5369,6 +5372,13 @@ public class TlsUtils
                 if (crypto.hasDHAgreement())
                 {
                     agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
+                }
+            }
+            else if (NamedGroup.refersToASpecificKEM(supportedGroup))
+            {
+                if (crypto.hasKEMAgreement())
+                {
+                    agreement = crypto.createKEMDomain(new TlsKEMConfig(supportedGroup, new TlsCryptoParameters(clientContext))).createKEM();
                 }
             }
 
