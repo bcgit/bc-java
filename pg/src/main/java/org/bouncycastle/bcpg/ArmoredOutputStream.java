@@ -11,8 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -301,15 +299,51 @@ public class ArmoredOutputStream
         sb.append(nl);
         for (int hashAlgorithm : hashAlgorithms)
         {
-            try
+            String hash;
+            switch (hashAlgorithm)
             {
-                String hash = PGPUtil.getDigestName(hashAlgorithm);
-                sb.append(HASH_HDR).append(": ").append(hash).append(nl);
-            }
-            catch (PGPException e)
-            {
+            case HashAlgorithmTags.MD5:
+                hash = "MD5";
+                break;
+            case HashAlgorithmTags.SHA1:
+                hash = "SHA1";
+                break;
+            case HashAlgorithmTags.RIPEMD160:
+                hash = "RIPEMD160";
+                break;
+            case HashAlgorithmTags.MD2:
+                hash = "MD2";
+                break;
+            case HashAlgorithmTags.SHA256:
+                hash = "SHA256";
+                break;
+            case HashAlgorithmTags.SHA384:
+                hash = "SHA384";
+                break;
+            case HashAlgorithmTags.SHA512:
+                hash = "SHA512";
+                break;
+            case HashAlgorithmTags.SHA224:
+                hash = "SHA224";
+                break;
+            case HashAlgorithmTags.SHA3_256:
+            case HashAlgorithmTags.SHA3_256_OLD:
+                hash = "SHA3-256";
+                break;
+            case HashAlgorithmTags.SHA3_384: // OLD
+                hash = "SHA3-384";
+                break;
+            case HashAlgorithmTags.SHA3_512:
+            case HashAlgorithmTags.SHA3_512_OLD:
+                hash = "SHA3-512";
+                break;
+            case HashAlgorithmTags.SHA3_224:
+                hash = "SHA3-224";
+                break;
+            default:
                 throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
             }
+            sb.append(HASH_HDR).append(": ").append(hash).append(nl);
         }
         sb.append(nl);
 
