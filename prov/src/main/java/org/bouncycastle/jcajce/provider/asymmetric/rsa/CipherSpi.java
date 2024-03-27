@@ -134,6 +134,11 @@ public class CipherSpi
     protected int engineGetOutputSize(
         int     inputLen) 
     {
+        if (tlsRsaSpec != null)
+        {
+            return TlsRsaKeyExchange.PRE_MASTER_SECRET_LENGTH;
+        }
+
         try
         {
             return cipher.getOutputBlockSize();
@@ -334,6 +339,7 @@ public class CipherSpi
             }
             else if (params instanceof TLSRSAPremasterSecretParameterSpec)
             {
+                // TODO Restrict mode to DECRYPT_MODE (and/or UNWRAP_MODE)
                 if (!(param instanceof RSAKeyParameters) || !((RSAKeyParameters)param).isPrivate())
                 {
                     throw new InvalidKeyException("RSA private key required for TLS decryption");
@@ -353,6 +359,7 @@ public class CipherSpi
         }
         else
         {
+            // TODO Remove after checking all AsymmetricBlockCipher init methods?
             param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
         }
 
@@ -446,6 +453,7 @@ public class CipherSpi
         int     inputLen) 
         throws IllegalBlockSizeException, BadPaddingException
     {
+        // TODO Can input actually be null?
         if (input != null)
         {
             engineUpdate(input, inputOffset, inputLen);
@@ -462,16 +470,8 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
-        int outputSize;
-        if (tlsRsaSpec != null)
-        {
-            outputSize = TlsRsaKeyExchange.PRE_MASTER_SECRET_LENGTH;
-        }
-        else
-        {
-            outputSize = engineGetOutputSize(input == null ? 0 : inputLen);
-        }
-
+        // TODO Can input actually be null?
+        int outputSize = engineGetOutputSize(input == null ? 0 : inputLen);
         if (outputOffset > output.length - outputSize)
         {
             throw new ShortBufferException("output buffer too short for input.");
