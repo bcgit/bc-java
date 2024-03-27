@@ -103,25 +103,30 @@ public class PGPUtil
         case HashAlgorithmTags.RIPEMD160:
             return "RIPEMD160";
         case HashAlgorithmTags.SHA256:
-        case HashAlgorithmTags.SHA3_256:
-        case HashAlgorithmTags.SHA3_256_OLD:
             return "SHA256";
         case HashAlgorithmTags.SHA384:
-        case HashAlgorithmTags.SHA3_384:
             return "SHA384";
         case HashAlgorithmTags.SHA512:
-        case HashAlgorithmTags.SHA3_512:
-        case HashAlgorithmTags.SHA3_512_OLD:
             return "SHA512";
         case HashAlgorithmTags.SHA224:
-        case HashAlgorithmTags.SHA3_224:
             return "SHA224";
+        case HashAlgorithmTags.SHA3_256:
+        case HashAlgorithmTags.SHA3_256_OLD:
+            return "SHA3-256";
+        case HashAlgorithmTags.SHA3_384:
+            return "SHA3-384";
+        case HashAlgorithmTags.SHA3_512:
+        case HashAlgorithmTags.SHA3_512_OLD:
+            return "SHA3-512";
+        case HashAlgorithmTags.SHA3_224:
+            return "SHA3-224";
         case HashAlgorithmTags.TIGER_192:
             return "TIGER";
         default:
             throw new PGPException("unknown hash algorithm tag in getDigestName: " + hashAlgorithm);
         }
     }
+
 
     public static int getDigestIDForName(String name)
     {
