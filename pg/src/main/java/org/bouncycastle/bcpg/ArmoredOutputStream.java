@@ -306,7 +306,8 @@ public class ArmoredOutputStream
                 String hash = PGPUtil.getDigestName(hashAlgorithm);
                 sb.append(HASH_HDR).append(": ").append(hash).append(nl);
             }
-            catch (PGPException e){
+            catch (PGPException e)
+            {
                 throw new IOException("unknown hash algorithm tag in beginClearText: " + hashAlgorithm);
             }
         }
