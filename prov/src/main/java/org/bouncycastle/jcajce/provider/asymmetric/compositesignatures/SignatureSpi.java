@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -250,7 +251,7 @@ public class SignatureSpi
         {
             this.componentSignatures.get(i).update(this.OIDBytes);
             this.componentSignatures.get(i).update(digestResult); //in total, "OID || digest(message)" is the message fed into each component signature
-            if (!this.componentSignatures.get(i).verify(DERBitString.getInstance(signatureSequence.getObjectAt(i)).getBytes()))
+            if (!this.componentSignatures.get(i).verify(ASN1BitString.getInstance(signatureSequence.getObjectAt(i)).getOctets()))
             {
                 fail = true;
             }

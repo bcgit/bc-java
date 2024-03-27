@@ -431,7 +431,7 @@ class ProvOcspRevocationChecker
 
             sig.update(basicResp.getTbsResponseData().getEncoded(ASN1Encoding.DER));
 
-            if (sig.verify(basicResp.getSignature().getBytes()))
+            if (sig.verify(basicResp.getSignature().getOctets()))
             {
                 if (nonce != null)
                 {
