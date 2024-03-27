@@ -18,6 +18,7 @@ public class AllTests21
     public static Test suite()
     {
         TestSuite suite = new TestSuite("JDK21 Provider Tests");
+        suite.addTestSuite(NTRUKEMTest.class);
         suite.addTestSuite(SNTRUPrimeKEMTest.class);
         return suite;
     }
