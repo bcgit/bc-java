@@ -66,6 +66,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testCreateDigest();
         testX25519HKDF();
         testJcePBESecretKeyEncryptorBuilder();
         testJcaPGPContentVerifierBuilderProvider();
@@ -184,6 +185,24 @@ public class OperatorJcajceTest
         testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", () -> new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1));
     }
 
+    public void testCreateDigest()
+        throws Exception
+    {
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1).getAlgorithm(), HashAlgorithmTags.SHA1);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.MD2).getAlgorithm(), HashAlgorithmTags.MD2);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.MD5).getAlgorithm(), HashAlgorithmTags.MD5);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.RIPEMD160).getAlgorithm(), HashAlgorithmTags.RIPEMD160);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256).getAlgorithm(), HashAlgorithmTags.SHA256);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA224).getAlgorithm(), HashAlgorithmTags.SHA224);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA384).getAlgorithm(), HashAlgorithmTags.SHA384);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA512).getAlgorithm(), HashAlgorithmTags.SHA512);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_256).getAlgorithm(), HashAlgorithmTags.SHA3_256);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_224).getAlgorithm(), HashAlgorithmTags.SHA3_224);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_384).getAlgorithm(), HashAlgorithmTags.SHA3_384);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_512).getAlgorithm(), HashAlgorithmTags.SHA3_512);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.TIGER_192).getAlgorithm(), HashAlgorithmTags.TIGER_192);
+    }
+
     public void testX25519HKDF()
         throws Exception
     {
@@ -201,7 +220,7 @@ public class OperatorJcajceTest
         KeyAgreement agreement = KeyAgreement.getInstance("X25519withSHA256HKDF", "BC");
         agreement.init(privKey, new HybridValueParameterSpec(Arrays.concatenate(ephmeralKey, publicKey), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP X25519"))));
         agreement.doPhase(pubKey, true);
-        Key secretKey= agreement.generateSecret(NISTObjectIdentifiers.id_aes128_wrap.getId());
+        Key secretKey = agreement.generateSecret(NISTObjectIdentifiers.id_aes128_wrap.getId());
 
 //        agreement.init(ephmeralprivateKeyParameters);
 //        byte[] secret = new byte[agreement.getAgreementSize()];

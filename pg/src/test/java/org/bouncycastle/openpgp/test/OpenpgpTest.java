@@ -132,15 +132,15 @@ public class OpenpgpTest
         isEquals("MD5", PGPUtil.getDigestName(HashAlgorithmTags.MD5));
         isEquals("RIPEMD160", PGPUtil.getDigestName(HashAlgorithmTags.RIPEMD160));
         isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA256));
-        isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256));
-        isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256_OLD));
+        isEquals("SHA3-256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256));
+        isEquals("SHA3-256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256_OLD));
         isEquals("SHA384", PGPUtil.getDigestName(HashAlgorithmTags.SHA384));
-        isEquals("SHA384", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_384));
+        isEquals("SHA3-384", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_384));
         isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA512));
-        isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512));
-        isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512_OLD));
+        isEquals("SHA3-512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512));
+        isEquals("SHA3-512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512_OLD));
         isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA224));
-        isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_224));
+        isEquals("SHA3-224", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_224));
         isEquals("TIGER", PGPUtil.getDigestName(HashAlgorithmTags.TIGER_192));
         testException("unknown hash algorithm tag in getDigestName: ", "PGPException", () -> PGPUtil.getDigestName(HashAlgorithmTags.MD4));
 
