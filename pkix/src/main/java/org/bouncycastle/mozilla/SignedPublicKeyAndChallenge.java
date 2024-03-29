@@ -121,7 +121,7 @@ public class SignedPublicKeyAndChallenge
         {
             sig.update(spkacSeq.getPublicKeyAndChallenge().getEncoded());
 
-            return sig.verify(spkacSeq.getSignature().getBytes());
+            return sig.verify(spkacSeq.getSignature().getOctets());
         }
         catch (Exception e)
         {

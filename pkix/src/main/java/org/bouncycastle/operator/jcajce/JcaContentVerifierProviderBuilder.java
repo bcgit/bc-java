@@ -434,7 +434,7 @@ public class JcaContentVerifierProviderBuilder
                 {
                     if (sigs[i] != null)
                     {
-                        if (!sigs[i].verify(ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes()))
+                        if (!sigs[i].verify(ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets()))
                         {
                             failed = true;
                         }

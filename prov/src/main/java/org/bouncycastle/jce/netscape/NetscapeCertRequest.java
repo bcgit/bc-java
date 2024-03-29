@@ -112,8 +112,7 @@ public class NetscapeCertRequest
 
             SubjectPublicKeyInfo pubkeyinfo = SubjectPublicKeyInfo.getInstance(pkac.getObjectAt(0));
 
-            X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(
-                    pubkeyinfo).getBytes());
+            X509EncodedKeySpec xspec = new X509EncodedKeySpec(pubkeyinfo.getEncoded(ASN1Encoding.DER));
 
             keyAlg = pubkeyinfo.getAlgorithm();
             pubkey = KeyFactory.getInstance(keyAlg.getAlgorithm().getId(), "BC")
@@ -207,7 +206,7 @@ public class NetscapeCertRequest
         Signature sig = Signature.getInstance(sigAlg.getAlgorithm().getId(),
                 "BC");
         sig.initVerify(pubkey);
-        sig.update(content.getBytes());
+        sig.update(content.getOctets());
 
         return sig.verify(sigBits);
     }
