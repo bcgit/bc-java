@@ -34,6 +34,8 @@ public class Ed25519Test
 
     public void performTest() throws Exception
     {
+        basicSigTest();
+
         for (int i = 0; i < 10; ++i)
         {
             testConsistency(Ed25519.Algorithm.Ed25519, null);
@@ -43,7 +45,6 @@ public class Ed25519Test
             testConsistency(Ed25519.Algorithm.Ed25519ph, context);
         }
 
-        basicSigTest();
         testRegressionInfiniteLoop();
     }
 
@@ -837,9 +838,9 @@ public class Ed25519Test
 
             signer.init(false, pub);
             signer.update(msg, 0, msg.length);
-            if (!signer.verifySignature(sig)) {
-                fail("signature verification failed for test vector: " + error);
-            }
+            boolean shouldVerify = signer.verifySignature(sig);
+
+            isTrue("signature verification failed for test vector: " + error, shouldVerify);
         }
     }
 }
