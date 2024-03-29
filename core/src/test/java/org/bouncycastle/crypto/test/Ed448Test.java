@@ -41,6 +41,8 @@ public class Ed448Test
             testConsistency(Ed448.Algorithm.Ed448, context);
             testConsistency(Ed448.Algorithm.Ed448ph, context);
         }
+
+        testRegressionInfiniteLoop();
     }
 
     private void basicSigTest()
@@ -1234,9 +1236,9 @@ public class Ed448Test
 
             signer.init(false, pub);
             signer.update(msg, 0, msg.length);
-            if (!signer.verifySignature(sig)) {
-                fail("signature verification failed for test vector: " + error);
-            }
+            boolean shouldVerify = signer.verifySignature(sig);
+
+            isTrue("signature verification failed for test vector: " + error, shouldVerify);
         }
     }
 }
