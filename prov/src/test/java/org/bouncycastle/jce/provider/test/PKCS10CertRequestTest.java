@@ -41,7 +41,6 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
-import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -215,7 +214,7 @@ public class PKCS10CertRequestTest
         
         sig.update(req.getCertificationRequestInfo().getEncoded());
         
-        if (!sig.verify(req.getSignature().getBytes()))
+        if (!sig.verify(req.getSignature().getOctets()))
         {
             fail("signature not mapped correctly.");
         }
@@ -294,7 +293,7 @@ public class PKCS10CertRequestTest
 
         sig.update(req.getCertificationRequestInfo().getEncoded());
 
-        if (!sig.verify(req.getSignature().getBytes()))
+        if (!sig.verify(req.getSignature().getOctets()))
         {
             fail("signature not mapped correctly.");
         }
@@ -344,7 +343,7 @@ public class PKCS10CertRequestTest
 
         sig.update(req.getCertificationRequestInfo().getEncoded());
 
-        if (!sig.verify(req.getSignature().getBytes()))
+        if (!sig.verify(req.getSignature().getOctets()))
         {
             fail("signature not mapped correctly.");
         }
@@ -401,7 +400,7 @@ public class PKCS10CertRequestTest
 
         sig.update(req.getCertificationRequestInfo().getEncoded());
 
-        if (!sig.verify(req.getSignature().getBytes()))
+        if (!sig.verify(req.getSignature().getOctets()))
         {
             fail("signature not mapped correctly.");
         }

@@ -158,7 +158,7 @@ public class EdECTest
         // yes, the demo certificate is invalid...
         sig.update(x25519Seq.getObjectAt(0).toASN1Primitive().getEncoded(ASN1Encoding.DL));
 
-        isTrue(sig.verify(x25519Cert.getSignature().getBytes()));
+        isTrue(sig.verify(x25519Cert.getSignature().getOctets()));
 
         CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
 
