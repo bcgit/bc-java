@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -34,6 +35,57 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 public class CrystalsKyberTest
     extends TestCase
 {
+
+    public void testModulus() throws IOException
+    {
+        KyberParameters[] params = new KyberParameters[]{
+                KyberParameters.kyber512,
+                KyberParameters.kyber768,
+                KyberParameters.kyber1024,
+        };
+
+        String[] files = new String[]{
+                "ML-KEM-512.txt",
+                "ML-KEM-768.txt",
+                "ML-KEM-1024.txt",
+        };
+
+        TestSampler sampler = new TestSampler();
+        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
+        {
+            String name = files[fileIndex];
+            // System.out.println("testing: " + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber/modulus", name);
+            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+            String line = null;
+            while ((line = bin.readLine()) != null)
+            {
+                line = line.trim();
+                line = line.trim();
+                byte[] key = Hex.decode(line);
+                KyberParameters parameters = params[fileIndex];
+
+
+                KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters) PublicKeyFactory.createKey(
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new KyberPublicKeyParameters(parameters, key)));
+
+                // KEM Enc
+                SecureRandom random = new SecureRandom();
+                KyberKEMGenerator KyberEncCipher = new KyberKEMGenerator(random);
+                try
+                {
+                    SecretWithEncapsulation secWenc = KyberEncCipher.generateEncapsulated(pubParams);
+                    byte[] generated_cipher_text = secWenc.getEncapsulation();
+                    fail();
+                }
+                catch (Exception ignored)
+                {
+                }
+            }
+        }
+    }
+
     public void testPrivInfoGeneration()
         throws IOException
     {
