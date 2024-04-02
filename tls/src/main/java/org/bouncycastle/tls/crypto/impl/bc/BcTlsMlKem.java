@@ -1,4 +1,4 @@
-package org.bouncycastle.tls.crypto.impl.jcajce;
+package org.bouncycastle.tls.crypto.impl.bc;
 
 import java.io.IOException;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -6,18 +6,19 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-public class JceTlsKyber implements TlsAgreement
+public class BcTlsMlKem implements TlsAgreement
 {
-    protected final JceTlsKyberDomain domain;
+    protected final BcTlsMlKemDomain domain;
 
     protected AsymmetricCipherKeyPair localKeyPair;
     protected KyberPublicKeyParameters peerPublicKey;
     protected byte[] ciphertext;
     protected byte[] secret;
 
-    public JceTlsKyber(JceTlsKyberDomain domain)
+    public BcTlsMlKem(BcTlsMlKemDomain domain)
     {
         this.domain = domain;
     }
@@ -40,7 +41,7 @@ public class JceTlsKyber implements TlsAgreement
         if (domain.getTlsKEMConfig().isServer())
         {
             this.peerPublicKey = domain.decodePublicKey(peerValue);
-            SecretWithEncapsulation encap = domain.enCap(peerPublicKey);
+            SecretWithEncapsulation encap = domain.encap(peerPublicKey);
             ciphertext = encap.getEncapsulation();
             secret = encap.getSecret();
         }
@@ -50,7 +51,7 @@ public class JceTlsKyber implements TlsAgreement
         }
     }
 
-    public JceTlsSecret calculateSecret() throws IOException
+    public TlsSecret calculateSecret() throws IOException
     {
         if (domain.getTlsKEMConfig().isServer())
         {
@@ -58,7 +59,7 @@ public class JceTlsKyber implements TlsAgreement
         }
         else
         {
-            return domain.adoptLocalSecret(domain.deCap((KyberPrivateKeyParameters)localKeyPair.getPrivate(), ciphertext));
+            return domain.adoptLocalSecret(domain.decap((KyberPrivateKeyParameters)localKeyPair.getPrivate(), ciphertext));
         }
     }
 }

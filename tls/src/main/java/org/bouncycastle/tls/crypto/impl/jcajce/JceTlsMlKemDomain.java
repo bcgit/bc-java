@@ -14,17 +14,17 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsKEMConfig;
 import org.bouncycastle.tls.crypto.TlsKEMDomain;
 
-public class JceTlsKyberDomain implements TlsKEMDomain
+public class JceTlsMlKemDomain implements TlsKEMDomain
 {
     public static KyberParameters getKyberParameters(TlsKEMConfig kemConfig)
     {
         switch (kemConfig.getKEMNamedGroup())
         {
-        case NamedGroup.kyber512:
+        case NamedGroup.mlkem512:
             return KyberParameters.kyber512;
-        case NamedGroup.kyber768:
+        case NamedGroup.mlkem768:
             return KyberParameters.kyber768;
-        case NamedGroup.kyber1024:
+        case NamedGroup.mlkem1024:
             return KyberParameters.kyber1024;
         default:
             return null;
@@ -40,7 +40,7 @@ public class JceTlsKyberDomain implements TlsKEMDomain
         return kemConfig;
     }
 
-    public JceTlsKyberDomain(JcaTlsCrypto crypto, TlsKEMConfig kemConfig)
+    public JceTlsMlKemDomain(JcaTlsCrypto crypto, TlsKEMConfig kemConfig)
     {
         this.crypto = crypto;
         this.kemConfig = kemConfig;
@@ -49,7 +49,7 @@ public class JceTlsKyberDomain implements TlsKEMDomain
 
     public TlsAgreement createKEM()
     {
-        return new JceTlsKyber(this);
+        return new JceTlsMlKem(this);
     }
 
     public KyberPublicKeyParameters decodePublicKey(byte[] encoding)
@@ -74,13 +74,13 @@ public class JceTlsKyberDomain implements TlsKEMDomain
         return crypto.adoptLocalSecret(secret);
     }
 
-    public SecretWithEncapsulation enCap(KyberPublicKeyParameters peerPublicKey)
+    public SecretWithEncapsulation encap(KyberPublicKeyParameters peerPublicKey)
     {
         KyberKEMGenerator kemGen = new KyberKEMGenerator(crypto.getSecureRandom());
         return kemGen.generateEncapsulated(peerPublicKey);
     }
 
-    public byte[] deCap(KyberPrivateKeyParameters kyberPrivateKeyParameters, byte[] cipherText)
+    public byte[] decap(KyberPrivateKeyParameters kyberPrivateKeyParameters, byte[] cipherText)
     {
         KyberKEMExtractor kemExtract = new KyberKEMExtractor(kyberPrivateKeyParameters);
         byte[] secret = kemExtract.extractSecret(cipherText);

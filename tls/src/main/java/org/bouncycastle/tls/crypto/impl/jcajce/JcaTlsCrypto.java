@@ -442,9 +442,9 @@ public class JcaTlsCrypto
         {
             switch (namedGroup)
             {
-            case NamedGroup.kyber512:
-            case NamedGroup.kyber768:
-            case NamedGroup.kyber1024:
+            case NamedGroup.mlkem512:
+            case NamedGroup.mlkem768:
+            case NamedGroup.mlkem1024:
                 return null;
             }
         }
@@ -843,7 +843,7 @@ public class JcaTlsCrypto
     
     public TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig)
     {
-        return new JceTlsKyberDomain(this, kemConfig);
+        return new JceTlsMlKemDomain(this, kemConfig);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
