@@ -52,13 +52,24 @@ class MockTlsKEMClient
         return protocolNames;
     }
 
+    public int[] supportedGroups = new int[] {
+            NamedGroup.mlkem512,
+            NamedGroup.mlkem768,
+            NamedGroup.mlkem1024
+    };
+
+    public void setSupportedGroups(int[] supportedGroups)
+    {
+        this.supportedGroups = supportedGroups;
+    }
+
     protected Vector getSupportedGroups(Vector namedGroupRoles) {
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
         if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.kem))) {
             TlsUtils.addIfSupported(supportedGroups, crypto,
-                    new int[]{ NamedGroup.kyber512, NamedGroup.kyber768, NamedGroup.kyber1024 });
+                    this.supportedGroups);
         };
         return supportedGroups;
     }
@@ -86,7 +97,7 @@ class MockTlsKEMClient
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS PQC client received alert: " + AlertLevel.getText(alertLevel)
+        out.println("TLS KEM client received alert: " + AlertLevel.getText(alertLevel)
                 + ", " + AlertDescription.getText(alertDescription));
     }
 
@@ -113,7 +124,7 @@ class MockTlsKEMClient
     {
         super.notifyServerVersion(serverVersion);
 
-        System.out.println("TLS PQC client negotiated " + serverVersion);
+        System.out.println("TLS KEM client negotiated " + serverVersion);
     }
 
     public TlsAuthentication getAuthentication() throws IOException
@@ -124,7 +135,7 @@ class MockTlsKEMClient
             {
                 TlsCertificate[] chain = serverCertificate.getCertificate().getCertificateList();
 
-                System.out.println("TLS PQC client received server certificate chain of length " + chain.length);
+                System.out.println("TLS KEM client received server certificate chain of length " + chain.length);
                 for (int i = 0; i != chain.length; i++)
                 {
                     Certificate entry = Certificate.getInstance(chain[i].getEncoded());
@@ -178,7 +189,7 @@ class MockTlsKEMClient
         ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
         if (protocolName != null)
         {
-            System.out.println("PQC Client ALPN: " + protocolName.getUtf8Decoding());
+            System.out.println("KEM Client ALPN: " + protocolName.getUtf8Decoding());
         }
 
         TlsSession newSession = context.getSession();
@@ -191,11 +202,11 @@ class MockTlsKEMClient
 
                 if (this.session != null && Arrays.areEqual(this.session.getSessionID(), newSessionID))
                 {
-                    System.out.println("PQC Client resumed session: " + hex);
+                    System.out.println("KEM Client resumed session: " + hex);
                 }
                 else
                 {
-                    System.out.println("PQC Client established session: " + hex);
+                    System.out.println("KEM Client established session: " + hex);
                 }
 
                 this.session = newSession;
@@ -204,14 +215,14 @@ class MockTlsKEMClient
             byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
             if (null != tlsServerEndPoint)
             {
-                System.out.println("PQC Client 'tls-server-end-point': " + hex(tlsServerEndPoint));
+                System.out.println("KEM Client 'tls-server-end-point': " + hex(tlsServerEndPoint));
             }
 
             byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-            System.out.println("PQC Client 'tls-unique': " + hex(tlsUnique));
+            System.out.println("KEM Client 'tls-unique': " + hex(tlsUnique));
 
             byte[] tlsExporter = context.exportChannelBinding(ChannelBinding.tls_exporter);
-            System.out.println("PQC Client 'tls-exporter': " + hex(tlsExporter));
+            System.out.println("KEM Client 'tls-exporter': " + hex(tlsExporter));
         }
     }
 

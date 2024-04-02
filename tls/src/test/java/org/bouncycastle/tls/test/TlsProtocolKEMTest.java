@@ -1,9 +1,11 @@
 package org.bouncycastle.tls.test;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.util.Arrays;
@@ -14,6 +16,40 @@ import junit.framework.TestCase;
 public class TlsProtocolKEMTest
         extends TestCase
 {
+
+    // mismatched ML-KEM strengths w/o classical crypto
+    public void testMismatchStrength() throws Exception
+    {
+        PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
+        PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
+        PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
+        PipedOutputStream serverWrite = new PipedOutputStream(clientRead);
+
+        TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
+        TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
+
+        ServerThread serverThread = new ServerThread(serverProtocol, new int[] {NamedGroup.mlkem768}, true);
+        try
+        {
+            serverThread.start();
+        }
+        catch (Exception ignored)
+        {
+        }
+        MockTlsKEMClient client = new MockTlsKEMClient(null);
+        client.setSupportedGroups(new int[] {NamedGroup.mlkem512});
+        try
+        {
+            clientProtocol.connect(client);
+            fail();
+        }
+        catch (Exception ex)
+        {
+        }
+
+        serverThread.join();
+    }
+
     public void testClientServer() throws Exception
     {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
@@ -24,7 +60,7 @@ public class TlsProtocolKEMTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol);
+        ServerThread serverThread = new ServerThread(serverProtocol, false);
         serverThread.start();
 
         MockTlsKEMClient client = new MockTlsKEMClient(null);
@@ -54,10 +90,21 @@ public class TlsProtocolKEMTest
             extends Thread
     {
         private final TlsServerProtocol serverProtocol;
+        private final int[] supportedGroups;
 
-        ServerThread(TlsServerProtocol serverProtocol)
+        private boolean shouldFail = false;
+
+        ServerThread(TlsServerProtocol serverProtocol, int[] supportedGroups, boolean fail)
         {
             this.serverProtocol = serverProtocol;
+            this.supportedGroups = supportedGroups;
+            this.shouldFail = fail;
+        }
+        ServerThread(TlsServerProtocol serverProtocol, boolean fail)
+        {
+            this.serverProtocol = serverProtocol;
+            this.supportedGroups = null;
+            this.shouldFail = fail;
         }
 
         public void run()
@@ -65,13 +112,28 @@ public class TlsProtocolKEMTest
             try
             {
                 MockTlsKEMServer server = new MockTlsKEMServer();
-                serverProtocol.accept(server);
+                if (supportedGroups != null)
+                {
+                    server.setSupportedGroups(supportedGroups);
+                }
+
+                try
+                {
+                    serverProtocol.accept(server);
+                    if (shouldFail)
+                    {
+                        fail();
+                    }
+                }
+                catch (IOException ignored)
+                {
+                }
+
                 Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
                 serverProtocol.close();
             }
             catch (Exception e)
             {
-//                throw new RuntimeException(e);
             }
         }
     }
