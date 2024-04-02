@@ -222,7 +222,7 @@ class KyberEngine
         // Type Check
         if (publicKeyInput.length != KyberIndCpaPublicKeyBytes)
         {
-            throw new RuntimeException("Input validation Error: Type check failed for ml-kem encapsulation");
+            throw new IllegalArgumentException("Input validation Error: Type check failed for ml-kem encapsulation");
         }
         // Modulus Check
         PolyVec polyVec = new PolyVec(this);
@@ -230,7 +230,7 @@ class KyberEngine
         byte[] ek = indCpa.packPublicKey(polyVec, seed);
         if (!Arrays.areEqual(ek, publicKeyInput))
         {
-            throw new RuntimeException("Input validation: Modulus check failed for ml-kem encapsulation");
+            throw new IllegalArgumentException("Input validation: Modulus check failed for ml-kem encapsulation");
         }
 
 
