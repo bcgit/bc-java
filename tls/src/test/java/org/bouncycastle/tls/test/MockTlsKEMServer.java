@@ -42,19 +42,20 @@ class MockTlsKEMServer
         return protocolNames;
     }
 
+    public int[] supportedGroups = new int[] {
+            NamedGroup.mlkem512,
+            NamedGroup.mlkem768,
+            NamedGroup.mlkem1024,
+            NamedGroup.x25519
+    };
+
+    public void setSupportedGroups(int[] supportedGroups)
+    {
+        this.supportedGroups = supportedGroups;
+    }
+
     public int[] getSupportedGroups() throws IOException {
-        return new int[] {
-                NamedGroup.kyber512,
-                NamedGroup.kyber768,
-                NamedGroup.kyber1024,
-//                NamedGroup.secp256Kyber512,
-//                NamedGroup.secp384Kyber768,
-//                NamedGroup.secp521Kyber1024,
-//                NamedGroup.x25519Kyber512,
-//                NamedGroup.x25519Kyber768,
-//                NamedGroup.x448Kyber768,
-                NamedGroup.x25519
-        };
+        return supportedGroups;
     }
 
     public TlsCredentials getCredentials() throws IOException
@@ -74,7 +75,7 @@ class MockTlsKEMServer
     public void notifyAlertRaised(short alertLevel, short alertDescription, String message, Throwable cause)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS PQC server raised alert: " + AlertLevel.getText(alertLevel)
+        out.println("TLS KEM server raised alert: " + AlertLevel.getText(alertLevel)
                 + ", " + AlertDescription.getText(alertDescription));
         if (message != null)
         {
@@ -89,7 +90,7 @@ class MockTlsKEMServer
     public void notifyAlertReceived(short alertLevel, short alertDescription)
     {
         PrintStream out = (alertLevel == AlertLevel.fatal) ? System.err : System.out;
-        out.println("TLS PQC server received alert: " + AlertLevel.getText(alertLevel)
+        out.println("TLS KEM server received alert: " + AlertLevel.getText(alertLevel)
                 + ", " + AlertDescription.getText(alertDescription));
     }
 
@@ -97,7 +98,7 @@ class MockTlsKEMServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        System.out.println("TLS PQC server negotiated " + serverVersion);
+        System.out.println("TLS KEM server negotiated " + serverVersion);
 
         return serverVersion;
     }
@@ -142,7 +143,7 @@ class MockTlsKEMServer
     {
         TlsCertificate[] chain = clientCertificate.getCertificateList();
 
-        System.out.println("TLS PQC server received client certificate chain of length " + chain.length);
+        System.out.println("TLS KEM server received client certificate chain of length " + chain.length);
         for (int i = 0; i != chain.length; i++)
         {
             Certificate entry = Certificate.getInstance(chain[i].getEncoded());
@@ -180,17 +181,17 @@ class MockTlsKEMServer
         ProtocolName protocolName = context.getSecurityParametersConnection().getApplicationProtocol();
         if (protocolName != null)
         {
-            System.out.println("PQC Server ALPN: " + protocolName.getUtf8Decoding());
+            System.out.println("KEM Server ALPN: " + protocolName.getUtf8Decoding());
         }
 
         byte[] tlsServerEndPoint = context.exportChannelBinding(ChannelBinding.tls_server_end_point);
-        System.out.println("PQC Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
+        System.out.println("KEM Server 'tls-server-end-point': " + hex(tlsServerEndPoint));
 
         byte[] tlsUnique = context.exportChannelBinding(ChannelBinding.tls_unique);
-        System.out.println("PQC Server 'tls-unique': " + hex(tlsUnique));
+        System.out.println("KEM Server 'tls-unique': " + hex(tlsUnique));
 
         byte[] tlsExporter = context.exportChannelBinding(ChannelBinding.tls_exporter);
-        System.out.println("PQC Server 'tls-exporter': " + hex(tlsExporter));
+        System.out.println("KEM Server 'tls-exporter': " + hex(tlsExporter));
     }
 
     public void processClientExtensions(Hashtable clientExtensions) throws IOException
