@@ -15,17 +15,17 @@ import org.bouncycastle.tls.crypto.TlsKEMConfig;
 import org.bouncycastle.tls.crypto.TlsKEMDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
-public class BcTlsKyberDomain implements TlsKEMDomain
+public class BcTlsMlKemDomain implements TlsKEMDomain
 {
     public static KyberParameters getKyberParameters(TlsKEMConfig kemConfig)
     {
         switch (kemConfig.getKEMNamedGroup())
         {
-        case NamedGroup.kyber512:
+        case NamedGroup.mlkem512:
             return KyberParameters.kyber512;
-        case NamedGroup.kyber768:
+        case NamedGroup.mlkem768:
             return KyberParameters.kyber768;
-        case NamedGroup.kyber1024:
+        case NamedGroup.mlkem1024:
             return KyberParameters.kyber1024;
         default:
             return null;
@@ -41,7 +41,7 @@ public class BcTlsKyberDomain implements TlsKEMDomain
         return kemConfig;
     }
 
-    public BcTlsKyberDomain(BcTlsCrypto crypto, TlsKEMConfig kemConfig)
+    public BcTlsMlKemDomain(BcTlsCrypto crypto, TlsKEMConfig kemConfig)
     {
         this.crypto = crypto;
         this.kemConfig = kemConfig;
@@ -50,7 +50,7 @@ public class BcTlsKyberDomain implements TlsKEMDomain
 
     public TlsAgreement createKEM()
     {
-        return new BcTlsKyber(this);
+        return new BcTlsMlKem(this);
     }
 
     public KyberPublicKeyParameters decodePublicKey(byte[] encoding)
@@ -75,13 +75,13 @@ public class BcTlsKyberDomain implements TlsKEMDomain
         return crypto.adoptLocalSecret(secret);
     }
 
-    public SecretWithEncapsulation enCap(KyberPublicKeyParameters peerPublicKey)
+    public SecretWithEncapsulation encap(KyberPublicKeyParameters peerPublicKey)
     {
         KyberKEMGenerator kemGen = new KyberKEMGenerator(crypto.getSecureRandom());
         return kemGen.generateEncapsulated(peerPublicKey);
     }
 
-    public byte[] deCap(KyberPrivateKeyParameters kyberPrivateKeyParameters, byte[] cipherText)
+    public byte[] decap(KyberPrivateKeyParameters kyberPrivateKeyParameters, byte[] cipherText)
     {
         KyberKEMExtractor kemExtract = new KyberKEMExtractor(kyberPrivateKeyParameters);
         byte[] secret = kemExtract.extractSecret(cipherText);

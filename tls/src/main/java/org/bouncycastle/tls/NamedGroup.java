@@ -102,9 +102,9 @@ public class NamedGroup
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
-    public static final int kyber512 = 0x023A;
-    public static final int kyber768 = 0x023C;
-    public static final int kyber1024 = 0x023D;
+    public static final int mlkem512 = 0x0247;
+    public static final int mlkem768 = 0x0248;
+    public static final int mlkem1024 = 0x0249;
 
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
@@ -135,7 +135,7 @@ public class NamedGroup
         {
             if ((namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
                 || (namedGroup == curveSM2)
-                || (namedGroup == kyber512 || namedGroup == kyber768 || namedGroup == kyber1024))
+                || (namedGroup == mlkem512 || namedGroup == mlkem768 || namedGroup == mlkem1024))
             {
                 return false;
             }
@@ -269,12 +269,12 @@ public class NamedGroup
     {
         switch (namedGroup)
         {
-        case kyber512:
-            return "kyber512";
-        case kyber768:
-            return "kyber768";
-        case kyber1024:
-            return "kyber1024";
+        case mlkem512:
+            return "mlkem512";
+        case mlkem768:
+            return "mlkem768";
+        case mlkem1024:
+            return "mlkem1024";
         default:
             return null;
         }
@@ -440,7 +440,7 @@ public class NamedGroup
 
     public static boolean refersToASpecificKEM(int namedGroup)
     {
-        return namedGroup == kyber512 || namedGroup == kyber768 || namedGroup == kyber1024;
+        return namedGroup == mlkem512 || namedGroup == mlkem768 || namedGroup == mlkem1024;
     }
 
     public static boolean refersToASpecificGroup(int namedGroup)
