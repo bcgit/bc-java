@@ -26,10 +26,10 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.encoders.Hex;
 
-class MockTlsKEMServer
+class MockTlsKemServer
         extends DefaultTlsServer
 {
-    MockTlsKEMServer()
+    MockTlsKemServer()
     {
         super(new BcTlsCrypto());
     }
