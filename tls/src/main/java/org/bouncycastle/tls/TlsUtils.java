@@ -5439,6 +5439,11 @@ public class TlsUtils
                     continue;
                 }
 
+                if (NamedGroup.refersToASpecificKEM(group) && !crypto.hasKEMAgreement())
+                {
+                    continue;
+                }
+
                 return clientShare;
             }
         }
@@ -5471,6 +5476,11 @@ public class TlsUtils
 
                 if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
                     (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                {
+                    continue;
+                }
+
+                if (NamedGroup.refersToASpecificKEM(group) && !crypto.hasKEMAgreement())
                 {
                     continue;
                 }
