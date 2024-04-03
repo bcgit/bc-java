@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -57,7 +58,7 @@ public class KeyPairGeneratorSpi
             this.secureRandom = new SecureRandom();
         }
 
-        List<KeyPairGenerator> generators = new ArrayList<>();
+        List<KeyPairGenerator> generators = new ArrayList<KeyPairGenerator>();
         try
         {
             switch (this.algorithmIdentifier)
@@ -152,7 +153,7 @@ public class KeyPairGeneratorSpi
                 throw new IllegalStateException("Generators not correctly initialized. Unsupported composite algorithm.");
             }
         }
-        catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException | NoSuchProviderException e)
+        catch (GeneralSecurityException e)
         {
             throw new RuntimeException(e);
         }

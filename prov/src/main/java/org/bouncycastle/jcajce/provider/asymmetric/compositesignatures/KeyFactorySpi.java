@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -34,6 +35,7 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * KeyFactory for composite signatures. List of supported combinations is in CompositeSignaturesConstants
@@ -105,9 +107,9 @@ public class KeyFactorySpi
             }
             return new CompositePrivateKey(keyIdentifier, privateKeys);
         }
-        catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
+        catch (GeneralSecurityException e)
         {
-            throw new RuntimeException(e);
+            throw Exceptions.ioException(e.getMessage(), e);
         }
     }
 
@@ -156,9 +158,9 @@ public class KeyFactorySpi
 
             return new CompositePublicKey(keyIdentifier, publicKeys);
         }
-        catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeySpecException e)
+        catch (GeneralSecurityException e)
         {
-            throw new RuntimeException(e);
+            throw Exceptions.ioException(e.getMessage(), e);
         }
     }
 
@@ -173,8 +175,8 @@ public class KeyFactorySpi
     private List<KeyFactory> getKeyFactoriesFromIdentifier(ASN1ObjectIdentifier algorithmIdentifier)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
-        List<KeyFactory> factories = new ArrayList<>();
-        List<String> algorithmNames = new ArrayList<>();
+        List<KeyFactory> factories = new ArrayList<KeyFactory>();
+        List<String> algorithmNames = new ArrayList<String>();
 
         switch (CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(algorithmIdentifier))
         {
