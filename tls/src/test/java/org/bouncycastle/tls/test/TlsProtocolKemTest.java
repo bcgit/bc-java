@@ -13,7 +13,7 @@ import org.bouncycastle.util.io.Streams;
 
 import junit.framework.TestCase;
 
-public class TlsProtocolKEMTest
+public class TlsProtocolKemTest
         extends TestCase
 {
 
@@ -36,7 +36,7 @@ public class TlsProtocolKEMTest
         catch (Exception ignored)
         {
         }
-        MockTlsKEMClient client = new MockTlsKEMClient(null);
+        MockTlsKemClient client = new MockTlsKemClient(null);
         client.setSupportedGroups(new int[] {NamedGroup.OQS_mlkem512});
         try
         {
@@ -63,7 +63,7 @@ public class TlsProtocolKEMTest
         ServerThread serverThread = new ServerThread(serverProtocol, false);
         serverThread.start();
 
-        MockTlsKEMClient client = new MockTlsKEMClient(null);
+        MockTlsKemClient client = new MockTlsKemClient(null);
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -111,7 +111,7 @@ public class TlsProtocolKEMTest
         {
             try
             {
-                MockTlsKEMServer server = new MockTlsKEMServer();
+                MockTlsKemServer server = new MockTlsKemServer();
                 if (supportedGroups != null)
                 {
                     server.setSupportedGroups(supportedGroups);

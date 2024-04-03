@@ -32,12 +32,12 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Hex;
 
-class MockTlsKEMClient
+class MockTlsKemClient
         extends DefaultTlsClient
 {
     TlsSession session;
 
-    MockTlsKEMClient(TlsSession session)
+    MockTlsKemClient(TlsSession session)
     {
         super(new BcTlsCrypto());
 
