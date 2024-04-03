@@ -5434,15 +5434,12 @@ public class TlsUtils
                 }
 
                 if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKEM(group) && !crypto.hasKEMAgreement()))
                 {
                     continue;
                 }
 
-                if (NamedGroup.refersToASpecificKEM(group) && !crypto.hasKEMAgreement())
-                {
-                    continue;
-                }
 
                 return clientShare;
             }
