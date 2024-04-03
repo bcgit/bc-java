@@ -19,6 +19,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.Composite
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
 public class CompositeSignaturesTest
@@ -62,10 +63,10 @@ public class CompositeSignaturesTest
             CompositePublicKey compositePublicKey = (CompositePublicKey)keyPair.getPublic();
             CompositePrivateKey compositePrivateKey = (CompositePrivateKey)keyPair.getPrivate();
 
-            String firstPublicKeyAlgorithm = compositePublicKey.getPublicKeys().get(0).getAlgorithm().toUpperCase();
-            String secondPublicKeyAlgorithm = compositePublicKey.getPublicKeys().get(1).getAlgorithm().toUpperCase();
-            String firstPrivateKeyAlgorithm = compositePrivateKey.getPrivateKeys().get(0).getAlgorithm().toUpperCase();
-            String secondPrivateKeyAlgorithm = compositePrivateKey.getPrivateKeys().get(1).getAlgorithm().toUpperCase();
+            String firstPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(0).getAlgorithm());
+            String secondPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(1).getAlgorithm());
+            String firstPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(0).getAlgorithm());
+            String secondPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(1).getAlgorithm());
 
             BCRSAPublicKey rsaPublicKey = null;
             BCRSAPublicKey rsaPrivateKey = null;
