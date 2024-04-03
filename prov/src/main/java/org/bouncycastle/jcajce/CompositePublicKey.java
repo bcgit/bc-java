@@ -55,7 +55,7 @@ public class CompositePublicKey implements PublicKey
             throw new IllegalArgumentException("at least one public key must be provided for the composite public key");
         }
 
-        List<PublicKey> keyList = new ArrayList<>(keys.length);
+        List<PublicKey> keyList = new ArrayList<PublicKey>(keys.length);
         for (int i = 0; i < keys.length; i++)
         {
             keyList.add(keys[i]);
@@ -77,19 +77,19 @@ public class CompositePublicKey implements PublicKey
             //Check if the public key algorithm specified in SubjectPublicKeyInfo is one of the supported composite signatures.
             if (!Arrays.asList(CompositeSignaturesConstants.supportedIdentifiers).contains(keyInfoIdentifier))
             {
-                throw new IllegalStateException("Unable to create CompositePublicKey from SubjectPublicKeyInfo");
+                throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
             AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
             publicKeyFromFactory = (CompositePublicKey) keyInfoConverter.generatePublic(keyInfo);
 
             if (publicKeyFromFactory == null)
             {
-                throw new IllegalStateException("Unable to create CompositePublicKey from SubjectPublicKeyInfo");
+                throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e.getMessage(), e);
         }
 
         this.keys = publicKeyFromFactory.getPublicKeys();

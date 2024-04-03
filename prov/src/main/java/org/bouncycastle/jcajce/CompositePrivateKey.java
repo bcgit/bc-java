@@ -17,6 +17,7 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * A composite private key class.
@@ -52,10 +53,10 @@ public class CompositePrivateKey implements PrivateKey
 
         if (keys == null || keys.length == 0)
         {
-            throw new IllegalArgumentException("At least one private key must be provided for the composite private key.");
+            throw new IllegalArgumentException("at least one private key must be provided for the composite private key");
         }
 
-        List<PrivateKey> keyList = new ArrayList<>(keys.length);
+        List<PrivateKey> keyList = new ArrayList<PrivateKey>(keys.length);
         for (int i = 0; i < keys.length; i++)
         {
             keyList.add(keys[i]);
@@ -88,7 +89,7 @@ public class CompositePrivateKey implements PrivateKey
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
 
         this.keys = privateKeyFromFactory.getPrivateKeys();
@@ -142,7 +143,7 @@ public class CompositePrivateKey implements PrivateKey
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("Unable to encode composite private key: " + e.getMessage());
+            throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
         }
     }
 
