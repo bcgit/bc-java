@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
@@ -19,6 +20,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Enumeration;
+
+import javax.swing.KeyStroke;
 
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -2132,6 +2135,56 @@ public class PKCS12StoreTest
         isTrue(ks.isCertificateEntry("cert0"));
     }
 
+    private void testStoreType(String storeType, boolean isMacExpected)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPair kp = kpGen.generateKeyPair();
+        X509Certificate cert = TestUtils.createSelfSignedCert(new X500Name("CN=PKCS12 Test"), "SHA256withECDSA", kp);
+
+        KeyStore keyStore = KeyStore.getInstance(storeType, "BC");
+        keyStore.load(null, null);
+
+        keyStore.setKeyEntry("key", kp.getPrivate(), null, new Certificate[] { cert });
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        keyStore.store(bOut, passwd);
+
+        KeyStore inStore = KeyStore.getInstance("PKCS12", "BC");
+
+        inStore.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
+
+        FileOutputStream fOut = new FileOutputStream("/tmp/" + storeType + ".p12");
+        fOut.write(bOut.toByteArray());
+        fOut.close();
+        Key k = inStore.getKey("key", null);
+
+        Pfx pfx = Pfx.getInstance(bOut.toByteArray());
+
+        if (isMacExpected)
+        {
+            isTrue(pfx.getMacData() != null);
+        }
+        else
+        {
+            isTrue(pfx.getMacData() == null);
+        }
+
+    }
+    
+    private void testAES256_AES128()
+        throws Exception
+    {
+        testStoreType("PKCS12-AES256-AES128", true);
+    }
+
+    private void testAES256GCM_AES128_GCM()
+        throws Exception
+    {
+        testStoreType("PKCS12-AES256-AES128-GCM", false);
+    }
+
     public void performTest()
         throws Exception
     {
@@ -2148,6 +2201,9 @@ public class PKCS12StoreTest
         testNTRUStore();
         testSphincsPlusStore();
         testRawKeyBagStore();
+        testAES256_AES128();
+        testAES256GCM_AES128_GCM();
+
         // converter tests
 
         KeyStore kS = KeyStore.getInstance("PKCS12", BC);
