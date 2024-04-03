@@ -127,6 +127,10 @@ public class TlsProtocolKEMTest
                 }
                 catch (IOException ignored)
                 {
+                    if (!shouldFail)
+                    {
+                        fail();
+                    }
                 }
 
                 Streams.pipeAll(serverProtocol.getInputStream(), serverProtocol.getOutputStream());
