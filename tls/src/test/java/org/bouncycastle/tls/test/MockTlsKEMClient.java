@@ -53,9 +53,9 @@ class MockTlsKEMClient
     }
 
     public int[] supportedGroups = new int[] {
-            NamedGroup.mlkem512,
-            NamedGroup.mlkem768,
-            NamedGroup.mlkem1024
+            NamedGroup.OQS_mlkem512,
+            NamedGroup.OQS_mlkem768,
+            NamedGroup.OQS_mlkem1024
     };
 
     public void setSupportedGroups(int[] supportedGroups)
