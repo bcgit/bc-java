@@ -345,7 +345,6 @@ class ProvSSLSocketDirect
     public synchronized void setHost(String host)
     {
         this.peerHost = host;
-        this.peerHostSNI = host;
     }
 
     @Override
@@ -531,6 +530,7 @@ class ProvSSLSocketDirect
         InetAddress peerAddress = getInetAddress();
         if (null == peerAddress)
         {
+            this.peerHostSNI = null;
             return;
         }
 
@@ -538,8 +538,8 @@ class ProvSSLSocketDirect
          * TODO[jsse] If we could somehow access the 'originalHostName' of peerAddress, it would be
          * usable as a default SNI host_name.
          */
-//        String originalHostName = null;
-//        if (null != originalHostName)
+//        String originalHostName = peerAddress.holder().getOriginalHostName();
+//        if (JsseUtils.isNameSpecified(originalHostName))
 //        {
 //            this.peerHost = originalHostName;
 //            this.peerHostSNI = originalHostName;
@@ -555,13 +555,17 @@ class ProvSSLSocketDirect
             return;
         }
 
-        if (useClientMode && provJdkTlsTrustNameService)
+        if (!useClientMode)
+        {
+            this.peerHost = peerAddress.getHostAddress();
+        }
+        else if (provJdkTlsTrustNameService)
         {
             this.peerHost = peerAddress.getHostName();
         }
         else
         {
-            this.peerHost = peerAddress.getHostAddress();
+            this.peerHost = null;
         }
 
         this.peerHostSNI = null;
