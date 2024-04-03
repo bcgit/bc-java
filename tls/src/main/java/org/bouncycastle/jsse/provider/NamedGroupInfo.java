@@ -75,9 +75,11 @@ class NamedGroupInfo
         ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
         ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman"),
 
-        kyber512(NamedGroup.kyber512, "KEM"),
-        kyber768(NamedGroup.kyber768, "KEM"),
-        kyber1024(NamedGroup.kyber1024, "KEM");
+        OQS_mlkem512(NamedGroup.OQS_mlkem512, "ML-KEM"),
+        OQS_mlkem768(NamedGroup.OQS_mlkem768, "ML-KEM"),
+        OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
+        DRAFT_mlkem768(NamedGroup.DRAFT_mlkem768, "ML-KEM"),
+        DRAFT_mlkem1024(NamedGroup.DRAFT_mlkem1024, "ML-KEM");
 
         private final int namedGroup;
         private final String name;

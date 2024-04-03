@@ -48,8 +48,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
-import org.bouncycastle.tls.crypto.TlsKEMConfig;
-import org.bouncycastle.tls.crypto.TlsKEMDomain;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -438,13 +438,18 @@ public class JcaTlsCrypto
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
-        else if (NamedGroup.refersToASpecificKEM(namedGroup))
+        else if (NamedGroup.refersToASpecificKem(namedGroup))
         {
             switch (namedGroup)
             {
-            case NamedGroup.kyber512:
-            case NamedGroup.kyber768:
-            case NamedGroup.kyber1024:
+            /*
+             * TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
+             */
+            case NamedGroup.OQS_mlkem512:
+            case NamedGroup.OQS_mlkem768:
+            case NamedGroup.OQS_mlkem1024:
+            case NamedGroup.DRAFT_mlkem768:
+            case NamedGroup.DRAFT_mlkem1024:
                 return null;
             }
         }
@@ -572,7 +577,7 @@ public class JcaTlsCrypto
         return true;
     }
     
-    public boolean hasKEMAgreement()
+    public boolean hasKemAgreement()
     {
         return true;
     }
@@ -841,9 +846,9 @@ public class JcaTlsCrypto
         }
     }
     
-    public TlsKEMDomain createKEMDomain(TlsKEMConfig kemConfig)
+    public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
     {
-        return new JceTlsKyberDomain(this, kemConfig);
+        return new JceTlsMLKemDomain(this, kemConfig);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
@@ -1170,8 +1175,9 @@ public class JcaTlsCrypto
                 }
                 }
             }
-            else if (NamedGroup.refersToASpecificKEM(namedGroup))
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
             {
+                // TODO[tls-kem] When implemented via provider, need to check for support dynamically
                 return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))

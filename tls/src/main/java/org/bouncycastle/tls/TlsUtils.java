@@ -40,7 +40,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
-import org.bouncycastle.tls.crypto.TlsKEMConfig;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -5374,11 +5374,11 @@ public class TlsUtils
                     agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
                 }
             }
-            else if (NamedGroup.refersToASpecificKEM(supportedGroup))
+            else if (NamedGroup.refersToASpecificKem(supportedGroup))
             {
-                if (crypto.hasKEMAgreement())
+                if (crypto.hasKemAgreement())
                 {
-                    agreement = crypto.createKEMDomain(new TlsKEMConfig(supportedGroup, new TlsCryptoParameters(clientContext))).createKEM();
+                    agreement = crypto.createKemDomain(new TlsKemConfig(supportedGroup, false)).createKem();
                 }
             }
 
@@ -5434,7 +5434,8 @@ public class TlsUtils
                 }
 
                 if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
                     continue;
                 }
@@ -5470,7 +5471,8 @@ public class TlsUtils
                 }
 
                 if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
                     continue;
                 }
