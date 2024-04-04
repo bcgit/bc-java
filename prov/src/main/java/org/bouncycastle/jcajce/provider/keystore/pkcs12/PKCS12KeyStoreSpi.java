@@ -115,6 +115,7 @@ import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
@@ -686,7 +687,7 @@ public class PKCS12KeyStoreSpi
             SecretKeyFactory keyFact = helper.createSecretKeyFactory(algorithm);
             PBEParameterSpec defParams = new PBEParameterSpec(
                 pbeParams.getIV(),
-                pbeParams.getIterations().intValue());
+                BigIntegers.intValueExact(pbeParams.getIterations()));
 
             Cipher cipher = helper.createCipher(algorithm);
 
@@ -710,7 +711,8 @@ public class PKCS12KeyStoreSpi
         throws IOException
     {
         PBEKeySpec pbeSpec = new PBEKeySpec(password, pbeParams.getSalt(),
-            pbeParams.getIterationCount().intValueExact(), pbeParams.getKeyLength().intValueExact() * 8);
+            BigIntegers.intValueExact(pbeParams.getIterationCount()),
+            BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8);
         byte[] out;
 
         try
@@ -752,7 +754,7 @@ public class PKCS12KeyStoreSpi
             {
                 PBEParameterSpec defParams = new PBEParameterSpec(
                     pbeParams.getIV(),
-                    pbeParams.getIterations().intValue());
+                    BigIntegers.intValueExact(pbeParams.getIterations()));
                 PKCS12Key key = new PKCS12Key(password, wrongPKCS12Zero);
 
                 Cipher cipher = helper.createCipher(algorithm.getId());
@@ -1319,7 +1321,7 @@ public class PKCS12KeyStoreSpi
 
     private int validateIterationCount(BigInteger i)
     {
-        int count = i.intValue();
+        int count = BigIntegers.intValueExact(i);
 
         if (count < 0)
         {
@@ -1329,9 +1331,10 @@ public class PKCS12KeyStoreSpi
         BigInteger maxValue = Properties.asBigInteger(PKCS12_MAX_IT_COUNT_PROPERTY);
         if (maxValue != null)
         {
-            if (maxValue.intValue() < count)
+            if (BigIntegers.intValueExact(maxValue) < count)
             {
-                throw new IllegalStateException("iteration count " + count + " greater than " + maxValue.intValue());
+                throw new IllegalStateException("iteration count " + count + " greater than "
+                    + BigIntegers.intValueExact(maxValue));
             }
         }
 
