@@ -94,14 +94,15 @@ public abstract class DTLSProtocol
     protected static int validateSelectedCipherSuite(int selectedCipherSuite, short alertDescription)
         throws IOException
     {
-        switch (TlsUtils.getEncryptionAlgorithm(selectedCipherSuite))
+        int encryptionAlgorithm = TlsUtils.getEncryptionAlgorithm(selectedCipherSuite);
+        if (EncryptionAlgorithm.NULL != encryptionAlgorithm)
         {
-        case EncryptionAlgorithm.RC4_40:
-        case EncryptionAlgorithm.RC4_128:
-        case -1:
-            throw new TlsFatalAlert(alertDescription);
-        default:
-            return selectedCipherSuite;
+            int cipherType = TlsUtils.getEncryptionAlgorithmType(encryptionAlgorithm);
+            if (cipherType < 0 || CipherType.stream == cipherType)
+            {
+                throw new TlsFatalAlert(alertDescription);
+            }
         }
+        return selectedCipherSuite;
     }
 }
