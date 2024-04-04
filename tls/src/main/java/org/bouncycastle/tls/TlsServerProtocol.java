@@ -398,7 +398,7 @@ public class TlsServerProtocol
             int namedGroup = clientShare.getNamedGroup();
     
             TlsAgreement agreement;
-            if (NamedGroup.refersToASpecificCurve(namedGroup))
+            if (NamedGroup.refersToAnECDHCurve(namedGroup))
             {
                 agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
             }
