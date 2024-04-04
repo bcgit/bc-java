@@ -75,7 +75,7 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
     {
         byte[] detachedCms = Base64.getDecoder().decode(SIGNATURE);
         byte[] rootCertificate = Base64.getDecoder().decode(CA_CERTIFICATE);
-        List<X509CertificateHolder> trustedCertificates = new ArrayList<>();
+        List<X509CertificateHolder> trustedCertificates = new ArrayList<X509CertificateHolder>();
         trustedCertificates.add(new X509CertificateHolder(rootCertificate));
 
         boolean isSignatureValid = verifyDetached(SIGNED_DATA, detachedCms, trustedCertificates);
@@ -92,7 +92,7 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
         boolean result = false;
         try
         {
-            HashSet<TrustAnchor> trustAnchors = new HashSet<>();
+            HashSet<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
             for (X509CertificateHolder trustedCert : trustedCertificates)
             {
                 TrustAnchor trustAnchor = new TrustAnchor(getX509Certificate(trustedCert), null);

@@ -64,11 +64,12 @@ public class CMSAuthEnvelopedDataParser
         //
         ASN1Set recipientInfos = ASN1Set.getInstance(authEvnData.getRecipientInfos().toASN1Primitive());
 
-        EncryptedContentInfoParser encInfo = authEvnData.getAuthEncryptedContentInfo();
+        final EncryptedContentInfoParser encInfo = authEvnData.getAuthEncryptedContentInfo();
+        
         encAlg = encInfo.getContentEncryptionAlgorithm();
         localMacProvider = new LocalMacProvider(authEvnData, this);
 
-        CMSReadable readable = new CMSProcessableInputStream(new InputStreamWithMAC(
+        final CMSReadable readable = new CMSProcessableInputStream(new InputStreamWithMAC(
             ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream(), localMacProvider));
 
         CMSSecureReadableWithAAD secureReadable = new CMSSecureReadableWithAAD()
