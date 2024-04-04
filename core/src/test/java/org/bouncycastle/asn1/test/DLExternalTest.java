@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -185,7 +184,7 @@ public class DLExternalTest
         isTrue("check tag", objNameTagged.hasContextTag(3));
         isEquals("check implicit", false, objNameTagged.isExplicit());
         isEquals("check tagged object: " + objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass(), DEROctetString.class.getName(), objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass().getName());
-        isEquals("check O", "Organization", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), Charset.forName("8859_1")));
+        isEquals("check O", "Organization", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), "8859_1"));
         isEquals("check fourth element in set: " + objNameElems.getObjectAt(3).getClass(), DLTaggedObject.class.getName(), objNameElems.getObjectAt(3).getClass().getName());
         objNameTagged = (DLTaggedObject)objNameElems.getObjectAt(3);
         isTrue("check tag", objNameTagged.hasContextTag(5));
@@ -195,7 +194,7 @@ public class DLExternalTest
         isTrue("check tag", objNameTagged.hasContextTag(0));
         isEquals("check implicit", false, objNameTagged.isExplicit());
         isEquals("check tagged object: " + objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass(), DEROctetString.class.getName(), objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING).getClass().getName());
-        isEquals("check CN", "Common Name", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), Charset.forName("8859_1")));
+        isEquals("check CN", "Common Name", new String(((DEROctetString)objNameTagged.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets(), "8859_1"));
 
         isEquals("check second element in set: " + msBindSet.getObjectAt(1).getClass(), DLTaggedObject.class.getName(), msBindSet.getObjectAt(1).getClass().getName());
         DLTaggedObject password = (DLTaggedObject)msBindSet.getObjectAt(1);
@@ -217,8 +216,8 @@ public class DLExternalTest
         ASN1EncodableVector objectNameVec = new ASN1EncodableVector();
         objectNameVec.add(new DLTaggedObject(BERTags.APPLICATION, 0, new DERPrintableString("de")));
         objectNameVec.add(new DLTaggedObject(BERTags.APPLICATION, 2, new DERPrintableString("viaT")));
-        objectNameVec.add(new DLTaggedObject(false, 3, new DEROctetString("Organization".getBytes(Charset.forName("8859_1")))));
-        objectNameVec.add(new DLTaggedObject(true, 5, new DLTaggedObject(false, 0, new DEROctetString("Common Name".getBytes(Charset.forName("8859_1"))))));
+        objectNameVec.add(new DLTaggedObject(false, 3, new DEROctetString("Organization".getBytes("8859_1"))));
+        objectNameVec.add(new DLTaggedObject(true, 5, new DLTaggedObject(false, 0, new DEROctetString("Common Name".getBytes("8859_1")))));
 
         DLTaggedObject objectName = new DLTaggedObject(BERTags.APPLICATION, 0, new DLSequence(objectNameVec));
         DLTaggedObject password = new DLTaggedObject(true, 2, new DERIA5String("SomePassword"));

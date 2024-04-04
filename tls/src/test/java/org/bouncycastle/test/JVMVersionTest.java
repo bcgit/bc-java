@@ -6,22 +6,22 @@ import org.junit.Test;
 /**
  * This test asserts the java version running the tests starts with
  * a property value passed in as part of test invocation.
- *
+ * <p>
  * -Dtest.java.version.prefix must match the start of System.getProperty("java.version")
  * So:
- *  if -Dtest.java.version.prefix=17 and System.getProperty("java.version") = 17.0.4.1
- *  Then this test will pass.
+ * if -Dtest.java.version.prefix=17 and System.getProperty("java.version") = 17.0.4.1
+ * Then this test will pass.
  */
-public class JVMVersionTest extends TestCase
+public class JVMVersionTest
+    extends TestCase
 {
 
     private static final String expectedVersionPropName = "test.java.version.prefix";
 
 
     @Test
-    public void testAssertExpectedJVM() {
-
-
+    public void testAssertExpectedJVM()
+    {
 
 
         //
@@ -34,13 +34,13 @@ public class JVMVersionTest extends TestCase
         // It is important for multi-release jars to be exercised on a representative JVM for each JVM they support.
         //
         //
-        assertNotNull(String.format("property %s is not set, see comment in test for reason why.",expectedVersionPropName),System.getProperty(expectedVersionPropName));
+        assertNotNull(String.format("property %s is not set, see comment in test for reason why.", expectedVersionPropName), System.getProperty(expectedVersionPropName));
 
 
         String version = System.getProperty("java.version");
         String expectedPrefix = System.getProperty(expectedVersionPropName);
 
-        assertTrue(String.format("JVM Version: '%s' did not start with '%s' see comment in test",version,expectedPrefix), version.startsWith(expectedPrefix));
+        assertTrue(String.format("JVM Version: '%s' did not start with '%s' see comment in test", version, expectedPrefix), version.startsWith(expectedPrefix));
 
 
     }
