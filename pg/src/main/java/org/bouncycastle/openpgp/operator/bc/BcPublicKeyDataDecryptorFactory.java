@@ -65,12 +65,12 @@ public class BcPublicKeyDataDecryptorFactory
             if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
             {
                 return getSessionData(secKeyData[0], privKey, X25519PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA256,
-                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(), "X25519", X25519PublicKeyParameters::new);
+                    SymmetricKeyAlgorithmTags.AES_128, new X25519Agreement(), "X25519", new X25519PublicKeyParameters());
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
             {
                 return getSessionData(secKeyData[0], privKey, X448PublicBCPGKey.LENGTH, HashAlgorithmTags.SHA512,
-                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(), "X448", X448PublicKeyParameters::new);
+                    SymmetricKeyAlgorithmTags.AES_256, new X448Agreement(), "X448", new X448PublicKeyParameters());
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
             {

@@ -116,13 +116,13 @@ public class BcAEADUtil
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_192
             || encAlgorithm == SymmetricKeyAlgorithmTags.AES_256)
         {
-            return createAEADCipher(aeadAlgorithm, AESEngine::newInstance);
+            return createAEADCipher(aeadAlgorithm, AESEngine.newInstance());
         }
         else if (enableCamellia && (encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_128
             || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_192
             || encAlgorithm == SymmetricKeyAlgorithmTags.CAMELLIA_256))
         {
-            return createAEADCipher(aeadAlgorithm, CamelliaEngine::new);
+            return createAEADCipher(aeadAlgorithm, new CamelliaEngine());
         }
         // Block Cipher must work on 16 byte blocks
         throw new PGPException("AEAD only supported for AES" + (enableCamellia ? " and Camellia" : "") + " based algorithms");
