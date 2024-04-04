@@ -626,6 +626,14 @@ public class SignedMailValidator
         {
             CertStore store = (CertStore)it.next();
             Collection coll = store.getCertificates(selector);
+            // sometimes the subjectKeyIdentifier in a TA certificate, even when the authorityKeyIdentifier is set.
+            // where this happens we role back to a simpler match to make sure we've got all the possibilities.
+            if (coll.isEmpty() && selector.getSubjectKeyIdentifier() != null)
+            {
+                X509CertSelector certSelector = (X509CertSelector)selector.clone();
+                certSelector.setSubjectKeyIdentifier(null);
+                coll = store.getCertificates(certSelector);
+            }
             result.addAll(coll);
         }
         return result;
