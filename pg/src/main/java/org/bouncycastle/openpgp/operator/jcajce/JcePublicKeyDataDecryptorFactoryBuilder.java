@@ -282,7 +282,11 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
-        catch (GeneralSecurityException | IOException e)
+        catch (GeneralSecurityException e)
+        {
+            throw new PGPException("error setting asymmetric cipher", e);
+        }
+        catch (IOException e)
         {
             throw new PGPException("error setting asymmetric cipher", e);
         }
