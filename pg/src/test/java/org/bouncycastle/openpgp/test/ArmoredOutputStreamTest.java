@@ -182,15 +182,27 @@ public class ArmoredOutputStreamTest
 
     public void testExceptions()
     {
-        testException("unknown hash algorithm tag in beginClearText: ", "IOException", () -> {
-            ArmoredOutputStream aOut = new ArmoredOutputStream(new ByteArrayOutputStream());
-            aOut.beginClearText(HashAlgorithmTags.SM3);
+        testException("unknown hash algorithm tag in beginClearText: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                ArmoredOutputStream aOut = new ArmoredOutputStream(new ByteArrayOutputStream());
+                         aOut.beginClearText(HashAlgorithmTags.SM3);
+            }
         });
 
-        testException("Armor header value for key ", "IllegalArgumentException", () -> {
-            ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+        testException("Armor header value for key ", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                ArmoredOutputStream aOut = ArmoredOutputStream.builder()
                 .setVersion("Text\nText")
                 .build(new ByteArrayOutputStream());
+            }
         });
     }
 

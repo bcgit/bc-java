@@ -174,7 +174,7 @@ public class JcaPGPKeyConverter
         }
 
         PublicKeyPacket pubPk = privKey.getPublicKeyPacket();
-        BCPGKey privPk = privKey.getPrivateKeyDataPacket();
+        final BCPGKey privPk = privKey.getPrivateKeyDataPacket();
 
         try
         {
@@ -509,11 +509,25 @@ public class JcaPGPKeyConverter
         }
         case PublicKeyAlgorithmTags.Ed25519:
         {
-            return getPrivateBCPGKey(privKey, Ed25519SecretBCPGKey::new);
+            return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                {
+                    return new Ed25519SecretBCPGKey(pInfoEncoded);
+                }
+            });
         }
         case PublicKeyAlgorithmTags.Ed448:
         {
-            return getPrivateBCPGKey(privKey, Ed448SecretBCPGKey::new);
+            return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                {
+                    return new Ed448SecretBCPGKey(pInfoEncoded);
+                }
+            });
         }
         case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
         case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
@@ -583,7 +597,14 @@ public class JcaPGPKeyConverter
         }
         else if (algorithm == PGPPublicKey.Ed25519)
         {
-            return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, Ed25519PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new Ed25519PublicBCPGKey(key);
+                }
+            });
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED2", 0, 3))
         {
@@ -591,7 +612,14 @@ public class JcaPGPKeyConverter
         }
         else if (algorithm == PGPPublicKey.X25519)
         {
-            return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, X25519PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new X25519PublicBCPGKey(key);
+                }
+            });
         }
         else if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
         {
@@ -602,11 +630,25 @@ public class JcaPGPKeyConverter
         }
         else if (algorithm == PGPPublicKey.Ed448)
         {
-            return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, Ed448PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new Ed448PublicBCPGKey(key);
+                }
+            });
         }
         else if (algorithm == PGPPublicKey.X448)
         {
-            return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, X448PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new X448PublicBCPGKey(key);
+                }
+            });
         }
         else
         {

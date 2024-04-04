@@ -146,7 +146,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                 return c.processBlock(sessionInfo, 0, sessionInfo.length);
             }
         }
-        catch (InvalidCipherTextException | IOException e)
+        catch (Exception e)
         {
             throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
         }
