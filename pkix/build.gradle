@@ -9,18 +9,12 @@ sourceSets {
             srcDirs = ['src/main/jdk1.9']
         }
     }
-
-
 }
 
 dependencies {
     implementation project(':core')
     implementation project(':prov')
     implementation project(':util')
-
-//    implementation files("$bc_prov")
-//    implementation files("$bc_util")
-  //  implementation project(path: ':core')
 
     java9Implementation project(':prov')
     java9Implementation project(':util')
@@ -29,7 +23,6 @@ dependencies {
     }
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
-
 }
 
 compileJava {
