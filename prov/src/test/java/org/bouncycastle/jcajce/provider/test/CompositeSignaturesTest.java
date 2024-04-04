@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce.provider.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -163,11 +162,11 @@ public class CompositeSignaturesTest
             KeyPair keyPair = keyPairGenerator.generateKeyPair();
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initSign(keyPair.getPrivate());
-            signature.update(messageToBeSigned.getBytes(StandardCharsets.UTF_8));
+            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
             byte[] signatureValue = signature.sign();
 
             signature.initVerify(keyPair.getPublic());
-            signature.update(messageToBeSigned.getBytes(StandardCharsets.UTF_8));
+            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
             TestCase.assertTrue(signature.verify(signatureValue));
         }
     }
@@ -181,7 +180,7 @@ public class CompositeSignaturesTest
         int count = 0;
         while ((line = reader.readLine()) != null)
         {
-            if (line.isEmpty())
+            if (line.length() == 0)
             {
                 continue;
             }
