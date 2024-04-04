@@ -156,9 +156,25 @@ public class BcpgGeneralTest
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
         final Iterator it = objectFactory.iterator();
-        testException("Cannot remove element from factory.", "UnsupportedOperationException", () -> it.remove());
+        testException("Cannot remove element from factory.", "UnsupportedOperationException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                it.remove();
+            }
+        });
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)it.next();
-        testException(null, "NoSuchElementException", () -> it.next());
+        testException(null, "NoSuchElementException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                it.next();
+            }
+        });
 
         PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
         isEquals(encryptedData.getAlgorithm(), SymmetricKeyAlgorithmTags.AES_128);

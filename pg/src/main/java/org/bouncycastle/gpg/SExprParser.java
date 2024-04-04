@@ -183,17 +183,21 @@ public class SExprParser
                 pubKey = new PGPPublicKey(pubPacket, fingerPrintCalculator);
             }
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, eccLabels,
-                keyIn ->
+                new GetSecKeyDataOperation()
                 {
-                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
-                    final String curve = expression.getExpressionWithLabel("curve").getString(1);
-                    if (curve.startsWith("NIST") || curve.startsWith("brain"))
+                    @Override
+                    public byte[] getSecKeyData(SExpression keyIn)
                     {
-                        return new ECSecretBCPGKey(d).getEncoded();
-                    }
-                    else
-                    {
-                        return new EdSecretBCPGKey(d).getEncoded();
+                        BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
+                        final String curve = expression.getExpressionWithLabel("curve").getString(1);
+                        if (curve.startsWith("NIST") || curve.startsWith("brain"))
+                        {
+                            return new ECSecretBCPGKey(d).getEncoded();
+                        }
+                        else
+                        {
+                            return new EdSecretBCPGKey(d).getEncoded();
+                        }
                     }
                 });
         }
@@ -219,10 +223,15 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, dsaLabels,
-                keyIn ->
+                new GetSecKeyDataOperation()
                 {
-                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
-                    return new DSASecretBCPGKey(x).getEncoded();
+                    @Override
+                    public byte[] getSecKeyData(SExpression keyIn)
+                    {
+                        BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
+
+                        return new DSASecretBCPGKey(x).getEncoded();
+                    }
                 });
         }
         else if (keyType.equals("elg"))
@@ -246,10 +255,15 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, elgLabels,
-                keyIn ->
+                new GetSecKeyDataOperation()
                 {
-                    BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
-                    return new ElGamalSecretBCPGKey(x).getEncoded();
+                    @Override
+                    public byte[] getSecKeyData(SExpression keyIn)
+                    {
+                        BigInteger x = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("x").getBytes(1));
+
+                        return new ElGamalSecretBCPGKey(x).getEncoded();
+                    }
                 });
         }
         else if (keyType.equals("rsa"))
@@ -275,12 +289,16 @@ public class SExprParser
                 }
             });
             secretKeyPacket = getSecKeyPacket(pubKey, keyProtectionRemoverFactory, maxDepth, type, expression, digestProvider, rsaLabels,
-                keyIn ->
+                new GetSecKeyDataOperation()
                 {
-                    BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
-                    BigInteger p = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("p").getBytes(1));
-                    BigInteger q = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("q").getBytes(1));
-                    return new RSASecretBCPGKey(d, p, q).getEncoded();
+                    @Override
+                    public byte[] getSecKeyData(SExpression keyIn)
+                    {
+                        BigInteger d = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("d").getBytes(1));
+                        BigInteger p = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("p").getBytes(1));
+                        BigInteger q = BigIntegers.fromUnsignedByteArray(keyIn.getExpressionWithLabelOrFail("q").getBytes(1));
+                        return new RSASecretBCPGKey(d, p, q).getEncoded();
+                    }
                 });
         }
         else
@@ -340,14 +358,14 @@ public class SExprParser
         return pubKey;
     }
 
-    private interface getSecKeyDataOperation
+    private interface GetSecKeyDataOperation
     {
         byte[] getSecKeyData(SExpression keyIn);
     }
 
     private static SecretKeyPacket getSecKeyPacket(PGPPublicKey pubKey, PBEProtectionRemoverFactory keyProtectionRemoverFactory, int maxDepth, int type,
                                                    SExpression expression, PGPDigestCalculatorProvider digestProvider,
-                                                   Map<Integer, String[]> labels, getSecKeyDataOperation operation)
+                                                   Map<Integer, String[]> labels, GetSecKeyDataOperation operation)
         throws PGPException, IOException
     {
         byte[] secKeyData = null;

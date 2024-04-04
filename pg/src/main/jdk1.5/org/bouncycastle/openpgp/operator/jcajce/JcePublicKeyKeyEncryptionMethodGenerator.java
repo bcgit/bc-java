@@ -26,7 +26,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpecWithPrepend;
+import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -97,7 +97,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
+                final ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 String keyEncryptionOID = RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId();
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
                 if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
@@ -240,7 +240,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         KeyPair ephKP = kpGen.generateKeyPair();
 
         byte[] ephPubEncoding = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getBytes();
-        UserKeyingMaterialSpecWithPrepend ukmSpec = JcaJcePGPUtil.getUserKeyingMaterialSpecWithPrepend(ephPubEncoding, pgpPublicKey.getPublicKeyPacket(), algorithmName);
+        HybridValueParameterSpec ukmSpec = JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(ephPubEncoding, pgpPublicKey.getPublicKeyPacket(), algorithmName);
         Key secret = JcaJcePGPUtil.getSecret(helper, cryptoPublicKey, keyEncryptionOID, agreementAlgorithmName, ukmSpec, ephKP.getPrivate());
         //No checksum or padding
         byte[] sessionData = new byte[sessionInfo.length - 3];

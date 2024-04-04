@@ -118,9 +118,33 @@ public class OperatorJcajceTest
         JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
 
-        testException("can't find MD5", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(3, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
-        testException("can't find SHA1", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(4, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
-        testException("can't find SHA-256", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
+        testException("can't find MD5", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(3, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
+        testException("can't find SHA1", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(4, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
+        testException("can't find SHA-256", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
         //JcaKeyFingerprintCalculator calculator2 = new JcaKeyFingerprintCalculator().setProvider("BC");
         JcaKeyFingerprintCalculator calculator2 = calculator.setProvider("BC");
         PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
@@ -141,17 +165,41 @@ public class OperatorJcajceTest
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
 
-        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", () -> calculator.calculateFingerprint(new PublicKeyPacket(7, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
+        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(7, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
     }
 
     public void testJcePGPDataEncryptorBuilder()
         throws Exception
     {
-        testException("null cipher specified", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL));
+        testException("null cipher specified", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL);
+            }
+        });
 
         //testException("AEAD algorithms can only be used with AES", "IllegalStateException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.IDEA).setWithAEAD(AEADAlgorithmTags.OCB, 6));
 
-        testException("minimum chunkSize is 6", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5));
+        testException("minimum chunkSize is 6", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5);
+            }
+        });
 
         isEquals(16, new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setProvider(new BouncyCastleProvider()).setWithAEAD(AEADAlgorithmTags.OCB, 6).build(new byte[32]).getBlockSize());
     }
@@ -159,8 +207,16 @@ public class OperatorJcajceTest
     public void testJcaPGPDigestCalculatorProviderBuilder()
         throws Exception
     {
-        PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NullProvider()).build();
-        testException("exception on setup: ", "PGPException", () -> provider.get(SymmetricKeyAlgorithmTags.AES_256));
+        final PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NullProvider()).build();
+        testException("exception on setup: ", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                provider.get(SymmetricKeyAlgorithmTags.AES_256);
+            }
+        });
     }
 
     public void testJcaPGPContentVerifierBuilderProvider()
@@ -182,7 +238,15 @@ public class OperatorJcajceTest
         throws Exception
     {
         final PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", () -> new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1));
+        testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1);
+            }
+        });
     }
 
     public void testCreateDigest()
