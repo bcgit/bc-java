@@ -57,7 +57,7 @@ public abstract class CompositeSignaturesConstants
         Falcon512_ECDSA_brainpoolP256r1_SHA256("Falcon512-ECDSA-brainpoolP256r1-SHA256"),
         Falcon512_Ed25519_SHA512("Falcon512-Ed25519-SHA512");
 
-        private String id;
+        private final String id;
 
         private CompositeName(String id)
         {
