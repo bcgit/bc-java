@@ -5336,7 +5336,7 @@ public class TlsUtils
             }
 
             TlsAgreement agreement = null;
-            if (NamedGroup.refersToASpecificCurve(supportedGroup))
+            if (NamedGroup.refersToAnECDHCurve(supportedGroup))
             {
                 if (crypto.hasECDHAgreement())
                 {
@@ -5409,7 +5409,7 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
+                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
                     (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
                     (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
@@ -5446,7 +5446,7 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
+                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
                     (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
                     (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
