@@ -24,11 +24,21 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Issues with a dangling weak reference causing intermittent NullPointerExceptions in the OcspCache have been fixed.</li>
+<li>Issues with non-constant time RSA operations in TLS handshakes have been fixed.</li>
+<li>Issue with Ed25519, Ed448 signature verification causing intermittent infinite loop have been fixed.</li>
+<li>Issues with non-constant time ML-KEM implementation ("Kyber Slash") have been fixed.</li>
+<li>Align ML-KEM input validation with FIPS 203 IPD requirements.</li>
+<li>Make PEM parsing more forgiving of whitespace to align with RFC 7468 - Textual Encodings of PKIX, PKCS, and CMS Structures.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>An implementation of MLS (RFC 9420 - The Messaging Layer Security Protocol) has been added as a new module.</li>
 <li>NTRU now supports NTRU-HPS4096-1229 and NTRU-HRSS-1373.</li>
+<li>Improvements to PGP support, including Curve25519, Curve448 key types.</li>
+<li>Add initial support for ML-KEM in TLS.</li>
+<li>Add XWing hybrid KEM construction (X25519 + ML-KEM-768).</li>
+<li>Introduce initial KEMSpi support (NTRU, SNTRU Prime) for JDK 21+.</li>
+<li>Introduce initial composite signature support for X509 Certificates.</li>
 </ul>
 <h3>2.1.4 Notes.</h3>
 <ul>
@@ -36,6 +46,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>BCJSSE: The boolean system property 'org.bouncycastle.jsse.fips.allowRSAKeyExchange" now defaults to false. All RSA
 key exchange cipher suites will therefore be disabled when the BCJSSE provider is used in FIPS mode, unless this system
 property is explicitly set to true.</li>
+<li>Improve OSGi compatibility.</li>
 </ul>
 
 <a id="r1rv77"><h3>2.2.1 Version</h3></a>
