@@ -47,6 +47,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PGPSecretKeyDecryptorWithAAD;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -68,26 +69,26 @@ public class SExprParser
 
     private static final Map<Integer, String[]> rsaLabels = new HashMap<Integer, String[]>()
     {{
-        put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"rsa", "n", "e", "protected-at"});
-        put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"rsa", "n", "e", "d", "p", "q", "u", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_OCB_AES), new String[]{"rsa", "n", "e", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC), new String[]{"rsa", "n", "e", "d", "p", "q", "u", "protected-at"});
     }};
     private static final Map<Integer, String[]> eccLabels = new HashMap<Integer, String[]>()
     {{
-        put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"ecc", "curve", "flags", "q", "protected-at"});
-        put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"ecc", "curve", "q", "d", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_OCB_AES), new String[]{"ecc", "curve", "flags", "q", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC), new String[]{"ecc", "curve", "q", "d", "protected-at"});
     }};
 
     private static final Map<Integer, String[]> dsaLabels = new HashMap<Integer, String[]>()
     {{
-        put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"dsa", "p", "q", "g", "y", "protected-at"});
-        put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"dsa", "p", "q", "g", "y", "x", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_OCB_AES), new String[]{"dsa", "p", "q", "g", "y", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC), new String[]{"dsa", "p", "q", "g", "y", "x", "protected-at"});
     }};
 
     private static final Map<Integer, String[]> elgLabels = new HashMap<Integer, String[]>()
     {{
         //https://github.com/gpg/gnupg/blob/40227e42ea0f2f1cf9c9f506375446648df17e8d/agent/cvt-openpgp.c#L217
-        put(ProtectionModeTags.OPENPGP_S2K3_OCB_AES, new String[]{"elg", "p", "q", "g", "y", "protected-at"});
-        put(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC, new String[]{"elg", "p", "q", "g", "y", "x", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_OCB_AES), new String[]{"elg", "p", "q", "g", "y", "protected-at"});
+        put(Integers.valueOf(ProtectionModeTags.OPENPGP_S2K3_SHA1_AES_CBC), new String[]{"elg", "p", "q", "g", "y", "x", "protected-at"});
     }};
 
     private static final String[] rsaBigIntegers = new String[]{"n", "e"};
@@ -402,7 +403,7 @@ public class SExprParser
                         {
                             PGPDigestCalculator digestCalculator = digestProvider.get(HashAlgorithmTags.SHA1);
                             OutputStream dOut = digestCalculator.getOutputStream();
-                            byte[] aad = SExpression.buildExpression(expression, keyIn.getExpression(0), labels.get(protection)).toCanonicalForm();
+                            byte[] aad = SExpression.buildExpression(expression, keyIn.getExpression(0), (String[])labels.get(Integers.valueOf(protection))).toCanonicalForm();
                             dOut.write(aad);
                             byte[] check = digestCalculator.getDigest();
                             byte[] hashBytes = keyIn.getExpression(1).getBytes(2);
@@ -415,7 +416,7 @@ public class SExprParser
                     }
                     else //ProtectionModeTags.OPENPGP_S2K3_OCB_AES
                     {
-                        String[] filter = labels.get(protection);
+                        String[] filter = (String[])labels.get(Integers.valueOf(protection));
                         if (filter == null)
                         {
                             // TODO could not get client to generate protected elgamal keys

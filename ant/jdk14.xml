@@ -41,10 +41,6 @@
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
             </fileset>
-            <fileset dir="pg/src/main/jdk1.5">
-                <exclude name="**/keybox/**/*.java"/>
-                <include name="**/*.java"/>
-            </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
@@ -134,17 +130,21 @@
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/gpg/test/*.java"/>
+                <exclude name="**/BcImplProviderTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
-                <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
+                <exclude name="**/cms/test/GOSTR3410_2012_256CmsSignVerifyDetached.java"/>
+                <exclude name="**/cert/test/GOSTR3410_2012_256GenerateCertificate.java"/>
+                <exclude name="**/bouncycastle/cms/test/*AuthEnvelopedData*Test.java"/>
                 <exclude name="**/PKIXRevocationTest.java"/>
 		<exclude name="**/its/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
+		<exclude name="**/MailGeneralTest.java"/>
 		<exclude name="**/SignedMailValidatorTest.java"/>
 		<exclude name="**/DummyCertPathReviewer.java"/>
 	    </fileset>
@@ -204,6 +204,9 @@
             <fileset dir="prov/src/main/javadoc"/>
             <fileset dir="pkix/src/main/javadoc"/>
             <fileset dir="pg/src/main/javadoc"/>
+        </copy>
+        <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="core/src/main/jdk1.4" includes="**/*.java"/>
