@@ -723,7 +723,7 @@ public class OpenPGPTest
             }
         }
 
-        sig = new PGPSignatureList(sKey.getSignatures().next()).get(0);
+        sig = new PGPSignatureList((PGPSignature)sKey.getSignatures().next()).get(0);
 
         if (sig.getKeyID() == vKey.getKeyID())
         {

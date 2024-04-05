@@ -10,7 +10,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -315,7 +314,7 @@ public class OperatorBcTest
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
-                gen.initialize(new ECGenParameterSpec(curveName));
+                gen.initialize(new ECNamedCurveGenParameterSpec(curveName));
             }
         });
     }
