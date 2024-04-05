@@ -188,6 +188,21 @@ public class BCStyle
     public static final ASN1ObjectIdentifier UID = new ASN1ObjectIdentifier("0.9.2342.19200300.100.1.1");
 
     /**
+     * CA/Browser Forum https://cabforum.org/uploads/CA-Browser-Forum-BR-v2.0.0.pdf, Table 78
+     */
+    public static final ASN1ObjectIdentifier JURISDICTION_C = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.60.2.1.3");
+
+    /**
+     * CA/Browser Forum https://cabforum.org/uploads/CA-Browser-Forum-BR-v2.0.0.pdf, Table 78
+     */
+    public static final ASN1ObjectIdentifier JURISDICTION_ST = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.60.2.1.2");
+
+    /**
+     * CA/Browser Forum https://cabforum.org/uploads/CA-Browser-Forum-BR-v2.0.0.pdf, Table 78
+     */
+    public static final ASN1ObjectIdentifier JURISDICTION_L = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.60.2.1.1");
+
+    /**
      * default look up table translating OID values into their common symbols following
      * the convention in RFC 2253 with a few extras
      */
@@ -235,6 +250,9 @@ public class BCStyle
         DefaultSymbols.put(TELEPHONE_NUMBER, "TelephoneNumber");
         DefaultSymbols.put(NAME, "Name");
         DefaultSymbols.put(ORGANIZATION_IDENTIFIER, "organizationIdentifier");
+        DefaultSymbols.put(JURISDICTION_C, "jurisdictionCountry");
+        DefaultSymbols.put(JURISDICTION_ST, "jurisdictionState");
+        DefaultSymbols.put(JURISDICTION_L, "jurisdictionLocality");
 
         DefaultLookUp.put("c", C);
         DefaultLookUp.put("o", O);
@@ -273,6 +291,9 @@ public class BCStyle
         DefaultLookUp.put("telephonenumber", TELEPHONE_NUMBER);
         DefaultLookUp.put("name", NAME);
         DefaultLookUp.put("organizationidentifier", ORGANIZATION_IDENTIFIER);
+        DefaultLookUp.put("jurisdictionCountry", JURISDICTION_C);
+        DefaultLookUp.put("jurisdictionState", JURISDICTION_ST);
+        DefaultLookUp.put("jurisdictionLocality", JURISDICTION_L);
     }
 
     /**
@@ -300,11 +321,11 @@ public class BCStyle
             return new ASN1GeneralizedTime(value);
         }
         else if (oid.equals(C) || oid.equals(SERIALNUMBER) || oid.equals(DN_QUALIFIER)
-            || oid.equals(TELEPHONE_NUMBER))
+            || oid.equals(TELEPHONE_NUMBER) || oid.equals(JURISDICTION_C))
         {
             return new DERPrintableString(value);
         }
-        
+
         return super.encodeStringValue(oid, value);
     }
 
