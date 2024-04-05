@@ -30,6 +30,12 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Align ML-KEM input validation with FIPS 203 IPD requirements.</li>
 <li>Make PEM parsing more forgiving of whitespace to align with RFC 7468 - Textual Encodings of PKIX, PKCS, and CMS Structures.</li>
 <li>Fix CCM length checks with large nonce sizes (n=12, n=13).</li>
+<li>EAC: Fixed the CertificateBody ASN.1 type to support an optional Certification Authority Reference in a Certificate Request.</li>
+<li>ASN.1: ObjectIdentifier (also Relative OID) parsing has been reworked to avoid denial-of-service attacks against the parser.
+The contents octets for both types are now also limited to 4096 bytes.</li>
+<li>BCJSSE: Fixed a missing null check on the result of PrivateKey.getEncoded(), which could cause issues for HSM RSA keys.</li>
+<li>BCJSSE: When endpoint identification is enabled and an SSL socket is not created with an explicit hostname (as happens
+with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
