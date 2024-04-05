@@ -382,7 +382,6 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
-        System.setProperty("enableCamelliaKeyWrapping", "True");
         keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.Ed448, "XDH", "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
@@ -396,7 +395,6 @@ public class OperatorBcTest
         keyringTest("ECDSA", "brainpoolP256r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP256r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("ECDSA", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("ECDSA", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
-
 
         keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);

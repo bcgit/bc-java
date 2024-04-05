@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -320,8 +321,9 @@ public class SExprParser
     {
         int flag = 0, flag_break = (1 << bigIntegerLabels.length) - 1;
         BigInteger[] bigIntegers = new BigInteger[bigIntegerLabels.length];
-        for (Object item : expression.getValues())
+        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;
@@ -445,8 +447,9 @@ public class SExprParser
         byte[] qoint = null;
         String curve = null;
         int flag = 0;
-        for (Object item : expression.getValues())
+        for (Iterator it = expression.getValues().iterator(); it.hasNext();)
         {
+            Object item = it.next();
             if (item instanceof SExpression)
             {
                 SExpression exp = (SExpression)item;

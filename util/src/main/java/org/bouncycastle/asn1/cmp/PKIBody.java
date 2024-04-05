@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * PKIBody ::= CHOICE {       -- message-specific body elements
@@ -84,11 +85,11 @@ public class PKIBody
         }
         catch (ClassCastException e)
         {
-            throw new IllegalArgumentException("malformed body found: " + e.getMessage(), e);
+            throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
         }
         catch (IllegalArgumentException e)
         {       
-            throw new IllegalArgumentException("malformed body found: " + e.getMessage(), e);
+            throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
         }
     }
 

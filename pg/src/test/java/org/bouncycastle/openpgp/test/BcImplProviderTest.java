@@ -412,7 +412,6 @@ public class BcImplProviderTest
             }
         });
 
-        System.setProperty("enableCamelliaKeyWrapping", "true");
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_128);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_192);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_256);

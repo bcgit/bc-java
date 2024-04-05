@@ -452,7 +452,7 @@ public class BcPGPKeyConverter
     private AsymmetricKeyParameter implGetPublicKeyX509(OctetArrayBCPGKey eddsaK, ASN1ObjectIdentifier algorithm)
         throws IOException
     {
-        byte[] pEnc = eddsaK.getKey().clone();
+        byte[] pEnc = Arrays.clone(eddsaK.getKey());
         return PublicKeyFactory.createKey(new SubjectPublicKeyInfo(new AlgorithmIdentifier(algorithm),
             Arrays.copyOfRange(pEnc, 0, pEnc.length)));
     }
