@@ -156,10 +156,12 @@ public class CCMTest
         // fail as size bound is a strict inequality.
         int[] offsets = new int[]{-10, -2, -1, 0, 1, 10};
         int[] ns = new int[]{13, 12};
-        for (int n_len : ns)
+        for (int i = 0; i != ns.length; i++)
         {
-            for (int offset : offsets)
+            int n_len = ns[i];
+            for (int j = 0; j != offsets.length; j++)
             {
+                int offset = offsets[j];
                 try
                 {
                     ccm.init(true, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));

@@ -78,15 +78,14 @@ public class JcePGPDataEncryptorBuilder
     @Override
     public JcePGPDataEncryptorBuilder setWithAEAD(int aeadAlgorithm, int chunkSize)
     {
-        boolean enableCamellia = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256
-            && (enableCamellia && (encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)))
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)
         {
-            throw new IllegalStateException("AEAD algorithms can only be used with AES" + (enableCamellia ? " and Camellia" : ""));
+            throw new IllegalStateException("AEAD algorithms can only be used with AES and Camellia");
         }
 
         if (chunkSize < 6)

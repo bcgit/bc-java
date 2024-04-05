@@ -31,7 +31,8 @@ public class Ed448Test
         runTest(new Ed448Test());
     }
 
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
         basicSigTest();
 
@@ -51,9 +52,9 @@ public class Ed448Test
         Ed448PrivateKeyParameters privateKey = new Ed448PrivateKeyParameters(
             Hex.decode(
                 "6c82a562cb808d10d632be89c8513ebf" +
-                "6c929f34ddfa8c9f63c9960ef6e348a3" +
-                "528c8a3fcc2f044e39a3fc5b94492f8f" +
-                "032e7549a20098f95b"));
+                    "6c929f34ddfa8c9f63c9960ef6e348a3" +
+                    "528c8a3fcc2f044e39a3fc5b94492f8f" +
+                    "032e7549a20098f95b"));
         Ed448PublicKeyParameters publicKey = new Ed448PublicKeyParameters(
             Hex.decode("5fd7449b59b461fd2ce787ec616ad46a" +
                 "1da1342485a70e1f8a0ea75d80e96778" +
@@ -79,7 +80,7 @@ public class Ed448Test
 
         isTrue(signer.verifySignature(sig));
     }
-    
+
     private Signer createSigner(int algorithm, byte[] context)
     {
         switch (algorithm)
@@ -100,7 +101,8 @@ public class Ed448Test
         return context;
     }
 
-    private void testConsistency(int algorithm, byte[] context) throws Exception
+    private void testConsistency(int algorithm, byte[] context)
+        throws Exception
     {
         Ed448KeyPairGenerator kpg = new Ed448KeyPairGenerator();
         kpg.init(new Ed448KeyGenerationParameters(RANDOM));
@@ -168,7 +170,8 @@ public class Ed448Test
         }
     }
 
-    private void testRegressionInfiniteLoop() throws Exception
+    private void testRegressionInfiniteLoop()
+        throws Exception
     {
         String[] testCases = new String[]{
             "pub=MEMwBQYDK2VxAzoAgZiVkEoqFULqfNRJUnq5Fu1OsZRExw1AxI5dAjzLFbcb+krjKjKA81DKnED3+iN6aQ7QlK2PsvGA priv=MEcCAQAwBQYDK2VxBDsEOeZPlP0NUeEuIOnJOE6PccUigEvDNtUtfWEyc27WyIgFwD2BqKGdJNHVHJe5Gws66Y9CMHZK54RCZg== msg=5k+U/Q1R4S4g6ck4To9xxSKAS8M21S19YTJzbtbIiAXAPYGooZ0k0dUcl7kbCzrpj0IwdkrnhEJm5l5p+g54eg== sig=RfExPil6ytaGVcLbC7Z+98YGgEceUtKP4YOkFQxKOcdzo92jTtgn24hZMhfJJfvUmPYW0L8w1F+AXpI+homRI5H99ZuSUBW9SoXGa3XeyHbH2cnB+gU1BYSJt418+K0WeluuaRotEoHkj2klG2vc/zUA e=found last=27 s=0 in addShifted_NP",
@@ -1200,11 +1203,12 @@ public class Ed448Test
             "pub=MEMwBQYDK2VxAzoAk6TbBisa2S0/rC6zKE3mKFC4If2yJZ3P9V/LNPhh8R1ch5Ugn13v8vDjqotXSmxwBHDIGtu1wRiA priv=MEcCAQAwBQYDK2VxBDsEOZV5u73XH2owfeYVPY9p9usxM2HKPMT3fRIaxq+WB601FGy/z6Q4ByRnrNahAbjt5C02xqH0uWF0yA== msg=vkkXHvYZOYAo8psXZDjY/uTXYpe7RiuhhaLo8VGPhHmcg0akrJfUAyLyuGVWpgeR7dkiN58qFL6Arw8CLyEU8A== sig=h4UndzbUyfve20M8qaX+e0vCwEVXaNeDxLRe1izwA3Zn6kWYJkaXWnihxwifXg9JP0PFWGzZOjaAF6MSnkVUM8m2AuXt4iRgTTi3D9y3yjHfDwwPzW4iuQj521plOBgLWQ73AY7K+ARFY0WEyLo3fQcA e=found last=20 s=36 in subShifted_NP",
         };
 
-        for (String test : testCases)
-        {   
+        for (int i = 0; i != testCases.length; i++)
+        {
+            String test = testCases[i];
             String[] parts = test.split(" ", 5);
             if (!parts[0].startsWith("pub=") || !parts[1].startsWith("priv=") || !parts[2].startsWith("msg=") || !parts[3].startsWith("sig=") || !parts[4].startsWith("e="))
-            {   
+            {
                 fail("invalid test case format; expected five parts (pub=, priv=, msg=, sig=, e=), but got " + test);
             }
 
@@ -1221,7 +1225,8 @@ public class Ed448Test
             Ed448PrivateKeyParameters priv = new Ed448PrivateKeyParameters(privBytes);
             Ed448PublicKeyParameters pubDerived = priv.generatePublicKey();
 
-            if (!Arrays.areEqual(pubDerived.getEncoded(), pub.getEncoded())) {
+            if (!Arrays.areEqual(pubDerived.getEncoded(), pub.getEncoded()))
+            {
                 fail("different derived public keys; expected=" + Hex.toHexString(pub.getEncoded()) + " derived=" + Hex.toHexString(pubDerived.getEncoded()));
             }
 
@@ -1230,7 +1235,8 @@ public class Ed448Test
             signer.update(msg, 0, msg.length);
             byte[] sigDerived = signer.generateSignature();
 
-            if (!Arrays.areEqual(sigDerived, sig)) {
+            if (!Arrays.areEqual(sigDerived, sig))
+            {
                 fail("different signatures of message; expected=" + Hex.toHexString(sig) + " actual=" + Hex.toHexString(sigDerived));
             }
 
