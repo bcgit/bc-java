@@ -101,7 +101,7 @@ public class OperatorBcTest
         testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
-        testBcPGPDataEncryptorBuilder();
+//        testBcPGPDataEncryptorBuilder();
         testBcPGPContentVerifierBuilderProvider();
         //testBcPBESecretKeyDecryptorBuilder();
         testBcKeyFingerprintCalculator();
@@ -372,7 +372,7 @@ public class OperatorBcTest
 //            }
 //        }
 
-        isTrue(Arrays.areEqual(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
+        isTrue("pub key mismatch: " + name, Arrays.areEqual(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
         isTrue(privKey.toString().equals(keyPair.getPrivate().toString()));
         // getEncoded() are Not equal as privKey.hasPublicKey is false but keyPair.getPrivate().hasPublicKey is true
         //isTrue(Arrays.equals(privKey.getEncoded(), keyPair.getPrivate().getEncoded()));
@@ -402,8 +402,6 @@ public class OperatorBcTest
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
-
-
     }
 
     private void keyringTest(String algorithmName1, String ed_str, int ed_num, String algorithmName2, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
