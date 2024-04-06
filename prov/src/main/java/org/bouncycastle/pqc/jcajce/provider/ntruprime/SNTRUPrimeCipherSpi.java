@@ -292,7 +292,7 @@ class SNTRUPrimeCipherSpi
             return rv;
         }
         catch (IllegalArgumentException e)
-        {                          e.printStackTrace();
+        {                        
             throw new NoSuchAlgorithmException("unable to extract KTS secret: " + e.getMessage());
         }
         catch (InvalidCipherTextException e)
