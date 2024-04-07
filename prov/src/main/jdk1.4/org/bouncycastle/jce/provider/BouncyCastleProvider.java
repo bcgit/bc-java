@@ -51,7 +51,7 @@ import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.79";
+    private static String info = "BouncyCastle Security Provider v1.78";
 
     public static final String PROVIDER_NAME = "BC";
 
