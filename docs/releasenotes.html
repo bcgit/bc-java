@@ -20,7 +20,7 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv78"><h3>2.1.1 Version</h3></a>
 Release: 1.78<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 7th April.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Issues with a dangling weak reference causing intermittent NullPointerExceptions in the OcspCache have been fixed.</li>
@@ -31,21 +31,30 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD
 <li>Make PEM parsing more forgiving of whitespace to align with RFC 7468 - Textual Encodings of PKIX, PKCS, and CMS Structures.</li>
 <li>Fix CCM length checks with large nonce sizes (n=12, n=13).</li>
 <li>EAC: Fixed the CertificateBody ASN.1 type to support an optional Certification Authority Reference in a Certificate Request.</li>
-<li>ASN.1: ObjectIdentifier (also Relative OID) parsing has been reworked to avoid denial-of-service attacks against the parser.
-The contents octets for both types are now also limited to 4096 bytes.</li>
+<li>ASN.1: ObjectIdentifier (also Relative OID) parsing has been optimized and the contents octets for both types are now limited to 4096 bytes.</li>
 <li>BCJSSE: Fixed a missing null check on the result of PrivateKey.getEncoded(), which could cause issues for HSM RSA keys.</li>
-<li>BCJSSE: When endpoint identification is enabled and an SSL socket is not created with an explicit hostname (as happens
-with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
+<li>BCJSSE: When endpoint identification is enabled and an SSL socket is not created with an explicit hostname (as happens with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
+<li>The missing module import of java.logging to the provider module has been added.</li>
+<li>GOST ASN.1 public key alg parameters are now compliant with <a href="https://datatracker.ietf.org/doc/rfc9215/">RFC 9215</a>.</li>
+<li>An off-by-one error in the encoding for EccP256CurvePoint for ITS has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
-<li>An implementation of MLS (RFC 9420 - The Messaging Layer Security Protocol) has been added as a new module.</li>
+<li>An implementation of MLS (<a href="https://datatracker.ietf.org/doc/rfc9420/">RFC 9420 - The Messaging Layer Security Protocol</a>) has been added as a new module.</li>
 <li>NTRU now supports NTRU-HPS4096-1229 and NTRU-HRSS-1373.</li>
-<li>Improvements to PGP support, including Curve25519, Curve448 key types.</li>
-<li>Add initial support for ML-KEM in TLS.</li>
-<li>Add XWing hybrid KEM construction (X25519 + ML-KEM-768).</li>
-<li>Introduce initial KEMSpi support (NTRU, SNTRU Prime) for JDK 21+.</li>
-<li>Introduce initial composite signature support for X509 Certificates.</li>
+<li>Improvements to PGP support, including Camellia key wrapping and Curve25519, Curve448 key types (including XDH with HKDF).</li>
+<li>Added initial support for ML-KEM in TLS.</li>
+<li>Added XWing hybrid KEM construction (X25519 + ML-KEM-768).</li>
+<li>Introduced initial KEMSpi support (NTRU, SNTRU Prime) for JDK 21+.</li>
+<li>Introduced initial composite signature support for X509 Certificates.</li>
+<li>PKCS#12 now supports PKCS12-AES256-AES128, PKCS12-AES256-AES128-GCM, PKCS12-DEF-AES256-AES128, and PKCS12-DEF-AES256-AES128-GCM.</li>
+<li>The default type for the KeyStore.getInstance("PKCS12", "BC") can now be set using the org.bouncycastle.pkcs12.default system/security property.</li>
+<li>The PGP SExpParser will now handle Ed25519 and Ed448 keys.</li>
+<li>Dilithium and Kyber key encoding updated to latest Draft RFCs (<a href="https://datatracker.ietf.org/doc/draft-ietf-lamps-dilithium-certificates/">draft-ietf-lamps-dilithium-certificates</a> and <a href="https://datatracker.ietf.org/doc/draft-ietf-lamps-kyber-certificates/">draft-ietf-lamps-kyber-certificates</a>)</li>
+<li>Support has been added for encryption key derivation using HKDF in CMS - see <a href="https://datatracker.ietf.org/doc/draft-housley-lamps-cms-cek-hkdf-sha256/">draft-housley-lamps-cms-cek-hkdf-sha256</a>.</li>
+<li>X500Name now recognises jurisdiction{C,ST,L} DNs.</li>
+<li>CertPathValidationContext and CertificatePoliciesValidation now include implementations of Memoable.</li>
+<li>The Composite post-quantum signatures implementation has been updated to the latest draft <a href="https://datatracker.ietf.org/doc/html/draft-ounsworth-pq-composite-sigs/">draft-ounsworth-pq-composite-sigs</a>.</li>
 </ul>
 <h3>2.1.4 Notes.</h3>
 <ul>
@@ -53,7 +62,20 @@ with HttpsURLConnection), hostname verification could be performed against a DNS
 <li>BCJSSE: The boolean system property 'org.bouncycastle.jsse.fips.allowRSAKeyExchange" now defaults to false. All RSA
 key exchange cipher suites will therefore be disabled when the BCJSSE provider is used in FIPS mode, unless this system
 property is explicitly set to true.</li>
-<li>Improve OSGi compatibility.</li>
+<li>OSGi compatibility should now be much improved.</li>
+<li>SignedMailValidator now includes a more general rollback method for locating the signature's trust anchor for use when the first approach fails.</li>
+<li>The PKCS12 store using GCM does not include the PKCS#12 MAC so no longer includes use of the PKCS#12 PBE scheme and only uses PBKDF2.</li>
+<li>In keeping with the current set of experimental OIDs for PQC algorithms, OIDs may have changed to reflect updated versions of the algorithms.</li>
+</ul>
+<h3>2.1.5 Security Advisories.</h3>
+<p>
+Release 1.78 deals with the following CVEs:
+</p>
+<ul>
+<li>CVE-2024-29857 - Importing an EC certificate with specially crafted F2m parameters can cause high CPU usage during parameter evaluation.</li>
+<li>CVE-2024-30171 - Possible timing based leakage in RSA based handshakes due to exception processing eliminated.</li>
+<li>CVE-2024-30172 - Crafted signature and public key can be used to trigger an infinite loop in the Ed25519 verification code.</li>
+<li>CVE-2024-301XX - When endpoint identification is enabled in the BCJSSE and an SSL socket is not created with an explicit hostname (as happens with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
 </ul>
 
 <a id="r1rv77"><h3>2.2.1 Version</h3></a>
