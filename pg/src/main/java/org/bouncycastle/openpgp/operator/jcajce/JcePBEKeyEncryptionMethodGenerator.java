@@ -13,6 +13,14 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.modes.AEADCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -20,6 +28,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcAEADUtil;
 
 /**
  * JCE based generator for password based encryption (PBE) data protection methods.
@@ -139,4 +148,38 @@ public class JcePBEKeyEncryptionMethodGenerator
             throw new PGPException("key invalid: " + e.getMessage(), e);
         }
     }
+
+    protected byte[] generateV6KEK(int kekAlgorithm, byte[] ikm, byte[] info)
+         throws PGPException
+     {
+         HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
+         hkdf.init(new HKDFParameters(ikm, null, info));
+
+         int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm);
+         byte[] kek = new byte[kekLen];
+         hkdf.generateBytes(kek, 0, kek.length);
+         return kek;
+     }
+
+     protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo, byte[] key, byte[] iv, byte[] info)
+         throws PGPException
+     {
+         byte[] sessionKey = new byte[sessionInfo.length - 3];
+         System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
+
+         AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
+         aeadCipher.init(true, new AEADParameters(new KeyParameter(key), 128, iv, info));
+         int outLen = aeadCipher.getOutputSize(sessionKey.length);
+         byte[] eskAndTag = new byte[outLen];
+         int len = aeadCipher.processBytes(sessionKey, 0, sessionKey.length, eskAndTag, 0);
+         try
+         {
+             len += aeadCipher.doFinal(eskAndTag, len);
+         }
+         catch (InvalidCipherTextException e)
+         {
+             throw new PGPException("cannot encrypt session info", e);
+         }
+         return eskAndTag;
+     }
 }

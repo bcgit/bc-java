@@ -208,7 +208,7 @@ public class JcaPGPKeyConverter
                         public PrivateKeyInfo getPrivateKeyInfos()
                             throws IOException
                         {
-                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
+                            return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
                                 Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
                         }
                     });
@@ -226,7 +226,7 @@ public class JcaPGPKeyConverter
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
-                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
+                        return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
                             X25519SecretBCPGKey.LENGTH, Arrays.reverseInPlace(privPk.getEncoded()));
                     }
                 });
@@ -239,7 +239,7 @@ public class JcaPGPKeyConverter
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
-                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
+                        return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
                             X448SecretBCPGKey.LENGTH, Arrays.reverseInPlace(privPk.getEncoded()));
                     }
                 });
@@ -256,7 +256,7 @@ public class JcaPGPKeyConverter
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
-                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
+                        return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
                             BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
                     }
                 });
@@ -269,7 +269,7 @@ public class JcaPGPKeyConverter
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
-                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
+                        return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
                             Ed25519SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
@@ -282,7 +282,7 @@ public class JcaPGPKeyConverter
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
-                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
+                        return JcaPGPKeyConverter.this.getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
                             Ed448SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
@@ -668,10 +668,16 @@ public class JcaPGPKeyConverter
     }
 
     @FunctionalInterface
-    private interface BCPGKeyOperation
+    private static interface BCPGKeyOperation
     {
         BCPGKey getBCPGKey(byte[] key);
     }
+
+    private static interface Operation
+    {
+        PrivateKeyInfo getPrivateKeyInfos() throws IOException;
+    }
+
 
     private BCPGKey getPublicBCPGKey(PublicKey pubKey, int keySize, BCPGKeyOperation operation)
     {
@@ -692,12 +698,6 @@ public class JcaPGPKeyConverter
         return pointEnc;
     }
 
-    @FunctionalInterface
-    private interface Operation
-    {
-        PrivateKeyInfo getPrivateKeyInfos()
-            throws IOException;
-    }
 
     private PrivateKey implGeneratePrivate(String keyAlgorithm, Operation operation)
         throws GeneralSecurityException, PGPException, IOException

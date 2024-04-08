@@ -1,13 +1,15 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java org/bouncycastle/bcpg/sig/* org/bouncycastle/pkcs/*
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java org/bouncycastle/bcpg/sig/* org/bouncycastle/cms/* org/bouncycastle/pkcs/* org/bouncycastle/gpg/*
 do
 ed $i <<%%
 g/ .Override/d
 g/	.Override/d
 g/ .Deprecated/d
 g/	.Deprecated/d
+g/ .FunctionalInterface/d
+g/	.FunctionalInterface/d
 w
 q
 %%
@@ -107,7 +109,7 @@ w
 q
 %
 
-ed org/bouncycastle/pqc/crypto/test/TestSampler.java <<%
+ed org/bouncycastle/cms/CMSAuthEnvelopedDataParser.java <<%
 g/private final/s/final//
 w
 q
@@ -127,6 +129,20 @@ q
 
 ed org/bouncycastle/crypto/modes/GCMSIVBlockCipher.java <<%
 g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/crypto/test/GCMSIVTest.java <<%
+g/private final/s/final//
+g/.SuppressWarnings/d
+w
+q
+%
+
+ed org/bouncycastle/crypto/signers/SM2Signer.java <<%
+g/private final/s/final//
+g/.SuppressWarnings/d
 w
 q
 %
@@ -195,6 +211,18 @@ q
 
 ed org/bouncycastle/openpgp/PGPExtendedKeyAttribute.java <<%
 g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/openpgp/operator/bc/BcAEADUtil.java <<%
+g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/gpg/SExprParser.java <<%
+g/<Integer, String..>/s///g
 w
 q
 %
