@@ -79,6 +79,8 @@
                 <exclude name="**/BCEC*.java" />
                 <exclude name="**/JCEEC5*.java" />
                 <exclude name="**/provider/JCEEC*.java" />
+                <exclude name="**/compositesignatures/*.java" />
+                <exclude name="**/CompositeSignatures.java" />
                 <exclude name="**/EC5*.java" />
                 <exclude name="**/SIKE*.java" />
                 <exclude name="**/Rainbow*.java" />
@@ -259,9 +261,13 @@
                 <exclude name="**/PKIXRevocationTest.java" />
                 <exclude name="**/cms/test/AnnotatedKeyTest.java"/>
                 <exclude name="**/bouncycastle/cms/test/AuthEnvelopedDataTest.java"/>
+                <exclude name="**/bouncycastle/cms/test/CMSAuthEnvelopedDataStreamGeneratorTest.java"/>
+                <exclude name="**/bouncycastle/cms/test/GOSTR3410_2012_256CmsSignVerifyDetached.java"/>
+                <exclude name="**/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java"/>
                 <exclude name="**/its/**" />
             </fileset>
             <fileset dir="mail/src/test/java">
+                <exclude name="**/MailGeneralTest.java" />
                 <exclude name="**/SignedMailValidatorTest.java" />
                 <exclude name="**/DummyCertPathReviewer.java" />
 		<exclude name="**/JournalingSecureRandomEncryptTest.java"/>
@@ -290,9 +296,12 @@
             </fileset>
             <fileset dir="pkix/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="util/src/main/jdk1.4" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
+        </copy>
+        <copy todir="${src.dir}" overwrite="true">
             <fileset dir="pg/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="pg/src/main/jdk1.3" includes="**/*.java" />
-            <fileset dir="core/src/test/jdk1.4" includes="**/*.java" />
         </copy>
         <copy todir="${src.dir}" overwrite="true">
             <fileset dir="prov/src/test/jdk1.4" includes="**/*.java" >
