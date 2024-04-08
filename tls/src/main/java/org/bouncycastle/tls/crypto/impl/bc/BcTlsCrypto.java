@@ -215,7 +215,15 @@ public class BcTlsCrypto
 
     public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
     {
-        return new BcTlsMLKemDomain(this, kemConfig);
+        switch (kemConfig.getNamedGroup())
+        {
+            case NamedGroup.OQS_secp256Mlkem512:
+            case NamedGroup.OQS_secp384Mlkem768:
+            case NamedGroup.OQS_secp521Mlkem1024:
+                return new BcTlsEcdhMlkemDomain(this, kemConfig);
+            default:
+                return new BcTlsMLKemDomain(this, kemConfig);
+        }
     }
 
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)

@@ -442,6 +442,12 @@ public class JcaTlsCrypto
         {
             switch (namedGroup)
             {
+            case NamedGroup.OQS_secp256Mlkem512:
+                return ECUtil.getAlgorithmParameters(this, NamedGroup.getCurveName(NamedGroup.secp256r1));
+            case NamedGroup.OQS_secp384Mlkem768:
+                return ECUtil.getAlgorithmParameters(this, NamedGroup.getCurveName(NamedGroup.secp384r1));
+            case NamedGroup.OQS_secp521Mlkem1024:
+                return ECUtil.getAlgorithmParameters(this, NamedGroup.getCurveName(NamedGroup.secp521r1));
             /*
              * TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
              */
@@ -848,7 +854,15 @@ public class JcaTlsCrypto
     
     public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
     {
-        return new JceTlsMLKemDomain(this, kemConfig);
+        switch (kemConfig.getNamedGroup())
+        {
+        case NamedGroup.OQS_secp256Mlkem512:
+        case NamedGroup.OQS_secp384Mlkem768:
+        case NamedGroup.OQS_secp521Mlkem1024:
+            return new JceTlsEcdhMlkemDomain(this, kemConfig);
+        default:
+            return new JceTlsMLKemDomain(this, kemConfig);
+        }
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)

@@ -12,6 +12,9 @@ import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPublicKeySpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.tls.AlertDescription;
@@ -21,6 +24,7 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCryptoException;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * EC domain class for generating key pairs and performing key agreement.
@@ -52,6 +56,23 @@ public class JceTlsECDomain
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 
+    public int getPublicKeyByteLength()
+    {
+        return (((ecCurve.getFieldSize() + 7) / 8) * 2) + 1;
+    }
+
+    public byte[] calculateECDHAgreementBytes(PrivateKey privateKey, PublicKey publicKey) throws IOException
+    {
+        try
+        {
+            return crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsCryptoException("cannot calculate secret", e);
+        }
+    }
+    
     public JceTlsSecret calculateECDHAgreement(PrivateKey privateKey, PublicKey publicKey)
         throws IOException
     {

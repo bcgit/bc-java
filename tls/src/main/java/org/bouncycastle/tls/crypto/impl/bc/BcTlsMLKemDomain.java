@@ -21,11 +21,14 @@ public class BcTlsMLKemDomain implements TlsKemDomain
         switch (namedGroup)
         {
         case NamedGroup.OQS_mlkem512:
+        case NamedGroup.OQS_secp256Mlkem512:
             return KyberParameters.kyber512;
         case NamedGroup.OQS_mlkem768:
+        case NamedGroup.OQS_secp384Mlkem768:
         case NamedGroup.DRAFT_mlkem768:
             return KyberParameters.kyber768;
         case NamedGroup.OQS_mlkem1024:
+        case NamedGroup.OQS_secp521Mlkem1024:
         case NamedGroup.DRAFT_mlkem1024:
             return KyberParameters.kyber1024;
         default:
@@ -54,11 +57,10 @@ public class BcTlsMLKemDomain implements TlsKemDomain
         return new BcTlsMLKem(this);
     }
 
-    public BcTlsSecret decapsulate(KyberPrivateKeyParameters privateKey, byte[] ciphertext)
+    public byte[] decapsulate(KyberPrivateKeyParameters privateKey, byte[] ciphertext)
     {
         KyberKEMExtractor kemExtract = new KyberKEMExtractor(privateKey);
-        byte[] secret = kemExtract.extractSecret(ciphertext);
-        return adoptLocalSecret(secret);
+        return kemExtract.extractSecret(ciphertext);
     }
 
     public KyberPublicKeyParameters decodePublicKey(byte[] encoding)

@@ -107,7 +107,13 @@ public class NamedGroup
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
     public static final int OQS_mlkem768 = 0x0248;
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
-    public static final int OQS_mlkem1024 = 0x0249;
+    public static final int OQS_mlkem1024 = 0x2F47;
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_secp256Mlkem512 = 0x0249;
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_secp384Mlkem768 = 0x2F48;
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_secp521Mlkem1024 = 0x2F49;
 
     /*
      * draft-connolly-tls-mlkem-key-agreement-01
@@ -310,6 +316,12 @@ public class NamedGroup
         case OQS_mlkem1024:
         case DRAFT_mlkem1024:
             return "ML-KEM-1024";
+        case OQS_secp256Mlkem512:
+            return "secp256-ML-KEM-512";
+        case OQS_secp384Mlkem768:
+            return "secp384-ML-KEM-768";
+        case OQS_secp521Mlkem1024:
+            return "secp521-ML-KEM-1024";
         default:
             return null;
         }
@@ -497,6 +509,9 @@ public class NamedGroup
         case OQS_mlkem512:
         case OQS_mlkem768:
         case OQS_mlkem1024:
+        case OQS_secp256Mlkem512:
+        case OQS_secp384Mlkem768:
+        case OQS_secp521Mlkem1024:
         case DRAFT_mlkem768:
         case DRAFT_mlkem1024:
             return true;
