@@ -257,6 +257,12 @@ w
 q
 %
 
+ed org/bouncycastle/crypto/encodings/OAEPEncoding.java <<%
+g/private final/s/final//
+w
+q
+%
+
 ed org/bouncycastle/asn1/x500/style/BCStyle.java <<%
 g/protected final .*defaultLookUp;/s/final//
 g/protected final .*defaultSymbols;/s/final//
