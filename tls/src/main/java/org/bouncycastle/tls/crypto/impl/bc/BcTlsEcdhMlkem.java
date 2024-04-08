@@ -65,10 +65,7 @@ public class BcTlsEcdhMlkem implements TlsAgreement
     public TlsSecret calculateSecret() throws IOException
     {
         byte[] ecSecret = domain.getEcDomain().calculateECDHAgreementBytes((ECPrivateKeyParameters)ecLocalKeyPair.getPrivate(), ecPeerPublicKey);
-        if (domain.isServer())
-        {
-        }
-        else
+        if (!domain.isServer())
         {
             kyberSecret = domain.getMlkemDomain().decapsulate((KyberPrivateKeyParameters) kyberLocalKeyPair.getPrivate(), kyberCiphertext);
         }
