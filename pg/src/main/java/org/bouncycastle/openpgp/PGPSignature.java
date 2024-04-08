@@ -220,7 +220,7 @@ public class PGPSignature
     {
         updateWithPublicKey(key);
 
-        getAttributesHash(userAttributes);
+        getAttriubtesHash(userAttributes);
 
         addTrailer();
 

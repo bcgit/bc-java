@@ -132,7 +132,7 @@ abstract class PGPDefaultSignatureGenerator
         return keyBytes;
     }
 
-    protected void getAttributesHash(PGPUserAttributeSubpacketVector userAttributes)
+    protected void getAttriubtesHash(PGPUserAttributeSubpacketVector userAttributes)
         throws PGPException
     {
         //
