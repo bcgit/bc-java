@@ -388,7 +388,13 @@ public class NamedGroup
             return "OQS_mlkem768";
         case OQS_mlkem1024:
             return "OQS_mlkem1024";
-        case DRAFT_mlkem768:
+        case OQS_secp256Mlkem512:
+            return "OQS_secp256Mlkem512";
+        case OQS_secp384Mlkem768:
+            return "OQS_secp384Mlkem768";
+        case OQS_secp521Mlkem1024:
+            return "OQS_secp521Mlkem1024";
+            case DRAFT_mlkem768:
             return "DRAFT_mlkem768";
         case DRAFT_mlkem1024:
             return "DRAFT_mlkem1024";
