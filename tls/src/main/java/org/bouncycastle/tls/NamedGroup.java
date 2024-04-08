@@ -107,9 +107,9 @@ public class NamedGroup
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
     public static final int OQS_mlkem768 = 0x0248;
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
-    public static final int OQS_mlkem1024 = 0x2F47;
+    public static final int OQS_mlkem1024 = 0x0249;
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
-    public static final int OQS_secp256Mlkem512 = 0x0249;
+    public static final int OQS_secp256Mlkem512 = 0x2F47;
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
     public static final int OQS_secp384Mlkem768 = 0x2F48;
     /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
