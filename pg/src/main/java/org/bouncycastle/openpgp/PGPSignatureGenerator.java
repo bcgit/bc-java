@@ -240,7 +240,7 @@ public class PGPSignatureGenerator
     {
         updateWithPublicKey(pubKey);
 
-        getAttributesHash(userAttributes);
+        getAttriubtesHash(userAttributes);
 
         return this.generate();
     }
