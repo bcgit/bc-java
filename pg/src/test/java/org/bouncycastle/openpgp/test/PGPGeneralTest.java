@@ -1094,6 +1094,8 @@ public class PGPGeneralTest
         PGPPublicKey publicKey7 = PGPPublicKey.join(publicKey2, publicKey2, true, true);
         isTrue(publicKey7.getKeyID() == publicKey2.getKeyID());
         isTrue(areEqual(publicKey7.getFingerprint(), publicKey2.getFingerprint()));
+        isTrue(publicKey7.hasFingerprint(publicKey2.getFingerprint()));
+        isTrue(publicKey2.hasFingerprint(publicKey7.getFingerprint()));
 
         PGPPublicKeyRingCollection pgpRingCollection = new JcaPGPPublicKeyRingCollection(probExpPubKey);
         final long id5 = 6556488621521814541L;
@@ -1105,6 +1107,8 @@ public class PGPGeneralTest
         PGPPublicKey publicKey6 = PGPPublicKey.join(publicKey5, publicKey5, true, true);
         isTrue(publicKey6.getKeyID() == publicKey5.getKeyID());
         isTrue(areEqual(publicKey6.getFingerprint(), publicKey5.getFingerprint()));
+        isTrue(publicKey6.hasFingerprint(publicKey5.getFingerprint()));
+        isTrue(publicKey5.hasFingerprint(publicKey6.getFingerprint()));
     }
 
     private boolean messageIs(String message, String s)
@@ -2027,7 +2031,7 @@ public class PGPGeneralTest
         PGPSignatureSubpacketVector hashedPcks = sig.getHashedSubPackets();
 
         IntendedRecipientFingerprint[] intFig = hashedPcks.getIntendedRecipientFingerprints();
-        isTrue("mismatch on intended rec. fingerprint", Arrays.areEqual(secretKey.getPublicKey().getFingerprint(), intFig[0].getFingerprint()));
+        isTrue("mismatch on intended rec. fingerprint", secretKey.getPublicKey().hasFingerprint(intFig[0].getFingerprint()));
 
         // Tests for null value
         isTrue("issuer key id should be 0", hashedPcks.getIssuerKeyID() == 0);
@@ -2080,7 +2084,7 @@ public class PGPGeneralTest
         isTrue("Revocable should be false", !hashedPcks.isRevocable());
         isTrue("RevocationKeys should not be empty", hashedPcks.getRevocationKeys().length == 1);
         RevocationKey revocationKey = hashedPcks.getRevocationKeys()[0];
-        isTrue(areEqual(revocationKey.getFingerprint(), publicKey.getFingerprint()));
+        isTrue(publicKey.hasFingerprint(revocationKey.getFingerprint()));
         isTrue(revocationKey.getAlgorithm() == PublicKeyAlgorithmTags.DSA);
         // TODO: addRevocationKey has no parameter for setting signatureClass
         isTrue(revocationKey.getSignatureClass() == RevocationKeyTags.CLASS_DEFAULT);

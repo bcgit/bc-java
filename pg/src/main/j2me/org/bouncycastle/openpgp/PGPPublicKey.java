@@ -337,11 +337,12 @@ public class PGPPublicKey
      */
     public byte[] getFingerprint()
     {
-        byte[]    tmp = new byte[fingerprint.length];
-        
-        System.arraycopy(fingerprint, 0, tmp, 0, tmp.length);
-        
-        return tmp;
+        return Arrays.clone(fingerprint);
+    }
+
+    public boolean hasFingerprint(byte[] fingerprint)
+    {
+        return Arrays.areEqual(this.fingerprint, fingerprint);
     }
     
     /**
