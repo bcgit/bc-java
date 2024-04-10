@@ -33,13 +33,18 @@ public class SetHostSocketFactory extends CustomSSLSocketFactory
         return SSLSocketFactory.getDefault();
     }
 
-    protected final URL url;
+    protected final String host;
 
     public SetHostSocketFactory(SSLSocketFactory delegate, URL url)
     {
+        this(delegate, url == null ? null : url.getHost());
+    }
+
+    public SetHostSocketFactory(SSLSocketFactory delegate, String host)
+    {
         super(delegate);
 
-        this.url = url;
+        this.host = host;
     }
 
     /**
@@ -63,17 +68,13 @@ public class SetHostSocketFactory extends CustomSSLSocketFactory
     @Override
     protected Socket configureSocket(Socket s)
     {
-        if (url != null && s instanceof BCSSLSocket)
+        if (host != null && s instanceof BCSSLSocket)
         {
             BCSSLSocket ssl = (BCSSLSocket)s;
 
-            String host = url.getHost();
-            if (host != null)
-            {
-                LOG.fine("Setting host on socket: " + host);
+            LOG.fine("Setting host on socket: " + host);
 
-                ssl.setHost(host);
-            }
+            ssl.setHost(host);
         }
         return s;
     }
