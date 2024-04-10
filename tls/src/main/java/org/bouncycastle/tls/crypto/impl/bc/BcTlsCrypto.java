@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.bouncycastle.crypto.agreement.srp.SRP6Server;
 import org.bouncycastle.crypto.agreement.srp.SRP6VerifierGenerator;
+import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest;
 import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
@@ -184,9 +185,12 @@ public class BcTlsCrypto
             // NOTE: Ignores macAlgorithm
             return createCipher_SM4_GCM(cryptoParams);
 
+        case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.DES_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC:
+        case EncryptionAlgorithm.MAGMA_CTR_OMAC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
@@ -265,6 +269,7 @@ public class BcTlsCrypto
         case CryptoHashAlgorithm.sha384:
         case CryptoHashAlgorithm.sha512:
         case CryptoHashAlgorithm.sm3:
+        case CryptoHashAlgorithm.gostr3411_2012_256:
             return true;
 
         default:
@@ -289,7 +294,7 @@ public class BcTlsCrypto
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
             return true;
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        // TODO[RFC 9189]
         case CryptoSignatureAlgorithm.gostr34102012_256:
         case CryptoSignatureAlgorithm.gostr34102012_512:
 
@@ -345,9 +350,12 @@ public class BcTlsCrypto
         case EncryptionAlgorithm.SM4_GCM:
             return true;
 
+        case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES_CBC:
         case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC:
+        case EncryptionAlgorithm.MAGMA_CTR_OMAC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
@@ -417,11 +425,13 @@ public class BcTlsCrypto
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return true;
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        // TODO[RFC 9189]
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
+
         // TODO[RFC 8998]
 //        case SignatureAlgorithm.sm2:
+
         default:
             return false;
         }
@@ -508,6 +518,8 @@ public class BcTlsCrypto
             return new SHA512Digest((SHA512Digest)digest);
         case CryptoHashAlgorithm.sm3:
             return new SM3Digest((SM3Digest)digest);
+        case CryptoHashAlgorithm.gostr3411_2012_256:
+            return new GOST3411_2012_256Digest((GOST3411_2012_256Digest)digest);
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
@@ -531,6 +543,8 @@ public class BcTlsCrypto
             return new SHA512Digest();
         case CryptoHashAlgorithm.sm3:
             return new SM3Digest();
+        case CryptoHashAlgorithm.gostr3411_2012_256:
+            return new GOST3411_2012_256Digest();
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }

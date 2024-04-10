@@ -154,7 +154,7 @@ public abstract class TlsCryptoTest
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
             return loadCredentialedSigner(cryptoParams, "rsa-sign", signatureAndHashAlgorithm);
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10] Add test resources for these
+        // TODO[RFC 9189] Add test resources for these
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
 
@@ -446,7 +446,7 @@ public abstract class TlsCryptoTest
     {
         int[] hashes = new int[] { CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
             CryptoHashAlgorithm.sha256, CryptoHashAlgorithm.sha384, CryptoHashAlgorithm.sha512,
-            CryptoHashAlgorithm.sm3 };
+            CryptoHashAlgorithm.sm3, CryptoHashAlgorithm.gostr3411_2012_256 };
 
         for (int i = 0; i < hashes.length; ++i)
         {

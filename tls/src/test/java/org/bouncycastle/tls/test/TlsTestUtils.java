@@ -197,6 +197,11 @@ public class TlsTestUtils
             return "rsa_pss_384";
         case SignatureAlgorithm.rsa_pss_pss_sha512:
             return "rsa_pss_512";
+
+        // TODO[RFC 9189] Choose names here and apply reverse mappings in getCACertResource(String)
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
+
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }

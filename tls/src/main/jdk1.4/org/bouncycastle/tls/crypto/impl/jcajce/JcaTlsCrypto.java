@@ -235,9 +235,12 @@ public class JcaTlsCrypto
                 // NOTE: Ignores macAlgorithm
                 return createCipher_SM4_GCM(cryptoParams);
 
+            case EncryptionAlgorithm._28147_CNT_IMIT:
             case EncryptionAlgorithm.DES40_CBC:
             case EncryptionAlgorithm.DES_CBC:
             case EncryptionAlgorithm.IDEA_CBC:
+            case EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC:
+            case EncryptionAlgorithm.MAGMA_CTR_OMAC:
             case EncryptionAlgorithm.RC2_CBC_40:
             case EncryptionAlgorithm.RC4_128:
             case EncryptionAlgorithm.RC4_40:
@@ -406,6 +409,8 @@ public class JcaTlsCrypto
             return "HmacSHA512";
         case CryptoHashAlgorithm.sm3:
             return "HmacSM3";
+        case CryptoHashAlgorithm.gostr3411_2012_256:
+            return "HmacGOST3411-2012-256";
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
@@ -538,7 +543,7 @@ public class JcaTlsCrypto
         case CryptoSignatureAlgorithm.rsa_pss_pss_sha512:
             return true;
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        // TODO[RFC 9189]
         case CryptoSignatureAlgorithm.gostr34102012_256:
         case CryptoSignatureAlgorithm.gostr34102012_512:
 
@@ -720,11 +725,13 @@ public class JcaTlsCrypto
         case SignatureAlgorithm.ecdsa_brainpoolP512r1tls13_sha512:
             return true;
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10]
+        // TODO[RFC 9189]
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
+
         // TODO[RFC 8998]
 //        case SignatureAlgorithm.sm2:
+
         default:
             return false;
         }
@@ -1097,9 +1104,12 @@ public class JcaTlsCrypto
         case EncryptionAlgorithm.SM4_GCM:
             return Boolean.valueOf(isUsableCipher("SM4/GCM/NoPadding", 128));
 
+        case EncryptionAlgorithm._28147_CNT_IMIT:
         case EncryptionAlgorithm.DES_CBC:
         case EncryptionAlgorithm.DES40_CBC:
         case EncryptionAlgorithm.IDEA_CBC:
+        case EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC:
+        case EncryptionAlgorithm.MAGMA_CTR_OMAC:
         case EncryptionAlgorithm.RC2_CBC_40:
         case EncryptionAlgorithm.RC4_128:
         case EncryptionAlgorithm.RC4_40:
@@ -1294,6 +1304,8 @@ public class JcaTlsCrypto
             return "SHA-512";
         case CryptoHashAlgorithm.sm3:
             return "SM3";
+        case CryptoHashAlgorithm.gostr3411_2012_256:
+            return "GOST3411-2012-256";
         default:
             throw new IllegalArgumentException("invalid CryptoHashAlgorithm: " + cryptoHashAlgorithm);
         }
