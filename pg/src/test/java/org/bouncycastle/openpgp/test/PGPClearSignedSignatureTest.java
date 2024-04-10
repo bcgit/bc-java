@@ -409,7 +409,8 @@ public class PGPClearSignedSignatureTest
 
         PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
 
-        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+        isTrue(areEqual(pubKeyRing.getPublicKey().getFingerprint(), Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
+        isTrue(pubKeyRing.getPublicKey().hasFingerprint(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
 
@@ -473,7 +474,8 @@ public class PGPClearSignedSignatureTest
 
         PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new BcKeyFingerprintCalculator());
 
-        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+        isTrue(areEqual(pubKeyRing.getPublicKey().getFingerprint(), Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
+        isTrue(pubKeyRing.getPublicKey().hasFingerprint(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
 

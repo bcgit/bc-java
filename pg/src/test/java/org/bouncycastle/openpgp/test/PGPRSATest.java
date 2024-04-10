@@ -446,11 +446,16 @@ public class PGPRSATest
 
         PGPPublicKey            pubKey = pgpPub.getPublicKey();
 
-        if (!areEqual(pubKey.getFingerprint(), Hex.decode("4FFB9F0884266C715D1CEAC804A3BBFA")))
+        byte[] expectedVersion3 = Hex.decode("4FFB9F0884266C715D1CEAC804A3BBFA");
+        if (!areEqual(pubKey.getFingerprint(), expectedVersion3))
         {
             fail("version 3 fingerprint test failed");
         }
-        
+        if (!pubKey.hasFingerprint(expectedVersion3))
+        {
+            fail("version 3 fingerprint test failed");
+        }
+
         //
         // version 4
         //
@@ -458,7 +463,12 @@ public class PGPRSATest
 
         pubKey = pgpPub.getPublicKey();
 
-        if (!areEqual(pubKey.getFingerprint(), Hex.decode("3062363c1046a01a751946bb35586146fdf3f373")))
+        byte[] expectedVersion4 = Hex.decode("3062363c1046a01a751946bb35586146fdf3f373");
+        if (!areEqual(pubKey.getFingerprint(), expectedVersion4))
+        {
+            fail("version 4 fingerprint test failed");
+        }
+        if (!pubKey.hasFingerprint(expectedVersion4))
         {
             fail("version 4 fingerprint test failed");
         }

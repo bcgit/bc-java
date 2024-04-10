@@ -278,7 +278,7 @@ public class PGPPublicKeyRingCollection
     }
 
     /**
-     * Return the PGP public key associated with the given key fingerprint.
+     * Return the public key ring which contains the key associated with the given key fingerprint.
      *
      * @param fingerprint the public key fingerprint to match against.
      * @return the PGP public key ring containing the PGP public key matching fingerprint.

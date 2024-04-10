@@ -68,9 +68,9 @@ public class PGPv6KeyTest
 
         Iterator<PGPPublicKey> pIt = publicKeys.getPublicKeys();
         PGPPublicKey key = (PGPPublicKey)pIt.next();
-        isTrue(Arrays.areEqual(PRIMARY_FINGERPRINT, key.getFingerprint()));
+        isTrue(key.hasFingerprint(PRIMARY_FINGERPRINT));
         key = (PGPPublicKey)pIt.next();
-        isTrue(Arrays.areEqual(SUBKEY_FINGERPRINT, key.getFingerprint()));
+        isTrue(key.hasFingerprint(SUBKEY_FINGERPRINT));
 
         bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes());
         armorIn = new ArmoredInputStream(bIn);

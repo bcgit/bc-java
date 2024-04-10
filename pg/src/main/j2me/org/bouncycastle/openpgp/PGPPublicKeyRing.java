@@ -15,7 +15,6 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.util.Arrays;
 
 /**
  * Class to hold a single master public key and its subkeys.
@@ -135,7 +134,7 @@ public class PGPPublicKeyRing
         {
             PGPPublicKey    k = (PGPPublicKey)keys.get(i);
 
-            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            if (k.hasFingerprint(fingerprint))
             {
                 return k;
             }
