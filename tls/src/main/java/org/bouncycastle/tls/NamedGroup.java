@@ -61,7 +61,7 @@ public class NamedGroup
     public static final int brainpoolP512r1tls13 = 33;
 
     /*
-     * draft-smyshlyaev-tls12-gost-suites-10
+     * RFC 9189
      */
     public static final int GC256A = 34;
     public static final int GC256B = 35;

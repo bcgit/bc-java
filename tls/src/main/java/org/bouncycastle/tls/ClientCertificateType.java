@@ -21,7 +21,7 @@ public class ClientCertificateType
     public static final short ecdsa_fixed_ecdh = 66;
 
     /*
-     * draft-smyshlyaev-tls12-gost-suites-10
+     * RFC 9189
      */
     public static final short gost_sign256 = 67;
     public static final short gost_sign512 = 68;

@@ -2219,6 +2219,17 @@ public class TlsUtils
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
 
+        case CipherSuite.TLS_GOSTR341112_256_WITH_28147_CNT_IMIT:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC:
+        {
+            if (isTLSv12Exactly)
+            {
+                return PRFAlgorithm.tls_prf_gostr3411_2012_256;
+            }
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
         case CipherSuite.TLS_DHE_PSK_WITH_AES_256_CBC_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384:
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA384:
@@ -2707,6 +2718,9 @@ public class TlsUtils
     {
         switch (cipherSuite)
         {
+        case CipherSuite.TLS_GOSTR341112_256_WITH_28147_CNT_IMIT:
+            return EncryptionAlgorithm._28147_CNT_IMIT;
+
         case CipherSuite.TLS_DH_anon_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA:
         case CipherSuite.TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA:
@@ -3007,6 +3021,12 @@ public class TlsUtils
         case CipherSuite.TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256:
             return EncryptionAlgorithm.CHACHA20_POLY1305;
 
+        case CipherSuite.TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC:
+            return EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC;
+
+        case CipherSuite.TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC:
+            return EncryptionAlgorithm.MAGMA_CTR_OMAC;
+
         case CipherSuite.TLS_DHE_PSK_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_anon_WITH_NULL_SHA:
         case CipherSuite.TLS_ECDH_ECDSA_WITH_NULL_SHA:
@@ -3085,6 +3105,9 @@ public class TlsUtils
         case EncryptionAlgorithm.SM4_CBC:
             return CipherType.block;
 
+        case EncryptionAlgorithm._28147_CNT_IMIT:
+        case EncryptionAlgorithm.KUZNYECHIK_CTR_OMAC:
+        case EncryptionAlgorithm.MAGMA_CTR_OMAC:
         case EncryptionAlgorithm.NULL:
         case EncryptionAlgorithm.RC4_40:
         case EncryptionAlgorithm.RC4_128:
@@ -3331,6 +3354,11 @@ public class TlsUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
         case CipherSuite.TLS_ECDHE_RSA_WITH_NULL_SHA:
             return KeyExchangeAlgorithm.ECDHE_RSA;
+
+        case CipherSuite.TLS_GOSTR341112_256_WITH_28147_CNT_IMIT:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC:
+            return KeyExchangeAlgorithm.GOSTR341112_256;
 
         case CipherSuite.TLS_AES_128_CCM_8_SHA256:
         case CipherSuite.TLS_AES_128_CCM_SHA256:
@@ -3905,6 +3933,9 @@ public class TlsUtils
         case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384:
         case CipherSuite.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_28147_CNT_IMIT:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC:
+        case CipherSuite.TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_128_CCM_8:
         case CipherSuite.TLS_PSK_DHE_WITH_AES_256_CCM_8:
         case CipherSuite.TLS_PSK_WITH_AES_128_CCM:
@@ -4090,8 +4121,6 @@ public class TlsUtils
 
     static boolean isValidSignatureAlgorithmForServerKeyExchange(short signatureAlgorithm, int keyExchangeAlgorithm)
     {
-        // TODO[tls13]
-
         switch (keyExchangeAlgorithm)
         {
         case KeyExchangeAlgorithm.DHE_RSA:
@@ -4129,6 +4158,7 @@ public class TlsUtils
         case KeyExchangeAlgorithm.NULL:
             return SignatureAlgorithm.anonymous != signatureAlgorithm;
 
+        case KeyExchangeAlgorithm.GOSTR341112_256:
         default:
             return false;
         }
@@ -4410,6 +4440,9 @@ public class TlsUtils
         case KeyExchangeAlgorithm.SRP_RSA:
             return crypto.hasSRPAuthentication()
                 && hasAnyRSASigAlgs(crypto);
+
+        // TODO[RFC 9189]
+        case KeyExchangeAlgorithm.GOSTR341112_256:
 
         default:
             return false;
@@ -5620,9 +5653,32 @@ public class TlsUtils
         {
             securityParameters.verifyDataLength = securityParameters.getPRFHashLength();
         }
+        else if (negotiatedVersion.isSSL())
+        {
+            securityParameters.verifyDataLength = 36;
+        }
         else
         {
-            securityParameters.verifyDataLength = negotiatedVersion.isSSL() ? 36 : 12;
+            /*
+             * RFC 9189 4.2.6. The verify_data_length value is equal to 32 for the CTR_OMAC cipher
+             * suites and is equal to 12 for the CNT_IMIT cipher suite.
+             */
+            switch (cipherSuite)
+            {
+            case CipherSuite.TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC:
+            case CipherSuite.TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC:
+            {
+                securityParameters.verifyDataLength = 32;
+                break;
+            }
+
+            case CipherSuite.TLS_GOSTR341112_256_WITH_28147_CNT_IMIT:
+            default:
+            {
+                securityParameters.verifyDataLength = 12;
+                break;
+            }
+            }
         }
     }
 

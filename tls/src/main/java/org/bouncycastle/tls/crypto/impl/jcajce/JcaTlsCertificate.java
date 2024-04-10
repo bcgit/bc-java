@@ -182,6 +182,10 @@ public class JcaTlsCertificate
             return new JcaTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
         }
 
+        // TODO[RFC 9189]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
@@ -505,6 +509,10 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.rsa_pss_pss_sha512:
             return supportsRSA_PSS_PSS(signatureAlgorithm)
                 && publicKey instanceof RSAPublicKey;
+
+        // TODO[RFC 9189]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
 
         default:
             return false;
