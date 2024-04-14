@@ -33,8 +33,6 @@ import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -88,7 +86,7 @@ class BcImplProvider
     static Signer createSigner(int keyAlgorithm, int hashAlgorithm, CipherParameters keyParam)
         throws PGPException
     {
-        switch(keyAlgorithm)
+        switch (keyAlgorithm)
         {
         case PublicKeyAlgorithmTags.RSA_GENERAL:
         case PublicKeyAlgorithmTags.RSA_SIGN:
@@ -98,10 +96,9 @@ class BcImplProvider
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
-            if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
-            {
-                return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
-            }
+        case PublicKeyAlgorithmTags.Ed25519:
+            return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+        case PublicKeyAlgorithmTags.Ed448:
             return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         default:
             throw new PGPException("cannot recognise keyAlgorithm: " + keyAlgorithm);
@@ -162,6 +159,8 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
+            //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
+            //   is usable, and it is subject to the same usage requirements
             return new RFC3394WrapEngine(new CamelliaEngine());
         default:
             throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
@@ -188,6 +187,8 @@ class BcImplProvider
         case PGPPublicKey.ECDSA:
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.ECDH:
+        case PGPPublicKey.X25519:
+        case PGPPublicKey.X448:
             throw new PGPException("Not implemented.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
@@ -239,7 +240,7 @@ class BcImplProvider
         public boolean verifySignature(byte[] signature)
         {
             digest.doFinal(digBuf, 0);
-            
+
             signer.update(digBuf, 0, digBuf.length);
 
             return signer.verifySignature(signature);

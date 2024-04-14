@@ -4,8 +4,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Vector;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -16,12 +14,16 @@ import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCryptoProvider;
+
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 public class TlsTestSuite extends TestSuite
 {
-    static TlsCrypto BC_CRYPTO = new BcTlsCrypto(); 
-    static TlsCrypto JCA_CRYPTO = new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
+    static BcTlsCrypto BC_CRYPTO = new BcTlsCrypto(); 
+    static JcaTlsCrypto JCA_CRYPTO = (JcaTlsCrypto)new JcaTlsCryptoProvider().setProvider(new BouncyCastleProvider()).create(new SecureRandom());
 
     static TlsCrypto getCrypto(TlsTestConfig config)
     {

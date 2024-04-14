@@ -53,7 +53,7 @@ public class SphincsPlusTest
             String name = fileList[i];
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/sphincs_plus", "subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-            System.out.println(name);
+            // System.out.println(name);
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)
@@ -131,11 +131,17 @@ public class SphincsPlusTest
 
                         if (robust)
                         {
-                            // nothing.
+                            if (b.indexOf("haraka") < 0)
+                            {
+                                b.append("_robust");
+                            }
                         }
                         else if (simple)
                         {
-                            b.append("_simple");
+                            if (b.indexOf("haraka") >= 0)
+                            {
+                                b.append("_simple");
+                            }
                         }
                         else
                         {
@@ -211,7 +217,7 @@ public class SphincsPlusTest
         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
         SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4792F267AAFA3F87CA60D01CB54F29202A3E784CCB7EBCDCFD45542B7F6AF778742E0F4479175084AA488B3B74340678AAD111491E7E52F6F1D726DAF2A4E75CAFB60D034B6E912B26BE68464B0095D60D"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_256f));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_256f_robust));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -233,8 +239,8 @@ public class SphincsPlusTest
 
     public void testBasicKeyImportSimpleSign()
     {
-        SPHINCSPlusPublicKeyParameters pubParams = new SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters.sha2_128f, Hex.decode("b505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"));
-        SPHINCSPlusPrivateKeyParameters privParams = new SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters.sha2_128f, Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"));
+        SPHINCSPlusPublicKeyParameters pubParams = new SPHINCSPlusPublicKeyParameters(SPHINCSPlusParameters.sha2_128f_robust, Hex.decode("b505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"));
+        SPHINCSPlusPrivateKeyParameters privParams = new SPHINCSPlusPrivateKeyParameters(SPHINCSPlusParameters.sha2_128f_robust, Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"));
 
         assertTrue(Arrays.areEqual(Hex.decode("b505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"), pubParams.getEncoded()));
         assertTrue(Arrays.areEqual(Hex.decode("7c9935a0b07694aa0c6d10e4db6b1add2fd81a25ccb148032dcd739936737f2db505d7cfad1b497499323c8686325e473985e5a31e5b9a0457916c84320c2ea8"), privParams.getEncoded()));
@@ -262,7 +268,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4711E95F8A383854BA16A5DD3E25FF71D3"
             + "061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_128f));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_128f_robust));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -293,7 +299,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode("7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4711E95F8A383854BA16A5DD3E25FF71D3"
             + "061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_128f));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_128f_robust));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -325,7 +331,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode(
             "7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f_simple));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -343,7 +349,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode(
             "7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E4766BA69D8560A9F84846AD8B765390C84"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f_simple));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -375,7 +381,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode(
             "7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f_robust));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
@@ -393,7 +399,7 @@ public class SphincsPlusTest
         SecureRandom random = new FixedSecureRandom(Hex.decode(
             "7C9935A0B07694AA0C6D10E4DB6B1ADD2FD81A25CCB148032DCD739936737F2DB505D7CFAD1B497499323C8686325E47354D75735F16E03DEC94D1F5B00C213D"));
 
-        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f));
+        kpGen.init(new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.shake_128f_robust));
 
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 

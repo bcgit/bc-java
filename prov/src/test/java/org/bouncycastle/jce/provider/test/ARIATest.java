@@ -14,8 +14,8 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
+import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Hex;
 

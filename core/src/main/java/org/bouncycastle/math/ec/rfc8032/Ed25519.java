@@ -175,13 +175,14 @@ public abstract class Ed25519
         F.sqr(p.x, u);
         F.sqr(p.y, v);
         F.mul(u, v, t);
-        F.sub(v, u, v);
+        F.sub(u, v, u);
         F.mul(t, C_d, t);
         F.addOne(t);
-        F.sub(t, v, t);
+        F.add(t, u, t);
         F.normalize(t);
+        F.normalize(v);
 
-        return F.isZero(t);
+        return F.isZero(t) & ~F.isZero(v);
     }
 
     private static int checkPoint(PointAccum p)
@@ -195,15 +196,17 @@ public abstract class Ed25519
         F.sqr(p.y, v);
         F.sqr(p.z, w);
         F.mul(u, v, t);
-        F.sub(v, u, v);
-        F.mul(v, w, v);
+        F.sub(u, v, u);
+        F.mul(u, w, u);
         F.sqr(w, w);
         F.mul(t, C_d, t);
         F.add(t, w, t);
-        F.sub(t, v, t);
+        F.add(t, u, t);
         F.normalize(t);
+        F.normalize(v);
+        F.normalize(w);
 
-        return F.isZero(t);
+        return F.isZero(t) & ~F.isZero(v) & ~F.isZero(w);
     }
 
     private static boolean checkPointFullVar(byte[] p)
@@ -563,7 +566,12 @@ public abstract class Ed25519
 
         int[] v0 = new int[4];
         int[] v1 = new int[4];
-        Scalar25519.reduceBasisVar(nA, v0, v1);
+
+        if (!Scalar25519.reduceBasisVar(nA, v0, v1))
+        {
+            throw new IllegalStateException();
+        }
+
         Scalar25519.multiply128Var(nS, v1, nS);
 
         PointAccum pZ = new PointAccum();
@@ -625,7 +633,12 @@ public abstract class Ed25519
 
         int[] v0 = new int[4];
         int[] v1 = new int[4];
-        Scalar25519.reduceBasisVar(nA, v0, v1);
+
+        if (!Scalar25519.reduceBasisVar(nA, v0, v1))
+        {
+            throw new IllegalStateException();
+        }
+
         Scalar25519.multiply128Var(nS, v1, nS);
 
         PointAccum pZ = new PointAccum();
@@ -682,7 +695,7 @@ public abstract class Ed25519
         F.normalize(p.y);
         F.normalize(p.z);
 
-        return F.isZeroVar(p.x) && F.areEqualVar(p.y, p.z);
+        return F.isZeroVar(p.x) && !F.isZeroVar(p.y) && F.areEqualVar(p.y, p.z);
     }
 
     private static void pointAdd(PointExtended p, PointExtended q, PointExtended r, PointTemp t)

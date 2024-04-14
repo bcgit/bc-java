@@ -1,5 +1,21 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.InputStream;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Signature;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -11,21 +27,6 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Signature;
-
 class OperatorHelper
 {
     private JcaJceHelper helper;
@@ -35,48 +36,15 @@ class OperatorHelper
         this.helper = helper;
     }
 
-    /**
-     * Return an appropriate name for the hash algorithm represented by the passed
-     * in hash algorithm ID number (JCA message digest naming convention).
-     *
-     * @param hashAlgorithm the algorithm ID for a hash algorithm.
-     * @return a String representation of the hash name.
-     */
-    String getDigestName(
-        int hashAlgorithm)
-        throws PGPException
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithmTags.SHA1:
-            return "SHA-1";
-        case HashAlgorithmTags.MD2:
-            return "MD2";
-        case HashAlgorithmTags.MD5:
-            return "MD5";
-        case HashAlgorithmTags.RIPEMD160:
-            return "RIPEMD160";
-        case HashAlgorithmTags.SHA256:
-            return "SHA-256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA-384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA-512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA-224";
-        case HashAlgorithmTags.TIGER_192:
-            return "TIGER";
-        default:
-            throw new PGPException("unknown hash algorithm tag in getDigestName: " + hashAlgorithm);
-        }
-    }
+
+
 
     MessageDigest createDigest(int algorithm)
         throws GeneralSecurityException, PGPException
     {
         MessageDigest dig;
 
-        String digestName = getDigestName(algorithm);
+        String digestName = PGPUtil.getDigestName(algorithm);
         try
         {
             dig = helper.createMessageDigest(digestName);
@@ -127,9 +95,7 @@ class OperatorHelper
 
             if (withIntegrityPacket)
             {
-                byte[] iv = new byte[c.getBlockSize()];
-
-                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(iv));
+                c.init(Cipher.DECRYPT_MODE, secretKey, new IvParameterSpec(new byte[c.getBlockSize()]));
             }
             else
             {
@@ -206,6 +172,8 @@ class OperatorHelper
         case PGPPublicKey.ECDSA:
             throw new PGPException("Can't use ECDSA for encryption.");
         case PGPPublicKey.EDDSA_LEGACY:
+        case PGPPublicKey.Ed448:
+        case PGPPublicKey.Ed25519:
             throw new PGPException("Can't use EDDSA for encryption.");
         default:
             throw new PGPException("unknown asymmetric algorithm: " + encAlgorithm);
@@ -272,7 +240,10 @@ class OperatorHelper
             encAlg = "ECDSA";
             break;
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+        case PublicKeyAlgorithmTags.Ed25519:
             return createSignature("Ed25519");
+        case PublicKeyAlgorithmTags.Ed448:
+            return createSignature("Ed448");
         default:
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
         }

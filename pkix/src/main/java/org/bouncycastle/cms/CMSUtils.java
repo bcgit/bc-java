@@ -5,25 +5,36 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BEROctetStringGenerator;
+import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.EncryptedContentInfo;
+import org.bouncycastle.asn1.cms.OriginatorInfo;
 import org.bouncycastle.asn1.cms.OtherRevocationInfoFormat;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
@@ -39,6 +50,9 @@ import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.OutputAEADEncryptor;
+import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
@@ -406,5 +420,124 @@ class CMSUtils
         return s1 == null ? getSafeOutputStream(s2)
             : s2 == null ? getSafeOutputStream(s1) : new TeeOutputStream(
             s1, s2);
+    }
+
+    static EncryptedContentInfo getEncryptedContentInfo(CMSTypedData content, OutputEncryptor contentEncryptor, byte[] encryptedContent)
+    {
+        return getEncryptedContentInfo(
+            content.getContentType(),
+            contentEncryptor.getAlgorithmIdentifier(),
+            encryptedContent);
+    }
+
+    static EncryptedContentInfo getEncryptedContentInfo(ASN1ObjectIdentifier encryptedContentType, AlgorithmIdentifier encAlgId, byte[] encryptedContent)
+    {
+        ASN1OctetString encContent = new BEROctetString(encryptedContent);
+
+        return new EncryptedContentInfo(
+            encryptedContentType,
+            encAlgId,
+            encContent);
+    }
+
+    static ASN1EncodableVector getRecipentInfos(GenericKey encKey, List recipientInfoGenerators)
+        throws CMSException
+    {
+        ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
+        Iterator it = recipientInfoGenerators.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
+
+            recipientInfos.add(recipient.generate(encKey));
+        }
+        return recipientInfos;
+    }
+
+    static void addRecipientInfosToGenerator(ASN1EncodableVector recipientInfos, BERSequenceGenerator authGen, boolean berEncodeRecipientSet)
+        throws IOException
+    {
+        if (berEncodeRecipientSet)
+        {
+            authGen.getRawOutputStream().write(new BERSet(recipientInfos).getEncoded());
+        }
+        else
+        {
+            authGen.getRawOutputStream().write(new DERSet(recipientInfos).getEncoded());
+        }
+    }
+
+    static void addOriginatorInfoToGenerator(BERSequenceGenerator envGen, OriginatorInfo originatorInfo)
+        throws IOException
+    {
+        if (originatorInfo != null)
+        {
+            envGen.addObject(new DERTaggedObject(false, 0, originatorInfo));
+        }
+    }
+
+    static void addAttriSetToGenerator(BERSequenceGenerator gen, CMSAttributeTableGenerator attriGen, int tagNo, Map parameters)
+        throws IOException
+    {
+        if (attriGen != null)
+        {
+            gen.addObject(new DERTaggedObject(false, tagNo, new BERSet(attriGen.getAttributes(parameters).toASN1EncodableVector())));
+        }
+    }
+
+    static ASN1Set processAuthAttrSet(CMSAttributeTableGenerator authAttrsGenerator, OutputAEADEncryptor encryptor)
+        throws IOException
+    {
+        ASN1Set authenticatedAttrSet = null;
+        if (authAttrsGenerator != null)
+        {
+            AttributeTable attrTable = authAttrsGenerator.getAttributes(Collections.EMPTY_MAP);
+
+            authenticatedAttrSet = new DERSet(attrTable.toASN1EncodableVector());
+            encryptor.getAADStream().write(authenticatedAttrSet.getEncoded(ASN1Encoding.DER));
+        }
+        return authenticatedAttrSet;
+    }
+
+    static AttributeTable getAttributesTable(ASN1SetParser set)
+        throws IOException
+    {
+        if (set != null)
+        {
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            ASN1Encodable o;
+
+            while ((o = set.readObject()) != null)
+            {
+                ASN1SequenceParser seq = (ASN1SequenceParser)o;
+
+                v.add(seq.toASN1Primitive());
+            }
+            return new AttributeTable(new DERSet(v));
+        }
+        return null;
+    }
+
+    static ASN1Set getAttrDLSet(CMSAttributeTableGenerator gen)
+    {
+        return (gen != null) ? new DLSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+    }
+
+    static ASN1Set getAttrBERSet(CMSAttributeTableGenerator gen)
+    {
+        return (gen != null) ? new BERSet(gen.getAttributes(Collections.EMPTY_MAP).toASN1EncodableVector()) : null;
+    }
+
+    static byte[] encodeObj(
+        ASN1Encodable obj)
+        throws IOException
+    {
+        if (obj != null)
+        {
+            return obj.toASN1Primitive().getEncoded();
+        }
+
+        return null;
     }
 }

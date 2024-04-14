@@ -5,13 +5,13 @@ import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.anssi.ANSSINamedCurves;
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.gm.GMNamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
 import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.internal.asn1.cryptlib.CryptlibObjectIdentifiers;
 
 /**
  * A general class that reads all X9.62 style EC curve tables.

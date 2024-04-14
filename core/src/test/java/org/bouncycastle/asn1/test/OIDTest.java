@@ -62,6 +62,8 @@ public class OIDTest
         String  oid)
         throws IOException
     {
+        isTrue(ASN1ObjectIdentifier.tryFromID(oid) != null);
+
         ASN1ObjectIdentifier o = new ASN1ObjectIdentifier(oid);
         o = (ASN1ObjectIdentifier)ASN1Primitive.fromByteArray(o.getEncoded());
         if (!o.getId().equals(oid))
@@ -73,6 +75,8 @@ public class OIDTest
     private void invalidOidCheck(
         String oid)
     {
+        isTrue(ASN1ObjectIdentifier.tryFromID(oid) == null);
+
         try
         {
             new ASN1ObjectIdentifier(oid);
@@ -127,6 +131,18 @@ public class OIDTest
         validOidCheck("1.1.127.32512.8323072.2130706432.545460846592.139637976727552.35747322042253312.9151314442816847872");
         validOidCheck("1.2.123.12345678901.1.1.1");
         validOidCheck("2.25.196556539987194312349856245628873852187.1");
+        validOidCheck("0.0");
+        validOidCheck("0.0.1");
+        validOidCheck("0.39");
+        validOidCheck("0.39.1");
+        validOidCheck("1.0");
+        validOidCheck("1.0.1");
+        validOidCheck("1.39");
+        validOidCheck("1.39.1");
+        validOidCheck("2.0");
+        validOidCheck("2.0.1");
+        validOidCheck("2.40");
+        validOidCheck("2.40.1");
 
         invalidOidCheck("0");
         invalidOidCheck("1");
@@ -147,6 +163,14 @@ public class OIDTest
         invalidOidCheck(".12.345.77.234.");
         invalidOidCheck("1.2.3.4.A.5");
         invalidOidCheck("1,2");
+        invalidOidCheck("0.40");
+        invalidOidCheck("0.40.1");
+        invalidOidCheck("0.100");
+        invalidOidCheck("0.100.1");
+        invalidOidCheck("1.40");
+        invalidOidCheck("1.40.1");
+        invalidOidCheck("1.100");
+        invalidOidCheck("1.100.1");
 
         branchCheck("1.1", "2.2");
 
@@ -158,6 +182,9 @@ public class OIDTest
         onCheck("1.12", "1.1.2", false);
         onCheck("1.1", "1.1.1", true);
         onCheck("1.1", "1.1.2", true);
+        onCheck("1.2.3.4.5.6", "1.2.3.4.5.6", false);
+        onCheck("1.2.3.4.5.6", "1.2.3.4.5.6.7", true);
+        onCheck("1.2.3.4.5.6", "1.2.3.4.5.6.7.8", true);
 
         testIntern();
     }

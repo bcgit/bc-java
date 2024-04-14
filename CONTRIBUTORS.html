@@ -10,7 +10,7 @@ Donors
 <p>
 The following people and organisations donated financially to help with the release of Bouncy Castle:
 <br />&nbsp;<br />
-EduFer (1.72). Miguel, Rodolfo Hansen, and iterate GmbH (1.69). Encryptomatic.com (1.67). Denis Beurive, Ravi_02, and Manuel Corona (1.66). Christian Kahlo, Alexi Livshitz, and Denis Beurive (1.65). Joshua Hight (1.63). Bihari Babu (1.61).  Jens Neuhalfen and perillamint (1.60). Brian Reid (1.59). Joop Kaashoek and Pexus LLC (1.57).  DidiSoft, Cotiviti, Atanas Krachev, Encryptomatic LLC, LogicalAnswersIncSupporter (1.56).  Digistamp, RAM NAG (1.55).  Lobster GmbH (1.54).  Sheba, Ishmal Bartley, and Li-Chang Johnny Lo (1.53). lecker&#064buetterchen.de, Charles Proxy, Gunny Mills, Morgan Le Douget, Ben Whitaker, and Emilio Navarrete Lineros (1.52).  Gup & Boz &#64 Alki Seattle, Bytemine Gmbh, Ted Pennings, Atanas Krachev, PrimeKey Solutions AB, Martin Paljak, CorseraFri19980116, CPU Terminator, Lindsay Bradford, kares, Philius, and Aaron Anderson (1.51).
+AXL Software, Larry West (California), A-Sher (1.77). EduFer (1.72). Miguel, Rodolfo Hansen, and iterate GmbH (1.69). Encryptomatic.com (1.67). Denis Beurive, Ravi_02, and Manuel Corona (1.66). Christian Kahlo, Alexi Livshitz, and Denis Beurive (1.65). Joshua Hight (1.63). Bihari Babu (1.61).  Jens Neuhalfen and perillamint (1.60). Brian Reid (1.59). Joop Kaashoek and Pexus LLC (1.57).  DidiSoft, Cotiviti, Atanas Krachev, Encryptomatic LLC, LogicalAnswersIncSupporter (1.56).  Digistamp, RAM NAG (1.55).  Lobster GmbH (1.54).  Sheba, Ishmal Bartley, and Li-Chang Johnny Lo (1.53). lecker&#064buetterchen.de, Charles Proxy, Gunny Mills, Morgan Le Douget, Ben Whitaker, and Emilio Navarrete Lineros (1.52).  Gup & Boz &#64 Alki Seattle, Bytemine Gmbh, Ted Pennings, Atanas Krachev, PrimeKey Solutions AB, Martin Paljak, CorseraFri19980116, CPU Terminator, Lindsay Bradford, kares, Philius, and Aaron Anderson (1.51).
 </p>
 <p>
 We also wish to acknowledge financial and collaborative support from <a href="https://www.cisco.com/">CISCO</a> and additional financial support from <a href="https://www.primekey.com/">PrimeKey</a> towards developing the EST API for RFC 7030 support.
@@ -384,7 +384,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Tobias Wich&lt;tobias.wich&#064ecsec.de&gt; Provided patch for TLS to work around servers sending Supported Elliptic Curves extension unexpectedly.</li>
 <li>Hauke Mehrtens&lt;hauke&#064hauke-m.de&gt; TLS patch to add ECDHE_ECDSA CCM ciphersuites from RFC 7251.</li>
 <li>Daniel Zimmerman&lt;dmz&#064galois.com&gt; Further key quality improvements to RSAKeyPairGenerator.</li>
-<li>Jens Kapitza&ltj.kapitza&#064schwarze-allianz.de&gt; Iterable support in OpenPGP API, code cleanup in OpenPGP API.</li>
+<li>Jens Kapitza&lt;j.kapitza&#064schwarze-allianz.de&gt; Iterable support in OpenPGP API, code cleanup in OpenPGP API.</li>
 <li>Johan Eklund&lt;johan&#064primekey.se&gt; update to RFC 6960 for OCSPObjectIdentifiers.</li>
 <li>nikosn&lt;https://github.com/nikosn&gt; Fix to encoding of EC private keys to ensure encoding matches order length.</li>
 <li>Axel von dem Bruch &lt;axel-vdb&#064riseup.net&gt; Contributions to BCrypt/OpenBSDBCrypt, original version of Blake2bDigest.</li>
@@ -452,7 +452,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>catbref &lt;https://github.com/catbref&gt; sample implementation of RFC 7748/Ed25519 (incorporated work from github users Valodim and str4d as well).</li>
 <li>gerlion &lt;https://github.com/gerlion&gt; detection of concurrency issue with pre-1.60 EC math library.</li>
 <li>fgrieu &lt;fgrieu&#064gmail.com&gt; identification and suggested fixes for possible timing vulnerability in OAEPEncoding and RSACoreEngine.</li>
-<li>MTG &lt;https://github.com/mtgag&gt; patch for decoding issues in PKIPublicationInfo and CertifiedKeyPair.</li>
+<li>MTG &lt;https://github.com/mtgag&gt; patch for decoding issues in PKIPublicationInfo and CertifiedKeyPair, patch for adding jurisdiction{C,ST,L} to X500 name style.</li>
 <li>Andreas Gadermaier &lt;up.gadermaier&#064gmail.com&gt; initial version of Argon2 PBKDF algorithm.</li>
 <li>Tony Washer &lt;tony.washer&#64yahoo.co.uk&gt; review of qTesla, Java 1.9 module code, additional test code and debugging for GOST, DSTU, and ECNR algorithms. Initial lightweight implementation of the ZUC ciphers and macs. Additions to LMS/HSS API implementations, fix for truncation issue with big HSS keys, contributions to optimization of LMS/HSS. Patch for XDH/EdDSA key handling and mcEliece decryption using kobaraImai. Initial GCM-SIV, Blake3, and Kangaroo implementation.</li>
 <li>Vincent Bouckaert &lt;https://github.com/veebee&gt; initial version of RFC 4998 ASN.1 classes. Debugging and testing of high level RFC 4998 implementation.</li>
@@ -488,7 +488,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>vvvlado &lt;https://github.com/vvvlado&gt; Fix to support repeated headers in PGP armored data.</li>
 <li>a--v--k &lt;https://github.com/a--v--k&gt; Clean up for some invalid mappings in the Java provider.</li>
 <li>lipnitsk &lt;https://github.com/lipnitsk&gt; Fix for non-CRT RSA Private serialisation.</li>
-<li>Niccolò Fontana &lt;https://github.com/NicFontana&gt; Initial fix for high-latency DTLS HelloVerifyRequest handshakes.</li>
+<li>Niccol&ograve; Fontana &lt;https://github.com/NicFontana&gt; Initial fix for high-latency DTLS HelloVerifyRequest handshakes.</li>
 <li>sudheernv &lt;https://github.com/sudheernv&gt; Patch for KMAC rightEncode() encoding.</li>
 <li>Mathias Neuhaus &lt;https://github.com/mneuhaus-cv&gt; Patch for cSHAKE extra padding on block aligned N and S bug.</li>
 <li>Yuri Schimke &lt;https://github.com/yschimke&gt; Patch for nested exception handling in BcKeyStoreSpi.</li>
@@ -529,14 +529,24 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Amazon AWS Security Team - isolation and identification of performance bottlenecks in the BC PEM parsing support.</li>
 <li>Phillip Schichtel &lt;https://github.com/pschichtel&gt; - initial code for specifying wrapping algorithm with PGP PBE encryption method, forcing of session key usage.</li>
 <li>Alexander Dippel &lt;https://github.com/adippel&gt; - corrections to prevent NPEs on chunked encoding of EST responses.</li>
-<li>Johann N. Löfflmann &lt;https://github.com/jonelo&gt; - fix to "too small" buffer issue in Blake2sp.</li>
+<li>Johann N. L&ouml;fflmann &lt;https://github.com/jonelo&gt; - fix to "too small" buffer issue in Blake2sp.</li>
 <li> Scott Xu &lt;https://github.com/scott-xu&gt; - message fix in OpenSSHPublicKeyUtil</li>
 <li>Scott Arciszewski &lt;https://github/scottarc&gt; - correction to ant scripts to ensure UTF8 support.</li>
 <li>GitHub Security team - identification of the X509LDAPCertStoreSpi wildcard bug (see CVE-2023-33201).</li>
 <li>James Howe &lt;https://github.com/OrangeDog&gt; - improvement to cross-provider compatibility in JcaPKCS10CertificationRequest.</li>
 <li>Steffen Heil &lt;https://github.com/steffen-heil&gt; - correction to error handling in Arrays.getLength().</li>
 <li>Thomas D. &lt;https://github.com/thomdev&gt; - expansion of HPKE APIs, addition of user controlled ephemeral key to HPKE API.</li>
-<li>Franz Fangmeyer &lt;https://github.com/ff-wl&gt; exception handling for improper use of '=' in an X.500 RDN.</li>
+<li>Franz Fangmeyer &lt;https://github.com/ff-wl&gt; - exception handling for improper use of '=' in an X.500 RDN.</li>
+<li>Jonathan Lennox &lt;https://github.com/JonathanLennox&gt; - fix DTLS retransmission bug with aggregated ChangeCipherSpec.</li>
+<li>Thomas Devanneaux &lt;tdevanneaux&#064apple.com&gt; - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.</li>
+<li>Norman Maurer &lt;norman_maurer&#064apple.com&gt; - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.</li>
+<li>Bing Shi &lt;roadicing&#064gmail.com&gt; - addition of F2m bounds checking for imported EC F2m curves.</li>
+<li>Phil Brown &lt;https://github.com/brownp2k&gt; - additional ant targets for building util and pkix.</li>
+<li>Tamas Cservenak &lt;https://github.com/cstamas&gt; - initial patch for supporting Ed25519 keys in GnuPG S-expressions.</li>
+<li>chchen-scholar &lt;https://github.com/chchen-scholar&gt; - encoding fix for EccP256CurvePoint.</li>
+<li>Seung Yeon &lt;https://github.com/seungyeonpark&gt; - addition of Memoable method implementations to CertPathValidationContext and CertificatePoliciesValidation.</li>
+<li>yuhh0328 &lt;https://github.com/yuhh0328&gt; - initial patch for adding ML-KEM support to TLS.</li>
+<li>Jan Oupick&yacute; &lt;https://github.com/Honzaik&gt; - update to draft 13 of composite PQC signatures.</li>
 </ul>
 </body>
 </html>

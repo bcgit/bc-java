@@ -62,6 +62,19 @@ w
 q
 %
 
+ed org/bouncycastle/asn1/x500/style/X500NameTokenizer.java <<%
+g/private final .*/s/final//
+w
+w
+q
+%
+
+ed org/bouncycastle/asn1/x509/AltSignatureAlgorithm.java <<%
+g/private final .*/s/final//
+w
+w
+q
+%
 ed org/bouncycastle/asn1/x509/AltSignatureAlgorithm.java <<%
 g/private final .*/s/final//
 w
@@ -201,6 +214,18 @@ q
 %
 
 ed org/bouncycastle/asn1/tsp/PartialHashtree.java <<%
+g/private final /s/final//
+w
+q
+%
+
+ed org/bouncycastle/pkcs/DeltaCertificateRequestAttributeValue.java <<%
+g/private final /s/final//
+w
+q
+%
+
+ed org/bouncycastle/pkcs/PKCS10CertificationRequest.java <<%
 g/private final /s/final//
 w
 q

@@ -23,6 +23,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.test.PrintTestResult;
+import org.bouncycastle.util.encoders.Hex;
 
 public class PGPUnicodeTest
     extends TestCase
@@ -75,12 +76,12 @@ public class PGPUnicodeTest
         {
             BigInteger keyId = new BigInteger("362961283C48132B9F14C5C3EC87272EFCB986D2", 16);
 
-            String passphrase = new String("H\u00e4ndle".getBytes("UTF-16"), "UTF-16");
+            String passphrase = "H\u00e4ndle";
 //            FileInputStream passwordFile = new FileInputStream("testdata/passphrase_for_test.txt");
 //            byte[] password = new byte[passwordFile.available()];
 //            passwordFile.read(password);
 //            passwordFile.close();
-//            String passphrase = new String(password);            
+//            String passphrase = new String(password);
 
             test_key(keyId, passphrase);
 
@@ -154,7 +155,7 @@ public class PGPUnicodeTest
     public static void main (String[] args)
         throws Exception
     {
-       PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
+        PrintTestResult.printResult( junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()

@@ -56,7 +56,7 @@ public class SignatureSpi
         }
         else
         {
-            throw new IllegalStateException("unsupported public key type");
+            throw new InvalidKeyException("unsupported public key type");
         }
 
         signer.init(false, pub);
@@ -77,7 +77,7 @@ public class SignatureSpi
         }
         else
         {
-            throw new IllegalStateException("unsupported private key type");
+            throw new InvalidKeyException("unsupported private key type");
         }
 
         signer.init(true, priv);

@@ -22,7 +22,6 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
@@ -30,6 +29,7 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -486,6 +486,33 @@ public class GOST3410Test
 
         checkKeyPairAlgId(kp, expectedAlgId);
 
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetB"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB, null));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetC"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC, null));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetD"));
+
+        kp = kpGen.generateKeyPair();
+
+        expectedAlgId = new AlgorithmIdentifier(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256,
+                    new GOST3410PublicKeyAlgParameters(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD, null));
+
+        checkKeyPairAlgId(kp, expectedAlgId);
+        
         kpGen.initialize(new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"));
 
         kp = kpGen.generateKeyPair();
@@ -872,7 +899,7 @@ public class GOST3410Test
             ecGOST2012VerifyTest("ECGOST3410-2012-256", ecgostData, ecgost2012_256Key, ecgost2012_256Sig);
             ecGOST2012VerifyTest("ECGOST3410-2012-512", ecgostData, ecgost2012_512Key, ecgost2012_512Sig);
         }
-        
+
         generationTest();
         parametersTest();
     }

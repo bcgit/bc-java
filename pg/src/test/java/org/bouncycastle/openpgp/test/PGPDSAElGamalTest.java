@@ -302,7 +302,7 @@ public class PGPDSAElGamalTest
         
             PGPPublicKeyEncryptedData    encP = (PGPPublicKeyEncryptedData)encList.get(0);
 
-            InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider("BC").build(pgpPrivKey));
+            InputStream clear = encP.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder().setProvider(new BouncyCastleProvider()).build(pgpPrivKey));
                      
             pgpFact = new JcaPGPObjectFactory(clear);
 

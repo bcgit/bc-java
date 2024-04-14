@@ -7,12 +7,12 @@ import java.security.interfaces.RSAPrivateKey;
 
 import javax.crypto.Cipher;
 
+import org.bouncycastle.jcajce.spec.TLSRSAPremasterSecretParameterSpec;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -70,11 +70,11 @@ public class JceDefaultTlsCredentialedDecryptor
     }
 
     /*
-     * TODO[tls-ops] Probably need to make RSA encryption/decryption into TlsCrypto functions so
-     * that users can implement "generic" encryption credentials externally
+     * TODO[tls-ops] Probably need to make RSA encryption/decryption into TlsCrypto functions so that users
+     * can implement "generic" encryption credentials externally
      */
     protected TlsSecret safeDecryptPreMasterSecret(TlsCryptoParameters cryptoParams, PrivateKey rsaServerPrivateKey,
-                                                   byte[] encryptedPreMasterSecret)
+        byte[] encryptedPreMasterSecret)
     {
         SecureRandom secureRandom = crypto.getSecureRandom();
 
@@ -82,60 +82,60 @@ public class JceDefaultTlsCredentialedDecryptor
          * RFC 5246 7.4.7.1.
          */
         ProtocolVersion expectedVersion = cryptoParams.getRSAPreMasterSecretVersion();
+        byte[] M;
 
-        // TODO Provide as configuration option?
-        boolean versionNumberCheckDisabled = false;
-
-        /*
-         * Generate 48 random bytes we can use as a Pre-Master-Secret, if the
-         * PKCS1 padding check should fail.
-         */
-        byte[] fallback = new byte[48];
-        secureRandom.nextBytes(fallback);
-
-        byte[] M = Arrays.clone(fallback);
         try
         {
+            // The use of the TLSRSAPremasterSecretParameterSpec signals to the BC provider that
+            // that the underlying implementation should not throw exceptions but return a random
+            // value on failures where the plaintext turns out to be invalid.
             Cipher c = crypto.createRSAEncryptionCipher();
-            c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey, secureRandom);
-            byte[] m = c.doFinal(encryptedPreMasterSecret);
-            if (m != null && m.length == 48)
-            {
-                M = m;
-            }
-        }
-        catch (Exception e)
-        {
-            /*
-             * A TLS server MUST NOT generate an alert if processing an
-             * RSA-encrypted premaster secret message fails, or the version number is not as
-             * expected. Instead, it MUST continue the handshake with a randomly generated
-             * premaster secret.
-             */
-        }
 
-        /*
-         * If ClientHello.legacy_version is TLS 1.1 or higher, server implementations MUST check the
-         * version number [..].
-         */
-        if (versionNumberCheckDisabled && !TlsImplUtils.isTLSv11(expectedVersion))
-        {
-            /*
-             * If the version number is TLS 1.0 or earlier, server implementations SHOULD check the
-             * version number, but MAY have a configuration option to disable the check.
-             */
+            c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey, new TLSRSAPremasterSecretParameterSpec(expectedVersion.getFullVersion()), secureRandom);
+            M = c.doFinal(encryptedPreMasterSecret);
         }
-        else
+        catch (Exception ex)
         {
+            // Fallback - note this will likely result in some level of a timing signal as traditionally
+            // JCE RSA providers will signal padding errors by throwing exceptions. The real answer to this
+            // problem is not to use RSA encryption based cipher suites.
+
             /*
-             * Compare the version number in the decrypted Pre-Master-Secret with the legacy_version
-             * field from the ClientHello. If they don't match, continue the handshake with the
-             * randomly generated 'fallback' value.
+             * Generate 48 random bytes we can use as a Pre-Master-Secret, if the PKCS1 padding check should fail.
+             */
+            byte[] fallback = new byte[48];
+            secureRandom.nextBytes(fallback);
+
+            M = Arrays.clone(fallback);
+            try
+            {
+                Cipher c = crypto.createRSAEncryptionCipher();
+
+                c.init(Cipher.DECRYPT_MODE, rsaServerPrivateKey, secureRandom);
+                byte[] m = c.doFinal(encryptedPreMasterSecret);
+                if (m != null && m.length == 48)
+                {
+                    M = m;
+                }
+            }
+            catch (Exception e)
+            {
+                /*
+                 * A TLS server MUST NOT generate an alert if processing an RSA-encrypted premaster secret message
+                 * fails, or the version number is not as expected. Instead, it MUST continue the handshake with a
+                 * randomly generated premaster secret.
+                 */
+            }
+
+            /*
+             * Compare the version number in the decrypted Pre-Master-Secret with the legacy_version field from
+             * the ClientHello. If they don't match, continue the handshake with the randomly generated 'fallback'
+             * value.
              *
              * NOTE: The comparison and replacement must be constant-time.
              */
             int mask = (expectedVersion.getMajorVersion() ^ (M[0] & 0xFF))
-                     | (expectedVersion.getMinorVersion() ^ (M[1] & 0xFF));
+                | (expectedVersion.getMinorVersion() ^ (M[1] & 0xFF));
 
             // 'mask' will be all 1s if the versions matched, or else all 0s.
             mask = (mask - 1) >> 31;

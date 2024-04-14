@@ -3,22 +3,15 @@ package org.bouncycastle.cms;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
-import java.util.Iterator;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequenceGenerator;
-import org.bouncycastle.asn1.BERSet;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSet;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 
@@ -32,12 +25,12 @@ import org.bouncycastle.operator.OutputEncryptor;
  *      edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(recipientCert).setProvider("BC"));
  *
  *      ByteArrayOutputStream  bOut = new ByteArrayOutputStream();
- *      
+ *
  *      OutputStream out = edGen.open(
  *                              bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
  *                                              .setProvider("BC").build());
  *      out.write(data);
- *      
+ *
  *      out.close();
  * </pre>
  */
@@ -56,7 +49,7 @@ public class CMSEnvelopedDataStreamGenerator
 
     /**
      * Set the underlying string size for encapsulated data
-     * 
+     *
      * @param bufferSize length of octet strings to buffer the data.
      */
     public void setBufferSize(
@@ -90,16 +83,7 @@ public class CMSEnvelopedDataStreamGenerator
         OutputEncryptor      encryptor)
         throws IOException, CMSException
     {
-        ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
-        GenericKey encKey = encryptor.getKey();
-        Iterator it = recipientInfoGenerators.iterator();
-
-        while (it.hasNext())
-        {
-            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
-
-            recipientInfos.add(recipient.generate(encKey));
-        }
+        ASN1EncodableVector recipientInfos = CMSUtils.getRecipentInfos(encryptor.getKey(), recipientInfoGenerators);
 
         return open(dataType, out, recipientInfos, encryptor);
     }
@@ -125,19 +109,9 @@ public class CMSEnvelopedDataStreamGenerator
 
         envGen.addObject(getVersion(recipientInfos));
 
-        if (originatorInfo != null)
-        {
-            envGen.addObject(new DERTaggedObject(false, 0, originatorInfo));
-        }
+        CMSUtils.addOriginatorInfoToGenerator(envGen, originatorInfo);
 
-        if (_berEncodeRecipientSet)
-        {
-            envGen.getRawOutputStream().write(new BERSet(recipientInfos).getEncoded());
-        }
-        else
-        {
-            envGen.getRawOutputStream().write(new DERSet(recipientInfos).getEncoded());
-        }
+        CMSUtils.addRecipientInfosToGenerator(recipientInfos, envGen, _berEncodeRecipientSet);
 
         BERSequenceGenerator eiGen = new BERSequenceGenerator(envGen.getRawOutputStream());
 
@@ -161,49 +135,7 @@ public class CMSEnvelopedDataStreamGenerator
     {
         try
         {
-            //
-            // ContentInfo
-            //
-            BERSequenceGenerator cGen = new BERSequenceGenerator(out);
-
-            cGen.addObject(CMSObjectIdentifiers.envelopedData);
-
-            //
-            // Encrypted Data
-            //
-            BERSequenceGenerator envGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
-
-            ASN1Set recipients;
-            if (_berEncodeRecipientSet)
-            {
-                recipients = new BERSet(recipientInfos);
-            }
-            else
-            {
-                recipients = new DERSet(recipientInfos);
-            }
-
-            envGen.addObject(getVersion(recipientInfos));
-
-            if (originatorInfo != null)
-            {
-                envGen.addObject(new DERTaggedObject(false, 0, originatorInfo));
-            }
-
-            envGen.getRawOutputStream().write(recipients.getEncoded());
-
-            BERSequenceGenerator eiGen = new BERSequenceGenerator(envGen.getRawOutputStream());
-
-            eiGen.addObject(CMSObjectIdentifiers.data);
-
-            AlgorithmIdentifier encAlgId = encryptor.getAlgorithmIdentifier();
-
-            eiGen.getRawOutputStream().write(encAlgId.getEncoded());
-
-            OutputStream octetStream = CMSUtils.createBEROctetOutputStream(
-                eiGen.getRawOutputStream(), 0, false, _bufferSize);
-
-            return new CmsEnvelopedDataOutputStream(encryptor, octetStream, cGen, envGen, eiGen);
+            return open(CMSObjectIdentifiers.data, out, recipientInfos, encryptor);
         }
         catch (IOException e)
         {
@@ -246,7 +178,7 @@ public class CMSEnvelopedDataStreamGenerator
         private BERSequenceGenerator _cGen;
         private BERSequenceGenerator _envGen;
         private BERSequenceGenerator _eiGen;
-    
+
         public CmsEnvelopedDataOutputStream(
             OutputEncryptor encryptor,
             OutputStream   octetStream,
@@ -261,14 +193,14 @@ public class CMSEnvelopedDataStreamGenerator
             _envGen = envGen;
             _eiGen = eiGen;
         }
-    
+
         public void write(
             int b)
             throws IOException
         {
             _cOut.write(b);
         }
-        
+
         public void write(
             byte[] bytes,
             int    off,
@@ -277,14 +209,14 @@ public class CMSEnvelopedDataStreamGenerator
         {
             _cOut.write(bytes, off, len);
         }
-        
+
         public void write(
             byte[] bytes)
             throws IOException
         {
             _cOut.write(bytes);
         }
-        
+
         public void close()
             throws IOException
         {
@@ -297,15 +229,8 @@ public class CMSEnvelopedDataStreamGenerator
             }
             _eiGen.close();
 
-            if (unprotectedAttributeGenerator != null)
-            {
-                AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.EMPTY_MAP);
-      
-                ASN1Set unprotectedAttrs = new BERSet(attrTable.toASN1EncodableVector());
+            CMSUtils.addAttriSetToGenerator(_envGen, unprotectedAttributeGenerator, 1, Collections.EMPTY_MAP);
 
-                _envGen.addObject(new DERTaggedObject(false, 1, unprotectedAttrs));
-            }
-    
             _envGen.close();
             _cGen.close();
         }

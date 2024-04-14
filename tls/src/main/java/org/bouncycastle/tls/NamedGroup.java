@@ -2,6 +2,7 @@ package org.bouncycastle.tls;
 
 
 import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.tls.injection.kems.InjectedKEM;
 
 /**
  * RFC 7919
@@ -105,6 +106,21 @@ public class NamedGroup
     public static final int arbitrary_explicit_prime_curves = 0xFF01;
     public static final int arbitrary_explicit_char2_curves = 0xFF02;
 
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_mlkem512 = 0x0247;
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_mlkem768 = 0x0248;
+    /** Experimental API (unstable): unofficial value from Open Quantum Safe project. */
+    public static final int OQS_mlkem1024 = 0x0249;
+
+    /*
+     * draft-connolly-tls-mlkem-key-agreement-01
+     */
+    /** Experimental API (unstable): draft value requested in draft-connolly-tls-mlkem-key-agreement. */
+    public static final int DRAFT_mlkem768 = 0x0768;
+    /** Experimental API (unstable): draft value requested in draft-connolly-tls-mlkem-key-agreement. */
+    public static final int DRAFT_mlkem1024 = 0x1024;
+
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
@@ -120,28 +136,51 @@ public class NamedGroup
 
     public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)
     {
-        if (TlsUtils.isTLSv13(version))
+        if (InjectionPoint.kems().contain(namedGroup))
+            return true; // #tls-injection
+        switch (namedGroup)
         {
-            if (InjectionPoint.kems().contain(namedGroup))
-                return true; // #tls-injection
-            if ((namedGroup >= sect163k1 && namedGroup <= secp256k1)
-                || (namedGroup >= brainpoolP256r1 && namedGroup <= brainpoolP512r1)
-                || (namedGroup >= GC256A && namedGroup <= GC512C)
-                || (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves))
-            {
-                return false;
-            }
+        case secp256r1:
+        case secp384r1:
+        case secp521r1:
+        case x25519:
+        case x448:
+            return true;
         }
-        else
+
+        if (refersToASpecificFiniteField(namedGroup))
         {
-            if ((namedGroup >= brainpoolP256r1tls13 && namedGroup <= brainpoolP512r1tls13)
-                || (namedGroup == curveSM2))
+            return true;
+        }
+
+        boolean isTLSv13 = TlsUtils.isTLSv13(version);
+
+        // NOTE: Version-independent curves checked above
+        if (refersToASpecificCurve(namedGroup))
+        {
+            switch (namedGroup)
             {
-                return false;
+            case brainpoolP256r1tls13:
+            case brainpoolP384r1tls13:
+            case brainpoolP512r1tls13:
+            case curveSM2:
+                return isTLSv13;
+            default:
+                return !isTLSv13;
             }
         }
 
-        return isValid(namedGroup);
+        if (refersToASpecificKem(namedGroup))
+        {
+            return isTLSv13;
+        }
+
+        if (namedGroup >= arbitrary_explicit_prime_curves && namedGroup <= arbitrary_explicit_char2_curves)
+        {
+            return !isTLSv13;
+        }
+
+        return isPrivate(namedGroup);
     }
 
     public static int getCurveBits(int namedGroup)
@@ -265,6 +304,23 @@ public class NamedGroup
         return null;
     }
 
+    public static String getKemName(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case OQS_mlkem512:
+            return "ML-KEM-512";
+        case OQS_mlkem768:
+        case DRAFT_mlkem768:
+            return "ML-KEM-768";
+        case OQS_mlkem1024:
+        case DRAFT_mlkem1024:
+            return "ML-KEM-1024";
+        default:
+            return null;
+        }
+    }
+
     public static int getMaximumChar2CurveBits()
     {
         return 571;
@@ -320,6 +376,16 @@ public class NamedGroup
             return "GC512C";
         case curveSM2:
             return "curveSM2";
+        case OQS_mlkem512:
+            return "OQS_mlkem512";
+        case OQS_mlkem768:
+            return "OQS_mlkem768";
+        case OQS_mlkem1024:
+            return "OQS_mlkem1024";
+        case DRAFT_mlkem768:
+            return "DRAFT_mlkem768";
+        case DRAFT_mlkem1024:
+            return "DRAFT_mlkem1024";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
@@ -350,10 +416,19 @@ public class NamedGroup
         }
 
         // #tls-injection
-        String injectedKEMName = InjectionPoint.kems().kemByCodePoint(namedGroup).standardName();
-        if (null != injectedKEMName)
+        if (InjectionPoint.kems().contain(namedGroup))
         {
-            return injectedKEMName;
+            String injectedKEMName = InjectionPoint.kems().kemByCodePoint(namedGroup).standardName();
+            if (null != injectedKEMName)
+            {
+                return injectedKEMName;
+            }
+        }
+        
+        String kemName = getKemName(namedGroup);
+        if (null != kemName)
+        {
+            return kemName;
         }
 
         return null;
@@ -368,6 +443,11 @@ public class NamedGroup
     {
         return (namedGroup >= sect163k1 && namedGroup <= sect571r1)
             || (namedGroup == arbitrary_explicit_char2_curves);
+    }
+
+    public static boolean isFiniteField(int namedGroup)
+    {
+        return (namedGroup & 0xFFFFFF00) == 0x00000100;
     }
 
     public static boolean isPrimeCurve(int namedGroup)
@@ -422,6 +502,22 @@ public class NamedGroup
     public static boolean refersToASpecificGroup(int namedGroup)
     {
         return refersToASpecificCurve(namedGroup)
-            || refersToASpecificFiniteField(namedGroup);
+            || refersToASpecificFiniteField(namedGroup)
+            || refersToASpecificKem(namedGroup);
+    }
+
+    public static boolean refersToASpecificKem(int namedGroup)
+    {
+        switch (namedGroup)
+        {
+        case OQS_mlkem512:
+        case OQS_mlkem768:
+        case OQS_mlkem1024:
+        case DRAFT_mlkem768:
+        case DRAFT_mlkem1024:
+            return true;
+        default:
+            return false;
+        }
     }
 }

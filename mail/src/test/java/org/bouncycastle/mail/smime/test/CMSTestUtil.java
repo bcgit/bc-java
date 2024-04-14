@@ -445,7 +445,7 @@ public class CMSTestUtil
         return _cert;
     }
 
-    private static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
+    static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
     {
         JcaContentSignerBuilder contentSignerBuilder;
         if (issPub instanceof RSAPublicKey)
@@ -498,7 +498,7 @@ public class CMSTestUtil
 
     private static final X509ExtensionUtils extUtils = new X509ExtensionUtils(new SHA1DigestCalculator());
 
-    private static AuthorityKeyIdentifier createAuthorityKeyId(
+    static AuthorityKeyIdentifier createAuthorityKeyId(
         PublicKey _pubKey)
         throws IOException
     {
@@ -519,7 +519,7 @@ public class CMSTestUtil
         return extUtils.createSubjectKeyIdentifier(SubjectPublicKeyInfo.getInstance(_pubKey.getEncoded()));
     }
 
-    private static BigInteger allocateSerialNumber()
+    static BigInteger allocateSerialNumber()
     {
         BigInteger _tmp = serialNumber;
         serialNumber = serialNumber.add(BigInteger.ONE);

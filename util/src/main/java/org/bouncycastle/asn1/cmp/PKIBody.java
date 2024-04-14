@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.CertReqMessages;
 import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * PKIBody ::= CHOICE {       -- message-specific body elements
@@ -78,7 +79,18 @@ public class PKIBody
     private PKIBody(ASN1TaggedObject tagged)
     {
         tagNo = tagged.getTagNo();
-        body = getBodyForType(tagNo, tagged.getExplicitBaseObject());
+        try
+        {
+            body = getBodyForType(tagNo, tagged.getExplicitBaseObject());
+        }
+        catch (ClassCastException e)
+        {
+            throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
+        }
+        catch (IllegalArgumentException e)
+        {       
+            throw Exceptions.illegalArgumentException("malformed body found: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -114,64 +126,75 @@ public class PKIBody
         int type,
         ASN1Encodable o)
     {
-        switch (type)
+        try
         {
-        case TYPE_INIT_REQ:
-            return CertReqMessages.getInstance(o);
-        case TYPE_INIT_REP:
-            return CertRepMessage.getInstance(o);
-        case TYPE_CERT_REQ:
-            return CertReqMessages.getInstance(o);
-        case TYPE_CERT_REP:
-            return CertRepMessage.getInstance(o);
-        case TYPE_P10_CERT_REQ:
-            return CertificationRequest.getInstance(o);
-        case TYPE_POPO_CHALL:
-            return POPODecKeyChallContent.getInstance(o);
-        case TYPE_POPO_REP:
-            return POPODecKeyRespContent.getInstance(o);
-        case TYPE_KEY_UPDATE_REQ:
-            return CertReqMessages.getInstance(o);
-        case TYPE_KEY_UPDATE_REP:
-            return CertRepMessage.getInstance(o);
-        case TYPE_KEY_RECOVERY_REQ:
-            return CertReqMessages.getInstance(o);
-        case TYPE_KEY_RECOVERY_REP:
-            return KeyRecRepContent.getInstance(o);
-        case TYPE_REVOCATION_REQ:
-            return RevReqContent.getInstance(o);
-        case TYPE_REVOCATION_REP:
-            return RevRepContent.getInstance(o);
-        case TYPE_CROSS_CERT_REQ:
-            return CertReqMessages.getInstance(o);
-        case TYPE_CROSS_CERT_REP:
-            return CertRepMessage.getInstance(o);
-        case TYPE_CA_KEY_UPDATE_ANN:
-            return CAKeyUpdAnnContent.getInstance(o);
-        case TYPE_CERT_ANN:
-            return CMPCertificate.getInstance(o);
-        case TYPE_REVOCATION_ANN:
-            return RevAnnContent.getInstance(o);
-        case TYPE_CRL_ANN:
-            return CRLAnnContent.getInstance(o);
-        case TYPE_CONFIRM:
-            return PKIConfirmContent.getInstance(o);
-        case TYPE_NESTED:
-            return PKIMessages.getInstance(o);
-        case TYPE_GEN_MSG:
-            return GenMsgContent.getInstance(o);
-        case TYPE_GEN_REP:
-            return GenRepContent.getInstance(o);
-        case TYPE_ERROR:
-            return ErrorMsgContent.getInstance(o);
-        case TYPE_CERT_CONFIRM:
-            return CertConfirmContent.getInstance(o);
-        case TYPE_POLL_REQ:
-            return PollReqContent.getInstance(o);
-        case TYPE_POLL_REP:
-            return PollRepContent.getInstance(o);
-        default:
-            throw new IllegalArgumentException("unknown tag number: " + type);
+            switch (type)
+            {
+            case TYPE_INIT_REQ:
+                return CertReqMessages.getInstance(o);
+            case TYPE_INIT_REP:
+                return CertRepMessage.getInstance(o);
+            case TYPE_CERT_REQ:
+                return CertReqMessages.getInstance(o);
+            case TYPE_CERT_REP:
+                return CertRepMessage.getInstance(o);
+            case TYPE_P10_CERT_REQ:
+                return CertificationRequest.getInstance(o);
+            case TYPE_POPO_CHALL:
+                return POPODecKeyChallContent.getInstance(o);
+            case TYPE_POPO_REP:
+                return POPODecKeyRespContent.getInstance(o);
+            case TYPE_KEY_UPDATE_REQ:
+                return CertReqMessages.getInstance(o);
+            case TYPE_KEY_UPDATE_REP:
+                return CertRepMessage.getInstance(o);
+            case TYPE_KEY_RECOVERY_REQ:
+                return CertReqMessages.getInstance(o);
+            case TYPE_KEY_RECOVERY_REP:
+                return KeyRecRepContent.getInstance(o);
+            case TYPE_REVOCATION_REQ:
+                return RevReqContent.getInstance(o);
+            case TYPE_REVOCATION_REP:
+                return RevRepContent.getInstance(o);
+            case TYPE_CROSS_CERT_REQ:
+                return CertReqMessages.getInstance(o);
+            case TYPE_CROSS_CERT_REP:
+                return CertRepMessage.getInstance(o);
+            case TYPE_CA_KEY_UPDATE_ANN:
+                return CAKeyUpdAnnContent.getInstance(o);
+            case TYPE_CERT_ANN:
+                return CMPCertificate.getInstance(o);
+            case TYPE_REVOCATION_ANN:
+                return RevAnnContent.getInstance(o);
+            case TYPE_CRL_ANN:
+                return CRLAnnContent.getInstance(o);
+            case TYPE_CONFIRM:
+                return PKIConfirmContent.getInstance(o);
+            case TYPE_NESTED:
+                return PKIMessages.getInstance(o);
+            case TYPE_GEN_MSG:
+                return GenMsgContent.getInstance(o);
+            case TYPE_GEN_REP:
+                return GenRepContent.getInstance(o);
+            case TYPE_ERROR:
+                return ErrorMsgContent.getInstance(o);
+            case TYPE_CERT_CONFIRM:
+                return CertConfirmContent.getInstance(o);
+            case TYPE_POLL_REQ:
+                return PollReqContent.getInstance(o);
+            case TYPE_POLL_REP:
+                return PollRepContent.getInstance(o);
+            default:
+                throw new IllegalArgumentException("unknown tag number: " + type);
+            }
+        }
+        catch (ClassCastException e)
+        {
+            throw new IllegalArgumentException("body type of " + type + " has incorrect type got: " + o.getClass());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new IllegalArgumentException("body type of " + type + " has incorrect type got: " + o.getClass());
         }
     }
 

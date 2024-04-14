@@ -29,9 +29,6 @@ public class GeMSSTest
         throws Exception
     {
 
-//        String testcipher = "fgemss256";//key generation fail
-
-//        String testcipher = "dualmodems256";//key generation fail
         String files = "dualmodems256.rsp fgemss256.rsp dualmodems192.rsp fgemss192.rsp fgemss128.rsp dualmodems128.rsp " +
             "redgemss128.rsp bluegemss128.rsp gemss128.rsp cyangemss128.rsp whitegemss128.rsp magentagemss128.rsp " +
             "bluegemss192.rsp gemss192.rsp redgemss192.rsp whitegemss192.rsp cyangemss192.rsp magentagemss192.rsp " +
@@ -46,7 +43,7 @@ public class GeMSSTest
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/gemss", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String testcase = name.replace(".rsp", "");
-            System.out.println("Testing on " + testcase);
+            // System.out.println("Testing on " + testcase);
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)
@@ -85,7 +82,7 @@ public class GeMSSTest
                         //
                         kpGen.init(new GeMSSKeyGenerationParameters(random, parameters));
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-                        //System.out.println("Key generation complete for case " + buf.get("count"));
+                        //// System.out.println("Key generation complete for case " + buf.get("count"));
                         //GeMSSPublicKeyParameters pubParams =new GeMSSPublicKeyParameters(parameters, pk);
                         GeMSSPublicKeyParameters pubParams = (GeMSSPublicKeyParameters)kp.getPublic();
                         GeMSSPrivateKeyParameters privParams = (GeMSSPrivateKeyParameters)kp.getPrivate();
@@ -96,14 +93,14 @@ public class GeMSSTest
 //                        {
 //                            if (sk[i] != SK[i])
 //                            {
-//                                System.out.println(i + " " + sk[i] + " " + SK[i]);
+//                                // System.out.println(i + " " + sk[i] + " " + SK[i]);
 //                            }
 //                        }
 //                        for (i = 0; i < pk.length; ++i)
 //                        {
 //                            if (pk[i] != PK[i])
 //                            {
-//                                System.out.println(i + " " + pk[i] + " " + PK[i]);
+//                                // System.out.println(i + " " + pk[i] + " " + PK[i]);
 //                            }
 //                        }
                         assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
@@ -117,19 +114,19 @@ public class GeMSSTest
                         ParametersWithRandom skwrand = new ParametersWithRandom(kp.getPrivate(), random);
                         signer.init(true, skwrand);
                         byte[] sigGenerated = signer.generateSignature(msg);
-                        //System.out.println("Sig generation complete for case " + buf.get("count"));
+                        //// System.out.println("Sig generation complete for case " + buf.get("count"));
                         signer.init(false, pubParams);
 //                        for (i = 0; i < sigGenerated.length; ++i)
 //                        {
 //                            if (sigExpected[i] != sigGenerated[i])
 //                            {
-//                                System.out.println(i + " " + sigExpected[i] + " " + sigGenerated[i]);
+//                                // System.out.println(i + " " + sigExpected[i] + " " + sigGenerated[i]);
 //                            }
 //                        }
                         assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, Arrays.copyOfRange(sigExpected, 0, sigGenerated.length)));
                         //assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, sigExpected));
                         assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, sigGenerated));
-                        System.out.println(testcase + " case " + buf.get("count") + " pass");
+                        // System.out.println(testcase + " case " + buf.get("count") + " pass");
 //                            System.err.println(Hex.toHexString(sigExpected));
 //                            System.err.println(Hex.toHexString(attachedSig));
                         //assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));

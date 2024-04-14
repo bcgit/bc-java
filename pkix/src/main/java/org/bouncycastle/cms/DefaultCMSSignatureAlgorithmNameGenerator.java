@@ -173,6 +173,21 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         simpleAlgs.put(BCObjectIdentifiers.dilithium2, "Dilithium2");
         simpleAlgs.put(BCObjectIdentifiers.dilithium3, "Dilithium3");
         simpleAlgs.put(BCObjectIdentifiers.dilithium5, "Dilithium5");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, "SPHINCS+-SHA2-128s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, "SPHINCS+-SHA2-128f");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, "SPHINCS+-SHA2-192s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, "SPHINCS+-SHA2-192f");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, "SPHINCS+-SHA2-256s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, "SPHINCS+-SHA2-256f");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_128s, "SPHINCS+-SHAKE-128s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_128f, "SPHINCS+-SHAKE-128f");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_192s, "SPHINCS+-SHAKE-192s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_192f, "SPHINCS+-SHAKE-192f");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_256s, "SPHINCS+-SHAKE-256s");
+        simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_256f, "SPHINCS+-SHAKE-256f");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium2, "Dilithium2");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium3, "Dilithium3");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium5, "Dilithium5");
 
         simpleAlgs.put(BCObjectIdentifiers.picnic_signature, "Picnic");
     }

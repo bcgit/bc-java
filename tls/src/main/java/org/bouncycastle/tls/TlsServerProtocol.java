@@ -12,6 +12,7 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.tls.injection.InjectionPoint;
@@ -399,7 +400,7 @@ public class TlsServerProtocol
             int namedGroup = clientShare.getNamedGroup();
     
             TlsAgreement agreement;
-            if (NamedGroup.refersToASpecificCurve(namedGroup))
+            if (NamedGroup.refersToAnECDHCurve(namedGroup))
             {
                 agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
             }
@@ -407,24 +408,27 @@ public class TlsServerProtocol
             {
                 agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
             }
-            else if (InjectionPoint.kems().contain(namedGroup)) {
+            else if (InjectionPoint.kems().contain(namedGroup))
+            {
                 // #tls-injection
                 assert crypto instanceof JcaTlsCrypto;
                 agreement = InjectionPoint.kems().kemByCodePoint(namedGroup).tlsAgreement((JcaTlsCrypto) crypto, true);
+            }
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
+            {
+                agreement = crypto.createKemDomain(new TlsKemConfig(namedGroup, true)).createKem();
             }
             else
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
-            // #tls-injection moved the following line here (due to the requirements of KemAgreement implementing TlsAgreement for KEMs):
             agreement.receivePeerValue(clientShare.getKeyExchange());
+
             byte[] key_exchange = agreement.generateEphemeral();
             KeyShareEntry serverShare = new KeyShareEntry(namedGroup, key_exchange);
             TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
 
-            // #pqc-tls #injection moved the following line from here (due to the requirements of KemAgreement implementing TlsAgreement for KEMs):
-            // agreement.receivePeerValue(clientShare.getKeyExchange());
             sharedSecret = agreement.calculateSecret();
         }
 

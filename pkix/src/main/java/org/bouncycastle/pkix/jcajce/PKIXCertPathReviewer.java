@@ -180,7 +180,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         if (certs.isEmpty())
         {
             throw new CertPathReviewerException(
-                    new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.emptyCertPath"));
+                    createErrorBundle("CertPathReviewer.emptyCertPath"));
         }
 
         pkixParams = (PKIXParameters) params.clone();
@@ -461,7 +461,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (IOException e)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.ncSubjectNameError", 
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.ncSubjectNameError", 
                                 new Object[] {new UntrustedInput(principal)});
                         throw new CertPathReviewerException(msg,e,certPath,index);
                     }
@@ -472,7 +472,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (PKIXNameConstraintValidatorException cpve)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedDN", 
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.notPermittedDN", 
                                 new Object[] {new UntrustedInput(principal.getName())});
                         throw new CertPathReviewerException(msg,cpve,certPath,index);
                     }
@@ -483,7 +483,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (PKIXNameConstraintValidatorException cpve)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedDN",
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.excludedDN",
                                 new Object[] {new UntrustedInput(principal.getName())});
                         throw new CertPathReviewerException(msg,cpve,certPath,index);
                     }
@@ -495,7 +495,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.subjAltNameExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.subjAltNameExtError");
                         throw new CertPathReviewerException(msg,ae,certPath,index);
                     }
                     
@@ -512,7 +512,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             }
                             catch (PKIXNameConstraintValidatorException cpve)
                             {
-                                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedEmail",
+                                ErrorBundle msg = createErrorBundle("CertPathReviewer.notPermittedEmail",
                                         new Object[] {new UntrustedInput(name)});
                                 throw new CertPathReviewerException(msg,cpve,certPath,index);
                             }
@@ -527,7 +527,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                }
 //                                catch (CertPathValidatorException cpve)
 //                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedEmail",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.notPermittedEmail",
 //                                            new Object[] {new UntrustedInput(email)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -538,7 +538,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                }
 //                                catch (CertPathValidatorException cpve)
 //                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedEmail",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.excludedEmail",
 //                                            new Object[] {new UntrustedInput(email)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -554,7 +554,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                catch (CertPathValidatorException cpve)
 //                                {
 //                                    X509Name altDNName = new X509Name(altDN);
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedDN",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.notPermittedDN",
 //                                            new Object[] {new UntrustedInput(altDNName)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -566,7 +566,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                catch (CertPathValidatorException cpve)
 //                                {
 //                                    X509Name altDNName = new X509Name(altDN);
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedDN",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.excludedDN",
 //                                            new Object[] {new UntrustedInput(altDNName)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -581,7 +581,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                }
 //                                catch (CertPathValidatorException cpve)
 //                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedIP",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.notPermittedIP",
 //                                            new Object[] {IPtoString(ip)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -592,7 +592,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 //                                }
 //                                catch (CertPathValidatorException cpve)
 //                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedIP",
+//                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.excludedIP",
 //                                            new Object[] {IPtoString(ip)});
 //                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
 //                                }
@@ -615,7 +615,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.ncExtError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.ncExtError");
                     throw new CertPathReviewerException(msg,ae,certPath,index);
                 }
                 
@@ -678,7 +678,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 if (maxPathLength <= 0)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pathLengthExtended");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.pathLengthExtended");
                     addError(msg);
                 }
                 maxPathLength--;
@@ -695,7 +695,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (AnnotatedException ae)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.processLengthConstError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.processLengthConstError");
                 addError(msg,index);
                 bc = null;
             }
@@ -710,7 +710,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
         }
 
-        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.totalPathLength",
+        ErrorBundle msg = createErrorBundle("CertPathReviewer.totalPathLength",
                 new Object[]{Integers.valueOf(totalPathLength)});
 
         addNotification(msg);
@@ -731,7 +731,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         
         // validation date
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certPathValidDate",
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.certPathValidDate",
                     new Object[] {new TrustedInput(validDate), new TrustedInput(currentDate)});
             addNotification(msg);
         }
@@ -745,7 +745,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             if (trustColl.size() > 1)
             {
                 // conflicting trust anchors                
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                         "CertPathReviewer.conflictingTrustAnchors",
                         new Object[]{Integers.valueOf(trustColl.size()),
                             new UntrustedInput(cert.getIssuerX500Principal())});
@@ -753,7 +753,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             else if (trustColl.isEmpty())
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                         "CertPathReviewer.noTrustAnchorFound",
                         new Object[]{new UntrustedInput(cert.getIssuerX500Principal()),
                             Integers.valueOf(pkixParams.getTrustAnchors().size())});
@@ -779,7 +779,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (SignatureException e)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.trustButInvalidCert");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.trustButInvalidCert");
                     addError(msg);
                 }
                 catch (Exception e)
@@ -794,7 +794,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (Throwable t)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                     "CertPathReviewer.unknown",
                     new Object[] {new UntrustedInput(t.getMessage()), new UntrustedInput(t)});
             addError(msg);
@@ -817,7 +817,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (IllegalArgumentException ex)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.trustDNInvalid",
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.trustDNInvalid",
                         new Object[] {new UntrustedInput(trust.getCAName())});
                 addError(msg);
             }
@@ -828,7 +828,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 boolean[] ku = sign.getKeyUsage(); 
                 if (ku != null && (ku.length <= 5 || !ku[5]))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.trustKeyUsage");
+                    ErrorBundle msg = createErrorBundle( "CertPathReviewer.trustKeyUsage");
                     addNotification(msg);
                 }
             }
@@ -866,7 +866,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (CertPathValidatorException ex)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.trustPubKeyError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.trustPubKeyError");
                 addError(msg);
                 workingAlgId = null;
             }
@@ -901,7 +901,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (GeneralSecurityException ex)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.signatureNotVerified",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.signatureNotVerified",
                             new Object[] {ex.getMessage(),ex,ex.getClass().getName()}); 
                     addError(msg,index);
                 }
@@ -912,19 +912,19 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 {
                     CertPathValidatorUtilities.verifyX509Certificate(cert, cert.getPublicKey(),
                         pkixParams.getSigProvider());
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.rootKeyIsValidButNotATrustAnchor");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.rootKeyIsValidButNotATrustAnchor");
                     addError(msg, index);
                 }
                 catch (GeneralSecurityException ex)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.signatureNotVerified",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.signatureNotVerified",
                             new Object[] {ex.getMessage(),ex,ex.getClass().getName()}); 
                     addError(msg,index);
                 }
             }
             else
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.NoIssuerPublicKey");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.NoIssuerPublicKey");
                 // if there is an authority key extension add the serial and issuer of the missing certificate
                 byte[] akiBytes = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
                 if (akiBytes != null)
@@ -954,13 +954,13 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (CertificateNotYetValidException cnve)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certificateNotYetValid",
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.certificateNotYetValid",
                         new Object[] {new TrustedInput(cert.getNotBefore())});
                 addError(msg,index);
             }
             catch (CertificateExpiredException cee)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certificateExpired",
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.certificateExpired",
                         new Object[] {new TrustedInput(cert.getNotAfter())});
                 addError(msg,index);
             }
@@ -980,7 +980,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlDistPtExtError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlDistPtExtError");
                     addError(msg,index);
                 }
 
@@ -996,7 +996,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlAuthInfoAccError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlAuthInfoAccError");
                     addError(msg,index);
                 }
                 
@@ -1009,7 +1009,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 Iterator urlIt = crlDistPointUrls.iterator();
                 while (urlIt.hasNext())
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlDistPoint",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlDistPoint",
                                 new Object[] {new UntrustedUrlInput(urlIt.next())});
                     addNotification(msg,index);
                 }
@@ -1018,7 +1018,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 urlIt = ocspUrls.iterator();
                 while (urlIt.hasNext())
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.ocspLocation",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.ocspLocation",
                             new Object[] {new UntrustedUrlInput(urlIt.next())});
                     addNotification(msg,index);
                 }
@@ -1038,7 +1038,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             // certificate issuer correct
             if (workingIssuerName != null && !cert.getIssuerX500Principal().equals(workingIssuerName))
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certWrongIssuer",
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.certWrongIssuer",
                             new Object[] {workingIssuerName.getName(),
                             cert.getIssuerX500Principal().getName()});
                 addError(msg,index);
@@ -1052,7 +1052,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                 if (cert != null && cert.getVersion() == 1)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCACert");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noCACert");
                     addError(msg,index);
                 }
 
@@ -1067,19 +1067,19 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     {
                         if (!bc.isCA())
                         {
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCACert");
+                            ErrorBundle msg = createErrorBundle("CertPathReviewer.noCACert");
                             addError(msg,index);
                         }
                     }
                     else
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noBasicConstraints");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.noBasicConstraints");
                         addError(msg,index);
                     }
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.errorProcesingBC");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.errorProcesingBC");
                     addError(msg,index);
                 }
 
@@ -1089,7 +1089,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                 if (keyUsage != null && (keyUsage.length <= KEY_CERT_SIGN || !keyUsage[KEY_CERT_SIGN]))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCertSign");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noCertSign");
                     addError(msg,index);
                 }
 
@@ -1113,7 +1113,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (CertPathValidatorException ex)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.pubKeyError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.pubKeyError");
                 addError(msg,index);
                 workingAlgId = null;
                 workingPublicKeyAlgorithm = null;
@@ -1225,7 +1225,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyExtError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.policyExtError");
                     throw new CertPathReviewerException(msg,ae,certPath,index);
                 }
                 if (certPolicies != null && validPolicyTree != null)
@@ -1252,7 +1252,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             }
                             catch (CertPathValidatorException cpve)
                             {
-                                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyQualifierError");
+                                ErrorBundle msg = createErrorBundle("CertPathReviewer.policyQualifierError");
                                 throw new CertPathReviewerException(msg,cpve,certPath,index);
                             }
 
@@ -1306,7 +1306,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                                 }
                                 catch (CertPathValidatorException cpve)
                                 {
-                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyQualifierError");
+                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.policyQualifierError");
                                     throw new CertPathReviewerException(msg,cpve,certPath,index);
                                 }
                                 List _nodes = policyNodes[i - 1];
@@ -1419,7 +1419,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 
                 if (explicitPolicy <= 0 && validPolicyTree == null)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noValidPolicyTree");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noValidPolicyTree");
                     throw new CertPathReviewerException(msg);
                 }
     
@@ -1439,7 +1439,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyMapExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.policyMapExtError");
                         throw new CertPathReviewerException(msg,ae,certPath,index);
                     }
                     
@@ -1453,12 +1453,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             ASN1ObjectIdentifier sp_id = (ASN1ObjectIdentifier) mapping.getObjectAt(1);
                             if (ANY_POLICY.equals(ip_id.getId())) 
                             {
-                                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.invalidPolicyMapping");
+                                ErrorBundle msg = createErrorBundle("CertPathReviewer.invalidPolicyMapping");
                                 throw new CertPathReviewerException(msg,certPath,index);
                             }
                             if (ANY_POLICY.equals(sp_id.getId()))
                             {
-                                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.invalidPolicyMapping");
+                                ErrorBundle msg = createErrorBundle("CertPathReviewer.invalidPolicyMapping");
                                 throw new CertPathReviewerException(msg,certPath,index);
                             }
                         }
@@ -1510,13 +1510,13 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                                 catch (AnnotatedException ae)
                                 {
                                     // error processing certificate policies extension
-                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyExtError");
+                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.policyExtError");
                                     throw new CertPathReviewerException(msg,ae,certPath,index);
                                 }
                                 catch (CertPathValidatorException cpve)
                                 {
                                     // error building qualifier set
-                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyQualifierError");
+                                    ErrorBundle msg = createErrorBundle("CertPathReviewer.policyQualifierError");
                                     throw new CertPathReviewerException(msg,cpve,certPath,index);
                                 }
                                 
@@ -1597,7 +1597,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyConstExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.policyConstExtError");
                         throw new CertPathReviewerException(msg,certPath,index);
                     }
     
@@ -1621,7 +1621,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyInhibitExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.policyInhibitExtError");
                         throw new CertPathReviewerException(msg,certPath,index);
                     }
                 }
@@ -1670,7 +1670,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (AnnotatedException e)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.policyConstExtError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.policyConstExtError");
                 throw new CertPathReviewerException(msg,certPath,index);
             }
             
@@ -1688,7 +1688,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             { 
                 if (pkixParams.isExplicitPolicyRequired())
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.explicitPolicy");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.explicitPolicy");
                     throw new CertPathReviewerException(msg,certPath,index);
                 }
                 intersection = null;
@@ -1699,7 +1699,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 {
                     if (acceptablePolicies.isEmpty())
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.explicitPolicy");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.explicitPolicy");
                         throw new CertPathReviewerException(msg,certPath,index);
                     }
                     else
@@ -1834,7 +1834,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
      
             if ((explicitPolicy <= 0) && (intersection == null))
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.invalidPolicy");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.invalidPolicy");
                 throw new CertPathReviewerException(msg);
             }
             
@@ -1866,7 +1866,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (CertPathValidatorException cpve)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certPathCheckerError",
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.certPathCheckerError",
                         new Object[] {cpve.getMessage(),cpve,cpve.getClass().getName()});
                 throw new CertPathReviewerException(msg,cpve);
             }
@@ -1922,7 +1922,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (CertPathValidatorException e)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.criticalExtensionError",
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.criticalExtensionError",
                                 new Object[] {e.getMessage(),e,e.getClass().getName()});
                         throw new CertPathReviewerException(msg,e.getCause(),certPath,index);
                     }
@@ -1933,7 +1933,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     Iterator it = criticalExtensions.iterator();
                     while (it.hasNext())
                     {
-                        msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.unknownCriticalExt",
+                        msg = createErrorBundle("CertPathReviewer.unknownCriticalExt",
                                 new Object[] {new ASN1ObjectIdentifier((String) it.next())});
                         addError(msg, index);
                     }
@@ -1961,7 +1961,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 if (QCStatement.id_etsi_qcs_QcCompliance.equals(stmt.getStatementId()))
                 {
                     // process statement - just write a notification that the certificate contains this statement
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcEuCompliance");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.QcEuCompliance");
                     addNotification(msg,index);
                 }
                 else if (QCStatement.id_qcs_pkixQCSyntax_v1.equals(stmt.getStatementId()))
@@ -1971,7 +1971,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 else if (QCStatement.id_etsi_qcs_QcSSCD.equals(stmt.getStatementId()))
                 {
                     // process statement - just write a notification that the certificate contains this statement
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcSSCD");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.QcSSCD");
                     addNotification(msg,index);
                 }
                 else if (QCStatement.id_etsi_qcs_LimiteValue.equals(stmt.getStatementId()))
@@ -1983,14 +1983,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     ErrorBundle msg;
                     if (limit.getCurrency().isAlphabetic())
                     {
-                        msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcLimitValueAlpha",
+                        msg = createErrorBundle("CertPathReviewer.QcLimitValueAlpha",
                                 new Object[] {limit.getCurrency().getAlphabetic(),
                                               new TrustedInput(new Double(value)),
                                               limit});
                     }
                     else
                     {
-                        msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcLimitValueNum",
+                        msg = createErrorBundle("CertPathReviewer.QcLimitValueNum",
                                 new Object[]{Integers.valueOf(limit.getCurrency().getNumeric()),
                                     new TrustedInput(new Double(value)),
                                     limit});
@@ -1999,7 +1999,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 else
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcUnknownStatement",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.QcUnknownStatement",
                             new Object[] {stmt.getStatementId(),new UntrustedInput(stmt)});
                     addNotification(msg,index);
                     unknownStatement = true;
@@ -2010,7 +2010,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (AnnotatedException ae)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.QcStatementExtError");
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.QcStatementExtError");
             addError(msg,index);
         }
         
@@ -2072,7 +2072,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (IOException e)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlIssuerException");
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.crlIssuerException");
             throw new CertPathReviewerException(msg,e);
         }
     
@@ -2095,7 +2095,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     nonMatchingCrlNames.add(((X509CRL) it.next()).getIssuerX500Principal());
                 }
                 int numbOfCrls = nonMatchingCrlNames.size();
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+                ErrorBundle msg = createErrorBundle(
                         "CertPathReviewer.noCrlInCertstore",
                         new Object[]{new UntrustedInput(crlselect.getIssuerNames()),
                             new UntrustedInput(nonMatchingCrlNames),
@@ -2105,7 +2105,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (AnnotatedException ae)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlExtractionError",
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.crlExtractionError",
                     new Object[] {ae.getCause().getMessage(),ae.getCause(),ae.getCause().getClass().getName()});
             addError(msg,index);
             crl_iter = new ArrayList().iterator();
@@ -2124,12 +2124,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             if (nextUpdate == null || validDate.before(nextUpdate))
             {
                 validCrlFound = true;
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localValidCRL", arguments);
+                ErrorBundle msg = createErrorBundle( "CertPathReviewer.localValidCRL", arguments);
                 addNotification(msg,index);
                 break;
             }
 
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localInvalidCRL", arguments);
+            ErrorBundle msg = createErrorBundle( "CertPathReviewer.localInvalidCRL", arguments);
             addNotification(msg,index);
         }
 
@@ -2154,7 +2154,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         // check if crl issuer is correct
                         if (!certIssuer.equals(crlIssuer))
                         {
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineCRLWrongCA",
+                            ErrorBundle msg = createErrorBundle( "CertPathReviewer.onlineCRLWrongCA",
                                 new Object[]{ new UntrustedInput(crlIssuer.getName()), new UntrustedInput(certIssuer.getName()),
                                     new UntrustedUrlInput(location) });
                             addNotification(msg,index);
@@ -2169,14 +2169,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         if (nextUpdate == null || validDate.before(nextUpdate))
                         {
                             validCrlFound = true;
-                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineValidCRL",
+                            ErrorBundle msg = createErrorBundle( "CertPathReviewer.onlineValidCRL",
                                 arguments);
                             addNotification(msg, index);
                             crl = onlineCRL;
                             break;
                         }
 
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.onlineInvalidCRL",
+                        ErrorBundle msg = createErrorBundle( "CertPathReviewer.onlineInvalidCRL",
                             arguments);
                         addNotification(msg, index);
                     }
@@ -2198,7 +2198,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                 if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noCrlSigningPermited");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noCrlSigningPermited");
                     throw new CertPathReviewerException(msg);
                 }
             }
@@ -2211,13 +2211,13 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (Exception e)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlVerifyFailed");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlVerifyFailed");
                     throw new CertPathReviewerException(msg,e);
                 }
             }
             else // issuer public key not known
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlNoIssuerPublicKey");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.crlNoIssuerPublicKey");
                 throw new CertPathReviewerException(msg);
             }
 
@@ -2235,7 +2235,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlReasonExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.crlReasonExtError");
                         throw new CertPathReviewerException(msg,ae);
                     }
                     if (reasonCode != null)
@@ -2254,20 +2254,20 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 
                 if (!validDate.before(crl_entry.getRevocationDate()))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.certRevoked",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.certRevoked",
                             new Object[] {new TrustedInput(crl_entry.getRevocationDate()),ls});
                     throw new CertPathReviewerException(msg);
                 }
                 else // cert was revoked after validation date
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.revokedAfterValidation",
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.revokedAfterValidation",
                             new Object[] {new TrustedInput(crl_entry.getRevocationDate()),ls});
                     addNotification(msg,index);
                 }
             }
             else // cert is not revoked
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notRevoked");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.notRevoked");
                 addNotification(msg,index);
             }
             
@@ -2277,7 +2277,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             Date nextUpdate = crl.getNextUpdate();
             if (!(nextUpdate == null || validDate.before(nextUpdate)))
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.crlUpdateAvailable",
+                ErrorBundle msg = createErrorBundle( "CertPathReviewer.crlUpdateAvailable",
                     new Object[]{ new TrustedInput(nextUpdate) });
                 addNotification(msg, index);
             }
@@ -2292,7 +2292,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (AnnotatedException ae)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.distrPtExtError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.distrPtExtError");
                 throw new CertPathReviewerException(msg);
             }
             ASN1Primitive dci;
@@ -2302,7 +2302,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (AnnotatedException ae)
             {
-                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.deltaCrlExtError");
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.deltaCrlExtError");
                 throw new CertPathReviewerException(msg);
             }
 
@@ -2316,7 +2316,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (IOException e)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlIssuerException");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlIssuerException");
                     throw new CertPathReviewerException(msg,e);
                 }
 
@@ -2327,7 +2327,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlNbrExtError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlNbrExtError");
                     throw new CertPathReviewerException(msg,ae);
                 }
                 
@@ -2339,7 +2339,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlExtractionError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlExtractionError");
                     throw new CertPathReviewerException(msg,ae);
                 }
                 while (it.hasNext())
@@ -2353,7 +2353,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     }
                     catch (AnnotatedException ae)
                     {
-                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.distrPtExtError");
+                        ErrorBundle msg = createErrorBundle("CertPathReviewer.distrPtExtError");
                         throw new CertPathReviewerException(msg,ae);
                     }
 
@@ -2366,7 +2366,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
                 if (!foundBase)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noBaseCRL");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noBaseCRL");
                     throw new CertPathReviewerException(msg);
                 }
             }
@@ -2381,25 +2381,25 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (AnnotatedException ae)
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlBCExtError");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlBCExtError");
                     throw new CertPathReviewerException(msg,ae);
                 }
                 
                 if (p.onlyContainsUserCerts() && (bc != null && bc.isCA()))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlOnlyUserCert");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlOnlyUserCert");
                     throw new CertPathReviewerException(msg);
                 }
                 
                 if (p.onlyContainsCACerts() && (bc == null || !bc.isCA()))
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlOnlyCaCert");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlOnlyCaCert");
                     throw new CertPathReviewerException(msg);
                 }
                 
                 if (p.onlyContainsAttributeCerts())
                 {
-                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.crlOnlyAttrCert");
+                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlOnlyAttrCert");
                     throw new CertPathReviewerException(msg);
                 }
             }
@@ -2407,7 +2407,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         
         if (!validCrlFound)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.noValidCrlFound");
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.noValidCrlFound");
             throw new CertPathReviewerException(msg);
         }
     }
@@ -2490,7 +2490,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (Exception e)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,
+            ErrorBundle msg = createErrorBundle(
                     "CertPathReviewer.loadCrlDistPointError",
                     new Object[] {new UntrustedInput(location),
                                   e.getMessage(),e,e.getClass().getName()});
@@ -2534,7 +2534,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
         catch (IOException ex)
         {
-            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.trustAnchorIssuerError");
+            ErrorBundle msg = createErrorBundle("CertPathReviewer.trustAnchorIssuerError");
             throw new CertPathReviewerException(msg);
         }
 
@@ -2559,5 +2559,21 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
         }
         return trustColl;
+    }
+    
+    private static ErrorBundle createErrorBundle(String id)
+    {
+        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, id);
+        msg.setClassLoader(PKIXCertPathReviewer.class.getClassLoader());
+        
+        return msg;
+    }
+    
+    private static ErrorBundle createErrorBundle(String id, Object[] arguments)
+    {
+        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, id, arguments);
+        msg.setClassLoader(PKIXCertPathReviewer.class.getClassLoader());
+        
+        return msg;
     }
 }

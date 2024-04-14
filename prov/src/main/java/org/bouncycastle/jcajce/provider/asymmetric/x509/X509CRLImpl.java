@@ -242,7 +242,7 @@ abstract class X509CRLImpl
         {
             List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
 
             boolean success = false;
             for (int i = 0; i != pubKeys.size(); i++)
@@ -264,7 +264,7 @@ abstract class X509CRLImpl
                     checkSignature(
                         (PublicKey)pubKeys.get(i), signature,
                         sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
                     success = true;
                 }
                 catch (SignatureException e)
@@ -286,7 +286,7 @@ abstract class X509CRLImpl
         else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
         {
             ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(ASN1BitString.getInstance(c.getSignature()).getBytes());
+            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
 
             boolean success = false;
             for (int i = 0; i != sigSeq.size(); i++)
@@ -303,7 +303,7 @@ abstract class X509CRLImpl
                     checkSignature(
                         key, signature,
                         sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes());
+                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
 
                     success = true;
                 }
@@ -353,20 +353,22 @@ abstract class X509CRLImpl
         }
     }
 
-    private void checkSignature(PublicKey key, Signature sig, ASN1Encodable sigAlgParams, byte[] encSig)
-        throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, CRLException
+    private void checkSignature(PublicKey key, Signature signature, ASN1Encodable sigAlgParams, byte[] sigBytes)
+        throws CRLException, InvalidKeyException, NoSuchAlgorithmException, SignatureException
     {
-        if (sigAlgParams != null)
+        if (!X509SignatureUtil.areEquivalentAlgorithms(c.getSignatureAlgorithm(), c.getTBSCertList().getSignature()))
         {
-            // needs to be called before initVerify().
-            X509SignatureUtil.setSignatureParameters(sig, sigAlgParams);
+            throw new CRLException("Signature algorithm on CertificateList does not match TbsCertList.");
         }
 
-        sig.initVerify(key);
+        // needs to be called before initVerify().
+        X509SignatureUtil.setSignatureParameters(signature, sigAlgParams);
+
+        signature.initVerify(key);
 
         try
         {
-            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(sig), 512);
+            OutputStream sigOut = new BufferedOutputStream(OutputStreamFactory.createStream(signature), 512);
 
             c.getTBSCertList().encodeTo(sigOut, ASN1Encoding.DER);
 
@@ -377,7 +379,7 @@ abstract class X509CRLImpl
             throw new CRLException(e.toString());
         }
 
-        if (!sig.verify(encSig))
+        if (!signature.verify(sigBytes))
         {
             throw new SignatureException("CRL does not verify with supplied public key.");
         }

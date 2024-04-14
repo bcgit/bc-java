@@ -34,6 +34,7 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.x509.CertificatePair;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
+import org.bouncycastle.util.Strings;
 
 /**
  * This is a general purpose implementation to get X.509 certificates and CRLs
@@ -126,8 +127,7 @@ public class X509LDAPCertStoreSpi
     private String parseDN(String subject, String subjectAttributeName)
     {
         String temp = subject;
-        int begin = temp.toLowerCase().indexOf(
-            subjectAttributeName.toLowerCase());
+        int begin = Strings.toLowerCase(temp).indexOf(Strings.toLowerCase(subjectAttributeName));
         temp = temp.substring(begin + subjectAttributeName.length());
         int end = temp.indexOf(',');
         if (end == -1)

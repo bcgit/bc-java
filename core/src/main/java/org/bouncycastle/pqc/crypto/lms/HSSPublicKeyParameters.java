@@ -18,6 +18,11 @@ public class HSSPublicKeyParameters
     {
         super(false);
 
+        if (lmsPublicKey == null)
+        {
+            throw new NullPointerException("lmsPublicKey");
+        }
+
         this.l = l;
         this.lmsPublicKey = lmsPublicKey;
     }

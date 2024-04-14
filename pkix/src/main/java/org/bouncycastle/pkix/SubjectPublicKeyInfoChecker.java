@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.x9.X9FieldID;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.math.Primes;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -39,8 +40,6 @@ public class SubjectPublicKeyInfoChecker
             + "ce86165a978d719ebf647f362d33fca29cd179fb42401cbaf3df0c614056f9c8"
             + "f3cfd51e474afb6bc6974f78db8aba8e9e517fded658591ab7502bd41849462f",
         16);
-
-    private static final BigInteger ONE = BigInteger.valueOf(1);
 
     public static void checkInfo(SubjectPublicKeyInfo pubInfo)
     {
@@ -110,6 +109,18 @@ public class SubjectPublicKeyInfoChecker
         }
     }
 
+    private static boolean hasAnySmallFactors(BigInteger modulus)
+    {
+        BigInteger M = modulus, X = SMALL_PRIMES_PRODUCT;
+        if (modulus.compareTo(SMALL_PRIMES_PRODUCT) < 0)
+        {
+            M = SMALL_PRIMES_PRODUCT;
+            X = modulus;
+        }
+
+        return !BigIntegers.modOddIsCoprimeVar(M, X);
+    }
+
     private static void validate(BigInteger modulus)
     {
         if ((modulus.intValue() & 1) == 0)
@@ -123,15 +134,13 @@ public class SubjectPublicKeyInfoChecker
             return;
         }
 
-        int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 15360);
-
-        int modBitLength = modulus.bitLength();
-        if (maxBitLength < modBitLength)
+        int maxBitLength = Properties.asInteger("org.bouncycastle.rsa.max_size", 16384);
+        if (maxBitLength < modulus.bitLength())
         {
-            throw new IllegalArgumentException("modulus value out of range");
+            throw new IllegalArgumentException("RSA modulus out of range");
         }
 
-        if (!modulus.gcd(SMALL_PRIMES_PRODUCT).equals(ONE))
+        if (hasAnySmallFactors(modulus))
         {
             throw new IllegalArgumentException("RSA modulus has a small prime factor");
         }
@@ -142,7 +151,8 @@ public class SubjectPublicKeyInfoChecker
             : bits >= 512 ? 7
             : 50;
 
-        Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(), iterations);
+        Primes.MROutput mr = Primes.enhancedMRProbablePrimeTest(modulus, CryptoServicesRegistrar.getSecureRandom(),
+            iterations);
         if (!mr.isProvablyComposite())
         {
             throw new IllegalArgumentException("RSA modulus is not composite");

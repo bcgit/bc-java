@@ -41,27 +41,28 @@ public class NTRUEngine
     public void init(boolean forEncryption, CipherParameters parameters)
     {
         this.forEncryption = forEncryption;
+
+        SecureRandom providedRandom = null;
+        if (parameters instanceof ParametersWithRandom)
+        {
+            ParametersWithRandom withRandom = (ParametersWithRandom)parameters;
+            providedRandom = withRandom.getRandom();
+            parameters = withRandom.getParameters();
+        }
+
         if (forEncryption)
         {
-            if (parameters instanceof ParametersWithRandom)
-            {
-                ParametersWithRandom p = (ParametersWithRandom)parameters;
-
-                this.random = p.getRandom();
-                this.pubKey = (NTRUEncryptionPublicKeyParameters)p.getParameters();
-            }
-            else
-            {
-                this.random = CryptoServicesRegistrar.getSecureRandom();
-                this.pubKey = (NTRUEncryptionPublicKeyParameters)parameters;
-            }
-
+            this.pubKey = (NTRUEncryptionPublicKeyParameters)parameters;
+            this.privKey = null;
             this.params = pubKey.getParameters();
+            this.random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
         }
         else
         {
+            this.pubKey = null;
             this.privKey = (NTRUEncryptionPrivateKeyParameters)parameters;
             this.params = privKey.getParameters();
+            this.random = null;
         }
     }
 

@@ -16,6 +16,7 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.NTRULPRimeParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -65,7 +66,7 @@ public class NTRULPRimeTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRULPRime", "BCPQC");
         kpg.initialize(NTRULPRimeParameterSpec.ntrulpr653, new SecureRandom());
 
-        performKEMScipher(kpg.generateKeyPair(), "NTRULPRime", new KEMParameterSpec("SEED"));
+        performKEMScipher(kpg.generateKeyPair(), "NTRULPRime", new KTSParameterSpec.Builder("SEED", 128).build());
     }
 
     public void testBasicKEMARIA()
@@ -78,7 +79,7 @@ public class NTRULPRimeTest
         performKEMScipher(kpg.generateKeyPair(), "NTRULPRime", new KEMParameterSpec("ARIA-KWP"));
     }
 
-    private void performKEMScipher(KeyPair kp, String algorithm, KEMParameterSpec ktsParameterSpec)
+    private void performKEMScipher(KeyPair kp, String algorithm, KTSParameterSpec ktsParameterSpec)
             throws Exception
     {
         Cipher w1 = Cipher.getInstance(algorithm, "BCPQC");
@@ -122,7 +123,7 @@ public class NTRULPRimeTest
         SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
         assertEquals("AES", secEnc1.getAlgorithm());
-        assertEquals(16, secEnc1.getEncoded().length);
+        assertEquals(32, secEnc1.getEncoded().length);
 
         keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"), new SecureRandom());
 

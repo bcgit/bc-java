@@ -247,8 +247,8 @@ public interface BCObjectIdentifiers
      */
     ASN1ObjectIdentifier falcon = bc_sig.branch("7");
 
-    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.1");  // falcon.branch("1");
-    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.4"); // falcon.branch("2");
+    ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
+    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
 
     /*
      * Dilithium
@@ -376,6 +376,8 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntruhps2048677 = pqc_kem_ntru.branch("2");
     ASN1ObjectIdentifier ntruhps4096821 = pqc_kem_ntru.branch("3");
     ASN1ObjectIdentifier ntruhrss701 = pqc_kem_ntru.branch("4");
+    ASN1ObjectIdentifier ntruhps40961229 = pqc_kem_ntru.branch("5");
+    ASN1ObjectIdentifier ntruhrss1373 = pqc_kem_ntru.branch("6");
 
     /**
      * Kyber

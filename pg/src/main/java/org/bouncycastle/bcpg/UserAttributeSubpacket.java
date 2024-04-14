@@ -64,10 +64,7 @@ public class UserAttributeSubpacket
         else
         {
             out.write(0xff);
-            out.write((byte)(bodyLen >> 24));
-            out.write((byte)(bodyLen >> 16));
-            out.write((byte)(bodyLen >> 8));
-            out.write((byte)bodyLen);
+            StreamUtil.writeBodyLen(out, bodyLen);
         }
 
         out.write(type);        

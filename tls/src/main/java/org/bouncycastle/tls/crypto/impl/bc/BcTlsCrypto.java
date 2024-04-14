@@ -54,6 +54,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -212,6 +214,11 @@ public class BcTlsCrypto
         }
     }
 
+    public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
+    {
+        return new BcTlsMLKemDomain(this, kemConfig);
+    }
+
     public TlsNonceGenerator createNonceGenerator(byte[] additionalSeedMaterial)
     {
         int cryptoHashAlgorithm = CryptoHashAlgorithm.sha256;
@@ -301,6 +308,11 @@ public class BcTlsCrypto
     }
 
     public boolean hasECDHAgreement()
+    {
+        return true;
+    }
+
+    public boolean hasKemAgreement()
     {
         return true;
     }

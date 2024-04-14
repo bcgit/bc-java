@@ -439,7 +439,7 @@ public class BcPGPPBETest
         }
 
         tryAlgorithm(PGPEncryptedData.AES_128, text);
-        //tryAlgorithm(PGPEncryptedData.CAMELLIA_128, text);
+        tryAlgorithm(PGPEncryptedData.CAMELLIA_128, text);
     }
 
     private void tryAlgorithm(int algorithm, byte[] text)

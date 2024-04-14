@@ -40,6 +40,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -1251,7 +1252,7 @@ public class TlsUtils
             addIfSupported(result, crypto, (SignatureAndHashAlgorithm)candidates.elementAt(i));
         }
 
-        // adding injected sig algorithms (to TLS client hello) #pqc-tls #injection
+        // adding injected sig algorithms (to TLS client hello) #tls-injection
         result.addAll(0, InjectionPoint.sigAlgs().asSigAndHashCollection());
         return result;
     }
@@ -1974,30 +1975,6 @@ public class TlsUtils
     {
         return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFCryptoHashAlgorithm(), "traffic upd",
             EMPTY_BYTES, securityParameters.getPRFHashLength());
-    }
-
-    /**
-     * @deprecated Will be removed. {@link TlsCryptoUtils#getHashForPRF(int)} should be a useful alternative.
-     */
-    public static short getHashAlgorithmForPRFAlgorithm(int prfAlgorithm)
-    {
-        switch (prfAlgorithm)
-        {
-        case PRFAlgorithm.ssl_prf_legacy:
-        case PRFAlgorithm.tls_prf_legacy:
-            throw new IllegalArgumentException("legacy PRF not a valid algorithm");
-        case PRFAlgorithm.tls_prf_sha256:
-        case PRFAlgorithm.tls13_hkdf_sha256:
-            return HashAlgorithm.sha256;
-        case PRFAlgorithm.tls_prf_sha384:
-        case PRFAlgorithm.tls13_hkdf_sha384:
-            return HashAlgorithm.sha384;
-        // TODO[RFC 8998]
-//        case PRFAlgorithm.tls13_hkdf_sm3:
-//            return HashAlgorithm.sm3;
-        default:
-            throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
-        }
     }
 
     public static ASN1ObjectIdentifier getOIDForHashAlgorithm(short hashAlgorithm)
@@ -4039,6 +4016,7 @@ public class TlsUtils
                 // TODO[tls13] We're conservatively adding both here, though maybe only one is needed
                 addToSet(result, NamedGroupRole.dh);
                 addToSet(result, NamedGroupRole.ecdh);
+                addToSet(result, NamedGroupRole.kem);
                 break;
             }
             }
@@ -5320,7 +5298,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(3);
         Vector clientShares = new Vector(2);
 
-        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         // TODO[tls13-psk] When clientShares empty, consider not adding extension if pre_shared_key in use
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
@@ -5336,7 +5314,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(1, 1.0f);
         Vector clientShares = new Vector(1);
 
-        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
 
@@ -5349,9 +5327,10 @@ public class TlsUtils
         return clientAgreements;
     }
 
-    private static void collectKeyShares(TlsCrypto crypto, int[] supportedGroups, Vector keyShareGroups,
+    private static void collectKeyShares(TlsClientContext clientContext, int[] supportedGroups, Vector keyShareGroups,
         Hashtable clientAgreements, Vector clientShares) throws IOException
     {
+        TlsCrypto crypto = clientContext.getCrypto();
         if (isNullOrEmpty(supportedGroups))
         {
             return;
@@ -5374,7 +5353,7 @@ public class TlsUtils
             }
 
             TlsAgreement agreement = null;
-            if (NamedGroup.refersToASpecificCurve(supportedGroup))
+            if (NamedGroup.refersToAnECDHCurve(supportedGroup))
             {
                 if (crypto.hasECDHAgreement())
                 {
@@ -5388,10 +5367,18 @@ public class TlsUtils
                     agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
                 }
             }
-            else {
+            else if (InjectionPoint.kems().contain(supportedGroup))
+            {
                 // #tls-injection
                 assert (crypto instanceof JcaTlsCrypto);
                 agreement = InjectionPoint.kems().kemByCodePoint(supportedGroup).tlsAgreement((JcaTlsCrypto)crypto, false); // assume we are a client
+            }
+            else if (NamedGroup.refersToASpecificKem(supportedGroup))
+            {
+                if (crypto.hasKemAgreement())
+                {
+                    agreement = crypto.createKemDomain(new TlsKemConfig(supportedGroup, false)).createKem();
+                }
             }
 
             if (null != agreement)
@@ -5446,8 +5433,9 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
                     continue;
                 }
@@ -5482,8 +5470,9 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToASpecificCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement())) 
+                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
                 {
                     continue;
                 }
@@ -5633,7 +5622,6 @@ public class TlsUtils
         case PRFAlgorithm.tls_prf_legacy:
         {
             securityParameters.prfCryptoHashAlgorithm = -1;
-            securityParameters.prfHashAlgorithm = -1;
             securityParameters.prfHashLength = -1;
             break;
         }
@@ -5642,7 +5630,6 @@ public class TlsUtils
             int prfCryptoHashAlgorithm = TlsCryptoUtils.getHashForPRF(prfAlgorithm);
 
             securityParameters.prfCryptoHashAlgorithm = prfCryptoHashAlgorithm;
-            securityParameters.prfHashAlgorithm = getHashAlgorithmForPRFAlgorithm(prfAlgorithm);
             securityParameters.prfHashLength = TlsCryptoUtils.getHashOutputSize(prfCryptoHashAlgorithm);
             break;
         }

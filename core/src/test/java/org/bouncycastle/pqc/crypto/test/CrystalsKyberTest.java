@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,11 +10,11 @@ import java.util.HashMap;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.util.DEROtherInfo;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
@@ -34,6 +35,57 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 public class CrystalsKyberTest
     extends TestCase
 {
+
+    public void testModulus() throws IOException
+    {
+        KyberParameters[] params = new KyberParameters[]{
+                KyberParameters.kyber512,
+                KyberParameters.kyber768,
+                KyberParameters.kyber1024,
+        };
+
+        String[] files = new String[]{
+                "ML-KEM-512.txt",
+                "ML-KEM-768.txt",
+                "ML-KEM-1024.txt",
+        };
+
+        TestSampler sampler = new TestSampler();
+        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
+        {
+            String name = files[fileIndex];
+            // System.out.println("testing: " + name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber/modulus", name);
+            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+            String line = null;
+            while ((line = bin.readLine()) != null)
+            {
+                line = line.trim();
+                line = line.trim();
+                byte[] key = Hex.decode(line);
+                KyberParameters parameters = params[fileIndex];
+
+
+                KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters) PublicKeyFactory.createKey(
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new KyberPublicKeyParameters(parameters, key)));
+
+                // KEM Enc
+                SecureRandom random = new SecureRandom();
+                KyberKEMGenerator KyberEncCipher = new KyberKEMGenerator(random);
+                try
+                {
+                    SecretWithEncapsulation secWenc = KyberEncCipher.generateEncapsulated(pubParams);
+                    byte[] generated_cipher_text = secWenc.getEncapsulation();
+                    fail();
+                }
+                catch (Exception ignored)
+                {
+                }
+            }
+        }
+    }
+
     public void testPrivInfoGeneration()
         throws IOException
     {
@@ -79,11 +131,11 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
         keyGen.init(new KyberKeyGenerationParameters(new FixedSecureRandom(coins), KyberParameters.kyber1024));
 
         AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
-        // System.out.print("public key = ");
+        // // System.out.print("public key = ");
         // Helper.printByteArray(((KyberPublicKeyParameters) keyPair.getPublic()).getEncoded());
         assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((KyberPublicKeyParameters)keyPair.getPublic()).getEncoded()));
 
-        // System.out.print("secret Key = ");
+        // // System.out.print("secret Key = ");
         // Helper.printByteArray(((KyberPrivateKeyParameters) keyPair.getPrivate()).getEncoded());
         assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((KyberPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
 
@@ -93,7 +145,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
 
         String expectedSharedSecret = "C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E";
 
-        // System.out.print("Shared secret = ");
+        // // System.out.print("Shared secret = ");
         // Helper.printByteArray(secretEncap.getSecret());
         assertTrue(Arrays.areEqual(Hex.decode(expectedSharedSecret), secretEncap.getSecret()));
 
@@ -149,7 +201,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -172,7 +224,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Kyber secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -219,10 +271,10 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                         assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
                         // } 
                         // catch (AssertionError e) {
-                        //     System.out.println("Failed assertion error.");
-                        //     System.out.println();
+                        //     // System.out.println("Failed assertion error.");
+                        //     // System.out.println();
 
-                        //     System.out.println();
+                        //     // System.out.println();
                         //     continue;
                         // }
                     }
@@ -237,7 +289,7 @@ ss = C9786ED936508E178D55A1208C590A10F25CFBFEB50BE4207395A8B2F8AA192E
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
 

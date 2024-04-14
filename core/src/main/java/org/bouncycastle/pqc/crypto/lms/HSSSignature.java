@@ -4,9 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.io.Streams;
 
 class HSSSignature
@@ -106,28 +107,11 @@ class HSSSignature
             return false;
         }
 
-        HSSSignature signature1 = (HSSSignature)o;
+        HSSSignature that = (HSSSignature)o;
 
-        if (lMinus1 != signature1.lMinus1)
-        {
-            return false;
-        }
-        // Probably incorrect - comparing Object[] arrays with Arrays.equals
-
-        if (signedPubKey.length != signature1.signedPubKey.length)
-        {
-            return false;
-        }
-
-        for (int t = 0; t < signedPubKey.length; t++)
-        {
-            if (!signedPubKey[t].equals(signature1.signedPubKey[t]))
-            {
-                return false;
-            }
-        }
-
-        return signature != null ? signature.equals(signature1.signature) : signature1.signature == null;
+        return this.lMinus1 == that.lMinus1
+            && Arrays.areEqual(this.signedPubKey, that.signedPubKey)
+            && Objects.areEqual(this.signature, that.signature);
     }
 
     @Override
@@ -135,7 +119,7 @@ class HSSSignature
     {
         int result = lMinus1;
         result = 31 * result + Arrays.hashCode(signedPubKey);
-        result = 31 * result + (signature != null ? signature.hashCode() : 0);
+        result = 31 * result + Objects.hashCode(signature);
         return result;
     }
 
@@ -153,7 +137,5 @@ class HSSSignature
         }
         composer.bytes(signature);
         return composer.build();
-
     }
-
 }

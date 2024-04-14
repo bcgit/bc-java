@@ -135,7 +135,6 @@ public class PGPAeadTest
     private void roundTripEncryptionDecryptionTests()
         throws PGPException, IOException
     {
-
         int[] aeadAlgs = new int[]{
             AEADAlgorithmTags.EAX,
             AEADAlgorithmTags.OCB,
@@ -144,7 +143,10 @@ public class PGPAeadTest
         int[] symAlgs = new int[]{
             SymmetricKeyAlgorithmTags.AES_128,
             SymmetricKeyAlgorithmTags.AES_192,
-            SymmetricKeyAlgorithmTags.AES_256
+            SymmetricKeyAlgorithmTags.AES_256,
+            SymmetricKeyAlgorithmTags.CAMELLIA_128,
+            SymmetricKeyAlgorithmTags.CAMELLIA_192,
+            SymmetricKeyAlgorithmTags.CAMELLIA_256
         };
         // Test round-trip encryption
         for (int i = 0; i != aeadAlgs.length; i++)

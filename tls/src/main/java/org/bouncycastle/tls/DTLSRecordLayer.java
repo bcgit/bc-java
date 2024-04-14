@@ -513,17 +513,25 @@ class DTLSRecordLayer
     {
         try
         {
-            return transport.receive(buf, off, len, waitMillis);
+            // NOTE: the buffer is sized to support transport.getReceiveLimit().
+            int received = transport.receive(buf, off, len, waitMillis);
+
+            // Check the transport returned a sensible value, otherwise discard the datagram.
+            if (received <= len)
+            {
+                return received;
+            }
         }
         catch (SocketTimeoutException e)
         {
-            return -1;
         }
         catch (InterruptedIOException e)
         {
             e.bytesTransferred = 0;
             throw e;
         }
+
+        return -1;
     }
 
     // TODO Include 'currentTimeMillis' as an argument, use with Timeout, resetHeartbeat
@@ -566,10 +574,12 @@ class DTLSRecordLayer
         {
             recordEpoch = readEpoch;
         }
-        else if (recordType == ContentType.handshake && null != retransmitEpoch
-            && epoch == retransmitEpoch.getEpoch())
+        else if (null != retransmitEpoch && epoch == retransmitEpoch.getEpoch())
         {
-            recordEpoch = retransmitEpoch;
+            if (recordType == ContentType.handshake)
+            {
+                recordEpoch = retransmitEpoch;
+            }
         }
 
         if (null == recordEpoch)
@@ -866,7 +876,6 @@ class DTLSRecordLayer
         int recordLength = RECORD_HEADER_LENGTH;
         if (recordQueue.available() >= recordLength)
         {
-            short recordType = recordQueue.readUint8(0);
             int epoch = recordQueue.readUint16(3);
 
             DTLSEpoch recordEpoch = null;
@@ -874,8 +883,7 @@ class DTLSRecordLayer
             {
                 recordEpoch = readEpoch;
             }
-            else if (recordType == ContentType.handshake && null != retransmitEpoch
-                && epoch == retransmitEpoch.getEpoch())
+            else if (null != retransmitEpoch && epoch == retransmitEpoch.getEpoch())
             {
                 recordEpoch = retransmitEpoch;
             }
@@ -912,7 +920,6 @@ class DTLSRecordLayer
         {
             this.inConnection = true;
 
-            short recordType = TlsUtils.readUint8(buf, off);
             int epoch = TlsUtils.readUint16(buf, off + 3);
 
             DTLSEpoch recordEpoch = null;
@@ -920,8 +927,7 @@ class DTLSRecordLayer
             {
                 recordEpoch = readEpoch;
             }
-            else if (recordType == ContentType.handshake && null != retransmitEpoch
-                && epoch == retransmitEpoch.getEpoch())
+            else if (null != retransmitEpoch && epoch == retransmitEpoch.getEpoch())
             {
                 recordEpoch = retransmitEpoch;
             }

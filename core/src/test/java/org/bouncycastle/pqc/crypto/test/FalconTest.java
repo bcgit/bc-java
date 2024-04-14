@@ -44,7 +44,7 @@ public class FalconTest
         for (int fileindex = 0; fileindex < files.length; fileindex++)
         {
             String name = files[fileindex];
-            System.out.println("testing: " + name);
+            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/falcon", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
             String line = null;
@@ -66,7 +66,7 @@ public class FalconTest
                         {
                             continue;
                         }
-                        System.out.println("test case: " + count);
+                        // System.out.println("test case: " + count);
 
                         byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Falcon secure random
                         byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
@@ -138,7 +138,7 @@ public class FalconTest
 
 
             }
-            System.out.println("testing successful!");
+            // System.out.println("testing successful!");
         }
     }
     

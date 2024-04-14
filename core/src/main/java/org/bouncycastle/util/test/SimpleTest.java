@@ -266,4 +266,29 @@ public abstract class SimpleTest
             }
         }
     }
+
+    protected interface TestExceptionOperation
+    {
+        void operation()
+            throws Exception;
+    }
+
+    protected Exception testException(String failMessage, String exceptionClass, TestExceptionOperation operation)
+    {
+        try
+        {
+            operation.operation();
+            fail(failMessage);
+        }
+        catch (Exception e)
+        {
+            if (failMessage != null)
+            {
+                isTrue(e.getMessage(), e.getMessage().indexOf(failMessage) >= 0);
+            }
+            isTrue(e.getClass().getName().indexOf(exceptionClass) >= 0);
+            return e;
+        }
+        return null;
+    }
 }

@@ -1,16 +1,77 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Hashtable;
+import java.util.Vector;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.tls.*;
-import org.bouncycastle.tls.crypto.*;
-import org.bouncycastle.tls.crypto.impl.*;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.CertificateType;
+import org.bouncycastle.tls.DigitallySigned;
+import org.bouncycastle.tls.EncryptionAlgorithm;
+import org.bouncycastle.tls.HashAlgorithm;
+import org.bouncycastle.tls.MACAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.SignatureScheme;
+import org.bouncycastle.tls.TlsDHUtils;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.CryptoSignatureAlgorithm;
+import org.bouncycastle.tls.crypto.SRP6Group;
+import org.bouncycastle.tls.crypto.Tls13Verifier;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsCryptoException;
+import org.bouncycastle.tls.crypto.TlsCryptoParameters;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsDHConfig;
+import org.bouncycastle.tls.crypto.TlsDHDomain;
+import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsECDomain;
+import org.bouncycastle.tls.crypto.TlsHMAC;
+import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
+import org.bouncycastle.tls.crypto.TlsNonceGenerator;
+import org.bouncycastle.tls.crypto.TlsSRP6Client;
+import org.bouncycastle.tls.crypto.TlsSRP6Server;
+import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
+import org.bouncycastle.tls.crypto.TlsSRPConfig;
+import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
+import org.bouncycastle.tls.crypto.TlsStreamVerifier;
+import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
+import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
+import org.bouncycastle.tls.crypto.impl.TlsBlockCipherImpl;
+import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
+import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
 import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -362,24 +423,27 @@ public class JcaTlsCrypto
         }
     }
 
-    public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException {
+    public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
+    {
         // #tls-injection
         // for injected KEMs (~NamedGroups), return null
         if (InjectionPoint.kems().contain(namedGroup))
             return null; // KEM is supported, no specific parameters (e.g., there are no disabled algorithms)
 
 
-        if (NamedGroup.refersToAnXDHCurve(namedGroup)) {
-            switch (namedGroup) {
-                /*
-                 * TODO Return AlgorithmParameters to check against disabled algorithms
-                 *
-                 * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
-                 * up using null AlgorithmParameters when checking algorithm constraints.
-                 */
-                case NamedGroup.x25519:
-                case NamedGroup.x448:
-                    return null;
+        if (NamedGroup.refersToAnXDHCurve(namedGroup))
+        {
+            switch (namedGroup)
+            {
+            /*
+             * TODO Return AlgorithmParameters to check against disabled algorithms
+             * 
+             * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
+             * up using null AlgorithmParameters when checking algorithm constraints.
+             */
+            case NamedGroup.x25519:
+            case NamedGroup.x448:
+                return null;
             }
         }
         else if (NamedGroup.refersToAnECDSACurve(namedGroup))
@@ -389,6 +453,21 @@ public class JcaTlsCrypto
         else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
+        }
+        else if (NamedGroup.refersToASpecificKem(namedGroup))
+        {
+            switch (namedGroup)
+            {
+            /*
+             * TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
+             */
+            case NamedGroup.OQS_mlkem512:
+            case NamedGroup.OQS_mlkem768:
+            case NamedGroup.OQS_mlkem1024:
+            case NamedGroup.DRAFT_mlkem768:
+            case NamedGroup.DRAFT_mlkem1024:
+                return null;
+            }
         }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
@@ -513,6 +592,11 @@ public class JcaTlsCrypto
     {
         return true;
     }
+    
+    public boolean hasKemAgreement()
+    {
+        return true;
+    }
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
@@ -578,7 +662,8 @@ public class JcaTlsCrypto
         }
     }
 
-    public boolean hasNamedGroup(int namedGroup) {
+    public boolean hasNamedGroup(int namedGroup)
+    {
         // #tls-injection
         if (InjectionPoint.kems().contain(namedGroup)) {
             return true;
@@ -682,7 +767,8 @@ public class JcaTlsCrypto
         }
     }
 
-    public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm) {
+    public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
+    {
         if (InjectionPoint.sigAlgs().contain(sigAndHashAlgorithm))
             return true; // #tls-injection
 
@@ -700,26 +786,30 @@ public class JcaTlsCrypto
         }
     }
 
-    public boolean hasSignatureScheme(int signatureScheme) {
+    public boolean hasSignatureScheme(int signatureScheme)
+    {
         if (InjectionPoint.sigAlgs().contain(signatureScheme))
             return true; // #tls-injection
 
-        switch (signatureScheme) {
-            case SignatureScheme.sm2sig_sm3:
-                return false;
-            default: {
-                short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);
+        switch (signatureScheme)
+        {
+        case SignatureScheme.sm2sig_sm3:
+            return false;
+        default:
+        {
+            short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);
 
-                switch (SignatureScheme.getCryptoHashAlgorithm(signatureScheme)) {
-                    case CryptoHashAlgorithm.md5:
-                        return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
-                    case CryptoHashAlgorithm.sha224:
-                        // Somewhat overkill, but simpler for now. It's also consistent with SunJSSE behaviour.
-                        return !JcaUtils.isSunMSCAPIProviderActive() && hasSignatureAlgorithm(signature);
-                    default:
-                        return hasSignatureAlgorithm(signature);
-                }
+            switch(SignatureScheme.getCryptoHashAlgorithm(signatureScheme))
+            {
+            case CryptoHashAlgorithm.md5:
+                return SignatureAlgorithm.rsa == signature && hasSignatureAlgorithm(signature);
+            case CryptoHashAlgorithm.sha224:
+                // Somewhat overkill, but simpler for now. It's also consistent with SunJSSE behaviour.
+                return !JcaUtils.isSunMSCAPIProviderActive() && hasSignatureAlgorithm(signature);
+            default:
+                return hasSignatureAlgorithm(signature);
             }
+        }
         }
     }
 
@@ -780,6 +870,11 @@ public class JcaTlsCrypto
         default:
             return new JceTlsECDomain(this, ecConfig);
         }
+    }
+    
+    public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
+    {
+        return new JceTlsMLKemDomain(this, kemConfig);
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
@@ -847,7 +942,7 @@ public class JcaTlsCrypto
     protected TlsHash createHash(String digestName)
         throws GeneralSecurityException
     {
-        return new JcaTlsHash(helper.createMessageDigest(digestName));
+        return new JcaTlsHash(helper.createDigest(digestName));
     }
 
     /**
@@ -881,20 +976,38 @@ public class JcaTlsCrypto
             SecureRandom random = needsRandom ? getSecureRandom() : null;
 
             JcaJceHelper helper = getHelper();
-            if (null != parameter)
-            {
-                Signature dummySigner = helper.createSignature(algorithmName);
-                dummySigner.initSign(privateKey, random);
-                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
-            }
 
-            Signature signer = helper.createSignature(algorithmName);
-            if (null != parameter)
+            try
             {
-                signer.setParameter(parameter);
+                if (null != parameter)
+                {
+                    Signature dummySigner = helper.createSignature(algorithmName);
+                    dummySigner.initSign(privateKey, random);
+                    helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+                }
+
+                Signature signer = helper.createSignature(algorithmName);
+                if (null != parameter)
+                {
+                    signer.setParameter(parameter);
+                }
+                signer.initSign(privateKey, random);
+                return new JcaTlsStreamSigner(signer);
             }
-            signer.initSign(privateKey, random);
-            return new JcaTlsStreamSigner(signer);
+            catch (InvalidKeyException e)
+            {
+                String upperAlg = Strings.toUpperCase(algorithmName);
+                if (upperAlg.endsWith("MGF1"))
+                {
+                    // ANDMGF1 has vanished from the Sun PKCS11 provider.
+                    algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
+                    return createStreamSigner(algorithmName, parameter, privateKey, needsRandom);
+                }
+                else
+                {
+                    throw e;
+                }
+            }
         }
         catch (GeneralSecurityException e)
         {
@@ -1065,11 +1178,17 @@ public class JcaTlsCrypto
         return null;
     }
 
-    protected Boolean isSupportedNamedGroup(int namedGroup) {
-        try {
-            if (InjectionPoint.kems().contain(namedGroup)) {
+    protected Boolean isSupportedNamedGroup(int namedGroup)
+    {
+        try
+        {
+            if (InjectionPoint.kems().contain(namedGroup))
+            {
                 return true; // #tls-injection
-            } else if (NamedGroup.refersToAnXDHCurve(namedGroup)) {
+            }
+            else
+            if (NamedGroup.refersToAnXDHCurve(namedGroup))
+            {
                 /*
                  * NOTE: We don't check for AlgorithmParameters support because even the SunEC
                  * provider doesn't support them. We skip checking KeyFactory and KeyPairGenerator
@@ -1094,6 +1213,11 @@ public class JcaTlsCrypto
                     return Boolean.TRUE;
                 }
                 }
+            }
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
+            {
+                // TODO[tls-kem] When implemented via provider, need to check for support dynamically
+                return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {

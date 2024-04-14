@@ -4,7 +4,6 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 
 /**
  * A builder for {@link PGPDataEncryptor} instances, which can be used to encrypt data objects.

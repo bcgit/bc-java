@@ -50,7 +50,7 @@ public class McElieceFujisakiCipherTest
 
             for (int k = 1; k <= numPassesEncDec; k++)
             {
-                System.out.println("############### test: " + k);
+                // System.out.println("############### test: " + k);
                 // initialize for encryption
                 mcElieceFujisakiDigestCipher.init(true, param);
 
@@ -85,8 +85,8 @@ public class McElieceFujisakiCipherTest
                 }
                 else
                 {
-                    System.out.println("test okay");
-                    System.out.println();
+                    // System.out.println("test okay");
+                    // System.out.println();
                 }
 
             }

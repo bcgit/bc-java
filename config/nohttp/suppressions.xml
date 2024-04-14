@@ -21,5 +21,5 @@
   <suppress message="http://point-at-infinity.org/ecc/nisttv" files=".+[\\/]nist_ecc.txt" checks="NoHttp"/>
 
   <!-- Suppress warnings in this file -->
-  <suppress files="config/nohttp/suppressions.xml" checks="NoHttp"/>
+  <suppress files=".+[\\/]nohttp[\\/]suppressions.xml" checks="NoHttp"/>
 </suppressions> 

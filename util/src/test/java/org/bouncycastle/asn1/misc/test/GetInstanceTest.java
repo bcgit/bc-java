@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.Vector;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -182,8 +181,6 @@ import org.bouncycastle.asn1.isismtt.x509.NamingAuthority;
 import org.bouncycastle.asn1.isismtt.x509.ProcurationSyntax;
 import org.bouncycastle.asn1.isismtt.x509.ProfessionInfo;
 import org.bouncycastle.asn1.isismtt.x509.Restriction;
-import org.bouncycastle.asn1.misc.CAST5CBCParameters;
-import org.bouncycastle.asn1.misc.IDEACBCPar;
 import org.bouncycastle.asn1.mozilla.PublicKeyAndChallenge;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
@@ -297,6 +294,8 @@ import org.bouncycastle.asn1.x9.DHPublicKey;
 import org.bouncycastle.asn1.x9.DHValidationParms;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
+import org.bouncycastle.internal.asn1.misc.IDEACBCPar;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Base64;
 

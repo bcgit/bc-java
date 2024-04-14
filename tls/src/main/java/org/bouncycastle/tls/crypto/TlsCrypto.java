@@ -70,6 +70,13 @@ public interface TlsCrypto
     boolean hasECDHAgreement();
 
     /**
+     * Return true if this TlsCrypto can support KEM key agreement.
+     *
+     * @return true if this instance can support KEM key agreement, false otherwise.
+     */
+    boolean hasKemAgreement();
+
+    /**
      * Return true if this TlsCrypto can support the passed in block/stream encryption algorithm.
      *
      * @param encryptionAlgorithm the algorithm of interest.
@@ -212,6 +219,14 @@ public interface TlsCrypto
      * @return a TlsECDomain supporting the parameters in ecConfig.
      */
     TlsECDomain createECDomain(TlsECConfig ecConfig);
+
+    /**
+     * Create a domain object supporting the domain parameters described in kemConfig.
+     *
+     * @param kemConfig the config describing the KEM parameters to use.
+     * @return a TlsKemDomain supporting the parameters in kemConfig.
+     */
+    TlsKemDomain createKemDomain(TlsKemConfig kemConfig);
 
     /**
      * Adopt the passed in secret, creating a new copy of it.

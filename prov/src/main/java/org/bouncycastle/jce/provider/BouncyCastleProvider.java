@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -23,6 +22,7 @@ import org.bouncycastle.crypto.CryptoServiceConstraintsException;
 import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
@@ -74,7 +74,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.76";
+    private static String info = "BouncyCastle Security Provider v1.78";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -121,7 +121,7 @@ public final class BouncyCastleProvider extends Provider
     // later ones configure it.
     private static final String[] ASYMMETRIC_GENERIC =
     {
-        "X509", "IES", "COMPOSITE", "EXTERNAL"
+        "X509", "IES", "COMPOSITE", "EXTERNAL", "CompositeSignatures"
     };
 
     private static final String[] ASYMMETRIC_CIPHERS =
@@ -167,7 +167,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.76, info);
+        super(PROVIDER_NAME, 1.78, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -253,8 +253,6 @@ public final class BouncyCastleProvider extends Provider
         put("CertStore.LDAP", "org.bouncycastle.jce.provider.X509LDAPCertStoreSpi");
         put("CertStore.Multi", "org.bouncycastle.jce.provider.MultiCertStoreSpi");
         put("Alg.Alias.CertStore.X509LDAP", "LDAP");
-
-        getService("SecureRandom", "DEFAULT");  // prime for new SecureRandom() on 1.8 JVMs.
     }
 
     public final Service getService(final String type, final String algorithm)
@@ -521,7 +519,6 @@ public final class BouncyCastleProvider extends Provider
         {
             return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
         }
-        
         AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
         if (converter == null)

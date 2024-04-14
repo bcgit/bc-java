@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.util.Strings;
 
 public class DefaultSignatureAlgorithmIdentifierFinder
-    implements SignatureAlgorithmIdentifierFinder
+        implements SignatureAlgorithmIdentifierFinder
 {
     private static Map algorithms = new HashMap();
     private static Set noParams = new HashSet();
@@ -194,7 +194,31 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
         algorithms.put("SPHINCS+", BCObjectIdentifiers.sphincsPlus);
         algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
-
+        algorithms.put("SPHINCS+-SHA2-128S", BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        algorithms.put("SPHINCS+-SHA2-128F", BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        algorithms.put("SPHINCS+-SHA2-192S", BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        algorithms.put("SPHINCS+-SHA2-192F", BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        algorithms.put("SPHINCS+-SHA2-256S", BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        algorithms.put("SPHINCS+-SHA2-256F", BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        algorithms.put("SPHINCS+-SHAKE-128S", BCObjectIdentifiers.sphincsPlus_shake_128s);
+        algorithms.put("SPHINCS+-SHAKE-128F", BCObjectIdentifiers.sphincsPlus_shake_128f);
+        algorithms.put("SPHINCS+-SHAKE-192S", BCObjectIdentifiers.sphincsPlus_shake_192s);
+        algorithms.put("SPHINCS+-SHAKE-192F", BCObjectIdentifiers.sphincsPlus_shake_192f);
+        algorithms.put("SPHINCS+-SHAKE-256S", BCObjectIdentifiers.sphincsPlus_shake_256s);
+        algorithms.put("SPHINCS+-SHAKE-256F", BCObjectIdentifiers.sphincsPlus_shake_256f);
+        algorithms.put("SPHINCS+-HARAKA-128S-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_128s_r3);
+        algorithms.put("SPHINCS+-HARAKA-128F-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_128f_r3);
+        algorithms.put("SPHINCS+-HARAKA-192S-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_192s_r3);
+        algorithms.put("SPHINCS+-HARAKA-192F-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_192f_r3);
+        algorithms.put("SPHINCS+-HARAKA-256S-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
+        algorithms.put("SPHINCS+-HARAKA-256F-ROBUST", BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
+        algorithms.put("SPHINCS+-HARAKA-128S-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple);
+        algorithms.put("SPHINCS+-HARAKA-128F-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple);
+        algorithms.put("SPHINCS+-HARAKA-192S-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple);
+        algorithms.put("SPHINCS+-HARAKA-192F-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple);
+        algorithms.put("SPHINCS+-HARAKA-256S-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple);
+        algorithms.put("SPHINCS+-HARAKA-256F-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple);
+        algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
         algorithms.put("DILITHIUM2", BCObjectIdentifiers.dilithium2);
         algorithms.put("DILITHIUM3", BCObjectIdentifiers.dilithium3);
         algorithms.put("DILITHIUM5", BCObjectIdentifiers.dilithium5);
@@ -209,6 +233,23 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         algorithms.put("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         algorithms.put("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
+
+        algorithms.put("MLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        algorithms.put("MLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        algorithms.put("MLDSA44-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        algorithms.put("MLDSA44-ECDSA-BRAINPOOLP256R1-SHA256", MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256);
+        algorithms.put("MLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        algorithms.put("MLDSA65-RSA3072-PSS-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        algorithms.put("MLDSA65-RSA3072-PKCS15-SHA512", MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        algorithms.put("MLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        algorithms.put("MLDSA65-ECDSA-P256-SHA512", MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        algorithms.put("MLDSA65-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        algorithms.put("MLDSA87-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        algorithms.put("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        algorithms.put("MLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+        algorithms.put("FALCON512-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256);
+        algorithms.put("FALCON512-ECDSA-BRAINPOOLP256R1-SHA256", MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256);
+        algorithms.put("FALCON512-ED25519-SHA512", MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
@@ -281,13 +322,17 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128f);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_192s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_192f);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256s);
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_256f);
+
         //
         // Dilithium
         //
@@ -366,6 +411,26 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
         noParams.add(CMSObjectIdentifiers.id_ecdsa_with_shake128);
         noParams.add(CMSObjectIdentifiers.id_ecdsa_with_shake256);
+
+        //
+        // Composite - Draft 13
+        //
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_ECDSA_brainpoolP256r1_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_ECDSA_P256_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_ECDSA_brainpoolP256r1_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_Falcon512_Ed25519_SHA512);
 
         //
         // PKCS 1.5 encrypted  algorithms
@@ -481,14 +546,17 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, NISTObjectIdentifiers.id_sha256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128s, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_128f, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, NISTObjectIdentifiers.id_sha256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192s, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_192f, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, NISTObjectIdentifiers.id_sha256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256s, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.sphincsPlus_shake_256f, NISTObjectIdentifiers.id_shake256);
-        
+
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_rmd160, TeleTrusTObjectIdentifiers.ripemd160);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha1, OIWObjectIdentifiers.idSHA1);
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha224, NISTObjectIdentifiers.id_sha224);
@@ -506,16 +574,16 @@ public class DefaultSignatureAlgorithmIdentifierFinder
     private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
     {
         return new RSASSAPSSparams(
-            hashAlgId,
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
-            new ASN1Integer(1));
+                hashAlgId,
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
+                new ASN1Integer(saltSize),
+                new ASN1Integer(1));
     }
 
     public AlgorithmIdentifier find(String sigAlgName)
     {
         String algorithmName = Strings.toUpperCase(sigAlgName);
-        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier)algorithms.get(algorithmName);
+        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier) algorithms.get(algorithmName);
         if (sigOID == null)
         {
             throw new IllegalArgumentException("Unknown signature type requested: " + sigAlgName);
@@ -528,7 +596,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         }
         else if (params.containsKey(algorithmName))
         {
-            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable)params.get(algorithmName));
+            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable) params.get(algorithmName));
         }
         else
         {

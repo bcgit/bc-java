@@ -9,7 +9,7 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
@@ -79,6 +79,11 @@ public class CompositePublicKey
         {
             throw new IllegalStateException("unable to encode composite key: " + e.getMessage());
         }
+    }
+
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
+        return null;
     }
 
     public int hashCode()

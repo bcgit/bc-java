@@ -109,9 +109,9 @@ class JceAEADUtil
         byte[] messageKeyAndIv = new byte[keyLen + ivLen - 8];
         hkdfGen.generateBytes(messageKeyAndIv, 0, messageKeyAndIv.length);
 
-        return new byte[][] { Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen) };
+        return new byte[][]{Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen)};
     }
-    
+
     /**
      * Create a {@link PGPDataDecryptor} for decrypting AEAD encrypted OpenPGP v5 data packets.
      *
@@ -239,10 +239,13 @@ class JceAEADUtil
     {
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256)
+            && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_192
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)
         {
             // Block Cipher must work on 16 byte blocks
-            throw new PGPException("AEAD only supported for AES based algorithms");
+            throw new PGPException("AEAD only supported for AES and Camellia" + " based algorithms");
         }
 
         String mode;
@@ -266,7 +269,6 @@ class JceAEADUtil
 
         return helper.createCipher(cName);
     }
-
 
     static class PGPAeadInputStream
         extends InputStream
@@ -417,7 +419,7 @@ class JceAEADUtil
             byte[] decData;
             try
             {
-                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE,  getNonce(iv, chunkIndex), 128, adata);
+                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
 
                 decData = c.doFinal(buf, 0, dataLen + aeadTagLength);
             }
@@ -433,18 +435,7 @@ class JceAEADUtil
 
             if (dataLen != chunkLength)     // it's our last block
             {
-                if (v5StyleAEAD)
-                {
-                    adata = new byte[13];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    xorChunkId(adata, chunkIndex);
-                }
-                else
-                {
-                    adata = new byte[aaData.length + 8];
-                    System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                    System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-                }
+                adata = PGPAeadOutputStream.getAdata(v5StyleAEAD, aaData, chunkIndex, totalBytes);
                 try
                 {
                     if (v5StyleAEAD)
@@ -491,7 +482,7 @@ class JceAEADUtil
         /**
          * OutputStream for AEAD encryption.
          *
-         * @param isV5AEAD       isV5AEAD of AEAD (OpenPGP v5 or v6)
+         * @param isV5AEAD      isV5AEAD of AEAD (OpenPGP v5 or v6)
          * @param out           underlying OutputStream
          * @param c             AEAD cipher
          * @param secretKey     secret key
@@ -612,7 +603,7 @@ class JceAEADUtil
 
             try
             {
-                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE,  getNonce(iv, chunkIndex), 128, adata);
+                JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
 
                 out.write(c.doFinal(data, 0, dataOff));
             }
@@ -634,19 +625,7 @@ class JceAEADUtil
                 writeBlock();
             }
 
-            byte[] adata;
-            if (isV5AEAD)
-            {
-                adata = new byte[13];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                xorChunkId(adata, chunkIndex);
-            }
-            else
-            {
-                adata = new byte[aaData.length + 8];
-                System.arraycopy(aaData, 0, adata, 0, aaData.length);
-                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
-            }
+            byte[] adata = getAdata(isV5AEAD, aaData, chunkIndex, totalBytes);
 
             try
             {
@@ -666,6 +645,24 @@ class JceAEADUtil
                 throw new IOException("exception processing final tag: " + e.getMessage());
             }
             out.close();
+        }
+
+        private static byte[] getAdata(boolean isV5AEAD, byte[] aaData, long chunkIndex, long totalBytes)
+        {
+            byte[] adata;
+            if (isV5AEAD)
+            {
+                adata = new byte[13];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                xorChunkId(adata, chunkIndex);
+            }
+            else
+            {
+                adata = new byte[aaData.length + 8];
+                System.arraycopy(aaData, 0, adata, 0, aaData.length);
+                System.arraycopy(Pack.longToBigEndian(totalBytes), 0, adata, aaData.length, 8);
+            }
+            return adata;
         }
     }
 }

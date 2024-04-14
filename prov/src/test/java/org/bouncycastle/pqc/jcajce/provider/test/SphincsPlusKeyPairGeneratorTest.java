@@ -92,24 +92,24 @@ public class SphincsPlusKeyPairGeneratorTest
 
         SPHINCSPlusParameterSpec[] params =
             {
-                SPHINCSPlusParameterSpec.sha2_128s,
-                SPHINCSPlusParameterSpec.sha2_128f,
-                SPHINCSPlusParameterSpec.shake_128s,
-                SPHINCSPlusParameterSpec.shake_128f,
+                SPHINCSPlusParameterSpec.sha2_128s_robust,
+                SPHINCSPlusParameterSpec.sha2_128f_robust,
+                SPHINCSPlusParameterSpec.shake_128s_robust,
+                SPHINCSPlusParameterSpec.shake_128f_robust,
                 SPHINCSPlusParameterSpec.haraka_128s,
                 SPHINCSPlusParameterSpec.haraka_128f,
 
-                SPHINCSPlusParameterSpec.sha2_192s,
-                SPHINCSPlusParameterSpec.sha2_192f,
-                SPHINCSPlusParameterSpec.shake_192s,
-                SPHINCSPlusParameterSpec.shake_192f,
+                SPHINCSPlusParameterSpec.sha2_192s_robust,
+                SPHINCSPlusParameterSpec.sha2_192f_robust,
+                SPHINCSPlusParameterSpec.shake_192s_robust,
+                SPHINCSPlusParameterSpec.shake_192f_robust,
                 SPHINCSPlusParameterSpec.haraka_192s,
                 SPHINCSPlusParameterSpec.haraka_192f,
 
-                SPHINCSPlusParameterSpec.sha2_256s,
-                SPHINCSPlusParameterSpec.sha2_256f,
-                SPHINCSPlusParameterSpec.shake_256s,
-                SPHINCSPlusParameterSpec.shake_256f,
+                SPHINCSPlusParameterSpec.sha2_256s_robust,
+                SPHINCSPlusParameterSpec.sha2_256f_robust,
+                SPHINCSPlusParameterSpec.shake_256s_robust,
+                SPHINCSPlusParameterSpec.shake_256f_robust,
                 SPHINCSPlusParameterSpec.haraka_256s,
                 SPHINCSPlusParameterSpec.haraka_256f,
             };

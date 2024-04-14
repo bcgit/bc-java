@@ -1,5 +1,6 @@
 package org.bouncycastle.cms.jcajce;
 
+import java.io.IOException;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
@@ -32,11 +33,13 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
@@ -47,6 +50,9 @@ import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.GenericKey;
@@ -54,10 +60,13 @@ import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.jcajce.JceKTSKeyUnwrapper;
+import org.bouncycastle.util.Strings;
 
 public class EnvelopedDataHelper
 {
     protected static final SecretKeySizeProvider KEY_SIZE_PROVIDER = DefaultSecretKeySizeProvider.INSTANCE;
+    private static final byte[] hkdfSalt = Strings.toByteArray("The Cryptographic Message Syntax");
+
     private static final Set authEnvelopedAlgorithms = new HashSet();
 
     protected static final Map BASE_CIPHER_NAMES = new HashMap();
@@ -201,6 +210,46 @@ public class EnvelopedDataHelper
         }
 
         throw new IllegalArgumentException("unknown generic key type");
+    }
+
+    public Key getJceKey(AlgorithmIdentifier algId, GenericKey key)
+        throws CMSException
+    {
+        if (algId.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
+        {
+            byte[] keyData = null;
+
+            if (key.getRepresentation() instanceof Key)
+            {
+                keyData = ((Key)key.getRepresentation()).getEncoded();
+            }
+
+            if (key.getRepresentation() instanceof byte[])
+            {
+                keyData = (byte[])key.getRepresentation();
+            }
+
+            AlgorithmIdentifier encAlgId = AlgorithmIdentifier.getInstance(algId.getParameters());
+
+            // TODO: at the moment assumes HKDF with SHA256
+            HKDFBytesGenerator kdf = new HKDFBytesGenerator(new SHA256Digest());
+            try
+            {
+                kdf.init(new HKDFParameters(keyData, hkdfSalt, encAlgId.getEncoded(ASN1Encoding.DER)));
+            }
+            catch (IOException e)
+            {
+                throw new CMSException("unable to encode enc algorithm parameters", e);
+            }
+
+            kdf.generateBytes(keyData, 0, keyData.length);
+
+            return new SecretKeySpec(keyData, getBaseCipherName(encAlgId.getAlgorithm()));
+        }
+        else
+        {
+            return getJceKey(algId.getAlgorithm(), key);
+        }
     }
 
     public void keySizeCheck(AlgorithmIdentifier keyAlgorithm, Key key)
@@ -363,15 +412,24 @@ public class EnvelopedDataHelper
                 InvalidKeyException, InvalidParameterSpecException, NoSuchAlgorithmException,
                 NoSuchPaddingException, NoSuchProviderException
             {
-                Cipher cipher = createCipher(encryptionAlgID.getAlgorithm());
-                ASN1Encodable sParams = encryptionAlgID.getParameters();
-                String encAlg = encryptionAlgID.getAlgorithm().getId();
+                AlgorithmIdentifier encAlgId;
+                if (encryptionAlgID.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
+                {
+                    encAlgId = AlgorithmIdentifier.getInstance(encryptionAlgID.getParameters());
+                }
+                else
+                {
+                    encAlgId = encryptionAlgID;
+                }
+                Cipher cipher = createCipher(encAlgId.getAlgorithm());
+                ASN1Encodable sParams = encAlgId.getParameters();
+                String encAlg = encAlgId.getAlgorithm().getId();
 
                 if (sParams != null && !(sParams instanceof ASN1Null))
                 {
                     try
                     {
-                        AlgorithmParameters params = createAlgorithmParameters(encryptionAlgID.getAlgorithm());
+                        AlgorithmParameters params = createAlgorithmParameters(encAlgId.getAlgorithm());
 
                         CMSUtils.loadParameters(params, sParams);
 

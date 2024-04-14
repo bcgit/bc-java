@@ -44,7 +44,7 @@ public class PQCTestUtil
     {
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
-        kpGen.initialize(SPHINCSPlusParameterSpec.sha2_128f, new SecureRandom());
+        kpGen.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, new SecureRandom());
 
         return kpGen.generateKeyPair();
     }

@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -262,32 +263,92 @@ public class HKDFGeneratorTest
         // (salt defaults to HashLen zero octets)
 
         // this test is identical to test 7 in all ways bar the IKM value
-
-        Digest hash = new SHA1Digest();
-        byte[] ikm = Hex
-            .decode("2adccada18779e7c2077ad2eb19d3f3e731385dd");
-        byte[] info = new byte[0];
-        int l = 255 * hash.getDigestSize();
-        byte[] okm = new byte[l];
-
-        HKDFParameters params = HKDFParameters.skipExtractParameters(ikm, info);
-
-        HKDFBytesGenerator hkdf = new HKDFBytesGenerator(hash);
-        hkdf.init(params);
-        hkdf.generateBytes(okm, 0, l);
-
-        int zeros = 0;
-        for (int i = 0; i < hash.getDigestSize(); i++)
         {
-            if (okm[i] == 0)
+            Digest hash = new SHA1Digest();
+            byte[] ikm = Hex
+                .decode("2adccada18779e7c2077ad2eb19d3f3e731385dd");
+            byte[] info = new byte[0];
+            int l = 255 * hash.getDigestSize();
+            byte[] okm = new byte[l];
+
+            HKDFParameters params = HKDFParameters.skipExtractParameters(ikm, info);
+
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(hash);
+            hkdf.init(params);
+            hkdf.generateBytes(okm, 0, l);
+
+            int zeros = 0;
+            for (int i = 0; i < hash.getDigestSize(); i++)
             {
-                zeros++;
+                if (okm[i] == 0)
+                {
+                    zeros++;
+                }
+            }
+
+            if (zeros == hash.getDigestSize())
+            {
+                fail("HKDF failed generator test " + 102);
             }
         }
 
-        if (zeros == hash.getDigestSize())
         {
-            fail("HKDF failed generator test " + 102);
+            // CMS_CEK_HKDF_SHA256 B.1
+            //            IKM = c702e7d0a9e064b09ba55245fb733cf3
+            //
+            //            The AES-128-CGM AlgorithmIdentifier:
+            //             algorithm=2.16.840.1.101.3.4.1.6
+            //             parameters=GCMParameters:
+            //              aes-nonce=0x5c79058ba2f43447639d29e2
+            //              aes-ICVlen is ommited; it indicates the DEFAULT of 12
+            //
+            //            DER-encoded AlgorithmIdentifier:
+            //              301b0609608648016503040106300e040c5c79058ba2f43447639d29e2
+            //
+            //            OKM = 2124ffb29fac4e0fbbc7d5d87492bff3
+            Digest hash = new SHA256Digest();
+            byte[] ikm = Hex.decode("c702e7d0a9e064b09ba55245fb733cf3");
+            byte[] salt = Strings.toByteArray("The Cryptographic Message Syntax");
+            byte[] info = Hex.decode("301b0609608648016503040106300e040c5c79058ba2f43447639d29e2");
+            byte[] okm = Hex.decode("2124ffb29fac4e0fbbc7d5d87492bff3");
+            byte[] genOkm = new byte[okm.length];
+
+            HKDFParameters params = new HKDFParameters(ikm, salt, info);
+
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(hash);
+            hkdf.init(params);
+            hkdf.generateBytes(genOkm, 0, genOkm.length);
+
+            compareOKM(8, genOkm, okm);
+        }
+
+        {
+            // CMS_CEK_HKDF_SHA256 B.1
+            //
+            //            IKM = c702e7d0a9e064b09ba55245fb733cf3
+            //
+            //            The AES-128-CBC AlgorithmIdentifier:
+            //             algorithm=2.16.840.1.101.3.4.1.2
+            //             parameters=AES-IV=0x651f722ffd512c52fe072e507d72b377
+            //
+            //            DER-encoded AlgorithmIdentifier:
+            //              301d06096086480165030401020410651f722ffd512c52fe072e507d72b377
+            //
+            //            OKM = 9cd102c52f1e19ece8729b35bfeceb50
+            Digest hash = new SHA256Digest();
+            byte[] ikm = Hex.decode("c702e7d0a9e064b09ba55245fb733cf3");
+            byte[] salt = Strings.toByteArray("The Cryptographic Message Syntax");
+            byte[] info = Hex.decode("301d06096086480165030401020410651f722ffd512c52fe072e507d72b377");
+            byte[] okm = Hex.decode("9cd102c52f1e19ece8729b35bfeceb50");
+            byte[] genOkm = new byte[okm.length];
+
+            HKDFParameters params = new HKDFParameters(ikm, salt, info);
+
+            HKDFBytesGenerator hkdf = new HKDFBytesGenerator(hash);
+            hkdf.init(params);
+            hkdf.generateBytes(genOkm, 0, genOkm.length);
+
+            compareOKM(9, genOkm, okm);
         }
     }
 

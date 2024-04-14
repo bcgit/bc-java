@@ -3,13 +3,10 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
-import org.bouncycastle.asn1.BERSet;
-import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
@@ -73,18 +70,12 @@ public class CMSEncryptedDataGenerator
 
         encContent = new BEROctetString(encryptedContent);
 
-        EncryptedContentInfo  eci = new EncryptedContentInfo(
+        EncryptedContentInfo  eci = CMSUtils.getEncryptedContentInfo(
                         content.getContentType(),
                         encAlgId,
-                        encContent);
+                        encryptedContent);
 
-        ASN1Set unprotectedAttrSet = null;
-        if (unprotectedAttributeGenerator != null)
-        {
-            AttributeTable attrTable = unprotectedAttributeGenerator.getAttributes(Collections.EMPTY_MAP);
-
-            unprotectedAttrSet = new BERSet(attrTable.toASN1EncodableVector());
-        }
+        ASN1Set unprotectedAttrSet = CMSUtils.getAttrBERSet(unprotectedAttributeGenerator);
 
         ContentInfo contentInfo = new ContentInfo(
                 CMSObjectIdentifiers.encryptedData,

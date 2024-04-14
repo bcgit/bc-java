@@ -52,6 +52,8 @@ public class RelativeOIDTest
 
     private void checkValid(String oid) throws IOException
     {
+        isTrue(ASN1RelativeOID.tryFromID(oid) != null);
+
         ASN1RelativeOID o = new ASN1RelativeOID(oid);
         o = (ASN1RelativeOID)ASN1Primitive.fromByteArray(o.getEncoded());
         if (!o.getId().equals(oid))
@@ -62,6 +64,8 @@ public class RelativeOIDTest
 
     private void checkInvalid(String oid)
     {
+        isTrue(ASN1RelativeOID.tryFromID(oid) == null);
+
         try
         {
             new ASN1RelativeOID(oid);

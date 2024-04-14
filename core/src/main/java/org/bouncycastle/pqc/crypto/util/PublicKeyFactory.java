@@ -12,12 +12,19 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.*;
+import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.CMCEPublicKey;
+import org.bouncycastle.pqc.asn1.KyberPublicKey;
+import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
+import org.bouncycastle.pqc.asn1.XMSSKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
+import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
@@ -121,12 +128,15 @@ public class PublicKeyFactory
 
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, new SPHINCSPlusConverter());
+        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
         
@@ -179,7 +189,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhps2048509, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps2048677, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhps4096821, new NtruConverter());
+        converters.put(BCObjectIdentifiers.ntruhps40961229, new NtruConverter());
         converters.put(BCObjectIdentifiers.ntruhrss701, new NtruConverter());
+        converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
         converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());

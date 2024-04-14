@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESFastEngine;
 import org.bouncycastle.crypto.engines.AESLightEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -71,7 +72,7 @@ public class AESVectorFileTest
 
             while (line != null)
             {
-                line = line.trim().toLowerCase();
+                line = Strings.toLowerCase(line.trim());
                 if (line.startsWith("blocksize="))
                 {
                     int i = 0;

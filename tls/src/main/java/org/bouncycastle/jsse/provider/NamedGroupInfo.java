@@ -2,7 +2,6 @@ package org.bouncycastle.jsse.provider;
 
 import java.security.AlgorithmParameters;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,7 +75,13 @@ class NamedGroupInfo
         ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
         ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),
         ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
-        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman");
+        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman"),
+
+        OQS_mlkem512(NamedGroup.OQS_mlkem512, "ML-KEM"),
+        OQS_mlkem768(NamedGroup.OQS_mlkem768, "ML-KEM"),
+        OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
+        DRAFT_mlkem768(NamedGroup.DRAFT_mlkem768, "ML-KEM"),
+        DRAFT_mlkem1024(NamedGroup.DRAFT_mlkem1024, "ML-KEM");
 
         private final int namedGroup;
         private final String name;
@@ -120,13 +125,17 @@ class NamedGroupInfo
 
     static class PerConnection
     {
-        // NOTE: Should have predictable iteration order (by preference)
-        private final Map<Integer, NamedGroupInfo> local;
+        private final LinkedHashMap<Integer, NamedGroupInfo> local;
         private final boolean localECDSA;
         private final AtomicReference<List<NamedGroupInfo>> peer;
 
-        PerConnection(Map<Integer, NamedGroupInfo> local, boolean localECDSA)
+        PerConnection(LinkedHashMap<Integer, NamedGroupInfo> local, boolean localECDSA)
         {
+            if (local == null)
+            {
+                throw new NullPointerException("local");
+            }
+
             this.local = local;
             this.localECDSA = localECDSA;
             this.peer = new AtomicReference<List<NamedGroupInfo>>();
@@ -223,9 +232,32 @@ class NamedGroupInfo
     static int getMaximumBitsServerECDH(PerConnection perConnection)
     {
         int maxBits = 0;
-        for (NamedGroupInfo namedGroupInfo : getEffectivePeer(perConnection))
+        List<NamedGroupInfo> peer = perConnection.getPeer();
+        if (peer != null)
         {
-            maxBits = Math.max(maxBits, namedGroupInfo.getBitsECDH());
+            for (NamedGroupInfo namedGroupInfo : peer)
+            {
+                int bits = namedGroupInfo.getBitsECDH();
+                if (bits > maxBits)
+                {
+                    if (perConnection.local.containsKey(namedGroupInfo.getNamedGroup()))
+                    {
+                        maxBits = bits;
+                    }
+                }
+            }
+        }
+        else
+        {
+            /*
+             * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
+             * extensions. In this case, the server is free to choose any one of the elliptic curves or point
+             * formats [...].
+             */
+            for (NamedGroupInfo namedGroupInfo : perConnection.local.values())
+            {
+                maxBits = Math.max(maxBits, namedGroupInfo.getBitsECDH());
+            }
         }
         return maxBits;
     }
@@ -233,9 +265,36 @@ class NamedGroupInfo
     static int getMaximumBitsServerFFDHE(PerConnection perConnection)
     {
         int maxBits = 0;
-        for (NamedGroupInfo namedGroupInfo : getEffectivePeer(perConnection))
+        boolean anyPeerFF = false;
+        List<NamedGroupInfo> peer = perConnection.getPeer();
+        if (peer != null)
         {
-            maxBits = Math.max(maxBits, namedGroupInfo.getBitsFFDHE());
+            for (NamedGroupInfo namedGroupInfo : peer)
+            {
+                int namedGroup = namedGroupInfo.getNamedGroup();
+                anyPeerFF |= NamedGroup.isFiniteField(namedGroup);
+
+                int bits = namedGroupInfo.getBitsFFDHE();
+                if (bits > maxBits)
+                {
+                    if (perConnection.local.containsKey(namedGroup))
+                    {
+                        maxBits = bits;
+                    }
+                }
+            }
+        }
+        if (!anyPeerFF)
+        {
+            /*
+             * RFC 7919 4. If [...] the Supported Groups extension is either absent from the ClientHello
+             * entirely or contains no FFDHE groups (i.e., no codepoints between 256 and 511, inclusive), then
+             * the server [...] MAY select an FFDHE cipher suite and offer an FFDHE group of its choice [...].
+             */
+            for (NamedGroupInfo namedGroupInfo : perConnection.local.values())
+            {
+                maxBits = Math.max(maxBits, namedGroupInfo.getBitsFFDHE());
+            }
         }
         return maxBits;
     }
@@ -274,11 +333,34 @@ class NamedGroupInfo
 
     static int selectServerECDH(PerConnection perConnection, int minimumBitsECDH)
     {
-        for (NamedGroupInfo namedGroupInfo : getEffectivePeer(perConnection))
+        List<NamedGroupInfo> peer = perConnection.getPeer();
+        if (peer != null)
         {
-            if (namedGroupInfo.getBitsECDH() >= minimumBitsECDH)
+            for (NamedGroupInfo namedGroupInfo : peer)
             {
-                return namedGroupInfo.getNamedGroup();
+                if (namedGroupInfo.getBitsECDH() >= minimumBitsECDH)
+                {
+                    int namedGroup = namedGroupInfo.getNamedGroup();
+                    if (perConnection.local.containsKey(namedGroup))
+                    {
+                        return namedGroup;
+                    }
+                }
+            }
+        }
+        else
+        {
+            /*
+             * RFC 4492 4. A client that proposes ECC cipher suites may choose not to include these
+             * extensions. In this case, the server is free to choose any one of the elliptic curves or point
+             * formats [...].
+             */
+            for (NamedGroupInfo namedGroupInfo : perConnection.local.values())
+            {
+                if (namedGroupInfo.getBitsECDH() >= minimumBitsECDH)
+                {
+                    return namedGroupInfo.getNamedGroup();
+                }
             }
         }
         return -1;
@@ -286,11 +368,37 @@ class NamedGroupInfo
 
     static int selectServerFFDHE(PerConnection perConnection, int minimumBitsFFDHE)
     {
-        for (NamedGroupInfo namedGroupInfo : getEffectivePeer(perConnection))
+        boolean anyPeerFF = false;
+        List<NamedGroupInfo> peer = perConnection.getPeer();
+        if (peer != null)
         {
-            if (namedGroupInfo.getBitsFFDHE() >= minimumBitsFFDHE)
+            for (NamedGroupInfo namedGroupInfo : peer)
             {
-                return namedGroupInfo.getNamedGroup();
+                int namedGroup = namedGroupInfo.getNamedGroup();
+                anyPeerFF |= NamedGroup.isFiniteField(namedGroup);
+
+                if (namedGroupInfo.getBitsFFDHE() >= minimumBitsFFDHE)
+                {
+                    if (perConnection.local.containsKey(namedGroup))
+                    {
+                        return namedGroup;
+                    }
+                }
+            }
+        }
+        if (!anyPeerFF)
+        {
+            /*
+             * RFC 7919 4. If [...] the Supported Groups extension is either absent from the ClientHello
+             * entirely or contains no FFDHE groups (i.e., no codepoints between 256 and 511, inclusive), then
+             * the server [...] MAY select an FFDHE cipher suite and offer an FFDHE group of its choice [...].
+             */
+            for (NamedGroupInfo namedGroupInfo : perConnection.local.values())
+            {
+                if (namedGroupInfo.getBitsFFDHE() >= minimumBitsFFDHE)
+                {
+                    return namedGroupInfo.getNamedGroup();
+                }
             }
         }
         return -1;
@@ -424,17 +532,6 @@ class NamedGroupInfo
         return ng;
     }
 
-    private static Collection<NamedGroupInfo> getEffectivePeer(PerConnection perConnection)
-    {
-        List<NamedGroupInfo> peer = perConnection.getPeer();
-        if (!peer.isEmpty())
-        {
-            return peer;
-        }
-
-        return perConnection.local.values();
-    }
-
     private static int getNamedGroupByName(String name)
     {
         for (All all : All.values())
@@ -451,7 +548,11 @@ class NamedGroupInfo
     private static List<NamedGroupInfo> getNamedGroupInfos(Map<Integer, NamedGroupInfo> namedGroupInfos,
         int[] namedGroups)
     {
-        if (TlsUtils.isNullOrEmpty(namedGroups))
+        if (namedGroups == null)
+        {
+            return null;
+        }
+        if (namedGroups.length < 1)
         {
             return Collections.emptyList();
         }

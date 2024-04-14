@@ -1,6 +1,8 @@
 package org.bouncycastle.cert.test;
 
 import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -10,9 +12,11 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bc.ExternalValue;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -22,6 +26,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.jcajce.ExternalPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.BigIntegers;
@@ -40,6 +45,7 @@ public class ExternalKeyTest
     {
         checkPublicKeyInfo();
         checkCertificate();
+        checkCertificateDilithium();
     }
 
     private void checkPublicKeyInfo()
@@ -87,6 +93,45 @@ public class ExternalKeyTest
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
     }
 
+    private void checkCertificateDilithium()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium5");
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        ExternalPublicKey externalKey = new ExternalPublicKey(kp.getPublic(),
+            new GeneralName(GeneralName.uniformResourceIdentifier, "https://localhost"),
+            MessageDigest.getInstance("SHA256"));
+
+        X500Name name = new X500Name("C=XX, O=Royal Institute of Public Key Infrastructure, OU=Post-Heffalump Research Department, CN=External Key Test");
+        long time = System.currentTimeMillis();
+        JcaX509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
+            name, BigInteger.valueOf(System.currentTimeMillis()), new Date(time - 5000), new Date(time + 365L * 24L * 60 * 60 * 5000), name, externalKey);
+
+        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("Dilithium5").build(kp.getPrivate()));
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
+//        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(cert.getEncoded())));
+//
+//        StringWriter sWrt = new StringWriter();
+//        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
+//
+//        pWrt.writeObject(cert);
+//
+//        pWrt.writeObject(kp.getPublic());
+//
+//        pWrt.close();
+//
+//        SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(externalKey.getEncoded());
+//
+//        System.err.println(externalKey.getEncoded().length + " " + kp.getPublic().getEncoded().length);
+//        System.err.println(ASN1Dump.dumpAsString(info, true));
+//
+//        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(info.getPublicKeyData().getOctets())));
+//        System.err.println(sWrt.toString());
+    }
+
     public static void main(
         String[] args)
         throws Exception
@@ -96,21 +141,21 @@ public class ExternalKeyTest
         runTest(new ExternalKeyTest());
 
         Security.addProvider(new BouncyCastlePQCProvider());
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("CMCE");
-
-        KeyPair kp = kpGen.generateKeyPair();
-
-        ExternalPublicKey externalKey = new ExternalPublicKey(kp.getPublic(),
-            new GeneralName(GeneralName.uniformResourceIdentifier, "https://localhost"),
-            MessageDigest.getInstance("SHA256"));
-
-        X500Name name = new X500Name("CN=Test");
-        long time = System.currentTimeMillis();
-        JcaX509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
-            name, BigIntegers.ONE, new Date(time - 5000), new Date(time + 50000), name, externalKey);
-
-        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("SHA256withECDSA").build(kp.getPrivate()));
-
-        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
+//        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("CMCE");
+//
+//        KeyPair kp = kpGen.generateKeyPair();
+//
+//        ExternalPublicKey externalKey = new ExternalPublicKey(kp.getPublic(),
+//            new GeneralName(GeneralName.uniformResourceIdentifier, "https://localhost"),
+//            MessageDigest.getInstance("SHA256"));
+//
+//        X500Name name = new X500Name("CN=Test");
+//        long time = System.currentTimeMillis();
+//        JcaX509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
+//            name, BigIntegers.ONE, new Date(time - 5000), new Date(time + 50000), name, externalKey);
+//
+//        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("SHA256withECDSA").build(kp.getPrivate()));
+//
+//        X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
     }
 }

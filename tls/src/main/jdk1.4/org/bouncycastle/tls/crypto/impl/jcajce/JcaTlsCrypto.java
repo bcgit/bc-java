@@ -47,6 +47,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHMAC;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSRP6Client;
 import org.bouncycastle.tls.crypto.TlsSRP6Server;
@@ -558,6 +560,11 @@ public class JcaTlsCrypto
         return true;
     }
 
+    public boolean hasKemAgreement()
+    {
+        return true;
+    }
+    
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
         final Integer key = Integers.valueOf(encryptionAlgorithm);
@@ -822,6 +829,11 @@ public class JcaTlsCrypto
         }
     }
 
+    public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
+    {
+        return new JceTlsMLKemDomain(this, kemConfig);
+    }
+    
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
     {
         return adoptLocalSecret(new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)]);

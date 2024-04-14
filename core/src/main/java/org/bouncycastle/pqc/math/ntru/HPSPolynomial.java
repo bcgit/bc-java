@@ -112,36 +112,4 @@ public class HPSPolynomial
         System.arraycopy(a.coeffs, 0, this.coeffs, 0, n);
         this.z3ToZq();
     }
-
-    @Override
-    public void r2Inv(Polynomial a)
-    {
-        HPSPolynomial f = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial g = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial v = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial w = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        this.r2Inv(a, f, g, v, w);
-    }
-
-    @Override
-    public void rqInv(Polynomial a)
-    {
-        HPSPolynomial ai2 = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial b = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial c = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial s = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        this.rqInv(a, ai2, b, c, s);
-    }
-
-    @Override
-    public void s3Inv(Polynomial a)
-    {
-        HPSPolynomial f = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial g = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial v = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        HPSPolynomial w = new HPSPolynomial((NTRUHPSParameterSet)this.params);
-        this.s3Inv(a, f, g, v, w);
-    }
-
-
 }

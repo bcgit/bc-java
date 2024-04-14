@@ -22,12 +22,15 @@ public class IETFUtils
 {
     private static String unescape(String elt)
     {
-        if (elt.length() == 0 || (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0))
+        if (elt.length() == 0)
+        {
+            return elt;
+        }
+        if (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0)
         {
             return elt.trim();
         }
 
-        char[] elts = elt.toCharArray();
         boolean escaped = false;
         boolean quoted = false;
         StringBuffer buf = new StringBuffer(elt.length());
@@ -35,9 +38,9 @@ public class IETFUtils
 
         // if it's an escaped hash string and not an actual encoding in string form
         // we need to leave it escaped.
-        if (elts[0] == '\\')
+        if (elt.charAt(0) == '\\')
         {
-            if (elts[1] == '#')
+            if (elt.charAt(1) == '#')
             {
                 start = 2;
                 buf.append("\\#");
@@ -48,9 +51,9 @@ public class IETFUtils
         int     lastEscaped = 0;
         char    hex1 = 0;
 
-        for (int i = start; i != elts.length; i++)
+        for (int i = start; i != elt.length(); i++)
         {
-            char c = elts[i];
+            char c = elt.charAt(i);
 
             if (c != ' ')
             {
@@ -66,8 +69,8 @@ public class IETFUtils
                 else
                 {
                     buf.append(c);
+                    escaped = false;
                 }
-                escaped = false;
             }
             else if (c == '\\' && !(escaped || quoted))
             {
@@ -128,99 +131,93 @@ public class IETFUtils
 
     public static RDN[] rDNsFromString(String name, X500NameStyle x500Style)
     {
-        X500NameTokenizer nTok = new X500NameTokenizer(name);
+        X500NameTokenizer tokenizer = new X500NameTokenizer(name);
         X500NameBuilder builder = new X500NameBuilder(x500Style);
 
-        while (nTok.hasMoreTokens())
+        addRDNs(x500Style, builder, tokenizer);
+
+        // TODO There's an unnecessary clone of the RDNs array happening here
+        return builder.build().getRDNs();
+    }
+
+    private static void addRDNs(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    {
+        String token;
+        while ((token = tokenizer.nextToken()) != null)
         {
-            String  token = nTok.nextToken();
-
-            if (token.indexOf('+') > 0)
+            if (token.indexOf('+') >= 0)
             {
-                X500NameTokenizer   pTok = new X500NameTokenizer(token, '+');
-                X500NameTokenizer   vTok = new X500NameTokenizer(pTok.nextToken(), '=');
-
-                String              attr = vTok.nextToken();
-
-                if (!vTok.hasMoreTokens())
-                {
-                    throw new IllegalArgumentException("badly formatted directory string");
-                }
-
-                String               value = vTok.nextToken();
-
-                if (vTok.hasMoreTokens())
-                {
-                    throw new IllegalArgumentException("badly formatted directory string");
-                }
-
-                ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
-
-                if (pTok.hasMoreTokens())
-                {
-                    Vector oids = new Vector();
-                    Vector values = new Vector();
-
-                    oids.addElement(oid);
-                    values.addElement(unescape(value));
-
-                    while (pTok.hasMoreTokens())
-                    {
-                        vTok = new X500NameTokenizer(pTok.nextToken(), '=');
-
-                        attr = vTok.nextToken();
-
-                        if (!vTok.hasMoreTokens())
-                        {
-                            throw new IllegalArgumentException("badly formatted directory string");
-                        }
-
-                        value = vTok.nextToken();
-
-                        if (vTok.hasMoreTokens())
-                        {
-                            throw new IllegalArgumentException("badly formatted directory string");
-                        }
-
-                        oid = x500Style.attrNameToOID(attr.trim());
-
-
-                        oids.addElement(oid);
-                        values.addElement(unescape(value));
-                    }
-
-                    builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
-                }
-                else
-                {
-                    builder.addRDN(oid, unescape(value));
-                }
+                addMultiValuedRDN(style, builder, new X500NameTokenizer(token, '+'));
             }
             else
             {
-                X500NameTokenizer   vTok = new X500NameTokenizer(token, '=');
-
-                String              attr = vTok.nextToken();
-
-                if (!vTok.hasMoreTokens())
-                {
-                    throw new IllegalArgumentException("badly formatted directory string");
-                }
-
-                String               value = vTok.nextToken();
-
-                if (vTok.hasMoreTokens())
-                {
-                    throw new IllegalArgumentException("badly formatted directory string");
-                }
-
-                ASN1ObjectIdentifier oid = x500Style.attrNameToOID(attr.trim());
-
-                builder.addRDN(oid, unescape(value));
+                addRDN(style, builder, token);
             }
         }
+    }
 
-        return builder.build().getRDNs();
+    private static void addMultiValuedRDN(X500NameStyle style, X500NameBuilder builder, X500NameTokenizer tokenizer)
+    {
+        String token = tokenizer.nextToken();
+        if (token == null)
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
+
+        if (!tokenizer.hasMoreTokens())
+        {
+            addRDN(style, builder, token);
+            return;
+        }
+
+        Vector oids = new Vector();
+        Vector values = new Vector();
+
+        do
+        {
+            collectAttributeTypeAndValue(style, oids, values, token);
+            token = tokenizer.nextToken();
+        }
+        while (token != null);
+
+        builder.addMultiValuedRDN(toOIDArray(oids), toValueArray(values));
+    }
+
+    private static void addRDN(X500NameStyle style, X500NameBuilder builder, String token)
+    {
+        X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
+
+        String typeToken = nextToken(tokenizer, true);
+        String valueToken = nextToken(tokenizer, false);
+
+        ASN1ObjectIdentifier oid = style.attrNameToOID(typeToken.trim());
+        String value = unescape(valueToken);
+
+        builder.addRDN(oid, value);
+    }
+
+    private static void collectAttributeTypeAndValue(X500NameStyle style, Vector oids, Vector values, String token)
+    {
+        X500NameTokenizer tokenizer = new X500NameTokenizer(token, '=');
+
+        String typeToken = nextToken(tokenizer, true);
+        String valueToken = nextToken(tokenizer, false);
+
+        ASN1ObjectIdentifier oid = style.attrNameToOID(typeToken.trim());
+        String value = unescape(valueToken);
+
+        oids.addElement(oid);
+        values.addElement(value);
+    }
+
+    private static String nextToken(X500NameTokenizer tokenizer, boolean expectMoreTokens)
+    {
+        String token = tokenizer.nextToken();
+        if (token == null || tokenizer.hasMoreTokens() != expectMoreTokens)
+        {
+            throw new IllegalArgumentException("badly formatted directory string");
+        }
+        return token;
     }
 
     private static String[] toValueArray(Vector values)
@@ -275,26 +272,26 @@ public class IETFUtils
         return aliases;
     }
 
-    public static ASN1ObjectIdentifier decodeAttrName(
-        String      name,
-        Hashtable   lookUp)
+    public static ASN1ObjectIdentifier decodeAttrName(String name, Hashtable lookUp)
     {
-        if (Strings.toUpperCase(name).startsWith("OID."))
+        if (name.regionMatches(true, 0, "OID.", 0, 4))
         {
             return new ASN1ObjectIdentifier(name.substring(4));
         }
-        else if (name.charAt(0) >= '0' && name.charAt(0) <= '9')
+
+        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.tryFromID(name);
+        if (oid != null)
         {
-            return new ASN1ObjectIdentifier(name);
+            return oid;
         }
 
-        ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)lookUp.get(Strings.toLowerCase(name));
-        if (oid == null)
+        oid = (ASN1ObjectIdentifier)lookUp.get(Strings.toLowerCase(name));
+        if (oid != null)
         {
-            throw new IllegalArgumentException("Unknown object id - " + name + " - passed to distinguished name");
+            return oid;
         }
 
-        return oid;
+        throw new IllegalArgumentException("Unknown object id - " + name + " - passed to distinguished name");
     }
 
     public static ASN1Encodable valueFromHexString(

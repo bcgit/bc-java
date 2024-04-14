@@ -28,9 +28,6 @@ public abstract class DefaultTlsClient
         CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,
         CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,
         CipherSuite.TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
-        CipherSuite.TLS_RSA_WITH_AES_128_GCM_SHA256,
-        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA256,
-        CipherSuite.TLS_RSA_WITH_AES_128_CBC_SHA,
     };
 
     public DefaultTlsClient(TlsCrypto crypto)

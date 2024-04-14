@@ -6,57 +6,111 @@ abstract class ScalarUtil
 {
     private static final long M = 0xFFFFFFFFL;
 
-    static void addShifted_NP(int last, int s, int[] Nu, int[] Nv, int[] _p)
+    static void addShifted_NP(int last, int s, int[] Nu, int[] Nv, int[] p, int[] t)
     {
-        int sWords = s >>> 5, sBits = s & 31;
-
-        long cc__p = 0L;
+        long cc_p = 0L;
         long cc_Nu = 0L;
 
-        if (sBits == 0)
+        if (s == 0)
         {
-            for (int i = sWords; i <= last; ++i)
+            for (int i = 0; i <= last; ++i)
             {
+                int p_i = p[i];
+
                 cc_Nu += Nu[i] & M;
-                cc_Nu += _p[i - sWords] & M;
+                cc_Nu += p_i & M;
 
-                cc__p += _p[i] & M;
-                cc__p += Nv[i - sWords] & M;
-                _p[i]  = (int)cc__p; cc__p >>>= 32;
+                cc_p += p_i & M;
+                cc_p += Nv[i] & M;
+                p_i   = (int)cc_p; cc_p >>>= 32;
+                p[i]  = p_i;
 
-                cc_Nu += _p[i - sWords] & M;
+                cc_Nu += p_i & M;
                 Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
             }
         }
-        else
+        else if (s < 32)
         {
             int prev_p = 0;
             int prev_q = 0;
             int prev_v = 0;
 
-            for (int i = sWords; i <= last; ++i)
+            for (int i = 0; i <= last; ++i)
             {
-                int next_p = _p[i - sWords];
-                int p_s = (next_p << sBits) | (prev_p >>> -sBits);
-                prev_p = next_p;
+                int p_i = p[i];
+                int p_s = (p_i << s) | (prev_p >>> -s);
+                prev_p = p_i;
 
                 cc_Nu += Nu[i] & M;
                 cc_Nu += p_s & M;
 
-                int next_v = Nv[i - sWords];
-                int v_s = (next_v << sBits) | (prev_v >>> -sBits);
+                int next_v = Nv[i];
+                int v_s = (next_v << s) | (prev_v >>> -s);
                 prev_v = next_v;
 
-                cc__p += _p[i] & M;
-                cc__p += v_s & M;
-                _p[i]  = (int)cc__p; cc__p >>>= 32;
+                cc_p += p_i & M;
+                cc_p += v_s & M;
+                p_i   = (int)cc_p; cc_p >>>= 32;
+                p[i]  = p_i;
 
-                int next_q = _p[i - sWords];
-                int q_s = (next_q << sBits) | (prev_q >>> -sBits);
-                prev_q = next_q;
+                int q_s = (p_i << s) | (prev_q >>> -s);
+                prev_q = p_i;
 
                 cc_Nu += q_s & M;
                 Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
+            }
+        }
+        else
+        {
+            // Copy the low limbs of the original p
+            System.arraycopy(p, 0, t, 0, last);
+
+            int sWords = s >>> 5; int sBits = s & 31;
+            if (sBits == 0)
+            {
+                for (int i = sWords; i <= last; ++i)
+                {
+                    cc_Nu += Nu[i] & M;
+                    cc_Nu += t[i - sWords] & M;
+
+                    cc_p += p[i] & M;
+                    cc_p += Nv[i - sWords] & M;
+                    p[i]  = (int)cc_p; cc_p >>>= 32;
+
+                    cc_Nu += p[i - sWords] & M;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
+                }
+            }
+            else
+            {
+                int prev_t = 0;
+                int prev_q = 0;
+                int prev_v = 0;
+
+                for (int i = sWords; i <= last; ++i)
+                {
+                    int next_t = t[i - sWords];
+                    int t_s = (next_t << sBits) | (prev_t >>> -sBits);
+                    prev_t = next_t;
+
+                    cc_Nu += Nu[i] & M;
+                    cc_Nu += t_s & M;
+
+                    int next_v = Nv[i - sWords];
+                    int v_s = (next_v << sBits) | (prev_v >>> -sBits);
+                    prev_v = next_v;
+
+                    cc_p += p[i] & M;
+                    cc_p += v_s & M;
+                    p[i]  = (int)cc_p; cc_p >>>= 32;
+
+                    int next_q = p[i - sWords];
+                    int q_s = (next_q << sBits) | (prev_q >>> -sBits);
+                    prev_q = next_q;
+
+                    cc_Nu += q_s & M;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>>= 32;
+                }
             }
         }
     }
@@ -141,57 +195,111 @@ abstract class ScalarUtil
         return false;
     }
 
-    static void subShifted_NP(int last, int s, int[] Nu, int[] Nv, int[] _p)
+    static void subShifted_NP(int last, int s, int[] Nu, int[] Nv, int[] p, int[] t)
     {
-        int sWords = s >>> 5, sBits = s & 31;
-
-        long cc__p = 0L;
+        long cc_p = 0L;
         long cc_Nu = 0L;
 
-        if (sBits == 0)
+        if (s == 0)
         {
-            for (int i = sWords; i <= last; ++i)
+            for (int i = 0; i <= last; ++i)
             {
+                int p_i = p[i];
+
                 cc_Nu += Nu[i] & M;
-                cc_Nu -= _p[i - sWords] & M;
+                cc_Nu -= p_i & M;
 
-                cc__p += _p[i] & M;
-                cc__p -= Nv[i - sWords] & M;
-                _p[i]  = (int)cc__p; cc__p >>= 32;
+                cc_p += p_i & M;
+                cc_p -= Nv[i] & M;
+                p_i   = (int)cc_p; cc_p >>= 32;
+                p[i]  = p_i;
 
-                cc_Nu -= _p[i - sWords] & M;
+                cc_Nu -= p_i & M;
                 Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
             }
         }
-        else
+        else if (s < 32)
         {
             int prev_p = 0;
             int prev_q = 0;
             int prev_v = 0;
 
-            for (int i = sWords; i <= last; ++i)
+            for (int i = 0; i <= last; ++i)
             {
-                int next_p = _p[i - sWords];
-                int p_s = (next_p << sBits) | (prev_p >>> -sBits);
-                prev_p = next_p;
+                int p_i = p[i];
+                int p_s = (p_i << s) | (prev_p >>> -s);
+                prev_p = p_i;
 
                 cc_Nu += Nu[i] & M;
                 cc_Nu -= p_s & M;
 
-                int next_v = Nv[i - sWords];
-                int v_s = (next_v << sBits) | (prev_v >>> -sBits);
+                int next_v = Nv[i];
+                int v_s = (next_v << s) | (prev_v >>> -s);
                 prev_v = next_v;
 
-                cc__p += _p[i] & M;
-                cc__p -= v_s & M;
-                _p[i]  = (int)cc__p; cc__p >>= 32;
+                cc_p += p_i & M;
+                cc_p -= v_s & M;
+                p_i   = (int)cc_p; cc_p >>= 32;
+                p[i]  = p_i;
 
-                int next_q = _p[i - sWords];
-                int q_s = (next_q << sBits) | (prev_q >>> -sBits);
-                prev_q = next_q;
+                int q_s = (p_i << s) | (prev_q >>> -s);
+                prev_q = p_i;
 
                 cc_Nu -= q_s & M;
                 Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+            }
+        }
+        else
+        {
+            // Copy the low limbs of the original p
+            System.arraycopy(p, 0, t, 0, last);
+
+            int sWords = s >>> 5; int sBits = s & 31;
+            if (sBits == 0)
+            {
+                for (int i = sWords; i <= last; ++i)
+                {
+                    cc_Nu += Nu[i] & M;
+                    cc_Nu -= t[i - sWords] & M;
+
+                    cc_p += p[i] & M;
+                    cc_p -= Nv[i - sWords] & M;
+                    p[i]  = (int)cc_p; cc_p >>= 32;
+
+                    cc_Nu -= p[i - sWords] & M;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                }
+            }
+            else
+            {
+                int prev_t = 0;
+                int prev_q = 0;
+                int prev_v = 0;
+
+                for (int i = sWords; i <= last; ++i)
+                {
+                    int next_t = t[i - sWords];
+                    int t_s = (next_t << sBits) | (prev_t >>> -sBits);
+                    prev_t = next_t;
+
+                    cc_Nu += Nu[i] & M;
+                    cc_Nu -= t_s & M;
+
+                    int next_v = Nv[i - sWords];
+                    int v_s = (next_v << sBits) | (prev_v >>> -sBits);
+                    prev_v = next_v;
+
+                    cc_p += p[i] & M;
+                    cc_p -= v_s & M;
+                    p[i]  = (int)cc_p; cc_p >>= 32;
+
+                    int next_q = p[i - sWords];
+                    int q_s = (next_q << sBits) | (prev_q >>> -sBits);
+                    prev_q = next_q;
+
+                    cc_Nu -= q_s & M;
+                    Nu[i]  = (int)cc_Nu; cc_Nu >>= 32;
+                }
             }
         }
     }

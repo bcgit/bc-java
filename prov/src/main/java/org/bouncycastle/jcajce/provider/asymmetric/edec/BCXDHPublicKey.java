@@ -7,11 +7,11 @@ import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;

@@ -5,10 +5,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
+import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -101,36 +101,6 @@ public class ECGOST3410NamedCurves
      * GostR3410-2001-CryptoPro-C
      */
     static X9ECParametersHolder gostR3410_2001_CryptoPro_C = new X9ECParametersHolder()
-    {
-        protected ECCurve createCurve()
-        {
-            BigInteger mod_p = fromHex("9B9F605F5A858107AB1EC85E6B41C8AACF846E86789051D37998F7B9022D759B");
-            BigInteger mod_q = fromHex("9B9F605F5A858107AB1EC85E6B41C8AA582CA3511EDDFB74F02F3A6598980BB9");
-
-            return configureCurve(new ECCurve.Fp(
-                mod_p,
-                fromHex("9B9F605F5A858107AB1EC85E6B41C8AACF846E86789051D37998F7B9022D7598"),
-                fromHex("805A"),
-                mod_q, ECConstants.ONE, true));
-        }
-
-        protected X9ECParameters createParameters()
-        {
-            byte[] S = null;
-            ECCurve curve = getCurve();
-
-            X9ECPoint G = configureBasepoint(curve,
-                ECConstants.ZERO,
-                fromHex("41ECE55743711A8C3CBF3783CD08C0EE4D4DC440D4641A8F366E550DFDB3BB67"));
-
-            return new X9ECParameters(curve, G, curve.getOrder(), curve.getCofactor(), S);
-        }
-    };
-
-    /*
-     * GostR3410-2001-CryptoPro-XchB
-     */
-    static X9ECParametersHolder gostR3410_2001_CryptoPro_XchB = new X9ECParametersHolder()
     {
         protected ECCurve createCurve()
         {
@@ -295,8 +265,11 @@ public class ECGOST3410NamedCurves
         defineCurve("GostR3410-2001-CryptoPro-B", CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_B, gostR3410_2001_CryptoPro_B);
         defineCurve("GostR3410-2001-CryptoPro-C", CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_C, gostR3410_2001_CryptoPro_C);
         defineCurve("GostR3410-2001-CryptoPro-XchA", CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchA, gostR3410_2001_CryptoPro_A);
-        defineCurve("GostR3410-2001-CryptoPro-XchB", CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB, gostR3410_2001_CryptoPro_XchB);
+        defineCurve("GostR3410-2001-CryptoPro-XchB", CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_XchB, gostR3410_2001_CryptoPro_C);
         defineCurve("Tc26-Gost-3410-12-256-paramSetA", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetA, id_tc26_gost_3410_12_256_paramSetA);
+        defineCurve("Tc26-Gost-3410-12-256-paramSetB", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetB, gostR3410_2001_CryptoPro_A);
+        defineCurve("Tc26-Gost-3410-12-256-paramSetC", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetC, gostR3410_2001_CryptoPro_B);
+        defineCurve("Tc26-Gost-3410-12-256-paramSetD", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256_paramSetD, gostR3410_2001_CryptoPro_C);
         defineCurve("Tc26-Gost-3410-12-512-paramSetA", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetA, id_tc26_gost_3410_12_512_paramSetA);
         defineCurve("Tc26-Gost-3410-12-512-paramSetB", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetB, id_tc26_gost_3410_12_512_paramSetB);
         defineCurve("Tc26-Gost-3410-12-512-paramSetC", RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512_paramSetC, id_tc26_gost_3410_12_512_paramSetC);

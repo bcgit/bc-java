@@ -13,6 +13,8 @@ import org.bouncycastle.i18n.LocalizedMessage;
 import org.bouncycastle.i18n.MissingEntryException;
 import org.bouncycastle.i18n.filter.HTMLFilter;
 import org.bouncycastle.i18n.filter.TrustedInput;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class LocalizedMessageTest extends TestCase
 {
@@ -29,6 +31,7 @@ public class LocalizedMessageTest extends TestCase
     private static final String missingTestId = "missing";
     private static final String filterTestId = "filter";
     private static final String utf8TestId = "utf8";
+    private static final String NNBSP = Strings.fromUTF8ByteArray(Hex.decode("e280af"));
 
     /*
      * Test method for 'org.bouncycastle.i18n.LocalizedMessage.getEntry(String,
@@ -60,7 +63,7 @@ public class LocalizedMessageTest extends TestCase
         msg = new LocalizedMessage(TEST_RESOURCE, timeTestId, args);
         assertEquals("It's 1:12:00 PM GMT at Aug 17, 2006.", msg.getEntry(
                 "text", Locale.ENGLISH, TimeZone.getTimeZone("GMT"))
-            .replace("Greenwich Mean Time", "GMT"));
+            .replace("Greenwich Mean Time", "GMT").replace(NNBSP, " "));
         // NOTE: Older JDKs appear to use '.' as the time separator for German locale
         assertEquals("Es ist 13:12 Uhr GMT am 17.08.2006.", msg.getEntry(
                 "text", Locale.GERMAN, TimeZone.getTimeZone("GMT"))
@@ -73,15 +76,15 @@ public class LocalizedMessageTest extends TestCase
         msg.setFilter(new HTMLFilter());
         assertEquals("It's 1:12:00 PM GMT at Aug 17, 2006.", msg.getEntry(
                 "text", Locale.ENGLISH, TimeZone.getTimeZone("GMT"))
-                   .replace("Greenwich Mean Time", "GMT"));
+                   .replace("Greenwich Mean Time", "GMT").replace(NNBSP, " "));
         // NOTE: Older JDKs appear to use '.' as the time separator for German locale
         assertEquals("Es ist 13:12 Uhr GMT am 17.08.2006.", msg.getEntry(
                 "text", Locale.GERMAN, TimeZone.getTimeZone("GMT"))
             .replace("13.12", "13:12")
-        .replace(":00 Mittlere Greenwich-Zeit", " Uhr GMT"));
+        .replace(":00 Mittlere Greenwich-Zeit", " Uhr GMT").replace(NNBSP, " "));
         
         // test number
-        args = new Object[] { new TrustedInput(new Float(0.2))  };
+        args = new Object[] { new TrustedInput(new Float(0.2f))  };
         msg = new LocalizedMessage(TEST_RESOURCE, "number", args);
         assertEquals("20%", msg.getEntry("text", Locale.ENGLISH, TimeZone.getDefault()));
 
@@ -186,5 +189,4 @@ public class LocalizedMessageTest extends TestCase
             assertEquals("Can't find entry noname in resource file org.bouncycastle.i18n.test.I18nTestMessages.", e.getMessage());
         }
     }
-
 }

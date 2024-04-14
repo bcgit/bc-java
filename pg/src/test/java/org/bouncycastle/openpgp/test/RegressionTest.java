@@ -54,7 +54,15 @@ public class RegressionTest
         new CRC24Test(),
         new WildcardKeyIDTest(),
         new ArmorCRCTest(),
-        new UnknownPacketTest()
+        new UnknownPacketTest(),
+        new ExSExprTest(),
+        new BcPGPEncryptedDataTest(),
+        new PGPGeneralTest(),
+        new BcpgGeneralTest(),
+        new BcImplProviderTest(),
+        new OperatorJcajceTest(),
+        new OpenPGPTest(),
+        new OperatorBcTest()
     };
 
     public static void main(String[] args)
