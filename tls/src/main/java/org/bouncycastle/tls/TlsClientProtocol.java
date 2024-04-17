@@ -1236,7 +1236,8 @@ public class TlsClientProtocol
                  */
                 if (null == TlsUtils.getExtensionData(this.clientExtensions, extType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in ServerHello: " + ExtensionType.getText(extType.intValue()));
                 }
 
                 /*
