@@ -72,7 +72,7 @@ jar {
     manifest.attributes('Bundle-Name': 'bcpg')
     manifest.attributes('Bundle-SymbolicName': 'bcpg')
     manifest.attributes('Export-Package': 'org.bouncycastle.{apache|bcpg|gpg|openpgp}.*')
-    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{apache|bcpg|gpg|openpgp|}.*,org.bouncycastle.*;version=\"${version}\"")
+    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{apache|bcpg|gpg|openpgp|}.*,org.bouncycastle.*;version=\"[${version},${maxVersion})\"")
 }
 
 
