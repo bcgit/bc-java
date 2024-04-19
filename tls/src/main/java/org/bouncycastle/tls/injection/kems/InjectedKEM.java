@@ -10,39 +10,55 @@ import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
  *
  * @author Sergejs Kozlovics
  */
-public class InjectedKEM {
+public class InjectedKEM
+{
 
-    public interface TlsAgreementFactory {
-        TlsAgreement create(JcaTlsCrypto crypto, boolean isServer);
+    public interface TlsAgreementFactory
+    {
+        TlsAgreement create(
+                JcaTlsCrypto crypto,
+                boolean isServer);
     }
 
     private final int codePoint;
     private final String standardName;
     private final TlsAgreementFactory tlsAgreementFactory;
 
-    public InjectedKEM(int kemCodePoint,
-                       String standardName, KemFactory kemFactory) {
+    public InjectedKEM(
+            int kemCodePoint,
+            String standardName,
+            KemFactory kemFactory)
+    {
         this(kemCodePoint,
                 standardName,
                 (crypto, isServer) -> new TlsAgreementForKEM(crypto, isServer, kemFactory.create()));
 
     }
 
-    public InjectedKEM(int codePoint, String standardName, TlsAgreementFactory tlsAgreementFactory) {
+    public InjectedKEM(
+            int codePoint,
+            String standardName,
+            TlsAgreementFactory tlsAgreementFactory)
+    {
         this.codePoint = codePoint;
         this.standardName = standardName;
         this.tlsAgreementFactory = tlsAgreementFactory;
     }
 
-    public int codePoint() {
+    public int codePoint()
+    {
         return this.codePoint;
     }
 
-    public String standardName() {
+    public String standardName()
+    {
         return this.standardName;
     }
 
-    public TlsAgreement tlsAgreement(JcaTlsCrypto crypto, boolean isServer) {
+    public TlsAgreement tlsAgreement(
+            JcaTlsCrypto crypto,
+            boolean isServer)
+    {
         return this.tlsAgreementFactory.create(crypto, isServer);
     }
 }

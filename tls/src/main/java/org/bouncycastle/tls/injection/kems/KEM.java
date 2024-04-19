@@ -6,6 +6,8 @@ import org.openquantumsafe.Pair;
  * A KEM (key encapsulation mechanism) is a set of functions that can be used to obtain
  * a symmetric encryption key from asymmetric keys.
  * The term KEM is a generalisation of Diffie-Hellman key exchange.
+ * The KEM abstraction can also be used to obtain quantumly exchanged keys via QKD
+ * (a KEM then needs to exchange only key IDs)
  * <p>
  * The three KEM functions actually define a half-KEM: keyGen() and decapsulate() are called at one side (e.g., the client),
  * while encapsulate() is called at the other side (e.g., the server).
@@ -16,7 +18,8 @@ import org.openquantumsafe.Pair;
  *
  * @author Sergejs Kozlovics
  */
-public interface KEM {
+public interface KEM
+{
     /**
      * Generates a new key pair (pk, sk).
      *
@@ -39,5 +42,7 @@ public interface KEM {
      * @param ciphertext the ciphertext
      * @return the shared secret K
      */
-    byte[] decapsulate(byte[] secretKey, byte[] ciphertext) throws Exception;
+    byte[] decapsulate(
+            byte[] secretKey,
+            byte[] ciphertext) throws Exception;
 }

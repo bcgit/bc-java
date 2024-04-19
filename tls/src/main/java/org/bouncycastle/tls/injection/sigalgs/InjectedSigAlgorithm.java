@@ -81,10 +81,13 @@ public class InjectedSigAlgorithm
         return this.api.isSupportedParameter(param);
     }
 
-    public boolean isSupportedPublicKey(Key someKey) {
+    public boolean isSupportedPublicKey(Key someKey)
+    {
         return this.api.isSupportedPublicKey(someKey);
     }
-    public boolean isSupportedPrivateKey(Key someKey) {
+
+    public boolean isSupportedPrivateKey(Key someKey)
+    {
         return this.api.isSupportedPrivateKey(someKey);
     }
 

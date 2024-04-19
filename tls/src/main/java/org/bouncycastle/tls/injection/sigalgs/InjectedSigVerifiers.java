@@ -20,35 +20,51 @@ import java.util.Map;
  *
  * @author Sergejs Kozlovics
  */
-public class InjectedSigVerifiers {
+public class InjectedSigVerifiers
+{
 
-    public interface VerifySignatureFunction {
-        boolean verifySignature(byte[] data, byte[] key, DigitallySigned signature);
+    public interface VerifySignatureFunction
+    {
+        boolean verifySignature(
+                byte[] data,
+                byte[] key,
+                DigitallySigned signature);
     }
 
     private final Map<Integer, VerifySignatureFunction> verifiers; // code point -> verifier fn
     private final Map<Integer, PublicKeyToEncodedKey> converters; // code point -> encoder fn
 
-    public InjectedSigVerifiers() {
+    public InjectedSigVerifiers()
+    {
         this.verifiers = new HashMap<>();
         this.converters = new HashMap<>();
     }
 
-    public InjectedSigVerifiers(InjectedSigVerifiers origin) { // clone
+    public InjectedSigVerifiers(InjectedSigVerifiers origin)
+    { // clone
         this.verifiers = new HashMap<>(origin.verifiers);
         this.converters = new HashMap<>(origin.converters);
     }
 
-    public void add(int sigSchemeCodePoint, VerifySignatureFunction fn, PublicKeyToEncodedKey fn2) {
+    public void add(
+            int sigSchemeCodePoint,
+            VerifySignatureFunction fn,
+            PublicKeyToEncodedKey fn2)
+    {
         verifiers.put(sigSchemeCodePoint, fn);
         converters.put(sigSchemeCodePoint, fn2);
     }
 
-    public boolean contain(int sigSchemeCodePoint) {
+    public boolean contain(int sigSchemeCodePoint)
+    {
         return verifiers.containsKey(sigSchemeCodePoint);
     }
 
-    public TlsVerifier tlsVerifier(JcaTlsCrypto crypto, PublicKey publicKey, int sigSchemeCodePoint) {
+    public TlsVerifier tlsVerifier(
+            JcaTlsCrypto crypto,
+            PublicKey publicKey,
+            int sigSchemeCodePoint)
+    {
         VerifySignatureFunction fn = verifiers.get(sigSchemeCodePoint);
         PublicKeyToEncodedKey fn2 = converters.get(sigSchemeCodePoint);
 
@@ -57,21 +73,31 @@ public class InjectedSigVerifiers {
 
     // implementing TlsVerifier via VerifySignatureFunction
     private class MyTlsVerifier
-            implements TlsVerifier {
+            implements TlsVerifier
+    {
         private final JcaTlsCrypto crypto;
         private final PublicKey publicKey;
         private final int signatureScheme;
         private final VerifySignatureFunction fn;
         private final PublicKeyToEncodedKey fn2;
 
-        public MyTlsVerifier(JcaTlsCrypto crypto, PublicKey publicKey, int signatureSchemeCodePoint, VerifySignatureFunction fn, PublicKeyToEncodedKey fn2) {
-            if (null == crypto) {
+        public MyTlsVerifier(
+                JcaTlsCrypto crypto,
+                PublicKey publicKey,
+                int signatureSchemeCodePoint,
+                VerifySignatureFunction fn,
+                PublicKeyToEncodedKey fn2)
+        {
+            if (null == crypto)
+            {
                 throw new NullPointerException("crypto");
             }
-            if (null == publicKey) {
+            if (null == publicKey)
+            {
                 throw new NullPointerException("publicKey");
             }
-            if (!contain(signatureSchemeCodePoint)) {
+            if (!contain(signatureSchemeCodePoint))
+            {
                 throw new IllegalArgumentException("signatureSchemeCodePoint");
             }
 
@@ -82,20 +108,29 @@ public class InjectedSigVerifiers {
             this.fn2 = fn2;
         }
 
-        public boolean verifyRawSignature(DigitallySigned signature, byte[] hash) throws IOException {
+        public boolean verifyRawSignature(
+                DigitallySigned signature,
+                byte[] hash) throws IOException
+        {
             byte[] encoded = fn2.encodedKey(publicKey);
             boolean b = fn.verifySignature(hash, encoded, signature);
             return b;
         }
 
-        private class MyStreamVerifier implements TlsStreamVerifier {
+        private class MyStreamVerifier
+                implements TlsStreamVerifier
+        {
 
             private final PublicKey publicKey;
             private final DigitallySigned signature;
             private final ByteArrayOutputStream stream;
             private final int signatureScheme;
 
-            public MyStreamVerifier(PublicKey publicKey, DigitallySigned signature, int signatureScheme) {
+            public MyStreamVerifier(
+                    PublicKey publicKey,
+                    DigitallySigned signature,
+                    int signatureScheme)
+            {
                 this.publicKey = publicKey;
                 this.signature = signature;
                 this.stream = new ByteArrayOutputStream();
@@ -103,12 +138,14 @@ public class InjectedSigVerifiers {
             }
 
             @Override
-            public OutputStream getOutputStream() throws IOException {
+            public OutputStream getOutputStream() throws IOException
+            {
                 return this.stream;
             }
 
             @Override
-            public boolean isVerified() throws IOException {
+            public boolean isVerified() throws IOException
+            {
 
                 byte[] data = this.stream.toByteArray();
                 byte[] key = publicKey.getEncoded();
@@ -145,7 +182,8 @@ public class InjectedSigVerifiers {
             }
         }
 
-        public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException {
+        public TlsStreamVerifier getStreamVerifier(DigitallySigned signature) throws IOException
+        {
             return new MyStreamVerifier(this.publicKey, signature, this.signatureScheme);
 
         }

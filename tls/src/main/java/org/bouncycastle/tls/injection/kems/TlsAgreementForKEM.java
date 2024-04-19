@@ -17,7 +17,9 @@ import java.io.IOException;
  *
  * @author Sergejs Kozlovics
  */
-public class TlsAgreementForKEM implements TlsAgreement {
+public class TlsAgreementForKEM
+        implements TlsAgreement
+{
     private JcaTlsCrypto crypto;
     private boolean isServer;
     private KEM kem; // delegate
@@ -28,7 +30,11 @@ public class TlsAgreementForKEM implements TlsAgreement {
     protected byte[] clientSecretKey;
     protected byte[] serverSecret;
 
-    public TlsAgreementForKEM(JcaTlsCrypto crypto, boolean isServer, KEM kem) {
+    public TlsAgreementForKEM(
+            JcaTlsCrypto crypto,
+            boolean isServer,
+            KEM kem)
+    {
         this.crypto = crypto;
         this.isServer = isServer;
         this.kem = kem;
@@ -37,60 +43,83 @@ public class TlsAgreementForKEM implements TlsAgreement {
         this.serverSecret = null;
     }
 
-    public byte[] generateEphemeral() throws IOException {
+    public byte[] generateEphemeral() throws IOException
+    {
 
         Pair<byte[], byte[]> p;
 
-        try {
+        try
+        {
             p = kem.keyGen();
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             throw new RuntimeException(e);
         }
         byte[] pk = p.getLeft();
         byte[] sk = p.getRight();
 
-        if (isServer) {
+        if (isServer)
+        {
             // Half-KEM Step2: client <--- peerEncapsulated ciphertext <--- server
             if (this.peerEncapsulated == null)
+            {
                 throw new IOException("receivePeerValue must be called before generateEphemeral for KEMs");
+            }
 
             Pair<byte[], byte[]> p2;
 
-            try {
+            try
+            {
                 p = kem.encapsulate(this.peerEncapsulated); // peerEncapsulated === client public key
-            } catch (Exception e) {
+            } catch (Exception e)
+            {
                 throw new RuntimeException(e);
             }
             this.serverSecret = p.getLeft(); // server secret
             return p.getRight();
-        } else {
+        }
+        else
+        {
             // Half-KEM Step1: client ---> generated pk ---> server
             this.clientSecretKey = sk;
             return pk;
         }
     }
 
-    public void receivePeerValue(byte[] peerEncapsulated) throws IOException {
+    public void receivePeerValue(byte[] peerEncapsulated) throws IOException
+    {
         this.peerEncapsulated = peerEncapsulated;
     }
 
-    public TlsSecret calculateSecret() throws IOException {
+    public TlsSecret calculateSecret() throws IOException
+    {
 
-        if (isServer) {
+        if (isServer)
+        {
             if (this.serverSecret == null)
+            {
                 throw new IOException("Server-side secret has not been generated: generateEphemeral must be called before calculateSecret");
+            }
             return new JceTlsSecret(this.crypto, this.serverSecret);
-        } else {
+        }
+        else
+        {
             if (this.clientSecretKey == null)
+            {
                 throw new IOException("Client-side key pair has not been generated: generateEphemeral must be called before calculateSecret");
+            }
             if (this.peerEncapsulated == null)
+            {
                 throw new IOException("receivePeerValue must be called before calculateSecret for KEMs");
+            }
 
-            try {
+            try
+            {
                 // Half-KEM Step3: decapsulate at the client
                 byte[] receivedSecret = kem.decapsulate(this.clientSecretKey, this.peerEncapsulated);
                 return new JceTlsSecret(this.crypto, receivedSecret);
-            } catch (Exception e) {
+            } catch (Exception e)
+            {
                 throw new RuntimeException(e);
             }
         }

@@ -1,6 +1,11 @@
 package org.bouncycastle.tls.injection;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -8,6 +13,7 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgorithm;
 import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgsProvider;
 
+import java.io.IOException;
 import java.security.Security;
 import java.util.Collection;
 import java.util.Stack;
@@ -188,11 +194,11 @@ public class InjectionPoint
                 p.remove("Alg.Alias.Signature." + this.oid);
                 p.remove("Alg.Alias.Signature.OID." + this.oid);
 
-                p.remove("Alg.Alias.KeyFactory."+this.oid);
-                p.remove("Alg.Alias.KeyFactory.OID."+this.oid);
+                p.remove("Alg.Alias.KeyFactory." + this.oid);
+                p.remove("Alg.Alias.KeyFactory.OID." + this.oid);
 
-                p.remove("Alg.Alias.KeyPairGenerator."+this.oid);
-                p.remove("Alg.Alias.KeyPairGenerator.OID."+this.oid);
+                p.remove("Alg.Alias.KeyPairGenerator." + this.oid);
+                p.remove("Alg.Alias.KeyPairGenerator.OID." + this.oid);
             }
             // = provider.addSignatureAlgorithm(provider, "SPHINCSPLUS", PREFIX + "SignatureSpi$Direct", BCObjectIdentifiers.sphincsPlus);
             provider.addAlgorithm("Signature." + this.name, "org.bouncycastle.tls.injection.signaturespi.DirectSignatureSpi");
@@ -201,13 +207,13 @@ public class InjectionPoint
 
             // TO FIX: (NEEDED TO READ THE KEY FILE) OR CREATE SOME UniversalKeyFactorySpi
             //provider.addAlgorithm("KeyFactory."+this.name, "org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi");
-            provider.addAlgorithm("KeyFactory."+this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyFactorySpi");
-            provider.addAlgorithm("Alg.Alias.KeyFactory."+this.oid, this.name);
-            provider.addAlgorithm("Alg.Alias.KeyFactory.OID."+this.oid, this.name);
+            provider.addAlgorithm("KeyFactory." + this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyFactorySpi");
+            provider.addAlgorithm("Alg.Alias.KeyFactory." + this.oid, this.name);
+            provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + this.oid, this.name);
 
-            provider.addAlgorithm("KeyPairGenerator."+this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyPairGeneratorSpi");
-            provider.addAlgorithm("Alg.Alias.KeyPairGenerator."+this.oid, this.name);
-            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID."+this.oid, this.name);
+            provider.addAlgorithm("KeyPairGenerator." + this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyPairGeneratorSpi");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + this.oid, this.name);
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + this.oid, this.name);
 
             /*for (String alias : this.aliases) {
                 provider.addAlgorithm("Alg.Alias.Signature." + alias, this.name);
@@ -227,5 +233,79 @@ public class InjectionPoint
             provider.addKeyInfoConverter(this.oid, converter);
         }
     }
+
+    public Asn1Bridge asn1Bridge()
+    {
+        return new Asn1Bridge()
+        {
+            @Override
+            public boolean isSupportedAlgorithm(ASN1ObjectIdentifier oid)
+            {
+                return sigAlgs().contain(oid);
+            }
+
+            @Override
+            public boolean isSupportedParameter(AsymmetricKeyParameter bcKey)
+            {
+                for (InjectedSigAlgorithm sigAlg : sigAlgs().asSigAlgCollection())
+                {
+                    if (sigAlg.isSupportedParameter(bcKey))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            @Override
+            public AsymmetricKeyParameter createPrivateKeyParameter(PrivateKeyInfo asnPrivateKey) throws IOException
+            {
+                AlgorithmIdentifier algId = asnPrivateKey.getPrivateKeyAlgorithm();
+                ASN1ObjectIdentifier algOID = algId.getAlgorithm();
+                return sigAlgs().byOid(algOID).createPrivateKeyParameter(asnPrivateKey);
+            }
+
+            @Override
+            public PrivateKeyInfo createPrivateKeyInfo(
+                    AsymmetricKeyParameter bcPrivateKey,
+                    ASN1Set attributes) throws IOException
+            {
+                for (InjectedSigAlgorithm sigAlg : sigAlgs().asSigAlgCollection())
+                {
+                    if (sigAlg.isSupportedParameter(bcPrivateKey))
+                    {
+                        return sigAlg.createPrivateKeyInfo(bcPrivateKey, attributes);
+                    }
+                }
+                throw new RuntimeException("Unsupported private key params were given");
+            }
+
+            @Override
+            public AsymmetricKeyParameter createPublicKeyParameter(
+                    SubjectPublicKeyInfo ansPublicKey,
+                    Object defaultParams) throws IOException
+            {
+                AlgorithmIdentifier algId = ansPublicKey.getAlgorithm();
+                ASN1ObjectIdentifier algOID = algId.getAlgorithm();
+                String algKey = algOID.toString();
+                return sigAlgs().byOid(algOID).createPublicKeyParameter(ansPublicKey, defaultParams);
+            }
+
+            @Override
+            public SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter bcPublicKey) throws IOException
+            {
+                for (InjectedSigAlgorithm sigAlg : sigAlgs().asSigAlgCollection())
+                {
+                    if (sigAlg.isSupportedParameter(bcPublicKey))
+                    {
+                        return sigAlg.createSubjectPublicKeyInfo(bcPublicKey);
+                    }
+                }
+                throw new RuntimeException("Unsupported public key params were given");
+            }
+        };
+    }
+
+    ;
 
 }

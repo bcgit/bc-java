@@ -6,65 +6,81 @@ import org.bouncycastle.tls.injection.sigalgs.SigAlgAPI;
 
 import java.util.Collection;
 
-public class InjectableAlgorithms {
+public class InjectableAlgorithms
+{
 
     ///// KEMs
     private final InjectableKEMs kems;
     private final InjectableSigAlgs sigAlgs;
 
 
-    public InjectableAlgorithms() {
+    public InjectableAlgorithms()
+    {
         this(new InjectableKEMs(), new InjectableSigAlgs());
     }
 
-    private InjectableAlgorithms(InjectableKEMs kems, InjectableSigAlgs sigAlgs) {
+    private InjectableAlgorithms(
+            InjectableKEMs kems,
+            InjectableSigAlgs sigAlgs)
+    {
         this.kems = kems;
         this.sigAlgs = sigAlgs;
     }
 
-    private InjectableAlgorithms(InjectableAlgorithms origin) { // clone constructor
+    private InjectableAlgorithms(InjectableAlgorithms origin)
+    { // clone constructor
         this.kems = new InjectableKEMs(origin.kems);
         this.sigAlgs = new InjectableSigAlgs(origin.sigAlgs);
     }
 
 
-    public InjectableAlgorithms withKEM(String standardName, int kemCodePoint,
-                                        KemFactory kemFactory, InjectableKEMs.Ordering ordering) {
+    public InjectableAlgorithms withKEM(
+            String standardName,
+            int kemCodePoint,
+            KemFactory kemFactory,
+            InjectableKEMs.Ordering ordering)
+    {
         return new InjectableAlgorithms(
                 this.kems.withKEM(kemCodePoint, standardName, kemFactory, ordering),
                 new InjectableSigAlgs(this.sigAlgs)
         );
     }
 
-    public InjectableAlgorithms withoutKEM(int kemCodePoint) {
+    public InjectableAlgorithms withoutKEM(int kemCodePoint)
+    {
         return new InjectableAlgorithms(
                 this.kems.withoutKEM(kemCodePoint),
                 this.sigAlgs
         );
     }
 
-    public InjectableAlgorithms withoutDefaultKEMs() {
+    public InjectableAlgorithms withoutDefaultKEMs()
+    {
         return new InjectableAlgorithms(
                 this.kems.withoutDefaultKEMs(),
                 this.sigAlgs
         );
     }
 
-    public InjectableAlgorithms withSigAlg(String name,
-                                           Collection<String> aliases,
-                                           ASN1ObjectIdentifier oid,
-                                           int signatureSchemeCodePoint,
-                                           SigAlgAPI api) {
+    public InjectableAlgorithms withSigAlg(
+            String name,
+            Collection<String> aliases,
+            ASN1ObjectIdentifier oid,
+            int signatureSchemeCodePoint,
+            SigAlgAPI api)
+    {
         InjectableAlgorithms clone = new InjectableAlgorithms(this);
         clone.sigAlgs().add(name, aliases, oid, signatureSchemeCodePoint, api);
         return clone;
     }
 
-    public InjectableKEMs kems() {
+    public InjectableKEMs kems()
+    {
         return this.kems;
     }
 
-    public InjectableSigAlgs sigAlgs() {
+    public InjectableSigAlgs sigAlgs()
+    {
         return this.sigAlgs;
     }
 

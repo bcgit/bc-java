@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 
-public interface PublicKeyToCipherParameters {
+public interface PublicKeyToCipherParameters
+{
     CipherParameters parameters(PublicKey publicKey) throws InvalidKeyException;
 }

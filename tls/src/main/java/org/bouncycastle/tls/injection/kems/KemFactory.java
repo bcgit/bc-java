@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.injection.kems;
 
-public interface KemFactory {
+public interface KemFactory
+{
     KEM create();
 }

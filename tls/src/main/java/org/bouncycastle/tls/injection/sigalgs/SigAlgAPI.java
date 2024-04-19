@@ -15,8 +15,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureSpi;
 
-public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
-                                   Asn1Bridge
+public interface SigAlgAPI
+        extends AsymmetricKeyInfoConverter,
+                Asn1Bridge
 {
 
     ///// BC <-> ASN.1 converters /////
@@ -32,6 +33,7 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
     boolean isSupportedParameter(AsymmetricKeyParameter bcKey);
 
     boolean isSupportedPublicKey(Key key);
+
     boolean isSupportedPrivateKey(Key key);
 
     /**
@@ -52,7 +54,9 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
      * @return ASN.1 representation of the private key
      * @throws IOException
      */
-    PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter bcPrivateKey, ASN1Set attributes) throws IOException;
+    PrivateKeyInfo createPrivateKeyInfo(
+            AsymmetricKeyParameter bcPrivateKey,
+            ASN1Set attributes) throws IOException;
 
 
     /**
@@ -63,7 +67,9 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
      * @return internal BC representation of the public key
      * @throws IOException
      */
-    AsymmetricKeyParameter createPublicKeyParameter(SubjectPublicKeyInfo ansPublicKey, Object defaultParams) throws IOException;
+    AsymmetricKeyParameter createPublicKeyParameter(
+            SubjectPublicKeyInfo ansPublicKey,
+            Object defaultParams) throws IOException;
 
     /**
      * Converts the given public key from the internal BC representation to the ASN.1 notation.
@@ -84,19 +90,27 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
 
     ///// Encodings /////
     byte[] internalEncodingFor(PublicKey key);
+
     byte[] internalEncodingFor(PrivateKey key);
 
     ///// sign & verify /////
-    byte[] sign(JcaTlsCrypto crypto, byte[] message, byte[] privateKey)
+    byte[] sign(
+            JcaTlsCrypto crypto,
+            byte[] message,
+            byte[] privateKey)
             throws IOException, Exception;
 
-    boolean verifySignature(byte[] message, byte[] publicKey, DigitallySigned signature);
+    boolean verifySignature(
+            byte[] message,
+            byte[] publicKey,
+            DigitallySigned signature);
 
     ///// SPI /////
 
     /**
      * Constructs a Java Service Provider Interface (SPI) driver for the current signature algorithm.
      * This driver will be used by the DirectSignatureSpi of the TLS injection mechanism.
+     *
      * @param key a public or a private key
      * @return a SignatureSpi instance (we suggest using our UniversalSignatureSpi class for that)
      */

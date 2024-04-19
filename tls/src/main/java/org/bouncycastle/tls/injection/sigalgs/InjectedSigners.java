@@ -16,46 +16,62 @@ import java.util.Map;
  *
  * @author Sergejs Kozlovics
  */
-public class InjectedSigners {
+public class InjectedSigners
+{
 
     private final Map<String, SignerFunction> injectedSigners;
 
-    public InjectedSigners() {
+    public InjectedSigners()
+    {
         this.injectedSigners = new HashMap<>();
     }
 
-    public InjectedSigners(InjectedSigners origin) { // clone
+    public InjectedSigners(InjectedSigners origin)
+    { // clone
         this.injectedSigners = new HashMap<>(origin.injectedSigners);
     }
 
-    public void add(String algorithmFullName, SignerFunction fn) {
+    public void add(
+            String algorithmFullName,
+            SignerFunction fn)
+    {
         injectedSigners.put(algorithmFullName, fn);
     }
 
-    public boolean contain(String algorithmFullName) {
+    public boolean contain(String algorithmFullName)
+    {
         return injectedSigners.containsKey(algorithmFullName);
     }
 
-    public Iterable<String> getNames() {
+    public Iterable<String> getNames()
+    {
         return injectedSigners.keySet();
     }
 
-    public TlsSigner tlsSigner(JcaTlsCrypto crypto, PrivateKey privateKey, String algorithmFullName) {
+    public TlsSigner tlsSigner(
+            JcaTlsCrypto crypto,
+            PrivateKey privateKey,
+            String algorithmFullName)
+    {
         // privateKey.getAlgorithm() returns some generinc name, e.g., "DSA" or "SPHINCS+"
         // however, we assume that the full algorithm name (with params) has been registered with the signer function;
         // thus, we require algorithmFullName to be passed as an argument
 
         Object fn = injectedSigners.get(algorithmFullName);
         if (fn == null)
+        {
             throw new RuntimeException("Algorithm " + algorithmFullName + " not found among signers.");
+        }
 
         byte[] sk = privateKey.getEncoded();
         PrivateKeyInfo info = PrivateKeyInfo.getInstance(sk);
 
         byte[] sk2;
-        try {
+        try
+        {
             sk2 = info.getPrivateKey().getEncoded();
-        } catch (IOException e) {
+        } catch (IOException e)
+        {
             throw new RuntimeException(e);
         }
         return new MyTlsSigner(crypto, sk2, (SignerFunction) fn);

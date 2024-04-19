@@ -192,6 +192,18 @@ public class JcaTlsCertificate
     {
         validateKeyUsageBit(KU_DIGITAL_SIGNATURE);
 
+        // #tls-injection
+        if (InjectionPoint.sigAlgs().contain(signatureScheme)) {
+
+            try {
+                return InjectionPoint.sigAlgs().tls13VerifierFor(getPublicKey());
+            } catch (InvalidKeyException e) {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            }
+
+
+        }
+
         switch (signatureScheme)
         {
         case SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256:
@@ -258,6 +270,7 @@ public class JcaTlsCertificate
             int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
             String digestName = crypto.getDigestName(cryptoHashAlgorithm);
             String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
+                //+"WITHRSA";//+
                 + "WITHRSAANDMGF1";
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary

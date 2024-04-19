@@ -30,6 +30,7 @@ public class InjectedSigAlgsProvider
 
 
     private static final Map keyInfoConverters = new HashMap();
+
     public InjectedSigAlgsProvider()
     {
         super(PROVIDER_NAME, 1.0, info);
@@ -45,7 +46,9 @@ public class InjectedSigAlgsProvider
     }
 
 
-    public void setParameter(String parameterName, Object parameter)
+    public void setParameter(
+            String parameterName,
+            Object parameter)
     {
         synchronized (CONFIGURATION)
         {
@@ -53,12 +56,16 @@ public class InjectedSigAlgsProvider
         }
     }
 
-    public boolean hasAlgorithm(String type, String name)
+    public boolean hasAlgorithm(
+            String type,
+            String name)
     {
         return containsKey(type + "." + name) || containsKey("Alg.Alias." + type + "." + name);
     }
 
-    public void addAlgorithm(String key, String value)
+    public void addAlgorithm(
+            String key,
+            String value)
     {
         if (containsKey(key))
         {
@@ -68,13 +75,19 @@ public class InjectedSigAlgsProvider
         put(key, value);
     }
 
-    public void addAlgorithm(String key, String value, Map<String, String> attributes)
+    public void addAlgorithm(
+            String key,
+            String value,
+            Map<String, String> attributes)
     {
         addAlgorithm(key, value);
         addAttributes(key, attributes);
     }
 
-    public void addAlgorithm(String type,  ASN1ObjectIdentifier oid, String className)
+    public void addAlgorithm(
+            String type,
+            ASN1ObjectIdentifier oid,
+            String className)
     {
         if (!containsKey(type + "." + className))
         {
@@ -85,14 +98,20 @@ public class InjectedSigAlgsProvider
         addAlgorithm(type + ".OID." + oid, className);
     }
 
-    public void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className, Map<String, String> attributes)
+    public void addAlgorithm(
+            String type,
+            ASN1ObjectIdentifier oid,
+            String className,
+            Map<String, String> attributes)
     {
         addAlgorithm(type, oid, className);
         addAttributes(type + "." + oid, attributes);
         addAttributes(type + ".OID." + oid, attributes);
     }
 
-    public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
+    public void addKeyInfoConverter(
+            ASN1ObjectIdentifier oid,
+            AsymmetricKeyInfoConverter keyInfoConverter)
     {
         synchronized (keyInfoConverters)
         {
@@ -102,14 +121,16 @@ public class InjectedSigAlgsProvider
 
     public AsymmetricKeyInfoConverter getKeyInfoConverter(ASN1ObjectIdentifier oid)
     {
-        return (AsymmetricKeyInfoConverter)keyInfoConverters.get(oid);
+        return (AsymmetricKeyInfoConverter) keyInfoConverters.get(oid);
     }
 
-    public void addAttributes(String key, Map<String, String> attributeMap)
+    public void addAttributes(
+            String key,
+            Map<String, String> attributeMap)
     {
-        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
+        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext(); )
         {
-            String attributeName = (String)it.next();
+            String attributeName = (String) it.next();
             String attributeKey = key + " " + attributeName;
             if (containsKey(attributeKey))
             {
@@ -124,7 +145,7 @@ public class InjectedSigAlgsProvider
     {
         synchronized (keyInfoConverters)
         {
-            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(algorithm);
+            return (AsymmetricKeyInfoConverter) keyInfoConverters.get(algorithm);
         }
     }
 
@@ -154,7 +175,9 @@ public class InjectedSigAlgsProvider
         return converter.generatePrivate(privateKeyInfo);
     }
 
-    static Class loadClass(Class sourceClass, final String className)
+    static Class loadClass(
+            Class sourceClass,
+            final String className)
     {
         try
         {
@@ -165,15 +188,14 @@ public class InjectedSigAlgsProvider
             }
             else
             {
-                return (Class)AccessController.doPrivileged(new PrivilegedAction()
+                return (Class) AccessController.doPrivileged(new PrivilegedAction()
                 {
                     public Object run()
                     {
                         try
                         {
                             return Class.forName(className);
-                        }
-                        catch (Exception e)
+                        } catch (Exception e)
                         {
                             // ignore - maybe log?
                         }
@@ -182,8 +204,7 @@ public class InjectedSigAlgsProvider
                     }
                 });
             }
-        }
-        catch (ClassNotFoundException e)
+        } catch (ClassNotFoundException e)
         {
             // ignore - maybe log?
         }

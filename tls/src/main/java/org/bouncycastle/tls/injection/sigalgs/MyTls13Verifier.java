@@ -16,23 +16,35 @@ public class MyTls13Verifier
 
     private ByteArrayOutputStream os = new ByteArrayOutputStream();
 
-    public MyTls13Verifier(PublicKey publicKey, SignatureSpi verifier)
+    public MyTls13Verifier(
+            PublicKey publicKey,
+            SignatureSpi verifier)
     {
         this.publicKey = publicKey;
         this.verifier = verifier;
     }
 
-    private Method findDirectOrInheritedMethod(Class c, String methodName, Class... args) {
+    private Method findDirectOrInheritedMethod(
+            Class c,
+            String methodName,
+            Class... args)
+    {
         Method m = null;
-        while (c!=null) {
-            for (Method mm : c.getDeclaredMethods()) {
+        while (c != null)
+        {
+            for (Method mm : c.getDeclaredMethods())
+            {
                 // this is an optimization: we don't check all arg types, just their number
                 // (for SignatureSpi-s that's sufficient)
                 if (mm.getName().equals(methodName) && (args.length == mm.getParameterTypes().length))
+                {
                     m = mm;
+                }
             }
-            if (m!=null)
+            if (m != null)
+            {
                 break;
+            }
             c = c.getSuperclass();
         }
         m.setAccessible(true);
@@ -61,23 +73,26 @@ public class MyTls13Verifier
             Object result = m.invoke(verifier, signature);
 
             return (boolean) result;
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             throw new RuntimeException(e);
         }
     }
 
-    public static boolean isPresentInCallStack() {
-        Exception e  = new Exception();
+    public static boolean isPresentInCallStack()
+    {
+        Exception e = new Exception();
 
         StackTraceElement[] stack = e.getStackTrace();
 
         // ignore the top of the stack since it will always be MyTls13Verifier
-        for (int i=1; i< stack.length; i++) {
+        for (int i = 1; i < stack.length; i++)
+        {
             StackTraceElement call = stack[i];
             if (call.getClassName().equals(MyTls13Verifier.class.getName()))
+            {
                 return true;
+            }
         }
         return false;
     }

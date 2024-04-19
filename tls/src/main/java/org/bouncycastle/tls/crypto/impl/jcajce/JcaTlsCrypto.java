@@ -1054,20 +1054,20 @@ public class JcaTlsCrypto
     {
         try
         {
-            JcaJceHelper helper = getHelper();
-            if (null != parameter)
-            {
-                Signature dummyVerifier = helper.createSignature(algorithmName);
-                dummyVerifier.initVerify(publicKey);
-                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
-            }
-
             // #tls-injection
             // try injected verifier...
             try {
                 return InjectionPoint.sigAlgs().tls13VerifierFor(publicKey);
             } catch (Exception e) {
                 // e.g., not injected, continue as usual
+            }
+
+            JcaJceHelper helper = getHelper();
+            if (null != parameter)
+            {
+                Signature dummyVerifier = helper.createSignature(algorithmName);
+                dummyVerifier.initVerify(publicKey);
+                helper = new ProviderJcaJceHelper(dummyVerifier.getProvider());
             }
 
             Signature verifier = helper.createSignature(algorithmName);
