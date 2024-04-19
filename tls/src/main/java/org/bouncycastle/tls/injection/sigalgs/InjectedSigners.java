@@ -28,24 +28,26 @@ public class InjectedSigners {
         this.injectedSigners = new HashMap<>(origin.injectedSigners);
     }
 
-    public void add(String algorithmName, SignerFunction fn) {
-        injectedSigners.put(algorithmName, fn);
+    public void add(String algorithmFullName, SignerFunction fn) {
+        injectedSigners.put(algorithmFullName, fn);
     }
 
-    public boolean contain(String name) {
-        return injectedSigners.containsKey(name);
+    public boolean contain(String algorithmFullName) {
+        return injectedSigners.containsKey(algorithmFullName);
     }
 
     public Iterable<String> getNames() {
         return injectedSigners.keySet();
     }
 
-    public TlsSigner tlsSigner(JcaTlsCrypto crypto, PrivateKey privateKey) {
-        String algorithm = privateKey.getAlgorithm();
+    public TlsSigner tlsSigner(JcaTlsCrypto crypto, PrivateKey privateKey, String algorithmFullName) {
+        // privateKey.getAlgorithm() returns some generinc name, e.g., "DSA" or "SPHINCS+"
+        // however, we assume that the full algorithm name (with params) has been registered with the signer function;
+        // thus, we require algorithmFullName to be passed as an argument
 
-        Object fn = injectedSigners.get(algorithm);
+        Object fn = injectedSigners.get(algorithmFullName);
         if (fn == null)
-            throw new RuntimeException("Algorithm " + algorithm + " not found among signers.");
+            throw new RuntimeException("Algorithm " + algorithmFullName + " not found among signers.");
 
         byte[] sk = privateKey.getEncoded();
         PrivateKeyInfo info = PrivateKeyInfo.getInstance(sk);

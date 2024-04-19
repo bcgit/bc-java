@@ -18,7 +18,7 @@ import java.security.*;
  * some factory returns a valid SignatureSpi. Then this SignatureSpi is used as a delegate
  * to which SignatureSpi method invocations are forwarded (via Java reflection due to protected method declarations).
  *
- * #pqc-tls #injection
+ * #tls-injection
  *
  * @author Sergejs Kozlovics
  */
@@ -28,7 +28,7 @@ public class DirectSignatureSpi extends java.security.SignatureSpi
 
     private java.security.SignatureSpi delegate = null; // will be initialized in engineInitVerify
 
-    public DirectSignatureSpi()
+    public DirectSignatureSpi() // must be no-arg constructor, full class name is used within the provider
     {
     }
 

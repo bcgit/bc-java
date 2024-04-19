@@ -10,7 +10,7 @@ import java.io.IOException;
 
 
 /**
- * #pqc-tls #injection
+ * #tls-injection
  * Wraps a Half-KEM and represents it as a BouncyCastle TlsAgreement.
  * In the Half-KEM, keyGen() is invoked at the client side, encapsulate() at the server side,
  * and decapsulate() at the client side.

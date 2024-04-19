@@ -12,7 +12,7 @@ import org.openquantumsafe.Pair;
  * <p>
  * This interface defines the three functions that are present in any KEM.
  * All keys/secrets/ciphertexts are byte[]-encoded.
- * #pqc-tls #injection
+ * #tls-injection
  *
  * @author Sergejs Kozlovics
  */

@@ -4,6 +4,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.tls.injection.kems.KemFactory;
 import org.bouncycastle.tls.injection.sigalgs.SigAlgAPI;
 
+import java.util.Collection;
+
 public class InjectableAlgorithms {
 
     ///// KEMs
@@ -49,11 +51,12 @@ public class InjectableAlgorithms {
     }
 
     public InjectableAlgorithms withSigAlg(String name,
+                                           Collection<String> aliases,
                                            ASN1ObjectIdentifier oid,
                                            int signatureSchemeCodePoint,
                                            SigAlgAPI api) {
         InjectableAlgorithms clone = new InjectableAlgorithms(this);
-        clone.sigAlgs().add(name, oid, signatureSchemeCodePoint, api);
+        clone.sigAlgs().add(name, aliases, oid, signatureSchemeCodePoint, api);
         return clone;
     }
 

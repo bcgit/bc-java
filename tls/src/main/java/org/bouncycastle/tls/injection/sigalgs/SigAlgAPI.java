@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.tls.DigitallySigned;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.injection.Asn1Bridge;
 
 import java.io.IOException;
 import java.security.Key;
@@ -14,7 +15,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureSpi;
 
-public interface SigAlgAPI extends AsymmetricKeyInfoConverter, Asn1Bridge {
+public interface SigAlgAPI extends AsymmetricKeyInfoConverter,
+                                   Asn1Bridge
+{
 
     ///// BC <-> ASN.1 converters /////
 
@@ -27,6 +30,9 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter, Asn1Bridge {
      * (i.e., a PrivateKeyInfo or SubjectPublicKeyInfo instance)
      */
     boolean isSupportedParameter(AsymmetricKeyParameter bcKey);
+
+    boolean isSupportedPublicKey(Key key);
+    boolean isSupportedPrivateKey(Key key);
 
     /**
      * Converts the given private key from ASN.1 to the internal BC representation.
@@ -77,7 +83,8 @@ public interface SigAlgAPI extends AsymmetricKeyInfoConverter, Asn1Bridge {
             throws IOException;
 
     ///// Encodings /////
-    byte[] internalEncoding(PublicKey key);
+    byte[] internalEncodingFor(PublicKey key);
+    byte[] internalEncodingFor(PrivateKey key);
 
     ///// sign & verify /////
     byte[] sign(JcaTlsCrypto crypto, byte[] message, byte[] privateKey)

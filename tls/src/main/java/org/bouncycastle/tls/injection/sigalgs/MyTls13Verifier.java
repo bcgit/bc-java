@@ -68,4 +68,18 @@ public class MyTls13Verifier
         }
     }
 
+    public static boolean isPresentInCallStack() {
+        Exception e  = new Exception();
+
+        StackTraceElement[] stack = e.getStackTrace();
+
+        // ignore the top of the stack since it will always be MyTls13Verifier
+        for (int i=1; i< stack.length; i++) {
+            StackTraceElement call = stack[i];
+            if (call.getClassName().equals(MyTls13Verifier.class.getName()))
+                return true;
+        }
+        return false;
+    }
+
 }

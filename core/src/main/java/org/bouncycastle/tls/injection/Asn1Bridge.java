@@ -1,5 +1,6 @@
-package org.bouncycastle.tls.injection.sigalgs;
+package org.bouncycastle.tls.injection;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -7,7 +8,30 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 import java.io.IOException;
 
+/**
+ * #tls-injection
+ *
+ * The Asn1Bridge interface defines the bridge between ASN.1 notation for public/private keys and their internal
+ * representation inside the BC AsymmetricKeyParameter class.
+ *
+ * This interface is implemented by the Asn1BridgeForInjectedSigAlgs class (in the BC core package),
+ * which represents signature algorithms injected into TLS Injection Mechanism (in the BC tls package;
+ * however there is no compile-time dependency on "tls" from the "core" package).
+ *
+ * The Asn1BridgeForInjectedSigAlgs is consulted inside the BC core package in order to add the ability to
+ * work with public and private keys corresponding to the injected (perhaps, non-standard) signature algorithms.
+ *
+ *
+ */
 public interface Asn1Bridge {
+
+    /**
+     * Checks whether the signature algorithm with the given object identified (OID) has been injected.
+     * @param oid the ASN object identifier of the algorithm in question
+     * @return returns true, iff the algorithm with the given oid has been injected
+     */
+    boolean isSupportedAlgorithm(ASN1ObjectIdentifier oid);
+
     /**
      * Checks whether the given BC key (public or private) can be converted to ASN.1.
      *

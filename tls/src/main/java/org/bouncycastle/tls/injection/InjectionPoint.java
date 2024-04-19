@@ -4,25 +4,33 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgorithm;
+import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgsProvider;
 
+import java.security.Security;
+import java.util.Collection;
 import java.util.Stack;
 
-public class InjectionPoint {
+public class InjectionPoint
+{
     private final Stack<InjectableAlgorithms> injectionStack;
 
 
     // Bill Pugh Singleton Implementation, see https://www.geeksforgeeks.org/java-singleton-design-pattern-practices-examples/
-    private static class BillPughSingleton {
+    private static class BillPughSingleton
+    {
         private static final InjectionPoint INSTANCE = new InjectionPoint();
     }
 
     // private = do not allow to call the constructor directly; force using _new
-    private InjectionPoint() {
+    private InjectionPoint()
+    {
         this.injectionStack = new Stack<>();
     }
 
-    public static InjectionPoint _new() {
+    public static InjectionPoint theInstance()
+    {
         return BillPughSingleton.INSTANCE;
     }
 
@@ -34,11 +42,23 @@ public class InjectionPoint {
      *                               In this case, use pushAfter() to be able to push the new algorithms instead of the previous.
      *                               Alternatively, use pop() to withdraw all previously injected algorithms and push() the new set of algorithms.
      */
-    public synchronized void push(InjectableAlgorithms newAlgorithms) throws IllegalStateException {
+    public synchronized void push(InjectableAlgorithms newAlgorithms) throws IllegalStateException
+    {
         if (!injectionStack.isEmpty())
+        {
             throw new IllegalStateException("Some other algorithms have been already injected (pushed).");
+        }
 
         injectionStack.push(newAlgorithms);
+
+        // Inserting forcefully (to the second place) the BC TLS provider
+        // and (to the first place) our provider for injected signature algorithms:
+
+        BouncyCastleJsseProvider jsseProvider = new BouncyCastleJsseProvider();
+        Security.insertProviderAt(jsseProvider, 1);
+
+        InjectedSigAlgsProvider injProvider = new InjectedSigAlgsProvider();
+        Security.insertProviderAt(injProvider, 1);
     }
 
     /**
@@ -50,24 +70,37 @@ public class InjectionPoint {
      * @throws IllegalStateException if the previously injected algorithms do not match the " previous" argument.
      *                               In this case, use pop() to withdraw all previously injected algorithms and push() the new set of algorithms.
      */
-    public synchronized void pushAfter(InjectableAlgorithms newAlgorithms, InjectableAlgorithms previous) throws IllegalStateException {
+    public synchronized void pushAfter(
+            InjectableAlgorithms newAlgorithms,
+            InjectableAlgorithms previous) throws IllegalStateException
+    {
         if (injectionStack.isEmpty())
+        {
             throw new IllegalStateException("No previously injected (pushed) algorithms found.");
+        }
         if (!injectionStack.peek().equals(previous))
+        {
             throw new IllegalStateException("The previously injected (pushed) algorithms do not match the previous argument.");
+        }
         injectionStack.push(newAlgorithms);
     }
 
     /**
      * Withdraws (pops) the current set of algorithms and restores the previously injected algorithms (if any).
+     *
      * @param current the currently used injected algorithms (act as a key to withdraw)
      * @throws IllegalStateException if no InjectableAlgorithms have been pushed
      */
-    public synchronized void pop(InjectableAlgorithms current) throws IllegalStateException {
+    public synchronized void pop(InjectableAlgorithms current) throws IllegalStateException
+    {
         if (injectionStack.isEmpty())
+        {
             throw new IllegalStateException("No previously injected (pushed) algorithms found.");
+        }
         if (!injectionStack.peek().equals(current))
+        {
             throw new IllegalStateException("The currently used injected (pushed) algorithms do not match the current argument.");
+        }
         injectionStack.pop();
     }
 
@@ -77,68 +110,118 @@ public class InjectionPoint {
     private static InjectableKEMs dummyKems = new InjectableKEMs();
     private static InjectableSigAlgs dummySigAlgs = new InjectableSigAlgs();
 
-    public static InjectableKEMs kems() {
+    public static InjectableKEMs kems()
+    {
         InjectableAlgorithms algs = BillPughSingleton.INSTANCE.injectionStack.peek();
         if (algs == null)
+        {
             return dummyKems;
+        }
         return algs.kems();
     }
 
-    public static InjectableSigAlgs sigAlgs() {
+    public static InjectableSigAlgs sigAlgs()
+    {
         InjectableAlgorithms algs = BillPughSingleton.INSTANCE.injectionStack.peek();
         if (algs == null)
+        {
             return dummySigAlgs;
+        }
         return algs.sigAlgs();
     }
 
-    public synchronized static void configureProvider(ConfigurableProvider provider) {
+    public synchronized static void configureProvider(ConfigurableProvider provider)
+    {
 
         // TODO: call not only from BouncyCastlePQCProvider, but also from JSSE?
         InjectableAlgorithms algs = BillPughSingleton.INSTANCE.injectionStack.peek();
-        for (InjectedSigAlgorithm alg : sigAlgs().asSigAlgCollection()) {
+        for (InjectedSigAlgorithm alg : sigAlgs().asSigAlgCollection())
+        {
 
-            new Registrar(alg.oid(), alg.name(), alg.converter()).configure(provider);
+            new SigAlgRegistrar(alg.oid(), alg.name(), alg.aliases(), alg.converter()).configure(provider);
         }
     }
 
-    private static class Registrar extends AsymmetricAlgorithmProvider {
+    private static class SigAlgRegistrar
+            extends AsymmetricAlgorithmProvider
+    {
         private final ASN1ObjectIdentifier oid;
         private final String name;
+        private final Collection<String> aliases;
         private final AsymmetricKeyInfoConverter converter;
 
-        public Registrar(ASN1ObjectIdentifier oid, String name, AsymmetricKeyInfoConverter converter) {
+        public SigAlgRegistrar(
+                ASN1ObjectIdentifier oid,
+                String name,
+                Collection<String> aliases,
+                AsymmetricKeyInfoConverter converter)
+        {
             super();
             this.oid = oid;
             this.name = name;
+            this.aliases = aliases;
             this.converter = converter;
         }
 
         @Override
-        public void configure(ConfigurableProvider provider) {
-            try {
+        public void configure(ConfigurableProvider provider)
+        {
+            try
+            {
                 provider.addAlgorithm("Alg.Alias.Signature." + this.oid, this.name);
                 provider.addAlgorithm("Alg.Alias.Signature.OID." + this.oid, this.name);
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException e)
+            {
                 // ignore, if duplicate (needed for injected RSA)
             }
 
             // remove previous values in order to avoid the duplicate key exception
-            if (provider instanceof java.security.Provider) {
+            if (provider instanceof java.security.Provider)
+            {
                 java.security.Provider p = (java.security.Provider) provider;
                 p.remove("Signature." + this.name);
+                for (String alias : this.aliases)
+                {
+                    p.remove("Signature." + alias);
+                    p.remove("Alg.Alias.Signature." + alias);
+                }
                 p.remove("Alg.Alias.Signature." + this.oid);
                 p.remove("Alg.Alias.Signature.OID." + this.oid);
+
+                p.remove("Alg.Alias.KeyFactory."+this.oid);
+                p.remove("Alg.Alias.KeyFactory.OID."+this.oid);
+
+                p.remove("Alg.Alias.KeyPairGenerator."+this.oid);
+                p.remove("Alg.Alias.KeyPairGenerator.OID."+this.oid);
             }
             // = provider.addSignatureAlgorithm(provider, "SPHINCSPLUS", PREFIX + "SignatureSpi$Direct", BCObjectIdentifiers.sphincsPlus);
             provider.addAlgorithm("Signature." + this.name, "org.bouncycastle.tls.injection.signaturespi.DirectSignatureSpi");
             provider.addAlgorithm("Alg.Alias.Signature." + this.oid, this.name);
             provider.addAlgorithm("Alg.Alias.Signature.OID." + this.oid, this.name);
 
+            // TO FIX: (NEEDED TO READ THE KEY FILE) OR CREATE SOME UniversalKeyFactorySpi
+            //provider.addAlgorithm("KeyFactory."+this.name, "org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi");
+            provider.addAlgorithm("KeyFactory."+this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyFactorySpi");
+            provider.addAlgorithm("Alg.Alias.KeyFactory."+this.oid, this.name);
+            provider.addAlgorithm("Alg.Alias.KeyFactory.OID."+this.oid, this.name);
 
-            try {
+            provider.addAlgorithm("KeyPairGenerator."+this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyPairGeneratorSpi");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator."+this.oid, this.name);
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID."+this.oid, this.name);
+
+            /*for (String alias : this.aliases) {
+                provider.addAlgorithm("Alg.Alias.Signature." + alias, this.name);
+                provider.addAlgorithm("Alg.Alias.KeyFactory." + alias, this.name);
+                provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + alias, this.name);
+            }*/
+
+
+            try
+            {
                 registerOid(provider, this.oid, this.name, converter);
                 registerOidAlgorithmParameters(provider, this.oid, this.name);
-            } catch (IllegalStateException e) {
+            } catch (IllegalStateException e)
+            {
                 // ignore, if duplicate (needed for injected RSA)
             }
             provider.addKeyInfoConverter(this.oid, converter);

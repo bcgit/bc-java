@@ -41,7 +41,7 @@ import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
-import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.tls.injection.Asn1BridgeForInjectedSigAlgs;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -72,7 +72,7 @@ public class PrivateKeyInfoFactory
      * @throws java.io.IOException on an error encoding the key
      */
     public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey)
-        throws IOException
+            throws IOException
     {
         return createPrivateKeyInfo(privateKey, null);
     }
@@ -85,34 +85,37 @@ public class PrivateKeyInfoFactory
      * @return the appropriate PrivateKeyInfo
      * @throws java.io.IOException on an error encoding the key
      */
-    public static PrivateKeyInfo createPrivateKeyInfo(AsymmetricKeyParameter privateKey, ASN1Set attributes)
-        throws IOException
+    public static PrivateKeyInfo createPrivateKeyInfo(
+            AsymmetricKeyParameter privateKey,
+            ASN1Set attributes)
+            throws IOException
     {
         // #tls-injection
-        if (InjectionPoint.sigAlgs().asn1Bridge().isSupportedParameter(privateKey)) {
-            return InjectionPoint.sigAlgs().asn1Bridge().createPrivateKeyInfo(privateKey, attributes);
+        if (Asn1BridgeForInjectedSigAlgs.theInstance().isSupportedParameter(privateKey))
+        {
+            return Asn1BridgeForInjectedSigAlgs.theInstance().createPrivateKeyInfo(privateKey, attributes);
         }
 
         if (privateKey instanceof RSAKeyParameters)
         {
-            RSAPrivateCrtKeyParameters priv = (RSAPrivateCrtKeyParameters)privateKey;
+            RSAPrivateCrtKeyParameters priv = (RSAPrivateCrtKeyParameters) privateKey;
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE),
-                new RSAPrivateKey(priv.getModulus(), priv.getPublicExponent(), priv.getExponent(), priv.getP(), priv.getQ(), priv.getDP(), priv.getDQ(), priv.getQInv()),
-                attributes);
+                    new RSAPrivateKey(priv.getModulus(), priv.getPublicExponent(), priv.getExponent(), priv.getP(), priv.getQ(), priv.getDP(), priv.getDQ(), priv.getQInv()),
+                    attributes);
         }
         else if (privateKey instanceof DSAPrivateKeyParameters)
         {
-            DSAPrivateKeyParameters priv = (DSAPrivateKeyParameters)privateKey;
+            DSAPrivateKeyParameters priv = (DSAPrivateKeyParameters) privateKey;
             DSAParameters params = priv.getParameters();
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa,
-                new DSAParameter(params.getP(), params.getQ(), params.getG())), new ASN1Integer(priv.getX()),
-                attributes);
+                    new DSAParameter(params.getP(), params.getQ(), params.getG())), new ASN1Integer(priv.getX()),
+                    attributes);
         }
         else if (privateKey instanceof ECPrivateKeyParameters)
         {
-            ECPrivateKeyParameters priv = (ECPrivateKeyParameters)privateKey;
+            ECPrivateKeyParameters priv = (ECPrivateKeyParameters) privateKey;
             ECDomainParameters domainParams = priv.getParameters();
             ASN1Encodable params;
             int orderBitLength;
@@ -125,9 +128,9 @@ public class PrivateKeyInfoFactory
             else if (domainParams instanceof ECGOST3410Parameters)
             {
                 GOST3410PublicKeyAlgParameters gostParams = new GOST3410PublicKeyAlgParameters(
-                    ((ECGOST3410Parameters)domainParams).getPublicKeyParamSet(),
-                    ((ECGOST3410Parameters)domainParams).getDigestParamSet(),
-                    ((ECGOST3410Parameters)domainParams).getEncryptionParamSet());
+                        ((ECGOST3410Parameters) domainParams).getPublicKeyParamSet(),
+                        ((ECGOST3410Parameters) domainParams).getDigestParamSet(),
+                        ((ECGOST3410Parameters) domainParams).getEncryptionParamSet());
 
 
                 int size;
@@ -143,8 +146,8 @@ public class PrivateKeyInfoFactory
 
                     boolean is512 = priv.getD().bitLength() > 256;
                     identifier = (is512) ?
-                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512 :
-                        RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
+                            RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512 :
+                            RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256;
                     size = (is512) ? 64 : 32;
                 }
                 byte[] encKey = new byte[size];
@@ -155,17 +158,17 @@ public class PrivateKeyInfoFactory
             }
             else if (domainParams instanceof ECNamedDomainParameters)
             {
-                params = new X962Parameters(((ECNamedDomainParameters)domainParams).getName());
+                params = new X962Parameters(((ECNamedDomainParameters) domainParams).getName());
                 orderBitLength = domainParams.getN().bitLength();
             }
             else
             {
                 X9ECParameters ecP = new X9ECParameters(
-                    domainParams.getCurve(),
-                    new X9ECPoint(domainParams.getG(), false),
-                    domainParams.getN(),
-                    domainParams.getH(),
-                    domainParams.getSeed());
+                        domainParams.getCurve(),
+                        new X9ECPoint(domainParams.getG(), false),
+                        domainParams.getN(),
+                        domainParams.getH(),
+                        domainParams.getSeed());
 
                 params = new X962Parameters(ecP);
                 orderBitLength = domainParams.getN().bitLength();
@@ -177,37 +180,37 @@ public class PrivateKeyInfoFactory
             DERBitString publicKey = new DERBitString(q.getEncoded(false));
 
             return new PrivateKeyInfo(
-                new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
-                new ECPrivateKey(orderBitLength, priv.getD(), publicKey, params),
-                attributes);
+                    new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, params),
+                    new ECPrivateKey(orderBitLength, priv.getD(), publicKey, params),
+                    attributes);
         }
         else if (privateKey instanceof X448PrivateKeyParameters)
         {
-            X448PrivateKeyParameters key = (X448PrivateKeyParameters)privateKey;
+            X448PrivateKeyParameters key = (X448PrivateKeyParameters) privateKey;
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X448),
-                new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
+                    new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
         }
         else if (privateKey instanceof X25519PrivateKeyParameters)
         {
-            X25519PrivateKeyParameters key = (X25519PrivateKeyParameters)privateKey;
+            X25519PrivateKeyParameters key = (X25519PrivateKeyParameters) privateKey;
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_X25519),
-                new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
+                    new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
         }
         else if (privateKey instanceof Ed448PrivateKeyParameters)
         {
-            Ed448PrivateKeyParameters key = (Ed448PrivateKeyParameters)privateKey;
+            Ed448PrivateKeyParameters key = (Ed448PrivateKeyParameters) privateKey;
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448),
-                new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
+                    new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
         }
         else if (privateKey instanceof Ed25519PrivateKeyParameters)
         {
-            Ed25519PrivateKeyParameters key = (Ed25519PrivateKeyParameters)privateKey;
+            Ed25519PrivateKeyParameters key = (Ed25519PrivateKeyParameters) privateKey;
 
             return new PrivateKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
-                new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
+                    new DEROctetString(key.getEncoded()), attributes, key.generatePublicKey().getEncoded());
         }
         else
         {
@@ -216,7 +219,11 @@ public class PrivateKeyInfoFactory
     }
 
 
-    private static void extractBytes(byte[] encKey, int size, int offSet, BigInteger bI)
+    private static void extractBytes(
+            byte[] encKey,
+            int size,
+            int offSet,
+            BigInteger bI)
     {
         byte[] val = bI.toByteArray();
         if (val.length < size)
