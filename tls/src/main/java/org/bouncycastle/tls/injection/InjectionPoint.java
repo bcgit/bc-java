@@ -205,21 +205,18 @@ public class InjectionPoint
             provider.addAlgorithm("Alg.Alias.Signature." + this.oid, this.name);
             provider.addAlgorithm("Alg.Alias.Signature.OID." + this.oid, this.name);
 
-            // TO FIX: (NEEDED TO READ THE KEY FILE) OR CREATE SOME UniversalKeyFactorySpi
-            //provider.addAlgorithm("KeyFactory."+this.name, "org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi");
             provider.addAlgorithm("KeyFactory." + this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + this.oid, this.name);
             provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + this.oid, this.name);
 
+            /* Maybe, in the future, we'll implement a universal KeyPairGenerator.
+               We need to check parameters carefully during the initialization
+               in order to find out whether the parameters correspond to one of the injected algorithms...
+
             provider.addAlgorithm("KeyPairGenerator." + this.name, "org.bouncycastle.tls.injection.signaturespi.UniversalKeyPairGeneratorSpi");
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + this.oid, this.name);
             provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + this.oid, this.name);
-
-            /*for (String alias : this.aliases) {
-                provider.addAlgorithm("Alg.Alias.Signature." + alias, this.name);
-                provider.addAlgorithm("Alg.Alias.KeyFactory." + alias, this.name);
-                provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + alias, this.name);
-            }*/
+             */
 
 
             try
