@@ -207,7 +207,7 @@ class ProvX509KeyManager
         addFilterLegacyServer(filters, ProvAlgorithmChecker.KU_KEY_ENCIPHERMENT, "RSA", KeyExchangeAlgorithm.RSA);
 
         // #tls-injection
-        // adding filters for injected signers (e.g., PQC signers) #pqc-tls #injection
+        // adding filters for injected signers (e.g., PQC signers)
         for (String name: InjectionPoint.sigAlgs().names()) {
             if (!filters.containsKey(name))
                 addFilter(filters, name);

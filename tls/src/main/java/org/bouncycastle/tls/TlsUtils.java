@@ -5383,7 +5383,7 @@ public class TlsUtils
 
             if (null != agreement)
             {
-                // #pqc-tls #injection (everything remains the same here, if KemAgreement is used as TlsAgreement for KEMs)
+                // #tls-injection (everything remains the same here, if KemAgreement is used as TlsAgreement for KEMs)
                 byte[] key_exchange = agreement.generateEphemeral(); // key_exchange = ephemeral public key for KEMs
                 KeyShareEntry clientShare = new KeyShareEntry(supportedGroup, key_exchange);
 

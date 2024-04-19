@@ -584,7 +584,7 @@ class SignatureSchemeInfo
     //private final All all;
     // for injection, we cannot use final enum All; we need some dynamic
     // data structure for storing the corresponding sig scheme info
-    // #pqc-tls #injection
+    // #tls-injection
     private final int signatureScheme;
     private final String name;
     private final String text;
@@ -607,7 +607,7 @@ class SignatureSchemeInfo
         boolean enabled, boolean disabled13)
     {
         //this.all = all;
-        //#pqc-tls #injection:
+        //#tls-injection:
         this.signatureScheme = all.signatureScheme;
         this.name = all.name;
         this.text = all.text;
