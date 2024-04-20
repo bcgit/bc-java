@@ -48,7 +48,8 @@ class OperatorHelper
         }
         catch (NoSuchAlgorithmException e)
         {
-            if (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224)
+            if (algorithm == HashAlgorithmTags.SHA1
+            || (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224))
             {
                 dig = helper.createMessageDigest("SHA-" + digestName.substring(3));
             }

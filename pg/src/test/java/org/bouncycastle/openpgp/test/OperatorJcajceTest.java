@@ -207,6 +207,20 @@ public class OperatorJcajceTest
     public void testJcaPGPDigestCalculatorProviderBuilder()
         throws Exception
     {
+
+        PGPDigestCalculatorProvider digCalcBldr = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NonDashProvider()).build();
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+
+        PGPDigestCalculatorProvider digCalcBldr2 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new DashProvider()).build();
+        testDigestCalc(digCalcBldr2.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+
+        PGPDigestCalculatorProvider digCalcBldr3 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NonDashProvider()).build();
+        testDigestCalc(digCalcBldr3.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+
+        PGPDigestCalculatorProvider digCalcBldr4 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new DashProvider()).build();
+        testDigestCalc(digCalcBldr4.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+
+
         final PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NullProvider()).build();
         testException("exception on setup: ", "PGPException", new TestExceptionOperation()
         {
@@ -310,4 +324,27 @@ public class OperatorJcajceTest
              super("NULL", 0.0, "Null Provider");
         }
     }
+
+    private class NonDashProvider
+        extends Provider
+    {
+        NonDashProvider()
+        {
+            super("NonDash", 0.0, "NonDash Provider");
+            putService(new Provider.Service(this, "MessageDigest", "SHA256", "org.bouncycastle.openpgp.test.SHA256", null, null));
+            putService(new Provider.Service(this, "MessageDigest", "SHA1", "org.bouncycastle.openpgp.test.SHA1", null, null));
+        }
+    }
+
+    private class DashProvider
+        extends Provider
+    {
+        DashProvider()
+        {
+            super("Dash", 0.0, "Dash Provider");
+            putService(new Service(this, "MessageDigest", "SHA-256", "org.bouncycastle.openpgp.test.SHA256", null, null));
+            putService(new Service(this, "MessageDigest", "SHA-1", "org.bouncycastle.openpgp.test.SHA1", null, null));
+        }
+    }
+
 }
