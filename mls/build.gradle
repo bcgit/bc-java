@@ -153,10 +153,15 @@ jar {
     into('META-INF/versions/9') {
         from sourceSets.java9.output
     }
+
+    String packages = 'org.bouncycastle.mls.*'
+
     manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-Name': 'bcmls')
+    manifest.attributes('Bundle-SymbolicName': 'bcmls')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.mls.*')
-    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+    manifest.attributes('Export-Package': "${packages}")
+    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!${packages},org.bouncycastle.*;version=\"[${version},${maxVersion})\"")
 }
 
 task sourcesJar(type: Jar) {
