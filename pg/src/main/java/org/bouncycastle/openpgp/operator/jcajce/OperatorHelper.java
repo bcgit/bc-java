@@ -36,9 +36,6 @@ class OperatorHelper
         this.helper = helper;
     }
 
-
-
-
     MessageDigest createDigest(int algorithm)
         throws GeneralSecurityException, PGPException
     {
@@ -53,7 +50,7 @@ class OperatorHelper
         {
             if (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224)
             {
-                dig = helper.createMessageDigest("SHA" + digestName.substring(4));
+                dig = helper.createMessageDigest("SHA-" + digestName.substring(3));
             }
             else
             {
