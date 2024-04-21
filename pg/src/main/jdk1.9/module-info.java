@@ -1,6 +1,7 @@
 module org.bouncycastle.pg
 {
     requires org.bouncycastle.provider;
+    requires org.bouncycastle.util;
     requires java.logging;
 
     exports org.bouncycastle.bcpg;

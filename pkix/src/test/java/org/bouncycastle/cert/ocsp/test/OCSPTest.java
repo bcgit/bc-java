@@ -914,12 +914,12 @@ public class OCSPTest
         //
         // invalid (empty) extension block
         //
-//        OCSPResp emptyExt = new OCSPResp(emptyExtResp);
-//
-//        BasicOCSPResp emptyRes = (BasicOCSPResp)emptyExt.getResponseObject();
-//
-//        isTrue(emptyRes.hasExtensions());
-//        isEquals(0, emptyRes.getExtensionOIDs().size());
+        OCSPResp emptyExt = new OCSPResp(emptyExtResp);
+
+        BasicOCSPResp emptyRes = (BasicOCSPResp)emptyExt.getResponseObject();
+
+        isTrue(emptyRes.hasExtensions());
+        isEquals(0, emptyRes.getExtensionOIDs().size());
 
         //
         // request list check
