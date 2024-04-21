@@ -71,10 +71,8 @@ public class Extensions
     private Extensions(
         ASN1Sequence seq)
     {
-        if (seq.size() == 0)
-        {
-            throw new IllegalArgumentException("empty extension sequence found");
-        }
+        // it's tempting to check there's at least one entry in the sequence. Don't!
+        // It turns out there's quite a few empty extension blocks out there...
 
         Enumeration e = seq.getObjects();
 
