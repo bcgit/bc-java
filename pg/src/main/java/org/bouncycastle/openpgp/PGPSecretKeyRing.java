@@ -24,7 +24,6 @@ import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
 
 /**
@@ -246,7 +245,7 @@ public class PGPSecretKeyRing
         {
             PGPPublicKey k = (PGPPublicKey)extraPubKeys.get(i);
 
-            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            if (k.hasFingerprint(fingerprint))
             {
                 return k;
             }
@@ -356,7 +355,7 @@ public class PGPSecretKeyRing
         {
             PGPSecretKey k = (PGPSecretKey)keys.get(i);
 
-            if (Arrays.areEqual(fingerprint, k.getPublicKey().getFingerprint()))
+            if (k.getPublicKey().hasFingerprint(fingerprint))
             {
                 return k;
             }

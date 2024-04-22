@@ -32,8 +32,11 @@ public class Ed25519Test
         runTest(new Ed25519Test());
     }
 
-    public void performTest() throws Exception
+    public void performTest()
+        throws Exception
     {
+        basicSigTest();
+
         for (int i = 0; i < 10; ++i)
         {
             testConsistency(Ed25519.Algorithm.Ed25519, null);
@@ -43,7 +46,6 @@ public class Ed25519Test
             testConsistency(Ed25519.Algorithm.Ed25519ph, context);
         }
 
-        basicSigTest();
         testRegressionInfiniteLoop();
     }
 
@@ -90,7 +92,8 @@ public class Ed25519Test
         return context;
     }
 
-    private void testConsistency(int algorithm, byte[] context) throws Exception
+    private void testConsistency(int algorithm, byte[] context)
+        throws Exception
     {
         Ed25519KeyPairGenerator kpg = new Ed25519KeyPairGenerator();
         kpg.init(new Ed25519KeyGenerationParameters(RANDOM));
@@ -158,7 +161,8 @@ public class Ed25519Test
         }
     }
 
-    private void testRegressionInfiniteLoop() throws Exception
+    private void testRegressionInfiniteLoop()
+        throws Exception
     {
         String[] testCases = new String[]{
             "pub=MCowBQYDK2VwAyEA3/3evB5w/U2/UClcztEy9jyUhCYb4lsYC/Uc0Y3XU2A= priv=MC4CAQAwBQYDK2VwBCIEIPqycfmKBOt+r71r9rPfm/qHloKw1mi0u7EtapwiyLFq msg=XffXN58qcNEDB9bG0Bi4+rJx+YoE636vvWv2s9+b+oeWgrDWaLS7sS1qnCLIsWogbfSKviAwbnT17l1hipS+Qw== sig=ygsIhBS66Bh6JYI+7NS7WX/KXIIqjMX4zlgqbH8euNCg1mkdj1E9gTZ1fxSfws8ZywBfLY1Sy+7ldggN2tLIDQ== e=found 57 iterations",
@@ -780,7 +784,6 @@ public class Ed25519Test
             "pub=MCowBQYDK2VwAyEAHtYhM7lFrRHW9FqjuSEdDZ1tctjede+MoV0R1UMtVVg= priv=MC4CAQAwBQYDK2VwBCIEIJD6PKp3MulK/B/Np+Cdu+Cfo6x2EPkJJliRnj1G9xs/ msg=Q/p5WuG23JyPgshQbo5YGam23fQ5OVqjC0fCzYVXRw+C9vDQdLODe5D6PKp3MulK/B/Np+Cdu+Cfo6x2EPkJJg== sig=t4XSeew/w5x52oghg7VR7yDP6cP2JkP+1qCbuYJyUNW/lmNKD16Tk3SWktl4o3HzmpQewS3lxx1vR2pKhkPqAw== e=found last=15 s=34 in subShifted_NP",
             "pub=MCowBQYDK2VwAyEAEI/536MsgF7aZ9O6hLaT2cGEwCIQRajWmvxE+iv+5Ig= priv=MC4CAQAwBQYDK2VwBCIEIE5+N8mBMqbcslWpsFiYUJLEbnKC1CZgwnql5scPhVqA msg=1CZgwnql5scPhVqAJy5QN89FfioiZlPgPcwVjCM2AgM5Frk3eACOherjcVcSUSth7u2NWh3IJGkOy+UgE6g3/w== sig=9iS9EP9mkQOoxQoGzcznIChrPQGdAA763KQjwnN5k4HmVBX/abYK5XIk6H+sfZ88Qq7VOFy8c1H1CwYb465AAg== e=found last=15 s=35 in subShifted_NP",
             "pub=MCowBQYDK2VwAyEAvdP5ffItF2siN+QBywHeCpXDFhjxK7SZwT2MfjSoipU= priv=MC4CAQAwBQYDK2VwBCIEINx5YWaFb57Vnoqc93w5yK8TSWlY+7GEYVjpc2WkiPI/ msg=Ggwp5bmATPmRhoheAaYfJTYxkSrIXYcSTqxi3HlhZoVvntWeipz3fDnIrxNJaVj7sYRhWOlzZaSI8j9oTJ1ygA== sig=c5HoX+KDVG2wM7o0o4dKJUy/zczPaKDUcnWhsmP3d6evqfDbRNAQpLopFdO9dyfuEv1H1gn+qLQUVvZcuwLDDw== e=infinite loop regression",
-            "pub=MCowBQYDK2VwAyEAvdP5ffItF2siN+QBywHeCpXDFhjxK7SZwT2MfjSoipU= priv=MC4CAQAwBQYDK2VwBCIEINx5YWaFb57Vnoqc93w5yK8TSWlY+7GEYVjpc2WkiPI/ msg=Ggwp5bmATPmRhoheAaYfJTYxkSrIXYcSTqxi3HlhZoVvntWeipz3fDnIrxNJaVj7sYRhWOlzZaSI8j9oTJ1ygA== sig=c5HoX+KDVG2wM7o0o4dKJUy/zczPaKDUcnWhsmP3d6evqfDbRNAQpLopFdO9dyfuEv1H1gn+qLQUVvZcuwLDDw== e=infinite loop regression",
             "pub=MCowBQYDK2VwAyEAhPw0vNPFREOs5U1MkD0yCWZ3WCOmwVSvN2jF1Oizqbk= priv=MC4CAQAwBQYDK2VwBCIEIP80+hG+p3eZq1Ez2fIwZVisdXlokktg+bLNtBeM/GQA msg=2I3ilxrJP/fye0bwPSNTluAceuuI6hS1a9t7J9YSlIX9WOwvrnoz2BUKVPkLpHmyEK7JHMDttj4l6BQiCOl//w== sig=kp9BeH0HbGR8wWV5vERw/tZtGHuYdpNvcUO7fyzEAp+avoeJFptyh7jzuvic/lcH8+W43kjvq2wn7t+Y4QOCAA== e=infinite loop regression",
             "pub=MCowBQYDK2VwAyEA6yB65NH24xZ3gPJpAf2oZiobm/CDOsW2mTA5NYHiu9Q= priv=MC4CAQAwBQYDK2VwBCIEIA8QPr2HS5Ph1RitdsIwIn6rAvIhxGzrI0iMNTQXdaOK msg=xaumAcR/MN99ugA1y5nJ/KZ89v2ubNtaOKMr85InQXbcd6tQUDJKVgi1s5E00FUzZNayymWz0FIZmpuB+B3D6A== sig=2Hh82APLUonf07pjWJPbqNkIvH0FKaGuqR6uZy0SolDLBOQRUUo19t6txaNjafroKvKivxp4BJZK//UZANV/AQ== e=infinite loop regression",
             "pub=MCowBQYDK2VwAyEAjzPeoBYWUh6lK8tL5zvJMe3quOc9DHDHqjaqmlQ9eCs= priv=MC4CAQAwBQYDK2VwBCIEIM/KKNbVtHGuvVjVRndMVx+uGHioSJfRTLV3mMT/qs0O msg=xoQTj8hSoCBUbsW5fls1TN4WIBm8+r9Q4dG8neWlAU5D0pb5V7PzbBUFJWeMN0nvqEZA2EOlmOckFJwvw4kbvg== sig=RvTiLTOBLVlUPXgblZ51/UkOE6Yen7x4M02mxNRnKQIQvRW6Xy3qME2Z0Am2zJnQUl5NzmX7bwYSxgxpmI88AQ== e=infinite loop regression",
@@ -802,8 +805,9 @@ public class Ed25519Test
             "pub=MCowBQYDK2VwAyEA69MJYVrwsGt5DugorT6VD7zSG3WQ4yOqXiRjUOP3LCQ= priv=MC4CAQAwBQYDK2VwBCIEIL2PFNE+QWZ53Ah9hoHeuEEEbw0Ew2ypwWts3l02nNOP msg=UG8S6ZNCvY8U0T5BZnncCH2Ggd64QQRvDQTDbKnBa2zeXTac04/SEviN0EcPRMD4b6uP03S9WDO2T2MYPkoXMw== sig=1Dgxn3qUqRaC+CMASAT16JtFBWL8qoF8SEBbQL8YYM/SPzN72c/7EbKCIUkdgrUD4iHVc2IHLCjHDeQPbSqnAw== e=infinite loop regression",
         };
 
-        for (String test : testCases)
+        for (int i = 0; i != testCases.length; i++)
         {
+            String test = testCases[i];
             String[] parts = test.split(" ", 5);
             if (!parts[0].startsWith("pub=") || !parts[1].startsWith("priv=") || !parts[2].startsWith("msg=") || !parts[3].startsWith("sig=") || !parts[4].startsWith("e="))
             {
@@ -823,7 +827,8 @@ public class Ed25519Test
             Ed25519PrivateKeyParameters priv = new Ed25519PrivateKeyParameters(privBytes);
             Ed25519PublicKeyParameters pubDerived = priv.generatePublicKey();
 
-            if (!Arrays.areEqual(pubDerived.getEncoded(), pub.getEncoded())) {
+            if (!Arrays.areEqual(pubDerived.getEncoded(), pub.getEncoded()))
+            {
                 fail("different derived public keys; expected=" + Hex.toHexString(pub.getEncoded()) + " derived=" + Hex.toHexString(pubDerived.getEncoded()));
             }
 
@@ -832,15 +837,16 @@ public class Ed25519Test
             signer.update(msg, 0, msg.length);
             byte[] sigDerived = signer.generateSignature();
 
-            if (!Arrays.areEqual(sigDerived, sig)) {
+            if (!Arrays.areEqual(sigDerived, sig))
+            {
                 fail("different signatures of message; expected=" + Hex.toHexString(sig) + " actual=" + Hex.toHexString(sigDerived));
             }
 
             signer.init(false, pub);
             signer.update(msg, 0, msg.length);
-            if (!signer.verifySignature(sig)) {
-                fail("signature verification failed for test vector: " + error);
-            }
+            boolean shouldVerify = signer.verifySignature(sig);
+
+            isTrue("signature verification failed for test vector: " + error, shouldVerify);
         }
     }
 }

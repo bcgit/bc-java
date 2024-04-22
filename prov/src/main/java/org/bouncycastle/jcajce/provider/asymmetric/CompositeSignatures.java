@@ -16,7 +16,7 @@ public class CompositeSignatures
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".compositesignatures.";
 
-    private static final Map<String, String> compositesAttributes = new HashMap<>();
+    private static final Map<String, String> compositesAttributes = new HashMap<String, String>();
 
     static
     {

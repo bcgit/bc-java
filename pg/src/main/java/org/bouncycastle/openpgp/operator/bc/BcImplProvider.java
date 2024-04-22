@@ -33,8 +33,6 @@ import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -152,7 +150,6 @@ class BcImplProvider
     static Wrapper createWrapper(int encAlgorithm)
         throws PGPException
     {
-        boolean enableCamelliaKeyWrapping = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         switch (encAlgorithm)
         {
         case SymmetricKeyAlgorithmTags.AES_128:
@@ -162,12 +159,9 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            if (enableCamelliaKeyWrapping)
-            {
-                //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
-                //   is usable, and it is subject to the same usage requirements
-                return new RFC3394WrapEngine(new CamelliaEngine());
-            }
+            //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
+            //   is usable, and it is subject to the same usage requirements
+            return new RFC3394WrapEngine(new CamelliaEngine());
         default:
             throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
         }

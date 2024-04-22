@@ -54,6 +54,7 @@
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pg/src/main/java" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="pg/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pg/src/main/java" includes="**/*.properties" />
             <fileset dir="pg/src/test/java" includes="**/*.java" />

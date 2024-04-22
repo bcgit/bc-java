@@ -59,6 +59,11 @@ public class KeyExchangeAlgorithm
      */
     public static final int SM2 = 25;
 
+    /*
+     * RFC 9189
+     */
+    public static final int GOSTR341112_256 = 26;
+
     public static boolean isAnonymous(int keyExchangeAlgorithm)
     {
         switch (keyExchangeAlgorithm)

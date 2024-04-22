@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -24,6 +26,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Signature class for composite signatures. Selected algorithm is set by the "subclasses" at the end of this file.
@@ -49,7 +52,7 @@ public class SignatureSpi
     {
         this.algorithmIdentifier = algorithmIdentifier;
         this.algorithmIdentifierASN1 = CompositeSignaturesConstants.compositeNameASN1IdentifierMap.get(this.algorithmIdentifier);
-        List<Signature> componentSignatures = new ArrayList<>();
+        List<Signature> componentSignatures = new ArrayList<Signature>();
         try
         {
             switch (this.algorithmIdentifier)
@@ -111,16 +114,20 @@ public class SignatureSpi
                 this.digest = DigestFactory.createSHA512();
                 break;
             default:
-                throw new RuntimeException("Unknown composite algorithm.");
+                throw new IllegalArgumentException("unknown composite algorithm");
             }
 
             //get bytes of composite signature algorithm OID in DER
             //these bytes are used a prefix to the message digest https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html#name-composite-sign
             OIDBytes = this.algorithmIdentifierASN1.getEncoded(ASN1Encoding.DER);
         }
-        catch (NoSuchAlgorithmException | NoSuchProviderException | IOException e)
+        catch (GeneralSecurityException e)
         {
-            throw new RuntimeException(e);
+            throw Exceptions.illegalStateException(e.getMessage(), e);
+        }
+        catch (IOException e)
+        {
+            throw Exceptions.illegalStateException(e.getMessage(), e);
         }
         this.componentSignatures = Collections.unmodifiableList(componentSignatures);
     }
@@ -250,7 +257,7 @@ public class SignatureSpi
         {
             this.componentSignatures.get(i).update(this.OIDBytes);
             this.componentSignatures.get(i).update(digestResult); //in total, "OID || digest(message)" is the message fed into each component signature
-            if (!this.componentSignatures.get(i).verify(DERBitString.getInstance(signatureSequence.getObjectAt(i)).getBytes()))
+            if (!this.componentSignatures.get(i).verify(ASN1BitString.getInstance(signatureSequence.getObjectAt(i)).getOctets()))
             {
                 fail = true;
             }

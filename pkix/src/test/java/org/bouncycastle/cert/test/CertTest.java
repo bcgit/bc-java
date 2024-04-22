@@ -5463,9 +5463,8 @@ public class CertTest
     };
 
     private void checkCompositeSignatureCertificateCreation()
+        throws Exception
     {
-        try
-        {
             int index = 0;
             for (String oid : compositeSignaturesOIDs)
             {
@@ -5487,18 +5486,12 @@ public class CertTest
                 CompositePublicKey compositePublicKey = (CompositePublicKey)cert.getPublicKey();
 
                 isEquals(CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(new ASN1ObjectIdentifier(oid)).getId(), compositePublicKey.getAlgorithm());
-    
+
                 isEquals(subjectName, cert.getSubjectX500Principal().getName());
 
                 cert.verify(cert.getPublicKey());
                 index++;
             }
-        }
-        catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateException | OperatorCreationException |
-            SignatureException | InvalidKeyException | TestFailedException e)
-        {                       e.printStackTrace();
-            fail("checkCompositeSignatureCertificateCreation failed: " + e.getMessage());
-        }
     }
 
     private void checkParseCompositePublicKey()

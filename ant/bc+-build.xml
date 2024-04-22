@@ -250,7 +250,7 @@
                      windowtitle="Bouncy Castle Library ${release.name} API Specification"
                      header="&lt;b&gt;Bouncy Castle Cryptography Library ${release.name}&lt;/b&gt;">
                 <docElements/>
-                <arg value="${javadoc.args}" />
+                <arg line="${javadoc.args}" />
                 <classpath>
                     <path refid="project.classpath" /> 
                     <fileset dir="${artifacts.jars.dir}">
@@ -923,6 +923,7 @@
              <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/keybox/*Test.java" />
              <fileset dir="${src.dir}" includes="**/test/*.java" />
              <fileset dir="${src.dir}" includes="**/test/*/*.java" />
              <fileset dir="${src.dir}" includes="**/*.asc" />
@@ -953,6 +954,7 @@
         </copy>
 
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 

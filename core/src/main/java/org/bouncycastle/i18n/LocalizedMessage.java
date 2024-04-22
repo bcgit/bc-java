@@ -151,7 +151,7 @@ public class LocalizedMessage
             String result = bundle.getString(entry);
             if (!encoding.equals(DEFAULT_ENCODING))
             {
-                result = new String(result.getBytes(Charset.forName(DEFAULT_ENCODING)), encoding);
+                result = new String(result.getBytes(DEFAULT_ENCODING), encoding);
             }
             if (!arguments.isEmpty())
             {

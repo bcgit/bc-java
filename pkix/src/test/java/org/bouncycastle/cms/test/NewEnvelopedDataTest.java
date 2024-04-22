@@ -45,6 +45,7 @@ import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
@@ -763,6 +764,57 @@ public class NewEnvelopedDataTest
 
 
         assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(2, c.size());
+
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
+
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+            assertEquals(true, Arrays.equals(data, recData));
+        }
+
+        RecipientId id = new JceKeyTransRecipientId(_reciCert);
+
+        Collection collection = recipients.getRecipients(id);
+        if (collection.size() != 2)
+        {
+            fail("recipients not matched using general recipient ID.");
+        }
+        assertTrue(collection.iterator().next() instanceof RecipientInformation);
+    }
+
+    public void testKeyTransWithHKDF()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        edGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(ASN1OctetString.getInstance(ASN1OctetString.getInstance(_reciCert.getExtensionValue(Extension.subjectKeyIdentifier.getId())).getOctets()).getOctets(), _reciCert.getPublicKey()).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
+                .setEnableSha256HKdf(true)
+                .setProvider(BC).build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSObjectIdentifiers.id_alg_cek_hkdf_sha256.getId());
+
+        AlgorithmIdentifier encAlgId = AlgorithmIdentifier.getInstance(ed.getContentEncryptionAlgorithm().getParameters());
+
+        assertEquals(encAlgId.getAlgorithm(), CMSAlgorithm.DES_EDE3_CBC);
 
         Collection c = recipients.getRecipients();
 
@@ -1532,6 +1584,7 @@ public class NewEnvelopedDataTest
         throws Exception
     {
         tryKekAlgorithm(CMSTestUtil.makeAESKey(192), NISTObjectIdentifiers.id_aes192_wrap);
+        tryKekAlgorithmWithHKdf(CMSTestUtil.makeAESKey(192), NISTObjectIdentifiers.id_aes192_wrap);
     }
 
     public void testAES256KEK()
@@ -1567,6 +1620,18 @@ public class NewEnvelopedDataTest
     private void tryKekAlgorithm(SecretKey kek, ASN1ObjectIdentifier algOid)
         throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
     {
+        doTryKekAlgorithm(kek, algOid, false);
+    }
+
+    private void tryKekAlgorithmWithHKdf(SecretKey kek, ASN1ObjectIdentifier algOid)
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
+    {
+        doTryKekAlgorithm(kek, algOid, true);
+    }
+
+    private void doTryKekAlgorithm(SecretKey kek, ASN1ObjectIdentifier algOid, boolean withKdf)
+        throws NoSuchAlgorithmException, NoSuchProviderException, CMSException
+    {
         byte[] data = "WallaWallaWashington".getBytes();
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
 
@@ -1576,14 +1641,23 @@ public class NewEnvelopedDataTest
 
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
-            new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
+                .setEnableSha256HKdf(withKdf)
+                .setProvider(BC).build());
 
         RecipientInformationStore recipients = ed.getRecipientInfos();
 
         Collection c = recipients.getRecipients();
         Iterator it = c.iterator();
 
-        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+        if (withKdf)
+        {
+            assertEquals(ed.getEncryptionAlgOID(), CMSObjectIdentifiers.id_alg_cek_hkdf_sha256.getId());
+        }
+        else
+        {
+            assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
+        }
 
         if (it.hasNext())
         {

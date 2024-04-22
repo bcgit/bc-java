@@ -237,16 +237,15 @@ class JceAEADUtil
     Cipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)
         throws PGPException
     {
-        boolean enableCamellia = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         if (encAlgorithm != SymmetricKeyAlgorithmTags.AES_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_192
             && encAlgorithm != SymmetricKeyAlgorithmTags.AES_256
-            && (enableCamellia && (encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_128
             && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_192
-            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)))
+            && encAlgorithm != SymmetricKeyAlgorithmTags.CAMELLIA_256)
         {
             // Block Cipher must work on 16 byte blocks
-            throw new PGPException("AEAD only supported for AES" + (enableCamellia ? " and Camellia" : "") + " based algorithms");
+            throw new PGPException("AEAD only supported for AES and Camellia" + " based algorithms");
         }
 
         String mode;

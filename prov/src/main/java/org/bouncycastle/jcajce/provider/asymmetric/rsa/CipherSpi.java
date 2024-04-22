@@ -31,9 +31,12 @@ import org.bouncycastle.crypto.encodings.ISO9796d1Encoding;
 import org.bouncycastle.crypto.encodings.OAEPEncoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.crypto.tls.TlsRsaKeyExchange;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
+import org.bouncycastle.jcajce.spec.TLSRSAPremasterSecretParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Strings;
@@ -49,6 +52,8 @@ public class CipherSpi
     private boolean                 publicKeyOnly = false;
     private boolean                 privateKeyOnly = false;
     private ErasableOutputStream    bOut = new ErasableOutputStream();
+    private TLSRSAPremasterSecretParameterSpec tlsRsaSpec = null;
+    private CipherParameters param = null;
 
     public CipherSpi(
         AsymmetricBlockCipher engine)
@@ -129,6 +134,11 @@ public class CipherSpi
     protected int engineGetOutputSize(
         int     inputLen) 
     {
+        if (tlsRsaSpec != null)
+        {
+            return TlsRsaKeyExchange.PRE_MASTER_SECRET_LENGTH;
+        }
+
         try
         {
             return cipher.getOutputBlockSize();
@@ -262,9 +272,12 @@ public class CipherSpi
         SecureRandom random)
     throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        CipherParameters param;
 
-        if (params == null || params instanceof OAEPParameterSpec)
+        this.tlsRsaSpec = null;
+
+        if (params == null
+            || params instanceof OAEPParameterSpec
+            || params instanceof TLSRSAPremasterSecretParameterSpec)
         {
             if (key instanceof RSAPublicKey)
             {
@@ -291,7 +304,7 @@ public class CipherSpi
                 throw new InvalidKeyException("unknown key type passed to RSA");
             }
             
-            if (params != null)
+            if (params instanceof OAEPParameterSpec)
             {
                 OAEPParameterSpec spec = (OAEPParameterSpec)params;
                 
@@ -324,6 +337,16 @@ public class CipherSpi
 
                 cipher = new OAEPEncoding(new RSABlindedEngine(), digest, mgfDigest, ((PSource.PSpecified)spec.getPSource()).getValue());
             }
+            else if (params instanceof TLSRSAPremasterSecretParameterSpec)
+            {
+                // TODO Restrict mode to DECRYPT_MODE (and/or UNWRAP_MODE)
+                if (!(param instanceof RSAKeyParameters) || !((RSAKeyParameters)param).isPrivate())
+                {
+                    throw new InvalidKeyException("RSA private key required for TLS decryption");
+                }
+
+                this.tlsRsaSpec = (TLSRSAPremasterSecretParameterSpec)params;
+            }
         }
         else
         {
@@ -336,6 +359,7 @@ public class CipherSpi
         }
         else
         {
+            // TODO Remove after checking all AsymmetricBlockCipher init methods?
             param = new ParametersWithRandom(param, CryptoServicesRegistrar.getSecureRandom());
         }
 
@@ -403,23 +427,12 @@ public class CipherSpi
         int     inputOffset,
         int     inputLen) 
     {
+        if (inputLen > getInputLimit() - bOut.size())
+        {
+            throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
+        }
+
         bOut.write(input, inputOffset, inputLen);
-
-        if (cipher instanceof RSABlindedEngine)
-        {
-            if (bOut.size() > cipher.getInputBlockSize() + 1)
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
-        }
-        else
-        {
-            if (bOut.size() > cipher.getInputBlockSize())
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
-        }
-
         return null;
     }
 
@@ -430,23 +443,7 @@ public class CipherSpi
         byte[]  output,
         int     outputOffset) 
     {
-        bOut.write(input, inputOffset, inputLen);
-
-        if (cipher instanceof RSABlindedEngine)
-        {
-            if (bOut.size() > cipher.getInputBlockSize() + 1)
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
-        }
-        else
-        {
-            if (bOut.size() > cipher.getInputBlockSize())
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
-        }
-
+        engineUpdate(input, inputOffset, inputLen);
         return 0;
     }
 
@@ -456,24 +453,10 @@ public class CipherSpi
         int     inputLen) 
         throws IllegalBlockSizeException, BadPaddingException
     {
+        // TODO Can input actually be null?
         if (input != null)
         {
-            bOut.write(input, inputOffset, inputLen);
-        }
-
-        if (cipher instanceof RSABlindedEngine)
-        {
-            if (bOut.size() > cipher.getInputBlockSize() + 1)
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
-        }
-        else
-        {
-            if (bOut.size() > cipher.getInputBlockSize())
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
+            engineUpdate(input, inputOffset, inputLen);
         }
 
         return getOutput();
@@ -487,39 +470,33 @@ public class CipherSpi
         int     outputOffset) 
         throws IllegalBlockSizeException, BadPaddingException, ShortBufferException
     {
-        if (outputOffset + engineGetOutputSize(inputLen) > output.length)
+        // TODO Can input actually be null?
+        int outputSize = engineGetOutputSize(input == null ? 0 : inputLen);
+        if (outputOffset > output.length - outputSize)
         {
             throw new ShortBufferException("output buffer too short for input.");
         }
 
-        if (input != null)
-        {
-            bOut.write(input, inputOffset, inputLen);
-        }
+        byte[] out = engineDoFinal(input, inputOffset, inputLen);
+        System.arraycopy(out, 0, output, outputOffset, out.length);
+        return out.length;
+    }
 
-        if (cipher instanceof RSABlindedEngine)
+    private int getInputLimit()
+    {
+        if (tlsRsaSpec != null)
         {
-            if (bOut.size() > cipher.getInputBlockSize() + 1)
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
+            ParametersWithRandom pWithR = (ParametersWithRandom)param;
+            return TlsRsaKeyExchange.getInputLimit((RSAKeyParameters)pWithR.getParameters());
+        }
+        else if (cipher instanceof RSABlindedEngine)
+        {
+            return cipher.getInputBlockSize() + 1;
         }
         else
         {
-            if (bOut.size() > cipher.getInputBlockSize())
-            {
-                throw new ArrayIndexOutOfBoundsException("too much data for RSA block");
-            }
+            return cipher.getInputBlockSize();
         }
-
-        byte[]  out = getOutput();
-
-        for (int i = 0; i != out.length; i++)
-        {
-            output[outputOffset + i] = out[i];
-        }
-
-        return out.length;
     }
 
     private byte[] getOutput()
@@ -527,6 +504,13 @@ public class CipherSpi
     {
         try
         {
+            if (tlsRsaSpec != null)
+            {
+                ParametersWithRandom pWithR = (ParametersWithRandom)param;
+                return TlsRsaKeyExchange.decryptPreMasterSecret(bOut.getBuf(), 0, bOut.size(),
+                    (RSAKeyParameters)pWithR.getParameters(), tlsRsaSpec.getProtocolVersion(), pWithR.getRandom());
+            }
+
             byte[] output;
             try
             {

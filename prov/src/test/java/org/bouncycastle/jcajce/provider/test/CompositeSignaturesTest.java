@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce.provider.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -19,6 +18,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.Composite
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 
 public class CompositeSignaturesTest
@@ -62,10 +62,10 @@ public class CompositeSignaturesTest
             CompositePublicKey compositePublicKey = (CompositePublicKey)keyPair.getPublic();
             CompositePrivateKey compositePrivateKey = (CompositePrivateKey)keyPair.getPrivate();
 
-            String firstPublicKeyAlgorithm = compositePublicKey.getPublicKeys().get(0).getAlgorithm().toUpperCase();
-            String secondPublicKeyAlgorithm = compositePublicKey.getPublicKeys().get(1).getAlgorithm().toUpperCase();
-            String firstPrivateKeyAlgorithm = compositePrivateKey.getPrivateKeys().get(0).getAlgorithm().toUpperCase();
-            String secondPrivateKeyAlgorithm = compositePrivateKey.getPrivateKeys().get(1).getAlgorithm().toUpperCase();
+            String firstPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(0).getAlgorithm());
+            String secondPublicKeyAlgorithm = Strings.toUpperCase(compositePublicKey.getPublicKeys().get(1).getAlgorithm());
+            String firstPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(0).getAlgorithm());
+            String secondPrivateKeyAlgorithm = Strings.toUpperCase(compositePrivateKey.getPrivateKeys().get(1).getAlgorithm());
 
             BCRSAPublicKey rsaPublicKey = null;
             BCRSAPublicKey rsaPrivateKey = null;
@@ -162,11 +162,11 @@ public class CompositeSignaturesTest
             KeyPair keyPair = keyPairGenerator.generateKeyPair();
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initSign(keyPair.getPrivate());
-            signature.update(messageToBeSigned.getBytes(StandardCharsets.UTF_8));
+            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
             byte[] signatureValue = signature.sign();
 
             signature.initVerify(keyPair.getPublic());
-            signature.update(messageToBeSigned.getBytes(StandardCharsets.UTF_8));
+            signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
             TestCase.assertTrue(signature.verify(signatureValue));
         }
     }
@@ -180,7 +180,7 @@ public class CompositeSignaturesTest
         int count = 0;
         while ((line = reader.readLine()) != null)
         {
-            if (line.isEmpty())
+            if (line.length() == 0)
             {
                 continue;
             }

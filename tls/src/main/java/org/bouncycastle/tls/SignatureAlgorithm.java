@@ -35,7 +35,7 @@ public class SignatureAlgorithm
     public static final short ecdsa_brainpoolP512r1tls13_sha512 = 28;
 
     /*
-     * draft-smyshlyaev-tls12-gost-suites-10
+     * RFC 9189
      */
     public static final short gostr34102012_256 = 64;
     public static final short gostr34102012_512 = 65;

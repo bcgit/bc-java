@@ -284,9 +284,9 @@ public abstract class SimpleTest
         {
             if (failMessage != null)
             {
-                isTrue(e.getMessage(), e.getMessage().contains(failMessage));
+                isTrue(e.getMessage(), e.getMessage().indexOf(failMessage) >= 0);
             }
-            isTrue(e.getClass().getName().contains(exceptionClass));
+            isTrue(e.getClass().getName().indexOf(exceptionClass) >= 0);
             return e;
         }
         return null;

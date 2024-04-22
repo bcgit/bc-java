@@ -691,10 +691,15 @@ abstract class JsseUtils
          */
         if ("RSA".equalsIgnoreCase(algorithm))
         {
-            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(privateKey.getEncoded());
-            if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
+            // NOTE: Private keys might not support encoding (e.g. for an HSM).
+            byte[] encoding = privateKey.getEncoded();
+            if (encoding != null)
             {
-                return "RSASSA-PSS";
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(encoding);
+                if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
+                {
+                    return "RSASSA-PSS";
+                }
             }
         }
 

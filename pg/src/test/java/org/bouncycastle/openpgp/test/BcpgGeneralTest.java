@@ -25,7 +25,6 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
-import org.bouncycastle.openpgp.PGPKdfParameters;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -103,7 +102,6 @@ public class BcpgGeneralTest
         throws Exception
     {
         SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
-//        System.setProperty("enableCamelliaKeyWrapping", "true");
         final X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
         gen.init(new X25519KeyGenerationParameters(random));
 //        testException("Symmetric key algorithm must be AES-128 or stronger.", "IllegalStateException", () ->
@@ -156,9 +154,25 @@ public class BcpgGeneralTest
 
         PGPObjectFactory objectFactory = new BcPGPObjectFactory(armorIn);
         final Iterator it = objectFactory.iterator();
-        testException("Cannot remove element from factory.", "UnsupportedOperationException", () -> it.remove());
+        testException("Cannot remove element from factory.", "UnsupportedOperationException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                it.remove();
+            }
+        });
         PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)it.next();
-        testException(null, "NoSuchElementException", () -> it.next());
+        testException(null, "NoSuchElementException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                it.next();
+            }
+        });
 
         PGPPBEEncryptedData encryptedData = (PGPPBEEncryptedData)encryptedDataList.get(0);
         isEquals(encryptedData.getAlgorithm(), SymmetricKeyAlgorithmTags.AES_128);

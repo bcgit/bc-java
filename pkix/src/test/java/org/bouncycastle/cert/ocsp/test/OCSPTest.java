@@ -265,6 +265,52 @@ public class OCSPTest
       + "ClrcOKZWKOWa14XJy/DJk6nlOiq5W2AglUt8JVOpa5oVdiNRIT2WoGnpqVV9"
       + "tUeoWog=");
 
+    private final byte[] emptyExtResp = Base64.decode(
+        "MIIHoAoBAKCCB5kwggeVBgkrBgEFBQcwAQEEggeGMIIHgjCCASqhdTBzMS4w"
+       + "LAYDVQQDDCVFSUQtU0sgMjAxNiBBSUEgT0NTUCBSRVNQT05ERVIgMjAyNDA0"
+       + "MRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEbMBkGA1UECgwSU0sgSUQgU29s"
+       + "dXRpb25zIEFTMQswCQYDVQQGEwJFRRgPMjAyNDA0MDYxODEzMTRaMIGbMIGY"
+       + "MEkwCQYFKw4DAhoFAAQUBjM3gNZS7ysU/rZfUMZ8XKOlOKEEFJwJqAeHDD2s"
+       + "Lof8oK7S+2VJiCj7AhBg9KcIpxg1dVqmcEXEfjl8oRYYDzIwMjEwMjA0MDk0"
+       + "NTE2WqADCgEAGA8yMDI0MDQwNjE4MTMxNFqhIjAgMB4GCSsGAQUFBzABBgQR"
+       + "GA8yMDE2MDgzMDA5MjEwOVqhAjAAMA0GCSqGSIb3DQEBCwUAA4IBAQB9HmgR"
+       + "drIde4dYwIBWqO7O7xrDOOb5tWhDaUx/7fv0uo/sQRjoI6Ozi7jSc+RPraEt"
+       + "bpwr5z91rY83+d8DXp/+2HkH7l/cxNhl87gsRKeif8aNG4dfZqL6DVa9md+v"
+       + "Cn7fGIhp+14y9aXY2FNOGzwCYQdXIsgXkaeqZ2EXx01XeNDAA1h0uZpud3IH"
+       + "X3xcrnZiXPDjQQeMtpfw04oLowf3zJ+9vblhQ+qMMn6ii1Kj8YD48pCnNwln"
+       + "eKGK0EzRAOylbHNeDp8SOy5JoS24IkrfmpfC7fZBp0NQMTUmtUkcusRRlmTw"
+       + "bmw6fzAFfE4EtFgrtshOMIrAu9GIv05LRJ8moIIFPDCCBTgwggU0MIIDHKAD"
+       + "AgECAhB3TCdJmp3pTGU3rjXJU+DbMA0GCSqGSIb3DQEBCwUAMGAxCzAJBgNV"
+       + "BAYTAkVFMSIwIAYDVQQKDBlBUyBTZXJ0aWZpdHNlZXJpbWlza2Vza3VzMRcw"
+       + "FQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEUMBIGA1UEAwwLRUlELVNLIDIwMTYw"
+       + "HhcNMjQwMzMxMjEwMDAwWhcNMjQwNTA1MjEwMDAwWjBzMS4wLAYDVQQDDCVF"
+       + "SUQtU0sgMjAxNiBBSUEgT0NTUCBSRVNQT05ERVIgMjAyNDA0MRcwFQYDVQRh"
+       + "DA5OVFJFRS0xMDc0NzAxMzEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFT"
+       + "MQswCQYDVQQGEwJFRTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB"
+       + "AL8VN0ssGmHAycQ0GTjHBD0jpl9GmTE/2l5nxxapyeIElh5zbLyqWgiak2Hk"
+       + "gwmesrNBusWAi9XMk23s/lk3bUrmr4ukvpyv+QjMAtOvO5jnanByjRKzOe5m"
+       + "Pl6OfGgRqcTmCmjgzN64zPGU35j793gKXGZf351k95sKbc0sj2fLo9Kz5rvt"
+       + "iA/0I/GJfpMFEfFVVq1D8FQnsSfu1pzzf5hmWQ1OneCLox4vgUk1gEo3mZPO"
+       + "0S4E6twLw3F+vp9jBaY0uolsyLvx2VwJPIO4ynzO3PvmrdMDHXYnbaJQOlXa"
+       + "KLK3kwhksyxcvxpWfgOWTrch9Ke+7jeNUEMcj//rm7kCAwEAAaOB1jCB0zAO"
+       + "BgNVHQ8BAf8EBAMCB4AwFgYDVR0lAQH/BAwwCgYIKwYBBQUHAwkwHQYDVR0O"
+       + "BBYEFNnCelaWBINpYLoWlLhh4T5EJTeBMB8GA1UdIwQYMBaAFJwJqAeHDD2s"
+       + "Lof8oK7S+2VJiCj7MEoGCCsGAQUFBwEBBD4wPDA6BggrBgEFBQcwAoYuaHR0"
+       + "cHM6Ly9zay5lZS91cGxvYWQvZmlsZXMvRUlELVNLXzIwMTYuZGVyLmNydDAM"
+       + "BgNVHRMBAf8EAjAAMA8GCSsGAQUFBzABBQQCBQAwDQYJKoZIhvcNAQELBQAD"
+       + "ggIBAFzysUmbHKAP6aGA3HJt9tLOrP1QoD42A7iSdf/wpewJBtgFM+wK5Z+x"
+       + "UHkaU316hN18FIOW1uL418+8oK9KU0NRbjNvGBbhNS7yG2bKRknRTCL48iVZ"
+       + "qGXJVLbO/frx6ZABukmdrzrJZ4MisVlmIBhwNQzJP5QOgq2tj+0/XX0/7N99"
+       + "dPyoz4SfUIa8Qe5k4GR79k7zvKy75j4kH2CuLuVEfoiHL/s3kwVBX33cIdwO"
+       + "rbrWViFHnc5ZLk4//d2YYGGWsGgy46s580T7vqu2EAy/NZIyFD+pozPEiiKM"
+       + "PNwFcYRCODnNZe4p6/anNtBke3ULmepcMs2nUcyM46uBuSLrn3Lj2KgYFboZ"
+       + "OBiItP+zAp90APq1X+f03vxW1uJp4EwqpPHJiB+9i3I6XpN8CpuTi72uQR1N"
+       + "bz8XkfajSsGUZK4+jdwYkrdwA6gb5XmLyDnTXPszdfjFhiZ7/PzDdjla1YrM"
+       + "J3HOcv8B5r5NqESQ+u28xE+LEhS9oJZLQygBOt29KN0Yh6xnN0xfR5iQizv4"
+       + "GTN6OLdYL7hg6YuCLCuh9Lh/dSGm6GfV2uQ5rjdyJ393VPnV/VuujEc/XIm/"
+       + "m1YvoDKyP8c2sa0e7/vYiVEJUYSRYPpoBsd1TUJNKpwK1K8O05CVHfmaMJXI"
+       + "VV46HiaBgBguGWj22+m47TEqOXXQ");
+
     private static final String BC = "BC";
 
     public String getName()
@@ -866,6 +912,16 @@ public class OCSPTest
         }
 
         //
+        // invalid (empty) extension block
+        //
+        OCSPResp emptyExt = new OCSPResp(emptyExtResp);
+
+        BasicOCSPResp emptyRes = (BasicOCSPResp)emptyExt.getResponseObject();
+
+        isTrue(emptyRes.hasExtensions());
+        isEquals(0, emptyRes.getExtensionOIDs().size());
+
+        //
         // request list check
         //
         requests = req.getRequestList();
@@ -963,6 +1019,7 @@ public class OCSPTest
 
     public static void main(
         String[] args)
+        throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
 

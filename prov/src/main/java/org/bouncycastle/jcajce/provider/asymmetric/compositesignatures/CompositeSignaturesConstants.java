@@ -57,7 +57,7 @@ public abstract class CompositeSignaturesConstants
         Falcon512_ECDSA_brainpoolP256r1_SHA256("Falcon512-ECDSA-brainpoolP256r1-SHA256"),
         Falcon512_Ed25519_SHA512("Falcon512-Ed25519-SHA512");
 
-        private String id;
+        private final String id;
 
         private CompositeName(String id)
         {
@@ -77,7 +77,7 @@ public abstract class CompositeSignaturesConstants
 
     static
     {
-        compositeNameASN1IdentifierMap = new HashMap<>();
+        compositeNameASN1IdentifierMap = new HashMap<CompositeName, ASN1ObjectIdentifier>();
         compositeNameASN1IdentifierMap.put(CompositeName.MLDSA44_RSA2048_PSS_SHA256, MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
         compositeNameASN1IdentifierMap.put(CompositeName.MLDSA44_RSA2048_PKCS15_SHA256, MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
         compositeNameASN1IdentifierMap.put(CompositeName.MLDSA44_ECDSA_P256_SHA256, MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256);
@@ -103,7 +103,7 @@ public abstract class CompositeSignaturesConstants
 
     static
     {
-        ASN1IdentifierCompositeNameMap = new HashMap<>();
+        ASN1IdentifierCompositeNameMap = new HashMap<ASN1ObjectIdentifier, CompositeName>();
         for (Entry<CompositeName, ASN1ObjectIdentifier> entry : compositeNameASN1IdentifierMap.entrySet())
         {
             ASN1IdentifierCompositeNameMap.put(entry.getValue(), entry.getKey());
@@ -117,7 +117,7 @@ public abstract class CompositeSignaturesConstants
 
     static
     {
-        ASN1IdentifierAlgorithmNameMap = new HashMap<>();
+        ASN1IdentifierAlgorithmNameMap = new HashMap<ASN1ObjectIdentifier, CompositeName>();
         for (ASN1ObjectIdentifier oid : supportedIdentifiers)
         {
             CompositeName algName = ASN1IdentifierCompositeNameMap.get(oid); //Get enum so we can get name() value.

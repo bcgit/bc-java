@@ -69,7 +69,7 @@ public class EtsiTs103097ExtensionModule
     public static final OERDefinition.Builder Extension = OERDefinition.seq(ExtId.label("id"),
         OERDefinition.aSwitch(
 
-            /**
+            /*
              * Switch to examine "Extension.id" and select the correct oer definition.
              */
             new Switch()
