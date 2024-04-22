@@ -259,7 +259,7 @@ public class PKCS10Test
         
         sig.update(req.toASN1Structure().getCertificationRequestInfo().getEncoded());
         
-        if (!sig.verify(req.toASN1Structure().getSignature().getBytes()))
+        if (!sig.verify(req.toASN1Structure().getSignature().getOctets()))
         {
             fail("signature not mapped correctly.");
         }

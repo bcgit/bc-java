@@ -1,4 +1,4 @@
-package org.bouncycastle.internal.asn1.misc.test;
+package org.bouncycastle.asn1.misc.test;
 
 import java.lang.reflect.Method;
 import java.math.BigInteger;
@@ -294,8 +294,8 @@ import org.bouncycastle.asn1.x9.DHPublicKey;
 import org.bouncycastle.asn1.x9.DHValidationParms;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.internal.asn1.misc.CAST5CBCParameters;
-import org.bouncycastle.internal.asn1.misc.IDEACBCPar;
+import org.bouncycastle.asn1.misc.CAST5CBCParameters;
+import org.bouncycastle.asn1.misc.IDEACBCPar;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.encoders.Base64;
 

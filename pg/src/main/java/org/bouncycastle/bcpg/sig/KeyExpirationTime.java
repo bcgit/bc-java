@@ -9,6 +9,9 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 public class KeyExpirationTime 
     extends SignatureSubpacket
 {
+    /**
+     * @deprecated Will be removed
+     */
     protected static byte[] timeToBytes(
         long    t)
     {
@@ -22,14 +25,14 @@ public class KeyExpirationTime
     {
         super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, isLongLength, data);
     }
-    
+
     public KeyExpirationTime(
         boolean    critical,
         long       seconds)
     {
         super(SignatureSubpacketTags.KEY_EXPIRE_TIME, critical, false, Utils.timeToBytes(seconds));
     }
-    
+
     /**
      * Return the number of seconds after creation time a key is valid for.
      * 
@@ -37,8 +40,6 @@ public class KeyExpirationTime
      */
     public long getTime()
     {
-        long    time = ((long)(data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) | ((data[2] & 0xff) << 8) | (data[3] & 0xff);
-        
-        return time;
+        return Utils.timeFromBytes(data);
     }
 }

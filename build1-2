@@ -47,6 +47,7 @@ mkdir -p $jdk12src
 ((cd pkix/src/test/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pkix/src/main/jdk1.2 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/main/java && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/main/jdk1.5 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/test/java && tar cf - * ) | (cd $jdk12src && tar xf -))
@@ -67,6 +68,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/test/PrintTestResult.java
     rm org/bouncycastle/pqc/legacy/crypto/qtesla/QTeslaKeyEncodingTests.java
     rm org/bouncycastle/pqc/crypto/util/PQCOtherInfoGenerator.java
+    rm -rf org/bouncycastle/test/JVMVersionTest.java
     rm -rf org/bouncycastle/crypto/test/ntru
     rm -rf org/bouncycastle/pqc/legacy/math/ntru
     rm -rf org/bouncycastle/pqc/math/test
@@ -204,12 +206,16 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/pkix/test/TestUtil.java
     rm org/bouncycastle/cert/cmp/test/PQC*.java
     rm org/bouncycastle/cert/cmp/test/Elgamal*.java
+    rm org/bouncycastle/cert/cmp/test/InvalidMessagesTest.java
+    rm org/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java
     rm org/bouncycastle/cert/ocsp/test/PKIXRevocationTest.java
     rm -r org/bouncycastle/crypto/test/BigSkippingCipherTest.java
     rm -rf org/bouncycastle/openssl/test
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/compositesignatures
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/dstu
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/DSTU*.java
     rm -rf org/bouncycastle/jcajce/provider/asymmetric/util/EC5*.java
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/CompositeSignatures.java
     rm org/bouncycastle/asn1/test/EnumeratedTest.java
     rm -rf org/bouncycastle/pqc/crypto/test/QT*.java
     rm -rf org/bouncycastle/pqc/crypto/test/SphincsPlusTest.java
@@ -238,6 +244,10 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm  org/bouncycastle/openpgp/test/BcPGPEd25519JcaKeyPairConversionTest.java
     rm  org/bouncycastle/openpgp/test/ArmoredOutputStreamUTF8Test.java
     rm  org/bouncycastle/openpgp/test/PGPAeadTest.java
+    rm  org/bouncycastle/openpgp/test/BytesBooleansTest.java
+    rm  org/bouncycastle/openpgp/test/BcImplProviderTest.java
+    rm  org/bouncycastle/openpgp/test/BcpgGeneralTest.java
+    rm  org/bouncycastle/openpgp/test/OpenPGPTest.java
 
     sh ../../scripts/jdk1.2ed.sh
 

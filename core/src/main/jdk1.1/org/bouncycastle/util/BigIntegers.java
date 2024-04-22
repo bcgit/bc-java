@@ -368,6 +368,51 @@ public final class BigIntegers
         return rv;
     }
 
+    public static boolean modOddIsCoprime(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'M' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
+        {
+            X = X.mod(M);
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        return 0 != Mod.modOddIsCoprime(m, x);
+    }
+
+    public static boolean modOddIsCoprimeVar(BigInteger M, BigInteger X)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'M' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.bitLength() > M.bitLength())
+        {
+            X = X.mod(M);
+        }
+        if (X.equals(ONE))
+        {
+            return true;
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int[] x = Nat.fromBigInteger(bits, X);
+        return Mod.modOddIsCoprimeVar(m, x);
+    }
     public static class Cache
     {
         private final Map values = new HashMap();

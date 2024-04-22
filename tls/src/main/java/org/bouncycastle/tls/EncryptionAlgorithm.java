@@ -77,4 +77,11 @@ public class EncryptionAlgorithm
      * GMT 0024-2014
      */
     public static final int SM4_CBC = 28;
+
+    /*
+     * RFC 9189
+     */
+    public static final int KUZNYECHIK_CTR_OMAC = 29;
+    public static final int MAGMA_CTR_OMAC = 30;
+    public static final int _28147_CNT_IMIT = 31;
 }

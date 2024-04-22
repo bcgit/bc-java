@@ -6,7 +6,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.cms.test.OctetStringTest;
 import org.bouncycastle.asn1.cms.test.ParseTest;
-import org.bouncycastle.internal.asn1.misc.test.GetInstanceTest;
+import org.bouncycastle.asn1.misc.test.GetInstanceTest;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 

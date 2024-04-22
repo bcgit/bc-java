@@ -1,3 +1,3 @@
 
-regexp: <List<PGPSignature>>|<Map<CertID, OCSPResponse>>|<URI[^>]*>>|<[A-Z?][^>@]*[a-zA-Z0-9\\]]>|<[A-Z]>|<[a-z][^>@]*[a-z\\]]>|@SuppressWarnings(.*)|@Override|@Deprecated
+regexp: <List<PGPSignature>>|<Map<CertID, OCSPResponse>>|<URI[^>]*>>|<[A-Z?][^>@]*[a-zA-Z0-9\\]]>|<[A-Z]>|<[a-z][^>@]*[a-z\\]]>|@SuppressWarnings(.*)|@Override|@Deprecated|@FunctionalInterface
 

@@ -131,63 +131,243 @@ public class BcImplProviderTest
         testCreateDigest(provider, HashAlgorithmTags.MD5, new MD5Digest());
         testCreateDigest(provider, HashAlgorithmTags.RIPEMD160, new RIPEMD160Digest());
         testCreateDigest(provider, HashAlgorithmTags.TIGER_192, new TigerDigest());
-        testException("cannot recognise digest", "PGPException", () -> provider.get(HashAlgorithmTags.SM3));
+        testException("cannot recognise digest", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                provider.get(HashAlgorithmTags.SM3);
+            }
+        });
 
         //createSigner
         testCreateSigner(PublicKeyAlgorithmTags.DSA, new DSADigestSigner(new DSASigner(), new SHA1Digest()), "DSA",
-            (pub, privKey) -> new DSASecretBCPGKey(((DSAPrivateKey)privKey).getX()),
-            (kpGen) -> kpGen.initialize(1024));
-        testCreateSigner(PublicKeyAlgorithmTags.RSA_GENERAL, new RSADigestSigner(new SHA1Digest()), "RSA",
-            (pub, privKey) ->
+            new PrivateKeyOperation()
             {
-                RSAPrivateCrtKey rsK = (RSAPrivateCrtKey)privKey;
-                return new RSASecretBCPGKey(rsK.getPrivateExponent(), rsK.getPrimeP(), rsK.getPrimeQ());
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new DSASecretBCPGKey(((DSAPrivateKey)privKey).getX());
+                }
             },
-            (kpGen) -> kpGen.initialize(1024));
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(1024);
+                }
+            });
+        testCreateSigner(PublicKeyAlgorithmTags.RSA_GENERAL, new RSADigestSigner(new SHA1Digest()), "RSA",
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    RSAPrivateCrtKey rsK = (RSAPrivateCrtKey)privKey;
+                    return new RSASecretBCPGKey(rsK.getPrivateExponent(), rsK.getPrimeP(), rsK.getPrimeQ());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(1024);
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("P-256"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("P-256"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("P-384"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("P-384"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("P-521"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("P-521"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("brainpoolP256r1"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("brainpoolP256r1"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("brainpoolP384r1"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("brainpoolP384r1"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.ECDSA, new DSADigestSigner(new ECDSASigner(), new SHA1Digest()), "ECDSA",
-            (pub, privKey) -> new ECSecretBCPGKey(((ECPrivateKey)privKey).getS()),
-            (kpGen) -> new ECGenParameterSpec("brainpoolP512r1"));
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECGenParameterSpec("brainpoolP512r1"));
+                }
+            });
 
         testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
-            (pub, privKey) ->
+            new PrivateKeyOperation()
             {
-                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new EdSecretBCPGKey(
-                    new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                    return new EdSecretBCPGKey(
+                        new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+                }
             },
-            (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519")));
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.Ed448, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
-            (pub, privKey) ->
+            new PrivateKeyOperation()
             {
-                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new Ed448SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                    return new Ed448SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
+                }
             },
-            (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448")));
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448"));
+                }
+            });
         testCreateSigner(PublicKeyAlgorithmTags.Ed25519, new EdDsaSigner(new Ed25519Signer(), new SHA1Digest()), "EdDSA",
-            (pub, privKey) ->
+            new PrivateKeyOperation()
             {
-                PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
-                return new Ed25519SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                    return new Ed25519SecretBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
+                }
             },
-            (kpGen) -> kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519")));
-        testException("cannot recognise keyAlgorithm:", "PGPException", ()->
-            new BcPGPContentVerifierBuilderProvider().get(PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA1)
-                .build(((PGPPublicKeyRing) new JcaPGPObjectFactory(BcPGPDSAElGamalTest.testPubKeyRing).nextObject()).getPublicKey()));
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
+                }
+            });
+        testException("cannot recognise keyAlgorithm:", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new BcPGPContentVerifierBuilderProvider().get(PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA1)
+                    .build(((PGPPublicKeyRing)new JcaPGPObjectFactory(BcPGPDSAElGamalTest.testPubKeyRing).nextObject()).getPublicKey());
+            }
+        });
+
 
 //        testException("cannot recognise keyAlgorithm: ", "PGPException", ()->
 //        {
@@ -211,12 +391,27 @@ public class BcImplProviderTest
         createBlockCipherTest(SymmetricKeyAlgorithmTags.IDEA);
         createBlockCipherTest(SymmetricKeyAlgorithmTags.TWOFISH);
         createBlockCipherTest(SymmetricKeyAlgorithmTags.TRIPLE_DES);
-        testException("cannot create cipher", "PGPException", () -> createBlockCipherTest(SymmetricKeyAlgorithmTags.SAFER));
+        testException("cannot create cipher", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                createBlockCipherTest(SymmetricKeyAlgorithmTags.SAFER);
+            }
+        });
 
         final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
-        testException("cannot recognise cipher", "PGPException", () -> decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.NULL, new byte[32], new byte[12], new byte[16], 0, 16));
+        testException("cannot recognise cipher", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.NULL, new byte[32], new byte[12], new byte[16], 0, 16);
+            }
+        });
 
-        System.setProperty("enableCamelliaKeyWrapping", "true");
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_128);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_192);
         createWrapperTest(SymmetricKeyAlgorithmTags.AES_256);

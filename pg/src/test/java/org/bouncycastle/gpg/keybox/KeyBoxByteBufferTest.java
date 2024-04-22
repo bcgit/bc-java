@@ -115,21 +115,66 @@ public class KeyBoxByteBufferTest
     public void testExceptions()
         throws IOException
     {
-        testException("Could not convert ", "IllegalStateException", () -> KeyBoxByteBuffer.wrap(new Object()));
+        testException("Could not convert ", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                KeyBoxByteBuffer.wrap(new Object());
+            }
+        });
         final KeyBoxByteBuffer buf = KeyBoxByteBuffer.wrap(new byte[4]);
-        testException("invalid range ", "IllegalArgumentException", () -> buf.rangeOf(-1, 2));
-
-        testException("range exceeds buffer remaining", "IllegalArgumentException", () -> buf.rangeOf(0, 24));
-
-        testException("size exceeds buffer remaining", "IllegalArgumentException", () -> buf.consume(buf.remaining() + 1));
-
-        testException("size less than 0", "IllegalArgumentException", () -> buf.consume(buf.size()));
-
-        testException("size exceeds buffer remaining", "IllegalArgumentException", () -> {
-            KeyBoxByteBuffer buf1 = KeyBoxByteBuffer.wrap(new byte[21]);
-            buf1.consume(buf1.getBuffer().remaining() + 1);
+        testException("invalid range ", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                buf.rangeOf(-1, 2);
+            }
         });
 
+        testException("range exceeds buffer remaining", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                buf.rangeOf(0, 24);
+            }
+        });
+
+        testException("size exceeds buffer remaining", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                buf.consume(buf.remaining() + 1);
+            }
+        });
+
+        testException("size less than 0", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                buf.bN(-1);
+            }
+        });
+
+        testException("size exceeds buffer remaining", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                KeyBoxByteBuffer buf1 = KeyBoxByteBuffer.wrap(new byte[21]);
+                buf1.consume(22);
+            }
+        });
     }
 
     @Override

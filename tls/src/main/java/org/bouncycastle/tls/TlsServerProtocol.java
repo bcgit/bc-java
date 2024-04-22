@@ -12,6 +12,7 @@ import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -397,7 +398,7 @@ public class TlsServerProtocol
             int namedGroup = clientShare.getNamedGroup();
     
             TlsAgreement agreement;
-            if (NamedGroup.refersToASpecificCurve(namedGroup))
+            if (NamedGroup.refersToAnECDHCurve(namedGroup))
             {
                 agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
             }
@@ -405,16 +406,21 @@ public class TlsServerProtocol
             {
                 agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
             }
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
+            {
+                agreement = crypto.createKemDomain(new TlsKemConfig(namedGroup, true)).createKem();
+            }
             else
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
+            agreement.receivePeerValue(clientShare.getKeyExchange());
+
             byte[] key_exchange = agreement.generateEphemeral();
             KeyShareEntry serverShare = new KeyShareEntry(namedGroup, key_exchange);
             TlsExtensionsUtils.addKeyShareServerHello(serverHelloExtensions, serverShare);
 
-            agreement.receivePeerValue(clientShare.getKeyExchange());
             sharedSecret = agreement.calculateSecret();
         }
 

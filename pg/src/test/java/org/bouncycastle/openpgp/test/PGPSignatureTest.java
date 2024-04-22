@@ -657,11 +657,11 @@ public class PGPSignatureTest
 
         IssuerFingerprint isFig = hashedPcks.getIssuerFingerprint();
 
-        isTrue("mismatch on issuer fingerprint", Arrays.areEqual(secretDSAKey.getPublicKey().getFingerprint(), isFig.getFingerprint()));
+        isTrue("mismatch on issuer fingerprint", secretDSAKey.getPublicKey().hasFingerprint(isFig.getFingerprint()));
 
         IntendedRecipientFingerprint intFig = hashedPcks.getIntendedRecipientFingerprint();
 
-        isTrue("mismatch on intended rec. fingerprint", Arrays.areEqual(secretKey.getPublicKey().getFingerprint(), intFig.getFingerprint()));
+        isTrue("mismatch on intended rec. fingerprint", secretKey.getPublicKey().hasFingerprint(intFig.getFingerprint()));
 
         prefAlgs = hashedPcks.getPreferredCompressionAlgorithms();
         preferredAlgorithmCheck("compression", NO_PREFERENCES, prefAlgs);

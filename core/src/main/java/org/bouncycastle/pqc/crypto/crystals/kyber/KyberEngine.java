@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.crystals.kyber;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.security.SecureRandom;
 
@@ -217,6 +218,22 @@ class KyberEngine
 
     public byte[][] kemEncrypt(byte[] publicKeyInput)
     {
+        // Input validation (6.2 ML-KEM Encaps)
+        // Type Check
+        if (publicKeyInput.length != KyberIndCpaPublicKeyBytes)
+        {
+            throw new IllegalArgumentException("Input validation Error: Type check failed for ml-kem encapsulation");
+        }
+        // Modulus Check
+        PolyVec polyVec = new PolyVec(this);
+        byte[] seed = indCpa.unpackPublicKey(polyVec, publicKeyInput);
+        byte[] ek = indCpa.packPublicKey(polyVec, seed);
+        if (!Arrays.areEqual(ek, publicKeyInput))
+        {
+            throw new IllegalArgumentException("Input validation: Modulus check failed for ml-kem encapsulation");
+        }
+
+
         byte[] outputCipherText;
 
         byte[] buf = new byte[2 * KyberSymBytes];

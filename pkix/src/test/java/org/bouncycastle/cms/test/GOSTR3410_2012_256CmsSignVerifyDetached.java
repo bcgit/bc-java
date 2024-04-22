@@ -8,7 +8,6 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -27,6 +26,7 @@ import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.encoders.Base64;
 
 public class GOSTR3410_2012_256CmsSignVerifyDetached
     extends TestCase
@@ -73,9 +73,9 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
     public void testGost3410_2012_256()
         throws Exception
     {
-        byte[] detachedCms = Base64.getDecoder().decode(SIGNATURE);
-        byte[] rootCertificate = Base64.getDecoder().decode(CA_CERTIFICATE);
-        List<X509CertificateHolder> trustedCertificates = new ArrayList<>();
+        byte[] detachedCms = Base64.decode(SIGNATURE);
+        byte[] rootCertificate = Base64.decode(CA_CERTIFICATE);
+        List<X509CertificateHolder> trustedCertificates = new ArrayList<X509CertificateHolder>();
         trustedCertificates.add(new X509CertificateHolder(rootCertificate));
 
         boolean isSignatureValid = verifyDetached(SIGNED_DATA, detachedCms, trustedCertificates);
@@ -92,7 +92,7 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
         boolean result = false;
         try
         {
-            HashSet<TrustAnchor> trustAnchors = new HashSet<>();
+            HashSet<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
             for (X509CertificateHolder trustedCert : trustedCertificates)
             {
                 TrustAnchor trustAnchor = new TrustAnchor(getX509Certificate(trustedCert), null);

@@ -452,7 +452,7 @@ public class CipherSuite
     public static final int TLS_SM4_CCM_SM3 = 0x00C7;
 
     /*
-     * draft-smyshlyaev-tls12-gost-suites-10
+     * RFC 9189
      */
     public static final int TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC = 0xC100;
     public static final int TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC = 0xC101;

@@ -181,6 +181,22 @@ public class EnvelopedDataHelper
         throw new IllegalArgumentException("unknown generic key type");
     }
 
+    public Key getJceKey(AlgorithmIdentifier algId, GenericKey key)
+    {  
+        ASN1ObjectIdentifier algorithm = algId.getAlgorithm();
+        if (key.getRepresentation() instanceof Key)
+        {
+            return (Key)key.getRepresentation();
+        }
+
+        if (key.getRepresentation() instanceof byte[])
+        {
+            return new SecretKeySpec((byte[])key.getRepresentation(), getBaseCipherName(algorithm));
+        }
+
+        throw new IllegalArgumentException("unknown generic key type");
+    }
+
     public void keySizeCheck(AlgorithmIdentifier keyAlgorithm, Key key)
         throws CMSException
     {

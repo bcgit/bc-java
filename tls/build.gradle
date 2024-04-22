@@ -146,9 +146,11 @@ jar {
         from sourceSets.java9.output
     }
     manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-Name': 'bctls')
+    manifest.attributes('Bundle-SymbolicName': 'bctls')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
     manifest.attributes('Export-Package': 'org.bouncycastle.{jsse|tls}.*')
-    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{jsse|tls}.*,org.bouncycastle.*;version=\"[${version},${maxVersion})\"")
 }
 
 

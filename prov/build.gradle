@@ -145,9 +145,11 @@ jar {
         from sourceSets.java21.output
     }
     manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-Name': 'bcprov')
+    manifest.attributes('Bundle-SymbolicName': 'bcprov')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.*')
-    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+    manifest.attributes('Export-Package': '!org.bouncycastle.internal.*,org.bouncycastle.*')
+    manifest.attributes('Import-Package': 'java.*;resolution:=optional,javax.*;resolution:=optional')
 }
 
 

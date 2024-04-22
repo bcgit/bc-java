@@ -622,7 +622,7 @@ public class ArmoredOutputStream
          */
         private Builder setSingletonHeader(String key, String value)
         {
-            if (value == null || value.trim().isEmpty())
+            if (value == null || value.trim().length() == 0)
             {
                 this.headers.remove(key);
             }
@@ -647,7 +647,7 @@ public class ArmoredOutputStream
          */
         private Builder addHeader(String key, String value)
         {
-            if (value == null || value.trim().isEmpty())
+            if (value == null || value.trim().length() == 0)
             {
                 return this;
             }
@@ -663,11 +663,12 @@ public class ArmoredOutputStream
             String trimmed = value.trim();
             for (String line : trimmed.split("\n"))
             {
-                if (line.trim().isEmpty())
+                String lineTrim = line.trim();
+                if (lineTrim.length() == 0)
                 {
                     continue;
                 }
-                values.add(line.trim());
+                values.add(lineTrim);
             }
             return this;
         }
@@ -683,7 +684,7 @@ public class ArmoredOutputStream
          */
         private Builder replaceHeader(String key, String value)
         {
-            if (value == null || value.trim().isEmpty())
+            if (value == null || value.trim().length() == 0)
             {
                 return this;
             }
@@ -694,11 +695,12 @@ public class ArmoredOutputStream
             String trimmed = value.trim();
             for (String line : trimmed.split("\n"))
             {
-                if (line.trim().isEmpty())
+                String lineTrim = line.trim();
+                if (lineTrim.length() == 0)
                 {
                     continue;
                 }
-                values.add(line.trim());
+                values.add(lineTrim);
             }
 
             headers.put(key, values);

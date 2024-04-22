@@ -141,6 +141,10 @@ public class BcTlsRawKeyCertificate
             return new BcTlsRSAPSSVerifier(crypto, getPubKeyRSA(), signatureScheme);
         }
 
+        // TODO[RFC 9189]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
+
         default:
             throw new TlsFatalAlert(AlertDescription.certificate_unknown);
         }
@@ -503,6 +507,10 @@ public class BcTlsRawKeyCertificate
         case SignatureAlgorithm.rsa_pss_pss_sha512:
             return supportsRSA_PSS_PSS(signatureAlgorithm)
                 && publicKey instanceof RSAKeyParameters;
+
+        // TODO[RFC 9189]
+        case SignatureAlgorithm.gostr34102012_256:
+        case SignatureAlgorithm.gostr34102012_512:
 
         default:
             return false;

@@ -223,7 +223,7 @@ public class BcPGPDSAElGamalTest
             isTrue(!p1.isEmpty());
             isTrue(p1.size() == 1);
 
-            PGPOnePassSignature ops = new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(p1.iterator().next().getEncoded())));
+            PGPOnePassSignature ops = new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(((PGPOnePassSignature)p1.iterator().next()).getEncoded())));
             isTrue(PGPSignature.BINARY_DOCUMENT == ops.getSignatureType());
             isTrue(ops.isContaining());
 

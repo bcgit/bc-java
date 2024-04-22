@@ -1,6 +1,7 @@
 module org.bouncycastle.provider
 {
     requires java.sql;
+    requires java.logging;
     requires java.naming;
 
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider,org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;

@@ -329,11 +329,22 @@ public class ECUtil
     public static X9ECParameters getNamedCurveByName(
         String curveName)
     {
-        X9ECParameters params = CustomNamedCurves.getByName(curveName);
+        String name;
+
+        if (curveName.indexOf(' ') > 0)
+        {
+            name = curveName.substring(curveName.indexOf(' ') + 1);
+        }
+        else
+        {
+            name = curveName;
+        }
+
+        X9ECParameters params = CustomNamedCurves.getByName(name);
 
         if (params == null)
         {
-            params = ECNamedCurveTable.getByName(curveName);
+            params = ECNamedCurveTable.getByName(name);
         }
 
         return params;

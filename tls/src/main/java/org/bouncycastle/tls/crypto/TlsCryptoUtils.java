@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
@@ -74,6 +75,8 @@ public abstract class TlsCryptoUtils
             return CryptoHashAlgorithm.sha384;
         case PRFAlgorithm.tls13_hkdf_sm3:
             return CryptoHashAlgorithm.sm3;
+        case PRFAlgorithm.tls_prf_gostr3411_2012_256:
+            return CryptoHashAlgorithm.gostr3411_2012_256;
         default:
             throw new IllegalArgumentException("unknown PRFAlgorithm: " + PRFAlgorithm.getText(prfAlgorithm));
         }
@@ -88,6 +91,7 @@ public abstract class TlsCryptoUtils
         case CryptoHashAlgorithm.sha224:
         case CryptoHashAlgorithm.sha256:
         case CryptoHashAlgorithm.sm3:
+        case CryptoHashAlgorithm.gostr3411_2012_256:
             return 64;
         case CryptoHashAlgorithm.sha384:
         case CryptoHashAlgorithm.sha512:
@@ -109,6 +113,7 @@ public abstract class TlsCryptoUtils
             return 28;
         case CryptoHashAlgorithm.sha256:
         case CryptoHashAlgorithm.sm3:
+        case CryptoHashAlgorithm.gostr3411_2012_256:
             return 32;
         case CryptoHashAlgorithm.sha384:
             return 48;
@@ -138,6 +143,8 @@ public abstract class TlsCryptoUtils
         // TODO[RFC 8998]
 //        case CryptoHashAlgorithm.sm3:
 //            return GMObjectIdentifiers.sm3;
+        case CryptoHashAlgorithm.gostr3411_2012_256:
+            return RosstandartObjectIdentifiers.id_tc26_gost_3411_12_256;
         default:
             throw new IllegalArgumentException();
         }

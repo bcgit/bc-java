@@ -318,7 +318,6 @@ public class X509CertificateFormatter
                     }
                     catch (Exception ex)
                     {
-                        ex.printStackTrace();
                         buf.append(oid.getId());
                         //     buf.append(" value = ").append(new String(Hex.encode(ext.getExtnValue().getOctets()))).append(nl);
                         buf.append(" value = ").append("*****").append(nl);

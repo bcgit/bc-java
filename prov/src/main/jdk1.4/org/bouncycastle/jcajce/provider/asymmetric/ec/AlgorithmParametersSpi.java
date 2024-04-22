@@ -36,7 +36,7 @@ public class AlgorithmParametersSpi
             X9ECParameters params = ECNamedCurveTable.getByName(ecGenParameterSpec.getName());
 
             curveName = ecGenParameterSpec.getName();
-            ecParameterSpec = new ECParameterSpec(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+            ecParameterSpec = new ECNamedCurveParameterSpec(curveName, params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
         }
         else if (algorithmParameterSpec instanceof ECParameterSpec)
         {

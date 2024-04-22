@@ -414,7 +414,8 @@ public class PGPEdDSATest
 
         PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
 
-        isTrue(areEqual(Hex.decode("EB85 BB5F A33A 75E1 5E94 4E63 F231 550C 4F47 E38E"), pubKeyRing.getPublicKey().getFingerprint()));
+        isTrue(areEqual(pubKeyRing.getPublicKey().getFingerprint(), Hex.decode("EB85 BB5F A33A 75E1 5E94 4E63 F231 550C 4F47 E38E")));
+        isTrue(pubKeyRing.getPublicKey().hasFingerprint(Hex.decode("EB85 BB5F A33A 75E1 5E94 4E63 F231 550C 4F47 E38E")));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDSASecretKey)));
 

@@ -10,7 +10,6 @@ import org.bouncycastle.util.Arrays;
 public class ExperimentalPacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
-    private int    tag;
     private byte[] contents;
     
     /**
@@ -45,6 +44,6 @@ public class ExperimentalPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(tag, contents);
+        out.writePacket(getPacketTag(), contents);
     }
 }
