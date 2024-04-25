@@ -1,7 +1,0 @@
-blank_issues_enabled: true
-
-# Update url below as needed. 
-contact_links:
-  - name: GitHub Discussions
-    url: https://github.com/bcgit/bc-java/discussions
-    about: Join in-depth discussions or ask questions
