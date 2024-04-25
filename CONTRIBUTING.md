@@ -15,8 +15,8 @@ Or you can [start a new discussion](../../discussions/new/choose) and ask your q
 
 If you find a problem with Bouncy Castle, [search if an issue already exists](../../issues).
 
-> **_NOTE:_**  If the issue is a __potential security problem__, please contact us at feedback-crypto@bouncycastle.org 
-before posting anything public. 
+> **_NOTE:_**  If the issue is a __potential security problem__, please contact us
+before posting anything public. See [Security Policy](SECURITY.md).
 
 If a related discussion or issue doesn't exist, and the issue is not security related, you can [open a new issue](../../issues/new). An issue can be converted into a discussion if regarded as one.
 
@@ -28,7 +28,7 @@ Please note we are unable to accept contributions which cannot be released under
 
 #### Create a pull request
 
-> **_NOTE:_**  If the issue is a __potential security problem__, please contact us at feedback-crypto@bouncycastle.org.
+> **_NOTE:_**  If the issue is a __potential security problem__, please contact us. See [Security Policy](SECURITY.md).
 
 You are welcome to send patches, under the Bouncy Castle License, as pull requests. For more information, see [Creating a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request). For minor updates, you can instead choose to create an issue with short snippets of code. See above.
 
