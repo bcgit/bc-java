@@ -501,11 +501,51 @@ public abstract class ECPoint
 
         byte[] Y = normed.getYCoord().getEncoded();
 
-        byte[] PO = new byte[X.length + Y.length + 1];
-        PO[0] = 0x04;
-        System.arraycopy(X, 0, PO, 1, X.length);
-        System.arraycopy(Y, 0, PO, X.length + 1, Y.length);
-        return PO;
+        {
+            byte[] PO = new byte[X.length + Y.length + 1];
+            PO[0] = 0x04;
+            System.arraycopy(X, 0, PO, 1, X.length);
+            System.arraycopy(Y, 0, PO, X.length + 1, Y.length);
+            return PO;
+        }
+    }
+
+    public int getEncodedLength(boolean compressed)
+    {
+        if (isInfinity())
+        {
+            return 1;
+        }
+
+        if (compressed)
+        {
+            return 1 + getXCoord().getEncodedLength();
+        }
+
+        return 1 + getXCoord().getEncodedLength() + getYCoord().getEncodedLength();
+    }
+
+    public void encodeTo(boolean compressed, byte[] buf, int off)
+    {
+        if (isInfinity())
+        {
+            buf[off] = 0x00;
+            return;
+        }
+
+        ECPoint normed = normalize();
+        ECFieldElement X = normed.getXCoord(), Y = normed.getYCoord();
+
+        if (compressed)
+        {
+            buf[off] = (byte)(normed.getCompressionYTilde() ? 0x03 : 0x02);
+            X.encodeTo(buf, off + 1);
+            return;
+        }
+
+        buf[off] = 0x04;
+        X.encodeTo(buf, off + 1);
+        Y.encodeTo(buf, off + 1 + X.getEncodedLength());
     }
 
     protected abstract boolean getCompressionYTilde();

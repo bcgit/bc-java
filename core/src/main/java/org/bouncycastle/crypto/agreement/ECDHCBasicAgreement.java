@@ -45,7 +45,7 @@ public class ECDHCBasicAgreement
 
     public int getFieldSize()
     {
-        return (key.getParameters().getCurve().getFieldSize() + 7) / 8;
+        return key.getParameters().getCurve().getFieldElementEncodingLength();
     }
 
     public BigInteger calculateAgreement(

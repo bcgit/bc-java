@@ -95,7 +95,7 @@ public class SM2Engine
             ecParams = ecKey.getParameters();
         }
 
-        curveLength = (ecParams.getCurve().getFieldSize() + 7) / 8;
+        curveLength = ecParams.getCurve().getFieldElementEncodingLength();
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SM2", ConstraintUtils.bitsOfSecurityFor(ecParams.getCurve()), ecKey, Utils.getPurpose(forEncryption)));
     }

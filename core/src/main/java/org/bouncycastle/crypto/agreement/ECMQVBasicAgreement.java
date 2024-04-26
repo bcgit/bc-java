@@ -31,7 +31,7 @@ public class ECMQVBasicAgreement
 
     public int getFieldSize()
     {
-        return (privParams.getStaticPrivateKey().getParameters().getCurve().getFieldSize() + 7) / 8;
+        return privParams.getStaticPrivateKey().getParameters().getCurve().getFieldElementEncodingLength();
     }
 
     public BigInteger calculateAgreement(CipherParameters pubKey)
