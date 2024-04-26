@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.parsers;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -7,6 +8,7 @@ import org.bouncycastle.crypto.KeyParser;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.io.Streams;
 
 public class ECIESPublicKeyParser
@@ -22,10 +24,14 @@ public class ECIESPublicKeyParser
     public AsymmetricKeyParameter readKey(InputStream stream)
         throws IOException
     {
-        byte[] V;
-        int    first = stream.read();
+        int first = stream.read();
+        if (first < 0)
+        {
+            throw new EOFException();
+        }
 
         // Decode the public ephemeral key
+        boolean compressed;
         switch (first)
         {
         case 0x00: // infinity
@@ -33,22 +39,30 @@ public class ECIESPublicKeyParser
 
         case 0x02: // compressed
         case 0x03: // Byte length calculated as in ECPoint.getEncoded();
-            V = new byte[1 + (ecParams.getCurve().getFieldSize()+7)/8];
+            compressed = true;
             break;
 
         case 0x04: // uncompressed or
         case 0x06: // hybrid
         case 0x07: // Byte length calculated as in ECPoint.getEncoded();
-            V = new byte[1 + 2*((ecParams.getCurve().getFieldSize()+7)/8)];
+            compressed = false;
             break;
 
         default:
             throw new IOException("Sender's public key has invalid point encoding 0x" + Integer.toString(first, 16));
         }
 
+        ECCurve curve = ecParams.getCurve();
+        int encodingLength = curve.getAffinePointEncodingLength(compressed);
+        byte[] V = new byte[encodingLength];
         V[0] = (byte)first;
-        Streams.readFully(stream, V, 1, V.length - 1);
 
-        return new ECPublicKeyParameters(ecParams.getCurve().decodePoint(V), ecParams);
+        int readLength = encodingLength - 1;
+        if (Streams.readFully(stream, V, 1, readLength) != readLength)
+        {
+            throw new EOFException();
+        }
+
+        return new ECPublicKeyParameters(curve.decodePoint(V), ecParams);
     }
 }
