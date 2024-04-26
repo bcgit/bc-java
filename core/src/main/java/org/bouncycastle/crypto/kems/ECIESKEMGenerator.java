@@ -100,9 +100,9 @@ public class ECIESKEMGenerator
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
-        if (!(recipientKey instanceof ECKeyParameters))
+        if (!(recipientKey instanceof ECPublicKeyParameters))
         {
-            throw new IllegalArgumentException("EC key required");
+            throw new IllegalArgumentException("EC public key required");
         }
 
         ECPublicKeyParameters ecPubKey = (ECPublicKeyParameters)recipientKey;
