@@ -30,7 +30,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 18th April.
 <ul>
 <li>The new dependency of the the PGP API on the bcutil jar was missing from the module jar, the OSGi manifest, and the Maven POM. This has been fixed.</li>
 <li>Missing exports and duplicate imports have been added/removed from the OSGi manifests.</li>
-<li>The OSGi manifests now have the same bundle IDs as 1.77 and lock down dependencies to the equivalent variations</li>
+<li>The OSGi manifests now have the same bundle IDs as 1.77 and lock down dependencies to the equivalent variations.</li>
 <li>A check in the X.509 Extensions class preventing the parsing of empty extensions has been removed.</li>
 </ul>
 
@@ -53,6 +53,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 7th April.
 <li>The missing module import of java.logging to the provider module has been added.</li>
 <li>GOST ASN.1 public key alg parameters are now compliant with <a href="https://datatracker.ietf.org/doc/rfc9215/">RFC 9215</a>.</li>
 <li>An off-by-one error in the encoding for EccP256CurvePoint for ITS has been fixed.</li>
+<li>PEM Parser now enforces PEM headers to start at the beginning of the line to be meaningful.</li>
 </ul>
 <h3>2.3.3 Additional Features and Functionality</h3>
 <ul>
