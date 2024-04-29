@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayOutputStream;
@@ -213,7 +214,7 @@ public class OnePassSignaturePacket
      * @return 32 bytes issuer fingerprint
      */
     public byte[] getFingerprint() {
-        return fingerprint;
+        return Arrays.clone(fingerprint);
     }
 
     /**
@@ -222,7 +223,7 @@ public class OnePassSignaturePacket
      * @return salt
      */
     public byte[] getSalt() {
-        return salt;
+        return Arrays.clone(salt);
     }
 
     /**
