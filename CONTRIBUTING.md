@@ -7,18 +7,18 @@ In this guide, you get an overview of the contribution workflow from starting a 
 For an overview of the project, see [README](README.md). 
 
 ### Start a discussion
-If you have a question or problem, you can [search in discussions](../../discussions), if someone has already found a solution to your problem. 
+If you have a question or problem, you can [search in discussions](https://github.com/bcgit/bc-java/discussions), if someone has already found a solution to your problem. 
 
-Or you can [start a new discussion](../../discussions/new/choose) and ask your question. 
+Or you can [start a new discussion](https://github.com/bcgit/bc-java/discussions/new/choose) and ask your question. 
 
 ### Create an issue
 
-If you find a problem with Bouncy Castle, [search if an issue already exists](../../issues).
+If you find a problem with Bouncy Castle, [search if an issue already exists](https://github.com/bcgit/bc-java/issues).
 
 > **_NOTE:_**  If the issue is a __potential security problem__, please contact us
 before posting anything public. See [Security Policy](SECURITY.md).
 
-If a related discussion or issue doesn't exist, and the issue is not security related, you can [open a new issue](../../issues/new). An issue can be converted into a discussion if regarded as one.
+If a related discussion or issue doesn't exist, and the issue is not security related, you can [open a new issue](https://github.com/bcgit/bc-java/issues/new). An issue can be converted into a discussion if regarded as one.
 
 ### Contribute to the code
 
