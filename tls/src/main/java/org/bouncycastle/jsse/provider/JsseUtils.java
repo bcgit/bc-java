@@ -156,16 +156,17 @@ abstract class JsseUtils
         return peerHost + ":" + peerPortStr;
     }
 
-    static String getSignatureAlgorithmsReport(String title, List<SignatureSchemeInfo> signatureSchemes)
+    static String getSignatureAlgorithmsReport(String title, Iterable<SignatureSchemeInfo> signatureSchemes)
     {
-        String[] names = SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(signatureSchemes);
-
         StringBuilder sb = new StringBuilder(title);
         sb.append(':');
-        for (String name : names)
+        if (signatureSchemes != null)
         {
-            sb.append(' ');
-            sb.append(name);
+            for (SignatureSchemeInfo signatureScheme : signatureSchemes)
+            {
+                sb.append(' ');
+                sb.append(signatureScheme.getJcaSignatureAlgorithmBC());
+            }
         }
         return sb.toString();
     }
