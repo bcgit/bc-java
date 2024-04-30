@@ -11,17 +11,19 @@ import org.bouncycastle.util.test.SimpleTestResult;
 import java.security.Security;
 
 public class AllTests
-        extends TestCase {
+        extends TestCase
+{
 
     public void testPacketParsing()
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] {
-                new SignaturePacketTest(),
-                new OnePassSignaturePacketTest(),
-                new OpenPgpMessageTest()
-        };
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
+                {
+                        new SignaturePacketTest(),
+                        new OnePassSignaturePacketTest(),
+                        new OpenPgpMessageTest()
+                };
 
         for (int i = 0; i != tests.length; i++)
         {

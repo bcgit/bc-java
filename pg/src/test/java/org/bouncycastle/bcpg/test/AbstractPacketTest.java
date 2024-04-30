@@ -7,7 +7,9 @@ import org.bouncycastle.util.test.SimpleTest;
 
 import java.io.IOException;
 
-public abstract class AbstractPacketTest extends SimpleTest {
+public abstract class AbstractPacketTest
+        extends SimpleTest
+{
 
     /**
      * Test, whether the first byte array and the second byte array are identical.
@@ -15,7 +17,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param first first array
      * @param second second array
      */
-    public void isEncodingEqual(byte[] first, byte[] second) {
+    public void isEncodingEqual(byte[] first, byte[] second)
+    {
         isEncodingEqual(null, first, second);
     }
 
@@ -26,9 +29,11 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param first first array
      * @param second second array
      */
-    public void isEncodingEqual(String message, byte[] first, byte[] second) {
+    public void isEncodingEqual(String message, byte[] first, byte[] second)
+    {
         StringBuilder sb = new StringBuilder();
-        if (message != null) {
+        if (message != null)
+        {
             sb.append(message).append("\n");
         }
         sb.append("Expected: \n").append(HexDumpUtil.hexdump(first)).append("\n");
@@ -44,7 +49,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param second second packet
      */
     public void isEncodingEqual(ContainedPacket first, ContainedPacket second)
-            throws IOException {
+            throws IOException
+    {
         isEncodingEqual(null, first, second);
     }
 
@@ -56,9 +62,11 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param second second packet
      */
     public void isEncodingEqual(String message, ContainedPacket first, ContainedPacket second)
-            throws IOException {
+            throws IOException
+    {
         StringBuilder sb = new StringBuilder();
-        if (message != null) {
+        if (message != null)
+        {
             sb.append(message).append("\n");
         }
         sb.append("Expected: \n").append(HexDumpUtil.hexdump(first)).append("\n");
@@ -70,7 +78,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * Test, whether the value is false.
      * @param value value
      */
-    public void isFalse(boolean value) {
+    public void isFalse(boolean value)
+    {
         isFalse("Value is not false.", value);
     }
 
@@ -79,7 +88,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param message custom error message
      * @param value value
      */
-    public void isFalse(String message, boolean value) {
+    public void isFalse(String message, boolean value)
+    {
         isTrue(message, !value);
     }
 
@@ -87,7 +97,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * Test, whether the value is null.
      * @param value value
      */
-    public void isNull(Object value) {
+    public void isNull(Object value)
+    {
         isNull("Value is not null.", value);
     }
 
@@ -96,7 +107,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param message custom error message
      * @param value value
      */
-    public void isNull(String message, Object value) {
+    public void isNull(String message, Object value)
+    {
         isTrue(message, value == null);
     }
 
@@ -104,7 +116,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * Test, whether the value is not null.
      * @param value value
      */
-    public void isNotNull(Object value) {
+    public void isNotNull(Object value)
+    {
         isNotNull("Value is not null.", value);
     }
 
@@ -113,7 +126,8 @@ public abstract class AbstractPacketTest extends SimpleTest {
      * @param message custom error message
      * @param value value
      */
-    public void isNotNull(String message, Object value) {
+    public void isNotNull(String message, Object value)
+    {
         isTrue(message, value != null);
     }
 }
