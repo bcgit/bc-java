@@ -93,7 +93,8 @@ public class PGPOnePassSignature
      *
      * @return packet version
      */
-    public int getVersion() {
+    public int getVersion()
+    {
         return sigPack.getVersion();
     }
 
@@ -113,7 +114,8 @@ public class PGPOnePassSignature
      * Only for {@link OnePassSignaturePacket#VERSION_6} packets.
      * @return fingerprint
      */
-    public byte[] getFingerprint() {
+    public byte[] getFingerprint()
+    {
         return sigPack.getFingerprint();
     }
 
@@ -122,7 +124,8 @@ public class PGPOnePassSignature
      * Only for {@link OnePassSignaturePacket#VERSION_6} packets.
      * @return salt
      */
-    public byte[] getSalt() {
+    public byte[] getSalt()
+    {
         return sigPack.getSalt();
     }
 

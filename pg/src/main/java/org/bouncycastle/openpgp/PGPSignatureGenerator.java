@@ -203,10 +203,13 @@ public class PGPSignatureGenerator
         fingerPrint[0] = digest[0];
         fingerPrint[1] = digest[1];
 
-        if (sigValues != null) {
+        if (sigValues != null)
+        {
             return new PGPSignature(new SignaturePacket(sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
                     contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, sigValues));
-        } else {
+        }
+        else
+        {
             // Ed25519, Ed448 use raw encoding instead of MPI
             return new PGPSignature(new SignaturePacket(4, sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
                     contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, contentSigner.getSignature()));
