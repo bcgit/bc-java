@@ -11,12 +11,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class SignaturePacketTest extends AbstractPacketTest
+public class SignaturePacketTest
+        extends AbstractPacketTest
 {
     @Override
     public String getName()
     {
-        return SignaturePacketTest.class.getSimpleName();
+        return "SignaturePacketTest";
     }
 
     @Override
@@ -82,7 +83,9 @@ public class SignaturePacketTest extends AbstractPacketTest
         isEncodingEqual("SignaturePacket encoding mismatch", encSigPacket, bOut.toByteArray());
     }
 
-    private void testParseV4Ed25519LegacySignature() throws IOException {
+    private void testParseV4Ed25519LegacySignature()
+            throws IOException
+    {
         // Hex-encoded v4 test signature
         //  see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-v4-ed25519legacy-sig
         byte[] encSigPacket = Hex.decode("885e040016080006050255f95f95000a09108cfde12197965a9af62200ff56f90cca98e2102637bd983fdb16c131dfd27ed82bf4dde5606e0d756aed33660100d09c4fa11527f038e0f57f2201d82f2ea2c9033265fa6ceb489e854bae61b404");
@@ -137,9 +140,12 @@ public class SignaturePacketTest extends AbstractPacketTest
         BCPGInputStream pIn = new BCPGInputStream(bIn);
         Exception ex = testException("unsupported version: 153",
                 "UnsupportedPacketVersionException",
-                new TestExceptionOperation() {
+                new TestExceptionOperation()
+                {
                     @Override
-                    public void operation() throws Exception {
+                    public void operation()
+                            throws Exception
+                    {
                         SignaturePacket sig = (SignaturePacket) pIn.readPacket();
                     }
                 });

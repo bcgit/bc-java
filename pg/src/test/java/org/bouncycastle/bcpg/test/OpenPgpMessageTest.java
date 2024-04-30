@@ -13,7 +13,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public class OpenPgpMessageTest extends AbstractPacketTest {
+public class OpenPgpMessageTest
+        extends AbstractPacketTest
+{
 
     /*
     Inline-signed message using a version 6 signature
@@ -155,17 +157,21 @@ public class OpenPgpMessageTest extends AbstractPacketTest {
     }
 
     @Override
-    public String getName() {
-        return OpenPgpMessageTest.class.getSimpleName();
+    public String getName()
+    {
+        return "OpenPgpMessageTest";
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+            throws Exception
+    {
         testParseV6CleartextSignedMessage();
         testParseV6InlineSignedMessage();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new OpenPgpMessageTest());
     }
 }

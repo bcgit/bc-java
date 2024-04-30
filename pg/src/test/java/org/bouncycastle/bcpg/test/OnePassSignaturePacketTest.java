@@ -14,7 +14,9 @@ public class OnePassSignaturePacketTest
 {
 
     // Parse v6 OPS packet and compare its values to a known-good test vector
-    private void testParseV6OnePassSignaturePacket() throws IOException {
+    private void testParseV6OnePassSignaturePacket()
+            throws IOException
+    {
         // Version 6 OnePassSignature packet
         // extracted from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
         byte[] encOPS = Hex.decode("c44606010a1b2076495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbaccb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc901");
@@ -48,7 +50,9 @@ public class OnePassSignaturePacketTest
         isEncodingEqual("OPS Packet encoding mismatch", encOPS, bOut.toByteArray());
     }
 
-    private void roundtripV3Packet() throws IOException {
+    private void roundtripV3Packet()
+            throws IOException
+    {
         OnePassSignaturePacket before = new OnePassSignaturePacket(
                 PGPSignature.BINARY_DOCUMENT,
                 HashAlgorithmTags.SHA256,
@@ -73,7 +77,8 @@ public class OnePassSignaturePacketTest
         isNull("OPS v3 MUST NOT have salt",
                 before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false}) {
+        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        {
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -105,7 +110,9 @@ public class OnePassSignaturePacketTest
         }
     }
 
-    private void roundtripV6Packet() throws IOException {
+    private void roundtripV6Packet()
+            throws IOException
+    {
         byte[] salt = new byte[32];
         byte[] fingerprint = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
         long keyID = ((fingerprint[0] & 0xffL) << 56) |
@@ -143,7 +150,8 @@ public class OnePassSignaturePacketTest
         isTrue("non-nested OPS is expected to be containing",
                 before.isContaining());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false}) {
+        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        {
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -174,7 +182,9 @@ public class OnePassSignaturePacketTest
         }
     }
 
-    private void roundtripV6PacketWithZeroLengthSalt() throws IOException {
+    private void roundtripV6PacketWithZeroLengthSalt()
+            throws IOException
+    {
         byte[] salt = new byte[0];
         byte[] fingerprint = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
 
@@ -189,7 +199,8 @@ public class OnePassSignaturePacketTest
         isEncodingEqual("Salt mismatch",
                 salt, before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false}) {
+        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        {
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -218,24 +229,31 @@ public class OnePassSignaturePacketTest
         }
     }
 
-    private void parsingOfPacketWithUnknownVersionFails() {
+    private void parsingOfPacketWithUnknownVersionFails()
+    {
         // Version 0x99 OnePassSignature packet
         byte[] encOPS = Hex.decode("c44699010a1b2076495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbaccb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc901");
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(encOPS);
         BCPGInputStream pIn = new BCPGInputStream(bIn);
 
-        try {
+        try
+        {
             pIn.readPacket();
             fail("Expected UnsupportedPacketVersionException");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             fail("Expected UnsupportedPacketVersionException", e);
-        } catch (UnsupportedPacketVersionException e) {
+        }
+        catch (UnsupportedPacketVersionException e)
+        {
             // expected
         }
     }
 
-    private void parsingOfPacketWithTruncatedFingerprintFails() {
+    private void parsingOfPacketWithTruncatedFingerprintFails()
+    {
         // Version 6 OnePassSignature packet with truncated fingerprint field (20 bytes instead of 32)
         // This error would happen, if a v6 OPS packet was generated with a v4 fingerprint.
         // extracted from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
@@ -244,21 +262,27 @@ public class OnePassSignaturePacketTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(encOPS);
         BCPGInputStream pIn = new BCPGInputStream(bIn);
 
-        try {
+        try
+        {
             pIn.readPacket();
             fail("Expected IOException");
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             // expected
         }
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return "OnePassSignaturePacketTest";
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+            throws Exception
+    {
         testParseV6OnePassSignaturePacket();
         roundtripV3Packet();
         roundtripV6Packet();
@@ -267,7 +291,8 @@ public class OnePassSignaturePacketTest
         roundtripV6PacketWithZeroLengthSalt();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new OnePassSignaturePacketTest());
     }
 }
