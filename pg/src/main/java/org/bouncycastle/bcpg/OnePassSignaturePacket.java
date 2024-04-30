@@ -64,7 +64,8 @@ public class OnePassSignaturePacket
         else if (version == VERSION_6)
         {
             int saltLen = in.read();
-            if (saltLen < 0) {
+            if (saltLen < 0)
+            {
                 throw new IOException("Version 6 OPS packet has invalid salt length.");
             }
             salt = new byte[saltLen];
@@ -168,7 +169,8 @@ public class OnePassSignaturePacket
      * Return the packet version.
      * @return version
      */
-    public int getVersion() {
+    public int getVersion()
+    {
         return version;
     }
 
@@ -213,7 +215,8 @@ public class OnePassSignaturePacket
      * Only for version 6 packets.
      * @return 32 bytes issuer fingerprint
      */
-    public byte[] getFingerprint() {
+    public byte[] getFingerprint()
+    {
         return Arrays.clone(fingerprint);
     }
 
@@ -222,7 +225,8 @@ public class OnePassSignaturePacket
      * Only for version 6 packets.
      * @return salt
      */
-    public byte[] getSalt() {
+    public byte[] getSalt()
+    {
         return Arrays.clone(salt);
     }
 

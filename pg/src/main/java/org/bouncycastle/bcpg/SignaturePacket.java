@@ -42,7 +42,8 @@ public class SignaturePacket
         super(SIGNATURE);
 
         version = in.read();
-        switch (version) {
+        switch (version)
+        {
             case VERSION_2:
             case VERSION_3:
                 parseV2_V3(in);
@@ -69,7 +70,8 @@ public class SignaturePacket
      *     Version 3 packet format</a>
      */
     private void parseV2_V3(BCPGInputStream in)
-        throws IOException {
+        throws IOException
+    {
         int    l = in.read(); // length l MUST be 5
 
         signatureType = in.read();
@@ -97,7 +99,9 @@ public class SignaturePacket
      * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-version-4-and-5-signature-p">
      *     Version 5 packet format</a>
      */
-    private void parseV4_V5(BCPGInputStream in) throws IOException {
+    private void parseV4_V5(BCPGInputStream in)
+            throws IOException
+    {
         signatureType = in.read();
         keyAlgorithm = in.read();
         hashAlgorithm = in.read();
@@ -121,7 +125,9 @@ public class SignaturePacket
      * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-and-6-signature-p">
      *     Version 6 packet format</a>
      */
-    private void parseV6(BCPGInputStream in) throws IOException {
+    private void parseV6(BCPGInputStream in)
+            throws IOException
+    {
         signatureType = in.read();
         keyAlgorithm = in.read();
         hashAlgorithm = in.read();
@@ -146,11 +152,16 @@ public class SignaturePacket
      * @param in input stream which skipped to after the hash algorithm octet
      * @throws IOException if the packet is malformed
      */
-    private void parseSubpackets(BCPGInputStream in) throws IOException {
+    private void parseSubpackets(BCPGInputStream in)
+            throws IOException
+    {
         int hashedLength;
-        if (version == 6) {
+        if (version == 6)
+        {
             hashedLength = StreamUtil.read4OctetLength(in);
-        } else {
+        }
+        else
+        {
             hashedLength = StreamUtil.read2OctetLength(in);
         }
         byte[]    hashed = new byte[hashedLength];
@@ -188,9 +199,12 @@ public class SignaturePacket
         }
 
         int unhashedLength;
-        if (version == VERSION_6) {
+        if (version == VERSION_6)
+        {
             unhashedLength = StreamUtil.read4OctetLength(in);
-        } else {
+        }
+        else
+        {
             unhashedLength = StreamUtil.read2OctetLength(in);
         }
         byte[]    unhashed = new byte[unhashedLength];
@@ -228,7 +242,9 @@ public class SignaturePacket
      * @param in input stream which skipped the head of the signature
      * @throws IOException if the packet is malformed
      */
-    private void parseSignature(BCPGInputStream in) throws IOException {
+    private void parseSignature(BCPGInputStream in)
+            throws IOException
+    {
         switch (keyAlgorithm)
         {
             case RSA_GENERAL:
@@ -432,7 +448,8 @@ public class SignaturePacket
      * Only for v6 signatures.
      * @return salt
      */
-    public byte[] getSalt() {
+    public byte[] getSalt()
+    {
         return salt;
     }
 
@@ -613,9 +630,12 @@ public class SignaturePacket
 
             byte[]                   data = sOut.toByteArray();
 
-            if (version == VERSION_6) {
+            if (version == VERSION_6)
+            {
                 StreamUtil.write4OctetLength(pOut, data.length);
-            } else {
+            }
+            else
+            {
                 StreamUtil.write2OctetLength(pOut, data.length);
             }
             pOut.write(data);
@@ -629,9 +649,12 @@ public class SignaturePacket
 
             data = sOut.toByteArray();
 
-            if (version == VERSION_6) {
+            if (version == VERSION_6)
+            {
                 StreamUtil.write4OctetLength(pOut, data.length);
-            } else {
+            }
+            else
+            {
                 StreamUtil.write2OctetLength(pOut, data.length);
             }
             pOut.write(data);
@@ -643,7 +666,8 @@ public class SignaturePacket
 
         pOut.write(fingerPrint);
 
-        if (version == VERSION_6) {
+        if (version == VERSION_6)
+        {
             pOut.write(salt.length);
             pOut.write(salt);
         }
