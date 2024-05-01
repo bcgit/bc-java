@@ -88,9 +88,45 @@ public class PGPOnePassSignature
         return verifier.verify(pgpSig.getSignature());
     }
 
+    /**
+     * Return the packet version.
+     *
+     * @return packet version
+     */
+    public int getVersion()
+    {
+        return sigPack.getVersion();
+    }
+
+    /**
+     * Return the key-ID of the issuer signing key.
+     * For {@link OnePassSignaturePacket#VERSION_6} packets, the key-ID is derived from the fingerprint.
+     *
+     * @return key-ID
+     */
     public long getKeyID()
     {
         return sigPack.getKeyID();
+    }
+
+    /**
+     * Return the issuer key fingerprint.
+     * Only for {@link OnePassSignaturePacket#VERSION_6} packets.
+     * @return fingerprint
+     */
+    public byte[] getFingerprint()
+    {
+        return sigPack.getFingerprint();
+    }
+
+    /**
+     * Return the salt used in the corresponding signature.
+     * Only for {@link OnePassSignaturePacket#VERSION_6} packets.
+     * @return salt
+     */
+    public byte[] getSalt()
+    {
+        return sigPack.getSalt();
     }
 
     public int getSignatureType()
