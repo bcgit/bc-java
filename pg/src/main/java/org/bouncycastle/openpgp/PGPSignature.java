@@ -19,7 +19,6 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
-import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -451,22 +450,13 @@ public class PGPSignature
             {
                 signature = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
             }
-            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY ||
-                getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519)
+            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
             {
                 byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
                 signature = new byte[Ed25519.SIGNATURE_SIZE];
                 System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
                 System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
-            }
-            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
-            {
-                byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
-                byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
-                signature = new byte[Ed448.SIGNATURE_SIZE];
-                System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
-                System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
             }
             else
             {
