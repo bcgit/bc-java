@@ -560,7 +560,7 @@ class RFC3280CertPathUtilities
    
             if (keyUsage == null)
             {
-                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign"))
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign", true))
                 {
                     checkKeys.add(validKeys.get(i));
                 }
@@ -1448,8 +1448,7 @@ class RFC3280CertPathUtilities
         {
             throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
-        System.err.println(cert.getIssuerX500Principal());
-        System.err.println(cert.getSubjectX500Principal());
+
         //
         // (a) (3)
         //
@@ -1457,9 +1456,8 @@ class RFC3280CertPathUtilities
         {
             revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validCertDate, certPath,
                 index, sign, workingPublicKey));
-            System.err.println("in revocation");
+
             revocationChecker.check(cert);
-            System.err.println("leaving revocation");
         }
 
         //
