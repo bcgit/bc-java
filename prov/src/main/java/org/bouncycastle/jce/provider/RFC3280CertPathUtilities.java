@@ -61,6 +61,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 class RFC3280CertPathUtilities
 {
@@ -556,15 +557,30 @@ class RFC3280CertPathUtilities
         {
             X509Certificate signCert = (X509Certificate)validCerts.get(i);
             boolean[] keyUsage = signCert.getKeyUsage();
-
-            if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
+   
+            if (keyUsage == null)
             {
-                lastException = new AnnotatedException(
-                    "Issuer certificate key usage extension does not permit CRL signing.");
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign"))
+                {
+                    checkKeys.add(validKeys.get(i));
+                }
+                else
+                {
+                    lastException = new AnnotatedException(
+                           "No key usage extension on CRL issuer certificate.");
+                }
             }
             else
             {
-                checkKeys.add(validKeys.get(i));
+                if (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN])
+                {
+                    lastException = new AnnotatedException(
+                                        "Issuer certificate key usage extension does not permit CRL signing.");
+                }
+                else
+                {
+                    checkKeys.add(validKeys.get(i));
+                }
             }
         }
 
@@ -1432,7 +1448,8 @@ class RFC3280CertPathUtilities
         {
             throw new ExtCertPathValidatorException("Could not validate certificate: " + e.getMessage(), e, certPath, index);
         }
-
+        System.err.println(cert.getIssuerX500Principal());
+        System.err.println(cert.getSubjectX500Principal());
         //
         // (a) (3)
         //
@@ -1440,8 +1457,9 @@ class RFC3280CertPathUtilities
         {
             revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validCertDate, certPath,
                 index, sign, workingPublicKey));
-
+            System.err.println("in revocation");
             revocationChecker.check(cert);
+            System.err.println("leaving revocation");
         }
 
         //
