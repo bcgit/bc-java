@@ -860,7 +860,10 @@
         <copyStandardFiles toDir="${pg.target.dir}" />
 
         <copy todir="${pg.target.src.dir}" filtering="true">
-             <fileset dir="${src.dir}" includes="org/bouncycastle/bcpg/**/*.java" />
+             <fileset dir="${src.dir}">
+                <include name="org/bouncycastle/bcpg/**/*.java" />
+                <exclude name="org/bouncycastle/**/test/**/*.java" />
+             </fileset>
         </copy>
 
         <copy todir="${pg.target.src.dir}">
