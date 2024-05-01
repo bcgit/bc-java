@@ -509,7 +509,7 @@ class RFC3280CertPathUtilities
 
             if (keyUsage == null)
             {
-                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign"))
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign", true))
                 {
                     checkKeys.add(validKeys.get(i));
                 }
