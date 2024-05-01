@@ -532,17 +532,18 @@ public class CertPathValidatorTest
             fail("path should have failed");
         }
         catch (CertPathValidatorException e)
-        {                                  e.printStackTrace();
+        {                   
             isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
         }
+
+        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
     }
 
     public void performTest()
         throws Exception
     {
-//        constraintTest();
+        constraintTest();
         testNoKeyUsageCRLSigner();
-           System.exit(0);
         CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
         // initialise CertStore
@@ -662,6 +663,8 @@ public class CertPathValidatorTest
                 fail("unexpected exception", e);
             }
         }
+
+        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
 
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();
