@@ -1,7 +1,7 @@
 package org.bouncycastle.bcpg.test;
 
 import org.bouncycastle.bcpg.ContainedPacket;
-import org.bouncycastle.bcpg.HexDumpUtil;
+import org.bouncycastle.test.DumpUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -36,8 +36,8 @@ public abstract class AbstractPacketTest
         {
             sb.append(message).append("\n");
         }
-        sb.append("Expected: \n").append(HexDumpUtil.hexdump(first)).append("\n");
-        sb.append("Got: \n").append(HexDumpUtil.hexdump(second));
+        sb.append("Expected: \n").append(DumpUtil.hexdump(first)).append("\n");
+        sb.append("Got: \n").append(DumpUtil.hexdump(second));
 
         isTrue(sb.toString(), first == second || Arrays.areEqual(first, second));
     }
@@ -69,8 +69,8 @@ public abstract class AbstractPacketTest
         {
             sb.append(message).append("\n");
         }
-        sb.append("Expected: \n").append(HexDumpUtil.hexdump(first)).append("\n");
-        sb.append("Got: \n").append(HexDumpUtil.hexdump(second));
+        sb.append("Expected: \n").append(PacketDumpUtil.hexdump(first)).append("\n");
+        sb.append("Got: \n").append(PacketDumpUtil.hexdump(second));
         isTrue(sb.toString(), first == second || Arrays.areEqual(first.getEncoded(), second.getEncoded()));
     }
 

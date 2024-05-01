@@ -1,12 +1,9 @@
-package org.bouncycastle.bcpg;
+package org.bouncycastle.test;
 
 import org.bouncycastle.util.encoders.Hex;
 
-import java.io.IOException;
-
-public class HexDumpUtil
+public class DumpUtil
 {
-
     /**
      * Return a formatted hex dump of the given byte array.
      * @param array byte array
@@ -64,31 +61,5 @@ public class HexDumpUtil
             l += 16;
         }
         return out.toString();
-    }
-
-    /**
-     * Return a formatted hex dump of the packet encoding of the given packet.
-     * @param packet packet
-     * @return formatted hex dump
-     * @throws IOException if an exception happens during packet encoding
-     */
-    public static String hexdump(ContainedPacket packet)
-            throws IOException
-    {
-        return hexdump(packet.getEncoded());
-    }
-
-    /**
-     * Return a formatted hex dump of the packet encoding of the given packet.
-     * If startIndent is non-zero, the hex dump is shifted right by the startIndent octets.
-     * @param startIndent shift the encodings octet stream by a number of bytes
-     * @param packet packet
-     * @return formatted hex dump
-     * @throws IOException if an exception happens during packet encoding
-     */
-    public static String hexdump(int startIndent, ContainedPacket packet)
-            throws IOException
-    {
-        return hexdump(startIndent, packet.getEncoded());
     }
 }
