@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg.test;
 
+import java.security.Security;
+
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -7,8 +9,6 @@ import junit.framework.TestSuite;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
-
-import java.security.Security;
 
 public class AllTests
         extends TestCase
@@ -22,7 +22,8 @@ public class AllTests
                 {
                         new SignaturePacketTest(),
                         new OnePassSignaturePacketTest(),
-                        new OpenPgpMessageTest()
+                        new OpenPgpMessageTest(),
+                        new FingerprintUtilTest()
                 };
 
         for (int i = 0; i != tests.length; i++)
