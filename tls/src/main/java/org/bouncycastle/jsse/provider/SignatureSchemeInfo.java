@@ -300,35 +300,37 @@ class SignatureSchemeInfo
         return new PerContext(index, candidatesClient, candidatesServer);
     }
 
-    static String[] getJcaSignatureAlgorithms(Collection<SignatureSchemeInfo> infos)
+    private static String[] getJcaSignatureAlgorithms(Collection<SignatureSchemeInfo> infos)
     {
         if (null == infos)
         {
             return TlsUtils.EMPTY_STRINGS;
         }
 
-        ArrayList<String> result = new ArrayList<String>();
+        String[] result = new String[infos.size()];
+        int resultPos = 0;
         for (SignatureSchemeInfo info : infos)
         {
             // TODO The two kinds of PSS signature scheme can give duplicates here
-            result.add(info.getJcaSignatureAlgorithm());
+            result[resultPos++] = info.getJcaSignatureAlgorithm();
         }
-        return result.toArray(TlsUtils.EMPTY_STRINGS);
+        return result;
     }
 
-    static String[] getJcaSignatureAlgorithmsBC(Collection<SignatureSchemeInfo> infos)
+    private static String[] getJcaSignatureAlgorithmsBC(Collection<SignatureSchemeInfo> infos)
     {
         if (null == infos)
         {
             return TlsUtils.EMPTY_STRINGS;
         }
 
-        ArrayList<String> result = new ArrayList<String>();
+        String[] result = new String[infos.size()];
+        int resultPos = 0;
         for (SignatureSchemeInfo info : infos)
         {
-            result.add(info.getJcaSignatureAlgorithmBC());
+            result[resultPos++] = info.getJcaSignatureAlgorithmBC();
         }
-        return result.toArray(TlsUtils.EMPTY_STRINGS);
+        return result;
     }
 
     static SignatureAndHashAlgorithm getSignatureAndHashAlgorithm(int signatureScheme)
@@ -341,7 +343,8 @@ class SignatureSchemeInfo
         return SignatureScheme.getSignatureAndHashAlgorithm(signatureScheme);
     }
 
-    static Vector<SignatureAndHashAlgorithm> getSignatureAndHashAlgorithms(List<SignatureSchemeInfo> signatureSchemeInfos)
+    private static Vector<SignatureAndHashAlgorithm> getSignatureAndHashAlgorithms(
+        Collection<SignatureSchemeInfo> signatureSchemeInfos)
     {
         // TODO[tls13] Actually should return empty for empty?
         if (null == signatureSchemeInfos || signatureSchemeInfos.isEmpty())
