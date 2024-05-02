@@ -11,6 +11,7 @@ public class SimpleTestTest
 {
     public void testJCE()
     {
+        System.setProperty("org.bouncycastle.bks.enable_v1", "true");
 
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {

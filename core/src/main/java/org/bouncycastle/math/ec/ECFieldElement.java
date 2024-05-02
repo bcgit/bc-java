@@ -85,7 +85,17 @@ public abstract class ECFieldElement
 
     public byte[] getEncoded()
     {
-        return BigIntegers.asUnsignedByteArray((getFieldSize() + 7) / 8, toBigInteger());
+        return BigIntegers.asUnsignedByteArray(getEncodedLength(), toBigInteger());
+    }
+
+    public int getEncodedLength()
+    {
+        return (getFieldSize() + 7) / 8;
+    }
+
+    public void encodeTo(byte[] buf, int off)
+    {
+        BigIntegers.asUnsignedByteArray(toBigInteger(), buf, off, getEncodedLength());
     }
 
     public static abstract class AbstractFp extends ECFieldElement

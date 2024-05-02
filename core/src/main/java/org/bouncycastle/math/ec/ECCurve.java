@@ -123,6 +123,19 @@ public abstract class ECCurve
         return new Config(this.coord, this.endomorphism, this.multiplier);
     }
 
+    public int getFieldElementEncodingLength()
+    {
+        return (getFieldSize() + 7) / 8;
+    }
+
+    public int getAffinePointEncodingLength(boolean compressed)
+    {
+        int fieldLength = getFieldElementEncodingLength();
+        return compressed
+            ?  1 + fieldLength
+            :  1 + fieldLength * 2;
+    }
+
     public ECPoint validatePoint(BigInteger x, BigInteger y)
     {
         ECPoint p = createPoint(x, y);
@@ -379,7 +392,7 @@ public abstract class ECCurve
     public ECPoint decodePoint(byte[] encoded)
     {
         ECPoint p = null;
-        int expectedLength = (getFieldSize() + 7) / 8;
+        int expectedLength = getFieldElementEncodingLength();
 
         byte type = encoded[0];
         switch (type)
@@ -463,25 +476,15 @@ public abstract class ECCurve
      */
     public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, final int len)
     {
-        final int FE_BYTES = (getFieldSize() + 7) >>> 3;
-
+        final int FE_BYTES = getFieldElementEncodingLength();
         final byte[] table = new byte[len * FE_BYTES * 2];
+        int pos = 0;
+        for (int i = 0; i < len; ++i)
         {
-            int pos = 0;
-            for (int i = 0; i < len; ++i)
-            {
-                ECPoint p = points[off + i];
-                byte[] px = p.getRawXCoord().toBigInteger().toByteArray();
-                byte[] py = p.getRawYCoord().toBigInteger().toByteArray();
-
-                int pxStart = px.length > FE_BYTES ? 1 : 0, pxLen = px.length - pxStart;
-                int pyStart = py.length > FE_BYTES ? 1 : 0, pyLen = py.length - pyStart;
-
-                System.arraycopy(px, pxStart, table, pos + FE_BYTES - pxLen, pxLen); pos += FE_BYTES;
-                System.arraycopy(py, pyStart, table, pos + FE_BYTES - pyLen, pyLen); pos += FE_BYTES;
-            }
+            ECPoint p = points[off + i];
+            p.getRawXCoord().encodeTo(table, pos);      pos += FE_BYTES;
+            p.getRawYCoord().encodeTo(table, pos);      pos += FE_BYTES;
         }
-
         return new AbstractECLookupTable()
         {
             public int getSize()
