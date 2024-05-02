@@ -25,7 +25,7 @@ public class ECDHCUnifiedAgreement
 
     public int getFieldSize()
     {
-        return (privParams.getStaticPrivateKey().getParameters().getCurve().getFieldSize() + 7) / 8;
+        return privParams.getStaticPrivateKey().getParameters().getCurve().getFieldElementEncodingLength();
     }
 
     public byte[] calculateAgreement(CipherParameters pubKey)

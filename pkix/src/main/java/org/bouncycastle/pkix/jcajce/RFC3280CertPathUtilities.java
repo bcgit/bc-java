@@ -40,6 +40,7 @@ import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jcajce.PKIXExtendedParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 class RFC3280CertPathUtilities
 {
@@ -506,14 +507,29 @@ class RFC3280CertPathUtilities
             X509Certificate signCert = (X509Certificate)validCerts.get(i);
             boolean[] keyUsage = signCert.getKeyUsage();
 
-            if (keyUsage != null && (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN]))
+            if (keyUsage == null)
             {
-                lastException = new AnnotatedException(
-                    "Issuer certificate key usage extension does not permit CRL signing.");
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_ca_without_crl_sign", true))
+                {
+                    checkKeys.add(validKeys.get(i));
+                }
+                else
+                {
+                    lastException = new AnnotatedException(
+                        "No key usage extension on issuer certificate.");
+                }
             }
             else
             {
-                checkKeys.add(validKeys.get(i));
+                if (keyUsage.length <= CRL_SIGN || !keyUsage[CRL_SIGN])
+                {
+                    lastException = new AnnotatedException(
+                        "Issuer certificate key usage extension does not permit CRL signing.");
+                }
+                else
+                {
+                    checkKeys.add(validKeys.get(i));
+                }
             }
         }
 

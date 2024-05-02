@@ -119,6 +119,6 @@ public class ECIESKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return (decKey.getParameters().getCurve().getFieldSize() / 8) * 2 + 1;
+        return decKey.getParameters().getCurve().getAffinePointEncodingLength(false);
     }
 }

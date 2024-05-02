@@ -1582,17 +1582,9 @@ public abstract class TlsProtocol
             return false;
         }
 
-        boolean isEMS = sessionParameters.isExtendedMasterSecret();
-        if (sessionVersion.isSSL())
+        if (!TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
         {
-            if (isEMS)
-            {
-                return false;
-            }
-        }
-        else if (!TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
-        {
-            if (!isEMS)
+            if (sessionParameters.isExtendedMasterSecret() == sessionVersion.isSSL())
             {
                 return false;
             }
