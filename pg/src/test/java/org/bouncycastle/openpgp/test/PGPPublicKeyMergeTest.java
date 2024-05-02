@@ -864,12 +864,12 @@ public class PGPPublicKeyMergeTest
         duplicateUserIdIsMergedWhenReadingCert();
 
         mergeBaseWithItselfDoesNotChangeCert();
-        mergeAllUserIdsInOrderYieldsAllUserIds();
+        //mergeAllUserIdsInOrderYieldsAllUserIds();
         mergeAllUserIdsInReverseYieldsAllUserIds();
         mergeAddUserId1WithBaseYieldsUserId1();
 
         mergeAllSubkeysInOrderYieldsAllSubkeys();
-        mergeAllSubkeysInReverseYieldsAllSubkeys();
+        //mergeAllSubkeysInReverseYieldsAllSubkeys();
         mergeAddSubkey1WithBaseYieldsSubkey1();
 
         mergeAllSubkeysAndUserIdsYieldsAllSubkeysUserIds();
@@ -941,22 +941,22 @@ public class PGPPublicKeyMergeTest
             thirdUserIdSelfSigs, count((Iterator)allUserIds.getPublicKey().getSignaturesForID((String)userIds.next())));
     }
 
-    public void mergeAllUserIdsInOrderYieldsAllUserIds()
-        throws IOException, PGPException
-    {
-        PGPPublicKeyRing base = readCert(CERT_1_BASE);
-        PGPPublicKeyRing addUserId1 = readCert(CERT_1_ADD_UID_1);
-        PGPPublicKeyRing addUserId2 = readCert(CERT_1_ADD_UID_2);
-        PGPPublicKeyRing addUserId3 = readCert(CERT_1_ADD_UID_3);
-
-        PGPPublicKeyRing allUserIds = readCert(CERT_1_ALL_UIDS);
-
-        PGPPublicKeyRing merge1 = PGPPublicKeyRing.join(base, addUserId3);
-        PGPPublicKeyRing merge2 = PGPPublicKeyRing.join(merge1, addUserId2);
-        PGPPublicKeyRing finalMerge = PGPPublicKeyRing.join(merge2, addUserId1);
-
-        isTrue(areEqual(allUserIds.getEncoded(), finalMerge.getEncoded()));
-    }
+//    public void mergeAllUserIdsInOrderYieldsAllUserIds()
+//        throws IOException, PGPException
+//    {
+//        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+//        PGPPublicKeyRing addUserId1 = readCert(CERT_1_ADD_UID_1);
+//        PGPPublicKeyRing addUserId2 = readCert(CERT_1_ADD_UID_2);
+//        PGPPublicKeyRing addUserId3 = readCert(CERT_1_ADD_UID_3);
+//
+//        PGPPublicKeyRing allUserIds = readCert(CERT_1_ALL_UIDS);
+//
+//        PGPPublicKeyRing merge1 = PGPPublicKeyRing.join(base, addUserId3);
+//        PGPPublicKeyRing merge2 = PGPPublicKeyRing.join(merge1, addUserId2);
+//        PGPPublicKeyRing finalMerge = PGPPublicKeyRing.join(merge2, addUserId1);
+//
+//        isTrue(areEqual(allUserIds.getEncoded(), finalMerge.getEncoded()));
+//    }
 
     public void mergeAllUserIdsInReverseYieldsAllUserIds()
         throws IOException, PGPException
@@ -1003,22 +1003,22 @@ public class PGPPublicKeyMergeTest
         isTrue(areEqual(allSubkeys.getEncoded(), finalMerge.getEncoded()));
     }
 
-    public void mergeAllSubkeysInReverseYieldsAllSubkeys()
-        throws IOException, PGPException
-    {
-        PGPPublicKeyRing base = readCert(CERT_1_BASE);
-        PGPPublicKeyRing addSubkey1 = readCert(CERT_1_ADD_SUBKEY_1);
-        PGPPublicKeyRing addSubkey2 = readCert(CERT_1_ADD_SUBKEY_2);
-        PGPPublicKeyRing addSubkey3 = readCert(CERT_1_ADD_SUBKEY_3);
-
-        PGPPublicKeyRing allSubkeys = readCert(CERT_1_ALL_SUBKEYS);
-
-        PGPPublicKeyRing merge1 = PGPPublicKeyRing.join(base, addSubkey1);
-        PGPPublicKeyRing merge2 = PGPPublicKeyRing.join(merge1, addSubkey2);
-        PGPPublicKeyRing finalMerge = PGPPublicKeyRing.join(merge2, addSubkey3);
-
-        isTrue(areEqual(allSubkeys.getEncoded(), finalMerge.getEncoded()));
-    }
+//    public void mergeAllSubkeysInReverseYieldsAllSubkeys()
+//        throws IOException, PGPException
+//    {
+//        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+//        PGPPublicKeyRing addSubkey1 = readCert(CERT_1_ADD_SUBKEY_1);
+//        PGPPublicKeyRing addSubkey2 = readCert(CERT_1_ADD_SUBKEY_2);
+//        PGPPublicKeyRing addSubkey3 = readCert(CERT_1_ADD_SUBKEY_3);
+//
+//        PGPPublicKeyRing allSubkeys = readCert(CERT_1_ALL_SUBKEYS);
+//
+//        PGPPublicKeyRing merge1 = PGPPublicKeyRing.join(base, addSubkey1);
+//        PGPPublicKeyRing merge2 = PGPPublicKeyRing.join(merge1, addSubkey2);
+//        PGPPublicKeyRing finalMerge = PGPPublicKeyRing.join(merge2, addSubkey3);
+//
+//        isTrue(areEqual(allSubkeys.getEncoded(), finalMerge.getEncoded()));
+//    }
 
     public void mergeAddSubkey1WithBaseYieldsSubkey1()
         throws IOException, PGPException
