@@ -216,9 +216,6 @@ public class PGPEncryptedDataGenerator
 
         pOut = new BCPGOutputStream(out, !useOldFormat);
 
-        defAlgorithm = dataEncryptorBuilder.getAlgorithm();
-        rand = dataEncryptorBuilder.getSecureRandom();
-
         byte[] sessionKey;  // session key, either protected by - or directly derived from session key encryption mechanism.
         byte[] sessionInfo; // sessionKey with prepended alg-id, appended checksum
 
@@ -284,11 +281,11 @@ public class PGPEncryptedDataGenerator
 
         try
         {
+            BCPGHeaderObject encOut;
             if (dataEncryptor instanceof PGPAEADDataEncryptor)
             {
                 PGPAEADDataEncryptor encryptor = (PGPAEADDataEncryptor)dataEncryptor;
                 long ivOrSaltLen;
-                BCPGHeaderObject encOut;
                 // OpenPGP V5 style AEAD
                 if (isV5StyleAEAD)
                 {
@@ -321,10 +318,9 @@ public class PGPEncryptedDataGenerator
             }
             else
             {
-                BCPGHeaderObject encOut;
                 if (digestCalc != null)
                 {
-                    encOut = new SymmetricEncIntegrityPacket();
+                    encOut =  SymmetricEncIntegrityPacket.createVersion1Packet();
                     if (useOldFormat)
                     {
                         throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
