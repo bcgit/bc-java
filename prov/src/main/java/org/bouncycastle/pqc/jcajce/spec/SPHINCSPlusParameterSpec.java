@@ -21,8 +21,8 @@ public class SPHINCSPlusParameterSpec
     public static final SPHINCSPlusParameterSpec sha2_256f_robust = new SPHINCSPlusParameterSpec("sha2-256f-robust");
     public static final SPHINCSPlusParameterSpec sha2_256s_robust = new SPHINCSPlusParameterSpec("sha2-256s-robust");
 
-    public static final SPHINCSPlusParameterSpec sha2_128f = new SPHINCSPlusParameterSpec("sha2-128s");
-    public static final SPHINCSPlusParameterSpec sha2_128s = new SPHINCSPlusParameterSpec("sha2-128f");
+    public static final SPHINCSPlusParameterSpec sha2_128f = new SPHINCSPlusParameterSpec("sha2-128f");
+    public static final SPHINCSPlusParameterSpec sha2_128s = new SPHINCSPlusParameterSpec("sha2-128s");
 
     public static final SPHINCSPlusParameterSpec sha2_192f = new SPHINCSPlusParameterSpec("sha2-192f");
     public static final SPHINCSPlusParameterSpec sha2_192s = new SPHINCSPlusParameterSpec("sha2-192s");
