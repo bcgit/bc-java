@@ -71,6 +71,14 @@ public interface PublicKeyAlgorithmTags
      */
     int EDDSA_LEGACY = 22;     // new name for old EDDSA tag.
     /**
+     * Reserved tag for AEDH.
+     */
+    int AEDH = 23;             // Reserved
+    /**
+     * Reserved tag for AEDSA.
+     */
+    int AEDSA = 24;            // Reserved
+    /**
      * X25519 encryption algorithm.
      * C-R compliant implementations MUST implement support for this.
      */
