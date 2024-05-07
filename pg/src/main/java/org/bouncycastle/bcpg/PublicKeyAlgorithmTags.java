@@ -19,11 +19,13 @@ public interface PublicKeyAlgorithmTags
     /**
      * Deprecated tag for encrypt-only RSA.
      * MUST NOT be generated.
+     * @deprecated use {@link #RSA_GENERAL} instead.
      */
     int RSA_ENCRYPT = 2;       // RSA Encrypt-Only
     /**
      * Deprecated tag for sign-only RSA.
      * MUST NOT be generated.
+     * @deprecated use {@link #RSA_GENERAL} instead.
      */
     int RSA_SIGN = 3;          // RSA Sign-Only
     /**
@@ -51,6 +53,7 @@ public interface PublicKeyAlgorithmTags
      * Reserved tag for sign+encrypt ElGamal.
      * MUST NOT be generated.
      * An implementation MUST NOT generate ElGamal signatures.
+     * @deprecated use {@link #ELGAMAL_ENCRYPT} instead.
      */
     int ELGAMAL_GENERAL = 20;  // Reserved Elgamal (Encrypt or Sign)
     /**
