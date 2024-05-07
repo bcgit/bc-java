@@ -13,12 +13,20 @@ public class UserIDPacket
     implements UserDataPacket
 {    
     private byte[]    idData;
-    
+
     public UserIDPacket(
-        BCPGInputStream  in)
+            BCPGInputStream  in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    public UserIDPacket(
+        BCPGInputStream  in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(USER_ID);
+        super(USER_ID, newPacketFormat);
 
         this.idData = in.readAll();
     }
@@ -67,6 +75,6 @@ public class UserIDPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(USER_ID, idData);
+        out.writePacket(hasNewPacketFormat(), USER_ID, idData);
     }
 }

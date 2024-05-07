@@ -11,12 +11,20 @@ public class UserAttributePacket
     extends ContainedPacket
 {    
     private UserAttributeSubpacket[]    subpackets;
-    
+
     public UserAttributePacket(
-        BCPGInputStream  in)
+            BCPGInputStream  in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    public UserAttributePacket(
+        BCPGInputStream  in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(USER_ATTRIBUTE);
+        super(USER_ATTRIBUTE, newPacketFormat);
 
         UserAttributeSubpacketInputStream     sIn = new UserAttributeSubpacketInputStream(in);
         UserAttributeSubpacket                sub;
@@ -59,6 +67,6 @@ public class UserAttributePacket
             subpackets[i].encode(bOut);
         }
 
-        out.writePacket(USER_ATTRIBUTE, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), USER_ATTRIBUTE, bOut.toByteArray());
     }
 }
