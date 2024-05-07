@@ -13,10 +13,18 @@ public class MarkerPacket
     byte[] marker = {(byte)0x50, (byte)0x47, (byte)0x50};
 
     public MarkerPacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    public MarkerPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(MARKER);
+        super(MARKER, newPacketFormat);
 
         in.readFully(marker);
     }
@@ -25,6 +33,6 @@ public class MarkerPacket
         BCPGOutputStream out)
         throws IOException
     {
-        out.writePacket(MARKER, marker);
+        out.writePacket(hasNewPacketFormat(), MARKER, marker);
     }
 }

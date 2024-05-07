@@ -22,8 +22,15 @@ public class InputStreamPacket
         BCPGInputStream  in,
         int packetTag)
     {
-        super(packetTag);
-        
+        this(in, packetTag, false);
+    }
+
+    InputStreamPacket(
+            BCPGInputStream in,
+            int packetTag,
+            boolean newPacketFormat)
+    {
+        super(packetTag, newPacketFormat);
         this.in = in;
     }
 

@@ -10,12 +10,20 @@ public class TrustPacket
     extends ContainedPacket
 {    
     byte[]    levelAndTrustAmount;
-    
+
     public TrustPacket(
-        BCPGInputStream  in)
+            BCPGInputStream  in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    public TrustPacket(
+        BCPGInputStream  in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(TRUST);
+        super(TRUST, newPacketFormat);
 
         ByteArrayOutputStream    bOut = new ByteArrayOutputStream();
         int                      ch;
@@ -47,6 +55,6 @@ public class TrustPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(TRUST, levelAndTrustAmount);
+        out.writePacket(hasNewPacketFormat(), TRUST, levelAndTrustAmount);
     }
 }
