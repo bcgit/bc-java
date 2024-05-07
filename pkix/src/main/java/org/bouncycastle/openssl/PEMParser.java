@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -110,22 +110,19 @@ public class PEMParser
         throws IOException
     {
         PemObject obj = readPemObject();
-
-        if (obj != null)
+        if (obj == null)
         {
-            String type = obj.getType();
-            Object pemObjectParser = parsers.get(type);
-            if (pemObjectParser != null)
-            {
-                return ((PemObjectParser)pemObjectParser).parseObject(obj);
-            }
-            else
-            {
-                throw new IOException("unrecognised object: " + type);
-            }
+            return null;
         }
 
-        return null;
+        String type = obj.getType();
+        Object pemObjectParser = parsers.get(type);
+        if (pemObjectParser == null)
+        {
+            throw new IOException("unrecognised object: " + type);
+        }
+
+        return ((PemObjectParser)pemObjectParser).parseObject(obj);
     }
 
     /**
@@ -268,16 +265,14 @@ public class PEMParser
                     pKey.getParametersObject());
                 PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
 
-                if (pKey.getPublicKey() != null)
+                ASN1BitString publicKey = pKey.getPublicKey();
+                SubjectPublicKeyInfo pubInfo = null;
+                if (publicKey != null)
                 {
-                    SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(algId, pKey.getPublicKey().getBytes());
+                    pubInfo = new SubjectPublicKeyInfo(algId, publicKey.getBytes());
+                }
 
-                    return new PEMKeyPair(pubInfo, privInfo);
-                }
-                else
-                {
-                    return new PEMKeyPair(null, privInfo);
-                }
+                return new PEMKeyPair(pubInfo, privInfo);
             }
             catch (IOException e)
             {
@@ -353,9 +348,10 @@ public class PEMParser
         {
             try
             {
+                AlgorithmIdentifier algId = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
                 RSAPublicKey rsaPubStructure = RSAPublicKey.getInstance(obj.getContent());
 
-                return new SubjectPublicKeyInfo(new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), rsaPubStructure);
+                return new SubjectPublicKeyInfo(algId, rsaPubStructure);
             }
             catch (IOException e)
             {
@@ -475,9 +471,7 @@ public class PEMParser
         {
             try
             {
-                ASN1InputStream aIn = new ASN1InputStream(obj.getContent());
-
-                return ContentInfo.getInstance(aIn.readObject());
+                return ContentInfo.getInstance(obj.getContent());
             }
             catch (Exception e)
             {
@@ -508,7 +502,7 @@ public class PEMParser
 
                 if (param instanceof ASN1ObjectIdentifier)
                 {
-                    return ASN1Primitive.fromByteArray(obj.getContent());
+                    return param;
                 }
                 else if (param instanceof ASN1Sequence)
                 {
