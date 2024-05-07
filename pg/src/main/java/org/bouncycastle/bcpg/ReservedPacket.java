@@ -5,6 +5,11 @@ public class ReservedPacket
 {
     public ReservedPacket(BCPGInputStream in)
     {
-        super(in, RESERVED);
+        this(in, false);
+    }
+
+    public ReservedPacket(BCPGInputStream in, boolean newPacketFormat)
+    {
+        super(in, RESERVED, newPacketFormat);
     }
 }
