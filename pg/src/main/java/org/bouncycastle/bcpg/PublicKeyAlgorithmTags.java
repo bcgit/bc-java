@@ -1,7 +1,14 @@
 package org.bouncycastle.bcpg;
 
 /**
- * Public Key Algorithm tag numbers
+ * Public Key Algorithm IDs.
+ *
+ * @see <a href="RFC4880 - Public-Key Algorithms">
+ *     https://www.rfc-editor.org/rfc/rfc4880.html#section-9.1</a>
+ * @see <a href="LibrePGP - Public-Key Algorithms">
+ *     https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-algorithms</a>
+ * @see <a href="Crypto-Refresh - Public-Key Algorithms">
+ *     https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-public-key-algorithms</a>
  */
 public interface PublicKeyAlgorithmTags 
 {
