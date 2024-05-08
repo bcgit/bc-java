@@ -7,7 +7,11 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
- * base class for an ECDSA Public Key.
+ * Base class for an ECDSA Public Key.
+ * This type is used with {@link PublicKeyAlgorithmTags#ECDSA} and the curve is identified by providing an OID.
+ *
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ec">
+ *     Crypto-Refresh - Algorithm-Specific Parts for ECDSA Keys</a>
  */
 public class ECDSAPublicBCPGKey
     extends ECPublicBCPGKey
