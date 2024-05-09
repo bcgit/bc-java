@@ -80,7 +80,7 @@ public class PKCS10CertificationRequest
     }
 
     /**
-     * Create a PKCS10CertificationRequestHolder from an underlying ASN.1 structure.
+     * Create a PKCS10CertificationRequest from an underlying ASN.1 structure.
      *
      * @param certificationRequest the underlying ASN.1 structure representing a request.
      */
@@ -134,7 +134,7 @@ public class PKCS10CertificationRequest
     }
 
     /**
-     * Create a PKCS10CertificationRequestHolder from the passed in bytes.
+     * Create a PKCS10CertificationRequest from the passed in bytes.
      *
      * @param encoded BER/DER encoding of the CertificationRequest structure.
      * @throws IOException in the event of corrupted data, or an incorrect structure.

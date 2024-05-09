@@ -301,7 +301,7 @@ public class ParserTest
         {
             if (privInfo instanceof PrivateKeyInfo)
             {
-                privKey = (RSAPrivateCrtKey)converter.getPrivateKey(PrivateKeyInfo.getInstance(privInfo));
+                privKey = (RSAPrivateCrtKey)converter.getPrivateKey((PrivateKeyInfo)privInfo);
             }
             else
             {
