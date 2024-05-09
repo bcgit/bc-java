@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<osgiscanner>
+
+
+    <prop load="gradle.properties"/>
+
+    <!-- Make bundle regular expression -->
+    <prop name="bundle_ver" value="${version}" find="-SNAPSHOT" replace=".0.[0-9]+"/>
+    <prop name="bundle_ver" value="^${bundle_ver}" find="\." replace="\\."/>
+
+    <!-- Make import range expression -->
+    <prop name="import_low" value="${version}" find="-SNAPSHOT" replace=".0.[0-9]+"/>
+    <prop name="import_low" value="${import_low}" find="\." replace="\\."/>
+    <prop name="import_max" value="${maxVersion}" find="-SNAPSHOT" replace=".0.[0-9]+"/>
+    <prop name="import_max" value="${import_max}" find="\." replace="\\."/>
+    <prop name="import_range" value="^\[${import_low}\,${import_max}\)"/>
+
+    <jar file="${ENV.BCHOME}/libs/jakarta.activation-api-2.0.0.jar"/>
+    <jar file="${ENV.BCHOME}/libs/jakarta.mail-2.0.1.jar"/>
+    <jar file="${ENV.BCHOME}/core/build/libs/core-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/core/build/libs/core-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/jmail/build/libs/bcjmail-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/mls/build/libs/bcmls-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/pg/build/libs/bcpg-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/pkix/build/libs/bcpkix-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/prov/build/libs/bcprov-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/tls/build/libs/bctls-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/util/build/libs/bcutil-jdk18on-${version}.jar"/>
+
+    <bundle matches="^bcprov" version="${bundle_ver}">
+        <ignore-package package="^mls_client"/>
+        <ignore-package package="^org\.bouncycastle\.mls\.client"/>
+
+        <header key="Bundle-Version" matches="${bundle_ver}"/>
+
+        <header key="Export-Package" matches=".*" on-undefined="fail">
+            <package matches="^org\.bouncycastle\.*" param="version" test="${bundle_ver}" on-match="pass"
+                     on-undefined="fail"/>
+        </header>
+
+    </bundle>
+
+
+    <bundle matches="^bc(jmail|mls|pg|pkix|tls|util)" version="${bundle_ver}">
+        <ignore-package package="^mls_client"/>
+        <ignore-package package="^org\.bouncycastle\.mls\.client"/>
+
+        <header key="Bundle-Version" matches="${bundle_ver}"/>
+
+        <header key="Export-Package" matches=".*" on-undefined="fail">
+            <package matches="^org\.bouncycastle\.*" param="version" test="${bundle_ver}" on-match="pass"
+                     on-undefined="fail"/>
+        </header>
+
+        <header key="Import-Package" matches=".*" on-undefined="fail">
+            <package matches="^org\.bouncycastle\.*" param="version" test="${import_range}" on-match="pass"
+                     on-undefined="fail"/>
+        </header>
+
+
+    </bundle>
+
+</osgiscanner>
