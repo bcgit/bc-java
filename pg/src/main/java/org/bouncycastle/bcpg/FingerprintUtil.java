@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg;
 
+import org.bouncycastle.util.Pack;
+
 public class FingerprintUtil
 {
 
@@ -51,14 +53,7 @@ public class FingerprintUtil
         {
             throw new IllegalArgumentException("Byte array MUST contain at least 8 bytes");
         }
-        return ((bytes[0] & 0xffL) << 56) |
-            ((bytes[1] & 0xffL) << 48) |
-            ((bytes[2] & 0xffL) << 40) |
-            ((bytes[3] & 0xffL) << 32) |
-            ((bytes[4] & 0xffL) << 24) |
-            ((bytes[5] & 0xffL) << 16) |
-            ((bytes[6] & 0xffL) << 8) |
-            ((bytes[7] & 0xffL));
+        return Pack.bigEndianToLong(bytes, 0);
     }
 
     /**
