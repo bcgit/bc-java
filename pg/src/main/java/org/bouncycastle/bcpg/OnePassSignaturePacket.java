@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayOutputStream;
@@ -74,15 +75,7 @@ public class OnePassSignaturePacket
             fingerprint = new byte[32];
             in.readFully(fingerprint);
 
-            // TODO: Replace with FingerprintUtil
-            keyID = ((fingerprint[0] & 0xffL) << 56) |
-                    ((fingerprint[1] & 0xffL) << 48) |
-                    ((fingerprint[2] & 0xffL) << 40) |
-                    ((fingerprint[3] & 0xffL) << 32) |
-                    ((fingerprint[4] & 0xffL) << 24) |
-                    ((fingerprint[5] & 0xffL) << 16) |
-                    ((fingerprint[6] & 0xffL) << 8) |
-                    ((fingerprint[7] & 0xffL));
+            keyID = Pack.bigEndianToLong(fingerprint, 0);
         }
         else
         {
@@ -154,15 +147,7 @@ public class OnePassSignaturePacket
         this.salt = salt;
         this.fingerprint = fingerprint;
         this.isContaining = (isNested) ? 0 : 1;
-        // TODO: Replace with FingerprintUtil
-        keyID = ((fingerprint[0] & 0xffL) << 56) |
-                ((fingerprint[1] & 0xffL) << 48) |
-                ((fingerprint[2] & 0xffL) << 40) |
-                ((fingerprint[3] & 0xffL) << 32) |
-                ((fingerprint[4] & 0xffL) << 24) |
-                ((fingerprint[5] & 0xffL) << 16) |
-                ((fingerprint[6] & 0xffL) << 8) |
-                ((fingerprint[7] & 0xffL));
+        this.keyID = Pack.bigEndianToLong(fingerprint, 0);
     }
 
     /**
