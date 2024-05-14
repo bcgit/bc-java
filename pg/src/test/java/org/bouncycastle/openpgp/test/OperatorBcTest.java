@@ -50,10 +50,12 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
@@ -101,9 +103,9 @@ public class OperatorBcTest
         testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
-//        testBcPGPDataEncryptorBuilder();
+        testBcPGPDataEncryptorBuilder();
         testBcPGPContentVerifierBuilderProvider();
-        //testBcPBESecretKeyDecryptorBuilder();
+        testBcPBESecretKeyDecryptorBuilder();
         testBcKeyFingerprintCalculator();
         testBcStandardDigests();
     }
@@ -179,12 +181,12 @@ public class OperatorBcTest
         });
     }
 
-//    public void testBcPBESecretKeyDecryptorBuilder()
-//        throws PGPException
-//    {
-//        final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
-//        decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.CAMELLIA_256, new byte[32], new byte[12], new byte[16], 0, 16);
-//    }
+    public void testBcPBESecretKeyDecryptorBuilder()
+        throws PGPException
+    {
+        final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
+        decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.CAMELLIA_256, new byte[32], new byte[12], new byte[16], 0, 16);
+    }
 
     public void testBcPGPContentVerifierBuilderProvider()
         throws Exception
