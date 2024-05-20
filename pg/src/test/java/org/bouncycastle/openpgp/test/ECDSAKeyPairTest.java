@@ -18,7 +18,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Date;
 
-public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
+public class ECDSAKeyPairTest
+        extends AbstractPgpKeyPairTest
 {
 
     private static final String PRIME256v1 = "" +
@@ -93,23 +94,27 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
             throws Exception
     {
         Security.addProvider(new BouncyCastleProvider());
+        testConversionOfFreshJcaKeyPair();
         testConversionOfParsedJcaKeyPair();
         testConversionOfParsedBcKeyPair();
 
-        testConversionOfFreshJcaKeyPair();
     }
 
-    private void testConversionOfParsedJcaKeyPair() throws PGPException, IOException {
-        // parseAndConvertJca(PRIME256v1);
-        // parseAndConvertJca(SECP384r1);
-        // parseAndConvertJca(SECP521r1);
+    private void testConversionOfParsedJcaKeyPair()
+            throws PGPException, IOException
+    {
         parseAndConvertJca(BRAINPOOLP256r1);
         parseAndConvertJca(BRAINPOOLP384r1);
         parseAndConvertJca(BRAINPOOLP521r1);
+        parseAndConvertJca(PRIME256v1);
+        parseAndConvertJca(SECP384r1);
+        parseAndConvertJca(SECP521r1);
     }
 
-    private void parseAndConvertJca(String curve) throws IOException, PGPException {
-        JcaPGPKeyConverter c = new JcaPGPKeyConverter();
+    private void parseAndConvertJca(String curve)
+            throws IOException, PGPException
+    {
+        JcaPGPKeyConverter c = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         PGPKeyPair parsed = parseJca(curve);
         byte[] pubEnc = parsed.getPublicKey().getEncoded();
         byte[] privEnc = parsed.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -119,7 +124,7 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
                 new KeyPair(c.getPublicKey(parsed.getPublicKey()),
                         c.getPrivateKey(parsed.getPrivateKey())),
                 parsed.getPublicKey().getCreationTime());
-        isEncodingEqual(pubEnc, j1.getPublicKey().getEncoded());
+        isEncodingEqual("ECDSA Public key (" + curve + ") encoding mismatch", pubEnc, j1.getPublicKey().getEncoded());
         isEncodingEqual(privEnc, j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
 
         BcPGPKeyPair b1 = toBcKeyPair(j1);
@@ -135,16 +140,20 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
         isEncodingEqual(privEnc, b2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void testConversionOfParsedBcKeyPair() throws PGPException, IOException {
-        parseAndConvertBc(PRIME256v1);
-        parseAndConvertBc(SECP384r1);
-        parseAndConvertBc(SECP521r1);
+    private void testConversionOfParsedBcKeyPair()
+            throws PGPException, IOException
+    {
         parseAndConvertBc(BRAINPOOLP256r1);
         parseAndConvertBc(BRAINPOOLP384r1);
         parseAndConvertBc(BRAINPOOLP521r1);
+        parseAndConvertBc(PRIME256v1);
+        parseAndConvertBc(SECP384r1);
+        parseAndConvertBc(SECP521r1);
     }
 
-    private void parseAndConvertBc(String curve) throws IOException, PGPException {
+    private void parseAndConvertBc(String curve)
+            throws IOException, PGPException
+    {
         BcPGPKeyConverter c = new BcPGPKeyConverter();
         PGPKeyPair parsed = parseBc(curve);
         byte[] pubEnc = parsed.getPublicKey().getEncoded();
@@ -173,7 +182,9 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
 
     }
 
-    private PGPKeyPair parseJca(String armored) throws IOException, PGPException {
+    private PGPKeyPair parseJca(String armored)
+            throws IOException, PGPException
+    {
         ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
@@ -182,7 +193,9 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
         return new PGPKeyPair(sk.getPublicKey(), sk.extractPrivateKey(null));
     }
 
-    private PGPKeyPair parseBc(String armored) throws IOException, PGPException {
+    private PGPKeyPair parseBc(String armored)
+            throws IOException, PGPException
+    {
         ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes(StandardCharsets.UTF_8));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
@@ -194,15 +207,17 @@ public class ECDSAKeyPairTest extends AbstractPgpKeyPairTest
     private void testConversionOfFreshJcaKeyPair()
             throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException, IOException
     {
-        for (String curve : new String[] {"prime256v1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1", "brainpoolP512r1"})
+        for (String curve : new String[] {
+                "prime256v1",
+                "secp384r1",
+                "secp521r1",
+                "brainpoolP256r1",
+                "brainpoolP384r1",
+                "brainpoolP512r1"
+        })
         {
-            try {
-                testConversionOfFreshJcaKeyPair(curve);
-            } catch (Exception e) {
-
-            }
+            testConversionOfFreshJcaKeyPair(curve);
         }
-
     }
 
     private void testConversionOfFreshJcaKeyPair(String curve)
