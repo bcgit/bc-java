@@ -6,7 +6,7 @@ import java.io.IOException;
  * Secret key of type {@link PublicKeyAlgorithmTags#X25519}.
  * This type was introduced with Crypto-Refresh and can be used with v4, v6 keys.
  * Note however, that legacy implementations might not understand this key type yet.
- * For a key type compatible with legacy v4 implementations, see {@link ECDHPublicBCPGKey} with
+ * For a key type compatible with legacy v4 implementations, see {@link ECSecretBCPGKey} with
  * {@link PublicKeyAlgorithmTags#ECDH}.
  * Note: Contrary to {@link ECSecretBCPGKey} using {@link PublicKeyAlgorithmTags#ECDH}, which uses big-endian
  * MPI encoding to encode the secret key material, {@link X25519SecretBCPGKey} uses native little-endian encoding.
