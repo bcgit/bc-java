@@ -8,6 +8,8 @@ import java.io.IOException;
  * Note however, that legacy implementations might not understand this key type yet.
  * For a key type compatible with legacy v4 implementations, see {@link ECDHPublicBCPGKey} with
  * {@link PublicKeyAlgorithmTags#ECDH}.
+ * Note: Contrary to {@link ECSecretBCPGKey} using {@link PublicKeyAlgorithmTags#ECDH}, which uses big-endian
+ * MPI encoding to encode the secret key material, {@link X25519SecretBCPGKey} uses native little-endian encoding.
  *
  * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-x">
  *     Crypto-Refresh - Algorithm-Specific Part for X25519 Keys</a>
