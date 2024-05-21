@@ -19,7 +19,7 @@ public class PGPV3SignatureGenerator
 {
     private PGPContentSignerBuilder contentSignerBuilder;
     private PGPContentSigner contentSigner;
-    private int              providedKeyAlgorithm = -1;
+//    private int              providedKeyAlgorithm = -1;
 
     /**
      * Create a signature generator built on the passed in contentSignerBuilder.
@@ -49,10 +49,10 @@ public class PGPV3SignatureGenerator
         sigType = contentSigner.getType();
         lastb = 0;
 
-        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
-        {
-            throw new PGPException("key algorithm mismatch");
-        }
+//        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
+//        {
+//            throw new PGPException("key algorithm mismatch");
+//        }
     }
 
     /**

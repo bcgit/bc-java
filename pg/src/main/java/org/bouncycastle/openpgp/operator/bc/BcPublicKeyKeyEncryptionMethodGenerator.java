@@ -32,6 +32,7 @@ import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
@@ -85,7 +86,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             {
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
                 byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket, new BcKeyFingerprintCalculator());
-                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519) || ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X25519))
                 {
                     AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random));
 
