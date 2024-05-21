@@ -25,6 +25,7 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -100,7 +101,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 String keyEncryptionOID = RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId();
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
-                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519) || ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X25519))
                 {
                     return getEncryptSessionInfo(pubKeyPacket, "X25519", cryptoPublicKey, keyEncryptionOID,
                         ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
