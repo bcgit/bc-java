@@ -74,6 +74,11 @@ public abstract class PGPKeyConverter
      *     <td>SHA2-256</td>
      *     <td>AES-128</td>
      *   </tr>
+     *   <tr>
+     *     <td>Curve448</td>
+     *     <td>SHA2-512</td>
+     *     <td>AES-256</td>
+     *   </tr>
      * </table>
      */
     protected PGPKdfParameters implGetKdfParameters(ASN1ObjectIdentifier curveID, PGPAlgorithmParameters algorithmParameters)
@@ -89,7 +94,8 @@ public abstract class PGPKeyConverter
             {
                 return new PGPKdfParameters(HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
             }
-            else if (curveID.equals(SECObjectIdentifiers.secp521r1) || curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP512r1))
+            else if (curveID.equals(SECObjectIdentifiers.secp521r1) || curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP512r1)
+                || curveID.equals(EdECObjectIdentifiers.id_X448))
             {
                 return new PGPKdfParameters(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
             }
