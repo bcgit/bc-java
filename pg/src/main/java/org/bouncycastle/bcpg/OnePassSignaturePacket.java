@@ -1,7 +1,6 @@
 package org.bouncycastle.bcpg;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayOutputStream;
@@ -46,10 +45,18 @@ public class OnePassSignaturePacket
      * @throws IOException when the end of stream is prematurely reached, or when the packet is malformed
      */
     OnePassSignaturePacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    OnePassSignaturePacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(ONE_PASS_SIGNATURE);
+        super(ONE_PASS_SIGNATURE, newPacketFormat);
 
         version = in.read();
         sigType = in.read();
@@ -75,7 +82,7 @@ public class OnePassSignaturePacket
             fingerprint = new byte[32];
             in.readFully(fingerprint);
 
-            keyID = Pack.bigEndianToLong(fingerprint, 0);
+            keyID = FingerprintUtil.keyIdFromV6Fingerprint(fingerprint);
         }
         else
         {
@@ -147,7 +154,7 @@ public class OnePassSignaturePacket
         this.salt = salt;
         this.fingerprint = fingerprint;
         this.isContaining = (isNested) ? 0 : 1;
-        this.keyID = Pack.bigEndianToLong(fingerprint, 0);
+        keyID = FingerprintUtil.keyIdFromV6Fingerprint(fingerprint);
     }
 
     /**
@@ -259,7 +266,7 @@ public class OnePassSignaturePacket
 
         pOut.close();
 
-        out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), ONE_PASS_SIGNATURE, bOut.toByteArray());
     }
 
 }

@@ -4,7 +4,14 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * base class for an Edwards Curve Secret Key.
+ * Base class for an Edwards Curve (EdDSA) Secret Key.
+ * This class is used with {@link PublicKeyAlgorithmTags#EDDSA_LEGACY} only and MUST NOT be used with v6 keys.
+ * Modern OpenPGP uses dedicated key types:
+ * For {@link PublicKeyAlgorithmTags#Ed25519} see {@link Ed25519SecretBCPGKey} instead.
+ * For {@link PublicKeyAlgorithmTags#Ed448} see {@link Ed448SecretBCPGKey} instead.
+ *
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ed">
+ *     Crypto-Refresh - Algorithm-Specific Parts for EdDSALegacy Keys (deprecated)</a>
  */
 public class EdSecretBCPGKey
     extends BCPGObject

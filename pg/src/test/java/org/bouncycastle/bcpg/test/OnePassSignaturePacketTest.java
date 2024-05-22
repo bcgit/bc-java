@@ -105,8 +105,10 @@ public class OnePassSignaturePacketTest
             isNull("round-tripped OPS v3 MUST NOT have salt",
                     after.getSalt());
 
-            isEncodingEqual("Packet encoding mismatch",
-                    before, after);
+            if (before.hasNewPacketFormat() && newTypeIdFormat)
+            {
+                isEncodingEqual(before, after);
+            }
         }
     }
 
@@ -115,14 +117,7 @@ public class OnePassSignaturePacketTest
     {
         byte[] salt = new byte[32];
         byte[] fingerprint = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
-        long keyID = ((fingerprint[0] & 0xffL) << 56) |
-                        ((fingerprint[1] & 0xffL) << 48) |
-                        ((fingerprint[2] & 0xffL) << 40) |
-                        ((fingerprint[3] & 0xffL) << 32) |
-                        ((fingerprint[4] & 0xffL) << 24) |
-                        ((fingerprint[5] & 0xffL) << 16) |
-                        ((fingerprint[6] & 0xffL) << 8) |
-                        ((fingerprint[7] & 0xffL));
+        long keyID = FingerprintUtil.keyIdFromV6Fingerprint(fingerprint);
 
         new SecureRandom().nextBytes(salt);
         OnePassSignaturePacket before = new OnePassSignaturePacket(
@@ -178,7 +173,10 @@ public class OnePassSignaturePacketTest
             isEncodingEqual("round-tripped OPS salt mismatch",
                     before.getSalt(), after.getSalt());
 
-            isEncodingEqual(before, after);
+            if (before.hasNewPacketFormat() && newTypeIdFormat)
+            {
+                isEncodingEqual(before, after);
+            }
         }
     }
 

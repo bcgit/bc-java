@@ -70,10 +70,30 @@ public class SecretKeyPacket
     private byte[] iv;
 
     SecretKeyPacket(
-        BCPGInputStream in)
-        throws IOException
+            BCPGInputStream in)
+            throws IOException
     {
         this(SECRET_KEY, in);
+    }
+
+    SecretKeyPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
+        throws IOException
+    {
+        this(SECRET_KEY, in, newPacketFormat);
+    }
+
+    /**
+     * @param in
+     * @throws IOException
+     */
+    SecretKeyPacket(
+            int keyTag,
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(keyTag, in, false);
     }
 
     /**
@@ -82,10 +102,11 @@ public class SecretKeyPacket
      */
     SecretKeyPacket(
         int keyTag,
-        BCPGInputStream in)
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag);
+        super(keyTag, newPacketFormat);
 
         if (this instanceof SecretSubkeyPacket)
         {
@@ -324,6 +345,6 @@ public class SecretKeyPacket
         BCPGOutputStream out)
         throws IOException
     {
-        out.writePacket(getPacketTag(), getEncodedContents());
+        out.writePacket(hasNewPacketFormat(), getPacketTag(), getEncodedContents());
     }
 }
