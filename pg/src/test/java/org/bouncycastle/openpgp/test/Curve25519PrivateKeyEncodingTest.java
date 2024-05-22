@@ -75,18 +75,22 @@ public class Curve25519PrivateKeyEncodingTest
         // Legacy key uses reversed encoding
         PGPKeyPair pgpECDHKeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDH, kp, date);
         byte[] encodedECDHPrivateKey = pgpECDHKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue(containsSubsequence(encodedECDHPrivateKey, Arrays.reverse(rawPrivateKey)));
+        isTrue("ECDH Curve25519Legacy (X25519) key MUST encode secret key in 'reverse' (big-endian MPI encoding) (JCE implementation)",
+                containsSubsequence(encodedECDHPrivateKey, Arrays.reverse(rawPrivateKey)));
 
         byte[] decodedECDHPrivateKey = jcaNativePrivateKey(c.getPrivateKey(pgpECDHKeyPair.getPrivateKey()));
-        isEncodingEqual(decodedECDHPrivateKey, rawPrivateKey);
+        isEncodingEqual("Decoded ECDH Curve25519Legacy (X25519) key MUST match original raw key (JCE implementation)",
+                decodedECDHPrivateKey, rawPrivateKey);
 
         // X25519 key uses native encoding
         PGPKeyPair pgpX25519KeyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
         byte[] encodedX25519PrivateKey = pgpX25519KeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue(containsSubsequence(encodedX25519PrivateKey, rawPrivateKey));
+        isTrue("X25519 key MUST use native encoding (little-endian) to encode the secret key material (JCE implementation)",
+                containsSubsequence(encodedX25519PrivateKey, rawPrivateKey));
 
         byte[] decodedX25519PrivateKey = jcaNativePrivateKey(c.getPrivateKey(pgpX25519KeyPair.getPrivateKey()));
-        isEncodingEqual(rawPrivateKey, decodedX25519PrivateKey);
+        isEncodingEqual("Decoded X25519 key MUST match original raw key (JCE implementation)",
+                rawPrivateKey, decodedX25519PrivateKey);
     }
 
     /**
@@ -122,18 +126,22 @@ public class Curve25519PrivateKeyEncodingTest
         // Legacy key uses reversed encoding
         PGPKeyPair pgpECDHKeyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.ECDH, kp, date);
         byte[] encodedECDHPrivateKey = pgpECDHKeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue(containsSubsequence(encodedECDHPrivateKey, Arrays.reverse(rawPrivateKey)));
+        isTrue("ECDH Curve25519Legacy (X25519) key MUST encode secret key in 'reverse' (big-endian MPI encoding) (BC implementation)",
+                containsSubsequence(encodedECDHPrivateKey, Arrays.reverse(rawPrivateKey)));
 
         byte[] decodedECDHPrivateKey = ((X25519PrivateKeyParameters) c.getPrivateKey(pgpECDHKeyPair.getPrivateKey())).getEncoded();
-        isEncodingEqual(decodedECDHPrivateKey, rawPrivateKey);
+        isEncodingEqual("Decoded ECDH Curve25519Legacy (X25519) key MUST match original raw key (BC implementation)",
+                decodedECDHPrivateKey, rawPrivateKey);
 
         // X25519 key uses native encoding
         PGPKeyPair pgpX25519KeyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
         byte[] encodedX25519PrivateKey = pgpX25519KeyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue(containsSubsequence(encodedX25519PrivateKey, rawPrivateKey));
+        isTrue("X25519 key MUST use native encoding (little-endian) to encode the secret key material (BC implementation)",
+                containsSubsequence(encodedX25519PrivateKey, rawPrivateKey));
 
         byte[] decodedX25519PrivateKey = ((X25519PrivateKeyParameters) c.getPrivateKey(pgpX25519KeyPair.getPrivateKey())).getEncoded();
-        isEncodingEqual(rawPrivateKey, decodedX25519PrivateKey);
+        isEncodingEqual("Decoded X25519 key MUST match original raw key (BC implementation)",
+                rawPrivateKey, decodedX25519PrivateKey);
     }
 
     /**
