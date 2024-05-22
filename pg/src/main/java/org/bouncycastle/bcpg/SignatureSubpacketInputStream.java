@@ -69,7 +69,7 @@ public class SignatureSubpacketInputStream
         throws IOException
     {
         boolean[] flags = new boolean[3];
-        int bodyLen = StreamUtil.readBodyLen(this, in, flags);
+        int bodyLen = StreamUtil.readBodyLen(this, flags);
         if (flags[0])
         {
             return null;

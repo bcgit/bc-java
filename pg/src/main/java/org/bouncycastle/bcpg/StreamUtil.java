@@ -154,7 +154,7 @@ class StreamUtil
      * flags[1] indicates (is)longLength = true
      * flags[2] indicate partial = true
      */
-    static int readBodyLen(InputStream in, InputStream subIn, boolean[] flags)
+    static int readBodyLen(InputStream in, boolean[] flags)
         throws IOException
     {
         Arrays.fill(flags, false);
@@ -170,7 +170,7 @@ class StreamUtil
         }
         else if (l <= 223)
         {
-            bodyLen = ((l - 192) << 8) + (subIn.read()) + 192;
+            bodyLen = ((l - 192) << 8) + (in.read()) + 192;
         }
         else if (l == 255)
         {
