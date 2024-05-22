@@ -36,10 +36,18 @@ public class SignaturePacket
     private byte[]                 salt; // v6 only
 
     SignaturePacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    SignaturePacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(SIGNATURE);
+        super(SIGNATURE, newPacketFormat);
 
         version = in.read();
         switch (version)
@@ -686,7 +694,7 @@ public class SignaturePacket
 
         pOut.close();
 
-        out.writePacket(SIGNATURE, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), SIGNATURE, bOut.toByteArray());
     }
 
     private void setCreationTime()

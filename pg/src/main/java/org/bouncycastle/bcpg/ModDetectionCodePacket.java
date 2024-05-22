@@ -9,12 +9,20 @@ public class ModDetectionCodePacket
     extends ContainedPacket
 {    
     private byte[]    digest;
-    
+
     ModDetectionCodePacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    ModDetectionCodePacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(MOD_DETECTION_CODE);
+        super(MOD_DETECTION_CODE, newPacketFormat);
 
         this.digest = new byte[20];
         in.readFully(this.digest);
@@ -44,6 +52,6 @@ public class ModDetectionCodePacket
         BCPGOutputStream    out) 
         throws IOException
     {
-        out.writePacket(MOD_DETECTION_CODE, digest, false);
+        out.writePacket(hasNewPacketFormat(), MOD_DETECTION_CODE, digest);
     }
 }
