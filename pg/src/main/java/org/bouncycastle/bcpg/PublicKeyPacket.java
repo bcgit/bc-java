@@ -162,19 +162,14 @@ public class PublicKeyPacket
 
         if (version <= VERSION_3)
         {
-            pOut.write((byte)(validDays >> 8));
-            pOut.write((byte)validDays);
+            pOut.writeShort((short)validDays);
         }
 
         pOut.write(algorithm);
 
         if (version == VERSION_6)
         {
-            int keyOctets = key.getEncoded().length;
-            pOut.write(keyOctets >> 24);
-            pOut.write(keyOctets >> 16);
-            pOut.write(keyOctets >> 8);
-            pOut.write(keyOctets);
+            pOut.writeInt(key.getEncoded().length);
         }
 
         pOut.writeObject((BCPGObject)key);

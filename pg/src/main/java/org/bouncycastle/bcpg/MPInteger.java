@@ -43,10 +43,7 @@ public class MPInteger
         BCPGOutputStream    out)
         throws IOException
     {
-        int length = value.bitLength();
-        
-        out.write(length >> 8);
-        out.write(length);
+        out.writeShort((short)value.bitLength());
         
         byte[]    bytes = value.toByteArray();
         

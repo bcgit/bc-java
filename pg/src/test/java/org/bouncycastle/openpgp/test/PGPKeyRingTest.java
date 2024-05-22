@@ -3211,7 +3211,6 @@ public class PGPKeyRingTest
     public void testNullEncryption()
         throws Exception
     {
-        char[] passPhrase = "fred".toCharArray();
         KeyPairGenerator bareGenerator = KeyPairGenerator.getInstance("RSA", new BouncyCastleProvider());
         bareGenerator.initialize(2048);
         KeyPair rsaPair = bareGenerator.generateKeyPair();

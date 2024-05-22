@@ -323,6 +323,22 @@ public class BCPGOutputStream
         p.encode(this);
     }
 
+    void writeShort(short n)
+        throws IOException
+    {
+        out.write((byte)(n >> 8));
+        out.write((byte)n);
+    }
+
+    void writeInt(int n)
+        throws IOException
+    {
+        out.write(n >> 24);
+        out.write(n >> 16);
+        out.write(n >> 8);
+        out.write(n);
+    }
+
     void writePacket(
         int tag,
         byte[] body)

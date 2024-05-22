@@ -109,10 +109,7 @@ class StreamUtil
     static void writeTime(BCPGOutputStream pOut, long time)
         throws IOException
     {
-        pOut.write((byte)(time >> 24));
-        pOut.write((byte)(time >> 16));
-        pOut.write((byte)(time >> 8));
-        pOut.write((byte)time);
+        pOut.writeInt((int) time);
     }
 
     static long readTime(BCPGInputStream in)
