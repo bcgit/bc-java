@@ -11,10 +11,18 @@ public class CompressedDataPacket
     int    algorithm;
 
     CompressedDataPacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    CompressedDataPacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(in, COMPRESSED_DATA);
+        super(in, COMPRESSED_DATA, newPacketFormat);
 
         algorithm = in.read();
     }

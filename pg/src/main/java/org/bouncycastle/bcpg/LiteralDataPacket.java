@@ -16,10 +16,18 @@ public class LiteralDataPacket
     long    modDate;
 
     LiteralDataPacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    LiteralDataPacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(in, LITERAL_DATA);
+        super(in, LITERAL_DATA, newPacketFormat);
 
         format = in.read();
         int    l = in.read();

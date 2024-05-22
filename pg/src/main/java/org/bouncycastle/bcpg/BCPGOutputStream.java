@@ -29,7 +29,7 @@ public class BCPGOutputStream
     }
 
     OutputStream out;
-    private boolean useOldFormat;
+    private PacketFormat packetFormat;
     private byte[] partialBuffer;
     private int partialBufferLength;
     private int partialPower;
@@ -46,11 +46,11 @@ public class BCPGOutputStream
     public BCPGOutputStream(
         OutputStream out)
     {
-        this(out, false);
+        this(out, PacketFormat.ROUNDTRIP);
     }
 
     /**
-     * Base constructor specifying whether or not to use packets in the new format
+     * Base constructor specifying whether to use packets in the new format
      * wherever possible.
      *
      * @param out           output stream to write encoded data to.
@@ -60,8 +60,15 @@ public class BCPGOutputStream
         OutputStream out,
         boolean newFormatOnly)
     {
+        this(out, newFormatOnly ? PacketFormat.CURRENT : PacketFormat.ROUNDTRIP);
+    }
+
+    public BCPGOutputStream(
+            OutputStream out,
+            PacketFormat packetFormat)
+    {
         this.out = out;
-        this.useOldFormat = !newFormatOnly;
+        this.packetFormat = packetFormat;
     }
 
     /**
@@ -75,6 +82,7 @@ public class BCPGOutputStream
         throws IOException
     {
         this.out = out;
+        this.packetFormat = PacketFormat.LEGACY;
         this.writeHeader(tag, true, true, 0);
     }
 
@@ -95,6 +103,7 @@ public class BCPGOutputStream
         throws IOException
     {
         this.out = out;
+        this.packetFormat = oldFormat ? PacketFormat.LEGACY : PacketFormat.CURRENT;
 
         if (length > 0xFFFFFFFFL)
         {
@@ -122,6 +131,7 @@ public class BCPGOutputStream
         throws IOException
     {
         this.out = out;
+        this.packetFormat = PacketFormat.CURRENT;
 
         this.writeHeader(tag, false, false, length);
     }
@@ -141,6 +151,7 @@ public class BCPGOutputStream
         throws IOException
     {
         this.out = out;
+        this.packetFormat = PacketFormat.CURRENT;
         this.writeHeader(tag, false, true, 0);
 
         this.partialBuffer = buffer;
@@ -316,6 +327,11 @@ public class BCPGOutputStream
         }
     }
 
+    /**
+     * Write a packet to the stream.
+     * @param p packet
+     * @throws IOException
+     */
     public void writePacket(
         ContainedPacket p)
         throws IOException
@@ -323,15 +339,54 @@ public class BCPGOutputStream
         p.encode(this);
     }
 
+    /**
+     * Write a packet to the stream.
+     * The packet will use the old encoding format if {@link #packetFormat} is {@link PacketFormat#LEGACY}, otherwise
+     * it will be encoded using the new packet format.
+     * @param tag packet tag
+     * @param body packet body
+     * @throws IOException
+     */
     void writePacket(
         int tag,
         byte[] body)
         throws IOException
     {
-        this.writeHeader(tag, useOldFormat, false, body.length);
+        this.writeHeader(tag, packetFormat == PacketFormat.LEGACY, false, body.length);
         this.write(body);
     }
 
+    /**
+     * Write a packet.
+     * The packet format will be chosen primarily based on {@link #packetFormat}.
+     * If {@link #packetFormat} is {@link PacketFormat#CURRENT}, the packet will be encoded using the new format.
+     * If it is {@link PacketFormat#LEGACY}, the packet will use old encoding format.
+     * If it is {@link PacketFormat#ROUNDTRIP}, then the format will be determined by objectPrefersNewPacketFormat.
+     *
+     * @param objectPrefersNewPacketFormat whether the packet prefers to be encoded using the new packet format
+     * @param tag packet tag
+     * @param body packet body
+     * @throws IOException
+     */
+    void writePacket(
+            boolean objectPrefersNewPacketFormat,
+            int tag,
+            byte[] body)
+            throws IOException
+    {
+        boolean oldPacketFormat = packetFormat == PacketFormat.LEGACY ||
+                (packetFormat == PacketFormat.ROUNDTRIP && !objectPrefersNewPacketFormat);
+        this.writeHeader(tag, oldPacketFormat, false, body.length);
+        this.write(body);
+    }
+
+    /**
+     * Write a packet, forcing the packet format to be either old or new.
+     * @param tag packet tag
+     * @param body packet body
+     * @param oldFormat if true, old format is forced, else force new format
+     * @throws IOException
+     */
     void writePacket(
         int tag,
         byte[] body,
@@ -379,4 +434,5 @@ public class BCPGOutputStream
         out.flush();
         out.close();
     }
+
 }

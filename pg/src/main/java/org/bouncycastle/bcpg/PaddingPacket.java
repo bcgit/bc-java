@@ -12,16 +12,22 @@ public class PaddingPacket
     private final byte[] padding;
 
     public PaddingPacket(BCPGInputStream in)
+            throws IOException
+    {
+        this(in, true);
+    }
+
+    public PaddingPacket(BCPGInputStream in, boolean newPacketFormat)
         throws IOException
     {
-        super(PADDING);
+        super(PADDING, newPacketFormat);
 
         padding = Streams.readAll(in);
     }
 
     public PaddingPacket(byte[] padding)
     {
-        super(PADDING);
+        super(PADDING, true);
 
         this.padding = padding;
     }
@@ -47,6 +53,6 @@ public class PaddingPacket
     public void encode(BCPGOutputStream pOut)
         throws IOException
     {
-        pOut.writePacket(PacketTags.PADDING, padding);
+        pOut.writePacket(hasNewPacketFormat(), PacketTags.PADDING, padding);
     }
 }
