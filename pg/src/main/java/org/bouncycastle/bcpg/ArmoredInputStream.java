@@ -24,7 +24,7 @@ import org.bouncycastle.util.Strings;
 public class ArmoredInputStream
     extends InputStream
 {
-    /*
+    /**
      * set up the decoding table.
      */
     private static final byte[] decodingTable;
