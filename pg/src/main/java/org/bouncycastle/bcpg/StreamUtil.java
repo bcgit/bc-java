@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
+import org.bouncycastle.util.Arrays;
+
 class StreamUtil
 {
     private static final long MAX_MEMORY = Runtime.getRuntime().maxMemory();
@@ -148,10 +150,39 @@ class StreamUtil
 
     /**
      * Note: flags is an array of three boolean values:
-     * flags[0] indicates l is negative
-     * */
-//    static int readBodyLen(InputStream in, boolean[] flags){
-//        flags =
-//    }
+     * flags[0] indicates l is negative, flag for eof
+     * flags[1] indicates (is)longLength = true
+     * flags[2] indicate partial = true
+     */
+    static int readBodyLen(InputStream in, InputStream subIn, boolean[] flags)
+        throws IOException
+    {
+        Arrays.fill(flags, false);
+        int l = in.read();
+        int bodyLen = -1;
+        if (l < 0)
+        {
+            flags[0] = true;
+        }
+        if (l < 192)
+        {
+            bodyLen = l;
+        }
+        else if (l <= 223)
+        {
+            bodyLen = ((l - 192) << 8) + (subIn.read()) + 192;
+        }
+        else if (l == 255)
+        {
+            flags[1] = true;
+            bodyLen = StreamUtil.read4OctetLength(in);
+        }
+        else
+        {
+            flags[2] = true;
+            bodyLen = 1 << (l & 0x1f);
+        }
+        return bodyLen;
+    }
 
 }
