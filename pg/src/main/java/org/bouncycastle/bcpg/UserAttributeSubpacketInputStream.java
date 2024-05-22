@@ -88,7 +88,7 @@ public class UserAttributeSubpacketInputStream
         }
         else if (l == 255)
         {
-            bodyLen = (in.read() << 24) | (in.read() << 16) |  (in.read() << 8)  | in.read();
+            bodyLen = StreamUtil.read4OctetLength(in);
             longLength = true;
         }
         else

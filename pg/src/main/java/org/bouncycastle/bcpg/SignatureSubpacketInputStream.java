@@ -69,7 +69,7 @@ public class SignatureSubpacketInputStream
         throws IOException
     {
         int l = this.read();
-        int bodyLen = 0;
+        int bodyLen;
 
         if (l < 0)
         {
@@ -89,7 +89,7 @@ public class SignatureSubpacketInputStream
         else if (l == 255)
         {
             isLongLength = true;
-            bodyLen = (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+            bodyLen = StreamUtil.read4OctetLength(in);
         }
         else
         {
