@@ -36,7 +36,7 @@ public class PublicKeyPacket
         super(keyTag);
 
         version = in.read();
-        time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+        time = StreamUtil.read4OctetLength(in);
 
         if (version <= VERSION_3)
         {
@@ -47,7 +47,7 @@ public class PublicKeyPacket
         if (version == VERSION_6)
         {
             // TODO: Use keyOctets to be able to parse unknown keys
-            long keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
+            long keyOctets = StreamUtil.read4OctetLength(in);
         }
 
         switch (algorithm)

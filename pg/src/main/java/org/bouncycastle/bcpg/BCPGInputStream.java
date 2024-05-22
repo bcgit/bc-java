@@ -216,7 +216,7 @@ public class BCPGInputStream
             }
             else if (l == 255)
             {
-                bodyLen = (this.read() << 24) | (this.read() << 16) |  (this.read() << 8)  | this.read();
+                bodyLen = StreamUtil.read4OctetLength(this);
             }
             else
             {
@@ -236,10 +236,10 @@ public class BCPGInputStream
                 bodyLen = this.read();
                 break;
             case 1:
-                bodyLen = (this.read() << 8) | this.read();
+                bodyLen = StreamUtil.read2OctetLength(this);
                 break;
             case 2:
-                bodyLen = (this.read() << 24) | (this.read() << 16) | (this.read() << 8) | this.read();
+                bodyLen = StreamUtil.read4OctetLength(this);
                 break;
             case 3:
                 partial = true;
@@ -410,7 +410,7 @@ public class BCPGInputStream
             }
             else if (l == 255)
             {
-                dataLength = (in.read() << 24) | (in.read() << 16) |  (in.read() << 8)  | in.read();
+                dataLength = StreamUtil.read4OctetLength(in);
             }
             else
             {

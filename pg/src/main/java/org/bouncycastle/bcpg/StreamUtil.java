@@ -109,13 +109,13 @@ class StreamUtil
     static void writeTime(BCPGOutputStream pOut, long time)
         throws IOException
     {
-        pOut.writeInt((int) time);
+        pOut.writeInt((int)time);
     }
 
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (((long)in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read()) * 1000;
+        return (long)read4OctetLength(in) * 1000L;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)
@@ -132,7 +132,7 @@ class StreamUtil
     }
 
     static void write4OctetLength(OutputStream pOut, int len)
-            throws IOException
+        throws IOException
     {
         pOut.write(len >> 24);
         pOut.write(len >> 16);
@@ -145,5 +145,13 @@ class StreamUtil
     {
         return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
     }
+
+    /**
+     * Note: flags is an array of three boolean values:
+     * flags[0] indicates l is negative
+     * */
+//    static int readBodyLen(InputStream in, boolean[] flags){
+//        flags =
+//    }
 
 }
