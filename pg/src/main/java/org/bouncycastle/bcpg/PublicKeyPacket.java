@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg;
 
+import sun.jvm.hotspot.types.JBooleanField;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Date;
@@ -22,18 +24,34 @@ public class PublicKeyPacket
     private BCPGKey key;
 
     PublicKeyPacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+    PublicKeyPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        this(PUBLIC_KEY, in);
+        this(PUBLIC_KEY, in, newPacketFormat);
+    }
+
+    PublicKeyPacket(
+            int keyTag,
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(keyTag, in, false);
     }
 
     PublicKeyPacket(
         int keyTag,
-        BCPGInputStream in)
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag);
+        super(keyTag, newPacketFormat);
 
         version = in.read();
         time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
@@ -188,6 +206,6 @@ public class PublicKeyPacket
         BCPGOutputStream out)
         throws IOException
     {
-        out.writePacket(getPacketTag(), getEncodedContents());
+        out.writePacket(hasNewPacketFormat(), getPacketTag(), getEncodedContents());
     }
 }

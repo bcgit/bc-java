@@ -6,6 +6,7 @@ public class Packet
     implements PacketTags
 {
     private final int packetTag;
+    private final boolean newPacketFormat;
 
     // for API compatibility
     public Packet()
@@ -15,7 +16,13 @@ public class Packet
 
     Packet(int packetTag)
     {
+        this(packetTag, false);
+    }
+
+    Packet(int packetTag, boolean newPacketFormat)
+    {
         this.packetTag = packetTag;
+        this.newPacketFormat = newPacketFormat;
     }
 
     /**
@@ -26,6 +33,17 @@ public class Packet
     public final int getPacketTag()
     {
          return packetTag;
+    }
+
+    /**
+     * Return true, if this instance of a packet was encoded using the new packet format.
+     * If the packet was encoded using the old legacy format, return false instead.
+     *
+     * @return true if new packet format encoding is used
+     */
+    public boolean hasNewPacketFormat()
+    {
+        return newPacketFormat;
     }
 
     /**
