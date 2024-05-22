@@ -31,10 +31,18 @@ public class SymmetricEncIntegrityPacket
     byte[] salt;                // V2
 
     SymmetricEncIntegrityPacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    SymmetricEncIntegrityPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(in, SYM_ENC_INTEGRITY_PRO);
+        super(in, SYM_ENC_INTEGRITY_PRO, newPacketFormat);
 
         version = in.read();
 

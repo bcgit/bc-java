@@ -1,8 +1,8 @@
 package org.bouncycastle.bcpg.sig;
 
+import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
-import org.bouncycastle.util.Pack;
 
 /**
  * packet giving the issuer key ID.
@@ -13,7 +13,9 @@ public class IssuerKeyID
     protected static byte[] keyIDToBytes(
         long    keyId)
     {
-        return Pack.longToBigEndian(keyId);
+        byte[]    data = new byte[8];
+        FingerprintUtil.writeKeyID(keyId, data);
+        return data;
     }
     
     public IssuerKeyID(
@@ -33,6 +35,6 @@ public class IssuerKeyID
     
     public long getKeyID()
     {
-        return Pack.bigEndianToLong(data, 0);
+        return FingerprintUtil.readKeyID(data);
     }
 }

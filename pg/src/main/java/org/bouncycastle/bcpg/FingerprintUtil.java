@@ -49,11 +49,7 @@ public class FingerprintUtil
      */
     public static long longFromLeftMostBytes(byte[] bytes)
     {
-        if (bytes.length < 8)
-        {
-            throw new IllegalArgumentException("Byte array MUST contain at least 8 bytes");
-        }
-        return Pack.bigEndianToLong(bytes, 0);
+        return readKeyID(bytes);
     }
 
     /**
@@ -64,18 +60,56 @@ public class FingerprintUtil
      */
     public static long longFromRightMostBytes(byte[] bytes)
     {
+        return readKeyID(bytes, bytes.length - 8);
+    }
+
+    /**
+     * Read a key-ID from the first 8 octets of the given byte array.
+     * @param bytes byte array
+     * @return key-ID
+     */
+    public static long readKeyID(byte[] bytes)
+    {
+        return readKeyID(bytes, 0);
+    }
+
+    /**
+     * Read a key-ID from 8 octets of the given byte array starting at offset.
+     * @param bytes byte array
+     * @param offset offset
+     * @return key-ID
+     */
+    public static long readKeyID(byte[] bytes, int offset)
+    {
         if (bytes.length < 8)
         {
             throw new IllegalArgumentException("Byte array MUST contain at least 8 bytes");
         }
-        int i = bytes.length;
-        return ((bytes[i - 8] & 0xffL) << 56) |
-            ((bytes[i - 7] & 0xffL) << 48) |
-            ((bytes[i - 6] & 0xffL) << 40) |
-            ((bytes[i - 5] & 0xffL) << 32) |
-            ((bytes[i - 4] & 0xffL) << 24) |
-            ((bytes[i - 3] & 0xffL) << 16) |
-            ((bytes[i - 2] & 0xffL) << 8) |
-            ((bytes[i - 1] & 0xffL));
+        return Pack.bigEndianToLong(bytes, offset);
+    }
+
+    /**
+     * Write the key-ID encoded as 8 octets to the given byte array, starting at index offset.
+     * @param keyID keyID
+     * @param bytes byte array
+     * @param offset starting offset
+     */
+    public static void writeKeyID(long keyID, byte[] bytes, int offset)
+    {
+        if (bytes.length - offset < 8)
+        {
+            throw new IllegalArgumentException("Not enough space to write key-ID to byte array.");
+        }
+        Pack.longToBigEndian(keyID, bytes, offset);
+    }
+
+    /**
+     * Write the key-ID to the first 8 octets of the given byte array.
+     * @param keyID keyID
+     * @param bytes byte array
+     */
+    public static void writeKeyID(long keyID, byte[] bytes)
+    {
+        writeKeyID(keyID, bytes, 0);
     }
 }

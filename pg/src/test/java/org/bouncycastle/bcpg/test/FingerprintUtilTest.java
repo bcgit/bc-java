@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg.test;
 
 import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -46,6 +47,38 @@ public class FingerprintUtilTest
             -3812177997909612905L, FingerprintUtil.keyIdFromLibrePgpFingerprint(decoded));
     }
 
+    private void testLeftMostEqualsRightMostFor8Bytes()
+    {
+        byte[] bytes = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+        isEquals(
+                FingerprintUtil.longFromLeftMostBytes(bytes),
+                FingerprintUtil.longFromRightMostBytes(bytes));
+        byte[] b = new byte[8];
+        FingerprintUtil.writeKeyID(FingerprintUtil.longFromLeftMostBytes(bytes), b);
+        isTrue(Arrays.areEqual(bytes, b));
+    }
+
+    private void testWriteKeyIdToBytes()
+    {
+        byte[] bytes = new byte[12];
+        long keyId = 72623859790382856L;
+        FingerprintUtil.writeKeyID(keyId, bytes, 2);
+        isTrue(Arrays.areEqual(
+                new byte[] {0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x00, 0x00},
+                bytes));
+
+        try
+        {
+            byte[] b = new byte[7];
+            FingerprintUtil.writeKeyID(0, b);
+            fail("Expected IllegalArgumentException for too short byte array.");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Expected
+        }
+    }
+
     @Override
     public String getName()
     {
@@ -60,6 +93,8 @@ public class FingerprintUtilTest
         testV6KeyIdFromFingerprint();
         testKeyIdFromTooShortFails();
         testLibrePgpKeyIdFromFingerprint();
+        testLeftMostEqualsRightMostFor8Bytes();
+        testWriteKeyIdToBytes();
     }
 
     public static void main(String[] args)

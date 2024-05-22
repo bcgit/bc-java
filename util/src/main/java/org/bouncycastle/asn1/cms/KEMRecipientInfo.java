@@ -74,9 +74,9 @@ public class KEMRecipientInfo
 
     private KEMRecipientInfo(ASN1Sequence seq)
     {
-        if (seq.size() != 3)
+        if (seq.size() < 8 || seq.size() > 9)
         {
-            throw new IllegalArgumentException("sequence must consist of 3 elements");
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
         cmsVersion = ASN1Integer.getInstance(seq.getObjectAt(0));

@@ -10,9 +10,16 @@ public class SymmetricEncDataPacket
     implements BCPGHeaderObject
 {
     public SymmetricEncDataPacket(
-        BCPGInputStream  in)
+            BCPGInputStream  in)
     {
-        super(in, SYMMETRIC_KEY_ENC);
+        this(in, false);
+    }
+
+    public SymmetricEncDataPacket(
+        BCPGInputStream  in,
+        boolean newPacketFormat)
+    {
+        super(in, SYMMETRIC_KEY_ENC, newPacketFormat);
     }
 
     public SymmetricEncDataPacket()

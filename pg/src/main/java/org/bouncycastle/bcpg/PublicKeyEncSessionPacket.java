@@ -33,10 +33,18 @@ public class PublicKeyEncSessionPacket
     private byte[] keyFingerprint;  // v6
 
     PublicKeyEncSessionPacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    PublicKeyEncSessionPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(PUBLIC_KEY_ENC_SESSION);
+        super(PUBLIC_KEY_ENC_SESSION, newPacketFormat);
 
         version = in.read();
 
@@ -271,6 +279,6 @@ public class PublicKeyEncSessionPacket
 
         pOut.close();
 
-        out.writePacket(PUBLIC_KEY_ENC_SESSION, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), PUBLIC_KEY_ENC_SESSION, bOut.toByteArray());
     }
 }

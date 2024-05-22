@@ -11,7 +11,20 @@ public class ExperimentalPacket
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
     private byte[] contents;
-    
+
+    /**
+     *
+     * @param in
+     * @throws IOException
+     */
+    ExperimentalPacket(
+            int                tag,
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(tag, in, false);
+    }
+
     /**
      * 
      * @param in
@@ -19,10 +32,11 @@ public class ExperimentalPacket
      */
     ExperimentalPacket(
         int                tag,
-        BCPGInputStream    in)
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(tag);
+        super(tag, newPacketFormat);
 
         this.contents = in.readAll();
     }
@@ -44,6 +58,6 @@ public class ExperimentalPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(getPacketTag(), contents);
+        out.writePacket(hasNewPacketFormat(), getPacketTag(), contents);
     }
 }
