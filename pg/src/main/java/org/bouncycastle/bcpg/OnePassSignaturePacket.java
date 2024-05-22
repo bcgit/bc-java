@@ -45,10 +45,18 @@ public class OnePassSignaturePacket
      * @throws IOException when the end of stream is prematurely reached, or when the packet is malformed
      */
     OnePassSignaturePacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    OnePassSignaturePacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(ONE_PASS_SIGNATURE);
+        super(ONE_PASS_SIGNATURE, newPacketFormat);
 
         version = in.read();
         sigType = in.read();
@@ -274,7 +282,7 @@ public class OnePassSignaturePacket
 
         pOut.close();
 
-        out.writePacket(ONE_PASS_SIGNATURE, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), ONE_PASS_SIGNATURE, bOut.toByteArray());
     }
 
 }
