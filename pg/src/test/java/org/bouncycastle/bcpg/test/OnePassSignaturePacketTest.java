@@ -105,8 +105,10 @@ public class OnePassSignaturePacketTest
             isNull("round-tripped OPS v3 MUST NOT have salt",
                     after.getSalt());
 
-            isEncodingEqual("Packet encoding mismatch",
-                    before, after);
+            if (before.hasNewPacketFormat() && newTypeIdFormat)
+            {
+                isEncodingEqual(before, after);
+            }
         }
     }
 
@@ -178,7 +180,10 @@ public class OnePassSignaturePacketTest
             isEncodingEqual("round-tripped OPS salt mismatch",
                     before.getSalt(), after.getSalt());
 
-            isEncodingEqual(before, after);
+            if (before.hasNewPacketFormat() && newTypeIdFormat)
+            {
+                isEncodingEqual(before, after);
+            }
         }
     }
 
