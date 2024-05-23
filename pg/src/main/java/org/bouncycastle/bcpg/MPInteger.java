@@ -15,7 +15,7 @@ public class MPInteger
         BCPGInputStream    in)
         throws IOException
     {
-        int       length = (in.read() << 8) | in.read();
+        int       length = StreamUtil.read2OctetLength(in);
         byte[]    bytes = new byte[(length + 7) / 8];
         
         in.readFully(bytes);
@@ -43,8 +43,8 @@ public class MPInteger
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writeShort((short)value.bitLength());
-        
+        StreamUtil.write2OctetLength(out, value.bitLength());
+
         byte[]    bytes = value.toByteArray();
         
         if (bytes[0] == 0)

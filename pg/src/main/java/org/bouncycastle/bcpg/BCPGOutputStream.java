@@ -206,8 +206,7 @@ public class BCPGOutputStream
                 else if (bodyLen <= 0xffff)
                 {
                     this.write(hdr | 0x01);
-                    this.write((byte)(bodyLen >> 8));
-                    this.write((byte)(bodyLen));
+                    StreamUtil.write2OctetLength(this, (int)bodyLen);
                 }
                 else
                 {
@@ -337,22 +336,6 @@ public class BCPGOutputStream
         throws IOException
     {
         p.encode(this);
-    }
-
-    void writeShort(short n)
-        throws IOException
-    {
-        out.write((byte)(n >> 8));
-        out.write((byte)n);
-    }
-
-    void writeInt(int n)
-        throws IOException
-    {
-        out.write(n >> 24);
-        out.write(n >> 16);
-        out.write(n >> 8);
-        out.write(n);
     }
 
     /**
