@@ -557,10 +557,10 @@ public class JcaPGPKeyConverter
                 ASN1ObjectIdentifier curveOid;
                 curveOid = ASN1ObjectIdentifier.getInstance(enc);
 
-                // ecPublicKey is not specific enough. Drill down to find proper OID.
+                // BCECPublicKey uses explicit parameter encoding, so we need to find the named curve manually
                 if (X9ObjectIdentifiers.id_ecPublicKey.equals(curveOid))
                 {
-                    enc = getCurveOIDForBCECKey((BCECPublicKey) pubKey);
+                    enc = getNamedCurveOID((BCECPublicKey) pubKey);
                     ASN1ObjectIdentifier nCurveOid = ASN1ObjectIdentifier.getInstance(enc);
                     if (nCurveOid != null)
                     {
@@ -685,7 +685,7 @@ public class JcaPGPKeyConverter
         }
     }
 
-    private ASN1Encodable getCurveOIDForBCECKey(BCECPublicKey pubKey)
+    private ASN1Encodable getNamedCurveOID(BCECPublicKey pubKey)
     {
         // Iterate through all registered curves to find applicable OID
         Enumeration names = ECNamedCurveTable.getNames();
