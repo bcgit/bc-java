@@ -8,8 +8,6 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.interfaces.RSAPublicKey;
 
-import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
-import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
@@ -73,10 +71,18 @@ public class JcaPGPContentVerifierBuilderProvider
         public PGPContentVerifier build(final PGPPublicKey publicKey)
             throws PGPException
         {
-            final Signature signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
-
             final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
             final PublicKey jcaKey = keyConverter.getPublicKey(publicKey);
+
+            final Signature signature;
+            if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY && jcaKey.getAlgorithm().equals("Ed448"))
+            {
+                signature = helper.createSignature(PublicKeyAlgorithmTags.Ed448, hashAlgorithm);
+            }
+            else
+            {
+                signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+            }
 
             try
             {
