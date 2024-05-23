@@ -29,6 +29,7 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
+import java.util.Enumeration;
 
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -36,6 +37,7 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -49,6 +51,7 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
@@ -72,6 +75,7 @@ import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -549,47 +553,58 @@ public class JcaPGPKeyConverter
                 SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
 
                 // TODO: should probably match curve by comparison as well
-                ASN1ObjectIdentifier curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
-                if (curveOid == null)
+                ASN1Encodable enc = keyInfo.getAlgorithm().getAlgorithm();
+                ASN1ObjectIdentifier curveOid;
+                curveOid = ASN1ObjectIdentifier.getInstance(enc);
+
+                // BCECPublicKey uses explicit parameter encoding, so we need to find the named curve manually
+                if (X9ObjectIdentifiers.id_ecPublicKey.equals(curveOid))
                 {
-                    // Legacy XDH on Curve25519 (legacy X25519)
-                    // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                    if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
+                    enc = getNamedCurveOID((BCECPublicKey) pubKey);
+                    ASN1ObjectIdentifier nCurveOid = ASN1ObjectIdentifier.getInstance(enc);
+                    if (nCurveOid != null)
+                    {
+                        curveOid = nCurveOid;
+                    }
+                }
+
+                // Legacy XDH on Curve25519 (legacy X25519)
+                // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
+                {
+                    PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
+
+                    return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
+                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                }
+                // Legacy X448 (1.3.101.111)
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
+                {
+
+                    PGPKdfParameters kdfParams = implGetKdfParameters(EdECObjectIdentifiers.id_X448, algorithmParameters);
+
+                    return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEncUncompressed(pubKey, X448.SCALAR_SIZE)),
+                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                }
+                // sun.security.ec.XDHPublicKeyImpl returns "XDH" for getAlgorithm()
+                // In this case we need to determine the curve by looking at the length of the encoding :/
+                else if (pubKey.getAlgorithm().regionMatches(true, 0, "XDH", 0, 3))
+                {
+                    // Legacy X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
+                    if (X25519.SCALAR_SIZE + 12 == pubKey.getEncoded().length) // + 12 for some reason
                     {
                         PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
 
                         return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
-                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                                    kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
                     }
                     // Legacy X448 (1.3.101.111)
-                    if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
+                    else
                     {
-
                         PGPKdfParameters kdfParams = implGetKdfParameters(EdECObjectIdentifiers.id_X448, algorithmParameters);
 
                         return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEncUncompressed(pubKey, X448.SCALAR_SIZE)),
-                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
-                    }
-                    // sun.security.ec.XDHPublicKeyImpl returns "XDH" for getAlgorithm()
-                    // In this case we need to determine the curve by looking at the length of the encoding :/
-                    else
-                    {
-                        // Legacy X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
-                        if (X25519.SCALAR_SIZE + 12 == pubKey.getEncoded().length) // + 12 for some reason
-                        {
-                            PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
-
-                            return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
                                     kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
-                        }
-                        // Legacy X448 (1.3.101.111)
-                        else
-                        {
-                            PGPKdfParameters kdfParams = implGetKdfParameters(EdECObjectIdentifiers.id_X448, algorithmParameters);
-
-                            return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEncUncompressed(pubKey, X448.SCALAR_SIZE)),
-                                    kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
-                        }
                     }
                 }
 
@@ -668,6 +683,22 @@ public class JcaPGPKeyConverter
             default:
                 throw new PGPException("unknown public key algorithm encountered: " + algorithm);
         }
+    }
+
+    private ASN1Encodable getNamedCurveOID(BCECPublicKey pubKey)
+    {
+        // Iterate through all registered curves to find applicable OID
+        Enumeration names = ECNamedCurveTable.getNames();
+        while (names.hasMoreElements())
+        {
+            String name = (String) names.nextElement();
+            X9ECParameters parms = ECNamedCurveTable.getByName(name);
+            if (pubKey.getParameters().getCurve().equals(parms.getCurve()))
+            {
+                return ECNamedCurveTable.getOID(name);
+            }
+        }
+        return null;
     }
 
     @FunctionalInterface

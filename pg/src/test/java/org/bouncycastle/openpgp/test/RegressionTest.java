@@ -74,7 +74,8 @@ public class RegressionTest
         new LegacyX25519KeyPairTest(),
         new LegacyX448KeyPairTest(),
 
-        new Curve25519PrivateKeyEncodingTest()
+        new Curve25519PrivateKeyEncodingTest(),
+        new ECDSAKeyPairTest()
     };
 
     public static void main(String[] args)
