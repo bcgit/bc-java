@@ -339,14 +339,6 @@ public class BCPGOutputStream
         p.encode(this);
     }
 
-    /**
-     * Write a packet to the stream.
-     * The packet will use the old encoding format if {@link #packetFormat} is {@link PacketFormat#LEGACY}, otherwise
-     * it will be encoded using the new packet format.
-     * @param tag packet tag
-     * @param body packet body
-     * @throws IOException
-     */
     void writeShort(short n)
         throws IOException
     {
@@ -363,6 +355,14 @@ public class BCPGOutputStream
         out.write(n);
     }
 
+    /**
+     * Write a packet to the stream.
+     * The packet will use the old encoding format if {@link #packetFormat} is {@link PacketFormat#LEGACY}, otherwise
+     * it will be encoded using the new packet format.
+     * @param tag packet tag
+     * @param body packet body
+     * @throws IOException
+     */
     void writePacket(
         int tag,
         byte[] body)
