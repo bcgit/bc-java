@@ -494,11 +494,10 @@ public class SignaturePacket
                 StreamUtil.write2OctetLength(sOut, data.length);
                 sOut.write(data);
 
-                byte[] hData = sOut.toByteArray();
-
+                int hDataSize = sOut.size();
                 sOut.write((byte)this.getVersion());
                 sOut.write((byte)0xff);
-                StreamUtil.write4OctetLength(sOut, hData.length);
+                StreamUtil.write4OctetLength(sOut, hDataSize);
             }
             catch (IOException e)
             {
