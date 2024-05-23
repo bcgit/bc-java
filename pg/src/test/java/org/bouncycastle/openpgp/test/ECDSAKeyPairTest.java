@@ -93,7 +93,6 @@ public class ECDSAKeyPairTest
     public void performTest()
             throws Exception
     {
-        Security.addProvider(new BouncyCastleProvider());
         testConversionOfFreshJcaKeyPair();
         testConversionOfParsedJcaKeyPair();
         testConversionOfParsedBcKeyPair();
