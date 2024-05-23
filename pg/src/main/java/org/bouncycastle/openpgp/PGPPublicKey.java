@@ -1137,28 +1137,7 @@ public class PGPPublicKey
         }
 
         // key signatures
-        for (Iterator<PGPSignature> it = copy.keySigs.iterator(); it.hasNext(); )
-        {
-            PGPSignature keySig = (PGPSignature)it.next();
-            boolean found = false;
-            for (int i = 0; i < keySigs.size(); i++)
-            {
-                PGPSignature existingKeySig = (PGPSignature)keySigs.get(i);
-                if (PGPSignature.isSignatureEncodingEqual(existingKeySig, keySig))
-                {
-                    found = true;
-                    // join existing sig with copy to apply modifications in unhashed subpackets
-                    existingKeySig = PGPSignature.join(existingKeySig, keySig);
-                    keySigs.set(i, existingKeySig);
-                    break;
-                }
-            }
-            if (found)
-            {
-                break;
-            }
-            keySigs.add(keySig);
-        }
+        joinPgpSignatureList(copy.keySigs, keySigs, true, true);
 
         // user-ids and id sigs
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
@@ -1198,27 +1177,7 @@ public class PGPPublicKey
             }
 
             List<PGPSignature> existingIdSigs = (List<PGPSignature>)idSigs.get(existingIdIndex);
-            for (Iterator<PGPSignature> it = copyIdSigs.iterator(); it.hasNext(); )
-            {
-                PGPSignature newSig = (PGPSignature)it.next();
-                boolean found = false;
-                for (int i = 0; i < existingIdSigs.size(); i++)
-                {
-                    PGPSignature existingSig = (PGPSignature)existingIdSigs.get(i);
-                    if (PGPSignature.isSignatureEncodingEqual(newSig, existingSig))
-                    {
-                        found = true;
-                        // join existing sig with copy to apply modifications in unhashed subpackets
-                        existingSig = PGPSignature.join(existingSig, newSig);
-                        existingIdSigs.set(i, existingSig);
-                        break;
-                    }
-                }
-                if (!found)
-                {
-                    existingIdSigs.add(newSig);
-                }
-            }
+            joinPgpSignatureList(copyIdSigs, existingIdSigs, false, true);
         }
 
         // subSigs
@@ -1230,27 +1189,7 @@ public class PGPPublicKey
             }
             else
             {
-                for (Iterator<PGPSignature> it = copy.subSigs.iterator(); it.hasNext(); )
-                {
-                    PGPSignature copySubSig = (PGPSignature)it.next();
-                    boolean found = false;
-                    for (int i = 0; subSigs != null && i < subSigs.size(); i++)
-                    {
-                        PGPSignature existingSubSig = (PGPSignature)subSigs.get(i);
-                        if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
-                        {
-                            found = true;
-                            // join existing sig with copy to apply modifications in unhashed subpackets
-                            existingSubSig = PGPSignature.join(existingSubSig, copySubSig);
-                            subSigs.set(i, existingSubSig);
-                            break;
-                        }
-                    }
-                    if (!found && subSigs != null)
-                    {
-                        subSigs.add(copySubSig);
-                    }
-                }
+                joinPgpSignatureList(copy.subSigs, subSigs, false, subSigs != null);
             }
         }
 
@@ -1258,5 +1197,38 @@ public class PGPPublicKey
         merged.subSigs = subSigs;
 
         return merged;
+    }
+
+    private static void joinPgpSignatureList(List<PGPSignature> source,
+                                             List<PGPSignature> rlt,
+                                             boolean needBreak,
+                                             boolean isNotNull)
+        throws PGPException
+    {
+        for (Iterator<PGPSignature> it = source.iterator(); it.hasNext(); )
+        {
+            PGPSignature copySubSig = (PGPSignature)it.next();
+            boolean found = false;
+            for (int i = 0; isNotNull && i < rlt.size(); i++)
+            {
+                PGPSignature existingSubSig = (PGPSignature)rlt.get(i);
+                if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                {
+                    found = true;
+                    // join existing sig with copy to apply modifications in unhashed subpackets
+                    existingSubSig = PGPSignature.join(existingSubSig, copySubSig);
+                    rlt.set(i, existingSubSig);
+                    break;
+                }
+            }
+            if (found && needBreak)
+            {
+                break;
+            }
+            else if (!found && isNotNull)
+            {
+                rlt.add(copySubSig);
+            }
+        }
     }
 }
