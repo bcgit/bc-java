@@ -56,7 +56,7 @@ public class PublicKeyPacket
 
         if (version <= VERSION_3)
         {
-            validDays = (in.read() << 8) | in.read();
+            validDays = StreamUtil.read2OctetLength(in);
         }
 
         algorithm = (byte)in.read();
@@ -178,14 +178,14 @@ public class PublicKeyPacket
 
         if (version <= VERSION_3)
         {
-            pOut.writeShort((short)validDays);
+            StreamUtil.write2OctetLength(pOut, validDays);
         }
 
         pOut.write(algorithm);
 
         if (version == VERSION_6)
         {
-            pOut.writeInt(key.getEncoded().length);
+            StreamUtil.write4OctetLength(pOut, key.getEncoded().length);
         }
 
         pOut.writeObject((BCPGObject)key);
