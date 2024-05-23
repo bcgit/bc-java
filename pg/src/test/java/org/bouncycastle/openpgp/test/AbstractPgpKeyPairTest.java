@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
@@ -35,7 +36,7 @@ public abstract class AbstractPgpKeyPairTest
     public JcaPGPKeyPair toJcaKeyPair(BcPGPKeyPair keyPair)
             throws PGPException
     {
-        JcaPGPKeyConverter c = new JcaPGPKeyConverter();
+        JcaPGPKeyConverter c = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         return new JcaPGPKeyPair(keyPair.getPublicKey().getAlgorithm(),
                 new KeyPair(
                         c.getPublicKey(keyPair.getPublicKey()),
