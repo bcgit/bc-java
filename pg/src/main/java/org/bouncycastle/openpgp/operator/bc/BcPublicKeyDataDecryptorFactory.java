@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -110,7 +109,7 @@ public class BcPublicKeyDataDecryptorFactory
 
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
                 // XDH
-                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecPubKey.getCurveOID()))
                 {
                     if (pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0])
                     {
