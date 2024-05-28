@@ -536,14 +536,7 @@ class DilithiumEngine
         // Helper.printByteArray(c2);
 
 
-        for (int i = 0; i < DilithiumCTilde; ++i)
-        {
-            if (c[i] != c2[i])
-            {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.constantTimeAreEqual(c, c2);
     }
 
     public boolean signOpen(byte[] msg, byte[] signedMsg, int signedMsglen, byte[] rho, byte[] t1)
