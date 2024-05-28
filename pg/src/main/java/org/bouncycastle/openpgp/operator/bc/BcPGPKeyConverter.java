@@ -122,7 +122,7 @@ public class BcPGPKeyConverter
             {
                 ECDHPublicBCPGKey ecdhPub = (ECDHPublicBCPGKey)pubPk.getKey();
 
-                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
+                if (BcUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     return PrivateKeyFactory.createKey(getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
                         Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX()))));
@@ -209,7 +209,7 @@ public class BcPGPKeyConverter
             {
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
 
-                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecdhK.getCurveOID()))
                 {
                     byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
                     // skip the 0x40 header byte.

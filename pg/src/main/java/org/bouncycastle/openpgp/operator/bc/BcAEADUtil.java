@@ -91,21 +91,25 @@ public class BcAEADUtil
      * @param salt       salt
      * @param hkdfInfo   HKDF info
      * @return message key and separate IV
-     * @throws PGPException
      */
     static byte[][] deriveMessageKeyAndIv(int aeadAlgo, int cipherAlgo, byte[] sessionKey, byte[] salt, byte[] hkdfInfo)
-        throws PGPException
+    {
+        int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(cipherAlgo);
+        int ivLen = AEADUtils.getIVLength(aeadAlgo);
+        byte[] messageKeyAndIv = generateHKDFBytes(sessionKey, salt, hkdfInfo, keyLen + ivLen - 8);
+
+        return new byte[][]{Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen)};
+    }
+
+    static byte[] generateHKDFBytes(byte[] sessionKey, byte[] salt, byte[] hkdfInfo, int len)
     {
         HKDFParameters hkdfParameters = new HKDFParameters(sessionKey, salt, hkdfInfo);
         HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
 
         hkdfGen.init(hkdfParameters);
-        int keyLen = SymmetricKeyUtils.getKeyLengthInOctets(cipherAlgo);
-        int ivLen = AEADUtils.getIVLength(aeadAlgo);
-        byte[] messageKeyAndIv = new byte[keyLen + ivLen - 8];
+        byte[] messageKeyAndIv = new byte[len];
         hkdfGen.generateBytes(messageKeyAndIv, 0, messageKeyAndIv.length);
-
-        return new byte[][]{Arrays.copyOfRange(messageKeyAndIv, 0, keyLen), Arrays.copyOfRange(messageKeyAndIv, keyLen, keyLen + ivLen)};
+        return messageKeyAndIv;
     }
 
     public static AEADBlockCipher createAEADCipher(int encAlgorithm, int aeadAlgorithm)

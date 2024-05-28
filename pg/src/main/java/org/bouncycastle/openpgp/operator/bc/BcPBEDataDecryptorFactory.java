@@ -8,12 +8,8 @@ import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.engines.CamelliaEngine;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
@@ -94,13 +90,10 @@ public class BcPBEDataDecryptorFactory
 
         byte[] hkdfInfo = keyData.getAAData(); // Between v5 and v6, these bytes differ
         int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
-        byte[] kek = new byte[kekLen];
 
         // HKDF
         // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-        HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
-        hkdfGen.init(new HKDFParameters(ikm, null, hkdfInfo));
-        hkdfGen.generateBytes(kek, 0, kek.length);
+        byte[] kek = BcAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
         final KeyParameter secretKey = new KeyParameter(kek);
 
         // AEAD

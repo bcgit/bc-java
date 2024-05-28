@@ -12,9 +12,6 @@ import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
-import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -144,13 +141,10 @@ public class JcePBEDataDecryptorFactoryBuilder
 
                 byte[] hkdfInfo = keyData.getAAData(); // between v5 and v6, these bytes differ
                 int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
-                byte[] kek = new byte[kekLen];
 
                 // HKDF
                 // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-                HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest()); // SHA256 is fixed
-                hkdfGen.init(new HKDFParameters(ikm, null, hkdfInfo));
-                hkdfGen.generateBytes(kek, 0, kek.length);
+                byte[] kek = JceAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
                 final SecretKey secretKey = new SecretKeySpec(kek, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
 
                 // AEAD

@@ -71,6 +71,9 @@ public class SymmetricKeyEncSessionPacket
 
             // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.5
             int s2kOctetCount = in.read();
+
+            //TODO: use this line to replace the following code?
+            //s2k = new S2K(in);
             s2kBytes = new byte[s2kOctetCount];
             in.readFully(s2kBytes);
             try

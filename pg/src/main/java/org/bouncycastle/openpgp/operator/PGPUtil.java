@@ -94,6 +94,7 @@ class PGPUtil
 
         try
         {
+            byte[] iv = s2k != null? s2k.getIV() : null;
             while (generatedBytes < keyBytes.length)
             {
                 if (s2k != null)
@@ -102,8 +103,6 @@ class PGPUtil
                     {
                         dOut.write(0);
                     }
-
-                    byte[] iv = s2k.getIV();
 
                     switch (s2k.getType())
                     {

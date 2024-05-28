@@ -17,7 +17,6 @@ import javax.crypto.Cipher;
 import javax.crypto.interfaces.DHKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -31,7 +30,6 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -257,7 +255,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             String agreementName;
             ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
             // XDH
-            if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+            if (JcaJcePGPUtil.isX25519(ecKey.getCurveOID()))
             {
                 agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
                 if (pEnc.length != (1 + X25519PublicBCPGKey.LENGTH) || 0x40 != pEnc[0])
