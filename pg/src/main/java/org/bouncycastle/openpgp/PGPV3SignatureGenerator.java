@@ -44,6 +44,10 @@ public class PGPV3SignatureGenerator
         PGPPrivateKey key)
         throws PGPException
     {
+        if (signatureType == 0xFF)
+        {
+            throw new PGPException("Illegal signature type 0xFF provided.");
+        }
         contentSigner = contentSignerBuilder.build(signatureType, key);
         sigOut = contentSigner.getOutputStream();
         sigType = contentSigner.getType();
