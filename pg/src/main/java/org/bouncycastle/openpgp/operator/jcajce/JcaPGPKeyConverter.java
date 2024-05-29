@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -18,11 +16,9 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
@@ -48,6 +44,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
@@ -75,13 +72,13 @@ import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-
 import org.bouncycastle.math.ec.rfc7748.X25519;
 import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
@@ -236,7 +233,7 @@ public class JcaPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.ECDSA:
             {
-                return implGetPrivateKeyEC("ECDSA", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
+                return implGetPrivateKeyEC("EC", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
             }
             // Legacy EdDSA (legacy Ed448, legacy Ed25519)
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
@@ -349,7 +346,7 @@ public class JcaPGPKeyConverter
             }
             case PublicKeyAlgorithmTags.ECDSA:
             {
-                return implGetPublicKeyEC("ECDSA", (ECDSAPublicBCPGKey) publicPk.getKey());
+                return implGetPublicKeyEC("EC", (ECDSAPublicBCPGKey) publicPk.getKey());
             }
             // Legacy EdDSA (legacy Ed448, legacy Ed25519)
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
@@ -420,11 +417,11 @@ public class JcaPGPKeyConverter
     }
 
     private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid, X9ECParameters x9Params)
-        throws InvalidParameterSpecException, NoSuchProviderException, NoSuchAlgorithmException
+        throws IOException, GeneralSecurityException
     {
         AlgorithmParameters params = helper.createAlgorithmParameters("EC");
 
-        params.init(new ECGenParameterSpec(ECNamedCurveTable.getName(curveOid)));
+        params.init(new X962Parameters(curveOid).getEncoded());
 
         return params.getParameterSpec(ECParameterSpec.class);
     }
@@ -560,7 +557,7 @@ public class JcaPGPKeyConverter
                 // BCECPublicKey uses explicit parameter encoding, so we need to find the named curve manually
                 if (X9ObjectIdentifiers.id_ecPublicKey.equals(curveOid))
                 {
-                    enc = getNamedCurveOID((BCECPublicKey) pubKey);
+                    enc = getNamedCurveOID(X962Parameters.getInstance(keyInfo.getAlgorithm().getParameters()));
                     ASN1ObjectIdentifier nCurveOid = ASN1ObjectIdentifier.getInstance(enc);
                     if (nCurveOid != null)
                     {
@@ -685,15 +682,29 @@ public class JcaPGPKeyConverter
         }
     }
 
-    private ASN1Encodable getNamedCurveOID(BCECPublicKey pubKey)
+    private ASN1Encodable getNamedCurveOID(X962Parameters ecParams)
     {
+        ECCurve curve = null;
+        if (ecParams.isNamedCurve())
+        {
+            return ASN1ObjectIdentifier.getInstance(ecParams.getParameters());
+        }
+        else if (ecParams.isImplicitlyCA())
+        {
+            curve = ((X9ECParameters)CryptoServicesRegistrar.getProperty(CryptoServicesRegistrar.Property.EC_IMPLICITLY_CA)).getCurve();
+        }
+        else
+        {
+            curve = X9ECParameters.getInstance(ecParams.getParameters()).getCurve();
+        }
+
         // Iterate through all registered curves to find applicable OID
         Enumeration names = ECNamedCurveTable.getNames();
         while (names.hasMoreElements())
         {
-            String name = (String) names.nextElement();
+            String name = (String)names.nextElement();
             X9ECParameters parms = ECNamedCurveTable.getByName(name);
-            if (pubKey.getParameters().getCurve().equals(parms.getCurve()))
+            if (curve.equals(parms.getCurve()))
             {
                 return ECNamedCurveTable.getOID(name);
             }
@@ -763,7 +774,7 @@ public class JcaPGPKeyConverter
     }
 
     private PrivateKey implGetPrivateKeyEC(String keyAlgorithm, ECPublicBCPGKey ecPub, ECSecretBCPGKey ecPriv)
-        throws GeneralSecurityException, PGPException
+        throws GeneralSecurityException, PGPException, IOException
     {
         ASN1ObjectIdentifier curveOid = ecPub.getCurveOID();
         ECPrivateKeySpec ecPrivSpec = new ECPrivateKeySpec(ecPriv.getX(), getECParameterSpec(curveOid, JcaJcePGPUtil.getX9Parameters(curveOid)));
