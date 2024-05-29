@@ -305,7 +305,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, publicKey, symmetricKeyAlgorithm, keyEnc,
                 JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
-            return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
+            return Arrays.prepend(paddedSessionKey.getEncoded(), (byte)symmetricKeyAlgorithm);
         }
         catch (Exception e)
         {
