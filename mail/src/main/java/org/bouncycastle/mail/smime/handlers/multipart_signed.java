@@ -207,7 +207,7 @@ public class multipart_signed
         {
             try
             {
-                byte abyte0[] = Strings.toByteArray(s);
+                byte abyte0[] = Strings.toUTF8ByteArray(s);
                 super.out.write(abyte0);
                 super.out.write(newline);
             }
