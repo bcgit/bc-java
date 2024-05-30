@@ -728,11 +728,12 @@ public class JcaPGPKeyConverter
 
     private byte[] getPointEncUncompressed(PublicKey pubKey, int publicKeySize)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[1 + publicKeySize];
 
         pointEnc[0] = 0x40;
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
+        //offset with pointEnc.length - pubInfo.length to avoid leading zero issue
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return pointEnc;
     }
 

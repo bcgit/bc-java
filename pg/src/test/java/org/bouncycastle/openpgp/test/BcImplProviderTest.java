@@ -142,6 +142,28 @@ public class BcImplProviderTest
         });
 
         //createSigner
+        testCreateSigner(PublicKeyAlgorithmTags.EDDSA_LEGACY, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
+            new PrivateKeyOperation()
+            {
+                @Override
+                public BCPGKey getPrivateBCPGKey(PGPPublicKey pub, PrivateKey privKey)
+                    throws IOException
+                {
+                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(privKey.getEncoded());
+                    return new EdSecretBCPGKey(
+                        new BigInteger(1, ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets()));
+                }
+            },
+            new KeyPairGeneratorOperation()
+            {
+                @Override
+                public void initialize(KeyPairGenerator kpGen)
+                    throws InvalidAlgorithmParameterException
+                {
+                    kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed448"));
+                }
+            });
+
         testCreateSigner(PublicKeyAlgorithmTags.DSA, new DSADigestSigner(new DSASigner(), new SHA1Digest()), "DSA",
             new PrivateKeyOperation()
             {
@@ -317,6 +339,7 @@ public class BcImplProviderTest
                     kpGen.initialize(new ECNamedCurveGenParameterSpec("Ed25519"));
                 }
             });
+
         testCreateSigner(PublicKeyAlgorithmTags.Ed448, new EdDsaSigner(new Ed448Signer(new byte[0]), new SHA1Digest()), "EdDSA",
             new PrivateKeyOperation()
             {

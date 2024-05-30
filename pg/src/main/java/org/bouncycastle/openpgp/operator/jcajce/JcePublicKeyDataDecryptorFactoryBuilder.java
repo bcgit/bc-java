@@ -264,6 +264,15 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                 }
                 publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1);
             }
+            else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+            {
+                agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
+                if (pEnc.length != (1 + X448PublicBCPGKey.LENGTH) || 0x40 != pEnc[0])
+                {
+                    throw new IllegalArgumentException("Invalid Curve25519 public key");
+                }
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 1);
+            }
             else
             {
                 X9ECParametersHolder x9Params = ECNamedCurveTable.getByOIDLazy(ecKey.getCurveOID());
@@ -318,7 +327,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         throws PGPException, GeneralSecurityException
     {
         PrivateKey privateKey = converter.getPrivateKey(privKey);
-        Key key = JcaJcePGPUtil.getSecret(helper, publicKey, RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId(),  agreementName, ukms, privateKey);
+        Key key = JcaJcePGPUtil.getSecret(helper, publicKey, RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId(), agreementName, ukms, privateKey);
         Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);
