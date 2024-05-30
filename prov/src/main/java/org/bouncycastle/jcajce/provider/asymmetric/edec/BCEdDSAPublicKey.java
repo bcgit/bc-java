@@ -14,6 +14,7 @@ import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCEdDSAPublicKey
     implements EdDSAPublicKey
@@ -54,7 +55,9 @@ public class BCEdDSAPublicKey
         }
         else
         {
-            throw new InvalidKeySpecException("raw key data not recognised");
+            throw new InvalidKeySpecException("raw key data not recognised (prefix mismatch:\n" +
+                    "Expected: " + Hex.toHexString(prefix) + "\n" +
+                    "Got:      " + Hex.toHexString(java.util.Arrays.copyOf(rawData, prefixLength)) + ")");
         }
     }
 
