@@ -416,7 +416,7 @@ public class JcaPGPKeyConverter
         }
     }
 
-    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid, X9ECParameters x9Params)
+    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid)
         throws IOException, GeneralSecurityException
     {
         AlgorithmParameters params = helper.createAlgorithmParameters("EC");
@@ -777,7 +777,7 @@ public class JcaPGPKeyConverter
         throws GeneralSecurityException, PGPException, IOException
     {
         ASN1ObjectIdentifier curveOid = ecPub.getCurveOID();
-        ECPrivateKeySpec ecPrivSpec = new ECPrivateKeySpec(ecPriv.getX(), getECParameterSpec(curveOid, JcaJcePGPUtil.getX9Parameters(curveOid)));
+        ECPrivateKeySpec ecPrivSpec = new ECPrivateKeySpec(ecPriv.getX(), getECParameterSpec(curveOid));
         return implGeneratePrivate(keyAlgorithm, ecPrivSpec);
     }
 
@@ -791,7 +791,7 @@ public class JcaPGPKeyConverter
             new java.security.spec.ECPoint(
                 ecPubPoint.getAffineXCoord().toBigInteger(),
                 ecPubPoint.getAffineYCoord().toBigInteger()),
-            getECParameterSpec(curveOID, x9Params));
+            getECParameterSpec(curveOID));
         return implGeneratePublic(keyAlgorithm, ecPubSpec);
     }
 
