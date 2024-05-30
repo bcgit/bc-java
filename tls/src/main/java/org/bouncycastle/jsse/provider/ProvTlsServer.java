@@ -31,6 +31,7 @@ import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
@@ -62,10 +63,6 @@ class ProvTlsServer
     // TODO[jsse] Integrate this into NamedGroupInfo
     private static final int provEphemeralDHKeySize = PropertyUtils.getIntegerSystemProperty("jdk.tls.ephemeralDHKeySize", 2048, 1024, 8192);
 
-    /*
-     * TODO[jsse] Does this selection override the restriction from 'jdk.tls.ephemeralDHKeySize'?
-     * TODO[fips] Probably should be ignored in fips mode?
-     */
     private static final DHGroup[] provServerDefaultDHEParameters = getDefaultDHEParameters();
 
     private static final boolean provServerEnableCA = PropertyUtils
@@ -100,7 +97,7 @@ class ProvTlsServer
             return null;
         }
 
-        ArrayList<DHGroup> result = new ArrayList<DHGroup>();
+        ArrayList<DHGroup> dhGroups = new ArrayList<DHGroup>();
         int outerComma = -1;
         do
         {
@@ -134,7 +131,7 @@ class ProvTlsServer
                 DHGroup dhGroup = TlsDHUtils.getStandardGroupForDHParameters(p, g);
                 if (null != dhGroup)
                 {
-                    result.add(dhGroup);
+                    dhGroups.add(dhGroup);
                 }
                 else if (!p.isProbablePrime(120))
                 {
@@ -143,7 +140,7 @@ class ProvTlsServer
                 }
                 else
                 {
-                    result.add(new DHGroup(p, null, g, 0));
+                    dhGroups.add(new DHGroup(p, null, g, 0));
                 }
             }
             catch (Exception e)
@@ -154,15 +151,15 @@ class ProvTlsServer
             outerComma = closeBrace + 1;
             if (outerComma >= limit)
             {
-                result.sort(new Comparator<DHGroup>()
+                DHGroup[] result = dhGroups.toArray(new DHGroup[dhGroups.size()]);
+                java.util.Arrays.sort(result, new Comparator<DHGroup>()
                 {
-                    @Override
                     public int compare(DHGroup a, DHGroup b)
                     {
                         return a.getP().bitLength() - b.getP().bitLength();
                     }
                 });
-                return result.toArray(new DHGroup[result.size()]);
+                return result;
             }
         }
         while (',' == input.charAt(outerComma));
@@ -268,13 +265,29 @@ class ProvTlsServer
     @Override
     protected int getMaximumNegotiableCurveBits()
     {
-        return NamedGroupInfo.getMaximumBitsServerECDH(jsseSecurityParameters.namedGroups);
+        NamedGroupInfo.DefaultedResult maxBitsResult = NamedGroupInfo.getMaximumBitsServerECDH(
+            jsseSecurityParameters.namedGroups);
+
+        int maxBits = maxBitsResult.getResult();
+
+        return maxBits;
     }
 
     @Override
     protected int getMaximumNegotiableFiniteFieldBits()
     {
-        int maxBits = NamedGroupInfo.getMaximumBitsServerFFDHE(jsseSecurityParameters.namedGroups);
+        NamedGroupInfo.DefaultedResult maxBitsResult = NamedGroupInfo.getMaximumBitsServerFFDHE(
+            jsseSecurityParameters.namedGroups);
+
+        int maxBits = maxBitsResult.getResult();
+
+        if (maxBitsResult.isDefaulted() &&
+            !TlsUtils.isNullOrEmpty(provServerDefaultDHEParameters) &&
+            !manager.getContextData().getContext().isFips())
+        {
+            DHGroup largest = provServerDefaultDHEParameters[provServerDefaultDHEParameters.length - 1];
+            maxBits = Math.max(maxBits, largest.getP().bitLength());
+        }
 
         return maxBits >= provEphemeralDHKeySize ? maxBits : 0;
     }
@@ -336,28 +349,39 @@ class ProvTlsServer
     @Override
     public TlsDHConfig getDHConfig() throws IOException
     {
-        if (provServerDefaultDHEParameters != null)
-        {
-            int minimumFiniteFieldBits = Math.max(
-                TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite), provEphemeralDHKeySize);
+        int minimumFiniteFieldBits = TlsDHUtils.getMinimumFiniteFieldBits(selectedCipherSuite);
+        minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
 
-            for (DHGroup group: provServerDefaultDHEParameters)
+        NamedGroupInfo.DefaultedResult namedGroupResult = NamedGroupInfo.selectServerFFDHE(
+            jsseSecurityParameters.namedGroups, minimumFiniteFieldBits);
+
+        int namedGroup = namedGroupResult.getResult();
+
+        if (namedGroupResult.isDefaulted() &&
+            !TlsUtils.isNullOrEmpty(provServerDefaultDHEParameters) &&
+            !manager.getContextData().getContext().isFips())
+        {
+            for (DHGroup dhGroup : provServerDefaultDHEParameters)
             {
-                if (group.getP().bitLength() >= minimumFiniteFieldBits)
+                int bits = dhGroup.getP().bitLength();
+                if (bits >= minimumFiniteFieldBits)
                 {
-                    return new TlsDHConfig(group);
+                    if (namedGroup < 0 || bits <= NamedGroup.getFiniteFieldBits(namedGroup))
+                    {
+                        return new TlsDHConfig(dhGroup);
+                    }
+                    break;
                 }
             }
         }
-        return super.getDHConfig();
+
+        return TlsDHUtils.createNamedDHConfig(context, namedGroup);
     }
 
     @Override
     protected int selectDH(int minimumFiniteFieldBits)
     {
-        minimumFiniteFieldBits = Math.max(minimumFiniteFieldBits, provEphemeralDHKeySize);
-
-        return NamedGroupInfo.selectServerFFDHE(jsseSecurityParameters.namedGroups, minimumFiniteFieldBits);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -369,7 +393,7 @@ class ProvTlsServer
     @Override
     protected int selectECDH(int minimumCurveBits)
     {
-        return NamedGroupInfo.selectServerECDH(jsseSecurityParameters.namedGroups, minimumCurveBits);
+        return NamedGroupInfo.selectServerECDH(jsseSecurityParameters.namedGroups, minimumCurveBits).getResult();
     }
 
     @Override
