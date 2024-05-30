@@ -33,6 +33,8 @@ import org.bouncycastle.crypto.engines.IDEAEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.TwofishEngine;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
@@ -96,6 +98,11 @@ class BcImplProvider
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+            if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
+            {
+                return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+            }
+            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed25519:
             return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed448:

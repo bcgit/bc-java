@@ -17,6 +17,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -104,6 +105,13 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                     return getEncryptSessionInfo(pubKeyPacket, "X25519", cryptoPublicKey, keyEncryptionOID,
                         ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
                         (kpGen) -> kpGen.initialize(255, random),
+                        (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR));
+                }
+                else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    return getEncryptSessionInfo(pubKeyPacket, "X448", cryptoPublicKey, keyEncryptionOID,
+                        ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
+                        (kpGen) -> kpGen.initialize(448, random),
                         (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR));
                 }
                 else

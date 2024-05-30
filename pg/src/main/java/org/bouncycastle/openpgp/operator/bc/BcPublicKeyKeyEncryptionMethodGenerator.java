@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -92,6 +93,17 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
                     ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
+                    return encryptSessionInfo(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
+                }
+                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X448KeyPairGenerator(), new X448KeyGenerationParameters(random));
+
+                    byte[] secret = BcUtil.getSecret(new X448Agreement(), ephKp.getPrivate(), cryptoPublicKey);
+
+                    byte[] ephPubEncoding = new byte[1 + X448PublicKeyParameters.KEY_SIZE];
+                    ephPubEncoding[0] = X_HDR;
+                    ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
                     return encryptSessionInfo(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
                 else

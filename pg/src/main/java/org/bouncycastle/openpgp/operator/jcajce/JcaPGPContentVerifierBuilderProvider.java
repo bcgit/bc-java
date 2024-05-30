@@ -73,7 +73,18 @@ public class JcaPGPContentVerifierBuilderProvider
         public PGPContentVerifier build(final PGPPublicKey publicKey)
             throws PGPException
         {
-            final Signature signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+            final Signature signature;
+
+            if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY
+                && ((EdDSAPublicBCPGKey)publicKey.getPublicKeyPacket().getKey()).getCurveOID().equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                // Try my best to solve Ed448Legacy issue
+                signature = helper.createSignature("Ed448");
+            }
+            else
+            {
+                signature = helper.createSignature(keyAlgorithm, hashAlgorithm);
+            }
 
             final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
             final PublicKey jcaKey = keyConverter.getPublicKey(publicKey);

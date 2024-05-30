@@ -383,6 +383,7 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
+        keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.Ed448, "XDH", "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 

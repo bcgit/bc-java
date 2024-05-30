@@ -454,9 +454,8 @@ public class PGPSignature
             {
                 byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
-                signature = new byte[Ed25519.SIGNATURE_SIZE];
-                System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
-                System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
+                //TODO: distinguish Ed25519 and Ed448
+                signature = Arrays.concatenate(a, b);
             }
             else
             {
