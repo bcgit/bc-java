@@ -370,7 +370,7 @@ public class JcaPGPKeyConverter
                 BCPGKey key = publicPk.getKey();
                 if (key instanceof Ed25519PublicBCPGKey)
                 {
-                    return implGetPublicKeyX509(BigIntegers.asUnsignedByteArray(new BigInteger(1, publicPk.getKey().getEncoded())),
+                    return implGetPublicKeyX509(publicPk.getKey().getEncoded(),
                         0, EdECObjectIdentifiers.id_Ed25519, "EdDSA");
                 }
                 else
@@ -382,7 +382,7 @@ public class JcaPGPKeyConverter
             // Modern Ed448 (1.3.101.113)
             case PublicKeyAlgorithmTags.Ed448:
             {
-                return implGetPublicKeyX509(BigIntegers.asUnsignedByteArray(new BigInteger(1, publicPk.getKey().getEncoded())),
+                return implGetPublicKeyX509(publicPk.getKey().getEncoded(),
                     0, EdECObjectIdentifiers.id_Ed448, "EdDSA");
             }
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
