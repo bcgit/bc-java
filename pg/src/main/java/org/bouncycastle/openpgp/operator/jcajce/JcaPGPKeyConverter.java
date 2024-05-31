@@ -719,10 +719,10 @@ public class JcaPGPKeyConverter
 
     private BCPGKey getPublicBCPGKey(PublicKey pubKey, int keySize, BCPGKeyOperation operation)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[keySize];
-
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
+        // refer to getPointEncUncompressed
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return operation.getBCPGKey(pointEnc);
     }
 
