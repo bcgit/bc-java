@@ -123,7 +123,7 @@ public class BcPublicKeyDataDecryptorFactory
                 {
                     if (pEnc.length != 1 + X448PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0])
                     {
-                        throw new IllegalArgumentException("Invalid Curve25519 public key");
+                        throw new IllegalArgumentException("Invalid Curve448 public key");
                     }
                     // skip the 0x40 header byte.
                     secret = BcUtil.getSecret(new X448Agreement(), privKey, new X448PublicKeyParameters(pEnc, 1));
