@@ -492,7 +492,14 @@ public class JcaTlsCrypto
 
         AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName, getHelper());
 
-        Signature signer = getHelper().createSignature(sigName);
+        Signature signer;
+        try {
+            signer =  getHelper().createSignature(sigName);
+        }
+        catch(Exception e) {
+            signer = Signature.getInstance("RSASSA-PSS", "SunRsaSign");
+            // #tls-injection fix: using the sig alg name of the SunRsaSign provider
+        }
 
         // NOTE: We explicitly set them even though they should be the defaults, because providers vary
         signer.setParameter(pssSpec);

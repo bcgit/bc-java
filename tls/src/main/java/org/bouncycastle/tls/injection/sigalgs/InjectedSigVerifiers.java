@@ -32,7 +32,7 @@ public class InjectedSigVerifiers
     }
 
     private final Map<Integer, VerifySignatureFunction> verifiers; // code point -> verifier fn
-    private final Map<Integer, PublicKeyToEncodedKey> converters; // code point -> encoder fn
+    private final Map<Integer, PublicKeyToByteKey> converters; // code point -> encoder fn
 
     public InjectedSigVerifiers()
     {
@@ -49,7 +49,7 @@ public class InjectedSigVerifiers
     public void add(
             int sigSchemeCodePoint,
             VerifySignatureFunction fn,
-            PublicKeyToEncodedKey fn2)
+            PublicKeyToByteKey fn2)
     {
         verifiers.put(sigSchemeCodePoint, fn);
         converters.put(sigSchemeCodePoint, fn2);
@@ -66,7 +66,7 @@ public class InjectedSigVerifiers
             int sigSchemeCodePoint)
     {
         VerifySignatureFunction fn = verifiers.get(sigSchemeCodePoint);
-        PublicKeyToEncodedKey fn2 = converters.get(sigSchemeCodePoint);
+        PublicKeyToByteKey fn2 = converters.get(sigSchemeCodePoint);
 
         return new MyTlsVerifier(crypto, publicKey, sigSchemeCodePoint, fn, fn2);
     }
@@ -79,14 +79,14 @@ public class InjectedSigVerifiers
         private final PublicKey publicKey;
         private final int signatureScheme;
         private final VerifySignatureFunction fn;
-        private final PublicKeyToEncodedKey fn2;
+        private final PublicKeyToByteKey fn2;
 
         public MyTlsVerifier(
                 JcaTlsCrypto crypto,
                 PublicKey publicKey,
                 int signatureSchemeCodePoint,
                 VerifySignatureFunction fn,
-                PublicKeyToEncodedKey fn2)
+                PublicKeyToByteKey fn2)
         {
             if (null == crypto)
             {
@@ -112,7 +112,7 @@ public class InjectedSigVerifiers
                 DigitallySigned signature,
                 byte[] hash) throws IOException
         {
-            byte[] encoded = fn2.encodedKey(publicKey);
+            byte[] encoded = fn2.byteKey(publicKey);
             boolean b = fn.verifySignature(hash, encoded, signature);
             return b;
         }

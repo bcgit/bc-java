@@ -2,7 +2,7 @@ package org.bouncycastle.tls.injection.sigalgs;
 
 import java.security.PublicKey;
 
-public interface PublicKeyToEncodedKey
+public interface PublicKeyToByteKey
 {
-    byte[] encodedKey(PublicKey key);
+    byte[] byteKey(PublicKey key);
 }

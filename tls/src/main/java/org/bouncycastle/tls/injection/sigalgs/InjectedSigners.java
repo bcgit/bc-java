@@ -63,17 +63,10 @@ public class InjectedSigners
             throw new RuntimeException("Algorithm " + algorithmFullName + " not found among signers.");
         }
 
-        byte[] sk = privateKey.getEncoded();
-        PrivateKeyInfo info = PrivateKeyInfo.getInstance(sk);
+        byte[] skEncoded = privateKey.getEncoded();
+        PrivateKeyInfo info = PrivateKeyInfo.getInstance(skEncoded);
 
-        byte[] sk2;
-        try
-        {
-            sk2 = info.getPrivateKey().getEncoded();
-        } catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        return new MyTlsSigner(crypto, sk2, (SignerFunction) fn);
+        byte[] skBytes = info.getPrivateKey().getOctets();
+        return new MyTlsSigner(crypto, skBytes, (SignerFunction) fn);
     }
 }

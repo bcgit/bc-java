@@ -12,7 +12,7 @@ public class MyMessageSigner
     private SignatureAndHashAlgorithm algorithm;
     private SignerFunction fnSign;
     private VerifierFunction fnVerify;
-    private CipherParametersToEncodedKey paramsToPublicKey, paramsToPrivateKey;
+    private CipherParametersByteKey paramsToPublicKey, paramsToPrivateKey;
 
     // the following fields are initialized by BC by invoking init():
     private CipherParameters params;
@@ -21,8 +21,8 @@ public class MyMessageSigner
             int signatureSchemeCodePoint,
             SignerFunction fnSign,
             VerifierFunction fnVerify,
-            CipherParametersToEncodedKey paramsToPublicKey,
-            CipherParametersToEncodedKey paramsToPrivateKey)
+            CipherParametersByteKey paramsToPublicKey,
+            CipherParametersByteKey paramsToPrivateKey)
     {
         this.algorithm = new SignatureAndHashAlgorithm((short) (signatureSchemeCodePoint >> 8), (short) (signatureSchemeCodePoint & 0xFF));
         this.fnSign = fnSign;
@@ -43,7 +43,7 @@ public class MyMessageSigner
     @Override
     public byte[] generateSignature(byte[] message)
     {
-        byte[] sk = this.paramsToPrivateKey.encodedKey(params); //skParams.getEncoded();
+        byte[] sk = this.paramsToPrivateKey.byteKey(params); //skParams.getEncoded();
 
         byte[] bcSignature = new byte[0];
         try
@@ -61,7 +61,8 @@ public class MyMessageSigner
             byte[] message,
             byte[] signature)
     {
-        byte[] pk = this.paramsToPublicKey.encodedKey(params);
-        return fnVerify.verify(message, pk, new DigitallySigned(algorithm, signature));
+        byte[] pk = this.paramsToPublicKey.byteKey(params);
+        boolean isValid = fnVerify.verify(message, pk, new DigitallySigned(algorithm, signature));
+        return isValid;
     }
 }

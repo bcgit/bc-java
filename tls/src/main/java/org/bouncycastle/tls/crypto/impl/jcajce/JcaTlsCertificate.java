@@ -270,14 +270,20 @@ public class JcaTlsCertificate
             int cryptoHashAlgorithm = SignatureScheme.getCryptoHashAlgorithm(signatureScheme);
             String digestName = crypto.getDigestName(cryptoHashAlgorithm);
             String sigName = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil.getDigestSigAlgName(digestName)
-                //+"WITHRSA";//+
                 + "WITHRSAANDMGF1";
 
             // NOTE: We explicitly set them even though they should be the defaults, because providers vary
             AlgorithmParameterSpec pssSpec = org.bouncycastle.tls.crypto.impl.jcajce.RSAUtil
                 .getPSSParameterSpec(cryptoHashAlgorithm, digestName, crypto.getHelper());
 
-            return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
+            try {
+                return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
+            }
+            catch(Exception e) {
+                // #tls-injection fix: using the sig alg name of the SunRsaSign provider
+                sigName = "RSASSA-PSS";
+                return crypto.createTls13Verifier(sigName, pssSpec, getPubKeyRSA());
+            }
         }
 
         // TODO[RFC 8998]
