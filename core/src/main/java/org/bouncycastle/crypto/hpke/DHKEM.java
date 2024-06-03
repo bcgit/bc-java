@@ -35,7 +35,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 
-class DHKEM
+class DHKEM extends KEM
 {
     private AsymmetricCipherKeyPairGenerator kpGen;
 
