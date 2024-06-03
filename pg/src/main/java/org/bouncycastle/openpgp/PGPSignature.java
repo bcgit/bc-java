@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -454,8 +455,19 @@ public class PGPSignature
             {
                 byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
-                //TODO: distinguish Ed25519 and Ed448
-                signature = Arrays.concatenate(a, b);
+                if (a.length + b.length == Ed25519.SIGNATURE_SIZE)
+                {
+                    signature = new byte[Ed25519.SIGNATURE_SIZE];
+                    System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
+                    System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
+                }
+                else
+                {
+                    signature = new byte[Ed448.SIGNATURE_SIZE];
+                    System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
+                    System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
+                }
+
             }
             else
             {
