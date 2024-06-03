@@ -78,6 +78,10 @@ class NamedGroupInfo
         OQS_mlkem512(NamedGroup.OQS_mlkem512, "ML-KEM"),
         OQS_mlkem768(NamedGroup.OQS_mlkem768, "ML-KEM"),
         OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
+        OQS_secp256Mlkem512(NamedGroup.OQS_secp256Mlkem512, "ML-KEM"),
+        OQS_secp384Mlkem768(NamedGroup.OQS_secp384Mlkem768, "ML-KEM"),
+        OQS_secp521Mlkem1024(NamedGroup.OQS_secp521Mlkem1024, "ML-KEM"),
+
         DRAFT_mlkem768(NamedGroup.DRAFT_mlkem768, "ML-KEM"),
         DRAFT_mlkem1024(NamedGroup.DRAFT_mlkem1024, "ML-KEM");
 
