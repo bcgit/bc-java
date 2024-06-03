@@ -75,6 +75,7 @@ public class RegressionTest
         new LegacyX448KeyPairTest(),
 
         new Curve25519PrivateKeyEncodingTest(),
+        new EdDSAKeyConversionWithLeadingZeroTest(),
         new ECDSAKeyPairTest()
     };
 
