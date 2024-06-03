@@ -1,12 +1,26 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+
+import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
+import org.bouncycastle.bcpg.EdSecretBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
@@ -15,11 +29,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
+import org.bouncycastle.util.Strings;
 
 public class LegacyEd448KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -49,7 +59,7 @@ public class LegacyEd448KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
                 keyPair.getPublicKey().getAlgorithm(),
@@ -76,7 +86,7 @@ public class LegacyEd448KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
                 keyPair.getPublicKey().getAlgorithm(),
