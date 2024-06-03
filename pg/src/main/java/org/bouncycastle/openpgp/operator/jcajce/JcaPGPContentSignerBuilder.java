@@ -98,7 +98,6 @@ public class JcaPGPContentSignerBuilder
 
         if (keyAlgorithm == PublicKeyAlgorithmTags.EDDSA_LEGACY && privateKey.getAlgorithm().equals("Ed448"))
         {
-            // Try my best to solve Ed448Legacy issue
             signature = helper.createSignature("Ed448");
         }
         else
