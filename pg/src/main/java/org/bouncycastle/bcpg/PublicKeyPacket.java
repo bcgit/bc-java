@@ -61,7 +61,7 @@ public class PublicKeyPacket
 
         algorithm = (byte)in.read();
         long keyOctets = 0;
-        if (version == VERSION_6)
+        if (version == VERSION_6 || version == 5)
         {
             keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
         }
@@ -102,9 +102,9 @@ public class PublicKeyPacket
             key = new Ed448PublicBCPGKey(in);
             break;
         default:
-            if (version == VERSION_6)
+            if (version == VERSION_6 || version == 5)
             {
-                // with version 6, we can gracefully handle unknown key types, as the length is known.
+                // with version 5 & 6, we can gracefully handle unknown key types, as the length is known.
                 key = new UnknownBCPGKey((int) keyOctets, in);
                 break;
             }
