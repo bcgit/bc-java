@@ -60,10 +60,10 @@ public class PublicKeyPacket
         }
 
         algorithm = (byte)in.read();
+        long keyOctets = 0;
         if (version == VERSION_6)
         {
-            // TODO: Use keyOctets to be able to parse unknown keys
-            long keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
+            keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
         }
 
         switch (algorithm)
@@ -102,6 +102,12 @@ public class PublicKeyPacket
             key = new Ed448PublicBCPGKey(in);
             break;
         default:
+            if (version == VERSION_6)
+            {
+                // with version 6, we can gracefully handle unknown key types, as the length is known.
+                key = new UnknownBCPGKey((int) keyOctets, in);
+                break;
+            }
             throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
         }
     }
