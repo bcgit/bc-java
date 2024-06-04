@@ -112,7 +112,9 @@ public class PublicKeyPacket
      * @param algorithm
      * @param time
      * @param key
+     * @deprecated use versioned {@link #PublicKeyPacket(int, int, Date, BCPGKey)} instead
      */
+    @Deprecated
     public PublicKeyPacket(
         int algorithm,
         Date time,
