@@ -99,13 +99,13 @@ public class PGPSecretKey
         if (isMasterKey && !(pubKey.isEncryptionKey() && pubPacket.getAlgorithm() != PublicKeyAlgorithmTags.RSA_GENERAL))
         {
             PGPPublicKey mstKey = new PGPPublicKey(pubKey);
-            mstKey.publicPk = new PublicKeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+            mstKey.publicPk = new PublicKeyPacket(pubPacket.getVersion(), pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
             return mstKey;
         }
         else
         {
             PGPPublicKey subKey = new PGPPublicKey(pubKey);
-            subKey.publicPk = new PublicSubkeyPacket(pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
+            subKey.publicPk = new PublicSubkeyPacket(pubPacket.getVersion(), pubPacket.getAlgorithm(), pubPacket.getTime(), pubPacket.getKey());
             return subKey;
         }
     }
@@ -316,7 +316,7 @@ public class PGPSecretKey
         // replace the public key packet structure with a public subkey one.
         PGPPublicKey pubSubKey = new PGPPublicKey(keyPair.getPublicKey(), null, subSigs);
 
-        pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
+        pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getVersion(), pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
 
         this.pub = pubSubKey;
         this.secret = buildSecretKeyPacket(false, keyPair.getPrivateKey(), keyPair.getPublicKey(), keyEncryptor, checksumCalculator);
