@@ -7,6 +7,8 @@ import org.bouncycastle.bcpg.UnknownBCPGKey;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
@@ -16,12 +18,19 @@ public class UnknownPublicKeyPacketTest
 {
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return "UnknownPublicKeyPacketTest";
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+            throws Exception
+    {
+        parseUnknownV6PublicKey();
+    }
+
+    private void parseUnknownV6PublicKey() throws ParseException, IOException {
         SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
         parser.setTimeZone(TimeZone.getTimeZone("UTC"));
 
