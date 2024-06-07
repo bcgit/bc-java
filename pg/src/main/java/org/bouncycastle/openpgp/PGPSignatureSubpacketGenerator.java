@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -192,14 +193,29 @@ public class PGPSignatureSubpacketGenerator
 
     /**
      * Specify the preferred AEAD algorithms of this key.
+     * This method of defining encryption mode preferences was introduced and deprecated in
+     * draft-koch-openpgp-2015-rfc4880bis for OpenPGP v5 keys.
      *
-     * @param isCritical true if should be treated as critical, false otherwise.
+     * @param isCritical true, if this packet should be treated as critical, false otherwise.
      * @param algorithms array of algorithms in descending preference
+     * @deprecated use {@link #setPreferredAEADCiphersuites(boolean, PreferredAEADCiphersuites.Combination[])} instead
      */
+    @Deprecated
     public void setPreferredAEADAlgorithms(boolean isCritical, int[] algorithms)
     {
-        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
+        packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_ENCRYPTION_MODES, isCritical,
             algorithms));
+    }
+
+    /**
+     * Specify the preferred AEAD cipher suites of this key.
+     *
+     * @param isCritical true, if this packet should be treated as critical, false otherwise.
+     * @param algorithms array of algorithms in descending preference
+     */
+    public void setPreferredAEADCiphersuites(boolean isCritical, PreferredAEADCiphersuites.Combination[] algorithms)
+    {
+        packets.add(new PreferredAEADCiphersuites(isCritical, algorithms));
     }
 
     public void addPolicyURI(boolean isCritical, String policyUri)
