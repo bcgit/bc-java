@@ -51,6 +51,7 @@ public class RegressionTest
         new IgnoreUnknownEncryptedSessionKeys(),
         new PGPEncryptedDataTest(),
         new PGPAeadTest(),
+        new AEADProtectedPGPSecretKeyTest(),
         new CRC24Test(),
         new WildcardKeyIDTest(),
         new ArmorCRCTest(),
