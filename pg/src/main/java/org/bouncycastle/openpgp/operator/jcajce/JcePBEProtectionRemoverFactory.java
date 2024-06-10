@@ -78,7 +78,15 @@ public class JcePBEProtectionRemoverFactory
         {
             return new PGPSecretKeyDecryptorWithAAD(passPhrase, calculatorProvider)
             {
-                public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData,  int keyOff, int keyLen)
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv,
+                                             int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData)
+                        throws PGPException
+                {
+                    throw new PGPException("Not implemented.");
+                }
+
+                public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData, int keyOff, int keyLen)
                     throws PGPException
                 {
                     try
@@ -137,6 +145,14 @@ public class JcePBEProtectionRemoverFactory
                     {
                         throw new PGPException("invalid key: " + e.getMessage(), e);
                     }
+                }
+
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv,
+                                             int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData)
+                        throws PGPException
+                {
+                    throw new PGPException("Not implemented.");
                 }
             };
 

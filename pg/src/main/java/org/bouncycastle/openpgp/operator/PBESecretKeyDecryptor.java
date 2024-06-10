@@ -28,4 +28,15 @@ public abstract class PBESecretKeyDecryptor
 
     public abstract byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
         throws PGPException;
+
+    public abstract byte[] recoverKeyData(
+            int encAlgorithm,
+            int aeadAlgorithm,
+            byte[] s2kKey,
+            byte[] iv,
+            int packetTag,
+            int keyVersion,
+            byte[] keyData,
+            byte[] pubkeyData)
+            throws PGPException;
 }
