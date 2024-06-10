@@ -3,6 +3,7 @@ package org.bouncycastle.bcpg;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -278,7 +279,7 @@ public class SecretKeyPacket
 
     public byte[] getSecretKeyData()
     {
-        return secKeyData;
+        return Arrays.clone(secKeyData);
     }
 
     public byte[] getEncodedContents()
