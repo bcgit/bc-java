@@ -19,10 +19,13 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -99,24 +102,37 @@ public class AEADProtectedPGPSecretKeyTest
         isEncodingEqual(plainSubkey, privSubKey.getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void lockGeneratedV4Key() throws PGPException {
+    private void lockGeneratedV4Key()
+            throws PGPException
+    {
         Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
         gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         Date creationTime = currentTimeRounded();
         PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
-        BcAEADSecretKeyEncryptorBuilder encBuilder = new BcAEADSecretKeyEncryptorBuilder(
+        lockGeneratedV4KeyBc(keyPair);
+
+        lockGeneratedV4KeyJca(keyPair);
+    }
+
+    private void lockGeneratedV4KeyBc(PGPKeyPair keyPair)
+            throws PGPException
+    {
+        BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
                 AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
-                S2K.Argon2Params.memoryConstrainedParameters()
-        );
+                S2K.Argon2Params.memoryConstrainedParameters());
+
+        PGPDigestCalculatorProvider digestProv = new BcPGPDigestCalculatorProvider();
 
         PGPSecretKey sk = new PGPSecretKey(
                 keyPair.getPrivateKey(),
                 keyPair.getPublicKey(),
-                new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+                digestProv.get(HashAlgorithmTags.SHA1),
                 true,
-                encBuilder.build("Hello".toCharArray(), keyPair.getPublicKey().getPublicKeyPacket()));
+                bcEncBuilder.build(
+                        "Hello".toCharArray(),
+                        keyPair.getPublicKey().getPublicKeyPacket()));
 
         isEquals(SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
         isEquals(S2K.ARGON_2, sk.getS2K().getType());
@@ -124,9 +140,41 @@ public class AEADProtectedPGPSecretKeyTest
         isEquals(4, sk.getS2K().getParallelism());
         isEquals(16, sk.getS2K().getMemorySizeExponent());
 
-        BcPBESecretKeyDecryptorBuilder decBuilder = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider());
+        BcPBESecretKeyDecryptorBuilder bcDecBuilder = new BcPBESecretKeyDecryptorBuilder(digestProv);
+        PGPPrivateKey dec = sk.extractPrivateKey(bcDecBuilder.build("Hello".toCharArray()));
+        isEncodingEqual(keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
+    }
 
-        PGPPrivateKey dec = sk.extractPrivateKey(decBuilder.build("Hello".toCharArray()));
+    private void lockGeneratedV4KeyJca(PGPKeyPair keyPair)
+            throws PGPException
+    {
+        BouncyCastleProvider prov = new BouncyCastleProvider();
+        JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters())
+                .setProvider(prov);
+
+        PGPDigestCalculatorProvider digestProv = new JcaPGPDigestCalculatorProviderBuilder()
+                .setProvider(prov)
+                .build();
+
+        PGPSecretKey sk = new PGPSecretKey(
+                keyPair.getPrivateKey(),
+                keyPair.getPublicKey(),
+                digestProv.get(HashAlgorithmTags.SHA1),
+                true,
+                jcaEncBuilder.build(
+                        "Hello".toCharArray(),
+                        keyPair.getPublicKey().getPublicKeyPacket()));
+
+        isEquals(SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
+        isEquals(S2K.ARGON_2, sk.getS2K().getType());
+        isEquals(3, sk.getS2K().getPasses());
+        isEquals(4, sk.getS2K().getParallelism());
+        isEquals(16, sk.getS2K().getMemorySizeExponent());
+
+        JcePBESecretKeyDecryptorBuilder jceDecBuilder = new JcePBESecretKeyDecryptorBuilder(digestProv).setProvider(prov);
+        PGPPrivateKey dec = sk.extractPrivateKey(jceDecBuilder.build("Hello".toCharArray()));
         isEncodingEqual(keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
 
