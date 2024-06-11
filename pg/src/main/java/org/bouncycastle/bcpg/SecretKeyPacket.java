@@ -213,6 +213,18 @@ public class SecretKeyPacket
         this(SECRET_KEY, pubKeyPacket, encAlgorithm, 0, s2kUsage, s2k, iv, secKeyData);
     }
 
+    public SecretKeyPacket(
+            PublicKeyPacket pubKeyPacket,
+            int encAlgorithm,
+            int aeadAlgorithm,
+            int s2kUsage,
+            S2K s2k,
+            byte[] iv,
+            byte[] secKeyData)
+    {
+        this(SECRET_KEY, pubKeyPacket, encAlgorithm, aeadAlgorithm, s2kUsage, s2k, iv, secKeyData);
+    }
+
     SecretKeyPacket(
         int keyTag,
         PublicKeyPacket pubKeyPacket,
