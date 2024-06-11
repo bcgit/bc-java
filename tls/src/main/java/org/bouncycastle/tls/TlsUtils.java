@@ -5188,7 +5188,14 @@ public class TlsUtils
             .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
-        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
+        Certificate serverCertificate;
+
+        try
+        {
+          serverCertificate = Certificate.parse(options, clientContext, buf, endPointHash);
+        } catch (IOException e) {
+          throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
+        }
 
         TlsProtocol.assertEmpty(buf);
 
@@ -5229,7 +5236,13 @@ public class TlsUtils
             .setCertificateType(securityParameters.getServerCertificateType())            
             .setMaxChainLength(client.getMaxCertificateChainLength());
 
-        Certificate serverCertificate = Certificate.parse(options, clientContext, buf, null);
+        Certificate serverCertificate;
+
+        try {
+          serverCertificate = Certificate.parse(options, clientContext, buf, null);
+        } catch (IOException e) {
+          throw new TlsFatalAlert(AlertDescription.bad_certificate, e);
+        }
 
         TlsProtocol.assertEmpty(buf);
 
