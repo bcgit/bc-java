@@ -15,10 +15,10 @@ import org.bouncycastle.asn1.DERSet;
  */
 public class AttributeTable
 {
-    private Hashtable attributes = new Hashtable();
+    private Hashtable<ASN1ObjectIdentifier, Object> attributes = new Hashtable<>();
 
     public AttributeTable(
-        Hashtable  attrs)
+        Hashtable<ASN1ObjectIdentifier, Object>  attrs)
     {
         attributes = copyTable(attrs);
     }
@@ -69,13 +69,13 @@ public class AttributeTable
         }
         else
         {
-            Vector v;
+            Vector<Attribute> v;
             
             if (value instanceof Attribute)
             {
-                v = new Vector();
+                v = new Vector<>();
                 
-                v.addElement(value);
+                v.addElement((Attribute) value);
                 v.addElement(a);
             }
             else
@@ -102,7 +102,7 @@ public class AttributeTable
         
         if (value instanceof Vector)
         {
-            return (Attribute)((Vector)value).elementAt(0);
+            return ((Vector<Attribute>)value).elementAt(0);
         }
         
         return (Attribute)value;
@@ -124,11 +124,11 @@ public class AttributeTable
         
         if (value instanceof Vector)
         {
-            Enumeration e = ((Vector)value).elements();
+            Enumeration<Attribute> e = ((Vector<Attribute>)value).elements();
             
             while (e.hasMoreElements())
             {
-                v.add((Attribute)e.nextElement());
+                v.add(e.nextElement());
             }
         }
         else if (value != null)
@@ -160,7 +160,7 @@ public class AttributeTable
         return size;
     }
 
-    public Hashtable toHashtable()
+    public Hashtable<ASN1ObjectIdentifier, Object> toHashtable()
     {
         return copyTable(attributes);
     }
@@ -197,15 +197,14 @@ public class AttributeTable
         return new Attributes(this.toASN1EncodableVector());
     }
 
-    private Hashtable copyTable(
-        Hashtable in)
+    private Hashtable<ASN1ObjectIdentifier, Object> copyTable(Hashtable<ASN1ObjectIdentifier, Object> in)
     {
-        Hashtable   out = new Hashtable();
-        Enumeration e = in.keys();
+        Hashtable<ASN1ObjectIdentifier, Object>   out = new Hashtable<>();
+        Enumeration<ASN1ObjectIdentifier> e = in.keys();
         
         while (e.hasMoreElements())
         {
-            Object key = e.nextElement();
+            ASN1ObjectIdentifier key = e.nextElement();
             
             out.put(key, in.get(key));
         }
