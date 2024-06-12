@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
-import java.util.Enumeration;
-
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -256,54 +255,68 @@ public class AuthenticatedData
 
     public static int calculateVersion(OriginatorInfo origInfo)
     {
-        if (origInfo == null)
+        /*
+         * IF (originatorInfo is present) AND
+         *    ((any certificates with a type of other are present) OR
+         *    (any crls with a type of other are present))
+         * THEN version is 3
+         * ELSE
+         *    IF ((originatorInfo is present) AND
+         *       (any version 2 attribute certificates are present))
+         *    THEN version is 1
+         *    ELSE version is 0
+         */
+
+        if (origInfo != null)
         {
-            return 0;
-        }
-        else
-        {
-            int ver = 0;
-
-            for (Enumeration e = origInfo.getCertificates().getObjects(); e.hasMoreElements();)
+            ASN1Set crls = origInfo.getCRLs();
+            if (crls != null)
             {
-                Object obj = e.nextElement();
-
-                if (obj instanceof ASN1TaggedObject)
+                for (int i = 0, count = crls.size(); i < count; ++i)
                 {
-                    ASN1TaggedObject tag = (ASN1TaggedObject)obj;
-
-                    if (tag.getTagNo() == 2)
+                    ASN1Encodable element = crls.getObjectAt(i);
+                    if (element instanceof ASN1TaggedObject)
                     {
-                        ver = 1;
-                    }
-                    else if (tag.getTagNo() == 3)
-                    {
-                        ver = 3;
-                        break;
-                    }
-                }
-            }
+                        ASN1TaggedObject tagged = (ASN1TaggedObject)element;
 
-            if (origInfo.getCRLs() != null)
-            {
-                for (Enumeration e = origInfo.getCRLs().getObjects(); e.hasMoreElements();)
-                {
-                    Object obj = e.nextElement();
-
-                    if (obj instanceof ASN1TaggedObject)
-                    {
-                        ASN1TaggedObject tag = (ASN1TaggedObject)obj;
-
-                        if (tag.getTagNo() == 1)
+                        // RevocationInfoChoice.other
+                        if (tagged.hasContextTag(1))
                         {
-                            ver = 3;
-                            break;
+                            return 3;
                         }
                     }
                 }
             }
 
-            return ver;
+            ASN1Set certs = origInfo.getCertificates();
+            if (certs != null)
+            {
+                boolean anyV2AttrCerts = false;
+
+                for (int i = 0, count = certs.size(); i < count; ++i)
+                {
+                    ASN1Encodable element = certs.getObjectAt(i);
+                    if (element instanceof ASN1TaggedObject)
+                    {
+                        ASN1TaggedObject tagged = (ASN1TaggedObject)element;
+
+                        // CertificateChoices.other
+                        if (tagged.hasContextTag(3))
+                        {
+                            return 3;
+                        }
+
+                        // CertificateChoices.v2AttrCert
+                        anyV2AttrCerts = anyV2AttrCerts || tagged.hasContextTag(2);
+                    }
+                }
+
+                if (anyV2AttrCerts)
+                {
+                    return 1;
+                }
+            }
         }
+        return 0;
     }
 }
