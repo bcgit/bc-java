@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequenceGenerator;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.operator.OutputAEADEncryptor;
@@ -78,7 +77,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
         //
         BERSequenceGenerator authEnvGen = new BERSequenceGenerator(cGen.getRawOutputStream(), 0, true);
 
-        authEnvGen.addObject(new ASN1Integer(AuthenticatedData.calculateVersion(originatorInfo)));
+        authEnvGen.addObject(new ASN1Integer(0));
 
         CMSUtils.addOriginatorInfoToGenerator(authEnvGen, originatorInfo);
 
