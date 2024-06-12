@@ -98,69 +98,68 @@ public class RecipientInfo
                                                     + o.getClass().getName());
     }
 
+    /** @deprecated Will be removed */
     public ASN1Integer getVersion()
     {
-        if (info instanceof ASN1TaggedObject)
+        if (!(info instanceof ASN1TaggedObject))
         {
-            ASN1TaggedObject o = (ASN1TaggedObject)info;
-
-            switch (o.getTagNo())
-            {
-            case 1:
-                return KeyAgreeRecipientInfo.getInstance(o, false).getVersion();
-            case 2:
-                return getKEKInfo(o).getVersion();
-            case 3:
-                return PasswordRecipientInfo.getInstance(o, false).getVersion();
-            case 4:
-                return new ASN1Integer(0);    // no syntax version for OtherRecipientInfo
-            default:
-                throw new IllegalStateException("unknown tag");
-            }
+            return KeyTransRecipientInfo.getInstance(info).getVersion();
         }
 
-        return KeyTransRecipientInfo.getInstance(info).getVersion();
+        ASN1TaggedObject tagged = (ASN1TaggedObject)info;
+        if (tagged.hasContextTag())
+        {
+            switch (tagged.getTagNo())
+            {
+            case 1:
+                return KeyAgreeRecipientInfo.getInstance(tagged, false).getVersion();
+            case 2:
+                return getKEKInfo(tagged).getVersion();
+            case 3:
+                return PasswordRecipientInfo.getInstance(tagged, false).getVersion();
+            case 4:
+                return new ASN1Integer(0);    // no syntax version for OtherRecipientInfo
+            }
+        }
+        throw new IllegalStateException("unknown tag");
     }
 
     public boolean isTagged()
     {
-        return (info instanceof ASN1TaggedObject);
+        return info instanceof ASN1TaggedObject;
     }
 
     public ASN1Encodable getInfo()
     {
-        if (info instanceof ASN1TaggedObject)
+        if (!(info instanceof ASN1TaggedObject))
         {
-            ASN1TaggedObject o = (ASN1TaggedObject)info;
-
-            switch (o.getTagNo())
-            {
-            case 1:
-                return KeyAgreeRecipientInfo.getInstance(o, false);
-            case 2:
-                return getKEKInfo(o);
-            case 3:
-                return PasswordRecipientInfo.getInstance(o, false);
-            case 4:
-                return OtherRecipientInfo.getInstance(o, false);
-            default:
-                throw new IllegalStateException("unknown tag");
-            }
+            return KeyTransRecipientInfo.getInstance(info);
         }
 
-        return KeyTransRecipientInfo.getInstance(info);
+        ASN1TaggedObject tagged = (ASN1TaggedObject)info;
+        if (tagged.hasContextTag())
+        {
+            switch (tagged.getTagNo())
+            {
+            case 1:
+                return KeyAgreeRecipientInfo.getInstance(tagged, false);
+            case 2:
+                return getKEKInfo(tagged);
+            case 3:
+                return PasswordRecipientInfo.getInstance(tagged, false);
+            case 4:
+                return OtherRecipientInfo.getInstance(tagged, false);
+            }
+        }
+        throw new IllegalStateException("unknown tag");
     }
 
     private KEKRecipientInfo getKEKInfo(ASN1TaggedObject o)
     {
-        if (o.isExplicit())
-        {                        // compatibilty with erroneous version
-            return KEKRecipientInfo.getInstance(o, true);
-        }
-        else
-        {
-            return KEKRecipientInfo.getInstance(o, false);
-        }
+        // For compatibility with erroneous version, we don't always pass 'false' here
+        boolean declaredExplicit = o.isExplicit();
+
+        return KEKRecipientInfo.getInstance(o, declaredExplicit);
     }
 
     /**
@@ -169,5 +168,35 @@ public class RecipientInfo
     public ASN1Primitive toASN1Primitive()
     {
         return info.toASN1Primitive();
+    }
+
+    boolean isKeyTransV0()
+    {
+        if (info instanceof ASN1TaggedObject)
+        {
+            return false;
+        }
+
+        KeyTransRecipientInfo ktri = KeyTransRecipientInfo.getInstance(info);
+
+        return ktri.getVersion().hasValue(0);
+    }
+
+    boolean isPasswordOrOther()
+    {
+        if (info instanceof ASN1TaggedObject)
+        {
+            ASN1TaggedObject tagged = (ASN1TaggedObject)info;
+            if (tagged.hasContextTag())
+            {
+                switch (tagged.getTagNo())
+                {
+                case 3:
+                case 4:
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
