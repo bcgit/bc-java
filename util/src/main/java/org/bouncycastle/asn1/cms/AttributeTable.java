@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -124,11 +123,9 @@ public class AttributeTable
         
         if (value instanceof Vector)
         {
-            Enumeration<Attribute> e = ((Vector<Attribute>)value).elements();
-            
-            while (e.hasMoreElements())
+            for (Attribute attribute : (Vector<Attribute>) value)
             {
-                v.add(e.nextElement());
+                v.add(attribute);
             }
         }
         else if (value != null)
@@ -143,10 +140,8 @@ public class AttributeTable
     {
         int size = 0;
 
-        for (Enumeration en = attributes.elements(); en.hasMoreElements();)
+        for (Object o : attributes.values())
         {
-            Object o = en.nextElement();
-
             if (o instanceof Vector)
             {
                 size += ((Vector)o).size();
@@ -168,19 +163,14 @@ public class AttributeTable
     public ASN1EncodableVector toASN1EncodableVector()
     {
         ASN1EncodableVector  v = new ASN1EncodableVector();
-        Enumeration          e = attributes.elements();
         
-        while (e.hasMoreElements())
+        for (Object value : attributes.values())
         {
-            Object value = e.nextElement();
-            
             if (value instanceof Vector)
             {
-                Enumeration en = ((Vector)value).elements();
-                
-                while (en.hasMoreElements())
+                for (Object element : (Vector)value)
                 {
-                    v.add(Attribute.getInstance(en.nextElement()));
+                    v.add(Attribute.getInstance(element));
                 }
             }
             else
@@ -200,12 +190,9 @@ public class AttributeTable
     private Hashtable<ASN1ObjectIdentifier, Object> copyTable(Hashtable<ASN1ObjectIdentifier, Object> in)
     {
         Hashtable<ASN1ObjectIdentifier, Object>   out = new Hashtable<>();
-        Enumeration<ASN1ObjectIdentifier> e = in.keys();
         
-        while (e.hasMoreElements())
+        for (ASN1ObjectIdentifier key : in.keySet())
         {
-            ASN1ObjectIdentifier key = e.nextElement();
-            
             out.put(key, in.get(key));
         }
         
