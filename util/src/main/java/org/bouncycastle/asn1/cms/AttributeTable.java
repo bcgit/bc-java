@@ -1,6 +1,8 @@
 package org.bouncycastle.asn1.cms;
 
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -14,12 +16,18 @@ import org.bouncycastle.asn1.DERSet;
  */
 public class AttributeTable
 {
-    private Hashtable<ASN1ObjectIdentifier, Object> attributes = new Hashtable<>();
+    private Map<ASN1ObjectIdentifier, Object> attributes = new LinkedHashMap<>();
+
+    public AttributeTable(
+        Map<ASN1ObjectIdentifier, Object>  attrs)
+    {
+        attributes = new LinkedHashMap<>(attrs);
+    }
 
     public AttributeTable(
         Hashtable<ASN1ObjectIdentifier, Object>  attrs)
     {
-        attributes = new Hashtable<>(attrs);
+        this((Map<ASN1ObjectIdentifier, Object>) attrs);
     }
 
     public AttributeTable(
