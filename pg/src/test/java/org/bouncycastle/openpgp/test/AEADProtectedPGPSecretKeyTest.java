@@ -52,6 +52,7 @@ public class AEADProtectedPGPSecretKeyTest
     {
         unlockTestVector();
         lockGeneratedV4Key();
+        lockGeneratedV6Key();
     }
 
     private void unlockTestVector()
@@ -111,12 +112,22 @@ public class AEADProtectedPGPSecretKeyTest
         Date creationTime = currentTimeRounded();
         PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
-        lockGeneratedV4KeyBc(keyPair);
-
-        lockGeneratedV4KeyJca(keyPair);
+        lockGeneratedKeyBc(keyPair);
+        lockGeneratedKeyJca(keyPair);
     }
 
-    private void lockGeneratedV4KeyBc(PGPKeyPair keyPair)
+    private void lockGeneratedV6Key()
+        throws PGPException
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = currentTimeRounded();
+        // TODO: Uncomment once https://github.com/bcgit/bc-java/pull/1695 is merged
+        // PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+    }
+
+    private void lockGeneratedKeyBc(PGPKeyPair keyPair)
             throws PGPException
     {
         BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
@@ -145,7 +156,7 @@ public class AEADProtectedPGPSecretKeyTest
         isEncodingEqual(keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void lockGeneratedV4KeyJca(PGPKeyPair keyPair)
+    private void lockGeneratedKeyJca(PGPKeyPair keyPair)
             throws PGPException
     {
         BouncyCastleProvider prov = new BouncyCastleProvider();
