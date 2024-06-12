@@ -60,14 +60,14 @@ public class BcKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_6)
+        else if (publicPk.getVersion() == 5 || publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
             try
             {
                 byte[] kBytes = publicPk.getEncodedContents();
                 digest = new SHA256Digest();
 
-                digest.update((byte)0x9b);
+                digest.update((byte) (publicPk.getVersion() == PublicKeyPacket.VERSION_6 ? 0x9b : 0x9a));
 
                 digest.update((byte)(kBytes.length >> 24));
                 digest.update((byte)(kBytes.length >> 16));
