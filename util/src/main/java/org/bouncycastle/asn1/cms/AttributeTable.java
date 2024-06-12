@@ -19,7 +19,7 @@ public class AttributeTable
     public AttributeTable(
         Hashtable<ASN1ObjectIdentifier, Object>  attrs)
     {
-        attributes = copyTable(attrs);
+        attributes = new Hashtable<>(attrs);
     }
 
     public AttributeTable(
@@ -157,7 +157,7 @@ public class AttributeTable
 
     public Hashtable<ASN1ObjectIdentifier, Object> toHashtable()
     {
-        return copyTable(attributes);
+        return new Hashtable<>(attributes);
     }
     
     public ASN1EncodableVector toASN1EncodableVector()
@@ -185,18 +185,6 @@ public class AttributeTable
     public Attributes toASN1Structure()
     {
         return new Attributes(this.toASN1EncodableVector());
-    }
-
-    private Hashtable<ASN1ObjectIdentifier, Object> copyTable(Hashtable<ASN1ObjectIdentifier, Object> in)
-    {
-        Hashtable<ASN1ObjectIdentifier, Object>   out = new Hashtable<>();
-        
-        for (ASN1ObjectIdentifier key : in.keySet())
-        {
-            out.put(key, in.get(key));
-        }
-        
-        return out;
     }
 
     /**
