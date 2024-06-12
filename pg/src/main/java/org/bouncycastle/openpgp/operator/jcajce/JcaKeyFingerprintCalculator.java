@@ -63,7 +63,7 @@ public class JcaKeyFingerprintCalculator
     {
         BCPGKey key = publicPk.getKey();
 
-        if (publicPk.getVersion() <= 3)
+        if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
@@ -92,7 +92,7 @@ public class JcaKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else if (publicPk.getVersion() == 4)
+        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
         {
             try
             {
@@ -120,7 +120,7 @@ public class JcaKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else if (publicPk.getVersion() == 6)
+        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
             try
             {
