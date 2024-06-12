@@ -1,6 +1,14 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.PacketFormat;
+import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.SecretKeyPacket;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.UnknownBCPGKey;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
@@ -51,7 +59,11 @@ public class UnknownSecretKeyPacketTest
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         SecretKeyPacket p = (SecretKeyPacket) pIn.readPacket();
 
-        isEncodingEqual(sk.getEncoded(PacketFormat.CURRENT), p.getEncoded(PacketFormat.CURRENT));
+        isEquals("Packet version mismatch", PublicKeyPacket.VERSION_6, p.getPublicKeyPacket().getVersion());
+        isEquals("Algorithm mismatch", 99, p.getPublicKeyPacket().getAlgorithm());
+        isEncodingEqual("Public key encoding mismatch", Hex.decode("c0ffee"), p.getPublicKeyPacket().getKey().getEncoded());
+        isEncodingEqual("Secret key encoding mismatch", Hex.decode("0decaf"), p.getSecretKeyData());
+        isEncodingEqual("Packet encoding mismatch", sk.getEncoded(PacketFormat.CURRENT), p.getEncoded(PacketFormat.CURRENT));
     }
 
     public static void main(String[] args)
