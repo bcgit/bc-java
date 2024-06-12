@@ -2,14 +2,15 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.bcpg.*;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
@@ -17,7 +18,12 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.util.Date;
 
 /**
@@ -169,7 +175,8 @@ public class Curve25519PrivateKeyEncodingTest
     /**
      * Test proper functionality of the {@link #containsSubsequence(byte[], byte[])} method.
      */
-    private void containsTest() {
+    private void containsTest()
+    {
         // Make sure our containsSubsequence method functions correctly
         byte[] s = new byte[] {0x00, 0x01, 0x02, 0x03};
         isTrue(containsSubsequence(s, new byte[] {0x00, 0x01}));

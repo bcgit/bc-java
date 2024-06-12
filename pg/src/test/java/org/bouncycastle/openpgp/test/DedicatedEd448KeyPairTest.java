@@ -24,7 +24,11 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
 
 public class DedicatedEd448KeyPairTest

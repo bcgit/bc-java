@@ -1,6 +1,8 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.bcpg.*;
+import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
@@ -11,7 +13,11 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
 import java.io.IOException;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.Date;
 
 public class LegacyX448KeyPairTest
