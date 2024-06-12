@@ -49,6 +49,10 @@ public class MessageDigestUtils
         digestOidMap.put(NISTObjectIdentifiers.id_shake256, "SHAKE256");
         digestOidMap.put(GMObjectIdentifiers.sm3, "SM3");
         digestOidMap.put(MiscObjectIdentifiers.blake3_256, "BLAKE3-256");
+        // sha-1WithRSAEncryption (RFC 3279 2.2.1)
+        digestOidMap.put(OIWObjectIdentifiers.sha1WithRSA,  "SHA-1");
+        // sha-1WithRSASignature (RFC 8017 A.2.4)
+        digestOidMap.put(new ASN1ObjectIdentifier("1.2.840.113549.1.1.5"), "SHA-1");
 
         digestAlgIdMap.put("SHA-1", new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE));
         digestAlgIdMap.put("SHA-224", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224));
