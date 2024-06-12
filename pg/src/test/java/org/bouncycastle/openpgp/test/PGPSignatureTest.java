@@ -11,7 +11,15 @@ import java.security.SignatureException;
 import java.util.Date;
 import java.util.Iterator;
 
-import org.bouncycastle.bcpg.*;
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -1364,7 +1372,9 @@ public class PGPSignatureTest
         isTrue(nonExportableSig.getEncoded(true).length == 0);
     }
 
-    private void testRejectionOfIllegalSignatureType0xFF() throws PGPException, IOException {
+    private void testRejectionOfIllegalSignatureType0xFF()
+            throws PGPException, IOException
+    {
         PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(rsaKeyRing, new JcaKeyFingerprintCalculator());
         PGPSecretKey secretKey = pgpPriv.getSecretKey();
         PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(rsaPass));
@@ -1393,7 +1403,8 @@ public class PGPSignatureTest
         {
             s.init(verifBuilder, secretKey.getPublicKey());
             fail("Verifying signature of type 0xff MUST fail.");
-        } catch (PGPException e)
+        }
+        catch (PGPException e)
         {
             // expected
         }
