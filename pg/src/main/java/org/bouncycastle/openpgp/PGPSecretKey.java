@@ -457,6 +457,16 @@ public class PGPSecretKey
     }
 
     /**
+     * Return the AEAD algorithm the key is encrypted with.
+     * Returns <pre>0</pre> if no AEAD is used.
+     * @return aead key encryption algorithm
+     */
+    public int getAEADKeyEncryptionAlgorithm()
+    {
+        return secret.getAeadAlgorithm();
+    }
+
+    /**
      * Return the keyID of the public key associated with this key.
      *
      * @return the keyID associated with this key.
