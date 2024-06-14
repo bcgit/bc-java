@@ -46,17 +46,7 @@ public class TlsAgreementForKEM
     public byte[] generateEphemeral() throws IOException
     {
 
-        Pair<byte[], byte[]> p;
 
-        try
-        {
-            p = kem.keyGen();
-        } catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        byte[] pk = p.getLeft();
-        byte[] sk = p.getRight();
 
         if (isServer)
         {
@@ -66,7 +56,7 @@ public class TlsAgreementForKEM
                 throw new IOException("receivePeerValue must be called before generateEphemeral for KEMs");
             }
 
-            Pair<byte[], byte[]> p2;
+            Pair<byte[], byte[]> p;
 
             try
             {
@@ -81,6 +71,17 @@ public class TlsAgreementForKEM
         else
         {
             // Half-KEM Step1: client ---> generated pk ---> server
+            Pair<byte[], byte[]> p;
+
+            try
+            {
+                p = kem.keyGen();
+            } catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
+            byte[] pk = p.getLeft();
+            byte[] sk = p.getRight();
             this.clientSecretKey = sk;
             return pk;
         }
