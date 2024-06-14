@@ -50,12 +50,12 @@ public class AEADProtectedPGPSecretKeyTest
     public void performTest()
             throws Exception
     {
-        unlockTestVector();
-        lockGeneratedV4Key();
-        lockGeneratedV6Key();
+        unlockV6KeyTestVector();
+        generateAndLockUnlockEd25519v4Key();
+        generateAndLockUnlockEd25519v6Key();
     }
 
-    private void unlockTestVector()
+    private void unlockV6KeyTestVector()
             throws IOException, PGPException
     {
         // AEAD encrypted test vector extracted from here:
@@ -95,15 +95,17 @@ public class AEADProtectedPGPSecretKeyTest
         // Test Bouncy Castle implementation
         BcPBESecretKeyDecryptorBuilder bcDecryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider());
         PGPPrivateKey privPrimaryKey = primaryKey.extractPrivateKey(bcDecryptor.build(passphrase));
-        isEncodingEqual(plainPrimaryKey, privPrimaryKey.getPrivateKeyDataPacket().getEncoded());
+        isEncodingEqual("Decrypted primary key encoding MUST match plain test vector",
+                plainPrimaryKey, privPrimaryKey.getPrivateKeyDataPacket().getEncoded());
 
         // Test Jca/Jce implementation
         JcePBESecretKeyDecryptorBuilder jceDecryptor = new JcePBESecretKeyDecryptorBuilder().setProvider(new BouncyCastleProvider());
         PGPPrivateKey privSubKey = subkey.extractPrivateKey(jceDecryptor.build(passphrase));
-        isEncodingEqual(plainSubkey, privSubKey.getPrivateKeyDataPacket().getEncoded());
+        isEncodingEqual("Decrypted subkey encoding MUST match plain test vector",
+                plainSubkey, privSubKey.getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void lockGeneratedV4Key()
+    private void generateAndLockUnlockEd25519v4Key()
             throws PGPException
     {
         Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
@@ -112,11 +114,22 @@ public class AEADProtectedPGPSecretKeyTest
         Date creationTime = currentTimeRounded();
         PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
-        lockGeneratedKeyBc(keyPair);
-        lockGeneratedKeyJca(keyPair);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128);
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
     }
 
-    private void lockGeneratedV6Key()
+    private void generateAndLockUnlockEd25519v6Key()
         throws PGPException
     {
         Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
@@ -124,14 +137,23 @@ public class AEADProtectedPGPSecretKeyTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         Date creationTime = currentTimeRounded();
         // TODO: Uncomment once https://github.com/bcgit/bc-java/pull/1695 is merged
-        // PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+        /*
+        PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
+         */
     }
 
-    private void lockGeneratedKeyBc(PGPKeyPair keyPair)
+    private void lockUnlockKeyBc(PGPKeyPair keyPair, int aeadAlgorithm, int encAlgorithm)
             throws PGPException
     {
         BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
-                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                aeadAlgorithm, encAlgorithm,
                 S2K.Argon2Params.memoryConstrainedParameters());
 
         PGPDigestCalculatorProvider digestProv = new BcPGPDigestCalculatorProvider();
@@ -145,23 +167,26 @@ public class AEADProtectedPGPSecretKeyTest
                         "Hello".toCharArray(),
                         keyPair.getPublicKey().getPublicKeyPacket()));
 
-        isEquals(SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
-        isEquals(S2K.ARGON_2, sk.getS2K().getType());
-        isEquals(3, sk.getS2K().getPasses());
-        isEquals(4, sk.getS2K().getParallelism());
-        isEquals(16, sk.getS2K().getMemorySizeExponent());
+        isEquals("S2KUsage mismatch", SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
+        isEquals("S2K type mismatch", S2K.ARGON_2, sk.getS2K().getType());
+        isEquals("Argon2 passes parameter mismatch", 3, sk.getS2K().getPasses());
+        isEquals("Argon2 parallelism parameter mismatch", 4, sk.getS2K().getParallelism());
+        isEquals("Argon2 memory exponent parameter mismatch", 16, sk.getS2K().getMemorySizeExponent());
+        isEquals("Symmetric key encryption algorithm mismatch", encAlgorithm, sk.getKeyEncryptionAlgorithm());
+        isEquals("AEAD key encryption algorithm mismatch", aeadAlgorithm, sk.getAEADKeyEncryptionAlgorithm());
 
         BcPBESecretKeyDecryptorBuilder bcDecBuilder = new BcPBESecretKeyDecryptorBuilder(digestProv);
         PGPPrivateKey dec = sk.extractPrivateKey(bcDecBuilder.build("Hello".toCharArray()));
-        isEncodingEqual(keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
+        isEncodingEqual("Decrypted key encoding mismatch",
+                keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void lockGeneratedKeyJca(PGPKeyPair keyPair)
+    private void lockUnlockKeyJca(PGPKeyPair keyPair, int aeadAlgorithm, int encAlgorithm)
             throws PGPException
     {
         BouncyCastleProvider prov = new BouncyCastleProvider();
         JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
-                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                aeadAlgorithm, encAlgorithm,
                 S2K.Argon2Params.memoryConstrainedParameters())
                 .setProvider(prov);
 
@@ -178,15 +203,18 @@ public class AEADProtectedPGPSecretKeyTest
                         "Hello".toCharArray(),
                         keyPair.getPublicKey().getPublicKeyPacket()));
 
-        isEquals(SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
-        isEquals(S2K.ARGON_2, sk.getS2K().getType());
-        isEquals(3, sk.getS2K().getPasses());
-        isEquals(4, sk.getS2K().getParallelism());
-        isEquals(16, sk.getS2K().getMemorySizeExponent());
+        isEquals("S2KUsage mismatch", SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
+        isEquals("S2K type mismatch", S2K.ARGON_2, sk.getS2K().getType());
+        isEquals("Argon2 passes parameter mismatch", 3, sk.getS2K().getPasses());
+        isEquals("Argon2 parallelism parameter mismatch", 4, sk.getS2K().getParallelism());
+        isEquals("Argon2 memory exponent parameter mismatch", 16, sk.getS2K().getMemorySizeExponent());
+        isEquals("Symmetric key encryption algorithm mismatch", encAlgorithm, sk.getKeyEncryptionAlgorithm());
+        isEquals("AEAD algorithm mismatch", aeadAlgorithm, sk.getAEADKeyEncryptionAlgorithm());
 
         JcePBESecretKeyDecryptorBuilder jceDecBuilder = new JcePBESecretKeyDecryptorBuilder(digestProv).setProvider(prov);
         PGPPrivateKey dec = sk.extractPrivateKey(jceDecBuilder.build("Hello".toCharArray()));
-        isEncodingEqual(keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
+        isEncodingEqual("Decrypted key encoding mismatch",
+                keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
 
     public static void main(String[] args)
