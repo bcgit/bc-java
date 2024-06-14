@@ -51,8 +51,12 @@ public class AEADProtectedPGPSecretKeyTest
             throws Exception
     {
         unlockV6KeyTestVector();
+
         generateAndLockUnlockEd25519v4Key();
         generateAndLockUnlockEd25519v6Key();
+
+        testUnlockKeyWithWrongPassphraseBc();
+        testUnlockKeyWithWrongPassphraseJca();
     }
 
     private void unlockV6KeyTestVector()
@@ -114,23 +118,25 @@ public class AEADProtectedPGPSecretKeyTest
         Date creationTime = currentTimeRounded();
         PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128);
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128);
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128);
+        String passphrase = "a$$word";
 
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
-        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256);
-        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
     }
 
     private void generateAndLockUnlockEd25519v6Key()
-        throws PGPException
+            throws PGPException
     {
         Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
         gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
@@ -149,7 +155,90 @@ public class AEADProtectedPGPSecretKeyTest
          */
     }
 
-    private void lockUnlockKeyBc(PGPKeyPair keyPair, int aeadAlgorithm, int encAlgorithm)
+    private void testUnlockKeyWithWrongPassphraseBc()
+            throws PGPException
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = currentTimeRounded();
+        PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+
+        BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters());
+
+        PGPDigestCalculatorProvider digestProv = new BcPGPDigestCalculatorProvider();
+
+        PGPSecretKey sk = new PGPSecretKey(
+                keyPair.getPrivateKey(),
+                keyPair.getPublicKey(),
+                digestProv.get(HashAlgorithmTags.SHA1),
+                true,
+                bcEncBuilder.build(
+                        "passphrase".toCharArray(),
+                        keyPair.getPublicKey().getPublicKeyPacket()));
+
+        BcPBESecretKeyDecryptorBuilder bcDecBuilder = new BcPBESecretKeyDecryptorBuilder(digestProv);
+        try
+        {
+            sk.extractPrivateKey(bcDecBuilder.build("password".toCharArray()));
+            fail("Expected PGPException due to mismatched passphrase");
+        }
+        catch (PGPException e)
+        {
+            // expected
+        }
+
+
+    }
+
+    private void testUnlockKeyWithWrongPassphraseJca()
+            throws PGPException
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = currentTimeRounded();
+        PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+
+        BouncyCastleProvider prov = new BouncyCastleProvider();
+        JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters())
+                .setProvider(prov);
+
+        PGPDigestCalculatorProvider digestProv = new JcaPGPDigestCalculatorProviderBuilder()
+                .setProvider(prov)
+                .build();
+
+        PGPSecretKey sk = new PGPSecretKey(
+                keyPair.getPrivateKey(),
+                keyPair.getPublicKey(),
+                digestProv.get(HashAlgorithmTags.SHA1),
+                true,
+                jcaEncBuilder.build(
+                        "Yin".toCharArray(),
+                        keyPair.getPublicKey().getPublicKeyPacket()));
+
+        JcePBESecretKeyDecryptorBuilder jceDecBuilder = new JcePBESecretKeyDecryptorBuilder(digestProv).setProvider(prov);
+        try
+        {
+            sk.extractPrivateKey(jceDecBuilder.build("Yang".toCharArray()));
+            fail("Expected PGPException due to wrong passphrase");
+        }
+        catch (PGPException e)
+        {
+            // expected
+        }
+    }
+
+    private void lockUnlockKeyBc(
+            PGPKeyPair keyPair,
+            int aeadAlgorithm,
+            int encAlgorithm,
+            String encryptionPassphrase,
+            String decryptionPassphrase)
             throws PGPException
     {
         BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
@@ -164,7 +253,7 @@ public class AEADProtectedPGPSecretKeyTest
                 digestProv.get(HashAlgorithmTags.SHA1),
                 true,
                 bcEncBuilder.build(
-                        "Hello".toCharArray(),
+                        encryptionPassphrase.toCharArray(),
                         keyPair.getPublicKey().getPublicKeyPacket()));
 
         isEquals("S2KUsage mismatch", SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
@@ -176,12 +265,17 @@ public class AEADProtectedPGPSecretKeyTest
         isEquals("AEAD key encryption algorithm mismatch", aeadAlgorithm, sk.getAEADKeyEncryptionAlgorithm());
 
         BcPBESecretKeyDecryptorBuilder bcDecBuilder = new BcPBESecretKeyDecryptorBuilder(digestProv);
-        PGPPrivateKey dec = sk.extractPrivateKey(bcDecBuilder.build("Hello".toCharArray()));
+        PGPPrivateKey dec = sk.extractPrivateKey(bcDecBuilder.build(decryptionPassphrase.toCharArray()));
         isEncodingEqual("Decrypted key encoding mismatch",
                 keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
 
-    private void lockUnlockKeyJca(PGPKeyPair keyPair, int aeadAlgorithm, int encAlgorithm)
+    private void lockUnlockKeyJca(
+            PGPKeyPair keyPair,
+            int aeadAlgorithm,
+            int encAlgorithm,
+            String encryptionPassphrase,
+            String decryptionPassphrase)
             throws PGPException
     {
         BouncyCastleProvider prov = new BouncyCastleProvider();
@@ -200,7 +294,7 @@ public class AEADProtectedPGPSecretKeyTest
                 digestProv.get(HashAlgorithmTags.SHA1),
                 true,
                 jcaEncBuilder.build(
-                        "Hello".toCharArray(),
+                        encryptionPassphrase.toCharArray(),
                         keyPair.getPublicKey().getPublicKeyPacket()));
 
         isEquals("S2KUsage mismatch", SecretKeyPacket.USAGE_AEAD, sk.getS2KUsage());
@@ -212,7 +306,7 @@ public class AEADProtectedPGPSecretKeyTest
         isEquals("AEAD algorithm mismatch", aeadAlgorithm, sk.getAEADKeyEncryptionAlgorithm());
 
         JcePBESecretKeyDecryptorBuilder jceDecBuilder = new JcePBESecretKeyDecryptorBuilder(digestProv).setProvider(prov);
-        PGPPrivateKey dec = sk.extractPrivateKey(jceDecBuilder.build("Hello".toCharArray()));
+        PGPPrivateKey dec = sk.extractPrivateKey(jceDecBuilder.build(decryptionPassphrase.toCharArray()));
         isEncodingEqual("Decrypted key encoding mismatch",
                 keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
     }
