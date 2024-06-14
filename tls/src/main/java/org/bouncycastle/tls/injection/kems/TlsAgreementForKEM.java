@@ -100,7 +100,7 @@ public class TlsAgreementForKEM
             {
                 throw new IOException("Server-side secret has not been generated: generateEphemeral must be called before calculateSecret");
             }
-            return new JceTlsSecret(this.crypto, this.serverSecret);
+            return new JceTlsSecret(this.crypto, this.serverSecret.clone()); // added .clone() since BC may alter the key
         }
         else
         {
@@ -117,7 +117,7 @@ public class TlsAgreementForKEM
             {
                 // Half-KEM Step3: decapsulate at the client
                 byte[] receivedSecret = kem.decapsulate(this.clientSecretKey, this.peerEncapsulated);
-                return new JceTlsSecret(this.crypto, receivedSecret);
+                return new JceTlsSecret(this.crypto, receivedSecret.clone()); // added .clone() since BC may alter the key
             } catch (Exception e)
             {
                 throw new RuntimeException(e);
