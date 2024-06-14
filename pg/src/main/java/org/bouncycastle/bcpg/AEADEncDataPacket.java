@@ -40,7 +40,7 @@ public class AEADEncDataPacket
         version = (byte)in.read();
         if (version != VERSION_1)
         {
-            throw new IllegalArgumentException("wrong AEAD packet version: " + version);
+            throw new UnsupportedPacketVersionException("wrong AEAD packet version: " + version);
         }
 
         algorithm = (byte)in.read();
