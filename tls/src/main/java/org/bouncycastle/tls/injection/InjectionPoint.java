@@ -41,6 +41,14 @@ public class InjectionPoint
     }
 
     /**
+     * Checks whether the stack of injected algorithms is empty.
+     * @return true, iff no InjectableAlgorithms have been pushed (or all have been popped out)
+     */
+    public synchronized boolean isEmpty() {
+        return injectionStack.isEmpty();
+    }
+
+    /**
      * Injects (pushes) the given algorithms into BouncyCastle TLS implementation.
      *
      * @param newAlgorithms the algorithms to inject
