@@ -6,19 +6,19 @@ import java.io.IOException;
 import org.bouncycastle.util.io.Streams;
 
 /**
- * basic packet for a PGP secret key
+ * Base class for OpenPGP secret (primary) keys.
  */
 public class SecretKeyPacket
     extends ContainedPacket
     implements PublicKeyAlgorithmTags
 {
     /**
-     * Unprotected.
+     * S2K-usage octet indicating that the secret key material is unprotected.
      */
     public static final int USAGE_NONE = 0x00;
 
     /**
-     * Malleable CFB.
+     * S2K-usage octet indicating that the secret key material is protected using malleable CFB.
      * Malleable-CFB-encrypted keys are vulnerable to corruption attacks
      * that can cause leakage of secret data when the secret key is used.
      *
@@ -36,7 +36,7 @@ public class SecretKeyPacket
     public static final int USAGE_CHECKSUM = 0xff;
 
     /**
-     * CFB.
+     * S2K-usage octet indicating that the secret key material is protected using a cipher in CFB mode.
      * CFB-encrypted keys are vulnerable to corruption attacks that can
      * cause leakage of secret data when the secret key is use.
      *
@@ -51,7 +51,7 @@ public class SecretKeyPacket
     public static final int USAGE_SHA1 = 0xfe;
 
     /**
-     * AEAD.
+     * S2K-usage octet indicating that the secret key material is protected using an AEAD scheme.
      * This usage protects against above-mentioned attacks.
      * Passphrase-protected secret key material in a v6 Secret Key or
      * v6 Secret Subkey packet SHOULD be protected with AEAD encryption
@@ -60,6 +60,7 @@ public class SecretKeyPacket
      * Users should migrate to AEAD with all due speed.
      */
     public static final int USAGE_AEAD = 0xfd;
+
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
@@ -68,6 +69,12 @@ public class SecretKeyPacket
     private S2K s2k;
     private byte[] iv;
 
+    /**
+     * Parse a primary OpenPGP secret key packet from the given OpenPGP {@link BCPGInputStream}.
+     * The packet format is remembered as {@link PacketFormat#LEGACY}.
+     * @param in packet input stream
+     * @throws IOException
+     */
     SecretKeyPacket(
             BCPGInputStream in)
             throws IOException
@@ -75,6 +82,14 @@ public class SecretKeyPacket
         this(SECRET_KEY, in);
     }
 
+    /**
+     * Parse a primary OpenPGP secret key packet from the given OpenPGP {@link BCPGInputStream}.
+     * If <pre>newPacketFormat</pre> is true, the packet format will be remembered as {@link PacketFormat#CURRENT},
+     * otherwise as {@link PacketFormat#LEGACY}.
+     * @param in packet input stream
+     * @param newPacketFormat current or legacy packet format
+     * @throws IOException
+     */
     SecretKeyPacket(
         BCPGInputStream in,
         boolean newPacketFormat)
@@ -84,28 +99,41 @@ public class SecretKeyPacket
     }
 
     /**
-     * @param in
+     * Parse a {@link SecretKeyPacket} or {@link SecretSubkeyPacket} from the given OpenPGP {@link BCPGInputStream}.
+     * The return type depends on the <pre>packetTypeID</pre>:
+     * {@link PacketTags#SECRET_KEY} means the result is a {@link SecretKeyPacket}.
+     * {@link PacketTags#SECRET_SUBKEY} results in a {@link SecretSubkeyPacket}.
+     * The packet format will be remembered as {@link PacketFormat#LEGACY}.
+     * @param packetTypeID packet type ID
+     * @param in packet input stream
      * @throws IOException
      */
     SecretKeyPacket(
-            int keyTag,
+            int packetTypeID,
             BCPGInputStream in)
             throws IOException
     {
-        this(keyTag, in, false);
+        this(packetTypeID, in, false);
     }
 
     /**
-     * @param in
+     * Parse a {@link SecretKeyPacket} or {@link SecretSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
+     * The return type depends on the <pre>packetTypeID</pre>:
+     * {@link PacketTags#SECRET_KEY} means the result is a {@link SecretKeyPacket}.
+     * {@link PacketTags#SECRET_SUBKEY} results in a {@link SecretSubkeyPacket}.
+     *
+     * @param packetTypeID packet type ID
+     * @param in packet input stream
+     * @param newPacketFormat packet format
      * @throws IOException
      */
     SecretKeyPacket(
-        int keyTag,
+        int packetTypeID,
         BCPGInputStream in,
         boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag, newPacketFormat);
+        super(packetTypeID, newPacketFormat);
 
         if (this instanceof SecretSubkeyPacket)
         {
@@ -174,11 +202,13 @@ public class SecretKeyPacket
     }
 
     /**
-     * @param pubKeyPacket
-     * @param encAlgorithm
-     * @param s2k
-     * @param iv
-     * @param secKeyData
+     * Construct a {@link SecretKeyPacket}.
+     * Note: <pre>secKeyData</pre> needs to be prepared by applying encryption/checksum beforehand.
+     * @param pubKeyPacket pubkey packet corresponding to this secret key packet.
+     * @param encAlgorithm algorithm id of the symmetric key algorithm that was used to encrypt the secret key material
+     * @param s2k s2k identifier for deriving a key from a passphrase
+     * @param iv IV that was used to encrypt the secret key material
+     * @param secKeyData encrypted/checksum'd secret key material
      */
     public SecretKeyPacket(
         PublicKeyPacket pubKeyPacket,
@@ -190,17 +220,37 @@ public class SecretKeyPacket
         this(SECRET_KEY, pubKeyPacket, encAlgorithm, s2k, iv, secKeyData);
     }
 
+    /**
+     * Construct a {@link SecretKeyPacket} or {@link SecretSubkeyPacket}.
+     * Note: <pre>secKeyData</pre> needs to be prepared by applying encryption/checksum beforehand.
+     * @param packetTypeID packet type ID
+     * @param pubKeyPacket pubkey packet corresponding to this secret key packet.
+     * @param encAlgorithm algorithm id of the symmetric key algorithm that was used to encrypt the secret key material
+     * @param s2k s2k identifier for deriving a key from a passphrase
+     * @param iv IV that was used to encrypt the secret key material
+     * @param secKeyData encrypted/checksum'd secret key material
+     */
     SecretKeyPacket(
-        int keyTag,
+        int packetTypeID,
         PublicKeyPacket pubKeyPacket,
         int encAlgorithm,
         S2K s2k,
         byte[] iv,
         byte[] secKeyData)
     {
-        this(keyTag, pubKeyPacket, encAlgorithm, 0, encAlgorithm != SymmetricKeyAlgorithmTags.NULL ? USAGE_CHECKSUM : USAGE_NONE, s2k, iv, secKeyData);
+        this(packetTypeID, pubKeyPacket, encAlgorithm, 0, encAlgorithm != SymmetricKeyAlgorithmTags.NULL ? USAGE_CHECKSUM : USAGE_NONE, s2k, iv, secKeyData);
     }
 
+    /**
+     * Construct a {@link SecretKeyPacket} or {@link SecretSubkeyPacket}.
+     * Note: <pre>secKeyData</pre> needs to be prepared by applying encryption/checksum beforehand.
+     * @param pubKeyPacket pubkey packet corresponding to this secret key packet.
+     * @param encAlgorithm algorithm id of the symmetric key algorithm that was used to encrypt the secret key material
+     * @param s2kUsage octet indicating, how the secert key material was protected
+     * @param s2k s2k identifier for deriving a key from a passphrase
+     * @param iv IV that was used to encrypt the secret key material
+     * @param secKeyData encrypted/checksum'd secret key material
+     */
     public SecretKeyPacket(
         PublicKeyPacket pubKeyPacket,
         int encAlgorithm,
@@ -212,8 +262,21 @@ public class SecretKeyPacket
         this(SECRET_KEY, pubKeyPacket, encAlgorithm, 0, s2kUsage, s2k, iv, secKeyData);
     }
 
+
+    /**
+     * Construct a {@link SecretKeyPacket} or {@link SecretSubkeyPacket}.
+     * Note: <pre>secKeyData</pre> needs to be prepared by applying encryption/checksum beforehand.
+     * @param packetTypeID packet type ID
+     * @param pubKeyPacket pubkey packet corresponding to this secret key packet.
+     * @param encAlgorithm algorithm id of the symmetric key algorithm that was used to encrypt the secret key material
+     * @param aeadAlgorithm AEAD algorithm scheme used to protect the secret key material with
+     * @param s2kUsage octet indicating how the secret key material was encrypted
+     * @param s2k s2k identifier for deriving a key from a passphrase
+     * @param iv IV that was used to encrypt the secret key material
+     * @param secKeyData encrypted/checksum'd secret key material
+     */
     SecretKeyPacket(
-        int keyTag,
+        int packetTypeID,
         PublicKeyPacket pubKeyPacket,
         int encAlgorithm,
         int aeadAlgorithm,
@@ -222,7 +285,7 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
-        super(keyTag);
+        super(packetTypeID);
 
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
@@ -246,41 +309,75 @@ public class SecretKeyPacket
         }
     }
 
+    /**
+     * Return the algorithm ID of the symmetric key algorithm that was used to encrypt the secret key material.
+     * @return symmetric key enc algorithm ID
+     */
     public int getEncAlgorithm()
     {
         return encAlgorithm;
     }
 
+    /**
+     * Return the algorithm ID of the AEAD algorithm that was used to protect the secret key material.
+     * @return aead algorithm id
+     */
     public int getAeadAlgorithm()
     {
         return aeadAlgorithm;
     }
 
+    /**
+     * Return the S2K usage mode indicating how the secret key material is protected.
+     * @return s2k usage
+     */
     public int getS2KUsage()
     {
         return s2kUsage;
     }
 
+    /**
+     * Return the IV that was used to protect the secret key material.
+     * @return IV
+     */
     public byte[] getIV()
     {
         return iv;
     }
 
+    /**
+     * Return the S2K identifier describing, how to derive the symmetric key to protect the secret key material with.
+     * @return s2k identifier
+     */
     public S2K getS2K()
     {
         return s2k;
     }
 
+    /**
+     * Return the public key packet corresponding to the secret key packet.
+     * @return public key packet
+     */
     public PublicKeyPacket getPublicKeyPacket()
     {
         return pubKeyPacket;
     }
 
+    /**
+     * Return the encrypted/checksum'd secret key data.
+     * @return secret key data
+     */
     public byte[] getSecretKeyData()
     {
         return secKeyData;
     }
 
+    /**
+     * Return the encoded packet content without packet frame.
+     *
+     * @return encoded packet contents
+     * @throws IOException
+     */
     public byte[] getEncodedContents()
         throws IOException
     {
@@ -340,6 +437,14 @@ public class SecretKeyPacket
         return conditionalParameters.toByteArray();
     }
 
+    /**
+     * Encode the packet into the given {@link BCPGOutputStream}.
+     * If the packet output stream has {@link PacketFormat#ROUNDTRIP} set, the packet format to encode the packet length
+     * with depends on the result of {@link #hasNewPacketFormat()}.
+     * Otherwise, the packet output stream dictates the packet format.
+     * @param out packet output stream
+     * @throws IOException
+     */
     public void encode(
         BCPGOutputStream out)
         throws IOException
