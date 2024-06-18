@@ -86,39 +86,39 @@ public class PublicKeyPacket
 
     /**
      * Parse a {@link PublicKeyPacket} or {@link PublicSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
-     * If <pre>keyTag</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
+     * If <pre>packetTypeID</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
      * If instead it is {@link #PUBLIC_SUBKEY}, it is a subkey packet.
      * The packet format is remembered as {@link PacketFormat#LEGACY}.
-     * @param keyTag packet tag
+     * @param packetTypeID packet type ID
      * @param in packet input stream
      * @throws IOException
      */
     PublicKeyPacket(
-            int keyTag,
+            int packetTypeID,
             BCPGInputStream in)
             throws IOException
     {
-        this(keyTag, in, false);
+        this(packetTypeID, in, false);
     }
 
     /**
      * Parse a {@link PublicKeyPacket} or {@link PublicSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
-     * If <pre>keyTag</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
+     * If <pre>packetTypeID</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
      * If instead it is {@link #PUBLIC_SUBKEY}, it is a subkey packet.
      * If <pre>newPacketFormat</pre> is true, the packet format is remembered as {@link PacketFormat#CURRENT},
      * otherwise as {@link PacketFormat#LEGACY}.
-     * @param keyTag packet tag
+     * @param packetTypeID packet type ID
      * @param in packet input stream
      * @param newPacketFormat packet format
      * @throws IOException
      */
     PublicKeyPacket(
-        int keyTag,
+        int packetTypeID,
         BCPGInputStream in,
         boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag, newPacketFormat);
+        super(packetTypeID, newPacketFormat);
 
         version = in.read();
         time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
@@ -208,17 +208,17 @@ public class PublicKeyPacket
 
     /**
      * Construct an OpenPGP public key packet.
-     * If <pre>keyTag</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
+     * If <pre>packetTypeID</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
      * If instead it is {@link #PUBLIC_SUBKEY}, it is a subkey packet.
-     * @param keyTag public key packet type
+     * @param packetTypeID public key packet type ID
      * @param version packet version
      * @param algorithm public key algorithm id
      * @param time creation time
      * @param key key object
      */
-    PublicKeyPacket(int keyTag, int version, int algorithm, Date time, BCPGKey key)
+    PublicKeyPacket(int packetTypeID, int version, int algorithm, Date time, BCPGKey key)
     {
-        super(keyTag);
+        super(packetTypeID);
 
         this.version = version;
         this.time = time.getTime() / 1000;
