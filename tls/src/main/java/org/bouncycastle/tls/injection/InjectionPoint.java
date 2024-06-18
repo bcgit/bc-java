@@ -9,11 +9,13 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgorithm;
 import org.bouncycastle.tls.injection.sigalgs.InjectedSigAlgsProvider;
 
 import java.io.IOException;
+import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
 import java.util.Stack;
@@ -67,12 +69,15 @@ public class InjectionPoint
 
         // Inserting forcefully (to the second place) the BC TLS provider
         // and (to the first place) our provider for injected signature algorithms:
-
         BouncyCastleJsseProvider jsseProvider = new BouncyCastleJsseProvider();
         Security.insertProviderAt(jsseProvider, 1);
 
         InjectedSigAlgsProvider injProvider = new InjectedSigAlgsProvider();
         Security.insertProviderAt(injProvider, 1);
+
+        // adding the BC provider as the last (since we want to prioritize Java built-in algorithms):
+        BouncyCastleProvider jceProvider = new BouncyCastleProvider();
+        Security.addProvider(jceProvider);
     }
 
     /**
