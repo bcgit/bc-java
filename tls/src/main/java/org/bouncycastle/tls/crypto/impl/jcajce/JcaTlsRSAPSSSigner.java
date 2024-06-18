@@ -85,6 +85,13 @@ public class JcaTlsRSAPSSSigner
         AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName,
             crypto.getHelper());
 
-        return crypto.createStreamSigner(sigName, pssSpec, privateKey, true);
+        try {
+            return crypto.createStreamSigner(sigName, pssSpec, privateKey, true);
+        }
+        catch(Exception e) {
+            // #tls-injection fix: using the sig alg name of the SunRsaSign provider
+            sigName = "RSASSA-PSS";
+            return crypto.createStreamSigner(sigName, pssSpec, privateKey, true);
+        }
     }
 }

@@ -1053,6 +1053,8 @@ public class TlsClientProtocol
                     throw new TlsFatalAlert(AlertDescription.illegal_parameter);
                 }
 
+
+                // #tls-injection (everything remains the same here, if KemAgreement is used as TlsAgreement for KEMs)
                 agreement.receivePeerValue(keyShareEntry.getKeyExchange());
                 sharedSecret = agreement.calculateSecret();
             }

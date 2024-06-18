@@ -68,9 +68,19 @@ import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Client;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /**
  * Class for providing cryptographic services for TLS based on implementations in the JCA/JCE.
@@ -420,6 +430,12 @@ public class JcaTlsCrypto
 
     public AlgorithmParameters getNamedGroupAlgorithmParameters(int namedGroup) throws GeneralSecurityException
     {
+        // #tls-injection
+        // for injected KEMs (~NamedGroups), return null
+        if (InjectionPoint.kems().contain(namedGroup))
+            return null; // KEM is supported, no specific parameters (e.g., there are no disabled algorithms)
+
+
         if (NamedGroup.refersToAnXDHCurve(namedGroup))
         {
             switch (namedGroup)
@@ -481,7 +497,14 @@ public class JcaTlsCrypto
 
         AlgorithmParameterSpec pssSpec = RSAUtil.getPSSParameterSpec(cryptoHashAlgorithm, digestName, getHelper());
 
-        Signature signer = getHelper().createSignature(sigName);
+        Signature signer;
+        try {
+            signer =  getHelper().createSignature(sigName);
+        }
+        catch(Exception e) {
+            signer = Signature.getInstance("RSASSA-PSS", "SunRsaSign");
+            // #tls-injection fix: using the sig alg name of the SunRsaSign provider
+        }
 
         // NOTE: We explicitly set them even though they should be the defaults, because providers vary
         signer.setParameter(pssSpec);
@@ -653,6 +676,10 @@ public class JcaTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
+        // #tls-injection
+        if (InjectionPoint.kems().contain(namedGroup)) {
+            return true;
+        }
         final Integer key = Integers.valueOf(namedGroup);
         synchronized (supportedNamedGroups)
         {
@@ -756,6 +783,9 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureAndHashAlgorithm(SignatureAndHashAlgorithm sigAndHashAlgorithm)
     {
+        if (InjectionPoint.sigAlgs().contain(sigAndHashAlgorithm))
+            return true; // #tls-injection
+
         short signature = sigAndHashAlgorithm.getSignature();
 
         switch (sigAndHashAlgorithm.getHash())
@@ -772,6 +802,9 @@ public class JcaTlsCrypto
 
     public boolean hasSignatureScheme(int signatureScheme)
     {
+        if (InjectionPoint.sigAlgs().contain(signatureScheme))
+            return true; // #tls-injection
+
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
@@ -1035,6 +1068,14 @@ public class JcaTlsCrypto
     {
         try
         {
+            // #tls-injection
+            // try injected verifier...
+            try {
+                return InjectionPoint.sigAlgs().tls13VerifierFor(publicKey);
+            } catch (Exception e) {
+                // e.g., not injected, continue as usual
+            }
+
             JcaJceHelper helper = getHelper();
             if (null != parameter)
             {
@@ -1158,6 +1199,11 @@ public class JcaTlsCrypto
     {
         try
         {
+            if (InjectionPoint.kems().contain(namedGroup))
+            {
+                return true; // #tls-injection
+            }
+            else
             if (NamedGroup.refersToAnXDHCurve(namedGroup))
             {
                 /*

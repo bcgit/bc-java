@@ -5,6 +5,9 @@ import java.util.Hashtable;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.injection.InjectableKEMs;
+import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.tls.injection.kems.InjectedKEM;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -155,23 +158,37 @@ public abstract class AbstractTlsClient
         TlsCrypto crypto = getCrypto();
         Vector supportedGroups = new Vector();
 
-        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)))
-        {
-            TlsUtils.addIfSupported(supportedGroups, crypto,
-                new int[]{ NamedGroup.x25519, NamedGroup.x448 });
+        // #tls-injection
+        // Adding injected KEMs before:
+        for (InjectedKEM kem : InjectionPoint.kems().kemsByOrdering(InjectableKEMs.Ordering.BEFORE)) {
+            supportedGroups.add(kem.codePoint());
         }
 
-        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)) ||
-            namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa)))
-        {
-            TlsUtils.addIfSupported(supportedGroups, crypto,
-                new int[]{ NamedGroup.secp256r1, NamedGroup.secp384r1 });
+        // #tls-injection
+        // Skipping the default KEMS, if they are not needed:
+        if (InjectionPoint.kems().defaultKemsNeeded()) {
+
+            if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh))) {
+                TlsUtils.addIfSupported(supportedGroups, crypto,
+                        new int[]{NamedGroup.x25519, NamedGroup.x448});
+            }
+
+            if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdh)) ||
+                    namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.ecdsa))) {
+                TlsUtils.addIfSupported(supportedGroups, crypto,
+                        new int[]{NamedGroup.secp256r1, NamedGroup.secp384r1});
+            }
+
+            if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.dh))) {
+                TlsUtils.addIfSupported(supportedGroups, crypto,
+                        new int[]{NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096});
+            }
         }
 
-        if (namedGroupRoles.contains(Integers.valueOf(NamedGroupRole.dh)))
-        {
-            TlsUtils.addIfSupported(supportedGroups, crypto,
-                new int[]{ NamedGroup.ffdhe2048, NamedGroup.ffdhe3072, NamedGroup.ffdhe4096 });
+        // #tls-injection
+        // Adding injected KEMs after:
+        for (InjectedKEM kem : InjectionPoint.kems().kemsByOrdering(InjectableKEMs.Ordering.AFTER)) {
+            supportedGroups.add(kem.codePoint());
         }
 
         return supportedGroups;
@@ -414,6 +431,15 @@ public abstract class AbstractTlsClient
          * be a non-contiguous subset of the "supported_groups" extension and MAY omit the most
          * preferred groups.
          */
+
+        // #tls-injection
+        // Adding the first injected KEM (if there exists one):
+        try {
+            return TlsUtils.vectorOfOne(InjectionPoint.kems().firstKEM().codePoint());
+        }
+        catch (IllegalStateException e) {
+            // KEM not found, continue with default algorithms
+        }
 
         if (null == supportedGroups || supportedGroups.isEmpty())
         {

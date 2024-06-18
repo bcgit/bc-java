@@ -1,5 +1,9 @@
 package org.bouncycastle.tls;
 
+
+import org.bouncycastle.tls.injection.InjectionPoint;
+import org.bouncycastle.tls.injection.kems.InjectedKEM;
+
 /**
  * RFC 7919
  */
@@ -132,6 +136,8 @@ public class NamedGroup
 
     public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)
     {
+        if (InjectionPoint.kems().contain(namedGroup))
+            return true; // #tls-injection
         switch (namedGroup)
         {
         case secp256r1:
@@ -409,6 +415,16 @@ public class NamedGroup
             return finiteFieldName;
         }
 
+        // #tls-injection
+        if (InjectionPoint.kems().contain(namedGroup))
+        {
+            String injectedKEMName = InjectionPoint.kems().kemByCodePoint(namedGroup).standardName();
+            if (null != injectedKEMName)
+            {
+                return injectedKEMName;
+            }
+        }
+        
         String kemName = getKemName(namedGroup);
         if (null != kemName)
         {

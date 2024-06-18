@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.tls.injection.InjectableKEMs;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 
@@ -1442,7 +1444,22 @@ public class TlsExtensionsUtils
 
         TlsProtocol.assertEmpty(buf);
 
-        return namedGroups;
+        // #tls-injection
+        // adding injected KEMs...
+
+        int[] before = InjectionPoint.kems().asCodePointCollection(InjectableKEMs.Ordering.BEFORE).stream().mapToInt(Integer::intValue).toArray();
+        if (!InjectionPoint.kems().defaultKemsNeeded())
+            namedGroups = new int[] {};
+        int[] after = InjectionPoint.kems().asCodePointCollection(InjectableKEMs.Ordering.AFTER).stream().mapToInt(Integer::intValue).toArray();
+
+        int resultLength = before.length + namedGroups.length + after.length;
+        int[] result = new int[resultLength];
+
+        System.arraycopy(before, 0, result, 0, before.length);
+        System.arraycopy(namedGroups, 0, result, before.length, namedGroups.length);
+        System.arraycopy(after, 0, result, before.length+namedGroups.length, after.length);
+
+        return result;
     }
 
     public static short[] readSupportedPointFormatsExtension(byte[] extensionData) throws IOException
