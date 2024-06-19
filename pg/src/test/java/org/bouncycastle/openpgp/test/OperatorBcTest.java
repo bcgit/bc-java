@@ -145,12 +145,13 @@ public class OperatorBcTest
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
         kpGen.initialize(1024);
         KeyPair kp = kpGen.generateKeyPair();
+        Date creationTime = new Date(1000 * (new Date().getTime() / 1000));
 
         JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
-        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
+        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), creationTime);
 
-        PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
-        byte[] output = calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+        PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey());
+        byte[] output = calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey()));
         byte[] kBytes = pubKeyPacket.getEncodedContents();
         SHA256Digest digest = new SHA256Digest();
 
@@ -167,16 +168,24 @@ public class OperatorBcTest
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
 
-        final PublicKeyPacket pubKeyPacket2 = new PublicKeyPacket(5, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
-        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", new TestExceptionOperation()
-        {
-            @Override
-            public void operation()
-                throws Exception
-            {
-                calculator.calculateFingerprint(pubKeyPacket2);
-            }
-        });
+        final PublicKeyPacket pubKeyPacket2 = new PublicKeyPacket(5, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey());
+        kBytes = pubKeyPacket2.getEncodedContents();
+        output = calculator.calculateFingerprint(pubKeyPacket2);
+
+        digest = new SHA256Digest();
+
+        digest.update((byte)0x9a);
+
+        digest.update((byte)(kBytes.length >> 24));
+        digest.update((byte)(kBytes.length >> 16));
+        digest.update((byte)(kBytes.length >> 8));
+        digest.update((byte)kBytes.length);
+
+        digest.update(kBytes, 0, kBytes.length);
+        digBuf = new byte[digest.getDigestSize()];
+
+        digest.doFinal(digBuf, 0);
+        isTrue(areEqual(output, digBuf));
     }
 
 //    public void testBcPBESecretKeyDecryptorBuilder()
