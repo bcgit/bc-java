@@ -13,14 +13,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bouncycastle.bcpg.ArmoredInputException;
-import org.bouncycastle.bcpg.BCPGInputStream;
-import org.bouncycastle.bcpg.PacketTags;
-import org.bouncycastle.bcpg.PublicSubkeyPacket;
-import org.bouncycastle.bcpg.SecretKeyPacket;
-import org.bouncycastle.bcpg.SecretSubkeyPacket;
-import org.bouncycastle.bcpg.TrustPacket;
-import org.bouncycastle.bcpg.UserDataPacket;
+import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
@@ -92,6 +85,17 @@ public class PGPSecretKeyRing
         throws IOException, PGPException
     {
         this(new ByteArrayInputStream(encoding), fingerPrintCalculator);
+    }
+
+    @Override
+    public byte[] getEncoded(PacketFormat format)
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        this.encode(pOut);
+        pOut.close();
+        return bOut.toByteArray();
     }
 
     public PGPSecretKeyRing(
@@ -389,11 +393,7 @@ public class PGPSecretKeyRing
     public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        this.encode(bOut);
-
-        return bOut.toByteArray();
+        return getEncoded(PacketFormat.ROUNDTRIP);
     }
 
     public void encode(
