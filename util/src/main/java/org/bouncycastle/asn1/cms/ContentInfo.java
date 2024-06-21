@@ -104,6 +104,12 @@ public class ContentInfo
         ASN1ObjectIdentifier contentType,
         ASN1Encodable        content)
     {
+        // TODO[cms] Blocked by CMSSignedDataGenerator.generateCounterSigners transient usage of null here
+//        if (contentType == null)
+//        {
+//            throw new NullPointerException("'contentType' cannot be null");
+//        }
+
         this.contentType = contentType;
         this.content = content;
         if (content != null)
