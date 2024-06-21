@@ -127,12 +127,41 @@ public class AEADProtectedPGPSecretKeyTest
         lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
         lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_128, passphrase, passphrase);
 
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_192, passphrase, passphrase);
+
         lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
         lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
         lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
         lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
         lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
         lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.AES_256, passphrase, passphrase);
+
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_128, passphrase, passphrase);
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_192, passphrase, passphrase);
+
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
+        lockUnlockKeyBc(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.EAX, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
+        lockUnlockKeyJca(keyPair, AEADAlgorithmTags.GCM, SymmetricKeyAlgorithmTags.CAMELLIA_256, passphrase, passphrase);
     }
 
     private void generateAndLockUnlockEd25519v6Key()
