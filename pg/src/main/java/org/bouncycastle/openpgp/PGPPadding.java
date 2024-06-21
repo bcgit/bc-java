@@ -1,10 +1,14 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PaddingPacket;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 
@@ -101,5 +105,28 @@ public class PGPPadding
     public byte[] getPadding()
     {
         return p.getPadding();
+    }
+
+    public void encode(OutputStream outStream)
+            throws IOException
+    {
+        BCPGOutputStream pOut = BCPGOutputStream.wrap(outStream);
+        p.encode(pOut);
+    }
+
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    public byte[] getEncoded(PacketFormat format)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        encode(pOut);
+        pOut.close();
+        return bOut.toByteArray();
     }
 }
