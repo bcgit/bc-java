@@ -60,6 +60,15 @@ public class SecretKeyPacket
      * Users should migrate to AEAD with all due speed.
      */
     public static final int USAGE_AEAD = 0xfd;
+
+    /**
+     * S2K-usage octet indicating that the secret key material is stored on a hardware-token.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-hardware-secrets/">
+     *     OpenPGP Hardware-Backed Secret Keys</a>
+     */
+    public static final int USAGE_HARDWARE_BACKED = 0xfc;
+
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
@@ -118,6 +127,11 @@ public class SecretKeyPacket
 
         int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
+
+        if (s2kUsage == USAGE_HARDWARE_BACKED)
+        {
+            return;
+        }
 
         if (version == 6 && s2kUsage != USAGE_NONE)
         {
@@ -290,19 +304,21 @@ public class SecretKeyPacket
         pOut.write(pubKeyPacket.getEncodedContents());
 
         pOut.write(s2kUsage);
-
-        // conditional parameters
-        byte[] conditionalParameters = encodeConditionalParameters();
-        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
+        if (s2kUsage != USAGE_HARDWARE_BACKED)
         {
-            pOut.write(conditionalParameters.length);
-        }
-        pOut.write(conditionalParameters);
+            // conditional parameters
+            byte[] conditionalParameters = encodeConditionalParameters();
+            if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
+            {
+                pOut.write(conditionalParameters.length);
+            }
+            pOut.write(conditionalParameters);
 
-        // encrypted secret key
-        if (secKeyData != null && secKeyData.length > 0)
-        {
-            pOut.write(secKeyData);
+            // encrypted secret key
+            if (secKeyData != null && secKeyData.length > 0)
+            {
+                pOut.write(secKeyData);
+            }
         }
 
         pOut.close();
