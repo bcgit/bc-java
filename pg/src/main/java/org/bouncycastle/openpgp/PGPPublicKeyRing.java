@@ -15,13 +15,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.bouncycastle.bcpg.ArmoredInputException;
-import org.bouncycastle.bcpg.BCPGInputStream;
-import org.bouncycastle.bcpg.Packet;
-import org.bouncycastle.bcpg.PacketTags;
-import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.TrustPacket;
-import org.bouncycastle.bcpg.UserDataPacket;
+import org.bouncycastle.bcpg.*;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Longs;
@@ -235,14 +229,21 @@ public class PGPPublicKeyRing
         return getPublicKeys();
     }
 
+    @Override
+    public byte[] getEncoded(PacketFormat format)
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        this.encode(pOut);
+        pOut.close();
+        return bOut.toByteArray();
+    }
+
     public byte[] getEncoded()
         throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        this.encode(bOut);
-
-        return bOut.toByteArray();
+        return getEncoded(PacketFormat.ROUNDTRIP);
     }
 
     /**
