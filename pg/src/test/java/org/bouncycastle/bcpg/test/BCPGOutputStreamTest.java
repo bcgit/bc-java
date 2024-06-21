@@ -12,9 +12,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BCPGOutputStreamTest extends SimpleTest {
+public class BCPGOutputStreamTest
+        extends SimpleTest
+{
 
-    private void testForceNewPacketFormat() throws IOException {
+    private void testForceNewPacketFormat()
+            throws IOException
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.CURRENT);
 
@@ -30,7 +34,9 @@ public class BCPGOutputStreamTest extends SimpleTest {
         isTrue(pIn.readPacket().hasNewPacketFormat());
     }
 
-    private void testForceOldPacketFormat() throws IOException {
+    private void testForceOldPacketFormat()
+            throws IOException
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.LEGACY);
 
@@ -46,7 +52,9 @@ public class BCPGOutputStreamTest extends SimpleTest {
         isTrue(!pIn.readPacket().hasNewPacketFormat());
     }
 
-    private void testRoundTripPacketFormat() throws IOException {
+    private void testRoundTripPacketFormat()
+            throws IOException
+    {
         List<UserIDPacket> oldPackets = new ArrayList<>();
         ByteArrayInputStream obIn = new ByteArrayInputStream(Hex.decode("b405416c696365b403426f62"));
         BCPGInputStream opIn = new BCPGInputStream(obIn);
@@ -79,7 +87,9 @@ public class BCPGOutputStreamTest extends SimpleTest {
         isTrue(pIn.readPacket().hasNewPacketFormat());
     }
 
-    private void testRoundtripMixedPacketFormats() throws IOException {
+    private void testRoundtripMixedPacketFormats()
+            throws IOException
+    {
         // Certificate with mixed new and old packet formats
         // The primary key + sigs use new format
         // The signing subkey + sigs use old format
@@ -244,7 +254,8 @@ public class BCPGOutputStreamTest extends SimpleTest {
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
         Packet packet;
-        while ((packet = pIn.readPacket()) != null) {
+        while ((packet = pIn.readPacket()) != null)
+        {
             isTrue(packet.hasNewPacketFormat());
         }
 
@@ -259,25 +270,30 @@ public class BCPGOutputStreamTest extends SimpleTest {
         bIn = new ByteArrayInputStream(bOut.toByteArray());
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
-        while ((packet = pIn.readPacket()) != null) {
+        while ((packet = pIn.readPacket()) != null)
+        {
             isTrue(!packet.hasNewPacketFormat());
         }
     }
 
     @Override
-    public String getName() {
+    public String getName()
+    {
         return "BCPGOutputStreamTest";
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+            throws Exception
+    {
         testForceOldPacketFormat();
         testForceNewPacketFormat();
         testRoundTripPacketFormat();
         testRoundtripMixedPacketFormats();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         runTest(new BCPGOutputStreamTest());
     }
 }
