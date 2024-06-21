@@ -128,7 +128,9 @@ public class DedicatedEd25519KeyPairTest
                 date.getTime(), j2.getPublicKey().getCreationTime().getTime());
     }
 
-    private void testConversionOfTestVectorKey() throws PGPException, IOException {
+    private void testConversionOfTestVectorKey()
+            throws PGPException, IOException
+    {
         JcaPGPKeyConverter jc = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         BcPGPKeyConverter bc = new BcPGPKeyConverter();
         // ed25519 public key from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-hashed-data-stream-for-sign
