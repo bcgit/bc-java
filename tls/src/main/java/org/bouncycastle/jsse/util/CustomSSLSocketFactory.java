@@ -54,7 +54,7 @@ public class CustomSSLSocketFactory extends SSLSocketFactory
         return configureSocket(delegate.createSocket(host, port, localHost, localPort));
     }
 
-    @Override
+    // No @Override for 1.8 method 
     public Socket createSocket(Socket s, InputStream consumed, boolean autoClose) throws IOException
     {
         return configureSocket(delegate.createSocket(s, consumed, autoClose));
