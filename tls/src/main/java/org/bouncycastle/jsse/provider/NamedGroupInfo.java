@@ -20,6 +20,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 
 class NamedGroupInfo
 {
@@ -517,7 +518,7 @@ class NamedGroupInfo
 
         final boolean disableChar2 =
             PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false) ||
-            PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
+            Properties.isOverrideSet("org.bouncycastle.ec.disable_f2m");
 
         final boolean disableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
 
