@@ -35,10 +35,10 @@ public class CMSTimeStampedDataGenerator
     public CMSTimeStampedData generate(TimeStampToken timeStamp, InputStream content)
         throws CMSException
     {
-        ByteArrayOutputStream contentOut = new ByteArrayOutputStream();
-
+        ASN1OctetString encContent = null;
         if (content != null)
         {
+            ByteArrayOutputStream contentOut = new ByteArrayOutputStream();
             try
             {
                 Streams.pipeAll(content, contentOut);
@@ -47,13 +47,11 @@ public class CMSTimeStampedDataGenerator
             {
                 throw new CMSException("exception encapsulating content: " + e.getMessage(), e);
             }
-        }
 
-        ASN1OctetString encContent = null;
-
-        if (contentOut.size() != 0)
-        {
-            encContent = new BEROctetString(contentOut.toByteArray());
+            if (contentOut.size() != 0)
+            {
+                encContent = new BEROctetString(contentOut.toByteArray());
+            }
         }
 
         TimeStampAndCRL stamp = new TimeStampAndCRL(timeStamp.toCMSSignedData().toASN1Structure());
@@ -64,8 +62,11 @@ public class CMSTimeStampedDataGenerator
         {
             asn1DataUri = new DERIA5String(dataUri.toString());
         }
-        
-        return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, new TimeStampedData(asn1DataUri, metaData, encContent, new Evidence(new TimeStampTokenEvidence(stamp)))));
+
+        TimeStampedData timeStampedData = new TimeStampedData(asn1DataUri, metaData, encContent,
+            new Evidence(new TimeStampTokenEvidence(stamp)));
+
+        return new CMSTimeStampedData(new ContentInfo(CMSObjectIdentifiers.timestampedData, timeStampedData));
     }
 }
 
