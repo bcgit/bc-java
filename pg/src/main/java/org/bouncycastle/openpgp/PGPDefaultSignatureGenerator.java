@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.UserAttributeSubpacket;
 
 abstract class PGPDefaultSignatureGenerator
@@ -11,6 +12,13 @@ abstract class PGPDefaultSignatureGenerator
     protected byte lastb;
     protected OutputStream sigOut;
     protected int sigType;
+
+    protected final int version;
+
+    public PGPDefaultSignatureGenerator(int version)
+    {
+        this.version = version;
+    }
 
     public void update(
         byte b)
@@ -108,9 +116,28 @@ abstract class PGPDefaultSignatureGenerator
     {
         byte[] keyBytes = getEncodedPublicKey(key);
 
-        this.update((byte)0x99);
-        this.update((byte)(keyBytes.length >> 8));
-        this.update((byte)(keyBytes.length));
+        if (version == SignaturePacket.VERSION_4)
+        {
+            this.update((byte) 0x99);
+            this.update((byte) (keyBytes.length >> 8));
+            this.update((byte) (keyBytes.length));
+        }
+        else if (version == SignaturePacket.VERSION_5)
+        {
+            this.update((byte) 0x9A);
+            this.update((byte) (keyBytes.length >> 24));
+            this.update((byte) (keyBytes.length >> 16));
+            this.update((byte) (keyBytes.length >> 8));
+            this.update((byte) (keyBytes.length));
+        }
+        else if (version == SignaturePacket.VERSION_6)
+        {
+            this.update((byte) 0x9B);
+            this.update((byte) (keyBytes.length >> 24));
+            this.update((byte) (keyBytes.length >> 16));
+            this.update((byte) (keyBytes.length >> 8));
+            this.update((byte) (keyBytes.length));
+        }
         this.update(keyBytes);
     }
 

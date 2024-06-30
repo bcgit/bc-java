@@ -76,6 +76,7 @@ public class PGPSignature
     PGPSignature(
         PGPSignature signature)
     {
+        super(signature.getVersion());
         sigPck = signature.sigPck;
         sigType = signature.sigType;
         trustPck = signature.trustPck;
@@ -91,6 +92,7 @@ public class PGPSignature
         SignaturePacket sigPacket,
         TrustPacket trustPacket)
     {
+        super(sigPacket.getVersion());
         this.sigPck = sigPacket;
         this.sigType = sigPck.getSignatureType();
         this.trustPck = trustPacket;
@@ -165,6 +167,16 @@ public class PGPSignature
         this.verifier = verifier;
         this.lastb = 0;
         this.sigOut = verifier.getOutputStream();
+
+        updateWithSalt();
+    }
+
+    private void updateWithSalt()
+    {
+        if (getVersion() == SignaturePacket.VERSION_6)
+        {
+            update(sigPck.getSalt());
+        }
     }
 
     public boolean verify()

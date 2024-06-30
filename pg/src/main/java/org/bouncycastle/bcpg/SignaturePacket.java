@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Vector;
 
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.util.Arrays;
@@ -240,6 +241,9 @@ public class SignaturePacket
 
             unhashedData[i] = p;
         }
+
+        setIssuerKeyId();
+        setCreationTime();
     }
 
     /**
@@ -398,7 +402,8 @@ public class SignaturePacket
             SignatureSubpacket[]    hashedData,
             SignatureSubpacket[]    unhashedData,
             byte[]                  fingerPrint,
-            byte[]                  signatureEncoding)
+            byte[]                  signatureEncoding,
+            byte[]                  salt)
     {
         super(SIGNATURE);
 
@@ -411,6 +416,37 @@ public class SignaturePacket
         this.unhashedData = unhashedData;
         this.fingerPrint = fingerPrint;
         this.signatureEncoding = Arrays.clone(signatureEncoding);
+        this.salt = Arrays.clone(salt);
+        if (hashedData != null)
+        {
+            setCreationTime();
+        }
+    }
+
+    public SignaturePacket(
+            int version,
+            int signatureType,
+            long keyID,
+            int keyAlgorithm,
+            int hashAlgorithm,
+            SignatureSubpacket[] hashedData,
+            SignatureSubpacket[] unhashedData,
+            byte[] fingerPrint,
+            MPInteger[] signature,
+            byte[] salt)
+    {
+        super(SIGNATURE);
+
+        this.version = version;
+        this.signatureType = signatureType;
+        this.keyID = keyID;
+        this.keyAlgorithm = keyAlgorithm;
+        this.hashAlgorithm = hashAlgorithm;
+        this.hashedData = hashedData;
+        this.unhashedData = unhashedData;
+        this.fingerPrint = fingerPrint;
+        this.signature = signature;
+        this.salt = Arrays.clone(salt);
         if (hashedData != null)
         {
             setCreationTime();
@@ -471,7 +507,7 @@ public class SignaturePacket
     {
         byte[]    trailer = null;
 
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == VERSION_2)
         {
             trailer = new byte[5];
 
@@ -483,7 +519,7 @@ public class SignaturePacket
             trailer[3] = (byte)(time >> 8);
             trailer[4] = (byte)(time);
         }
-        else
+        else if (version == VERSION_4 || version == VERSION_5 || version == VERSION_6)
         {
             ByteArrayOutputStream    sOut = new ByteArrayOutputStream();
             SignatureSubpacket[]     hashed = this.getHashedSubPackets();
@@ -503,7 +539,14 @@ public class SignaturePacket
                 }
 
                 byte[]                   data = hOut.toByteArray();
-                StreamUtil.write2OctetLength(sOut, data.length);
+                if (version != VERSION_6)
+                {
+                    StreamUtil.write2OctetLength(sOut, data.length);
+                }
+                else
+                {
+                    StreamUtil.write4OctetLength(sOut, data.length);
+                }
                 sOut.write(data);
 
                 byte[]    hData = sOut.toByteArray();
@@ -705,6 +748,49 @@ public class SignaturePacket
             {
                 creationTime = ((SignatureCreationTime)hashedData[i]).getTime().getTime();
                 break;
+            }
+        }
+    }
+
+    /**
+     * Iterate over the hashed and unhashed signature subpackets to identify either a {@link IssuerKeyID} or
+     * {@link IssuerFingerprint} subpacket to derive the issuer key-ID from.
+     * The issuer {@link IssuerKeyID} and {@link IssuerFingerprint} subpacket information is "self-authenticating",
+     * as its authenticity can be verified by checking the signature with the corresponding key.
+     * Therefore, we can also check the unhashed signature subpacket area.
+     */
+    private void setIssuerKeyId()
+    {
+        if (keyID != 0L)
+        {
+            return;
+        }
+
+        for (SignatureSubpacket p : hashedData)
+        {
+            if (p instanceof IssuerKeyID)
+            {
+                keyID = ((IssuerKeyID) p).getKeyID();
+                return;
+            }
+            if (p instanceof IssuerFingerprint)
+            {
+                keyID = ((IssuerFingerprint) p).getKeyID();
+                return;
+            }
+        }
+
+        for (SignatureSubpacket p : unhashedData)
+        {
+            if (p instanceof IssuerKeyID)
+            {
+                keyID = ((IssuerKeyID) p).getKeyID();
+                return;
+            }
+            if (p instanceof IssuerFingerprint)
+            {
+                keyID = ((IssuerFingerprint) p).getKeyID();
+                return;
             }
         }
     }

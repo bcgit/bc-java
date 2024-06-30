@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -41,6 +42,8 @@ public class PGPOnePassSignature
     PGPOnePassSignature(
         OnePassSignaturePacket sigPack)
     {
+        // v3 OPSs are typically used with v4 sigs
+        super(sigPack.getVersion() == OnePassSignaturePacket.VERSION_3 ? SignaturePacket.VERSION_4 : sigPack.getVersion());
         this.sigPack = sigPack;
         this.sigType = sigPack.getSignatureType();
     }
@@ -61,6 +64,24 @@ public class PGPOnePassSignature
 
         lastb = 0;
         sigOut = verifier.getOutputStream();
+
+        updateWithSalt();
+    }
+
+    private void updateWithSalt()
+            throws PGPException
+    {
+        if (version == SignaturePacket.VERSION_6)
+        {
+            try
+            {
+                sigOut.write(getSalt());
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Cannot salt the signature.", e);
+            }
+        }
     }
 
     /**
