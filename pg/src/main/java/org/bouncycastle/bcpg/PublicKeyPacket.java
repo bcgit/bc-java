@@ -13,6 +13,7 @@ public class PublicKeyPacket
 {
     public static final int VERSION_3 = 3;
     public static final int VERSION_4 = 4;
+    public static final int LIBREPGP_5 = 5;
     public static final int VERSION_6 = 6;
 
     private int version;
