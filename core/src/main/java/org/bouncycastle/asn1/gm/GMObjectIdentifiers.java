@@ -49,15 +49,15 @@ public interface GMObjectIdentifiers
     ASN1ObjectIdentifier sm2encrypt = sm_scheme.branch("301.3");
 
     /**
-     * <Information security technology — Cryptographic application identifier criterion specification>
-     * <url>http&#058;//c.gb688.cn/bzgk/gb/showGb&#63;type=online&hcno=252CF0F72A7BE339A56DEA7D774E8994</url>,
+     * &lt;Information security technology — Cryptographic application identifier criterion specification&gt;
+     * &lt;url&gt;http&#058;//c.gb688.cn/bzgk/gb/showGb&#63;type=online&hcno=252CF0F72A7BE339A56DEA7D774E8994&lt;/url&gt;,
      * Page 21 only cover from 301.1 to 301.3
      * */
     ASN1ObjectIdentifier wapip192v1 =  sm_scheme.branch("301.101");
     /**
-     * <WAPI certificate management—Part 5: Example of certificate format (draft)>
-     * <url>http&#058;//www.chinabwips.org.cn/zqyjgs1.htm</url> and
-     * <url>http&#058;//www.chinabwips.org.cn/doc/101.pdf</url>,
+     * &lt;WAPI certificate management—Part 5: Example of certificate format (draft)&gt;
+     * &lt;url&gt;http&#058;//www.chinabwips.org.cn/zqyjgs1.htm&lt;/url&gt; and
+     * &lt;url&gt;http&#058;//www.chinabwips.org.cn/doc/101.pdf&lt;/url&gt;,
      * Page 9 and page 10 states the OID of ECDSA-192 algorithm based on SHA-256 is 1.2.156.11235.1.1.1
      * */
     ASN1ObjectIdentifier wapi192v1 =  new ASN1ObjectIdentifier("1.2.156.11235.1.1.1");
