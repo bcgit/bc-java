@@ -99,12 +99,11 @@ public class PGPV6SignatureTest
     {
         String msg = "Hello, World!\n";
         String ARMORED_SIG = "-----BEGIN PGP SIGNATURE-----\n" +
-                "Version: BCPG v@RELEASE_NAME@\n" +
                 "\n" +
-                "wogGABsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
-                "gXv9AAAAAGHvEIB9K2RLSK++vMVKnivhTgBBHon1f/feri7mJOAYfGm8vOzgbc/8\n" +
-                "/zeeT3ZY+EK3q6RQ6W0nolelQejFuy1w9duC8/1U/oTD6iSi1pRAEm4M\n" +
-                "=mBNb\n" +
+                "wpgGABsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
+                "gm9ZAAAAAHbbIIiAPSgC+KgRmEnYT3DlWRRXD3FZbagaoUrQy6hBg+exB/J/zqCD\n" +
+                "WQDNfRrJsKzt5NNgDtlpOPwJocYPL3LTvYIDDTTxmD1WFMaeF/mDgo1DJfcRCkXt\n" +
+                "PXdpdVaImaOqDA==\n" +
                 "-----END PGP SIGNATURE-----";
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
@@ -132,11 +131,12 @@ public class PGPV6SignatureTest
     {
         String ARMORED_MSG = "-----BEGIN PGP MESSAGE-----\n" +
                 "\n" +
-                "xDYGAQobEKM41oT/St9iR6qxoR2RndzLGGxPBgmml+TVLfpscisMHx4nwYpWcI9l\n" +
-                "JewnutmsyQDLFHUAAAAAAEhlbGxvLCBXb3JsZCEKwogGARsKAAAAKSKhBssYbE8G\n" +
-                "CaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJmgXv9AAAAAHU6EKM41oT/St9i\n" +
-                "R6qxoR2RndzKyHgSHsO9QIzLibxeWtny69R0srOsJVFr153JlXSlUojGxv00QvlY\n" +
-                "z90jECs8awk7vCeJxTHrHFL01Xy5sTsN\n" +
+                "xEYGAQobIMcgFZRFzyKmYrqqNES9B0geVN5TZ6Wct6aUrITCuFyeyxhsTwYJppfk\n" +
+                "1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkAyxR1AAAAAABIZWxsbywgV29ybGQhCsKY\n" +
+                "BgEbCgAAACkioQbLGGxPBgmml+TVLfpscisMHx4nwYpWcI9lJewnutmsyQWCZoJv\n" +
+                "WQAAAAAkFSDHIBWURc8ipmK6qjREvQdIHlTeU2elnLemlKyEwrhcnotltzKi2NN+\n" +
+                "XNJISXQ0X0f4TppBoHbpmwc5YCTIv2+vDZPI+tjzXL9m2e1jrqqaUMEwQ+Zy8B+K\n" +
+                "LC4rA6Gh2gY=\n" +
                 "-----END PGP MESSAGE-----";
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
@@ -176,9 +176,10 @@ public class PGPV6SignatureTest
                 "Hello, World!\n" +
                 "-----BEGIN PGP SIGNATURE-----\n" +
                 "\n" +
-                "wogGARsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
-                "gX0IAAAAALdCEDfia8BJtFWPXTosZnJdtOIx/lb8o9mk+CedAnXQOD/qTQ9CIhMI\n" +
-                "yYHAJc7UnhdrjDbJ2as+G0bqNqm2VyjmfuGeiJvjBhKJvaxgGHhuruIO\n" +
+                "wpgGARsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
+                "gm9ZAAAAAOwrIHtJrY7SIiXXqaBpEbjlJvpviklWkAvMJOLLmVt+hy7wvLNKZEhu\n" +
+                "ZKiy7zgFRoXTwtVVHyBlTvRoMKN7NhfN5UoDaV3isn0uipMR7YoZTxacQmg3CQlM\n" +
+                "NOaSt0xdZMqnBw==\n" +
                 "-----END PGP SIGNATURE-----";
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
