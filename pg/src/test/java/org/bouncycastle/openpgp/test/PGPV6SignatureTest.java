@@ -68,6 +68,9 @@ public class PGPV6SignatureTest
         verifyV6BinarySignature();
         verifyV6InlineSignature();
         verifyV6CleartextSignature();
+
+        verifyingSignatureWithMismatchedSaltSizeFails();
+        verifyingOPSWithMismatchedSaltSizeFails();
     }
 
     private void verifyV6DirectKeySignatureTestVector()
@@ -209,6 +212,84 @@ public class PGPV6SignatureTest
         sig.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
         sig.update("Hello, World!".getBytes(StandardCharsets.UTF_8));
         isTrue("Signature MUST verify successfully", sig.verify());
+    }
+
+    private void verifyingSignatureWithMismatchedSaltSizeFails()
+            throws IOException
+    {
+        // v6 signature made using SHA512 with 16 instead of 32 bytes of salt.
+        String armoredSig = "-----BEGIN PGP SIGNATURE-----\n" +
+                "Version: BCPG v@RELEASE_NAME@\n" +
+                "\n" +
+                "wogGABsKAAAAKSKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJm\n" +
+                "gXv9AAAAAGHvEIB9K2RLSK++vMVKnivhTgBBHon1f/feri7mJOAYfGm8vOzgbc/8\n" +
+                "/zeeT3ZY+EK3q6RQ6W0nolelQejFuy1w9duC8/1U/oTD6iSi1pRAEm4M\n" +
+                "=mBNb\n" +
+                "-----END PGP SIGNATURE-----";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+        PGPPublicKey signingPubKey = secretKeys.getPublicKey();
+
+        bIn = new ByteArrayInputStream(armoredSig.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+        PGPSignature binarySig = sigList.get(0);
+
+        try
+        {
+            binarySig.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+            fail("Init'ing verification of signature with mismatched salt size MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // expected
+        }
+    }
+
+    private void verifyingOPSWithMismatchedSaltSizeFails()
+            throws IOException
+    {
+        // v6 signature made using SHA512 with 16 instead of 32 bytes of salt.
+        String armoredMsg = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "xDYGAQobEKM41oT/St9iR6qxoR2RndzLGGxPBgmml+TVLfpscisMHx4nwYpWcI9l\n" +
+                "JewnutmsyQDLFHUAAAAAAEhlbGxvLCBXb3JsZCEKwogGARsKAAAAKSKhBssYbE8G\n" +
+                "CaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJBYJmgXv9AAAAAHU6EKM41oT/St9i\n" +
+                "R6qxoR2RndzKyHgSHsO9QIzLibxeWtny69R0srOsJVFr153JlXSlUojGxv00QvlY\n" +
+                "z90jECs8awk7vCeJxTHrHFL01Xy5sTsN\n" +
+                "-----END PGP MESSAGE-----";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+        PGPPublicKey signingPubKey = secretKeys.getPublicKey();
+
+        bIn = new ByteArrayInputStream(armoredMsg.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+
+        PGPOnePassSignatureList opsList = (PGPOnePassSignatureList) objFac.nextObject();
+        isEquals("There MUST be exactly 1 OPS", 1, opsList.size());
+        PGPOnePassSignature ops = opsList.get(0);
+
+        try
+        {
+            ops.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+            fail("Init'ing verification of OPS with mismatched salt size MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // expected.
+        }
     }
 
     public static void main(String[] args)
