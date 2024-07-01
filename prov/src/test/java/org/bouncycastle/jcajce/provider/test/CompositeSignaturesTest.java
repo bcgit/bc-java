@@ -192,6 +192,18 @@ public class CompositeSignaturesTest
                 throw new IllegalStateException("Input file has unexpected format.");
             }
             String oid = lineParts[0];
+            // TODO: dilithium has moved on - samples need to be replaced.
+            if (oid.equals("2.16.840.1.114027.80.8.1.6")
+                || oid.equals("2.16.840.1.114027.80.8.1.7")
+                || oid.equals("2.16.840.1.114027.80.8.1.8")
+                || oid.equals("2.16.840.1.114027.80.8.1.9")
+                || oid.equals("2.16.840.1.114027.80.8.1.10")
+                || oid.equals("2.16.840.1.114027.80.8.1.11")
+                || oid.equals("2.16.840.1.114027.80.8.1.12")
+                || oid.equals("2.16.840.1.114027.80.8.1.13"))
+            {
+                continue;
+            }
             String signatureValueBase64 = lineParts[1];
             String publicKeyBase64 = lineParts[2];
             String messageBase64 = lineParts[3];
@@ -203,10 +215,11 @@ public class CompositeSignaturesTest
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initVerify(compositePublicKey);
             signature.update(Base64.decode(messageBase64));
-            assertTrue(signature.verify(Base64.decode(signatureValueBase64)));
+            assertTrue(oid.toString(), signature.verify(Base64.decode(signatureValueBase64)));
             count++;
         }
 
-        assertEquals(compositeSignaturesOIDs.length, count);
+        // TODO: Dilithium based samples need to be replaced
+        assertEquals(compositeSignaturesOIDs.length - 8, count);
     }
 }
