@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -163,12 +164,30 @@ public class PGPSignature
     }
 
     void init(PGPContentVerifier verifier)
+            throws PGPException
     {
         this.verifier = verifier;
         this.lastb = 0;
         this.sigOut = verifier.getOutputStream();
 
+        checkSaltSize();
         updateWithSalt();
+    }
+
+    private void checkSaltSize()
+            throws PGPException
+    {
+        if (getVersion() != SignaturePacket.VERSION_6)
+        {
+            return;
+        }
+
+        int expectedSaltSize = HashUtils.getV6SignatureSaltSizeInBytes(getHashAlgorithm());
+        if (expectedSaltSize != sigPck.getSalt().length)
+        {
+            throw new PGPException("RFC9580 defines the salt size for " + PGPUtil.getDigestName(getHashAlgorithm()) +
+                    " as " + expectedSaltSize + " octets, but signature has " + sigPck.getSalt().length + " octets.");
+        }
     }
 
     private void updateWithSalt()
