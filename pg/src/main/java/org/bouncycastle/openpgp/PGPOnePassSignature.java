@@ -6,6 +6,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.SignaturePacket;
@@ -65,7 +66,24 @@ public class PGPOnePassSignature
         lastb = 0;
         sigOut = verifier.getOutputStream();
 
+        checkSaltSize();
         updateWithSalt();
+    }
+
+    private void checkSaltSize()
+            throws PGPException
+    {
+        if (getVersion() != SignaturePacket.VERSION_6)
+        {
+            return;
+        }
+
+        int expectedSaltSize = HashUtils.getV6SignatureSaltSizeInBytes(getHashAlgorithm());
+        if (expectedSaltSize != getSalt().length)
+        {
+            throw new PGPException("RFC9580 defines the salt size for " + PGPUtil.getDigestName(getHashAlgorithm()) +
+                    " as " + expectedSaltSize + " octets, but signature has " + getSalt().length + " octets.");
+        }
     }
 
     private void updateWithSalt()
