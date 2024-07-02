@@ -470,6 +470,11 @@ public class PGPSignature
         return null;
     }
 
+    byte[] getSalt()
+    {
+        return sigPck.getSalt();
+    }
+
     public byte[] getSignature()
         throws PGPException
     {

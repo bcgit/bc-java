@@ -71,6 +71,7 @@ public class PGPV6SignatureTest
 
         verifyingSignatureWithMismatchedSaltSizeFails();
         verifyingOPSWithMismatchedSaltSizeFails();
+        verifyingInlineSignatureWithSignatureSaltValueMismatchFails();
     }
 
     private void verifyV6DirectKeySignatureTestVector()
@@ -289,6 +290,59 @@ public class PGPV6SignatureTest
         catch (PGPException e)
         {
             // expected.
+        }
+    }
+
+    private void verifyingInlineSignatureWithSignatureSaltValueMismatchFails()
+            throws IOException, PGPException
+    {
+        String ARMORED_MSG = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "xEYGAQobIMcgFZRFzyKmYrqqNES9B0geVN5TZ6Wct6aUrITCuFyeyxhsTwYJppfk\n" +
+                "1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkAyxR1AAAAAABIZWxsbywgV29ybGQhCsKY\n" +
+                "BgEbCgAAACkioQbLGGxPBgmml+TVLfpscisMHx4nwYpWcI9lJewnutmsyQWCZoJv\n" +
+                "WQAAAAAkFSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAItltzKi2NN+\n" +
+                "XNJISXQ0X0f4TppBoHbpmwc5YCTIv2+vDZPI+tjzXL9m2e1jrqqaUMEwQ+Zy8B+K\n" +
+                "LC4rA6Gh2gY=\n" +
+                "=KRD3\n" +
+                "-----END PGP MESSAGE-----";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+        PGPPublicKey signingPubKey = secretKeys.getPublicKey();
+
+        bIn = new ByteArrayInputStream(ARMORED_MSG.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+
+        PGPOnePassSignatureList opsList = (PGPOnePassSignatureList) objFac.nextObject();
+        PGPOnePassSignature ops = opsList.get(0);
+        isEncodingEqual("OPS salt MUST match our expectations.",
+                Hex.decode("C720159445CF22A662BAAA3444BD07481E54DE5367A59CB7A694AC84C2B85C9E"),
+                ops.getSalt());
+
+        ops.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+
+        PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        Streams.pipeAll(lit.getDataStream(), plainOut);
+
+        ops.update(plainOut.toByteArray());
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+        PGPSignature sig = sigList.get(0);
+
+        try
+        {
+            ops.verify(sig);
+            fail("Verifying signature with mismatched salt MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // expected
         }
     }
 

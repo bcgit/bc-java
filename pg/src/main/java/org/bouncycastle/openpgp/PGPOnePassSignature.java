@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A one pass signature object.
@@ -113,6 +114,8 @@ public class PGPOnePassSignature
         PGPSignature pgpSig)
         throws PGPException
     {
+        compareSalt(pgpSig);
+
         try
         {
             sigOut.write(pgpSig.getSignatureTrailer());
@@ -125,6 +128,19 @@ public class PGPOnePassSignature
         }
 
         return verifier.verify(pgpSig.getSignature());
+    }
+
+    private void compareSalt(PGPSignature signature)
+            throws PGPException
+    {
+        if (version != SignaturePacket.VERSION_6)
+        {
+            return;
+        }
+        if (!Arrays.constantTimeAreEqual(getSalt(), signature.getSalt()))
+        {
+            throw new PGPException("Salt in OnePassSignaturePacket does not match salt in SignaturePacket.");
+        }
     }
 
     /**
