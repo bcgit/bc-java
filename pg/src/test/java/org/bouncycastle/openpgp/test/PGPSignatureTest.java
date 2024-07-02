@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -45,7 +46,10 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
@@ -762,6 +766,7 @@ public class PGPSignatureTest
         testSignatureTarget();
         testUserAttributeEncoding();
         testExportNonExportableSignature();
+        testRejectionOfIllegalSignatureType0xFF();
     }
 
     private void testUserAttributeEncoding()
@@ -1365,6 +1370,44 @@ public class PGPSignatureTest
         PGPSignature nonExportableSig = readSignatures(NONEXPORTABLESIGNATURE).get(0);
         isTrue(!Arrays.areEqual(nonExportableSig.getEncoded(), nonExportableSig.getEncoded(true)));
         isTrue(nonExportableSig.getEncoded(true).length == 0);
+    }
+
+    private void testRejectionOfIllegalSignatureType0xFF()
+            throws PGPException, IOException
+    {
+        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(rsaKeyRing, new JcaKeyFingerprintCalculator());
+        PGPSecretKey secretKey = pgpPriv.getSecretKey();
+        PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(rsaPass));
+
+        PGPContentSignerBuilder sigBuilder = new BcPGPContentSignerBuilder(
+                PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA512);
+        PGPSignatureGenerator generator = new PGPSignatureGenerator(sigBuilder);
+        try
+        {
+            generator.init(0xFF, pgpPrivKey);
+            fail("Generating signature of type 0xff MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // Expected
+        }
+
+        PGPContentVerifierBuilderProvider verifBuilder = new BcPGPContentVerifierBuilderProvider();
+
+        // signature of type 0xff (illegal)
+        byte[] hexSig = Hex.decode("889c04ff010a000605026655fdbe000a0910b3c272c907c7f7b2133604008dc801695e0905a21a03b832dfd576d66dc23a6ac8715128aaa5cee941b36660efd3c47618c5e880b2dc5e8a34638f10061ae6a9724a2306b66eeb4aec79b49ce4ec48f6de0b5119fc7911e9e2a7677bc4a1f6dd783ce15949457872246e0b415c6f8e3390da90597b059009dcc64723adbc45530a1db0ef70fcffbfc97af6b6");
+        ByteArrayInputStream bIn = new ByteArrayInputStream(hexSig);
+        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        PGPSignature s = new PGPSignature(pIn);
+        try
+        {
+            s.init(verifBuilder, secretKey.getPublicKey());
+            fail("Verifying signature of type 0xff MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // expected
+        }
     }
 
     private PGPSignatureList readSignatures(String armored)

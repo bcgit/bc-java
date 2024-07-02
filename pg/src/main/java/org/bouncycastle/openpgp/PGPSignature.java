@@ -149,6 +149,10 @@ public class PGPSignature
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
+        if (sigType == 0xff)
+        {
+            throw new PGPException("Illegal signature type 0xFF encountered.");
+        }
         PGPContentVerifierBuilder verifierBuilder = createVerifierProvider(verifierBuilderProvider);
 
         init(verifierBuilder.build(pubKey));
