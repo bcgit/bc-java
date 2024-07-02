@@ -93,5 +93,7 @@ artifacts {
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    minHeapSize = "512m"
+    maxHeapSize = "3072m"
 }
 
