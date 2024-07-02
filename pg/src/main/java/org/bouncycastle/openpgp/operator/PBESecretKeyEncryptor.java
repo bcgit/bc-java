@@ -8,12 +8,22 @@ import org.bouncycastle.openpgp.PGPException;
 public abstract class PBESecretKeyEncryptor
 {
     protected int encAlgorithm;
+    protected int aeadAlgorithm;
     protected char[] passPhrase;
     protected PGPDigestCalculator s2kDigestCalculator;
     protected int s2kCount;
     protected S2K s2k;
 
     protected SecureRandom random;
+
+    protected PBESecretKeyEncryptor(int encAlgorithm, int aeadAlgorithm, S2K.Argon2Params argon2Params, SecureRandom random, char[] passPhrase)
+    {
+        this.encAlgorithm = encAlgorithm;
+        this.aeadAlgorithm = aeadAlgorithm;
+        this.passPhrase = passPhrase;
+        this.s2k = S2K.argon2S2K(argon2Params);
+        this.random = random;
+    }
 
     protected PBESecretKeyEncryptor(int encAlgorithm, PGPDigestCalculator s2kDigestCalculator, SecureRandom random, char[] passPhrase)
     {
@@ -38,6 +48,11 @@ public abstract class PBESecretKeyEncryptor
     public int getAlgorithm()
     {
         return encAlgorithm;
+    }
+
+    public int getAeadAlgorithm()
+    {
+        return aeadAlgorithm;
     }
 
     public int getHashAlgorithm()

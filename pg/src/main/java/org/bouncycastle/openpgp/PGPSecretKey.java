@@ -143,6 +143,11 @@ public class PGPSecretKey
                 S2K s2k = keyEncryptor.getS2K();
 
                 int s2kUsage;
+                if (keyEncryptor.getAeadAlgorithm() != 0)
+                {
+                    s2kUsage = SecretKeyPacket.USAGE_AEAD;
+                    return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, keyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, encData);
+                }
 
                 if (checksumCalculator != null)
                 {
@@ -196,6 +201,18 @@ public class PGPSecretKey
         else
         {
             return new SecretSubkeyPacket(pubKey, encAlgorithm, s2kusage, s2k, iv, secKeyData);
+        }
+    }
+
+    private static SecretKeyPacket generateSecretKeyPacket(boolean isMasterKey, PublicKeyPacket pubKey, int encAlgorithm, int aeadAlgorithm, int s2kUsage, S2K s2K, byte[] iv, byte[] secKeyData)
+    {
+        if (isMasterKey)
+        {
+            return new SecretKeyPacket(pubKey, encAlgorithm, aeadAlgorithm, s2kUsage, s2K, iv, secKeyData);
+        }
+        else
+        {
+            return new SecretSubkeyPacket(pubKey, encAlgorithm, aeadAlgorithm, s2kUsage, s2K, iv, secKeyData);
         }
     }
 
@@ -440,6 +457,16 @@ public class PGPSecretKey
     }
 
     /**
+     * Return the AEAD algorithm the key is encrypted with.
+     * Returns <pre>0</pre> if no AEAD is used.
+     * @return aead key encryption algorithm
+     */
+    public int getAEADKeyEncryptionAlgorithm()
+    {
+        return secret.getAeadAlgorithm();
+    }
+
+    /**
      * Return the keyID of the public key associated with this key.
      *
      * @return the keyID associated with this key.
@@ -514,16 +541,95 @@ public class PGPSecretKey
         throws PGPException
     {
         byte[] encData = secret.getSecretKeyData();
-        byte[] data = null;
 
-        if (secret.getEncAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
+        // S2K Usage == 0 -> encAlgo == s2kUsage == 0 -> unencrypted key
+        if (secret.getEncAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
         {
-            try
-            {
-                byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
-                if (secret.getPublicKeyPacket().getVersion() == 4)
-                {
+            return encData;
+        }
 
+        byte[] data = null;
+        try
+        {
+            // key := s2k(passphrase)
+            byte[] key = decryptorFactory.makeKeyFromPassPhrase(secret.getEncAlgorithm(), secret.getS2K());
+
+            // version 2 or 3, RSA only.
+            if (secret.getPublicKeyPacket().getVersion() <= PublicKeyPacket.VERSION_3)
+            {
+
+                data = new byte[encData.length];
+
+                byte[] iv = new byte[secret.getIV().length];
+
+                System.arraycopy(secret.getIV(), 0, iv, 0, iv.length);
+
+                //
+                // read in the four numbers
+                //
+                int pos = 0;
+
+                for (int i = 0; i != 4; i++)
+                {
+                    int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
+
+                    data[pos] = encData[pos];
+                    data[pos + 1] = encData[pos + 1];
+
+                    if (encLen > (encData.length - (pos + 2)))
+                    {
+                        throw new PGPException("out of range encLen found in encData");
+                    }
+                    byte[] tmp = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, iv, encData, pos + 2, encLen);
+                    System.arraycopy(tmp, 0, data, pos + 2, tmp.length);
+                    pos += 2 + encLen;
+
+                    if (i != 3)
+                    {
+                        System.arraycopy(encData, pos - iv.length, iv, 0, iv.length);
+                    }
+                }
+
+                //
+                // verify and copy checksum
+                //
+
+                data[pos] = encData[pos];
+                data[pos + 1] = encData[pos + 1];
+
+                int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
+                int calcCs = 0;
+                for (int j = 0; j < data.length - 2; j++)
+                {
+                    calcCs += data[j] & 0xff;
+                }
+
+                calcCs &= 0xffff;
+                if (calcCs != cs)
+                {
+                    throw new PGPException("checksum mismatch: passphrase wrong, expected "
+                            + Integer.toHexString(cs)
+                            + " found " + Integer.toHexString(calcCs));
+                }
+            }
+            // V4, V5 or V6 key
+            else
+            {
+                if (secret.getS2KUsage() == SecretKeyPacket.USAGE_AEAD)
+                {
+                    // privKey := AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
+                    return decryptorFactory.recoverKeyData(
+                            secret.getEncAlgorithm(),
+                            secret.getAeadAlgorithm(),
+                            key, // s2k output = ikm for hkdf
+                            secret.getIV(), // iv = aead nonce
+                            secret.getPacketTag(),
+                            secret.getPublicKeyPacket().getVersion(),
+                            secret.getSecretKeyData(),
+                            secret.getPublicKeyPacket().getEncodedContents());
+                }
+                else
+                {
                     data = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, secret.getIV(), encData, 0, encData.length);
 
                     boolean useSHA1 = secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1;
@@ -534,78 +640,16 @@ public class PGPSecretKey
                         throw new PGPException("checksum mismatch at in checksum of " + check.length + " bytes");
                     }
                 }
-                else // version 2 or 3, RSA only.
-                {
-
-                    data = new byte[encData.length];
-
-                    byte[] iv = new byte[secret.getIV().length];
-
-                    System.arraycopy(secret.getIV(), 0, iv, 0, iv.length);
-
-                    //
-                    // read in the four numbers
-                    //
-                    int pos = 0;
-
-                    for (int i = 0; i != 4; i++)
-                    {
-                        int encLen = ((((encData[pos] & 0xff) << 8) | (encData[pos + 1] & 0xff)) + 7) / 8;
-
-                        data[pos] = encData[pos];
-                        data[pos + 1] = encData[pos + 1];
-
-                        if (encLen > (encData.length - (pos + 2)))
-                        {
-                            throw new PGPException("out of range encLen found in encData");
-                        }
-                        byte[] tmp = decryptorFactory.recoverKeyData(secret.getEncAlgorithm(), key, iv, encData, pos + 2, encLen);
-                        System.arraycopy(tmp, 0, data, pos + 2, tmp.length);
-                        pos += 2 + encLen;
-
-                        if (i != 3)
-                        {
-                            System.arraycopy(encData, pos - iv.length, iv, 0, iv.length);
-                        }
-                    }
-
-                    //
-                    // verify and copy checksum
-                    //
-
-                    data[pos] = encData[pos];
-                    data[pos + 1] = encData[pos + 1];
-
-                    int cs = ((encData[pos] << 8) & 0xff00) | (encData[pos + 1] & 0xff);
-                    int calcCs = 0;
-                    for (int j = 0; j < data.length - 2; j++)
-                    {
-                        calcCs += data[j] & 0xff;
-                    }
-
-                    calcCs &= 0xffff;
-                    if (calcCs != cs)
-                    {
-                        throw new PGPException("checksum mismatch: passphrase wrong, expected "
-                            + Integer.toHexString(cs)
-                            + " found " + Integer.toHexString(calcCs));
-                    }
-                }
-            }
-            catch (PGPException e)
-            {
-                throw e;
-            }
-            catch (Exception e)
-            {
-                throw new PGPException("Exception decrypting key", e);
             }
         }
-        else
+        catch (PGPException e)
         {
-            data = encData;
+            throw e;
         }
-
+        catch (Exception e)
+        {
+            throw new PGPException("Exception decrypting key", e);
+        }
         return data;
     }
 
