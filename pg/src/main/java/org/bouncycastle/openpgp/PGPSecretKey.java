@@ -159,11 +159,11 @@ public class PGPSecretKey
 
                 return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, s2kUsage, s2k, iv, encData);
             }
-            else
+            else if (pubKey.getVersion() != PublicKeyPacket.VERSION_6)
             {
                 pOut.write(checksum(null, keyData, keyData.length));
-                return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, bOut.toByteArray());
             }
+            return generateSecretKeyPacket(isMasterKey, pubKey.publicPk, encAlgorithm, bOut.toByteArray());
         }
         catch (PGPException e)
         {
