@@ -465,10 +465,10 @@ public class OperatorBcTest
                 count++;
                 sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
                    // TODO: appears to be failing on CI system
-//                if (!sig.verifyCertification(vKey, sKey))
-//                {
-//                    fail("failed to verify sub-key signature.");
-//                }
+                if (!sig.verifyCertification(vKey, sKey))
+                {
+                    fail("failed to verify sub-key signature.");
+                }
             }
         }
 
