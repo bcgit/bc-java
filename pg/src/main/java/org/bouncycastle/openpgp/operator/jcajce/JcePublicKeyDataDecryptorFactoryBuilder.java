@@ -273,7 +273,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
                 agreementName = RFC6637Utils.getAgreementAlgorithm(pubKeyData);
 
-                publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(PublicKeyAlgorithmTags.ECDH, new Date(),
+                publicKey = converter.getPublicKey(new PGPPublicKey(new PublicKeyPacket(pubKeyData.getVersion(), PublicKeyAlgorithmTags.ECDH, new Date(),
                     new ECDHPublicBCPGKey(ecKey.getCurveOID(), publicPoint, ecKey.getHashAlgorithm(), ecKey.getSymmetricKeyAlgorithm())), fingerprintCalculator));
             }
             byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyData, fingerprintCalculator);

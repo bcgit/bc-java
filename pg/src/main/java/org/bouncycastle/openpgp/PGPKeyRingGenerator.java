@@ -268,7 +268,7 @@ public class PGPKeyRingGenerator
             // replace the public key packet structure with a public subkey one.
             PGPPublicKey pubSubKey = new PGPPublicKey(keyPair.getPublicKey(), null, subSigs);
 
-            pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
+            pubSubKey.publicPk = new PublicSubkeyPacket(pubSubKey.getVersion(), pubSubKey.getAlgorithm(), pubSubKey.getCreationTime(), pubSubKey.publicPk.getKey());
 
             keys.add(new PGPSecretKey(keyPair.getPrivateKey(), pubSubKey, checksumCalculator, keyEncryptor));
         }
