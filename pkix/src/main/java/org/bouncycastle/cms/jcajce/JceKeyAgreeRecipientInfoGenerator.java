@@ -57,6 +57,8 @@ public class JceKeyAgreeRecipientInfoGenerator
     private PrivateKey senderPrivateKey;
 
     private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper wrappingHelper = null;
+
     private SecureRandom random;
     private KeyPair ephemeralKP;
     private byte[] userKeyingMaterial;
@@ -86,6 +88,20 @@ public class JceKeyAgreeRecipientInfoGenerator
     public JceKeyAgreeRecipientInfoGenerator setProvider(String providerName)
     {
         this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+
+        return this;
+    }
+
+    public JceKeyAgreeRecipientInfoGenerator setKeyWrappingProvider(Provider provider)
+    {
+        this.wrappingHelper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+
+        return this;
+    }
+
+    public JceKeyAgreeRecipientInfoGenerator setKeyWrappingProvider(String providerName)
+    {
+        this.wrappingHelper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
 
         return this;
     }
@@ -203,8 +219,10 @@ public class JceKeyAgreeRecipientInfoGenerator
 
                 SecretKey keyEncryptionKey = keyAgreement.generateSecret(keyEncAlg.getId());
 
+                EnvelopedDataHelper keyWrapHelper = (wrappingHelper != null) ? wrappingHelper : helper;
+
                 // Wrap the content encryption key with the agreement key
-                Cipher keyEncryptionCipher = helper.createCipher(keyEncAlg);
+                Cipher keyEncryptionCipher = keyWrapHelper.createCipher(keyEncAlg);
                 ASN1OctetString encryptedKey;
 
                 if (keyEncAlg.equals(CryptoProObjectIdentifiers.id_Gost28147_89_None_KeyWrap)
@@ -212,7 +230,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                 {
                     keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, new GOST28147WrapParameterSpec(CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet, userKeyingMaterial));
 
-                    byte[] encKeyBytes = keyEncryptionCipher.wrap(helper.getJceKey(contentEncryptionKey));
+                    byte[] encKeyBytes = keyEncryptionCipher.wrap(keyWrapHelper.getJceKey(contentEncryptionKey));
 
                     Gost2814789EncryptedKey encKey = new Gost2814789EncryptedKey(
                         Arrays.copyOfRange(encKeyBytes, 0, encKeyBytes.length - 4),
@@ -224,7 +242,7 @@ public class JceKeyAgreeRecipientInfoGenerator
                 {
                     keyEncryptionCipher.init(Cipher.WRAP_MODE, keyEncryptionKey, random);
 
-                    byte[] encryptedKeyBytes = keyEncryptionCipher.wrap(helper.getJceKey(contentEncryptionKey));
+                    byte[] encryptedKeyBytes = keyEncryptionCipher.wrap(keyWrapHelper.getJceKey(contentEncryptionKey));
 
                     encryptedKey = new DEROctetString(encryptedKeyBytes);
                 }
