@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -96,16 +97,30 @@ public class SecretKeyPacket
     }
 
     /**
-     * @param in
-     * @throws IOException
+     * Parse a {@link SecretKeyPacket} or {@link SecretSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
+     * The return type depends on the <pre>packetTypeID</pre>:
+     * {@link PacketTags#SECRET_KEY} means the result is a {@link SecretKeyPacket}.
+     * {@link PacketTags#SECRET_SUBKEY} results in a {@link SecretSubkeyPacket}.
+     *
+     * @param packetTypeID packet type ID
+     * @param in packet input stream
+     * @param newPacketFormat packet format
+     * @throws IOException if the secret key packet cannot be parsed
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-secret-key-packet-formats">
+     *     C-R - Secret-Key Packet Formats</a>
+     * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-secret-key-packet-formats">
+     *     LibrePGP - Secret-Key Packet Formats</a>
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-hardware-secrets/">
+     *     Hardware-Backed Secret Keys</a>
      */
     SecretKeyPacket(
-        int keyTag,
+        int packetTypeID,
         BCPGInputStream in,
         boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag, newPacketFormat);
+        super(packetTypeID, newPacketFormat);
 
         if (this instanceof SecretSubkeyPacket)
         {
@@ -119,12 +134,15 @@ public class SecretKeyPacket
         int version = pubKeyPacket.getVersion();
         s2kUsage = in.read();
 
-        if (version == 6 && s2kUsage != USAGE_NONE)
+        int conditionalParameterLength = -1;
+        if (version == PublicKeyPacket.LIBREPGP_5 ||
+                (version == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             // TODO: Use length to parse unknown parameters
-            int conditionalParameterLength = in.read();
+            conditionalParameterLength = in.read();
         }
 
+        // 255, 254, 253
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
         {
             encAlgorithm = in.read();
@@ -133,44 +151,74 @@ public class SecretKeyPacket
         {
             encAlgorithm = s2kUsage;
         }
+
+        // 253
         if (s2kUsage == USAGE_AEAD)
         {
             aeadAlgorithm = in.read();
         }
-        if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
+
+        // version = 6 && 254 || 253
+        if (version == PublicKeyPacket.VERSION_6 && (s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD))
         {
-            if (version == PublicKeyPacket.VERSION_6)
-            {
-                // TODO: Use length to parse unknown S2Ks
-                int s2kLen = in.read();
-            }
-            s2k = new S2K(in);
+            int s2KLen = in.read();
+            byte[] s2kBytes = new byte[s2KLen];
+            in.readFully(s2kBytes);
+
+            // TODO: catch UnsupportedPacketVersionException gracefully
+            s2k = new S2K(new ByteArrayInputStream(s2kBytes));
         }
+        else
+        {
+            // 255, 254, 253
+            if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
+            {
+                s2k = new S2K(in);
+            }
+        }
+
         if (s2kUsage == USAGE_AEAD)
         {
             iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
             Streams.readFully(in, iv);
         }
-        boolean isGNUDummyNoPrivateKey = s2k != null
+        else
+        {
+            boolean isGNUDummyNoPrivateKey = s2k != null
             && s2k.getType() == S2K.GNU_DUMMY_S2K
             && s2k.getProtectionMode() == S2K.GNU_PROTECTION_MODE_NO_PRIVATE_KEY;
-        if (!(isGNUDummyNoPrivateKey))
-        {
-            if (s2kUsage != 0 && iv == null)
+            if (!(isGNUDummyNoPrivateKey))
             {
-                if (encAlgorithm < 7)
+                if (s2kUsage != USAGE_NONE && iv == null)
                 {
-                    iv = new byte[8];
+                    if (encAlgorithm < 7)
+                    {
+                        iv = new byte[8];
+                    }
+                    else
+                    {
+                        iv = new byte[16];
+                    }
+                    in.readFully(iv, 0, iv.length);
                 }
-                else
-                {
-                    iv = new byte[16];
-                }
-                in.readFully(iv, 0, iv.length);
             }
         }
 
-        this.secKeyData = in.readAll();
+        if (version == PublicKeyPacket.LIBREPGP_5)
+        {
+            long keyOctetCount = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+            if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_NONE)
+            {
+                // encoded keyOctetCount does not contain checksum
+                keyOctetCount += 2;
+            }
+            this.secKeyData = new byte[(int) keyOctetCount];
+            in.readFully(secKeyData);
+        }
+        else
+        {
+            this.secKeyData = in.readAll();
+        }
     }
 
     /**
@@ -291,9 +339,11 @@ public class SecretKeyPacket
 
         pOut.write(s2kUsage);
 
+
         // conditional parameters
         byte[] conditionalParameters = encodeConditionalParameters();
-        if (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE)
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5 ||
+                (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             pOut.write(conditionalParameters.length);
         }
@@ -302,9 +352,21 @@ public class SecretKeyPacket
         // encrypted secret key
         if (secKeyData != null && secKeyData.length > 0)
         {
+            if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5)
+            {
+                int keyOctetCount = secKeyData.length;
+                // v5 keyOctetCount does not include checksum octets
+                if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_NONE)
+                {
+                    keyOctetCount -= 2;
+                }
+                pOut.write(keyOctetCount >> 24);
+                pOut.write(keyOctetCount >> 16);
+                pOut.write(keyOctetCount >> 8);
+                pOut.write(keyOctetCount);
+            }
             pOut.write(secKeyData);
         }
-
         pOut.close();
 
         return bOut.toByteArray();

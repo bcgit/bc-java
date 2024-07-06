@@ -553,7 +553,15 @@ public class SignaturePacket
 
                 sOut.write((byte)this.getVersion());
                 sOut.write((byte)0xff);
-                StreamUtil.write4OctetLength(sOut, hData.length);
+
+                if (version == VERSION_5)
+                {
+                    StreamUtil.write8OctetLength(sOut, hData.length);
+                }
+                else
+                {
+                    StreamUtil.write4OctetLength(sOut, hData.length);
+                }
             }
             catch (IOException e)
             {

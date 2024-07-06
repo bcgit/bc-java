@@ -44,66 +44,106 @@ public class PublicKeyPacket
         this(keyTag, in, false);
     }
 
+    /**
+     * Parse a {@link PublicKeyPacket} or {@link PublicSubkeyPacket} from an OpenPGP {@link BCPGInputStream}.
+     * If <pre>packetTypeID</pre> is {@link #PUBLIC_KEY}, the packet is a primary key.
+     * If instead it is {@link #PUBLIC_SUBKEY}, it is a subkey packet.
+     * If <pre>newPacketFormat</pre> is true, the packet format is remembered as {@link PacketFormat#CURRENT},
+     * otherwise as {@link PacketFormat#LEGACY}.
+     * @param packetTypeID packet type ID
+     * @param in packet input stream
+     * @param newPacketFormat packet format
+     * @throws IOException if the key packet cannot be parsed
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-3-public-keys">
+     *     C-R - Version 3 Public Keys</a>
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-public-keys">
+     *     C-R - Version 4 Public Keys</a>
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-6-public-keys">
+     *     C-R - Version 6 Public Keys</a>
+     * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-public-key-packet-formats">
+     *     LibrePGP - Public-Key Packet Formats</a>
+     */
     PublicKeyPacket(
-        int keyTag,
+        int packetTypeID,
         BCPGInputStream in,
         boolean newPacketFormat)
         throws IOException
     {
-        super(keyTag, newPacketFormat);
+        super(packetTypeID, newPacketFormat);
 
         version = in.read();
-        time = ((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
 
-        if (version <= VERSION_3)
+        if (version < 2 || version > VERSION_6)
+        {
+            throw new UnsupportedPacketVersionException("Unsupported Public Key Packet version encountered: " + version);
+        }
+
+        time = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+
+        if (version == 2 || version == VERSION_3)
         {
             validDays = (in.read() << 8) | in.read();
         }
 
-        algorithm = (byte)in.read();
-        if (version == VERSION_6)
+        algorithm = (byte) in.read();
+
+        long keyOctetCount = -1;
+        if (version == LIBREPGP_5 || version == VERSION_6)
         {
-            // TODO: Use keyOctets to be able to parse unknown keys
-            long keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
+            keyOctetCount = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
         }
 
-        switch (algorithm)
+        parseKey(in, algorithm, keyOctetCount);
+    }
+
+    /**
+     * Parse algorithm-specific public key material.
+     * @param in input stream which read just up to the public key material
+     * @param algorithmId public key algorithm ID
+     * @param optLen optional: Length of the public key material. -1 if not present.
+     * @throws IOException if the pk material cannot be parsed
+     */
+    private void parseKey(BCPGInputStream in, int algorithmId, long optLen)
+            throws IOException
+    {
+        switch (algorithmId)
         {
-        case RSA_ENCRYPT:
-        case RSA_GENERAL:
-        case RSA_SIGN:
-            key = new RSAPublicBCPGKey(in);
-            break;
-        case DSA:
-            key = new DSAPublicBCPGKey(in);
-            break;
-        case ELGAMAL_ENCRYPT:
-        case ELGAMAL_GENERAL:
-            key = new ElGamalPublicBCPGKey(in);
-            break;
-        case ECDH:
-            key = new ECDHPublicBCPGKey(in);
-            break;
-        case X25519:
-            key = new X25519PublicBCPGKey(in);
-            break;
-        case X448:
-            key = new X448PublicBCPGKey(in);
-            break;
-        case ECDSA:
-            key = new ECDSAPublicBCPGKey(in);
-            break;
-        case EDDSA_LEGACY:
-            key = new EdDSAPublicBCPGKey(in);
-            break;
-        case Ed25519:
-            key = new Ed25519PublicBCPGKey(in);
-            break;
-        case Ed448:
-            key = new Ed448PublicBCPGKey(in);
-            break;
-        default:
-            throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
+            case RSA_ENCRYPT:
+            case RSA_GENERAL:
+            case RSA_SIGN:
+                key = new RSAPublicBCPGKey(in);
+                break;
+            case DSA:
+                key = new DSAPublicBCPGKey(in);
+                break;
+            case ELGAMAL_ENCRYPT:
+            case ELGAMAL_GENERAL:
+                key = new ElGamalPublicBCPGKey(in);
+                break;
+            case ECDH:
+                key = new ECDHPublicBCPGKey(in);
+                break;
+            case X25519:
+                key = new X25519PublicBCPGKey(in);
+                break;
+            case X448:
+                key = new X448PublicBCPGKey(in);
+                break;
+            case ECDSA:
+                key = new ECDSAPublicBCPGKey(in);
+                break;
+            case EDDSA_LEGACY:
+                key = new EdDSAPublicBCPGKey(in);
+                break;
+            case Ed25519:
+                key = new Ed25519PublicBCPGKey(in);
+                break;
+            case Ed448:
+                key = new Ed448PublicBCPGKey(in);
+                break;
+            default:
+                throw new IOException("unknown PGP public key algorithm encountered: " + algorithm);
         }
     }
 
@@ -185,7 +225,7 @@ public class PublicKeyPacket
 
         pOut.write(algorithm);
 
-        if (version == VERSION_6)
+        if (version == VERSION_6 || version == LIBREPGP_5)
         {
             int keyOctets = key.getEncoded().length;
             pOut.write(keyOctets >> 24);
