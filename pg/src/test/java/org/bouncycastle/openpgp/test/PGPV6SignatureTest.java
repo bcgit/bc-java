@@ -2,8 +2,12 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyRing;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
@@ -15,6 +19,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 
@@ -22,6 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 
 public class PGPV6SignatureTest
         extends AbstractPacketTest
@@ -53,6 +59,7 @@ public class PGPV6SignatureTest
             "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
             "k0mXubZvyl4GBg==\n" +
             "-----END PGP PRIVATE KEY BLOCK-----";
+
     @Override
     public String getName()
     {
@@ -72,6 +79,8 @@ public class PGPV6SignatureTest
         verifyingSignatureWithMismatchedSaltSizeFails();
         verifyingOPSWithMismatchedSaltSizeFails();
         verifyingInlineSignatureWithSignatureSaltValueMismatchFails();
+
+        verifySignaturesOnEd448X448Key();
     }
 
     private void verifyV6DirectKeySignatureTestVector()
@@ -344,6 +353,140 @@ public class PGPV6SignatureTest
         {
             // expected
         }
+    }
+
+    private void verifySignaturesOnEd448X448Key()
+            throws PGPException, IOException
+    {
+        String KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+                "Comment: 8cf27d01 f6160563 9e4b8525 353c0cfb  f5a23e45 96c47fe6 d90ccacf 3293d5d6\n" +
+                "Comment: 93c07acb 9eef9fa2 346ac1d5 ff50051c  96124504 e2fb3b5b 564bf969 16d28d42\n" +
+                "Comment: Ed <ed448@example.com>\n" +
+                "\n" +
+                "xX8GZovgyRwAAAA529b1jdB2Cgndd45hbN3qxpTbTM9IpdLJ8ibifS5ranMF8g+w\n" +
+                "vQfvV2HNwONn1mC+/7yxGLzW9YQAAMM1xRUHrZdL6vcIOugjQ9YDzaoM8nV+6RfN\n" +
+                "05CJCcJLp2eM0t015rw6UCcGGL7gy5TOFeLhGMU59x2IwsAjBh8cDgAAAEIFgmaL\n" +
+                "4MkDCwkHBRUKDggMAhYAApsDAh4JIiEGjPJ9AfYWBWOeS4UlNTwM+/WiPkWWxH/m\n" +
+                "2QzKzzKT1dYFJwkCBwIAAAAA9fcgS0FBeDv6TwF/camy0KEZRHDNIpEI0upB+4vU\n" +
+                "kyYab1MiKfpfIkZfqCFCikuR8yW6yIFKNXQK/B9nemfwzq6UNrdUZkZL9BpUfXsq\n" +
+                "xlOJ3ksehQrH8SM9ZgAkk+H0WQyKgakBmw8T74vz44Pej2oAU8w50OtJ81duKIdN\n" +
+                "bsFF0WiU1PYeLbEPfDjnB2x1lINQCQDNFkVkIDxlZDQ0OEBleGFtcGxlLmNvbT7C\n" +
+                "wAoGExwKAAAAKQWCZovgySIhBozyfQH2FgVjnkuFJTU8DPv1oj5FlsR/5tkMys8y\n" +
+                "k9XWAAAAADlTIC14mbBrJQ9/qWzRmS5FHVcJkx87OZ9/573lMDcNM+sMIUQP8b/L\n" +
+                "c2sLKtzGpQGXG1ETp/MOlGSQaMF6l/3eQpnVZg3jEO0Qd2040Leq4TQqNaFJBMmt\n" +
+                "wg2ADddE3CkwzMhBG00yhppY2p6xsvGgYVz3vMCQ2MnH/0Hj+9bmzSoJDM/4gXe3\n" +
+                "HXI1kuEOPFINmi0Ax30GZovgyRoAAAA4SRrAL6zM93X89gPFjMA3D9vjprB0pB7m\n" +
+                "fVr/c3UPaS/H5ILrcgbvcpwf+D7H1n2DZq2N4MqXvzoANBS7o2zj3FQO80Reagx2\n" +
+                "ZTav2DzRHNl4M626qkGyUD4u393yIU0u8KMPTZstT43zWqVn3ZzPJJAbdcLADQYY\n" +
+                "HA4AAAAsIiEGjPJ9AfYWBWOeS4UlNTwM+/WiPkWWxH/m2QzKzzKT1dYFgmaL4MkC\n" +
+                "mwwAAAAAGPAg10+uyPMPtyB8bomChz/rokK7pTV5AgIjulbOuEVSLkQPXRn06gMn\n" +
+                "TleudzUKY3mh3Cm01DAVg+5GWQz9F0qWebwzsjUiGqMt7ovySZw4Qkv+lBPkKSxN\n" +
+                "uwDxqjLecoGbL6nM4mGMU+27dlZRjjpHVWRGur6tup5IBWsX97zKYYrsTE2HCVOC\n" +
+                "rm3bgQD1eeP0CQA=\n" +
+                "-----END PGP PRIVATE KEY BLOCK-----";
+        verifySignaturesOnKey(KEY);
+    }
+
+    private void verifySignaturesOnKey(String armoredKey)
+            throws IOException, PGPException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(armoredKey.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        Iterator<PGPPublicKey> pubKeys = secretKeys.getPublicKeys();
+        PGPPublicKey primaryKey = pubKeys.next();
+
+        Iterator<PGPSignature> directKeySigs = primaryKey.getSignaturesOfType(PGPSignature.DIRECT_KEY);
+        while (directKeySigs.hasNext())
+        {
+            PGPSignature dkSig = directKeySigs.next();
+            PGPPublicKey sigKey = getSigningKeyFor(secretKeys, dkSig);
+            if (sigKey != null)
+            {
+                dkSig.init(new BcPGPContentVerifierBuilderProvider(), sigKey);
+                isTrue("Direct-Key Signature MUST verify", dkSig.verifyCertification(sigKey));
+            }
+            else
+            {
+                System.out.println("Did not find signing key for DK sig");
+            }
+        }
+
+        Iterator<String> uids = primaryKey.getUserIDs();
+        while (uids.hasNext())
+        {
+            String uid = uids.next();
+            Iterator<PGPSignature> uidSigs = primaryKey.getSignaturesForID(uid);
+            while (uidSigs.hasNext())
+            {
+                PGPSignature uidSig = uidSigs.next();
+                PGPPublicKey sigKey = getSigningKeyFor(secretKeys, uidSig);
+                if (sigKey != null)
+                {
+                    uidSig.init(new BcPGPContentVerifierBuilderProvider(), sigKey);
+                    isTrue("UID Signature for " + uid + " MUST verify",
+                            uidSig.verifyCertification(uid, sigKey));
+                }
+                else
+                {
+                    System.out.println("Did not find signing key for UID sig for " + uid);
+                }
+            }
+        }
+
+        while (pubKeys.hasNext())
+        {
+            PGPPublicKey subkey = pubKeys.next();
+            Iterator<PGPSignature> bindSigs = subkey.getSignaturesOfType(PGPSignature.SUBKEY_BINDING);
+            while (bindSigs.hasNext())
+            {
+                PGPSignature bindSig = bindSigs.next();
+                PGPPublicKey sigKey = getSigningKeyFor(secretKeys, bindSig);
+                if (sigKey != null)
+                {
+                    bindSig.init(new BcPGPContentVerifierBuilderProvider(), sigKey);
+                    isTrue("Subkey binding signature MUST verify",
+                            bindSig.verifyCertification(sigKey, subkey));
+                }
+                else
+                {
+                    System.out.println("Did not find singing key for subkey " + Hex.toHexString(subkey.getFingerprint()) + " binding signature");
+                }
+            }
+        }
+    }
+
+    private PGPPublicKey getSigningKeyFor(PGPKeyRing keys, PGPSignature sig)
+    {
+        Iterator<PGPPublicKey> pubKeys = keys.getPublicKeys();
+        while (pubKeys.hasNext())
+        {
+            PGPPublicKey k = pubKeys.next();
+            if (k.getKeyID() == sig.getKeyID())
+            {
+                return k;
+            }
+
+            for (SignatureSubpacket p : sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+            {
+                IssuerFingerprint fp = (IssuerFingerprint) p;
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                    return k;
+                }
+            }
+
+            for (SignatureSubpacket p : sig.getUnhashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+            {
+                IssuerFingerprint fp = (IssuerFingerprint) p;
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                    return k;
+                }
+            }
+        }
+        return null;
     }
 
     public static void main(String[] args)
