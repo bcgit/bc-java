@@ -25,6 +25,7 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
+import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.attr.ImageAttribute;
@@ -2102,7 +2103,7 @@ public class PGPGeneralTest
         isTrue("isPrimaryUserID should be true", hashedPcks.isPrimaryUserID());
 
 
-        PGPSignatureSubpacketVector hashedPcks2 = PGPSignatureSubpacketVector.fromSubpackets(null);
+        PGPSignatureSubpacketVector hashedPcks2 = PGPSignatureSubpacketVector.fromSubpackets((SignatureSubpacket[]) null);
         isTrue("Empty PGPSignatureSubpacketVector", hashedPcks2.size() == 0);
 
         hashedGen = new PGPSignatureSubpacketGenerator();
