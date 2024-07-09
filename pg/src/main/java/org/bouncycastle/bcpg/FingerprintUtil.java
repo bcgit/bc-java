@@ -116,6 +116,7 @@ public class FingerprintUtil
 
     public static String prettifyFingerprint(byte[] fingerprint)
     {
+        // -DM Hex.toHexString
         String hex = Hex.toHexString(fingerprint);
         StringBuilder sb = new StringBuilder();
         switch (hex.length())
