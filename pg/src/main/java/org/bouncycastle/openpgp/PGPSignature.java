@@ -191,10 +191,18 @@ public class PGPSignature
     }
 
     private void updateWithSalt()
+            throws PGPException
     {
         if (getVersion() == SignaturePacket.VERSION_6)
         {
-            update(sigPck.getSalt());
+            try
+            {
+                sigOut.write(sigPck.getSalt());
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Cannot update signature with salt.", e);
+            }
         }
     }
 
