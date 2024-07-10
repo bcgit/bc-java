@@ -17,17 +17,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
-import org.bouncycastle.pqc.asn1.FalconPrivateKey;
-import org.bouncycastle.pqc.asn1.McElieceCCA2PrivateKey;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPrivateKey;
-import org.bouncycastle.pqc.asn1.SPHINCSPLUSPublicKey;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
-import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.asn1.*;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
@@ -70,6 +60,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
+import org.bouncycastle.tls.injection.Asn1BridgeForInjectedSigAlgs;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -86,7 +77,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(byte[] privateKeyInfoData)
-        throws IOException
+            throws IOException
     {
         if (privateKeyInfoData == null)
         {
@@ -108,7 +99,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(InputStream inStr)
-        throws IOException
+            throws IOException
     {
         return createKey(PrivateKeyInfo.getInstance(new ASN1InputStream(inStr).readObject()));
     }
@@ -121,7 +112,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo)
-        throws IOException
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -130,6 +121,12 @@ public class PrivateKeyFactory
 
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
+
+        // #tls-injection:
+        if (Asn1BridgeForInjectedSigAlgs.theInstance().isSupportedAlgorithm(algOID))
+        {
+            return Asn1BridgeForInjectedSigAlgs.theInstance().createPrivateKeyParameter(keyInfo);
+        }
 
         if (algOID.on(PQCObjectIdentifiers.qTESLA))
         {
@@ -140,7 +137,7 @@ public class PrivateKeyFactory
         else if (algOID.equals(PQCObjectIdentifiers.sphincs256))
         {
             return new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets(),
-                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(algId.getParameters())));
+                    Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(algId.getParameters())));
         }
         else if (algOID.equals(PQCObjectIdentifiers.newHope))
         {
@@ -182,7 +179,7 @@ public class PrivateKeyFactory
                 SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(obj);
                 SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
                 return new SPHINCSPlusPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
-                    publicKey.getPkseed(), publicKey.getPkroot());
+                        publicKey.getPkseed(), publicKey.getPkroot());
             }
             else
             {
@@ -238,10 +235,10 @@ public class PrivateKeyFactory
             NTRULPRimeParameters spParams = Utils.ntrulprimeParamsLookup(algOID);
 
             return new NTRULPRimePrivateKeyParameters(spParams,
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets());
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_sntruprime))
         {
@@ -250,14 +247,14 @@ public class PrivateKeyFactory
             SNTRUPrimeParameters spParams = Utils.sntruprimeParamsLookup(algOID);
 
             return new SNTRUPrimePrivateKeyParameters(spParams,
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(0)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                    ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
-            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+                || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(algOID);
@@ -277,24 +274,24 @@ public class PrivateKeyFactory
                     DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
 
                     return new DilithiumPrivateKeyParameters(spParams,
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                        pubParams.getT1()); // encT1
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                            pubParams.getT1()); // encT1
                 }
                 else
                 {
                     return new DilithiumPrivateKeyParameters(spParams,
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                        null);
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                            ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                            null);
                 }
             }
             else if (keyObj instanceof DEROctetString)
@@ -353,12 +350,12 @@ public class PrivateKeyFactory
             try
             {
                 XMSSPrivateKeyParameters.Builder keyBuilder = new XMSSPrivateKeyParameters
-                    .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
-                    .withIndex(xmssPrivateKey.getIndex())
-                    .withSecretKeySeed(xmssPrivateKey.getSecretKeySeed())
-                    .withSecretKeyPRF(xmssPrivateKey.getSecretKeyPRF())
-                    .withPublicSeed(xmssPrivateKey.getPublicSeed())
-                    .withRoot(xmssPrivateKey.getRoot());
+                        .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
+                        .withIndex(xmssPrivateKey.getIndex())
+                        .withSecretKeySeed(xmssPrivateKey.getSecretKeySeed())
+                        .withSecretKeyPRF(xmssPrivateKey.getSecretKeyPRF())
+                        .withPublicSeed(xmssPrivateKey.getPublicSeed())
+                        .withRoot(xmssPrivateKey.getRoot());
 
                 if (xmssPrivateKey.getVersion() != 0)
                 {
@@ -367,13 +364,12 @@ public class PrivateKeyFactory
 
                 if (xmssPrivateKey.getBdsState() != null)
                 {
-                    BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
+                    BDS bds = (BDS) XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
                     keyBuilder.withBDSState(bds.withWOTSDigest(treeDigest));
                 }
 
                 return keyBuilder.build();
-            }
-            catch (ClassNotFoundException e)
+            } catch (ClassNotFoundException e)
             {
                 throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
             }
@@ -388,12 +384,12 @@ public class PrivateKeyFactory
                 XMSSMTPrivateKey xmssMtPrivateKey = XMSSMTPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
                 XMSSMTPrivateKeyParameters.Builder keyBuilder = new XMSSMTPrivateKeyParameters
-                    .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
-                    .withIndex(xmssMtPrivateKey.getIndex())
-                    .withSecretKeySeed(xmssMtPrivateKey.getSecretKeySeed())
-                    .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
-                    .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
-                    .withRoot(xmssMtPrivateKey.getRoot());
+                        .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
+                        .withIndex(xmssMtPrivateKey.getIndex())
+                        .withSecretKeySeed(xmssMtPrivateKey.getSecretKeySeed())
+                        .withSecretKeyPRF(xmssMtPrivateKey.getSecretKeyPRF())
+                        .withPublicSeed(xmssMtPrivateKey.getPublicSeed())
+                        .withRoot(xmssMtPrivateKey.getRoot());
 
                 if (xmssMtPrivateKey.getVersion() != 0)
                 {
@@ -402,13 +398,12 @@ public class PrivateKeyFactory
 
                 if (xmssMtPrivateKey.getBdsState() != null)
                 {
-                    BDSStateMap bdsState = (BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class);
+                    BDSStateMap bdsState = (BDSStateMap) XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class);
                     keyBuilder.withBDSState(bdsState.withWOTSDigest(treeDigest));
                 }
 
                 return keyBuilder.build();
-            }
-            catch (ClassNotFoundException e)
+            } catch (ClassNotFoundException e)
             {
                 throw new IOException("ClassNotFoundException processing BDS state: " + e.getMessage());
             }

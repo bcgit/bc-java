@@ -14,6 +14,8 @@ import org.bouncycastle.tls.crypto.TlsDHConfig;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
+import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 
 public class TlsServerProtocol
@@ -405,6 +407,12 @@ public class TlsServerProtocol
             else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
             {
                 agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
+            }
+            else if (InjectionPoint.kems().contain(namedGroup))
+            {
+                // #tls-injection
+                assert crypto instanceof JcaTlsCrypto;
+                agreement = InjectionPoint.kems().kemByCodePoint(namedGroup).tlsAgreement((JcaTlsCrypto) crypto, true);
             }
             else if (NamedGroup.refersToASpecificKem(namedGroup))
             {

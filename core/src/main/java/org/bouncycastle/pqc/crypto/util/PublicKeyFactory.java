@@ -63,6 +63,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPublicKeyParameters;
+import org.bouncycastle.tls.injection.Asn1BridgeForInjectedSigAlgs;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -138,7 +139,7 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
-        
+
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
@@ -239,7 +240,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(byte[] keyInfoData)
-        throws IOException
+            throws IOException
     {
         if (keyInfoData == null)
         {
@@ -260,7 +261,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(InputStream inStr)
-        throws IOException
+            throws IOException
     {
         return createKey(SubjectPublicKeyInfo.getInstance(new ASN1InputStream(inStr).readObject()));
     }
@@ -273,7 +274,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo)
-        throws IOException
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -290,8 +291,10 @@ public class PublicKeyFactory
      * @return the appropriate key parameter
      * @throws IOException on an error decoding the key
      */
-    public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-        throws IOException
+    public static AsymmetricKeyParameter createKey(
+            SubjectPublicKeyInfo keyInfo,
+            Object defaultParams)
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -299,7 +302,15 @@ public class PublicKeyFactory
         }
 
         AlgorithmIdentifier algId = keyInfo.getAlgorithm();
-        SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter)converters.get(algId.getAlgorithm());
+        ASN1ObjectIdentifier algOID = algId.getAlgorithm();
+
+        // #tls-injection:
+        if (Asn1BridgeForInjectedSigAlgs.theInstance().isSupportedAlgorithm(algOID))
+        {
+            return Asn1BridgeForInjectedSigAlgs.theInstance().createPublicKeyParameter(keyInfo, defaultParams);
+        }
+
+        SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter) converters.get(algId.getAlgorithm());
 
         if (converter != null)
         {
@@ -313,46 +324,56 @@ public class PublicKeyFactory
 
     private static abstract class SubjectPublicKeyInfoConverter
     {
-        abstract AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException;
+        abstract AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException;
     }
 
     private static class QTeslaConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             return new QTESLAPublicKeyParameters(Utils.qTeslaLookupSecurityCategory(keyInfo.getAlgorithm()), keyInfo.getPublicKeyData().getOctets());
         }
     }
 
     private static class SPHINCSConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             return new SPHINCSPublicKeyParameters(keyInfo.getPublicKeyData().getBytes(),
-                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters())));
+                    Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(keyInfo.getAlgorithm().getParameters())));
         }
     }
 
     private static class NHConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             return new NHPublicKeyParameters(keyInfo.getPublicKeyData().getBytes());
         }
     }
 
     private static class XMSSConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             XMSSKeyParams keyParams = XMSSKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
 
@@ -362,26 +383,28 @@ public class PublicKeyFactory
                 XMSSPublicKey xmssPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
 
                 return new XMSSPublicKeyParameters
-                    .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
-                    .withPublicSeed(xmssPublicKey.getPublicSeed())
-                    .withRoot(xmssPublicKey.getRoot()).build();
+                        .Builder(new XMSSParameters(keyParams.getHeight(), Utils.getDigest(treeDigest)))
+                        .withPublicSeed(xmssPublicKey.getPublicSeed())
+                        .withRoot(xmssPublicKey.getRoot()).build();
             }
             else
             {
                 byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
                 return new XMSSPublicKeyParameters
-                    .Builder(XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
-                    .withPublicKey(keyEnc).build();
+                        .Builder(XMSSParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
+                        .withPublicKey(keyEnc).build();
             }
         }
     }
 
     private static class XMSSMTConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             XMSSMTKeyParams keyParams = XMSSMTKeyParams.getInstance(keyInfo.getAlgorithm().getParameters());
 
@@ -392,26 +415,28 @@ public class PublicKeyFactory
                 XMSSPublicKey xmssMtPublicKey = XMSSPublicKey.getInstance(keyInfo.parsePublicKey());
 
                 return new XMSSMTPublicKeyParameters
-                    .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
-                    .withPublicSeed(xmssMtPublicKey.getPublicSeed())
-                    .withRoot(xmssMtPublicKey.getRoot()).build();
+                        .Builder(new XMSSMTParameters(keyParams.getHeight(), keyParams.getLayers(), Utils.getDigest(treeDigest)))
+                        .withPublicSeed(xmssMtPublicKey.getPublicSeed())
+                        .withRoot(xmssMtPublicKey.getRoot()).build();
             }
             else
             {
                 byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
                 return new XMSSMTPublicKeyParameters
-                    .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
-                    .withPublicKey(keyEnc).build();
+                        .Builder(XMSSMTParameters.lookupByOID(Pack.bigEndianToInt(keyEnc, 0)))
+                        .withPublicKey(keyEnc).build();
             }
         }
     }
 
     private static class LMSConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -432,10 +457,12 @@ public class PublicKeyFactory
     }
 
     private static class SPHINCSPlusConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             try
             {
@@ -444,8 +471,7 @@ public class PublicKeyFactory
                 SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
@@ -457,10 +483,12 @@ public class PublicKeyFactory
     }
 
     private static class CMCEConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             try
             {
@@ -469,9 +497,8 @@ public class PublicKeyFactory
                 CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new CMCEPublicKeyParameters(spParams, keyEnc);
-            }
-            catch (Exception e)
-            {        
+            } catch (Exception e)
+            {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
                 CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
@@ -484,7 +511,9 @@ public class PublicKeyFactory
     private static class SABERConverter
             extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
                 throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(
@@ -497,10 +526,12 @@ public class PublicKeyFactory
     }
 
     private static class McElieceCCA2Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             McElieceCCA2PublicKey mKey = McElieceCCA2PublicKey.getInstance(keyInfo.parsePublicKey());
 
@@ -511,7 +542,9 @@ public class PublicKeyFactory
     private static class FrodoConverter
             extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
                 throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
@@ -525,7 +558,9 @@ public class PublicKeyFactory
     private static class PicnicConverter
             extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
                 throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
@@ -537,10 +572,12 @@ public class PublicKeyFactory
     }
 
     private static class NtruConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -551,10 +588,12 @@ public class PublicKeyFactory
     }
 
     private static class FalconConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 //            FalconPublicKey falconPublicKey = FalconPublicKey.getInstance(keyInfo.parsePublicKey());
@@ -567,10 +606,12 @@ public class PublicKeyFactory
     }
 
     private static class KyberConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
@@ -580,8 +621,7 @@ public class PublicKeyFactory
                 KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
 
                 return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 // we're a raw encoding
                 return new KyberPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
@@ -590,10 +630,12 @@ public class PublicKeyFactory
     }
 
     private static class NTRULPrimeConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -604,10 +646,12 @@ public class PublicKeyFactory
     }
 
     private static class SNTRUPrimeConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -616,19 +660,23 @@ public class PublicKeyFactory
             return new SNTRUPrimePublicKeyParameters(ntruLPRimeParams, keyEnc);
         }
     }
-    
+
     static class DilithiumConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             DilithiumParameters dilithiumParams = Utils.dilithiumParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
         }
 
-        static DilithiumPublicKeyParameters getPublicKeyParams(DilithiumParameters dilithiumParams, ASN1BitString publicKeyData)
+        static DilithiumPublicKeyParameters getPublicKeyParams(
+                DilithiumParameters dilithiumParams,
+                ASN1BitString publicKeyData)
         {
             try
             {
@@ -638,8 +686,8 @@ public class PublicKeyFactory
                     ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
                     return new DilithiumPublicKeyParameters(dilithiumParams,
-                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
-                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                            ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                            ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
                 }
                 else
                 {
@@ -647,8 +695,7 @@ public class PublicKeyFactory
 
                     return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
                 }
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 // we're a raw encoding
                 return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
@@ -659,7 +706,9 @@ public class PublicKeyFactory
     private static class BIKEConverter
             extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
                 throws IOException
         {
             try
@@ -669,8 +718,7 @@ public class PublicKeyFactory
                 BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new BIKEPublicKeyParameters(bikeParams, keyEnc);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
@@ -684,7 +732,9 @@ public class PublicKeyFactory
     private static class HQCConverter
             extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
                 throws IOException
         {
             try
@@ -694,8 +744,7 @@ public class PublicKeyFactory
                 HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new HQCPublicKeyParameters(hqcParams, keyEnc);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 // raw encoding
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
@@ -708,10 +757,12 @@ public class PublicKeyFactory
     }
 
     private static class RainbowConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 

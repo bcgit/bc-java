@@ -63,6 +63,7 @@ import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.tls.injection.Asn1BridgeForInjectedSigAlgs;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -103,7 +104,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(byte[] keyInfoData)
-        throws IOException
+            throws IOException
     {
         if (keyInfoData == null)
         {
@@ -124,7 +125,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(InputStream inStr)
-        throws IOException
+            throws IOException
     {
         return createKey(SubjectPublicKeyInfo.getInstance(new ASN1InputStream(inStr).readObject()));
     }
@@ -137,7 +138,7 @@ public class PublicKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo)
-        throws IOException
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -154,8 +155,10 @@ public class PublicKeyFactory
      * @return the appropriate key parameter
      * @throws IOException on an error decoding the key
      */
-    public static AsymmetricKeyParameter createKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-        throws IOException
+    public static AsymmetricKeyParameter createKey(
+            SubjectPublicKeyInfo keyInfo,
+            Object defaultParams)
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -163,8 +166,15 @@ public class PublicKeyFactory
         }
 
         AlgorithmIdentifier algID = keyInfo.getAlgorithm();
+        ASN1ObjectIdentifier algOID = algID.getAlgorithm();
 
-        SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter)converters.get(algID.getAlgorithm());
+        // #tls-injection
+        if (Asn1BridgeForInjectedSigAlgs.theInstance().isSupportedAlgorithm((algOID)))
+        {
+            return Asn1BridgeForInjectedSigAlgs.theInstance().createPublicKeyParameter(keyInfo, defaultParams);
+        }
+
+        SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter) converters.get(algID.getAlgorithm());
         if (null == converter)
         {
             throw new IOException("algorithm identifier in public key not recognised: " + algID.getAlgorithm());
@@ -175,15 +185,19 @@ public class PublicKeyFactory
 
     private static abstract class SubjectPublicKeyInfoConverter
     {
-        abstract AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException;
+        abstract AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException;
     }
 
     private static class RSAConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             RSAPublicKey pubKey = RSAPublicKey.getInstance(keyInfo.parsePublicKey());
 
@@ -192,10 +206,12 @@ public class PublicKeyFactory
     }
 
     private static class DHPublicNumberConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             DHPublicKey dhPublicKey = DHPublicKey.getInstance(keyInfo.parsePublicKey());
 
@@ -230,13 +246,15 @@ public class PublicKeyFactory
     }
 
     private static class DHAgreementConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             DHParameter params = DHParameter.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            ASN1Integer derY = (ASN1Integer) keyInfo.parsePublicKey();
 
             BigInteger lVal = params.getL();
             int l = lVal == null ? 0 : lVal.intValue();
@@ -247,26 +265,30 @@ public class PublicKeyFactory
     }
 
     private static class ElGamalConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             ElGamalParameter params = ElGamalParameter.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            ASN1Integer derY = (ASN1Integer) keyInfo.parsePublicKey();
 
             return new ElGamalPublicKeyParameters(derY.getValue(), new ElGamalParameters(
-                params.getP(), params.getG()));
+                    params.getP(), params.getG()));
         }
     }
 
     private static class DSAConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            ASN1Integer derY = (ASN1Integer) keyInfo.parsePublicKey();
             ASN1Encodable de = keyInfo.getAlgorithm().getParameters();
 
             DSAParameters parameters = null;
@@ -281,16 +303,18 @@ public class PublicKeyFactory
     }
 
     private static class ECConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             X962Parameters params = X962Parameters.getInstance(keyInfo.getAlgorithm().getParameters());
             ECDomainParameters dParams;
 
             if (params.isNamedCurve())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) params.getParameters();
 
                 X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
                 if (x9 == null)
@@ -301,7 +325,7 @@ public class PublicKeyFactory
             }
             else if (params.isImplicitlyCA())
             {
-                dParams = (ECDomainParameters)defaultParams;
+                dParams = (ECDomainParameters) defaultParams;
             }
             else
             {
@@ -317,7 +341,7 @@ public class PublicKeyFactory
             // extra octet string - the old extra embedded octet string
             //
             if (data[0] == 0x04 && data[1] == data.length - 2
-                && (data[2] == 0x02 || data[2] == 0x03))
+                    && (data[2] == 0x02 || data[2] == 0x03))
             {
                 int qLength = new X9IntegerConverter().getByteLength(dParams.getCurve());
 
@@ -325,9 +349,8 @@ public class PublicKeyFactory
                 {
                     try
                     {
-                        key = (ASN1OctetString)ASN1Primitive.fromByteArray(data);
-                    }
-                    catch (IOException ex)
+                        key = (ASN1OctetString) ASN1Primitive.fromByteArray(data);
+                    } catch (IOException ex)
                     {
                         throw new IllegalArgumentException("error recovering public key");
                     }
@@ -341,9 +364,11 @@ public class PublicKeyFactory
     }
 
     private static class GOST3410_2001Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             AlgorithmIdentifier algID = keyInfo.getAlgorithm();
 //            ASN1ObjectIdentifier algOid = algID.getAlgorithm();
@@ -351,17 +376,16 @@ public class PublicKeyFactory
             ASN1ObjectIdentifier publicKeyParamSet = gostParams.getPublicKeyParamSet();
 
             ECGOST3410Parameters ecDomainParameters = new ECGOST3410Parameters(
-                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
-                publicKeyParamSet,
-                gostParams.getDigestParamSet(),
-                gostParams.getEncryptionParamSet());
+                    new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
+                    publicKeyParamSet,
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet());
 
             ASN1OctetString key;
             try
             {
-                key = (ASN1OctetString)keyInfo.parsePublicKey();
-            }
-            catch (IOException ex)
+                key = (ASN1OctetString) keyInfo.parsePublicKey();
+            } catch (IOException ex)
             {
                 throw new IllegalArgumentException("error recovering GOST3410_2001 public key");
             }
@@ -390,9 +414,11 @@ public class PublicKeyFactory
     }
 
     private static class GOST3410_2012Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             AlgorithmIdentifier algID = keyInfo.getAlgorithm();
             ASN1ObjectIdentifier algOid = algID.getAlgorithm();
@@ -400,17 +426,16 @@ public class PublicKeyFactory
             ASN1ObjectIdentifier publicKeyParamSet = gostParams.getPublicKeyParamSet();
 
             ECGOST3410Parameters ecDomainParameters = new ECGOST3410Parameters(
-                new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
-                publicKeyParamSet,
-                gostParams.getDigestParamSet(),
-                gostParams.getEncryptionParamSet());
+                    new ECNamedDomainParameters(publicKeyParamSet, ECGOST3410NamedCurves.getByOIDX9(publicKeyParamSet)),
+                    publicKeyParamSet,
+                    gostParams.getDigestParamSet(),
+                    gostParams.getEncryptionParamSet());
 
             ASN1OctetString key;
             try
             {
-                key = (ASN1OctetString)keyInfo.parsePublicKey();
-            }
-            catch (IOException ex)
+                key = (ASN1OctetString) keyInfo.parsePublicKey();
+            } catch (IOException ex)
             {
                 throw new IllegalArgumentException("error recovering GOST3410_2012 public key");
             }
@@ -443,10 +468,12 @@ public class PublicKeyFactory
     }
 
     private static class DSTUConverter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
+                throws IOException
         {
             AlgorithmIdentifier algID = keyInfo.getAlgorithm();
             ASN1ObjectIdentifier algOid = algID.getAlgorithm();
@@ -455,9 +482,8 @@ public class PublicKeyFactory
             ASN1OctetString key;
             try
             {
-                key = (ASN1OctetString)keyInfo.parsePublicKey();
-            }
-            catch (IOException ex)
+                key = (ASN1OctetString) keyInfo.parsePublicKey();
+            } catch (IOException ex)
             {
                 throw new IllegalArgumentException("error recovering DSTU public key");
             }
@@ -513,42 +539,52 @@ public class PublicKeyFactory
     }
 
     private static class X25519Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             return new X25519PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
     private static class X448Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             return new X448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
     private static class Ed25519Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             return new Ed25519PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
     private static class Ed448Converter
-        extends SubjectPublicKeyInfoConverter
+            extends SubjectPublicKeyInfoConverter
     {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+        AsymmetricKeyParameter getPublicKeyParameters(
+                SubjectPublicKeyInfo keyInfo,
+                Object defaultParams)
         {
             return new Ed448PublicKeyParameters(getRawKey(keyInfo, defaultParams));
         }
     }
 
-    private static byte[] getRawKey(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+    private static byte[] getRawKey(
+            SubjectPublicKeyInfo keyInfo,
+            Object defaultParams)
     {
         /*
          * TODO[RFC 8422]

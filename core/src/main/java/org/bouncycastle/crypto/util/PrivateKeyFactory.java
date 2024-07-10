@@ -47,6 +47,7 @@ import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.tls.injection.Asn1BridgeForInjectedSigAlgs;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -62,7 +63,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(byte[] privateKeyInfoData)
-        throws IOException
+            throws IOException
     {
         if (privateKeyInfoData == null)
         {
@@ -84,7 +85,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(InputStream inStr)
-        throws IOException
+            throws IOException
     {
         return createKey(PrivateKeyInfo.getInstance(new ASN1InputStream(inStr).readObject()));
     }
@@ -97,7 +98,7 @@ public class PrivateKeyFactory
      * @throws IOException on an error decoding the key
      */
     public static AsymmetricKeyParameter createKey(PrivateKeyInfo keyInfo)
-        throws IOException
+            throws IOException
     {
         if (keyInfo == null)
         {
@@ -107,23 +108,29 @@ public class PrivateKeyFactory
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
+        // #tls-injection
+        if (Asn1BridgeForInjectedSigAlgs.theInstance().isSupportedAlgorithm(algOID))
+        {
+            return Asn1BridgeForInjectedSigAlgs.theInstance().createPrivateKeyParameter(keyInfo);
+        }
+
         if (algOID.equals(PKCSObjectIdentifiers.rsaEncryption)
-            || algOID.equals(PKCSObjectIdentifiers.id_RSASSA_PSS)
-            || algOID.equals(X509ObjectIdentifiers.id_ea_rsa))
+                || algOID.equals(PKCSObjectIdentifiers.id_RSASSA_PSS)
+                || algOID.equals(X509ObjectIdentifiers.id_ea_rsa))
         {
             RSAPrivateKey keyStructure = RSAPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
             return new RSAPrivateCrtKeyParameters(keyStructure.getModulus(),
-                keyStructure.getPublicExponent(), keyStructure.getPrivateExponent(),
-                keyStructure.getPrime1(), keyStructure.getPrime2(), keyStructure.getExponent1(),
-                keyStructure.getExponent2(), keyStructure.getCoefficient());
+                    keyStructure.getPublicExponent(), keyStructure.getPrivateExponent(),
+                    keyStructure.getPrime1(), keyStructure.getPrime2(), keyStructure.getExponent1(),
+                    keyStructure.getExponent2(), keyStructure.getCoefficient());
         }
         // TODO?
 //      else if (algOID.equals(X9ObjectIdentifiers.dhpublicnumber))
         else if (algOID.equals(PKCSObjectIdentifiers.dhKeyAgreement))
         {
             DHParameter params = DHParameter.getInstance(algId.getParameters());
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            ASN1Integer derX = (ASN1Integer) keyInfo.parsePrivateKey();
 
             BigInteger lVal = params.getL();
             int l = lVal == null ? 0 : lVal.intValue();
@@ -134,14 +141,14 @@ public class PrivateKeyFactory
         else if (algOID.equals(OIWObjectIdentifiers.elGamalAlgorithm))
         {
             ElGamalParameter params = ElGamalParameter.getInstance(algId.getParameters());
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            ASN1Integer derX = (ASN1Integer) keyInfo.parsePrivateKey();
 
             return new ElGamalPrivateKeyParameters(derX.getValue(), new ElGamalParameters(
-                params.getP(), params.getG()));
+                    params.getP(), params.getG()));
         }
         else if (algOID.equals(X9ObjectIdentifiers.id_dsa))
         {
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            ASN1Integer derX = (ASN1Integer) keyInfo.parsePrivateKey();
             ASN1Encodable algParameters = algId.getParameters();
 
             DSAParameters parameters = null;
@@ -162,7 +169,7 @@ public class PrivateKeyFactory
 
             if (params.isNamedCurve())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
+                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier) params.getParameters();
 
                 x9 = CustomNamedCurves.getByOID(oid);
                 if (x9 == null)
@@ -175,7 +182,7 @@ public class PrivateKeyFactory
             {
                 x9 = X9ECParameters.getInstance(params.getParameters());
                 dParams = new ECDomainParameters(
-                    x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+                        x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
             }
 
             ECPrivateKey ec = ECPrivateKey.getInstance(keyInfo.parsePrivateKey());
@@ -212,9 +219,9 @@ public class PrivateKeyFactory
             return new Ed448PrivateKeyParameters(getRawKey(keyInfo));
         }
         else if (
-            algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
-                algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
-                algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
+                algOID.equals(CryptoProObjectIdentifiers.gostR3410_2001) ||
+                        algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
+                        algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
             ASN1Encodable algParameters = algId.getParameters();
             GOST3410PublicKeyAlgParameters gostParams = GOST3410PublicKeyAlgParameters.getInstance(algParameters);
@@ -226,11 +233,11 @@ public class PrivateKeyFactory
                 X9ECParameters ecP = ECGOST3410NamedCurves.getByOIDX9(gostParams.getPublicKeyParamSet());
 
                 ecSpec = new ECGOST3410Parameters(
-                    new ECNamedDomainParameters(
-                        gostParams.getPublicKeyParamSet(), ecP),
-                    gostParams.getPublicKeyParamSet(),
-                    gostParams.getDigestParamSet(),
-                    gostParams.getEncryptionParamSet());
+                        new ECNamedDomainParameters(
+                                gostParams.getPublicKeyParamSet(), ecP),
+                        gostParams.getPublicKeyParamSet(),
+                        gostParams.getDigestParamSet(),
+                        gostParams.getEncryptionParamSet());
 
                 int privateKeyLength = keyInfo.getPrivateKeyLength();
 
@@ -262,8 +269,8 @@ public class PrivateKeyFactory
                     X9ECParameters ecP = ECNamedCurveTable.getByOID(oid);
 
                     ecSpec = new ECGOST3410Parameters(new ECNamedDomainParameters(oid, ecP),
-                        gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(),
-                        gostParams.getEncryptionParamSet());
+                            gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(),
+                            gostParams.getEncryptionParamSet());
                 }
                 else if (params.isImplicitlyCA())
                 {
@@ -273,8 +280,8 @@ public class PrivateKeyFactory
                 {
                     X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
                     ecSpec = new ECGOST3410Parameters(new ECNamedDomainParameters(algOID, ecP),
-                        gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(),
-                        gostParams.getEncryptionParamSet());
+                            gostParams.getPublicKeyParamSet(), gostParams.getDigestParamSet(),
+                            gostParams.getEncryptionParamSet());
                 }
 
                 ASN1Encodable privKey = keyInfo.parsePrivateKey();
@@ -294,12 +301,12 @@ public class PrivateKeyFactory
             }
 
             return new ECPrivateKeyParameters(
-                d,
-                new ECGOST3410Parameters(
-                    ecSpec,
-                    gostParams.getPublicKeyParamSet(),
-                    gostParams.getDigestParamSet(),
-                    gostParams.getEncryptionParamSet()));
+                    d,
+                    new ECGOST3410Parameters(
+                            ecSpec,
+                            gostParams.getPublicKeyParamSet(),
+                            gostParams.getDigestParamSet(),
+                            gostParams.getEncryptionParamSet()));
 
         }
         else

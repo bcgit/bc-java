@@ -12,6 +12,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsSigner;
+import org.bouncycastle.tls.injection.InjectionPoint;
 
 /**
  * Credentialed class for generating signatures based on the use of primitives from the JCA.
@@ -35,6 +36,12 @@ public class JcaDefaultTlsCredentialedSigner
         String algorithm = privateKey.getAlgorithm();
 
         TlsSigner signer;
+
+
+        if (InjectionPoint.sigAlgs().contain(signatureAndHashAlgorithm)) { // #tls-injection
+            signer = InjectionPoint.sigAlgs().tlsSignerFor(crypto, privateKey);
+            return signer;
+        }
 
         // TODO We probably want better distinction b/w the rsa_pss_pss and rsa_pss_rsae cases here
         if (privateKey instanceof RSAPrivateKey

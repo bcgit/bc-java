@@ -68,6 +68,7 @@ import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
 import org.bouncycastle.tls.crypto.impl.TlsImplUtils;
 import org.bouncycastle.tls.crypto.impl.TlsNullCipher;
+import org.bouncycastle.tls.injection.InjectionPoint;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -397,6 +398,10 @@ public class BcTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
+        // #tls-injection
+        if (InjectionPoint.kems().contain(namedGroup)) {
+            return true;
+        }
         return NamedGroup.refersToASpecificGroup(namedGroup);
     }
 
