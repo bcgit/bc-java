@@ -59,7 +59,7 @@ public class PGPSignatureGenerator
 
     /**
      * Create a signature generator built on the passed in contentSignerBuilder.
-     * The produces signature version will match the version of the passed in signing key.
+     * The produced signature version will match the version of the passed in signing key.
      *
      * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures
      * @param signingKey signing key
@@ -71,6 +71,15 @@ public class PGPSignatureGenerator
         this(contentSignerBuilder, signingKey, signingKey.getVersion());
     }
 
+    /**
+     * Create a signature generator built on the passed in contentSignerBuilder.
+     * The signature that is being produced will match the passed in signature version.
+     * NOTE: You cannot use a v6 signing key to produce signatures of any other version than 6.
+     *
+     * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures
+     * @param signingKey signing key
+     * @param signatureVersion version of the produced signature packet
+     */
     public PGPSignatureGenerator(
             PGPContentSignerBuilder contentSignerBuilder,
             PGPPublicKey signingKey,
