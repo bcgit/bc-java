@@ -12,7 +12,7 @@ import org.bouncycastle.util.Arrays;
 /**
  *
  *    Crystal Kyber Public Key Format.
- *    See https://www.ietf.org/archive/id/draft-uni-qsckeys-kyber-00.html for details.
+ *    See https://www.ietf.org/archive/id/draft-uni-qsckeys-kyber-01.html for details.
  *    <pre>
  *        KyberPublicKey ::= SEQUENCE {
  *         t           OCTET STRING,
