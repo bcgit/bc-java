@@ -13,11 +13,9 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
@@ -209,12 +207,7 @@ public class OpenSSHPrivateKeyUtil
                     if (parameters.isNamedCurve())
                     {
                         ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(parameters.getParameters());
-                        X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
-                        if (x9 == null)
-                        {
-                            x9 = ECNamedCurveTable.getByOID(oid);
-                        }
-                        domainParams = new ECNamedDomainParameters(oid, x9);
+                        domainParams = ECNamedDomainParameters.lookup(oid);
                     }
                     else
                     {
