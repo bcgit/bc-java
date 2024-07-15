@@ -1,8 +1,10 @@
 package org.bouncycastle.jsse.provider;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
@@ -19,7 +21,9 @@ import org.bouncycastle.jsse.BCX509Key;
 import org.bouncycastle.jsse.provider.SignatureSchemeInfo.PerConnection;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.AlertLevel;
+import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusRequest;
 import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
@@ -376,8 +380,34 @@ class ProvTlsClient
                 String authType = JsseUtils.getAuthTypeServer(
                     context.getSecurityParametersHandshake().getKeyExchangeAlgorithm());
 
-                jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses(
-                    serverCertificate.getCertificateStatus());
+                if (TlsUtils.isTLSv13(context))
+                {
+                    // RFC 8446: In TLS 1.3, the server's OCSP information is carried in an extension in the CertificateEntry
+                    // containing the associated certificate.  Specifically, the body of the "status_request" extension
+                    // from the server MUST be a CertificateStatus structure as defined in [RFC6066], which is interpreted as defined in [RFC6960].
+                    CertificateEntry[] certificateEntryList = serverCertificate.getCertificate().getCertificateEntryList();
+                    for (int i = 0; i < certificateEntryList.length - 1; i++)
+                    {
+                        CertificateEntry entry = certificateEntryList[i];
+                        Hashtable extensions = entry.getExtensions();
+                        if (extensions != null && extensions.get(TlsExtensionsUtils.EXT_status_request) != null)
+                        {
+                            byte[] extBytes = (byte[]) extensions.get(TlsExtensionsUtils.EXT_status_request);
+                            ByteArrayInputStream bais = new ByteArrayInputStream(extBytes);
+                            CertificateStatus certificateStatus = CertificateStatus.parse(context, bais);
+                            if (jsseSecurityParameters.statusResponses == null)
+                            {
+                                jsseSecurityParameters.statusResponses = new ArrayList<byte[]>();
+                            }
+                            jsseSecurityParameters.statusResponses.addAll(JsseUtils.getStatusResponses(certificateStatus));
+                        }
+                    }
+                }
+                else
+                {
+                    jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses(
+                            serverCertificate.getCertificateStatus());
+                }
 
                 manager.checkServerTrusted(chain, authType);
             }

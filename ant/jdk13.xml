@@ -109,8 +109,8 @@
                 <exclude name="**/PKIXCertPathBuilderSpi_8.java"/>
                 <exclude name="**/WrappedRevocationChecker.java"/>
                 <exclude name="**/ProvRevocationChecker.java"/>
-                <exclude name="**/provider/OcspCache.java"/>
                 <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
+                <exclude name="**/provider/OcspResponseManager.java"/>
                 <exclude name="**/jcajce/BCFKSLoadStoreParameter.java" />
                 <exclude name="**/jcajce/BCLoadStoreParameter.java" />
 		<exclude name="**/keystore/util/ParameterUtil.java" />
@@ -244,6 +244,7 @@
                 <exclude name="**/jce/provider/test/AEADTest.java" />
                 <exclude name="**/jce/provider/test/ECEncodingTest.java" />
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
+                <exclude name="**/jce/provider/test/OcspResponseManagerTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/pkix/test/RevocationTest.java"/>

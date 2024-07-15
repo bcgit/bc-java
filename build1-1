@@ -98,8 +98,9 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -f org/bouncycastle/jce/provider/PKIXCertPathBuilderSpi_8.java
     rm -f org/bouncycastle/jce/provider/WrappedRevocationChecker.java
     rm -f org/bouncycastle/jce/provider/ProvRevocationChecker.java
-    rm -f org/bouncycastle/jce/provider/OcspCache.java
     rm -f org/bouncycastle/jce/provider/ProvOcspRevocationChecker.java
+    rm -f org/bouncycastle/jce/provider/OcspResponseManager.java
+    rm -f org/bouncycastle/jce/provider/test/OcspResponseManagerTest.java
     rm -rf org/bouncycastle/i18n/filter/test
     rm -rf org/bouncycastle/math/ec/test
     rm -rf org/bouncycastle/jce/provider/test/ECEncodingTest.java
