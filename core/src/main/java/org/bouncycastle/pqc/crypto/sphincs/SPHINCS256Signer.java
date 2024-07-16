@@ -406,13 +406,12 @@ public class SPHINCS256Signer
             smlen -= SPHINCS256Config.SUBTREE_HEIGHT * SPHINCS256Config.HASH_BYTES;
         }
 
+        // Because we use custom offsets on tpk, rather than incurring an
+        // expensive copy, we use a manual constant time comparison.
         boolean verified = true;
         for (i = 0; i < SPHINCS256Config.HASH_BYTES; i++)
         {
-            if (root[i] != tpk[i + Horst.N_MASKS * SPHINCS256Config.HASH_BYTES])
-            {
-                verified = false;
-            }
+            verified &= root[i] == tpk[i + Horst.N_MASKS * SPHINCS256Config.HASH_BYTES];
         }
 
         return verified;

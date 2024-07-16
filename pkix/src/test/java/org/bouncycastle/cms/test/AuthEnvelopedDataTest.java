@@ -18,9 +18,11 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedData;
@@ -205,6 +207,59 @@ public class AuthEnvelopedDataTest
         assertEquals("Hello, world!", Strings.fromByteArray(recData));
     }
 
+    public void testGCMwithHKDF()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_GCM)
+            .setEnableSha256HKdf(true)
+            .setProvider(BC).build();
+
+        assertEquals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256, candidate.getAlgorithmIdentifier().getAlgorithm());
+
+        AlgorithmIdentifier kdfParams = AlgorithmIdentifier.getInstance(candidate.getAlgorithmIdentifier().getParameters());
+
+        assertEquals(NISTObjectIdentifiers.id_aes128_GCM, kdfParams.getAlgorithm());
+        assertNotNull(GCMParameters.getInstance(kdfParams.getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
     public void testCCM()
         throws Exception
     {
@@ -217,6 +272,58 @@ public class AuthEnvelopedDataTest
 
         assertEquals(NISTObjectIdentifiers.id_aes128_CCM, candidate.getAlgorithmIdentifier().getAlgorithm());
         assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                 Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                     new DERSet(new Time(new Date())));
+                 attrs.put(testAttr.getAttrType(), testAttr);
+                 return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+        assertTrue(java.util.Arrays.equals(authData.getMac(), recipient.getMac()));
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testCCMwithHKDF()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CCM)
+                                            .setEnableSha256HKdf(true).setProvider(BC).build();
+
+        assertEquals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256, candidate.getAlgorithmIdentifier().getAlgorithm());
+
+        AlgorithmIdentifier kdfParams = AlgorithmIdentifier.getInstance(candidate.getAlgorithmIdentifier().getParameters());
+
+        assertEquals(NISTObjectIdentifiers.id_aes128_CCM, kdfParams.getAlgorithm());
+        assertNotNull(GCMParameters.getInstance(kdfParams.getParameters()));
 
         assertTrue(candidate instanceof OutputAEADEncryptor);
 

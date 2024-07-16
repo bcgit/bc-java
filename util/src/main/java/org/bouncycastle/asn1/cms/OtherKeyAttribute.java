@@ -57,7 +57,11 @@ public class OtherKeyAttribute
         ASN1Sequence seq)
     {
         keyAttrId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        keyAttr = seq.getObjectAt(1);
+
+        if (seq.size() > 1)
+        {
+            keyAttr = seq.getObjectAt(1);
+        }
     }
 
     public OtherKeyAttribute(
@@ -86,7 +90,11 @@ public class OtherKeyAttribute
         ASN1EncodableVector v = new ASN1EncodableVector(2);
 
         v.add(keyAttrId);
-        v.add(keyAttr);
+
+        if (keyAttr != null)
+        {
+            v.add(keyAttr);
+        }
 
         return new DERSequence(v);
     }

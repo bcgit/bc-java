@@ -36,19 +36,27 @@ public class NTRUTest
         NTRUParameters.ntruhps2048509,
         NTRUParameters.ntruhps2048677,
         NTRUParameters.ntruhps4096821,
-        NTRUParameters.ntruhrss701
+        NTRUParameters.ntruhps40961229,
+        NTRUParameters.ntruhrss701,
+        NTRUParameters.ntruhrss1373
     };
+
     private final String[] katBase = {
         "ntruhps2048509",
         "ntruhps2048677",
         "ntruhps4096821",
-        "ntruhrss701"
+        "ntruhps40961229",
+        "ntruhrss701",
+        "ntruhrss1373"
     };
+
     private final String[] katFiles = {
         "PQCkemKAT_935.rsp",
         "PQCkemKAT_1234.rsp",
         "PQCkemKAT_1590.rsp",
-        "PQCkemKAT_1450.rsp"
+        "PQCkemKAT_2366.rsp",
+        "PQCkemKAT_1450.rsp",
+        "PQCkemKAT_2983.rsp"
     };
 
     public void testPrivInfoGeneration()
@@ -76,6 +84,7 @@ public class NTRUTest
         for (int i = 0; i < this.params.length; i++)
         {
             NTRUParameters param = params[i];
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/ntru/" + katBase[i], katFiles[i]);
             List<NTRUKAT> kats = NTRUKAT.getKAT(src);
 

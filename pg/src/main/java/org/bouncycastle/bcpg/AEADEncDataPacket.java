@@ -23,9 +23,16 @@ public class AEADEncDataPacket
     private final byte[] iv;
 
     public AEADEncDataPacket(BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    public AEADEncDataPacket(BCPGInputStream in,
+                             boolean newPacketFormat)
         throws IOException
     {
-        super(in, AEAD_ENC_DATA);
+        super(in, AEAD_ENC_DATA, newPacketFormat);
 
         version = (byte)in.read();
         if (version != VERSION_1)

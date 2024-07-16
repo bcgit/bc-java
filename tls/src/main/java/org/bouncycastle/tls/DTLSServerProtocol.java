@@ -751,13 +751,10 @@ public class DTLSServerProtocol
             return false;
         }
 
-        boolean isEMS = sessionParameters.isExtendedMasterSecret();
-        if (!TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
+        if (!sessionParameters.isExtendedMasterSecret() &&
+            !TlsUtils.isExtendedMasterSecretOptional(sessionVersion))
         {
-            if (!isEMS)
-            {
-                return false;
-            }
+            return false;
         }
 
         TlsCrypto crypto = state.serverContext.getCrypto();

@@ -19,7 +19,7 @@ public class SignaturePacket
     public static final int VERSION_2 = 2;
     public static final int VERSION_3 = 3;
     public static final int VERSION_4 = 4;  // https://datatracker.ietf.org/doc/rfc4880/
-    public static final int VERSION_5 = 5;  // https://datatracker.ietf.org/doc/draft-koch-openpgp-2015-rfc4880bis/
+    public static final int VERSION_5 = 5;  // https://datatracker.ietf.org/doc/draft-koch-librepgp/
     public static final int VERSION_6 = 6;  // https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/
 
     private int                    version;
@@ -33,155 +33,282 @@ public class SignaturePacket
     private SignatureSubpacket[]   hashedData;
     private SignatureSubpacket[]   unhashedData;
     private byte[]                 signatureEncoding;
+    private byte[]                 salt; // v6 only
 
     SignaturePacket(
-        BCPGInputStream    in)
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(in, false);
+    }
+
+    SignaturePacket(
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(SIGNATURE);
+        super(SIGNATURE, newPacketFormat);
 
         version = in.read();
-
-        if (version == VERSION_3 || version == VERSION_2)
+        switch (version)
         {
-            int    l = in.read();
-
-            signatureType = in.read();
-            creationTime = (((long)in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read()) * 1000;
-
-            keyID = StreamUtil.readKeyID(in);
-            keyAlgorithm = in.read();
-            hashAlgorithm = in.read();
+            case VERSION_2:
+            case VERSION_3:
+                parseV2_V3(in);
+                break;
+            case VERSION_4:
+            case VERSION_5:
+                parseV4_V5(in);
+                break;
+            case VERSION_6:
+                parseV6(in);
+                break;
+            default:
+                Streams.drain(in);
+                throw new UnsupportedPacketVersionException("unsupported version: " + version);
         }
-        else if (version == VERSION_4)
-        {
-            signatureType = in.read();
-            keyAlgorithm = in.read();
-            hashAlgorithm = in.read();
+    }
 
-            int        hashedLength = (in.read() << 8) | in.read();
-            byte[]    hashed = new byte[hashedLength];
+    /**
+     * Parse a version 2 or version 3 signature.
+     * @param in input stream which already skipped over the version number
+     * @throws IOException if the packet is malformed
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-5.2.2">
+     *     Version 3 packet format</a>
+     */
+    private void parseV2_V3(BCPGInputStream in)
+        throws IOException
+    {
+        int    l = in.read(); // length l MUST be 5
 
-            in.readFully(hashed);
+        signatureType = in.read();
+        creationTime = StreamUtil.readTime(in);
 
-            //
-            // read the signature sub packet data.
-            //
-            SignatureSubpacket    sub;
-            SignatureSubpacketInputStream    sIn = new SignatureSubpacketInputStream(
-                                                                 new ByteArrayInputStream(hashed));
+        keyID = StreamUtil.readKeyID(in);
+        keyAlgorithm = in.read();
+        hashAlgorithm = in.read();
 
-            Vector    v = new Vector();
-            while ((sub = sIn.readPacket()) != null)
-            {
-                v.addElement(sub);
-            }
-
-            hashedData = new SignatureSubpacket[v.size()];
-
-            for (int i = 0; i != hashedData.length; i++)
-            {
-                SignatureSubpacket    p = (SignatureSubpacket)v.elementAt(i);
-                if (p instanceof IssuerKeyID)
-                {
-                    keyID = ((IssuerKeyID)p).getKeyID();
-                }
-                else if (p instanceof SignatureCreationTime)
-                {
-                    creationTime = ((SignatureCreationTime)p).getTime().getTime();
-                }
-
-                hashedData[i] = p;
-            }
-
-            int        unhashedLength = (in.read() << 8) | in.read();
-            byte[]    unhashed = new byte[unhashedLength];
-
-            in.readFully(unhashed);
-
-            sIn = new SignatureSubpacketInputStream(
-                                     new ByteArrayInputStream(unhashed));
-
-            v.removeAllElements();
-            while ((sub = sIn.readPacket()) != null)
-            {
-                v.addElement(sub);
-            }
-
-            unhashedData = new SignatureSubpacket[v.size()];
-
-            for (int i = 0; i != unhashedData.length; i++)
-            {
-                SignatureSubpacket    p = (SignatureSubpacket)v.elementAt(i);
-                if (p instanceof IssuerKeyID)
-                {
-                    keyID = ((IssuerKeyID)p).getKeyID();
-                }
-
-                unhashedData[i] = p;
-            }
-        }
-        else
-        {
-            Streams.drain(in);
-
-            throw new UnsupportedPacketVersionException("unsupported version: " + version);
-        }
-
+        // left 16 bits of the signed hash value
         fingerPrint = new byte[2];
         in.readFully(fingerPrint);
 
+        parseSignature(in);
+    }
+
+    /**
+     * Parse a version 4 or version 5 signature.
+     * The difference between version 4 and 5 is that a version 5 signature contains additional metadata.
+     * @param in input stream which already skipped over the version number
+     * @throws IOException if the packet is malformed
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-5.2.3">
+     *     Version 4 packet format</a>
+     * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-version-4-and-5-signature-p">
+     *     Version 5 packet format</a>
+     */
+    private void parseV4_V5(BCPGInputStream in)
+            throws IOException
+    {
+        signatureType = in.read();
+        keyAlgorithm = in.read();
+        hashAlgorithm = in.read();
+
+        parseSubpackets(in);
+
+        // left 16 bits of the signed hash value
+        fingerPrint = new byte[2];
+        in.readFully(fingerPrint);
+
+        parseSignature(in);
+    }
+
+    /**
+     * Parse a version 6 signature.
+     * Version 6 signatures do use 4 octet subpacket area length descriptors and contain an additional salt value
+     * (which may or may not be of size 0, librepgp and crypto-refresh are in disagreement here).
+     * @param in input stream which already skipped over the version number
+     * @throws IOException if the packet is malformed
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-and-6-signature-p">
+     *     Version 6 packet format</a>
+     */
+    private void parseV6(BCPGInputStream in)
+            throws IOException
+    {
+        signatureType = in.read();
+        keyAlgorithm = in.read();
+        hashAlgorithm = in.read();
+
+        parseSubpackets(in);
+
+        // left 16 bits of the signed hash value
+        fingerPrint = new byte[2];
+        in.readFully(fingerPrint);
+
+        int saltSize = in.read();
+        salt = new byte[saltSize];
+        in.readFully(salt);
+
+        parseSignature(in);
+    }
+
+    /**
+     * Parse the hashed and unhashed signature subpacket areas of the signature.
+     * Version 4 and 5 signature encode the area length using 2 octets, while version 6 uses 4 octet lengths instead.
+     *
+     * @param in input stream which skipped to after the hash algorithm octet
+     * @throws IOException if the packet is malformed
+     */
+    private void parseSubpackets(BCPGInputStream in)
+            throws IOException
+    {
+        int hashedLength;
+        if (version == 6)
+        {
+            hashedLength = StreamUtil.read4OctetLength(in);
+        }
+        else
+        {
+            hashedLength = StreamUtil.read2OctetLength(in);
+        }
+        byte[]    hashed = new byte[hashedLength];
+
+        in.readFully(hashed);
+
+        //
+        // read the signature sub packet data.
+        //
+        SignatureSubpacket    sub;
+        SignatureSubpacketInputStream    sIn = new SignatureSubpacketInputStream(
+                new ByteArrayInputStream(hashed));
+
+        Vector<SignatureSubpacket>    vec = new Vector<SignatureSubpacket>();
+        while ((sub = sIn.readPacket()) != null)
+        {
+            vec.addElement(sub);
+        }
+
+        hashedData = new SignatureSubpacket[vec.size()];
+
+        for (int i = 0; i != hashedData.length; i++)
+        {
+            SignatureSubpacket    p = vec.elementAt(i);
+            if (p instanceof IssuerKeyID)
+            {
+                keyID = ((IssuerKeyID)p).getKeyID();
+            }
+            else if (p instanceof SignatureCreationTime)
+            {
+                creationTime = ((SignatureCreationTime)p).getTime().getTime();
+            }
+
+            hashedData[i] = p;
+        }
+
+        int unhashedLength;
+        if (version == VERSION_6)
+        {
+            unhashedLength = StreamUtil.read4OctetLength(in);
+        }
+        else
+        {
+            unhashedLength = StreamUtil.read2OctetLength(in);
+        }
+        byte[]    unhashed = new byte[unhashedLength];
+
+        in.readFully(unhashed);
+
+        sIn = new SignatureSubpacketInputStream(
+                new ByteArrayInputStream(unhashed));
+
+        vec.removeAllElements();
+        while ((sub = sIn.readPacket()) != null)
+        {
+            vec.addElement(sub);
+        }
+
+        unhashedData = new SignatureSubpacket[vec.size()];
+
+        for (int i = 0; i != unhashedData.length; i++)
+        {
+            SignatureSubpacket    p = vec.elementAt(i);
+            if (p instanceof IssuerKeyID)
+            {
+                keyID = ((IssuerKeyID)p).getKeyID();
+            }
+
+            unhashedData[i] = p;
+        }
+    }
+
+    /**
+     * Parse the algorithm-specific signature encoding.
+     * Ed25519 and Ed448 do not populate the signature MPInteger field, but instead read the raw signature to
+     * signatureEncoding directly.
+     *
+     * @param in input stream which skipped the head of the signature
+     * @throws IOException if the packet is malformed
+     */
+    private void parseSignature(BCPGInputStream in)
+            throws IOException
+    {
         switch (keyAlgorithm)
         {
-        case RSA_GENERAL:
-        case RSA_SIGN:
-            MPInteger    v = new MPInteger(in);
+            case RSA_GENERAL:
+            case RSA_SIGN:
+                MPInteger    v = new MPInteger(in);
 
-            signature = new MPInteger[1];
-            signature[0] = v;
-            break;
-        case DSA:
-            MPInteger    r = new MPInteger(in);
-            MPInteger    s = new MPInteger(in);
+                signature = new MPInteger[1];
+                signature[0] = v;
+                break;
+            case DSA:
+                MPInteger    r = new MPInteger(in);
+                MPInteger    s = new MPInteger(in);
 
-            signature = new MPInteger[2];
-            signature[0] = r;
-            signature[1] = s;
-            break;
-        case ELGAMAL_ENCRYPT: // yep, this really does happen sometimes.
-        case ELGAMAL_GENERAL:
-            MPInteger       p = new MPInteger(in);
-            MPInteger       g = new MPInteger(in);
-            MPInteger       y = new MPInteger(in);
+                signature = new MPInteger[2];
+                signature[0] = r;
+                signature[1] = s;
+                break;
+            case ELGAMAL_ENCRYPT: // yep, this really does happen sometimes.
+            case ELGAMAL_GENERAL:
+                MPInteger       p = new MPInteger(in);
+                MPInteger       g = new MPInteger(in);
+                MPInteger       y = new MPInteger(in);
 
-            signature = new MPInteger[3];
-            signature[0] = p;
-            signature[1] = g;
-            signature[2] = y;
-            break;
-        case ECDSA:
-        case EDDSA_LEGACY:
-        case Ed448:
-        case Ed25519:
-        case X448:
-        case X25519:
-            MPInteger    ecR = new MPInteger(in);
-            MPInteger    ecS = new MPInteger(in);
+                signature = new MPInteger[3];
+                signature[0] = p;
+                signature[1] = g;
+                signature[2] = y;
+                break;
+            case Ed448:
+                signatureEncoding = new byte[org.bouncycastle.math.ec.rfc8032.Ed448.SIGNATURE_SIZE];
+                in.readFully(signatureEncoding);
+                break;
+            case Ed25519:
+                signatureEncoding = new byte[org.bouncycastle.math.ec.rfc8032.Ed25519.SIGNATURE_SIZE];
+                in.readFully(signatureEncoding);
+                break;
+            case ECDSA:
+            case EDDSA_LEGACY:
 
-            signature = new MPInteger[2];
-            signature[0] = ecR;
-            signature[1] = ecS;
-            break;
-        default:
-            if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)
-            {
-                signature = null;
-                signatureEncoding = Streams.readAll(in);
-            }
-            else
-            {
-                throw new IOException("unknown signature key algorithm: " + keyAlgorithm);
-            }
+                MPInteger    ecR = new MPInteger(in);
+                MPInteger    ecS = new MPInteger(in);
+
+                signature = new MPInteger[2];
+                signature[0] = ecR;
+                signature[1] = ecS;
+                break;
+            default:
+                if (keyAlgorithm >= PublicKeyAlgorithmTags.EXPERIMENTAL_1 && keyAlgorithm <= PublicKeyAlgorithmTags.EXPERIMENTAL_11)
+                {
+                    signature = null;
+                    signatureEncoding = Streams.readAll(in);
+                }
+                else
+                {
+                    throw new IOException("unknown signature key algorithm: " + keyAlgorithm);
+                }
         }
     }
 
@@ -262,6 +389,34 @@ public class SignaturePacket
         }
     }
 
+    public SignaturePacket(
+            int                     version,
+            int                     signatureType,
+            long                    keyID,
+            int                     keyAlgorithm,
+            int                     hashAlgorithm,
+            SignatureSubpacket[]    hashedData,
+            SignatureSubpacket[]    unhashedData,
+            byte[]                  fingerPrint,
+            byte[]                  signatureEncoding)
+    {
+        super(SIGNATURE);
+
+        this.version = version;
+        this.signatureType = signatureType;
+        this.keyID = keyID;
+        this.keyAlgorithm = keyAlgorithm;
+        this.hashAlgorithm = hashAlgorithm;
+        this.hashedData = hashedData;
+        this.unhashedData = unhashedData;
+        this.fingerPrint = fingerPrint;
+        this.signatureEncoding = Arrays.clone(signatureEncoding);
+        if (hashedData != null)
+        {
+            setCreationTime();
+        }
+    }
+
     /**
      * get the version number
      */
@@ -294,6 +449,16 @@ public class SignaturePacket
     public byte[] getFingerPrint()
     {
         return Arrays.clone(fingerPrint);
+    }
+
+    /**
+     * Return the signature's salt.
+     * Only for v6 signatures.
+     * @return salt
+     */
+    public byte[] getSalt()
+    {
+        return salt;
     }
 
     /**
@@ -338,19 +503,14 @@ public class SignaturePacket
                 }
 
                 byte[]                   data = hOut.toByteArray();
-
-                sOut.write((byte)(data.length >> 8));
-                sOut.write((byte)data.length);
+                StreamUtil.write2OctetLength(sOut, data.length);
                 sOut.write(data);
 
                 byte[]    hData = sOut.toByteArray();
 
                 sOut.write((byte)this.getVersion());
                 sOut.write((byte)0xff);
-                sOut.write((byte)(hData.length>> 24));
-                sOut.write((byte)(hData.length >> 16));
-                sOut.write((byte)(hData.length >> 8));
-                sOut.write((byte)(hData.length));
+                StreamUtil.write4OctetLength(sOut, hData.length);
             }
             catch (IOException e)
             {
@@ -382,6 +542,8 @@ public class SignaturePacket
     /**
      * return the signature as a set of integers - note this is normalised to be the
      * ASN.1 encoding of what appears in the signature packet.
+     * Note, that Ed25519 and Ed448 returns null, as the raw signature is stored in signatureEncoding only.
+     * For those, use {@link #getSignatureBytes()} instead.
      */
     public MPInteger[] getSignature()
     {
@@ -447,7 +609,7 @@ public class SignaturePacket
 
         pOut.write(version);
 
-        if (version == 3 || version == 2)
+        if (version == VERSION_3 || version == VERSION_2)
         {
             pOut.write(5); // the length of the next block
 
@@ -461,7 +623,7 @@ public class SignaturePacket
             pOut.write(keyAlgorithm);
             pOut.write(hashAlgorithm);
         }
-        else if (version == 4)
+        else if (version == VERSION_4 || version == VERSION_5 || version == VERSION_6)
         {
             pOut.write(signatureType);
             pOut.write(keyAlgorithm);
@@ -476,8 +638,14 @@ public class SignaturePacket
 
             byte[]                   data = sOut.toByteArray();
 
-            pOut.write(data.length >> 8);
-            pOut.write(data.length);
+            if (version == VERSION_6)
+            {
+                StreamUtil.write4OctetLength(pOut, data.length);
+            }
+            else
+            {
+                StreamUtil.write2OctetLength(pOut, data.length);
+            }
             pOut.write(data);
 
             sOut.reset();
@@ -489,8 +657,14 @@ public class SignaturePacket
 
             data = sOut.toByteArray();
 
-            pOut.write(data.length >> 8);
-            pOut.write(data.length);
+            if (version == VERSION_6)
+            {
+                StreamUtil.write4OctetLength(pOut, data.length);
+            }
+            else
+            {
+                StreamUtil.write2OctetLength(pOut, data.length);
+            }
             pOut.write(data);
         }
         else
@@ -499,6 +673,12 @@ public class SignaturePacket
         }
 
         pOut.write(fingerPrint);
+
+        if (version == VERSION_6)
+        {
+            pOut.write(salt.length);
+            pOut.write(salt);
+        }
 
         if (signature != null)
         {
@@ -514,7 +694,7 @@ public class SignaturePacket
 
         pOut.close();
 
-        out.writePacket(SIGNATURE, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), SIGNATURE, bOut.toByteArray());
     }
 
     private void setCreationTime()

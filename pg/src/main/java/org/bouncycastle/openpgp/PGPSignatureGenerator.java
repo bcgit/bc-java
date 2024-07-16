@@ -178,15 +178,19 @@ public class PGPSignatureGenerator
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));
         }
-        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY ||
-            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519 ||
-            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
+        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
         {
             byte[] enc = contentSigner.getSignature();
             sigValues = new MPInteger[]{
                 new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, 0, enc.length / 2))),
                 new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, enc.length / 2, enc.length)))
             };
+        }
+        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519 ||
+            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
+        {
+            // Contrary to EDDSA_LEGACY, the new PK algorithms Ed25519, Ed448 do not use MPI encoding
+            sigValues = null;
         }
         else
         {
@@ -199,7 +203,17 @@ public class PGPSignatureGenerator
         fingerPrint[0] = digest[0];
         fingerPrint[1] = digest[1];
 
-        return new PGPSignature(new SignaturePacket(sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(), contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, sigValues));
+        if (sigValues != null)
+        {
+            return new PGPSignature(new SignaturePacket(sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
+                    contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, sigValues));
+        }
+        else
+        {
+            // Ed25519, Ed448 use raw encoding instead of MPI
+            return new PGPSignature(new SignaturePacket(4, sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
+                    contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, contentSigner.getSignature()));
+        }
     }
 
     /**
@@ -240,7 +254,7 @@ public class PGPSignatureGenerator
     {
         updateWithPublicKey(pubKey);
 
-        getAttriubtesHash(userAttributes);
+        getAttributesHash(userAttributes);
 
         return this.generate();
     }

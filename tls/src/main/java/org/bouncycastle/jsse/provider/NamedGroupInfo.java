@@ -20,6 +20,7 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Properties;
 
 class NamedGroupInfo
 {
@@ -73,7 +74,13 @@ class NamedGroupInfo
         ffdhe3072(NamedGroup.ffdhe3072, "DiffieHellman"),
         ffdhe4096(NamedGroup.ffdhe4096, "DiffieHellman"),
         ffdhe6144(NamedGroup.ffdhe6144, "DiffieHellman"),
-        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman");
+        ffdhe8192(NamedGroup.ffdhe8192, "DiffieHellman"),
+
+        OQS_mlkem512(NamedGroup.OQS_mlkem512, "ML-KEM"),
+        OQS_mlkem768(NamedGroup.OQS_mlkem768, "ML-KEM"),
+        OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
+        DRAFT_mlkem768(NamedGroup.DRAFT_mlkem768, "ML-KEM"),
+        DRAFT_mlkem1024(NamedGroup.DRAFT_mlkem1024, "ML-KEM");
 
         private final int namedGroup;
         private final String name;
@@ -159,6 +166,28 @@ class NamedGroupInfo
         }
     }
 
+    static class DefaultedResult
+    {
+        private final int result;
+        private final boolean defaulted;
+
+        DefaultedResult(int result, boolean defaulted)
+        {
+            this.result = result;
+            this.defaulted = defaulted;
+        }
+
+        int getResult()
+        {
+            return result;
+        }
+
+        boolean isDefaulted()
+        {
+            return defaulted;
+        }
+    }
+
     static PerConnection createPerConnectionClient(PerContext perContext, ProvSSLParameters sslParameters,
         ProtocolVersion[] activeProtocolVersions)
     {
@@ -221,7 +250,7 @@ class NamedGroupInfo
         return new PerContext(index, candidates);
     }
 
-    static int getMaximumBitsServerECDH(PerConnection perConnection)
+    static DefaultedResult getMaximumBitsServerECDH(PerConnection perConnection)
     {
         int maxBits = 0;
         List<NamedGroupInfo> peer = perConnection.getPeer();
@@ -251,10 +280,10 @@ class NamedGroupInfo
                 maxBits = Math.max(maxBits, namedGroupInfo.getBitsECDH());
             }
         }
-        return maxBits;
+        return new DefaultedResult(maxBits, peer == null);
     }
 
-    static int getMaximumBitsServerFFDHE(PerConnection perConnection)
+    static DefaultedResult getMaximumBitsServerFFDHE(PerConnection perConnection)
     {
         int maxBits = 0;
         boolean anyPeerFF = false;
@@ -288,7 +317,7 @@ class NamedGroupInfo
                 maxBits = Math.max(maxBits, namedGroupInfo.getBitsFFDHE());
             }
         }
-        return maxBits;
+        return new DefaultedResult(maxBits, !anyPeerFF);
     }
 
     static NamedGroupInfo getNamedGroup(PerContext perContext, int namedGroup)
@@ -323,7 +352,7 @@ class NamedGroupInfo
         return perConnection.local.containsKey(namedGroup);
     }
 
-    static int selectServerECDH(PerConnection perConnection, int minimumBitsECDH)
+    static DefaultedResult selectServerECDH(PerConnection perConnection, int minimumBitsECDH)
     {
         List<NamedGroupInfo> peer = perConnection.getPeer();
         if (peer != null)
@@ -335,7 +364,7 @@ class NamedGroupInfo
                     int namedGroup = namedGroupInfo.getNamedGroup();
                     if (perConnection.local.containsKey(namedGroup))
                     {
-                        return namedGroup;
+                        return new DefaultedResult(namedGroup, false);
                     }
                 }
             }
@@ -351,14 +380,14 @@ class NamedGroupInfo
             {
                 if (namedGroupInfo.getBitsECDH() >= minimumBitsECDH)
                 {
-                    return namedGroupInfo.getNamedGroup();
+                    return new DefaultedResult(namedGroupInfo.getNamedGroup(), true);
                 }
             }
         }
-        return -1;
+        return new DefaultedResult(-1, peer == null);
     }
 
-    static int selectServerFFDHE(PerConnection perConnection, int minimumBitsFFDHE)
+    static DefaultedResult selectServerFFDHE(PerConnection perConnection, int minimumBitsFFDHE)
     {
         boolean anyPeerFF = false;
         List<NamedGroupInfo> peer = perConnection.getPeer();
@@ -373,7 +402,7 @@ class NamedGroupInfo
                 {
                     if (perConnection.local.containsKey(namedGroup))
                     {
-                        return namedGroup;
+                        return new DefaultedResult(namedGroup, false);
                     }
                 }
             }
@@ -389,11 +418,11 @@ class NamedGroupInfo
             {
                 if (namedGroupInfo.getBitsFFDHE() >= minimumBitsFFDHE)
                 {
-                    return namedGroupInfo.getNamedGroup();
+                    return new DefaultedResult(namedGroupInfo.getNamedGroup(), true);
                 }
             }
         }
-        return -1;
+        return new DefaultedResult(-1, !anyPeerFF);
     }
 
     private static void addNamedGroup(boolean isFipsContext, JcaTlsCrypto crypto, boolean disableChar2,
@@ -489,7 +518,7 @@ class NamedGroupInfo
 
         final boolean disableChar2 =
             PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false) ||
-            PropertyUtils.getBooleanSystemProperty("org.bouncycastle.ec.disable_f2m", false);
+            Properties.isOverrideSet("org.bouncycastle.ec.disable_f2m");
 
         final boolean disableFFDHE = !PropertyUtils.getBooleanSystemProperty("jsse.enableFFDHE", true);
 

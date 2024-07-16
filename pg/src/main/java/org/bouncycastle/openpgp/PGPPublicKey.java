@@ -29,6 +29,7 @@ import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * general class to handle a PGP public key object.
@@ -67,25 +68,11 @@ public class PGPPublicKey
         }
         else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
         {
-            this.keyID = ((long)(fingerprint[fingerprint.length - 8] & 0xff) << 56)
-                | ((long)(fingerprint[fingerprint.length - 7] & 0xff) << 48)
-                | ((long)(fingerprint[fingerprint.length - 6] & 0xff) << 40)
-                | ((long)(fingerprint[fingerprint.length - 5] & 0xff) << 32)
-                | ((long)(fingerprint[fingerprint.length - 4] & 0xff) << 24)
-                | ((long)(fingerprint[fingerprint.length - 3] & 0xff) << 16)
-                | ((long)(fingerprint[fingerprint.length - 2] & 0xff) << 8)
-                | ((fingerprint[fingerprint.length - 1] & 0xff));
+            this.keyID = Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
         }
         else if (publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
-            this.keyID = ((long)(fingerprint[0] & 0xff) << 56)
-                | ((long)(fingerprint[1] & 0xff) << 48)
-                | ((long)(fingerprint[2] & 0xff) << 40)
-                | ((long)(fingerprint[3] & 0xff) << 32)
-                | ((long)(fingerprint[4] & 0xff) << 24)
-                | ((long)(fingerprint[5] & 0xff) << 16)
-                | ((long)(fingerprint[6] & 0xff) << 8)
-                | ((long)(fingerprint[7] & 0xff));
+            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
         }
 
         // key strength
@@ -415,11 +402,12 @@ public class PGPPublicKey
      */
     public byte[] getFingerprint()
     {
-        byte[] tmp = new byte[fingerprint.length];
+        return Arrays.clone(fingerprint);
+    }
 
-        System.arraycopy(fingerprint, 0, tmp, 0, tmp.length);
-
-        return tmp;
+    public boolean hasFingerprint(byte[] fingerprint)
+    {
+        return Arrays.areEqual(this.fingerprint, fingerprint);
     }
 
     /**

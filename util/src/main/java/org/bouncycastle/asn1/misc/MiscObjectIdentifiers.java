@@ -163,4 +163,32 @@ public interface MiscObjectIdentifiers
     ASN1ObjectIdentifier id_composite_key = new ASN1ObjectIdentifier("2.16.840.1.114027.80.4.1");
 
     ASN1ObjectIdentifier id_oracle_pkcs12_trusted_key_usage = new ASN1ObjectIdentifier("2.16.840.1.113894.746875.1.1");
+
+
+    // COMPOSITE SIGNATURES START
+    // -- To be replaced by IANA
+    // Composite signature related OIDs. Based https://www.ietf.org/archive/id/draft-ounsworth-pq-composite-sigs-13.html
+    // The current OIDs are EXPERIMENTAL and are going to change.
+    ASN1ObjectIdentifier id_composite_signatures = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1");
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PSS_SHA256 = id_composite_signatures.branch("1");
+    ASN1ObjectIdentifier id_MLDSA44_RSA2048_PKCS15_SHA256 = id_composite_signatures.branch("2");
+    ASN1ObjectIdentifier id_MLDSA44_Ed25519_SHA512 = id_composite_signatures.branch("3");
+    ASN1ObjectIdentifier id_MLDSA44_ECDSA_P256_SHA256 = id_composite_signatures.branch("4");
+    ASN1ObjectIdentifier id_MLDSA44_ECDSA_brainpoolP256r1_SHA256 = id_composite_signatures.branch("5");
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PSS_SHA512 = id_composite_signatures.branch("6");
+    ASN1ObjectIdentifier id_MLDSA65_RSA3072_PKCS15_SHA512 = id_composite_signatures.branch("7");
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_P256_SHA512 = id_composite_signatures.branch("8");
+    ASN1ObjectIdentifier id_MLDSA65_ECDSA_brainpoolP256r1_SHA512 = id_composite_signatures.branch("9");
+    ASN1ObjectIdentifier id_MLDSA65_Ed25519_SHA512 = id_composite_signatures.branch("10");
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_P384_SHA512 = id_composite_signatures.branch("11");
+    ASN1ObjectIdentifier id_MLDSA87_ECDSA_brainpoolP384r1_SHA512 = id_composite_signatures.branch("12");
+    ASN1ObjectIdentifier id_MLDSA87_Ed448_SHA512 = id_composite_signatures.branch("13");
+
+    // Falcon-based composites below were removed from the IETF draft in version 13 and are expected to be included in a later/separate standard.
+    // Most likely due to the fact that the Falcon (FN-DSA) NIST standard is going to be released after the Dilithium (ML-DSA) standard.
+    // However, we still leave their implementation for experimental usage.
+    ASN1ObjectIdentifier id_Falcon512_ECDSA_P256_SHA256 = id_composite_signatures.branch("14");
+    ASN1ObjectIdentifier id_Falcon512_ECDSA_brainpoolP256r1_SHA256 = id_composite_signatures.branch("15");
+    ASN1ObjectIdentifier id_Falcon512_Ed25519_SHA512 = id_composite_signatures.branch("16");
+    // COMPOSITE SIGNATURES END
 }

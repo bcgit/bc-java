@@ -135,7 +135,6 @@ public class PGPAeadTest
     private void roundTripEncryptionDecryptionTests()
         throws PGPException, IOException
     {
-        System.setProperty("enableCamelliaKeyWrapping", "True");
         int[] aeadAlgs = new int[]{
             AEADAlgorithmTags.EAX,
             AEADAlgorithmTags.OCB,

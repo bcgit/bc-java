@@ -409,7 +409,8 @@ public class PGPClearSignedSignatureTest
 
         PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new JcaKeyFingerprintCalculator());
 
-        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+        isTrue(areEqual(pubKeyRing.getPublicKey().getFingerprint(), Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
+        isTrue(pubKeyRing.getPublicKey().hasFingerprint(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
 
@@ -473,7 +474,8 @@ public class PGPClearSignedSignatureTest
 
         PGPPublicKeyRing pubKeyRing = new PGPPublicKeyRing(aIn, new BcKeyFingerprintCalculator());
 
-        isTrue(areEqual(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34"), pubKeyRing.getPublicKey().getFingerprint()));
+        isTrue(areEqual(pubKeyRing.getPublicKey().getFingerprint(), Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
+        isTrue(pubKeyRing.getPublicKey().hasFingerprint(Hex.decode("6234 6350 CAE2 433E 2400  1D72 94FA 62C3 6481 AE34")));
 
         aIn = new ArmoredInputStream(new ByteArrayInputStream(Strings.toByteArray(edDsaSignedMessage)));
 
@@ -623,26 +625,52 @@ public class PGPClearSignedSignatureTest
     private void testExceptions()
         throws IOException
     {
-        ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(crOnlySignedMessage.getBytes()));
+        final ArmoredInputStream aIn = new ArmoredInputStream(new ByteArrayInputStream(crOnlySignedMessage.getBytes()));
 
-        testException("Offset and length cannot be negative.", "IndexOutOfBoundsException", ()-> aIn.read(new byte[15], -1, -1));
-        testException("Invalid offset and length.", "IndexOutOfBoundsException", ()-> aIn.read(new byte[15], 2, 15));
-        testException("invalid armor header", "ArmoredInputException", ()-> {
-            String message =
-                "-----BEGIN PGP SIGNED MESSAGE-----\r"
-                    +"-----BEGIN PGP SIGNED MESSAGE-----\r"
-                    + "\r";
-            ArmoredInputStream in = new ArmoredInputStream(new ByteArrayInputStream(message.getBytes()));
+        testException("Offset and length cannot be negative.", "IndexOutOfBoundsException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                aIn.read(new byte[15], -1, -1);
+            }
         });
-        testException("inconsistent line endings in headers", "ArmoredInputException", ()-> {
-            String message =
-                "-----BEGIN PGP SIGNED MESSAGE-----\r\n"
-                    + "Hash: SHA256\r\n"
-                    + "\r\r";
-            ArmoredInputStream in = new ArmoredInputStream(new ByteArrayInputStream(message.getBytes()));
+        testException("Invalid offset and length.", "IndexOutOfBoundsException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                aIn.read(new byte[15], 2, 15);
+            }
         });
-
-
+        testException("invalid armor header", "ArmoredInputException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                String message =
+                    "-----BEGIN PGP SIGNED MESSAGE-----\r"
+                        + "-----BEGIN PGP SIGNED MESSAGE-----\r"
+                        + "\r";
+                ArmoredInputStream in = new ArmoredInputStream(new ByteArrayInputStream(message.getBytes()));
+            }
+        });
+        testException("inconsistent line endings in headers", "ArmoredInputException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                String message =
+                    "-----BEGIN PGP SIGNED MESSAGE-----\r\n"
+                        + "Hash: SHA256\r\n"
+                        + "\r\r";
+                ArmoredInputStream in = new ArmoredInputStream(new ByteArrayInputStream(message.getBytes()));
+            }
+        });
     }
 
     private static boolean isWhiteSpace(byte b)

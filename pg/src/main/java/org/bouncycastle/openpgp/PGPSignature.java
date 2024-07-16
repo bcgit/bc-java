@@ -220,7 +220,7 @@ public class PGPSignature
     {
         updateWithPublicKey(key);
 
-        getAttriubtesHash(userAttributes);
+        getAttributesHash(userAttributes);
 
         addTrailer();
 
@@ -451,22 +451,22 @@ public class PGPSignature
             {
                 signature = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
             }
-            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY ||
-                getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519)
+            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
             {
                 byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
                 byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
-                signature = new byte[Ed25519.SIGNATURE_SIZE];
-                System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
-                System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
-            }
-            else if (getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
-            {
-                byte[] a = BigIntegers.asUnsignedByteArray(sigValues[0].getValue());
-                byte[] b = BigIntegers.asUnsignedByteArray(sigValues[1].getValue());
-                signature = new byte[Ed448.SIGNATURE_SIZE];
-                System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
-                System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
+                if (a.length + b.length > Ed25519.SIGNATURE_SIZE)
+                {
+                    signature = new byte[Ed448.SIGNATURE_SIZE];
+                    System.arraycopy(a, 0, signature, Ed448.PUBLIC_KEY_SIZE - a.length, a.length);
+                    System.arraycopy(b, 0, signature, Ed448.SIGNATURE_SIZE - b.length, b.length);
+                }
+                else
+                {
+                    signature = new byte[Ed25519.SIGNATURE_SIZE];
+                    System.arraycopy(a, 0, signature, Ed25519.PUBLIC_KEY_SIZE - a.length, a.length);
+                    System.arraycopy(b, 0, signature, Ed25519.SIGNATURE_SIZE - b.length, b.length);
+                }
             }
             else
             {

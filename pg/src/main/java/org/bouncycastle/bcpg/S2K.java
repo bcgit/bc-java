@@ -127,7 +127,7 @@ public class S2K
     public S2K(
         int algorithm)
     {
-        this.type = 0;
+        this.type = SIMPLE;
         this.algorithm = algorithm;
     }
 
@@ -141,7 +141,7 @@ public class S2K
         int algorithm,
         byte[] iv)
     {
-        this.type = 1;
+        this.type = SALTED;
         this.algorithm = algorithm;
         this.iv = iv;
     }
@@ -158,7 +158,7 @@ public class S2K
         byte[] iv,
         int itCount)
     {
-        this.type = 3;
+        this.type = SALTED_AND_ITERATED;
         this.algorithm = algorithm;
         this.iv = iv;
 

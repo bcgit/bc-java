@@ -452,7 +452,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>catbref &lt;https://github.com/catbref&gt; sample implementation of RFC 7748/Ed25519 (incorporated work from github users Valodim and str4d as well).</li>
 <li>gerlion &lt;https://github.com/gerlion&gt; detection of concurrency issue with pre-1.60 EC math library.</li>
 <li>fgrieu &lt;fgrieu&#064gmail.com&gt; identification and suggested fixes for possible timing vulnerability in OAEPEncoding and RSACoreEngine.</li>
-<li>MTG &lt;https://github.com/mtgag&gt; patch for decoding issues in PKIPublicationInfo and CertifiedKeyPair.</li>
+<li>MTG &lt;https://github.com/mtgag&gt; patch for decoding issues in PKIPublicationInfo and CertifiedKeyPair, patch for adding jurisdiction{C,ST,L} to X500 name style.</li>
 <li>Andreas Gadermaier &lt;up.gadermaier&#064gmail.com&gt; initial version of Argon2 PBKDF algorithm.</li>
 <li>Tony Washer &lt;tony.washer&#64yahoo.co.uk&gt; review of qTesla, Java 1.9 module code, additional test code and debugging for GOST, DSTU, and ECNR algorithms. Initial lightweight implementation of the ZUC ciphers and macs. Additions to LMS/HSS API implementations, fix for truncation issue with big HSS keys, contributions to optimization of LMS/HSS. Patch for XDH/EdDSA key handling and mcEliece decryption using kobaraImai. Initial GCM-SIV, Blake3, and Kangaroo implementation.</li>
 <li>Vincent Bouckaert &lt;https://github.com/veebee&gt; initial version of RFC 4998 ASN.1 classes. Debugging and testing of high level RFC 4998 implementation.</li>
@@ -541,6 +541,13 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Thomas Devanneaux &lt;tdevanneaux&#064apple.com&gt; - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.</li>
 <li>Norman Maurer &lt;norman_maurer&#064apple.com&gt; - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.</li>
 <li>Bing Shi &lt;roadicing&#064gmail.com&gt; - addition of F2m bounds checking for imported EC F2m curves.</li>
+<li>Phil Brown &lt;https://github.com/brownp2k&gt; - additional ant targets for building util and pkix.</li>
+<li>Tamas Cservenak &lt;https://github.com/cstamas&gt; - initial patch for supporting Ed25519 keys in GnuPG S-expressions.</li>
+<li>chchen-scholar &lt;https://github.com/chchen-scholar&gt; - encoding fix for EccP256CurvePoint.</li>
+<li>Seung Yeon &lt;https://github.com/seungyeonpark&gt; - addition of Memoable method implementations to CertPathValidationContext and CertificatePoliciesValidation.</li>
+<li>yuhh0328 &lt;https://github.com/yuhh0328&gt; - initial patch for adding ML-KEM support to TLS.</li>
+<li>Jan Oupick&yacute; &lt;https://github.com/Honzaik&gt; - update to draft 13 of composite PQC signatures.</li>
+<li>Karsten Otto &lt;https://github.com/ottoka&gt; - finished the support for jdk.tls.server.defaultDHEParameters.</li>
 </ul>
 </body>
 </html>

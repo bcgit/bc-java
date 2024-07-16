@@ -115,13 +115,27 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             {
                 return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
                     new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random), new X25519Agreement(), cryptoPublicKey, X25519PublicKeyParameters.KEY_SIZE,
-                    (publicKey, ephPubEncoding) -> ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0));
+                    new EphPubEncodingOperation()
+                    {
+                        @Override
+                        public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
+                        {
+                            ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
+                        }
+                    });
             }
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
                 return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
                     new X448KeyPairGenerator(), new X448KeyGenerationParameters(random), new X448Agreement(), cryptoPublicKey, X448PublicKeyParameters.KEY_SIZE,
-                    (publicKey, ephPubEncoding) -> ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0));
+                    new EphPubEncodingOperation()
+                    {
+                        @Override
+                        public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
+                        {
+                            ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
+                        }
+                    });
             }
             else
             {
@@ -132,14 +146,14 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                 return c.processBlock(sessionInfo, 0, sessionInfo.length);
             }
         }
-        catch (InvalidCipherTextException | IOException e)
+        catch (Exception e)
         {
             throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
         }
     }
 
     @FunctionalInterface
-    private interface ephPubEncodingOperation
+    private interface EphPubEncodingOperation
     {
         void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding);
     }
@@ -159,7 +173,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
     private byte[] encryptSessionInfo(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
                                       AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
-                                      int keySize, ephPubEncodingOperation ephPubEncodingOperation)
+                                      int keySize, EphPubEncodingOperation ephPubEncodingOperation)
         throws PGPException, IOException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);

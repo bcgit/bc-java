@@ -156,16 +156,17 @@ abstract class JsseUtils
         return peerHost + ":" + peerPortStr;
     }
 
-    static String getSignatureAlgorithmsReport(String title, List<SignatureSchemeInfo> signatureSchemes)
+    static String getSignatureAlgorithmsReport(String title, Iterable<SignatureSchemeInfo> signatureSchemes)
     {
-        String[] names = SignatureSchemeInfo.getJcaSignatureAlgorithmsBC(signatureSchemes);
-
         StringBuilder sb = new StringBuilder(title);
         sb.append(':');
-        for (String name : names)
+        if (signatureSchemes != null)
         {
-            sb.append(' ');
-            sb.append(name);
+            for (SignatureSchemeInfo signatureScheme : signatureSchemes)
+            {
+                sb.append(' ');
+                sb.append(signatureScheme.getJcaSignatureAlgorithmBC());
+            }
         }
         return sb.toString();
     }
@@ -691,10 +692,15 @@ abstract class JsseUtils
          */
         if ("RSA".equalsIgnoreCase(algorithm))
         {
-            PrivateKeyInfo pki = PrivateKeyInfo.getInstance(privateKey.getEncoded());
-            if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
+            // NOTE: Private keys might not support encoding (e.g. for an HSM).
+            byte[] encoding = privateKey.getEncoded();
+            if (encoding != null)
             {
-                return "RSASSA-PSS";
+                PrivateKeyInfo pki = PrivateKeyInfo.getInstance(encoding);
+                if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(pki.getPrivateKeyAlgorithm().getAlgorithm()))
+                {
+                    return "RSASSA-PSS";
+                }
             }
         }
 

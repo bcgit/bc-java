@@ -145,10 +145,14 @@ jar {
     into('META-INF/versions/9') {
         from sourceSets.java9.output
     }
+    String v = "${rootProject.extensions.ext.bundle_version}"
     manifest.attributes('Multi-Release': 'true')
+    manifest.attributes('Bundle-Name': 'bctls')
+    manifest.attributes('Bundle-SymbolicName': 'bctls')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
-    manifest.attributes('Export-Package': 'org.bouncycastle.{jsse|tls}.*')
-    manifest.attributes('Import-Package': 'java.*;resolution:=optional;javax.*;resolution:=optional')
+    manifest.attributes('Export-Package': "org.bouncycastle.{jsse|tls}.*;version=${v}")
+    manifest.attributes('Import-Package': "java.*;resolution:=optional,javax.*;resolution:=optional,!org.bouncycastle.{jsse|tls}.*,org.bouncycastle.*;version=\"[${v},${maxVersion})\"")
+    manifest.attributes('Bundle-Version': "${v}")
 }
 
 

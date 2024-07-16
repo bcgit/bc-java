@@ -23,7 +23,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Longs;
 
@@ -184,7 +183,7 @@ public class PGPPublicKeyRing
         {
             PGPPublicKey k = (PGPPublicKey)keys.get(i);
 
-            if (Arrays.areEqual(fingerprint, k.getFingerprint()))
+            if (k.hasFingerprint(fingerprint))
             {
                 return k;
             }
@@ -478,7 +477,7 @@ public class PGPPublicKeyRing
         boolean allowSubkeySigsOnNonSubkey)
         throws PGPException
     {
-        if (!Arrays.areEqual(first.getPublicKey().getFingerprint(), second.getPublicKey().getFingerprint()))
+        if (!second.getPublicKey().hasFingerprint(first.getPublicKey().getFingerprint()))
         {
             throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
         }

@@ -443,7 +443,7 @@ public class BcPGPDSATest
 
         PGPSignatureList p3 = (PGPSignatureList)pgpFact.nextObject();
         isTrue(!p3.isEmpty());
-        if (!ops.verify(p3.iterator().next()))
+        if (!ops.verify((PGPSignature)p3.iterator().next()))
         {
             fail("Failed signature check");
         }

@@ -26,6 +26,6 @@ public class PrimaryUserID
     
     public boolean isPrimaryUserID()
     {
-        return data[0] != 0;
+        return Utils.booleanFromByteArray(data);
     }
 }

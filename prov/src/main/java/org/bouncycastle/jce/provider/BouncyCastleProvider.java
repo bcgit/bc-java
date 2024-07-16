@@ -74,7 +74,7 @@ public final class BouncyCastleProvider extends Provider
 {
     private static final Logger LOG = Logger.getLogger(BouncyCastleProvider.class.getName());
 
-    private static String info = "BouncyCastle Security Provider v1.78b";
+    private static String info = "BouncyCastle Security Provider v1.79b";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -121,7 +121,7 @@ public final class BouncyCastleProvider extends Provider
     // later ones configure it.
     private static final String[] ASYMMETRIC_GENERIC =
     {
-        "X509", "IES", "COMPOSITE", "EXTERNAL"
+        "X509", "IES", "COMPOSITE", "EXTERNAL", "CompositeSignatures"
     };
 
     private static final String[] ASYMMETRIC_CIPHERS =
@@ -167,7 +167,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.7799, info);
+        super(PROVIDER_NAME, 1.7899, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -519,7 +519,6 @@ public final class BouncyCastleProvider extends Provider
         {
             return new PicnicKeyFactorySpi().generatePublic(publicKeyInfo);
         }
-        
         AsymmetricKeyInfoConverter converter = getAsymmetricKeyInfoConverter(publicKeyInfo.getAlgorithm().getAlgorithm());
 
         if (converter == null)

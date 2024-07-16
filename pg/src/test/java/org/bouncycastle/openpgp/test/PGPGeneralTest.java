@@ -982,9 +982,7 @@ public class PGPGeneralTest
     public static void main(String[] args)
         throws Exception
     {
-
-        PGPGeneralTest test = new PGPGeneralTest();
-        test.performTest();
+        runTest(new PGPGeneralTest());
     }
 
     @Override
@@ -1066,11 +1064,11 @@ public class PGPGeneralTest
         it = publicKey1.getKeySignatures();
         isTrue(it.hasNext() == false);
         it = publicKey2.getKeySignatures();
-        isTrue(it.next().getKeyID() == -4049084404703773049L);
+        isTrue(((PGPSignature)it.next()).getKeyID() == -4049084404703773049L);
         it = publicKey3.getKeySignatures();
         isTrue(it.hasNext() == false);
         it = publicKey4.getKeySignatures();
-        isTrue(it.next().getKeyID() == -6498553574938125416L);
+        isTrue(((PGPSignature)it.next()).getKeyID() == -6498553574938125416L);
 
         // Test for getEncoded(boolean)
         isTrue(areEqual(publicKey1.getEncoded(), publicKey1.getEncoded(false)));
@@ -1090,12 +1088,14 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("Key-ID mismatch.", e.getMessage().contains("Key-ID mismatch."));
+            isTrue("Key-ID mismatch.", messageIs(e.getMessage(), "Key-ID mismatch."));
         }
 
         PGPPublicKey publicKey7 = PGPPublicKey.join(publicKey2, publicKey2, true, true);
         isTrue(publicKey7.getKeyID() == publicKey2.getKeyID());
         isTrue(areEqual(publicKey7.getFingerprint(), publicKey2.getFingerprint()));
+        isTrue(publicKey7.hasFingerprint(publicKey2.getFingerprint()));
+        isTrue(publicKey2.hasFingerprint(publicKey7.getFingerprint()));
 
         PGPPublicKeyRingCollection pgpRingCollection = new JcaPGPPublicKeyRingCollection(probExpPubKey);
         final long id5 = 6556488621521814541L;
@@ -1107,8 +1107,13 @@ public class PGPGeneralTest
         PGPPublicKey publicKey6 = PGPPublicKey.join(publicKey5, publicKey5, true, true);
         isTrue(publicKey6.getKeyID() == publicKey5.getKeyID());
         isTrue(areEqual(publicKey6.getFingerprint(), publicKey5.getFingerprint()));
+        isTrue(publicKey6.hasFingerprint(publicKey5.getFingerprint()));
+        isTrue(publicKey5.hasFingerprint(publicKey6.getFingerprint()));
+    }
 
-
+    private boolean messageIs(String message, String s)
+    {
+        return message.indexOf(s) >= 0;
     }
 
     public void testAddRemoveCertification()
@@ -1394,7 +1399,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("keyIDs do not match", e.getMessage().contains("keyIDs do not match"));
+            isTrue("keyIDs do not match", messageIs(e.getMessage(), "keyIDs do not match"));
         }
 
         byte[] bOut = secretKey.getEncoded();
@@ -1636,7 +1641,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("key 0 must be a master key", e.getMessage().contains("key 0 must be a master key"));
+            isTrue("key 0 must be a master key", messageIs(e.getMessage(), "key 0 must be a master key"));
         }
 
         try
@@ -1649,7 +1654,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("key 0 can be only master key", e.getMessage().contains("key 0 can be only master key"));
+            isTrue("key 0 can be only master key", messageIs(e.getMessage(), "key 0 can be only master key"));
         }
 
         PGPSecretKeyRing secretKeys2 = new PGPSecretKeyRing(new ArrayList<PGPSecretKey>());
@@ -1675,7 +1680,7 @@ public class PGPGeneralTest
         catch (IOException e)
         {
             isTrue("secret key ring doesn't start with secret key tag: tag 0x",
-                e.getMessage().contains("secret key ring doesn't start with secret key tag: tag 0x"));
+                messageIs(e.getMessage(), "secret key ring doesn't start with secret key tag: tag 0x"));
         }
     }
 
@@ -1710,7 +1715,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue("Collection already contains a key with a keyID for the passed in ring.",
-                e.getMessage().contains("Collection already contains a key with a keyID for the passed in ring."));
+                messageIs(e.getMessage(), "Collection already contains a key with a keyID for the passed in ring."));
         }
 
         secCol = PGPSecretKeyRingCollection.removeSecretKeyRing(secCol, secretKeys);
@@ -1724,7 +1729,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue("Collection does not contain a key with a keyID for the passed in ring.",
-                e.getMessage().contains("Collection does not contain a key with a keyID for the passed in ring."));
+                messageIs(e.getMessage(), "Collection does not contain a key with a keyID for the passed in ring."));
         }
 
         secCol = PGPSecretKeyRingCollection.addSecretKeyRing(secCol, secretKeys);
@@ -1749,7 +1754,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("found where PGPSecretKeyRing expected", e.getMessage().contains("found where PGPSecretKeyRing expected"));
+            isTrue("found where PGPSecretKeyRing expected", messageIs(e.getMessage(), "found where PGPSecretKeyRing expected"));
         }
     }
 
@@ -1776,7 +1781,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue("Collection already contains a key with a keyID for the passed in ring.",
-                e.getMessage().contains("Collection already contains a key with a keyID for the passed in ring."));
+                messageIs(e.getMessage(), "Collection already contains a key with a keyID for the passed in ring."));
         }
 
         pubRings = PGPPublicKeyRingCollection.removePublicKeyRing(pubRings, pubRing);
@@ -1788,7 +1793,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue("Collection does not contain a key with a keyID for the passed in ring.",
-                e.getMessage().contains("Collection does not contain a key with a keyID for the passed in ring."));
+                messageIs(e.getMessage(), "Collection does not contain a key with a keyID for the passed in ring."));
         }
         pubRings = PGPPublicKeyRingCollection.addPublicKeyRing(pubRings, pubRing);
 
@@ -1811,7 +1816,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("found where PGPPublicKeyRing expected", e.getMessage().contains("found where PGPPublicKeyRing expected"));
+            isTrue("found where PGPPublicKeyRing expected", messageIs(e.getMessage(), "found where PGPPublicKeyRing expected"));
         }
     }
 
@@ -1833,7 +1838,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("key 0 must be a master key", e.getMessage().contains("key 0 must be a master key"));
+            isTrue("key 0 must be a master key", messageIs(e.getMessage(), "key 0 must be a master key"));
         }
         try
         {
@@ -1845,7 +1850,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("key 0 can be only master key", e.getMessage().contains("key 0 can be only master key"));
+            isTrue("key 0 can be only master key", messageIs(e.getMessage(), "key 0 can be only master key"));
         }
 
         try
@@ -1855,7 +1860,7 @@ public class PGPGeneralTest
         }
         catch (IOException e)
         {
-            isTrue("public key ring doesn't start with public key tag: ", e.getMessage().contains("public key ring doesn't start with public key tag: "));
+            isTrue("public key ring doesn't start with public key tag: ", messageIs(e.getMessage(), "public key ring doesn't start with public key tag: "));
         }
 
         PGPPublicKeyRing pubKeys2 = new PGPPublicKeyRing(new ArrayList<PGPPublicKey>());
@@ -2026,7 +2031,7 @@ public class PGPGeneralTest
         PGPSignatureSubpacketVector hashedPcks = sig.getHashedSubPackets();
 
         IntendedRecipientFingerprint[] intFig = hashedPcks.getIntendedRecipientFingerprints();
-        isTrue("mismatch on intended rec. fingerprint", Arrays.areEqual(secretKey.getPublicKey().getFingerprint(), intFig[0].getFingerprint()));
+        isTrue("mismatch on intended rec. fingerprint", secretKey.getPublicKey().hasFingerprint(intFig[0].getFingerprint()));
 
         // Tests for null value
         isTrue("issuer key id should be 0", hashedPcks.getIssuerKeyID() == 0);
@@ -2079,7 +2084,7 @@ public class PGPGeneralTest
         isTrue("Revocable should be false", !hashedPcks.isRevocable());
         isTrue("RevocationKeys should not be empty", hashedPcks.getRevocationKeys().length == 1);
         RevocationKey revocationKey = hashedPcks.getRevocationKeys()[0];
-        isTrue(areEqual(revocationKey.getFingerprint(), publicKey.getFingerprint()));
+        isTrue(publicKey.hasFingerprint(revocationKey.getFingerprint()));
         isTrue(revocationKey.getAlgorithm() == PublicKeyAlgorithmTags.DSA);
         // TODO: addRevocationKey has no parameter for setting signatureClass
         isTrue(revocationKey.getSignatureClass() == RevocationKeyTags.CLASS_DEFAULT);
@@ -2110,7 +2115,7 @@ public class PGPGeneralTest
         catch (IllegalStateException e)
         {
             isTrue("Exportable Certification exists in the Signature Subpacket Generator",
-                e.getMessage().contains("Exportable Certification exists in the Signature Subpacket Generator"));
+                messageIs(e.getMessage(), "Exportable Certification exists in the Signature Subpacket Generator"));
         }
         hashedGen.setRevocable(false, true);
         try
@@ -2121,7 +2126,7 @@ public class PGPGeneralTest
         catch (IllegalStateException e)
         {
             isTrue("Revocable exists in the Signature Subpacket Generator",
-                e.getMessage().contains("Revocable exists in the Signature Subpacket Generator"));
+                messageIs(e.getMessage(), "Revocable exists in the Signature Subpacket Generator"));
         }
 
         try
@@ -2131,7 +2136,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("attempt to set null SignerUserID", e.getMessage().contains("attempt to set null SignerUserID"));
+            isTrue("attempt to set null SignerUserID", messageIs(e.getMessage(), "attempt to set null SignerUserID"));
         }
         try
         {
@@ -2140,7 +2145,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("attempt to set null SignerUserID", e.getMessage().contains("attempt to set null SignerUserID"));
+            isTrue("attempt to set null SignerUserID", messageIs(e.getMessage(), "attempt to set null SignerUserID"));
         }
 
         final byte[] signerUserId = new byte[0];
@@ -2157,7 +2162,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("attempt to set null regular expression", e.getMessage().contains("attempt to set null regular expression"));
+            isTrue("attempt to set null regular expression", messageIs(e.getMessage(), "attempt to set null regular expression"));
         }
         hashedGen.setRevocationReason(false, RevocationReasonTags.USER_NO_LONGER_VALID, "");
         hashedGen.addPolicyURI(false, url);
@@ -2222,7 +2227,7 @@ public class PGPGeneralTest
         catch (PGPException e)
         {
             isTrue("passed in public key does not match secret key",
-                e.getMessage().contains("passed in public key does not match secret key"));
+                messageIs(e.getMessage(), "passed in public key does not match secret key"));
         }
 
 
@@ -2283,7 +2288,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("unsupported protection type", e.getMessage().contains("unsupported protection type"));
+            isTrue("unsupported protection type", messageIs(e.getMessage(), "unsupported protection type"));
         }
 
         try
@@ -2306,7 +2311,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("does not have protected block", e.getMessage().contains("does not have protected block"));
+            isTrue("does not have protected block", messageIs(e.getMessage(), "does not have protected block"));
         }
 
 
@@ -2331,7 +2336,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("no curve expression", e.getMessage().contains("no curve expression"));
+            isTrue("no curve expression", messageIs(e.getMessage(), "no curve expression"));
         }
 
         try
@@ -2358,7 +2363,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("no curve expression", e.getMessage().contains("no curve expression"));
+            isTrue("no curve expression", messageIs(e.getMessage(), "no curve expression"));
         }
 
 //        try
@@ -2412,7 +2417,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("unsupported protection type ", e.getMessage().contains("unsupported protection type "));
+            isTrue("unsupported protection type ", messageIs(e.getMessage(), "unsupported protection type "));
         }
 
         //TODO: getKeyData: branch in line 157 cannot be reached
@@ -2490,7 +2495,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("passed in public key does not match secret key", e.getMessage().contains("passed in public key does not match secret key"));
+            isTrue("passed in public key does not match secret key", messageIs(e.getMessage(), "passed in public key does not match secret key"));
         }
 
         try
@@ -2518,7 +2523,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("does not have protected block", e.getMessage().contains("does not have protected block"));
+            isTrue("does not have protected block", messageIs(e.getMessage(), "does not have protected block"));
         }
 
         try
@@ -2564,7 +2569,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("unsupported protection type", e.getMessage().contains("unsupported protection type"));
+            isTrue("unsupported protection type", messageIs(e.getMessage(), "unsupported protection type"));
         }
     }
 
@@ -2636,7 +2641,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("passed in public key does not match secret key", e.getMessage().contains("passed in public key does not match secret key"));
+            isTrue("passed in public key does not match secret key", messageIs(e.getMessage(), "passed in public key does not match secret key"));
         }
 
         key = ("Created: 20211022T053140\n" +
@@ -2723,7 +2728,7 @@ public class PGPGeneralTest
         }
         catch (IllegalArgumentException e)
         {
-            isTrue("does not have protected block", e.getMessage().contains("does not have protected block"));
+            isTrue("does not have protected block", messageIs(e.getMessage(), "does not have protected block"));
         }
 
         try
@@ -2769,7 +2774,7 @@ public class PGPGeneralTest
         }
         catch (PGPException e)
         {
-            isTrue("unsupported protection type", e.getMessage().contains("unsupported protection type"));
+            isTrue("unsupported protection type", messageIs(e.getMessage(), "unsupported protection type"));
         }
 
 //        try
@@ -2951,7 +2956,7 @@ public class PGPGeneralTest
         catch (PGPException e)
         {
             isTrue("passed in public key does not match secret key",
-                e.getMessage().contains("passed in public key does not match secret key"));
+                messageIs(e.getMessage(), "passed in public key does not match secret key"));
         }
 
         try
@@ -2975,7 +2980,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue(" does not have protected block",
-                e.getMessage().contains(" does not have protected block"));
+                messageIs(e.getMessage(), " does not have protected block"));
         }
 
         try
@@ -3011,7 +3016,7 @@ public class PGPGeneralTest
         catch (IllegalArgumentException e)
         {
             isTrue("The public key should not be null",
-                e.getMessage().contains("The public key should not be null"));
+                messageIs(e.getMessage(), "The public key should not be null"));
         }
 
         try
@@ -3047,7 +3052,7 @@ public class PGPGeneralTest
         catch (PGPException e)
         {
             isTrue("unsupported protection type",
-                e.getMessage().contains("unsupported protection type"));
+                messageIs(e.getMessage(), "unsupported protection type"));
         }
 
 //        try
@@ -3173,7 +3178,7 @@ public class PGPGeneralTest
         }
         catch (IllegalStateException e)
         {
-            isTrue("unable to resolve parameters for ", e.getMessage().contains("unable to resolve parameters for "));
+            isTrue("unable to resolve parameters for ", messageIs(e.getMessage(), "unable to resolve parameters for "));
         }
     }
 

@@ -76,7 +76,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
 
-public class OpenpgpTest
+public class OpenPGPTest
     extends SimpleTest
 {
     static char[] pass = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
@@ -85,7 +85,7 @@ public class OpenpgpTest
     {
         Security.addProvider(new BouncyCastleProvider());
 
-        runTest(new OpenpgpTest());
+        runTest(new OpenPGPTest());
     }
 
     @Override
@@ -113,15 +113,47 @@ public class OpenpgpTest
     public void testPGPCompressedDataGenerator()
         throws IOException
     {
-        testException("unknown compression algorithm", "IllegalArgumentException", () -> new PGPCompressedDataGenerator(110));
-        testException("unknown compression level:", "IllegalArgumentException", () -> new PGPCompressedDataGenerator(CompressionAlgorithmTags.UNCOMPRESSED, 10));
+        testException("unknown compression algorithm", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPCompressedDataGenerator(110);
+            }
+        });
+        testException("unknown compression level:", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPCompressedDataGenerator(CompressionAlgorithmTags.UNCOMPRESSED, 10);
+            }
+        });
 
         final PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
 
         final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         cGen.open(new UncloseableOutputStream(bOut));
-        testException("generator already in open state", "IllegalStateException", () -> cGen.open(new UncloseableOutputStream(bOut)));
-        testException("generator already in open state", "IllegalStateException", () -> cGen.open(new UncloseableOutputStream(bOut), new byte[10]));
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                cGen.open(new UncloseableOutputStream(bOut));
+            }
+        });
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                cGen.open(new UncloseableOutputStream(bOut), new byte[10]);
+            }
+        });
     }
 
     public void testPGPUtil()
@@ -132,35 +164,74 @@ public class OpenpgpTest
         isEquals("MD5", PGPUtil.getDigestName(HashAlgorithmTags.MD5));
         isEquals("RIPEMD160", PGPUtil.getDigestName(HashAlgorithmTags.RIPEMD160));
         isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA256));
-        isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256));
-        isEquals("SHA256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256_OLD));
+        isEquals("SHA3-256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256));
+        isEquals("SHA3-256", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_256_OLD));
         isEquals("SHA384", PGPUtil.getDigestName(HashAlgorithmTags.SHA384));
-        isEquals("SHA384", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_384));
+        isEquals("SHA3-384", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_384));
         isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA512));
-        isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512));
-        isEquals("SHA512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512_OLD));
+        isEquals("SHA3-512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512));
+        isEquals("SHA3-512", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_512_OLD));
         isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA224));
-        isEquals("SHA224", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_224));
+        isEquals("SHA3-224", PGPUtil.getDigestName(HashAlgorithmTags.SHA3_224));
         isEquals("TIGER", PGPUtil.getDigestName(HashAlgorithmTags.TIGER_192));
-        testException("unknown hash algorithm tag in getDigestName: ", "PGPException", () -> PGPUtil.getDigestName(HashAlgorithmTags.MD4));
+        testException("unknown hash algorithm tag in getDigestName: ", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPUtil.getDigestName(HashAlgorithmTags.MD4);
+            }
+        });
 
-        testException("unable to map ", "IllegalArgumentException", () -> PGPUtil.getDigestIDForName("Test"));
+        testException("unable to map ", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPUtil.getDigestIDForName("Test");
+            }
+        });
 
         isEquals("SHA1withRSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA1));
         isEquals("SHA1withRSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_SIGN, HashAlgorithmTags.SHA1));
         isEquals("SHA1withDSA", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.DSA, HashAlgorithmTags.SHA1));
         isEquals("SHA1withElGamal", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, HashAlgorithmTags.SHA1));
         isEquals("SHA1withElGamal", PGPUtil.getSignatureName(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, HashAlgorithmTags.SHA1));
-        testException("unknown algorithm tag in signature:", "PGPException", () -> PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_ENCRYPT, HashAlgorithmTags.SHA1));
+        testException("unknown algorithm tag in signature:", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPUtil.getSignatureName(PublicKeyAlgorithmTags.RSA_ENCRYPT, HashAlgorithmTags.SHA1);
+            }
+        });
 
         isTrue(PGPUtil.getSymmetricCipherName(SymmetricKeyAlgorithmTags.NULL) == null);
-        testException("unknown symmetric algorithm: ", "IllegalArgumentException", () -> PGPUtil.getSymmetricCipherName(101));
+        testException("unknown symmetric algorithm: ", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPUtil.getSymmetricCipherName(101);
+            }
+        });
 
         isTrue(!PGPUtil.isKeyBox(new byte[11]));
 
         isTrue(PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.DES, CryptoServicesRegistrar.getSecureRandom()).length == 8);
-        testException("unknown symmetric algorithm: ", "PGPException", () -> PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.NULL, CryptoServicesRegistrar.getSecureRandom()));
-
+        testException("unknown symmetric algorithm: ", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPUtil.makeRandomKey(SymmetricKeyAlgorithmTags.NULL, CryptoServicesRegistrar.getSecureRandom());
+            }
+        });
     }
 
     public void testContruction()
@@ -177,46 +248,110 @@ public class OpenpgpTest
         out.close();
         final byte[] input = bOut.toByteArray();
 
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPCompressedData(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPCompressedData(new BCPGInputStream(new ByteArrayInputStream(input)));
+            }
+        });
         //testException("unexpected packet in stream: ", "IOException", ()-> new PGPEncryptedDataList(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPMarker(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPPadding(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPMarker(new BCPGInputStream(new ByteArrayInputStream(input)));
+            }
+        });
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPOnePassSignature(new BCPGInputStream(new ByteArrayInputStream(input)));
+            }
+        });
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPPadding(new BCPGInputStream(new ByteArrayInputStream(input)));
+            }
+        });
         //testException("unexpected packet in stream: ", "IOException", ()-> new PGPPublicKeyRing(new BCPGInputStream(new ByteArrayInputStream(input)), new BcKeyFingerprintCalculator()));
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(input))));
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(input)));
+            }
+        });
 
-        testException("unexpected packet in stream: ", "IOException", () -> new PGPLiteralData(new BCPGInputStream(new ByteArrayInputStream(BcPGPRSATest.sig1))));
+        testException("unexpected packet in stream: ", "IOException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPLiteralData(new BCPGInputStream(new ByteArrayInputStream(BcPGPRSATest.sig1)));
+            }
+        });
     }
 
     public void testPGPLiteralDataGenerator()
         throws Exception
     {
-        PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
-        String data = "Now is the time for all good men\nTo come to the aid of the party\n";
+        final PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+        final String data = "Now is the time for all good men\nTo come to the aid of the party\n";
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         PGPCompressedDataGenerator cGen = new PGPCompressedDataGenerator(
             PGPCompressedData.ZIP);
-        BCPGOutputStream bcOut = new BCPGOutputStream(
+        final BCPGOutputStream bcOut = new BCPGOutputStream(
             cGen.open(new UncloseableOutputStream(bOut)));
-        Date testDate = new Date((System.currentTimeMillis() / 1000) * 1000);
+        final Date testDate = new Date((System.currentTimeMillis() / 1000) * 1000);
         lGen.open(
             new UncloseableOutputStream(bcOut),
             PGPLiteralData.BINARY,
             "_CONSOLE",
             data.getBytes().length,
             testDate);
-        testException("generator already in open state", "IllegalStateException", () -> lGen.open(
-            new UncloseableOutputStream(bcOut),
-            PGPLiteralData.BINARY,
-            "_CONSOLE",
-            data.getBytes().length,
-            testDate));
-        testException("generator already in open state", "IllegalStateException", () -> lGen.open(
-            new UncloseableOutputStream(bcOut),
-            PGPLiteralData.BINARY,
-            "_CONSOLE",
-            testDate,
-            new byte[10]));
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                lGen.open(
+                            new UncloseableOutputStream(bcOut),
+                            PGPLiteralData.BINARY,
+                            "_CONSOLE",
+                            data.getBytes().length,
+                            testDate);
+            }
+        });
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                lGen.open(
+                            new UncloseableOutputStream(bcOut),
+                            PGPLiteralData.BINARY,
+                            "_CONSOLE",
+                            testDate,
+                            new byte[10]);
+            }
+        });
     }
 
     public void testPGPSignatureVerifierBuilder()
@@ -253,9 +388,17 @@ public class OpenpgpTest
         PGPSignatureVerifier verifier = new PGPSignatureVerifierBuilder(new JcaPGPContentVerifierBuilderProvider(), masterKey).buildKeyRevocationVerifier(sig, masterKey);
         isTrue(verifier.getSignatureType() == PGPSignature.KEY_REVOCATION);
         isTrue(verifier.isVerified());
-        PGPSignature tmpFinalSig1 = sig;
-        PGPPublicKey tmpFInalPubKey1 = masterKey;
-        testException("PGPSignature not initialised - call init().", "PGPException", () -> tmpFinalSig1.verifyCertification(tmpFInalPubKey1));
+        final PGPSignature tmpFinalSig1 = sig;
+        final PGPPublicKey tmpFinalPubKey1 = masterKey;
+        testException("PGPSignature not initialised - call init().", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                tmpFinalSig1.verifyCertification(tmpFinalPubKey1);
+            }
+        });
 
         pgpPub = new PGPPublicKeyRing(PGPKeyRingTest.pub7sub, new JcaKeyFingerprintCalculator());
         it = pgpPub.getPublicKeys();
@@ -290,7 +433,15 @@ public class OpenpgpTest
             isTrue(verifier.getSignatureType() == PGPSignature.SUBKEY_REVOCATION);
             isTrue(verifier.isVerified());
 
-            testException("PGPSignature not initialised - call init().", "PGPException", () -> tmpFinalSig1.verifyCertification(tmpFInalPubKey1, tmpFInalPubKey1));
+            testException("PGPSignature not initialised - call init().", "PGPException", new TestExceptionOperation()
+            {
+                @Override
+                public void operation()
+                    throws Exception
+                {
+                    tmpFinalSig1.verifyCertification(tmpFinalPubKey1, tmpFinalPubKey1);
+                }
+            });
         }
 
         PGPDigestCalculator digestCalculator = new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1);
@@ -418,7 +569,15 @@ public class OpenpgpTest
 
                 final PGPSignature tmpFinalSig = sig;
                 final PGPPublicKey tmpFInalPubKey = key;
-                testException("PGPSignature not initialised - call init().", "PGPException", () -> tmpFinalSig.verifyCertification(tmpFInalPubKey));
+                testException("PGPSignature not initialised - call init().", "PGPException", new TestExceptionOperation()
+                {
+                    @Override
+                    public void operation()
+                        throws Exception
+                    {
+                        tmpFinalSig.verifyCertification(tmpFInalPubKey);
+                    }
+                });
 
             }
             bOut.write(key.getEncoded());
@@ -451,7 +610,15 @@ public class OpenpgpTest
                 final PGPSignature tmpFinalSig = sig;
                 final PGPUserAttributeSubpacketVector tmpFinalAttributes = attributes;
                 final PGPPublicKey tmpFinalPubKey = pubKey;
-                testException("PGPSignature not initialised - call init().", "PGPException", () -> tmpFinalSig.verifyCertification(tmpFinalAttributes, tmpFinalPubKey));
+                testException("PGPSignature not initialised - call init().", "PGPException", new TestExceptionOperation()
+                {
+                    @Override
+                    public void operation()
+                        throws Exception
+                    {
+                        tmpFinalSig.verifyCertification(tmpFinalAttributes, tmpFinalPubKey);
+                    }
+                });
                 sigCount++;
             }
 
@@ -491,7 +658,15 @@ public class OpenpgpTest
         isTrue(verifier.isVerified());
         isTrue(PGPSignature.isCertification(verifier.getSignatureType()));
 
-        testException("PGPSignature not initialised - call init().", "PGPException", () -> tmpFinalSig1.verifyCertification(rawID, tmpFInalPubKey1));
+        testException("PGPSignature not initialised - call init().", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                tmpFinalSig1.verifyCertification(rawID, tmpFinalPubKey1);
+            }
+        });
 
         char[] passPhrase = "hello".toCharArray();
         KeyPairGenerator dsaKpg = KeyPairGenerator.getInstance("DSA", "BC");
@@ -548,7 +723,7 @@ public class OpenpgpTest
             }
         }
 
-        sig = new PGPSignatureList(sKey.getSignatures().next()).get(0);
+        sig = new PGPSignatureList((PGPSignature)sKey.getSignatures().next()).get(0);
 
         if (sig.getKeyID() == vKey.getKeyID())
         {
@@ -566,23 +741,87 @@ public class OpenpgpTest
         final PGPPublicKey v_Key = vKey;
         final PGPSignature finalSig = sig;
         final PGPPublicKey s_Key = sKey;
-        testException("signature is not a direct key signature", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildDirectKeyVerifier(finalSig, v_Key));
-        testException("signature is not a key revocation signature", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildKeyRevocationVerifier(finalSig, v_Key));
-        testException("signature is not a primary key binding signature", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildPrimaryKeyBindingVerifier(finalSig, v_Key, v_Key));
-        testException("signature is not a subkey binding signature", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), s_Key).buildSubKeyBindingVerifier(finalSig2, s_Key, s_Key));
+        testException("signature is not a direct key signature", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildDirectKeyVerifier(finalSig, v_Key);
+            }
+        });
+        testException("signature is not a key revocation signature", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildKeyRevocationVerifier(finalSig, v_Key);
+            }
+        } );
+        testException("signature is not a primary key binding signature", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                           (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildPrimaryKeyBindingVerifier(finalSig, v_Key, v_Key);
+            }
+        });
+        testException("signature is not a subkey binding signature", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                           (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), s_Key).buildSubKeyBindingVerifier(finalSig2, s_Key, s_Key);
+            }
+        });
         finalSig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key);
         final PGPUserAttributeSubpacketVector finalAttributes = attributes;
-        testException("signature is neither a certification signature nor a certification revocation.", "PGPException", () -> finalSig.verifyCertification(finalAttributes, v_Key));
-        testException("signature is neither a certification signature nor a certification revocation.", "PGPException", () -> finalSig.verifyCertification(rawID, v_Key));
+        testException("signature is neither a certification signature nor a certification revocation.", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                finalSig.verifyCertification(finalAttributes, v_Key);
+            }
+        });
+        testException("signature is neither a certification signature nor a certification revocation.", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                finalSig.verifyCertification(rawID, v_Key);
+            }
+        });
 
         finalSig2.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), finalPubKey2);
-        testException("signature is not a key binding signature.", "PGPException", () -> finalSig2.verifyCertification(finalPubKey2, finalPubKey2));
+        testException("signature is not a key binding signature.", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                finalSig2.verifyCertification(finalPubKey2, finalPubKey2);
+            }
+        });
 
-        testException("These are different signatures.", "IllegalArgumentException", () -> PGPSignature.join(finalSig, finalSig2));
+        testException("These are different signatures.", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                PGPSignature.join(finalSig, finalSig2);
+            }
+        });
 
         keyRingGen = new PGPKeyRingGenerator(PGPSignature.CERTIFICATION_REVOCATION, dsaKeyPair,
             "test", sha1Calc, null, null, new JcaPGPContentSignerBuilder(PGPPublicKey.DSA, HashAlgorithmTags.SHA1)
@@ -610,13 +849,36 @@ public class OpenpgpTest
             }
         }
         final PGPSignature finalSig3 = (PGPSignature)sKey.getSignatures().next();
-        testException("signature is neither a certification signature nor a certification revocation", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildCertificationVerifier(finalSig3, rawID, v_Key));
-
-        testException("signature is neither a certification signature nor a certification revocation", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildCertificationVerifier(finalSig3, finalAttributes, v_Key));
-        testException("signature is not a primary key binding signature", "PGPException", () -> new PGPSignatureVerifierBuilder
-            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildSubKeyRevocationVerifier(finalSig3, v_Key, v_Key));
+        testException("signature is neither a certification signature nor a certification revocation", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                           (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildCertificationVerifier(finalSig3, rawID, v_Key);
+            }
+        });
+        testException("signature is neither a certification signature nor a certification revocation", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildCertificationVerifier(finalSig3, finalAttributes, v_Key);
+            }
+        });
+        testException("signature is not a primary key binding signature", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPSignatureVerifierBuilder
+                            (new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), v_Key).buildSubKeyRevocationVerifier(finalSig3, v_Key, v_Key);
+            }
+        });
 
         isTrue(finalSig2.isCertification());
         isTrue(!finalSig3.isCertification());
@@ -639,18 +901,31 @@ public class OpenpgpTest
     public void testPGPEncryptedDataGenerator()
         throws Exception
     {
-
-
-        ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
+        final ByteArrayOutputStream cbOut = new ByteArrayOutputStream();
         final PGPEncryptedDataGenerator cPk = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(PGPEncryptedData.CAST5).setSecureRandom(new SecureRandom()));
         final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-        testException("no encryption methods specified", "IllegalStateException", () -> cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
+        testException("no encryption methods specified", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+            }
+        });
 
         cPk.addMethod(new BcPBEKeyEncryptionMethodGenerator(pass, 2).setSecureRandom(CryptoServicesRegistrar.getSecureRandom()));
         cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
-        testException("generator already in open state", "IllegalStateException", () -> cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length));
-
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                cPk.open(new UncloseableOutputStream(cbOut), bOut.toByteArray().length);
+            }
+        });
     }
 
     public void testPGPLiteralData()
@@ -686,7 +961,15 @@ public class OpenpgpTest
         isTrue(vector.getSubpacket(0) == null);
         isTrue(vector.getImageAttribute() == null);
 
-        testException("attempt to set null image", "IllegalArgumentException", () -> new PGPUserAttributeSubpacketVectorGenerator().setImageAttribute(0, null));
+        testException("attempt to set null image", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPUserAttributeSubpacketVectorGenerator().setImageAttribute(0, null);
+            }
+        });
     }
 
     public void testPGPCanonicalizedDataGenerator()
@@ -696,11 +979,35 @@ public class OpenpgpTest
         final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         final File bcFile = File.createTempFile("bcpgp", ".back");
         canGen.open(bOut, PGPLiteralData.TEXT, bcFile);
-        testException("generator already in open state", "IllegalStateException", () -> canGen.open(bOut, PGPLiteralData.TEXT, bcFile));
-        testException("generator already in open state", "IllegalStateException", () -> canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
-            new Date(bcFile.lastModified()), bcFile));
-        testException("generator already in open state", "IllegalStateException", () -> canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
-            new Date(bcFile.lastModified()), new byte[10]));
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                canGen.open(bOut, PGPLiteralData.TEXT, bcFile);
+            }
+        });
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
+                            new Date(bcFile.lastModified()), bcFile);
+            }
+        });
+        testException("generator already in open state", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                canGen.open(bOut, PGPLiteralData.TEXT, bcFile.getName(),
+                            new Date(bcFile.lastModified()), new byte[10]);
+            }
+        });
     }
 
 //    public void testPGPV3SignatureGenerator()

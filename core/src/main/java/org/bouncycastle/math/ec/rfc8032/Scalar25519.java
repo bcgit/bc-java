@@ -295,7 +295,7 @@ abstract class Scalar25519
         return r;
     }
 
-    static void reduceBasisVar(int[] k, int[] z0, int[] z1)
+    static boolean reduceBasisVar(int[] k, int[] z0, int[] z1)
     {
         /*
          * Split scalar k into two half-size scalars z0 and z1, such that z1 * k == z0 mod L.
@@ -306,28 +306,36 @@ abstract class Scalar25519
         int[] Nu = new int[16];     System.arraycopy(LSq, 0, Nu, 0, 16);
         int[] Nv = new int[16];     Nat256.square(k, Nv); ++Nv[0];
         int[] p  = new int[16];     Nat256.mul(L, k, p);
+        int[] t  = new int[16];     // temp array
         int[] u0 = new int[4];      System.arraycopy(L, 0, u0, 0, 4);
         int[] u1 = new int[4];
         int[] v0 = new int[4];      System.arraycopy(k, 0, v0, 0, 4);
         int[] v1 = new int[4];      v1[0] = 1;
 
+        // Conservative upper bound on the number of loop iterations needed
+        int iterations = TARGET_LENGTH * 4;
         int last = 15;
         int len_Nv = ScalarUtil.getBitLengthPositive(last, Nv);
 
         while (len_Nv > TARGET_LENGTH)
         {
+            if (--iterations < 0)
+            {
+                return false;
+            }
+
             int len_p = ScalarUtil.getBitLength(last, p);
             int s = len_p - len_Nv;
             s &= ~(s >> 31);
 
             if (p[last] < 0)
             {
-                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.addShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.addShifted_UV(3, s, u0, u1, v0, v1);
             }
             else
             {
-                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p);
+                ScalarUtil.subShifted_NP(last, s, Nu, Nv, p, t);
                 ScalarUtil.subShifted_UV(3, s, u0, u1, v0, v1);
             }
 
@@ -345,6 +353,7 @@ abstract class Scalar25519
         // v1 * k == v0 mod L
         System.arraycopy(v0, 0, z0, 0, 4);
         System.arraycopy(v1, 0, z1, 0, 4);
+        return true;
     }
 
     static void toSignedDigits(int bits, int[] z)

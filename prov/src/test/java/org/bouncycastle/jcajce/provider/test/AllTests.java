@@ -29,6 +29,8 @@ public class AllTests
         suite.addTestSuite(RandomTest.class);
         suite.addTestSuite(RFC3211WrapTest.class);
         suite.addTestSuite(SP80038GTest.class);
+        suite.addTestSuite(CompositeKeyTest.class);
+        suite.addTestSuite(CompositeSignaturesTest.class);
         suite.addTestSuite(BouncyCastleProviderTest.class);
 
         return new BCTestSetup(suite);

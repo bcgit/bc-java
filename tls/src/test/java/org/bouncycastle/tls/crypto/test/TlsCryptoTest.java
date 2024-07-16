@@ -29,6 +29,8 @@ import org.bouncycastle.tls.crypto.TlsDHDomain;
 import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsECDomain;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
@@ -152,7 +154,7 @@ public abstract class TlsCryptoTest
         case SignatureAlgorithm.rsa_pss_rsae_sha512:
             return loadCredentialedSigner(cryptoParams, "rsa-sign", signatureAndHashAlgorithm);
 
-        // TODO[draft-smyshlyaev-tls12-gost-suites-10] Add test resources for these
+        // TODO[RFC 9189] Add test resources for these
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
 
@@ -444,7 +446,7 @@ public abstract class TlsCryptoTest
     {
         int[] hashes = new int[] { CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
             CryptoHashAlgorithm.sha256, CryptoHashAlgorithm.sha384, CryptoHashAlgorithm.sha512,
-            CryptoHashAlgorithm.sm3 };
+            CryptoHashAlgorithm.sm3, CryptoHashAlgorithm.gostr3411_2012_256 };
 
         for (int i = 0; i < hashes.length; ++i)
         {
@@ -483,6 +485,24 @@ public abstract class TlsCryptoTest
             {
                 fail("Unexpected exception: " + e.getMessage());
             }
+        }
+    }
+
+    public void testKemDomain() throws Exception
+    {
+        if (!crypto.hasKemAgreement())
+        {
+            return;
+        }
+
+        for (int namedGroup = 0; namedGroup < 0x10000; ++namedGroup)
+        {
+            if (!NamedGroup.refersToASpecificKem(namedGroup) || !crypto.hasNamedGroup(namedGroup))
+            {
+                continue;
+            }
+
+            implTestKemDomain(namedGroup);
         }
     }
 
@@ -648,11 +668,13 @@ public abstract class TlsCryptoTest
 
     private void implTestAgreement(TlsAgreement aA, TlsAgreement aB) throws IOException
     {
-        byte[] pA = aA.generateEphemeral();
-        byte[] pB = aB.generateEphemeral();
+        // NOTE: Order is important since some agreements are actually KEMs
 
-        aA.receivePeerValue(pB);
+        byte[] pA = aA.generateEphemeral();
         aB.receivePeerValue(pA);
+
+        byte[] pB = aB.generateEphemeral();
+        aA.receivePeerValue(pB);
 
         TlsSecret sA = aA.calculateSecret();
         TlsSecret sB = aB.calculateSecret();
@@ -693,6 +715,20 @@ public abstract class TlsCryptoTest
             TlsAgreement aB = d.createECDH();
 
             implTestAgreement(aA, aB);
+        }
+    }
+
+    private void implTestKemDomain(int namedGroup) throws IOException
+    {
+        TlsKemDomain clientDomain = crypto.createKemDomain(new TlsKemConfig(namedGroup, false));
+        TlsKemDomain serverDomain = crypto.createKemDomain(new TlsKemConfig(namedGroup, true));
+
+        for (int i = 0; i < 2; ++i)
+        {
+            TlsAgreement clientKem = clientDomain.createKem();
+            TlsAgreement serverKem = serverDomain.createKem();
+    
+            implTestAgreement(clientKem, serverKem);
         }
     }
 

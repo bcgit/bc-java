@@ -1,10 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,7 +41,6 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -64,18 +66,51 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testCreateDigest();
         testX25519HKDF();
         testJcePBESecretKeyEncryptorBuilder();
         testJcaPGPContentVerifierBuilderProvider();
         testJcaPGPDigestCalculatorProviderBuilder();
         testJcePGPDataEncryptorBuilder();
         testJcaKeyFingerprintCalculator();
+        testStandardDigests();
+    }
+
+    private void testStandardDigests()
+        throws Exception
+    {
+        PGPDigestCalculatorProvider digCalcBldr =
+            new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build();
+
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.MD5), Hex.decode("900150983cd24fb0d6963f7d28e17f72"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.RIPEMD160), Hex.decode("8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA384), Hex.decode("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA512), Hex.decode("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA224), Hex.decode("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_256), Hex.decode("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_512), Hex.decode("b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"));
+    }
+
+    private void testDigestCalc(PGPDigestCalculator digCalc, byte[] expected)
+        throws IOException
+    {
+        OutputStream dOut = digCalc.getOutputStream();
+
+        dOut.write(Strings.toByteArray("abc"));
+
+        dOut.close();
+
+        byte[] res = digCalc.getDigest();
+
+        isTrue(Arrays.areEqual(res, expected));
     }
 
     public void testJcaKeyFingerprintCalculator()
         throws Exception
     {
-        final JcaKeyFingerprintCalculator calculator = new JcaKeyFingerprintCalculator().setProvider(new BouncyCastlePQCProvider());
+        final JcaKeyFingerprintCalculator calculator = new JcaKeyFingerprintCalculator().setProvider(new NullProvider());
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
         kpGen.initialize(1024);
         KeyPair kp = kpGen.generateKeyPair();
@@ -83,9 +118,33 @@ public class OperatorJcajceTest
         JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
 
-        testException("can't find MD5", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(3, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
-        testException("can't find SHA1", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(4, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
-        testException("can't find SHA-256", "PGPException", () -> calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
+        testException("can't find MD5", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(3, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
+        testException("can't find SHA1", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(4, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
+        testException("can't find SHA-256", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
         //JcaKeyFingerprintCalculator calculator2 = new JcaKeyFingerprintCalculator().setProvider("BC");
         JcaKeyFingerprintCalculator calculator2 = calculator.setProvider("BC");
         PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
@@ -106,17 +165,41 @@ public class OperatorJcajceTest
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
 
-        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", () -> calculator.calculateFingerprint(new PublicKeyPacket(7, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey())));
+        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(new PublicKeyPacket(7, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+            }
+        });
     }
 
     public void testJcePGPDataEncryptorBuilder()
         throws Exception
     {
-        testException("null cipher specified", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL));
+        testException("null cipher specified", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL);
+            }
+        });
 
         //testException("AEAD algorithms can only be used with AES", "IllegalStateException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.IDEA).setWithAEAD(AEADAlgorithmTags.OCB, 6));
 
-        testException("minimum chunkSize is 6", "IllegalArgumentException", () -> new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5));
+        testException("minimum chunkSize is 6", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5);
+            }
+        });
 
         isEquals(16, new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setProvider(new BouncyCastleProvider()).setWithAEAD(AEADAlgorithmTags.OCB, 6).build(new byte[32]).getBlockSize());
     }
@@ -124,8 +207,30 @@ public class OperatorJcajceTest
     public void testJcaPGPDigestCalculatorProviderBuilder()
         throws Exception
     {
-        PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new BouncyCastlePQCProvider()).build();
-        testException("exception on setup: ", "PGPException", () -> provider.get(SymmetricKeyAlgorithmTags.AES_256));
+
+        PGPDigestCalculatorProvider digCalcBldr = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NonDashProvider()).build();
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+
+        PGPDigestCalculatorProvider digCalcBldr2 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new DashProvider()).build();
+        testDigestCalc(digCalcBldr2.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+
+        PGPDigestCalculatorProvider digCalcBldr3 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NonDashProvider()).build();
+        testDigestCalc(digCalcBldr3.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+
+        PGPDigestCalculatorProvider digCalcBldr4 = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new DashProvider()).build();
+        testDigestCalc(digCalcBldr4.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+
+
+        final PGPDigestCalculatorProvider provider = new JcaPGPDigestCalculatorProviderBuilder().setProvider(new NullProvider()).build();
+        testException("exception on setup: ", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                provider.get(SymmetricKeyAlgorithmTags.AES_256);
+            }
+        });
     }
 
     public void testJcaPGPContentVerifierBuilderProvider()
@@ -147,7 +252,33 @@ public class OperatorJcajceTest
         throws Exception
     {
         final PGPDigestCalculator sha1Calc = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
-        testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", () -> new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1));
+        testException("s2KCount value outside of range 0 to 255.", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new JcePBESecretKeyEncryptorBuilder(PGPEncryptedData.AES_256, sha1Calc, -1);
+            }
+        });
+    }
+
+    public void testCreateDigest()
+        throws Exception
+    {
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1).getAlgorithm(), HashAlgorithmTags.SHA1);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.MD2).getAlgorithm(), HashAlgorithmTags.MD2);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.MD5).getAlgorithm(), HashAlgorithmTags.MD5);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.RIPEMD160).getAlgorithm(), HashAlgorithmTags.RIPEMD160);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA256).getAlgorithm(), HashAlgorithmTags.SHA256);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA224).getAlgorithm(), HashAlgorithmTags.SHA224);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA384).getAlgorithm(), HashAlgorithmTags.SHA384);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA512).getAlgorithm(), HashAlgorithmTags.SHA512);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_256).getAlgorithm(), HashAlgorithmTags.SHA3_256);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_224).getAlgorithm(), HashAlgorithmTags.SHA3_224);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_384).getAlgorithm(), HashAlgorithmTags.SHA3_384);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA3_512).getAlgorithm(), HashAlgorithmTags.SHA3_512);
+        isEquals(new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.TIGER_192).getAlgorithm(), HashAlgorithmTags.TIGER_192);
     }
 
     public void testX25519HKDF()
@@ -167,7 +298,7 @@ public class OperatorJcajceTest
         KeyAgreement agreement = KeyAgreement.getInstance("X25519withSHA256HKDF", "BC");
         agreement.init(privKey, new HybridValueParameterSpec(Arrays.concatenate(ephmeralKey, publicKey), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP X25519"))));
         agreement.doPhase(pubKey, true);
-        Key secretKey= agreement.generateSecret(NISTObjectIdentifiers.id_aes128_wrap.getId());
+        Key secretKey = agreement.generateSecret(NISTObjectIdentifiers.id_aes128_wrap.getId());
 
 //        agreement.init(ephmeralprivateKeyParameters);
 //        byte[] secret = new byte[agreement.getAgreementSize()];
@@ -183,6 +314,37 @@ public class OperatorJcajceTest
 //        c.init(false, new KeyParameter(output2));
 //        byte[] output = c.unwrap(keyEnc, 0, keyEnc.length);
         //isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
+    }
+
+    private class NullProvider
+        extends Provider
+    {
+        NullProvider()
+        {
+             super("NULL", 0.0, "Null Provider");
+        }
+    }
+
+    private class NonDashProvider
+        extends Provider
+    {
+        NonDashProvider()
+        {
+            super("NonDash", 0.0, "NonDash Provider");
+            putService(new Provider.Service(this, "MessageDigest", "SHA256", "org.bouncycastle.openpgp.test.SHA256", null, null));
+            putService(new Provider.Service(this, "MessageDigest", "SHA1", "org.bouncycastle.openpgp.test.SHA1", null, null));
+        }
+    }
+
+    private class DashProvider
+        extends Provider
+    {
+        DashProvider()
+        {
+            super("Dash", 0.0, "Dash Provider");
+            putService(new Service(this, "MessageDigest", "SHA-256", "org.bouncycastle.openpgp.test.SHA256", null, null));
+            putService(new Service(this, "MessageDigest", "SHA-1", "org.bouncycastle.openpgp.test.SHA1", null, null));
+        }
     }
 
 }

@@ -117,7 +117,7 @@ public class HRSSPolynomial
         /* NOTE: Assumes input is in {0,1,2}^N */
         /*       Produces output in [0,Q-1]^N */
         int i;
-        HRSSPolynomial b = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
+        Polynomial b = this.params.createPolynomial();
         short t, zj;
 
         /* Define z by <z*x^i, x-1> = delta_{i,0} mod 3:      */
@@ -161,35 +161,5 @@ public class HRSSPolynomial
         {
             this.coeffs[i + 1] = (short)(b.coeffs[i] - b.coeffs[i + 1]);
         }
-    }
-
-    @Override
-    public void r2Inv(Polynomial a)
-    {
-        HRSSPolynomial f = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial g = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial v = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial w = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        this.r2Inv(a, f, g, v, w);
-    }
-
-    @Override
-    public void rqInv(Polynomial a)
-    {
-        HRSSPolynomial ai2 = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial b = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial c = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial s = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        this.rqInv(a, ai2, b, c, s);
-    }
-
-    @Override
-    public void s3Inv(Polynomial a)
-    {
-        HRSSPolynomial f = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial g = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial v = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        HRSSPolynomial w = new HRSSPolynomial((NTRUHRSSParameterSet)this.params);
-        this.s3Inv(a, f, g, v, w);
     }
 }

@@ -250,7 +250,7 @@
                      windowtitle="Bouncy Castle Library ${release.name} API Specification"
                      header="&lt;b&gt;Bouncy Castle Cryptography Library ${release.name}&lt;/b&gt;">
                 <docElements/>
-                <arg value="${javadoc.args}" />
+                <arg line="${javadoc.args}" />
                 <classpath>
                     <path refid="project.classpath" /> 
                     <fileset dir="${artifacts.jars.dir}">
@@ -360,14 +360,27 @@
                  <exclude name="org/bouncycastle/asn1/cmp/**" />
                  <exclude name="org/bouncycastle/asn1/cms/**" />
                  <exclude name="org/bouncycastle/asn1/crmf/**" />
+                 <exclude name="org/bouncycastle/asn1/cryptlib/**" />
                  <exclude name="org/bouncycastle/asn1/dvcs/**" />
                  <exclude name="org/bouncycastle/asn1/eac/**" />
+                 <exclude name="org/bouncycastle/asn1/edec/**" />
                  <exclude name="org/bouncycastle/asn1/esf/**" />
                  <exclude name="org/bouncycastle/asn1/ess/**" />
                  <exclude name="org/bouncycastle/asn1/est/**" />
+                 <exclude name="org/bouncycastle/asn1/gnu/**" />
+                 <exclude name="org/bouncycastle/asn1/iana/**" />
                  <exclude name="org/bouncycastle/asn1/icao/**" />
+                 <exclude name="org/bouncycastle/asn1/isara/**" />
                  <exclude name="org/bouncycastle/asn1/isismtt/**" />
-                 <exclude name="org/bouncycastle/asn1/its/**" />
+                 <exclude name="org/bouncycastle/asn1/iso/**" />
+                 <exclude name="org/bouncycastle/asn1/kisa/**" />
+                 <exclude name="org/bouncycastle/asn1/microsoft/**" />
+                 <exclude name="org/bouncycastle/asn1/misc/**" />
+                 <exclude name="org/bouncycastle/asn1/mozilla/**" />
+                 <exclude name="org/bouncycastle/asn1/nsri/**" />
+                 <exclude name="org/bouncycastle/asn1/ntt/**" />
+                 <exclude name="org/bouncycastle/asn1/oiw/**" />
+                 <exclude name="org/bouncycastle/asn1/rosstandart/**" />
                  <exclude name="org/bouncycastle/asn1/smime/**" />
                  <exclude name="org/bouncycastle/asn1/tsp/**" />
                  <exclude name="org/bouncycastle/bcpg/**" />
@@ -754,14 +767,27 @@
                  <include name="org/bouncycastle/asn1/cmp/**" />
                  <include name="org/bouncycastle/asn1/cms/**" />
                  <include name="org/bouncycastle/asn1/crmf/**" />
+                 <include name="org/bouncycastle/asn1/cryptlib/**" />
                  <include name="org/bouncycastle/asn1/dvcs/**" />
                  <include name="org/bouncycastle/asn1/eac/**" />
+                 <include name="org/bouncycastle/asn1/edec/**" />
                  <include name="org/bouncycastle/asn1/esf/**" />
                  <include name="org/bouncycastle/asn1/ess/**" />
                  <include name="org/bouncycastle/asn1/est/**" />
+                 <include name="org/bouncycastle/asn1/gnu/**" />
+                 <include name="org/bouncycastle/asn1/iana/**" />
                  <include name="org/bouncycastle/asn1/icao/**" />
+                 <include name="org/bouncycastle/asn1/isara/**" />
                  <include name="org/bouncycastle/asn1/isismtt/**" />
-                 <include name="org/bouncycastle/asn1/its/**" />
+                 <include name="org/bouncycastle/asn1/iso/**" />
+                 <include name="org/bouncycastle/asn1/kisa/**" />
+                 <include name="org/bouncycastle/asn1/microsoft/**" />
+                 <include name="org/bouncycastle/asn1/misc/**" />
+                 <include name="org/bouncycastle/asn1/mozilla/**" />
+                 <include name="org/bouncycastle/asn1/nsri/**" />
+                 <include name="org/bouncycastle/asn1/ntt/**" />
+                 <include name="org/bouncycastle/asn1/oiw/**" />
+                 <include name="org/bouncycastle/asn1/rosstandart/**" />
                  <include name="org/bouncycastle/asn1/smime/**" />
                  <include name="org/bouncycastle/asn1/tsp/**" />
                  <include name="org/bouncycastle/oer/**" />
@@ -860,7 +886,10 @@
         <copyStandardFiles toDir="${pg.target.dir}" />
 
         <copy todir="${pg.target.src.dir}" filtering="true">
-             <fileset dir="${src.dir}" includes="org/bouncycastle/bcpg/**/*.java" />
+             <fileset dir="${src.dir}">
+                <include name="org/bouncycastle/bcpg/**/*.java" />
+                <exclude name="org/bouncycastle/**/test/**/*.java" />
+             </fileset>
         </copy>
 
         <copy todir="${pg.target.src.dir}">
@@ -923,6 +952,7 @@
              <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/keybox/*Test.java" />
              <fileset dir="${src.dir}" includes="**/test/*.java" />
              <fileset dir="${src.dir}" includes="**/test/*/*.java" />
              <fileset dir="${src.dir}" includes="**/*.asc" />
@@ -953,6 +983,7 @@
         </copy>
 
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages.properties" />
 

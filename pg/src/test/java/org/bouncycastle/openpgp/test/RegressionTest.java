@@ -61,8 +61,22 @@ public class RegressionTest
         new BcpgGeneralTest(),
         new BcImplProviderTest(),
         new OperatorJcajceTest(),
-        new OpenpgpTest(),
-        new OperatorBcTest()
+        new OpenPGPTest(),
+        new OperatorBcTest(),
+
+        new DedicatedEd25519KeyPairTest(),
+        new DedicatedEd448KeyPairTest(),
+        new DedicatedX25519KeyPairTest(),
+        new DedicatedX448KeyPairTest(),
+
+        new LegacyEd25519KeyPairTest(),
+        new LegacyEd448KeyPairTest(),
+        new LegacyX25519KeyPairTest(),
+        new LegacyX448KeyPairTest(),
+
+        new Curve25519PrivateKeyEncodingTest(),
+        new EdDSAKeyConversionWithLeadingZeroTest(),
+        new ECDSAKeyPairTest()
     };
 
     public static void main(String[] args)

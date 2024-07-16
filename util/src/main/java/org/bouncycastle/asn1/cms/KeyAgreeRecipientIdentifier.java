@@ -3,8 +3,8 @@ package org.bouncycastle.asn1.cms;
 import org.bouncycastle.asn1.ASN1Choice;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERTaggedObject;
 
 /**
@@ -37,9 +37,14 @@ public class KeyAgreeRecipientIdentifier
         ASN1TaggedObject    obj,
         boolean             explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        if (!explicit)
+        {
+            throw new IllegalArgumentException("choice item must be explicitly tagged");
+        }
+
+        return getInstance(obj.getExplicitBaseObject());
     }
-    
+
     /**
      * Return an KeyAgreeRecipientIdentifier object from the given object.
      * <p>
@@ -62,19 +67,20 @@ public class KeyAgreeRecipientIdentifier
         {
             return (KeyAgreeRecipientIdentifier)obj;
         }
-        
-        if (obj instanceof ASN1Sequence)
+
+        if (obj instanceof ASN1TaggedObject)
         {
-            return new KeyAgreeRecipientIdentifier(IssuerAndSerialNumber.getInstance(obj));
+            ASN1TaggedObject taggedObject = (ASN1TaggedObject)obj;
+            if (taggedObject.hasContextTag(0))
+            {
+                return new KeyAgreeRecipientIdentifier(RecipientKeyIdentifier.getInstance(taggedObject, false));
+            }
+
+            throw new IllegalArgumentException("Invalid KeyAgreeRecipientIdentifier tag: "
+                + ASN1Util.getTagText(taggedObject));
         }
-        
-        if (obj instanceof ASN1TaggedObject && ((ASN1TaggedObject)obj).getTagNo() == 0)
-        {
-            return new KeyAgreeRecipientIdentifier(RecipientKeyIdentifier.getInstance(
-                (ASN1TaggedObject)obj, false));
-        }
-        
-        throw new IllegalArgumentException("Invalid KeyAgreeRecipientIdentifier: " + obj.getClass().getName());
+
+        return new KeyAgreeRecipientIdentifier(IssuerAndSerialNumber.getInstance(obj));
     } 
 
     public KeyAgreeRecipientIdentifier(

@@ -79,7 +79,8 @@ public class BcDefaultTlsCredentialedDecryptor
         ProtocolVersion expectedVersion = cryptoParams.getRSAPreMasterSecretVersion();
 
         byte[] preMasterSecret = org.bouncycastle.crypto.tls.TlsRsaKeyExchange.decryptPreMasterSecret(
-            encryptedPreMasterSecret, rsaServerPrivateKey, expectedVersion.getFullVersion(), crypto.getSecureRandom());
+            encryptedPreMasterSecret, 0, encryptedPreMasterSecret.length, rsaServerPrivateKey,
+            expectedVersion.getFullVersion(), crypto.getSecureRandom());
 
         return crypto.createSecret(preMasterSecret);
     }

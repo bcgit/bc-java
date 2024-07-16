@@ -1,7 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1String;
@@ -87,17 +87,25 @@ public class StringTest
         }
 
         byte[] t61Bytes = new byte[] { -1, -2, -3, -4, -5, -6, -7, -8 };
-        String t61String = new String(t61Bytes, Charset.forName("iso-8859-1"));
-        ASN1T61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
 
-        if (!t61.getString().equals(t61String))
+        try
         {
-            fail("DERT61String.getString() result incorrect");
+            String t61String = new String(t61Bytes, "iso-8859-1");
+            ASN1T61String t61 = new DERT61String(Strings.fromByteArray(t61Bytes));
+
+            if (!t61.getString().equals(t61String))
+            {
+                fail("DERT61String.getString() result incorrect");
+            }
+
+            if (!t61.toString().equals(t61String))
+            {
+                fail("DERT61String.toString() result incorrect");
+            }
         }
-
-        if (!t61.toString().equals(t61String))
+        catch (UnsupportedEncodingException e)
         {
-            fail("DERT61String.toString() result incorrect");
+            // ignore test
         }
 
         char[] shortChars = new char[] { 'a', 'b', 'c', 'd', 'e'};

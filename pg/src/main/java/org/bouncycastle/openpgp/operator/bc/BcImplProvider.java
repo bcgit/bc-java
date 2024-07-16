@@ -98,6 +98,14 @@ class BcImplProvider
         case PublicKeyAlgorithmTags.ECDSA:
             return new DSADigestSigner(new ECDSASigner(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+            if (keyParam instanceof Ed25519PrivateKeyParameters || keyParam instanceof Ed25519PublicKeyParameters)
+            {
+                return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
+            }
+            else
+            {
+                return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
+            }
         case PublicKeyAlgorithmTags.Ed25519:
             return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed448:
@@ -152,7 +160,6 @@ class BcImplProvider
     static Wrapper createWrapper(int encAlgorithm)
         throws PGPException
     {
-        boolean enableCamelliaKeyWrapping = Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping"));
         switch (encAlgorithm)
         {
         case SymmetricKeyAlgorithmTags.AES_128:
@@ -162,12 +169,9 @@ class BcImplProvider
         case SymmetricKeyAlgorithmTags.CAMELLIA_128:
         case SymmetricKeyAlgorithmTags.CAMELLIA_192:
         case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            if (enableCamelliaKeyWrapping)
-            {
-                //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
-                //   is usable, and it is subject to the same usage requirements
-                return new RFC3394WrapEngine(new CamelliaEngine());
-            }
+            //RFC 5581 s3: Camellia may be used in any place in OpenPGP where a symmetric cipher
+            //   is usable, and it is subject to the same usage requirements
+            return new RFC3394WrapEngine(new CamelliaEngine());
         default:
             throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
         }

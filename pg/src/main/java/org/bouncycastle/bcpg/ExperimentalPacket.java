@@ -10,9 +10,21 @@ import org.bouncycastle.util.Arrays;
 public class ExperimentalPacket 
     extends ContainedPacket implements PublicKeyAlgorithmTags
 {
-    private int    tag;
     private byte[] contents;
-    
+
+    /**
+     *
+     * @param in
+     * @throws IOException
+     */
+    ExperimentalPacket(
+            int                tag,
+            BCPGInputStream    in)
+            throws IOException
+    {
+        this(tag, in, false);
+    }
+
     /**
      * 
      * @param in
@@ -20,10 +32,11 @@ public class ExperimentalPacket
      */
     ExperimentalPacket(
         int                tag,
-        BCPGInputStream    in)
+        BCPGInputStream    in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(tag);
+        super(tag, newPacketFormat);
 
         this.contents = in.readAll();
     }
@@ -45,6 +58,6 @@ public class ExperimentalPacket
         BCPGOutputStream    out)
         throws IOException
     {
-        out.writePacket(tag, contents);
+        out.writePacket(hasNewPacketFormat(), getPacketTag(), contents);
     }
 }

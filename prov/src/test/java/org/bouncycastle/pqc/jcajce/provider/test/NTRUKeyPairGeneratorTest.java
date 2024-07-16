@@ -40,7 +40,9 @@ public class NTRUKeyPairGeneratorTest
                     NTRUParameterSpec.ntruhps2048509,
                     NTRUParameterSpec.ntruhps2048677,
                     NTRUParameterSpec.ntruhps4096821,
-                    NTRUParameterSpec.ntruhrss701
+                    NTRUParameterSpec.ntruhps40961229,
+                    NTRUParameterSpec.ntruhrss701,
+                    NTRUParameterSpec.ntruhrss1373
                 };
         kf = KeyFactory.getInstance("NTRU", "BC");
 

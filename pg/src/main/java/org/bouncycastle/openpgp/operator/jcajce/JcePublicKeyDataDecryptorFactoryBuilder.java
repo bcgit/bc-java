@@ -260,7 +260,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
             {
                 agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
-                if (pEnc.length != (1 + X25519PublicKeyParameters.KEY_SIZE) || 0x40 != pEnc[0])
+                if (pEnc.length != (1 + X25519PublicBCPGKey.LENGTH) || 0x40 != pEnc[0])
                 {
                     throw new IllegalArgumentException("Invalid Curve25519 public key");
                 }
@@ -282,9 +282,9 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
             return PGPPad.unpadSessionData(paddedSessionKey.getEncoded());
         }
-        catch (GeneralSecurityException | IOException e)
+        catch (Exception e)
         {
-            throw new PGPException("error setting asymmetric cipher", e);
+            throw new PGPException("error decrypting session data: " + e.getMessage(), e);
         }
     }
 
@@ -309,9 +309,9 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
             return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
         }
-        catch (GeneralSecurityException | IOException e)
+        catch (Exception e)
         {
-            throw new PGPException("error setting asymmetric cipher", e);
+            throw new PGPException("error decrypting session data: " + e.getMessage(), e);
         }
     }
 

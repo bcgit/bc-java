@@ -45,6 +45,10 @@ mkdir -p $jdk11src
 ((cd pkix/src/main/java && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/main/javadoc && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/test/java && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pg/src/main/jdk1.5 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
+((cd pg/src/main/jdk1.1 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/main/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/test/jdk1.4 && tar cf - * ) | (cd $jdk11src && tar xf -))
 ((cd pkix/src/main/jdk1.3 && tar cf - * ) | (cd $jdk11src && tar xf -))
@@ -235,6 +239,12 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -rf org/bouncycastle/pkcs/test
     rm -rf org/bouncycastle/eac/test
     rm -rf org/bouncycastle/cms/test
+    rm -r org/bouncycastle/jcajce/provider/asymmetric/compositesignatures
+    rm -r org/bouncycastle/jcajce/provider/asymmetric/CompositeSignatures.java
+    rm org/bouncycastle/pqc/crypto/test/XWingTest.java
+    rm org/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java
+    rm org/bouncycastle/cert/cmp/test/InvalidMessagesTest.java
+    rm org/bouncycastle/test/JVMVersionTest.java
     rm org/bouncycastle/cms/jcajce/JceAADStream.java
     rm org/bouncycastle/cms/jcajce/JceCMSKEM*.java
     rm org/bouncycastle/cms/jcajce/JceKEM*.java
@@ -296,7 +306,11 @@ find $jdk11src -name "*.java" -exec scripts/useseccert.sh \{\} \;
     rm -f  org/bouncycastle/jcajce/provider/asymmetric/NTRU.java
     rm -f  org/bouncycastle/jcajce/provider/asymmetric/Falcon.java
     rm -f  org/bouncycastle/test/PrintTestResult.java
-    rm  org/bouncycastle/openpgp/test/PGPAeadTest.java
+    rm -f  org/bouncycastle/openpgp/test/PGPAeadTest.java
+    rm -f  org/bouncycastle/openpgp/test/BytesBooleansTest.java
+    rm -f  org/bouncycastle/openpgp/test/BcImplProviderTest.java
+    rm -f  org/bouncycastle/openpgp/test/BcpgGeneralTest.java
+    rm -f  org/bouncycastle/openpgp/test/OpenPGPTest.java
 
     sh ../../scripts/jdk1.2ed.sh > /dev/null 2>&1
     sh ../../scripts/jdk1.1ed.sh > /dev/null 2>&1
@@ -641,6 +655,7 @@ then
     mkdir $artifacts/bcpg-jdk11-$base/src
     tar cf - index.html LICENSE.html CONTRIBUTORS.html docs | (cd $artifacts/bcpg-jdk11-$base; tar xf -)
     ((cd pg/src/main/java && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
+    ((cd pg/src/main/jdk1.5 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
     ((cd pg/src/main/jdk1.1 && tar cf - * ) | (cd $artifacts/bcpg-jdk11-$base/src && tar xf -))
@@ -684,6 +699,12 @@ then
     rm -f src/org/bouncycastle/openpgp/examples/DSAElGamalKeyRingGenerator.java
     rm -f src/org/bouncycastle/openpgp/examples/EllipticCurveKeyPairGenerator.java
     rm  src/org/bouncycastle/openpgp/test/PGPAeadTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/BytesBooleansTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/BcImplProviderTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/BcpgGeneralTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/OpenPGPTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/OperatorBcTest.java
+    rm -f  src/org/bouncycastle/openpgp/test/PGPGeneralTest.java
 
     find src -name AllTests.java -exec rm {} \;
 
@@ -798,8 +819,16 @@ w
 q
 %
 
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip bcpg/*.java bcpg/*/*.java openpgp/*.java )
-    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/*/*.java openpgp/*/*/*.java )
+    ed src/org/bouncycastle/openpgp/operator/bc/BcPublicKeyDataDecryptorFactory.java <<%
+g/private.*final.*;/s/final//
+w
+q
+%
+
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip bcpg/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip bcpg/*/*.java openpgp/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/*/*.java )
+    (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/*/*/*.java )
     (cd src/org/bouncycastle; javac -d ../../../classes -classpath ../../../classes:../../../src:../../../../jce-jdk11-$base/classes:$JDK11PATH/lib/classes.zip openpgp/test/RegressionTest.java )
 
     cp ../../../../pg/src/test/resources/org/bouncycastle/openpgp/test/bigpub.asc classes/org/bouncycastle/openpgp/test/bigpub.asc

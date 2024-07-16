@@ -151,7 +151,7 @@ public class BCPGInputStream
         {
             try
             {
-                nextB = in.read();
+                nextB = this.read();
             }
             catch (EOFException e)
             {
@@ -264,52 +264,52 @@ public class BCPGInputStream
         switch (tag)
         {
         case RESERVED:
-            return new ReservedPacket(objStream);
+            return new ReservedPacket(objStream, newPacket);
         case PUBLIC_KEY_ENC_SESSION:
-            return new PublicKeyEncSessionPacket(objStream);
+            return new PublicKeyEncSessionPacket(objStream, newPacket);
         case SIGNATURE:
-            return new SignaturePacket(objStream);
+            return new SignaturePacket(objStream, newPacket);
         case SYMMETRIC_KEY_ENC_SESSION:
-            return new SymmetricKeyEncSessionPacket(objStream);
+            return new SymmetricKeyEncSessionPacket(objStream, newPacket);
         case ONE_PASS_SIGNATURE:
-            return new OnePassSignaturePacket(objStream);
+            return new OnePassSignaturePacket(objStream, newPacket);
         case SECRET_KEY:
-            return new SecretKeyPacket(objStream);
+            return new SecretKeyPacket(objStream, newPacket);
         case PUBLIC_KEY:
-            return new PublicKeyPacket(objStream);
+            return new PublicKeyPacket(objStream, newPacket);
         case SECRET_SUBKEY:
-            return new SecretSubkeyPacket(objStream);
+            return new SecretSubkeyPacket(objStream, newPacket);
         case COMPRESSED_DATA:
-            return new CompressedDataPacket(objStream);
+            return new CompressedDataPacket(objStream, newPacket);
         case SYMMETRIC_KEY_ENC:
-            return new SymmetricEncDataPacket(objStream);
+            return new SymmetricEncDataPacket(objStream, newPacket);
         case MARKER:
-            return new MarkerPacket(objStream);
+            return new MarkerPacket(objStream, newPacket);
         case LITERAL_DATA:
-            return new LiteralDataPacket(objStream);
+            return new LiteralDataPacket(objStream, newPacket);
         case TRUST:
-            return new TrustPacket(objStream);
+            return new TrustPacket(objStream, newPacket);
         case USER_ID:
-            return new UserIDPacket(objStream);
+            return new UserIDPacket(objStream, newPacket);
         case USER_ATTRIBUTE:
-            return new UserAttributePacket(objStream);
+            return new UserAttributePacket(objStream, newPacket);
         case PUBLIC_SUBKEY:
-            return new PublicSubkeyPacket(objStream);
+            return new PublicSubkeyPacket(objStream, newPacket);
         case SYM_ENC_INTEGRITY_PRO:
-            return new SymmetricEncIntegrityPacket(objStream);
+            return new SymmetricEncIntegrityPacket(objStream, newPacket);
         case MOD_DETECTION_CODE:
-            return new ModDetectionCodePacket(objStream);
+            return new ModDetectionCodePacket(objStream, newPacket);
         case AEAD_ENC_DATA:
-            return new AEADEncDataPacket(objStream);
+            return new AEADEncDataPacket(objStream, newPacket);
         case PADDING:
-            return new PaddingPacket(objStream);
+            return new PaddingPacket(objStream, newPacket);
         case EXPERIMENTAL_1:
         case EXPERIMENTAL_2:
         case EXPERIMENTAL_3:
         case EXPERIMENTAL_4:
-            return new ExperimentalPacket(tag, objStream);
+            return new ExperimentalPacket(tag, objStream, newPacket);
         default:
-            return new UnknownPacket(tag, objStream);
+            return new UnknownPacket(tag, objStream, newPacket);
         }
     }
 

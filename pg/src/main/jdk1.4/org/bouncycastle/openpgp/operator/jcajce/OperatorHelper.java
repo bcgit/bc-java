@@ -45,48 +45,12 @@ class OperatorHelper
         this.helper = helper;
     }
 
-    /**
-     * Return an appropriate name for the hash algorithm represented by the passed
-     * in hash algorithm ID number (JCA message digest naming convention).
-     *
-     * @param hashAlgorithm the algorithm ID for a hash algorithm.
-     * @return a String representation of the hash name.
-     */
-    String getDigestName(
-        int hashAlgorithm)
-        throws PGPException
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithmTags.SHA1:
-            return "SHA-1";
-        case HashAlgorithmTags.MD2:
-            return "MD2";
-        case HashAlgorithmTags.MD5:
-            return "MD5";
-        case HashAlgorithmTags.RIPEMD160:
-            return "RIPEMD160";
-        case HashAlgorithmTags.SHA256:
-            return "SHA-256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA-384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA-512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA-224";
-        case HashAlgorithmTags.TIGER_192:
-            return "TIGER";
-        default:
-            throw new PGPException("unknown hash algorithm tag in getDigestName: " + hashAlgorithm);
-        }
-    }
-
     MessageDigest createDigest(int algorithm)
         throws GeneralSecurityException, PGPException
     {
         MessageDigest dig;
 
-        String digestName = getDigestName(algorithm);
+        String digestName = PGPUtil.getDigestName(algorithm);
         try
         {
             dig = helper.createMessageDigest(digestName);
@@ -376,8 +340,11 @@ class OperatorHelper
         case PublicKeyAlgorithmTags.ECDSA:
             encAlg = "ECDSA";
             break;
-        case PublicKeyAlgorithmTags.EDDSA:
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+        case PublicKeyAlgorithmTags.Ed25519:
             return createSignature("Ed25519");
+        case PublicKeyAlgorithmTags.Ed448:
+            return createSignature("Ed448");
         default:
             throw new PGPException("unknown algorithm tag in signature:" + keyAlgorithm);
         }

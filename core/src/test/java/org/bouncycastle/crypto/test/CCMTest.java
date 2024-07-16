@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -148,6 +149,53 @@ public class CCMTest
         catch (IllegalArgumentException e)
         {
             // expected
+        }
+
+        // For small number of allowed blocks, validate boundary
+        // conditions are properly handled. Zero and greater will
+        // fail as size bound is a strict inequality.
+        int[] offsets = new int[]{-10, -2, -1, 0, 1, 10};
+        int[] ns = new int[]{13, 12};
+        for (int i = 0; i != ns.length; i++)
+        {
+            int n_len = ns[i];
+            for (int j = 0; j != offsets.length; j++)
+            {
+                int offset = offsets[j];
+                try
+                {
+                    ccm.init(true, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
+
+                    // Encrypt up to 2^(8q) + offset. Note that message length
+                    // must be strictly less than 2^(8q) so offset=0 will not
+                    // work (per SP 800-38C Section A.1 Length Requirements).
+                    int q = 15 - n_len;
+                    int size = 1 << (8*q);
+                    inBuf = new byte[size + offset];
+
+                    outBuf = new byte[ccm.getOutputSize(inBuf.length)];
+                    len = ccm.processPacket(inBuf, 0, inBuf.length, outBuf, 0);
+
+                    if (offset >= 0) {
+                        fail("expected to fail to encrypt boundary bytes n=" + n_len + "size=" + size + " offset=" + offset);
+                    } else {
+                        // Decrypt should also succeed if encryption succeeded.
+                        ccm.init(false, new AEADParameters(new KeyParameter(K1), 128, new byte[n_len]));
+                        out = ccm.processPacket(outBuf, 0, outBuf.length);
+
+                        if (out.length != inBuf.length || !Arrays.areEqual(inBuf, out))
+                        {
+                            fail("encryption output incorrect");
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    if (offset < 0) {
+                        fail("unexpected failure to encrypt boundary bytes n=" + n_len + " offset=" + offset + " msg=" + e.getMessage());
+                    }
+                }
+            }
         }
 
         AEADTestUtil.testReset(this, new CCMBlockCipher(AESEngine.newInstance()), new CCMBlockCipher(AESEngine.newInstance()), new AEADParameters(new KeyParameter(K1), 32, N2));

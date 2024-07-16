@@ -81,6 +81,11 @@ public class CompositePublicKey
         }
     }
 
+    public AlgorithmIdentifier getAlgorithmIdentifier()
+    {
+        return null;
+    }
+
     public int hashCode()
     {
         return keys.hashCode();

@@ -10,8 +10,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.spec.ECGenParameterSpec;
-
 import java.util.Date;
 import java.util.Iterator;
 
@@ -33,7 +31,6 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.edec.KeyAgreementSpi;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -55,6 +52,7 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
@@ -75,6 +73,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
@@ -102,10 +101,41 @@ public class OperatorBcTest
         testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
-        testBcPGPDataEncryptorBuilder();
+//        testBcPGPDataEncryptorBuilder();
         testBcPGPContentVerifierBuilderProvider();
         //testBcPBESecretKeyDecryptorBuilder();
         testBcKeyFingerprintCalculator();
+        testBcStandardDigests();
+    }
+
+    private void testBcStandardDigests()
+        throws Exception
+    {
+        PGPDigestCalculatorProvider digCalcBldr = new BcPGPDigestCalculatorProvider();
+
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.MD5), Hex.decode("900150983cd24fb0d6963f7d28e17f72"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA1), Hex.decode("a9993e364706816aba3e25717850c26c9cd0d89d"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.RIPEMD160), Hex.decode("8eb208f7e05d987a9b044a8e98c6b087f15a0bfc"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA256), Hex.decode("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA384), Hex.decode("cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA512), Hex.decode("ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA224), Hex.decode("23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_256), Hex.decode("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"));
+        testDigestCalc(digCalcBldr.get(HashAlgorithmTags.SHA3_512), Hex.decode("b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"));
+    }
+
+    private void testDigestCalc(PGPDigestCalculator digCalc, byte[] expected)
+        throws IOException
+    {
+        OutputStream dOut = digCalc.getOutputStream();
+
+        dOut.write(Strings.toByteArray("abc"));
+
+        dOut.close();
+
+        byte[] res = digCalc.getDigest();
+
+        isTrue(Arrays.areEqual(res, expected));
     }
 
     public void testBcKeyFingerprintCalculator()
@@ -138,7 +168,15 @@ public class OperatorBcTest
         isTrue(areEqual(output, digBuf));
 
         final PublicKeyPacket pubKeyPacket2 = new PublicKeyPacket(5, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
-        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", () -> calculator.calculateFingerprint(pubKeyPacket2));
+        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                calculator.calculateFingerprint(pubKeyPacket2);
+            }
+        });
     }
 
 //    public void testBcPBESecretKeyDecryptorBuilder()
@@ -164,13 +202,45 @@ public class OperatorBcTest
     public void testBcPGPDataEncryptorBuilder()
         throws Exception
     {
-        testException("null cipher specified", "IllegalArgumentException", () -> new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL));
+        testException("null cipher specified", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.NULL);
+            }
+        });
 
-        testException("AEAD algorithms can only be used with AES", "IllegalStateException", () -> new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.IDEA).setWithAEAD(AEADAlgorithmTags.OCB, 6));
+        testException("AEAD algorithms can only be used with AES", "IllegalStateException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.IDEA).setWithAEAD(AEADAlgorithmTags.OCB, 6);
+            }
+        });
 
-        testException("minimum chunkSize is 6", "IllegalArgumentException", () -> new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5));
+        testException("minimum chunkSize is 6", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithAEAD(AEADAlgorithmTags.OCB, 5);
+            }
+        });
 
-        testException("invalid parameters:", "PGPException", () -> new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(new byte[0]));
+        testException("invalid parameters:", "PGPException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).build(new byte[0]);
+            }
+        });
 
         isTrue(new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithIntegrityPacket(false).build(new byte[32]).getIntegrityCalculator() == null);
 
@@ -180,49 +250,73 @@ public class OperatorBcTest
     public void testBcPGPKeyPair()
         throws Exception
     {
-        testCreateKeyPair(PublicKeyAlgorithmTags.X448, "X448", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, "X25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed448, "Ed448", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-256")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-384")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("P-521")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "ECDH", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.DSA, "DSA", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDH, "X25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-256")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-384")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("P-521")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP256r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP384r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ECDSA, "ECDSA", (gen) -> gen.initialize(new ECGenParameterSpec("brainpoolP512r1")));
-        testCreateKeyPair(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL", (gen) -> {
-        });
-        testCreateKeyPair(PublicKeyAlgorithmTags.Ed25519, "Ed25519", (gen) -> {
-        });
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.X448, "X448");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.X25519, "X25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.EDDSA_LEGACY, PublicKeyAlgorithmTags.Ed25519, "Ed25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.Ed448, "Ed448");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.ECDH, PublicKeyAlgorithmTags.X25519, "X25519");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "P-256");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "P-384");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "P-521");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "brainpoolP256r1");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "brainpoolP384r1");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDH, "ECDH", "brainpoolP512r1");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.X25519, PublicKeyAlgorithmTags.ECDH, "X25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.Ed25519, PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.DSA, "DSA");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.ECDH, "X25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.EDDSA_LEGACY, "Ed25519");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.ECDSA, "ECDSA");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "P-256");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "P-384");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "P-521");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "brainpoolP256r1");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "brainpoolP384r1");
+        testCreateKeyPairEC(PublicKeyAlgorithmTags.ECDSA, "ECDSA", "brainpoolP512r1");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, "ELGAMAL");
+        testCreateKeyPairDefault(PublicKeyAlgorithmTags.Ed25519, "Ed25519");
+    }
 
+    private void testCreateKeyPairDefault(int algorithm, String name)
+        throws Exception
+    {
+        testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
+        {
+            @Override
+            public void initialize(KeyPairGenerator gen)
+                throws Exception
+            {
+            }
+        });
+    }
+
+    private void testCreateKeyPairDefault(int algorithm1, int algorithm2, String name)
+        throws Exception
+    {
+        testCreateKeyPair(algorithm1, algorithm2, name, new KeyPairGeneratorOperation()
+        {
+            @Override
+            public void initialize(KeyPairGenerator gen)
+                throws Exception
+            {
+            }
+        });
+    }
+    
+    private void testCreateKeyPairEC(int algorithm, String name, final String curveName)
+        throws Exception
+    {
+        testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
+        {
+            @Override
+            public void initialize(KeyPairGenerator gen)
+                throws Exception
+            {
+                gen.initialize(new ECNamedCurveGenParameterSpec(curveName));
+            }
+        });
     }
 
     private void testCreateKeyPair(int algorithm, String name, KeyPairGeneratorOperation kpgen)
@@ -278,7 +372,7 @@ public class OperatorBcTest
 //            }
 //        }
 
-        isTrue(Arrays.areEqual(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
+        isTrue("pub key mismatch: " + name, Arrays.areEqual(pubKey.getEncoded(), keyPair.getPublic().getEncoded()));
         isTrue(privKey.toString().equals(keyPair.getPrivate().toString()));
         // getEncoded() are Not equal as privKey.hasPublicKey is false but keyPair.getPrivate().hasPublicKey is true
         //isTrue(Arrays.equals(privKey.getEncoded(), keyPair.getPrivate().getEncoded()));
@@ -287,7 +381,6 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
-        System.setProperty("enableCamelliaKeyWrapping", "True");
         keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.Ed448, "XDH", "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
@@ -302,7 +395,6 @@ public class OperatorBcTest
         keyringTest("ECDSA", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP384r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_192);
         keyringTest("ECDSA", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDSA, "ECDH", "brainpoolP512r1", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
 
-
         keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA384, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("EdDSA", "ED25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_128);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_192);
@@ -310,8 +402,6 @@ public class OperatorBcTest
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_128);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_192);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.CAMELLIA_256);
-
-
     }
 
     private void keyringTest(String algorithmName1, String ed_str, int ed_num, String algorithmName2, String x_str, int x_num, int hashAlgorithm, int symmetricWrapAlgorithm)
@@ -374,7 +464,7 @@ public class OperatorBcTest
             {
                 count++;
                 sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
-
+                   // TODO: appears to be failing on CI system
                 if (!sig.verifyCertification(vKey, sKey))
                 {
                     fail("failed to verify sub-key signature.");

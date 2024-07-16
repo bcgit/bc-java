@@ -393,11 +393,157 @@ public class CertPathValidatorTest
 
     }
 
+    private static byte[] crlFake = Base64.decode(
+        "MIIBzTCBtgIBATANBgkqhkiG9w0BAQsFADAiMQswCQYDVQQGEwJYWDETMBEGA1UE" +
+        "CgwKQ1JMcyAnciBVcxcNMjQwMzI1MTg0NzAwWhcNMjQwNDAxMTg0NzAwWqBgMF4w" +
+        "CgYDVR0UBAMCAQEwHwYDVR0jBBgwFoAU/NE0t8uklbG2WeoLBWIe6JqPtDowLwYD" +
+        "VR0cAQH/BCUwI6AeoByGGmh0dHA6Ly9mb28uZXhhbXBsZS9jcmwuZGxshAH/MA0G" +
+        "CSqGSIb3DQEBCwUAA4IBAQAN8oDSvWsg3JvUJ4MkXvczaFb72VH0J/VL5PV2cBSm" +
+        "MfaVBKnUsNr1IcxT06KF8gNrDTpKqJ9fetO290swZfcPt9sEVUBVQUpdlQc3tya1" +
+        "jYWmFkA3tkpqH5rBCQa3CBm1Cg8cbFBtwWgWr70NsVvfD6etjAEP9Ze+MSXnGV0p" +
+        "w9EeOV07HnSD/PGQwqCiaSn5DdIDVoH8eFSGmgNLw+b4SwUjmz8PqsZwvHxJvleV" +
+        "1D8cj7zdR4ywgRMjEfJZ8Bp+Tdu64Gv0doDS0iEJIshLHYkcW1okpq/tPm8kKAbD" +
+        "reparePNQwhScVcDiSL73eEBIPokgG3QhohiucP5MeF1");
+
+    private static byte[] crlIssuer = Base64.decode(
+        "MIIDMzCCAhugAwIBAgIUPOARSBZTC4SU8f/RrhdPXfZVh9EwDQYJKoZIhvcNAQEL\n" +
+        "BQAwIzELMAkGA1UEBhMCWFgxFDASBgNVBAoMC0NlcnRzICdyIFVzMB4XDTI0MDMy\n" +
+        "NTE4NDcwMFoXDTI1MDMyNTE4NDcwMFowIjELMAkGA1UEBhMCWFgxEzARBgNVBAoM\n" +
+        "CkNSTHMgJ3IgVXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCleY8S\n" +
+        "gEwPfvfUcIuix5dC7MgFudzaJROINa3u7cW0Rh+mivfepuGl9I683qinDebmE1Sq\n" +
+        "bVyHDi4RqpM+BCQ0EnW6idriL+13BqNU4QRd68gwF4eNXw9rtmixVGvcvcUngNnz\n" +
+        "XPrJyWqarjFQ8ECH09I9q/Fv3OAWPmTbzAgWdXV7cx/pCHFNEU3qSWeXkbumKV5l\n" +
+        "DqTs/J82/n5HZfRjUVIMbf4X6/9wA9BQX8aYbUMng49M5GVd/bg3RXGBLF4lXIUd\n" +
+        "IPpGYrKT2V+EFq9yKqbnXawTXKw7mBNoIbaN950f1VMdf8czsPNxdeCHJzNtQV70\n" +
+        "aOqa2hLzxAxzAz7DAgMBAAGjYDBeMB0GA1UdDgQWBBRdiKBrVfofgq1XL7AZu3Wk\n" +
+        "t83qzjAfBgNVHSMEGDAWgBS04fYwVDNa70uNyIJtV75OHwEHmTAMBgNVHRMBAf8E\n" +
+        "AjAAMA4GA1UdDwEB/wQEAwIBAjANBgkqhkiG9w0BAQsFAAOCAQEAF5XrOXxVfCFb\n" +
+        "S5EXxpAk8iXMAOfcfYiWEUT9DdJ3ABeAFnhbiLdlKq8J3BGr1Iiveo2pE9fKz9s/\n" +
+        "2tZjzbe9Kfg05mfyn9DS5AoWjieW5zaAZpDR9pKkq9/d7pDTbHwvDnNLoMMHRPZP\n" +
+        "2tsBhjcPPay8zWKLz+8dfPyrGpbGfFg/zd3KBNefc12Sl0Iw6XQUaIpDxyJBvpIU\n" +
+        "0Xo1R1F22gJ7oG1zI28mr6SGyBvJ8r1c0sQ1qQt+iA/0M5qXRjuLIhO8/ajlMQwP\n" +
+        "Sdasa53HOErxWqsxNRpwJkaynSiKSwGeqLxdTYwWcWrsYB7RqKgjbQnhSBSd3TKm\n" +
+        "H2P790A+oQ==");
+
+    private static byte[] crlSecretary = Base64.decode(
+        "MIIDejCCAmKgAwIBAgIUI4Xq9G+KWEr2NPfGbY4A2dfXp50wDQYJKoZIhvcNAQEL\n" +
+        "BQAwIzELMAkGA1UEBhMCWFgxFDASBgNVBAoMC0NlcnRzICdyIFVzMB4XDTI0MDMy\n" +
+        "NTE4NDcwMFoXDTI1MDMyNTE4NDcwMFowIjELMAkGA1UEBhMCWFgxEzARBgNVBAoM\n" +
+        "CkNSTHMgJ3IgVXMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkynb7\n" +
+        "zm0ooFfVkkqj9ppBiTh0YGUqv7/jQoFMDJ/XVtYGUJdyPTXoD9cP1ZypzONmK07U\n" +
+        "Rc0WMug47hv2tZgrVOxqrGQqDD7e4LM3luinwG5eW3XYT4eJr6Urbk8KSdKSYzqj\n" +
+        "wjY217KQ8DDgioUInWBUyz5UWrG014QbcEgwX0JGpQrwaaPQtbUd58f5x/LCdsXC\n" +
+        "p41ySSNsYoKhDawnNblLVxhr+Vp7eQ0wj7LaD/+k12ZDMQbkj3PsGBiWqm+e2uwV\n" +
+        "n9cq9kK6ARN0svju5dpDw5hERRrQ1GR87WvHWHUtmnR7s7+xacRpZTUvJ5Xsi0Rf\n" +
+        "Eq1SDPYPyT8ksrt7AgMBAAGjgaYwgaMwHQYDVR0OBBYEFPzRNLfLpJWxtlnqCwVi\n" +
+        "Huiaj7Q6MB8GA1UdIwQYMBaAFLTh9jBUM1rvS43Igm1Xvk4fAQeZMAwGA1UdEwEB\n" +
+        "/wQCMAAwUwYDVR0fBEwwSjBIoB6gHIYaaHR0cDovL2Zvby5leGFtcGxlL2NybC5k\n" +
+        "bGyiJqQkMCIxCzAJBgNVBAYTAlhYMRMwEQYDVQQKDApDUkxzICdyIFVzMA0GCSqG\n" +
+        "SIb3DQEBCwUAA4IBAQBY72Z1LwWsVbnYl6ZhWDAAuy0bwTMKwF8JwpG1PpFzC6p0\n" +
+        "DJd36c3ZOzRYgjpmApi3X9lFx0oyuZOjBIlMtqnXgKjYBytF2jmf8DziIsCnvMI8\n" +
+        "1IiFRjWjm56y0xaxBqv9yzvTqKG198vxakxPAUn8oONMtLvqHAvoQyHCBej5Xirg\n" +
+        "joJkPeHeRwl9sgYZcqowNHGHiBX8KtXeatkHkpmxZO5cunGD+RcOnBpJEfZJhopX\n" +
+        "GaW1DPRY0qqPFhnLcQsv8UZEyDxyYH/HuGaZy3u9lT1SqlOx2zzQnTK6EyIc92n3\n" +
+        "suILIm4MBrqXYXUlHkMzLmpJGH9lg9xaFn3vCU7Q");
+
+    private static byte[] crlRoot = Base64.decode(
+        "MIIDFjCCAf6gAwIBAgIUF/hP3a/TkmHlfhYYUiFNw/H5lMwwDQYJKoZIhvcNAQEL\n" +
+            "BQAwIzELMAkGA1UEBhMCWFgxFDASBgNVBAoMC0NlcnRzICdyIFVzMB4XDTI0MDMy\n" +
+            "NTE4NDcwMFoXDTI1MDMyNTE4NDcwMFowIzELMAkGA1UEBhMCWFgxFDASBgNVBAoM\n" +
+            "C0NlcnRzICdyIFVzMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAomfH\n" +
+            "KuGQzqGkFGSsKLESgJbRRRQsIuJ19w/sumNHNPnbl93rEgdoF1y2yUFcY0ZipZCg\n" +
+            "lIpfhOkp6I+WLtF59t8vLw30P1ZBwmbjC54EwGLH3WRDPS0j+33TfDjNdQRwY4u6\n" +
+            "j2EK6drXPhBPsaG0map3VfWQelaStAoIC6evoYFzfO2E7Ik4xv06U47WHefseBue\n" +
+            "ZcsFvfW3bf/E04PFc2YssUyqjiaa0sU/w7l9xj2P+vCqpM393ZWJX6GRcns/wUJ/\n" +
+            "na7iXpIO82EV3/eExeXoHc912L+m0HoB86RYQat+wyhX6Z5i1ApU6zXqGU7D8cPD\n" +
+            "DrbIjwLDMwKPbC9FjwIDAQABo0IwQDAdBgNVHQ4EFgQUtOH2MFQzWu9LjciCbVe+\n" +
+            "Th8BB5kwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAgQwDQYJKoZIhvcN\n" +
+            "AQELBQADggEBAJGeqkMrzOgesGaCHJJgX/qpG7bp4KPPL0bi7EYnT1cuy5ss053I\n" +
+            "Ooh5APYn+GrufWjYn4mwSekvuRTB6VdR4YMeoYPMxWJRp3l7s0aHLo98BbW9WX+4\n" +
+            "ju+K/Dndbrs1v7r4IB79hu4QtR7BVaEQ8UjqY+/I1VeYKtAd7scQGKpSNOPN3YVu\n" +
+            "+QY3fXy+nfDhj7drUeAHVj+Qz/6RZOIhmIPj7adsZhDQwvMG3cAkAfVGncP7n+cN\n" +
+            "nqZyYu8PPQp4g+QM42kXXBu5N8QwkCtcMe2nvKiQvEOZww70N3mTIK8CSxLla5pI\n" +
+            "635lNPBZubGF6m35P7EArB0JuU2KYNgUxis=\n");
+
+    private static byte[] crlVictim = Base64.decode(
+        "MIIDjTCCAnWgAwIBAgIUW8wsCzJEg7WzpMvkUKyloeKqKLYwDQYJKoZIhvcNAQEL\n" +
+        "BQAwIzELMAkGA1UEBhMCWFgxFDASBgNVBAoMC0NlcnRzICdyIFVzMB4XDTI0MDMy\n" +
+        "NTE4NDcwMFoXDTI1MDMyNTE4NDcwMFowJTELMAkGA1UEBhMCWFgxFjAUBgNVBAoM\n" +
+        "DVVubHVja3kgJ3IgV2UwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC6\n" +
+        "erJm/+hf6IhoqCYfX+y6uiVSSF/J6VyENk+oXS2g71g1sapGCXRO8xlDqH1rhFzC\n" +
+        "IJ56nC14K9w4r+6D3FUKw4G5sKMRTMX7U5brjd8wRd3XHAIUdSCP9SVrNz6bmcjf\n" +
+        "B27vBT0ifIC7bQg7Y01BoqnBPObuwT7ufk951rFzCIagzSylzR/GRNhMYo4rO6jw\n" +
+        "Ih84LpAxUQ1vFAaBb5GCVhXoUWecu+RtIaIDo9tn8PF16O6VW8zPmsoV9HELD8Sx\n" +
+        "HuoSXXcsF2OW55XLeAO+l1tikAVqA6nUvQx03bb3TW7W+3v6nGzG308fHA32TdLk\n" +
+        "ZLK9nPnF5hF4pFmWpjwHAgMBAAGjgbYwgbMwHQYDVR0OBBYEFMitbC8lM9mw/hc6\n" +
+        "TnvL5vpAyfpZMB8GA1UdIwQYMBaAFLTh9jBUM1rvS43Igm1Xvk4fAQeZMAwGA1Ud\n" +
+        "EwEB/wQCMAAwDgYDVR0PAQH/BAQDAgeAMFMGA1UdHwRMMEowSKAeoByGGmh0dHA6\n" +
+        "Ly9mb28uZXhhbXBsZS9jcmwuZGxsoiakJDAiMQswCQYDVQQGEwJYWDETMBEGA1UE\n" +
+        "CgwKQ1JMcyAnciBVczANBgkqhkiG9w0BAQsFAAOCAQEAmysx1oqEUDUpLg98K9Rw\n" +
+        "AXTykVDjjG0ZKg7UtDcaIeBfomhXv+Sh2oz9zqqZQ5/4HGIwe2fAsbQZmlH//8Yb\n" +
+        "ovEZCo3WmhJSyTDB2KLebPJLw5HOi7QrAjYJWKR+pkuQmxMPoSAdMXRkiBmzYjZL\n" +
+        "lxHaT6Y2IMZ6kVtHCmcOFaHWJyPAUZ4ymO03cb/1M73ioecf9jMgIf7YBaopty2p\n" +
+        "X2GVHaCE1m7u+2WU45b34PBRY/ZvhZvuJKi3TfuaLMJFPz6HY4XbHPnlBP4EwXpC\n" +
+        "5VaJvOMXWZPWh/yrCVEKMzFxesbwHV/vyOUls0P4kIY383/78MvzchHLhwR7h2fy\n" +
+        "Iw==");
+
+    private void testNoKeyUsageCRLSigner()
+        throws Exception
+    {
+        CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
+
+        X509Certificate root = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(crlRoot));
+        X509Certificate crlIss = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(crlIssuer));
+        X509Certificate secretary = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(crlSecretary));
+        X509Certificate victim = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(crlVictim));
+
+        X509CRL fakeCrl = (X509CRL)cf.generateCRL(new ByteArrayInputStream(crlFake));
+
+        List list = new ArrayList();
+
+//        list.add(root);
+//        list.add(crlIss);
+        list.add(secretary);
+        list.add(victim);
+        list.add(fakeCrl);
+
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "false");
+
+        CertPath cp = cf.generateCertPath(Collections.singletonList(victim));
+
+        CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
+        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+        Date validDate = new Date(fakeCrl.getThisUpdate().getTime() + 60 * 60 * 1000);
+
+            //Searching for rootCert by subjectDN without CRL
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(root, null));
+                                                //
+        CertPathValidator cpb = CertPathValidator.getInstance("PKIX", "BC");
+        X509CertSelector targetConstraints = new X509CertSelector();
+        targetConstraints.setSubject(victim.getSubjectX500Principal().getEncoded());
+        PKIXParameters params = new PKIXParameters(trust);
+        params.addCertStore(store);
+        params.setDate(validDate);
+
+        try
+        {
+            PKIXCertPathValidatorResult result = (PKIXCertPathValidatorResult)cpb.validate(cp, params);
+            fail("path should have failed");
+        }
+        catch (CertPathValidatorException e)
+        {                   
+            isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
+        }
+
+        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+    }
+
     public void performTest()
         throws Exception
     {
         constraintTest();
-
+        testNoKeyUsageCRLSigner();
         CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
 
         // initialise CertStore
@@ -431,6 +577,8 @@ public class CertPathValidatorTest
         MyChecker checker = new MyChecker();
         param.addCertPathChecker(checker);
 
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
+
         PKIXCertPathValidatorResult result =
             (PKIXCertPathValidatorResult)cpv.validate(cp, param);
         PolicyNode policyTree = result.getPolicyTree();
@@ -462,6 +610,8 @@ public class CertPathValidatorTest
         param.setDate(validDate);
 
         result = (PKIXCertPathValidatorResult)cpv.validate(cp, param);
+
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "false");
 
         isTrue(result.getTrustAnchor().getTrustedCert().equals(rootCert));
         
@@ -513,6 +663,8 @@ public class CertPathValidatorTest
                 fail("unexpected exception", e);
             }
         }
+
+        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
 
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();

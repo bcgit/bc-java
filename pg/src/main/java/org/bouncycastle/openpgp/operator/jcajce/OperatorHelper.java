@@ -1,5 +1,21 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.InputStream;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Signature;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyAgreement;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -11,22 +27,6 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-
-import java.io.InputStream;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Signature;
-
 class OperatorHelper
 {
     private JcaJceHelper helper;
@@ -36,57 +36,22 @@ class OperatorHelper
         this.helper = helper;
     }
 
-    /**
-     * Return an appropriate name for the hash algorithm represented by the passed
-     * in hash algorithm ID number (JCA message digest naming convention).
-     *
-     * @param hashAlgorithm the algorithm ID for a hash algorithm.
-     * @return a String representation of the hash name.
-     */
-    String getDigestName(
-        int hashAlgorithm)
-        throws PGPException
-    {
-        switch (hashAlgorithm)
-        {
-        case HashAlgorithmTags.SHA1:
-            return "SHA-1";
-        case HashAlgorithmTags.MD2:
-            return "MD2";
-        case HashAlgorithmTags.MD5:
-            return "MD5";
-        case HashAlgorithmTags.RIPEMD160:
-            return "RIPEMD160";
-        case HashAlgorithmTags.SHA256:
-            return "SHA-256";
-        case HashAlgorithmTags.SHA384:
-            return "SHA-384";
-        case HashAlgorithmTags.SHA512:
-            return "SHA-512";
-        case HashAlgorithmTags.SHA224:
-            return "SHA-224";
-        case HashAlgorithmTags.TIGER_192:
-            return "TIGER";
-        default:
-            throw new PGPException("unknown hash algorithm tag in getDigestName: " + hashAlgorithm);
-        }
-    }
-
     MessageDigest createDigest(int algorithm)
         throws GeneralSecurityException, PGPException
     {
         MessageDigest dig;
 
-        String digestName = getDigestName(algorithm);
+        String digestName = PGPUtil.getDigestName(algorithm);
         try
         {
             dig = helper.createMessageDigest(digestName);
         }
         catch (NoSuchAlgorithmException e)
         {
-            if (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224)
+            if (algorithm == HashAlgorithmTags.SHA1
+            || (algorithm >= HashAlgorithmTags.SHA256 && algorithm <= HashAlgorithmTags.SHA224))
             {
-                dig = helper.createMessageDigest("SHA" + digestName.substring(4));
+                dig = helper.createMessageDigest("SHA-" + digestName.substring(3));
             }
             else
             {
@@ -227,10 +192,7 @@ class OperatorHelper
             case SymmetricKeyAlgorithmTags.CAMELLIA_128:
             case SymmetricKeyAlgorithmTags.CAMELLIA_192:
             case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-                if (Boolean.parseBoolean(System.getProperty("enableCamelliaKeyWrapping")))
-                {
-                    return helper.createCipher("CamelliaWrap");
-                }
+                return helper.createCipher("CamelliaWrap");
             default:
                 throw new PGPException("unknown wrap algorithm: " + encAlgorithm);
             }

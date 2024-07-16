@@ -1,6 +1,7 @@
 module org.bouncycastle.provider
 {
     requires java.sql;
+    requires java.logging;
     requires java.naming;
 
     provides java.security.Provider with org.bouncycastle.jce.provider.BouncyCastleProvider,org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -62,6 +63,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce;
     exports org.bouncycastle.jcajce.io;
     exports org.bouncycastle.jcajce.provider.asymmetric;
+    exports org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
     exports org.bouncycastle.jcajce.provider.asymmetric.dh;
     exports org.bouncycastle.jcajce.provider.asymmetric.dsa;
     exports org.bouncycastle.jcajce.provider.asymmetric.dstu;
