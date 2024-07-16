@@ -616,10 +616,10 @@ public final class BCrypt
 
     /**
      * Calculates the <b>bcrypt</b> hash of an input - note for processing general passwords you want to
-     * make sure the password is terminated in a manner similar to what is done by passwordToByteArray().
+     * make sure the password is terminated in a manner similar to what is done by {@link #passwordToByteArray(char[])}.
      * <p>
      * This implements the raw <b>bcrypt</b> function as defined in the bcrypt specification, not
-     * the crypt encoded version implemented in OpenBSD.
+     * the crypt encoded version implemented in OpenBSD, see {@link OpenBSDBCrypt} for that.
      * </p>
      * @param pwInput    the password bytes (up to 72 bytes) to use for this invocation.
      * @param salt     the 128 bit salt to use for this invocation.
