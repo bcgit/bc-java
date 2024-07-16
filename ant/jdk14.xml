@@ -70,7 +70,7 @@
                 <exclude name="**/BCEC*.java"/>
                 <exclude name="**/JCEEC5*.java"/>
                 <exclude name="**/provider/JCEEC*.java"/>
-                <exclude name="**/provider/OcspCache.java"/>
+                <exclude name="**/provider/OcspResponseManager.java"/>
                 <exclude name="**/provider/ProvOcspRevocationChecker.java"/>
                 <exclude name="**/EC5*.java"/>
                 <exclude name="**/PKCS12StoreParameter.java"/>
@@ -175,6 +175,7 @@
                 <exclude name="**/jce/provider/test/JceTestUtil.java"/>
                 <exclude name="**/SIKE*.java"/>
 		<exclude name="**/CertLocaleTest.java"/>
+		        <exclude name="**/jce/provider/test/OcspResponseManagerTest.java"/>
             </fileset>
 
             <fileset dir="tls/src/main/java" includes="**/*.java">

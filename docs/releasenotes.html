@@ -24,10 +24,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, TBD.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Leading zeroes were sometimes dropped from Ed25519 signatures leading to verification errors in the PGP API. This has been fixed.</li>
+<li>Issue when getting BC ProvRevocationChecker (engineGetRevocationChecker), then adding it to the PKIXBuilderParams from the client, causing the ProvOcspRevocationChecker to have an old "parent" reference without ocspResponses added.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
 <li>BCJSSE: Added support for security property "jdk.tls.server.defaultDHEParameters" (disabled in FIPS mode).</li>
+<li>BCJSSE: Support has been added for server-side OCSP stapling (status_request and status_request_v2) for TLSv1.2 and TLSv1.3 during TLS handshake.</li>
+<li>New property has been added (org.bouncycastle.prov.revocation.checker.no-fallback) to complement RevocationChecker's NO_FALLBACK option.</li>
 </ul>
 
 <a id="r1rv78d1"><h3>2.2.1 Version</h3></a>
@@ -100,6 +103,9 @@ Release 1.78 deals with the following CVEs:
 <li>CVE-2024-30171 - Possible timing based leakage in RSA based handshakes due to exception processing eliminated.</li>
 <li>CVE-2024-30172 - Crafted signature and public key can be used to trigger an infinite loop in the Ed25519 verification code.</li>
 <li>CVE-2024-34447 - When endpoint identification is enabled in the BCJSSE and an SSL socket is not created with an explicit hostname (as happens with HttpsURLConnection), hostname verification could be performed against a DNS-resolved IP address. This has been fixed.</li>
+<li>BCJSSE: For OCSP server stapling to be enabled, the property jdk.tls.server.enableStatusRequestExtension must be
+set to true. Other properties that control stapling are also available: jdk.tls.server.[cacheSize | cacheLifetime
+| responseTimeout | responderURI | responderOverride | ignoreExtensions]</li>
 </ul>
 
 <a id="r1rv77"><h3>2.4.1 Version</h3></a>
