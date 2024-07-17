@@ -7,8 +7,8 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 /**
  * base class for HPKE KEM
  */
-public abstract class KEM {
-
+public abstract class KEM
+{
     // Key Generation
     abstract AsymmetricCipherKeyPair GeneratePrivateKey();
     abstract AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm);
