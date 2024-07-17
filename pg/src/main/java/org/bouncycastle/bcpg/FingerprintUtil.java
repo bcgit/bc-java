@@ -7,6 +7,30 @@ public class FingerprintUtil
 {
 
     /**
+     * Derive a key-id from the given key fingerprint.
+     * This method can derive key-ids from v4, v5 (LibrePGP) and v6 keys.
+     * For keys with other versions (2,3) it will return 0.
+     *
+     * @param keyVersion version of the key
+     * @param fingerprint fingerprint of the key
+     * @return derived key-id
+     */
+    public static long keyIdFromFingerprint(int keyVersion, byte[] fingerprint)
+    {
+        switch (keyVersion)
+        {
+            case PublicKeyPacket.VERSION_4:
+                return keyIdFromV4Fingerprint(fingerprint);
+            case 5:
+                return keyIdFromLibrePgpFingerprint(fingerprint);
+            case PublicKeyPacket.VERSION_6:
+                return keyIdFromV6Fingerprint(fingerprint);
+            default:
+                return 0;
+        }
+    }
+
+    /**
      * Derive a 64 bit key-id from a version 6 OpenPGP fingerprint.
      * For v6 keys, the key-id corresponds to the left-most 8 octets of the fingerprint.
      *
