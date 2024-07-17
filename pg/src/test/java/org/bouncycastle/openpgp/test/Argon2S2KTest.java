@@ -66,14 +66,14 @@ public class Argon2S2KTest
 
     // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-ae
     private static final String TEST_MSG_AES256 = "-----BEGIN PGP MESSAGE-----\n" +
-        "Comment: Encrypted using AES with 192-bit key\n" +
-        "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
-        "\n" +
-        "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
-        "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
-        "LVg77Mwwfgl2n/d572WciAM=\n" +
-        "=n8Ma\n" +
-        "-----END PGP MESSAGE-----";
+            "Comment: Encrypted using AES with 256-bit key\n" +
+            "Comment: Session key: BBEDA55B9AAE63DAC45D4F49D89DACF4AF37FEF...\n" +
+            "Comment: Session key: ...C13BAB2F1F8E18FB74580D8B0\n" +
+            "\n" +
+            "wzcECQS4eJUgIG/3mcaILEJFpmJ8AQQVnZ9l7KtagdClm9UaQ/Z6M/5roklSGpGu\n" +
+            "623YmaXezGj80j4B+Ku1sgTdJo87X1Wrup7l0wJypZls21Uwd67m9koF60eefH/K\n" +
+            "95D1usliXOEm8ayQJQmZrjf6K6v9PWwqMQ==\n" +
+            "-----END PGP MESSAGE-----";
 
     static final String TEST_MSG_PLAIN = "Hello, world!";
 
