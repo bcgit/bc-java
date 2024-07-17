@@ -8,7 +8,7 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 public class PreferredAlgorithms 
     extends SignatureSubpacket
 {    
-    private static byte[] intToByteArray(
+    protected static byte[] intToByteArray(
         int[]    v)
     {
         byte[]    data = new byte[v.length];
