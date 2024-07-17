@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.test;
 
 import java.security.Security;
 
+import org.bouncycastle.bcpg.test.SignatureSubpacketsTest;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
@@ -63,6 +64,7 @@ public class RegressionTest
         new OperatorJcajceTest(),
         new OpenPGPTest(),
         new OperatorBcTest(),
+        new SignatureSubpacketsTest(),
 
         new DedicatedEd25519KeyPairTest(),
         new DedicatedEd448KeyPairTest(),
