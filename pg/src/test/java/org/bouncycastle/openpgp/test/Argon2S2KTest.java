@@ -42,7 +42,7 @@ public class Argon2S2KTest
 
     static final String TEST_MSG_PASSWORD = "password";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-
     static final String TEST_MSG_AES128 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 128-bit key\n" +
         "Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F\n" +
@@ -53,7 +53,7 @@ public class Argon2S2KTest
         "=uIks\n" +
         "-----END PGP MESSAGE-----";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-a
     private static final String TEST_MSG_AES192 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 192-bit key\n" +
         "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
@@ -64,7 +64,7 @@ public class Argon2S2KTest
         "=n8Ma\n" +
         "-----END PGP MESSAGE-----";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-ae
     private static final String TEST_MSG_AES256 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 192-bit key\n" +
         "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
