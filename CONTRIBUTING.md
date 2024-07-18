@@ -18,7 +18,7 @@ If you find a problem with Bouncy Castle, [search if an issue already exists](ht
 > **_NOTE:_**  If the issue is a __potential security problem__, please contact us
 before posting anything public. See [Security Policy](SECURITY.md).
 
-If a related discussion or issue doesn't exist, and the issue is not security related, you can [open a new issue](https://github.com/bcgit/bc-java/issues/new). An issue can be converted into a discussion if regarded as one.
+If a related discussion or issue doesn't exist, and the issue is not security-related, you can [open a new issue](https://github.com/bcgit/bc-java/issues/new/choose). An issue can be converted into a discussion if regarded as one.
 
 ### Contribute to the code
 
