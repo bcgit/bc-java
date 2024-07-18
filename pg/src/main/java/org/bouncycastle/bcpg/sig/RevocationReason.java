@@ -5,7 +5,12 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Strings;
 
 /**
- * Represents revocation reason OpenPGP signature sub packet.
+ * Signature Subpacket for encoding the reason why a key was revoked.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.23">
+ *     RFC4880 - Reason for Revocation</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-reason-for-revocation">
+ *     C-R - Reason for Revocation</a>
  */
 public class RevocationReason extends SignatureSubpacket
 {

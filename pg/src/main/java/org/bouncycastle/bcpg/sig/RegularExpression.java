@@ -6,7 +6,13 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * Regexp Packet - RFC 4880 5.2.3.14. Note: the RFC says the byte encoding is to be null terminated.
+ * Signature Subpacket containing a regular expression limiting the scope of the signature.
+ * Note: the RFC says the byte encoding is to be null terminated.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.14">
+ *     RFC4880 - Regular Expression</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-regular-expression">
+ *     C-R - Regular Expression</a>
  */
 public class RegularExpression
     extends SignatureSubpacket

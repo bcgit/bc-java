@@ -7,7 +7,12 @@ import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.bcpg.UserAttributeSubpacketTags;
 
 /**
- * Basic type for a image attribute packet.
+ * User-Attribute Subpacket used to encode an image, e.g. the user's avatar.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.12.1">
+ *     RFC4880 - Image Attribute Subpacket</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-the-image-attribute-subpack">
+ *     C-R - Image Attribute Subpacket</a>
  */
 public class ImageAttribute 
     extends UserAttributeSubpacket

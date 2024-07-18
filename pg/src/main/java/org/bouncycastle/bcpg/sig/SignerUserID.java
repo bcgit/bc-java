@@ -6,7 +6,12 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
- * packet giving the User ID of the signer.
+ * Signature Subpacket containing the User ID of the identity as which the issuer created the signature.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.22">
+ *     RFC4880 - Signer's User ID</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-signers-user-id">
+ *     C-R - Signer's User ID</a>
  */
 public class SignerUserID 
     extends SignatureSubpacket
