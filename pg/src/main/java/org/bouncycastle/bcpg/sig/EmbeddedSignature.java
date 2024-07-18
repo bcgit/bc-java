@@ -4,7 +4,15 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * Packet embedded signature
+ * Signature Subpacket for embedding one Signature into another.
+ * This packet is used e.g. for embedding a primary-key binding signature
+ * ({@link org.bouncycastle.openpgp.PGPSignature#PRIMARYKEY_BINDING}) into a subkey-binding signature
+ * ({@link org.bouncycastle.openpgp.PGPSignature#SUBKEY_BINDING}) for a signing-capable subkey.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.26">
+ *     RFC4880 - Embedded Signature</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-embedded-signature">
+ *     C-R: Embedded Signature</a>
  */
 public class EmbeddedSignature
     extends SignatureSubpacket

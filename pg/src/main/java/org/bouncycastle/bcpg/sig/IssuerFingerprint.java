@@ -7,7 +7,11 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
 
 /**
- * packet giving the issuer key fingerprint.
+ * Signature Subpacket containing the fingerprint of the issuers signing (sub-) key.
+ * This packet supersedes the {@link IssuerKeyID} subpacket.
+ *
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-issuer-fingerprint">
+ *     C-R - Issuer Fingerprint</a>
  */
 public class IssuerFingerprint
     extends SignatureSubpacket

@@ -4,7 +4,14 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * Represents revocation key OpenPGP signature sub packet.
+ * Signature Subpacket containing the algorithm and fingerprint of a separate version 4 key which is allowed to issue
+ * revocation signatures for this key.
+ * This mechanism is deprecated.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.15">
+ *     RFC4880 - Revocation Key</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-revocation-key">
+ *     C-R - Revocation Key</a>
  */
 public class RevocationKey extends SignatureSubpacket
 {
