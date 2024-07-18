@@ -8,7 +8,8 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
- * base class for an EC Public Key.
+ * Base class for an EC Public Key.
+ * For subclasses, see {@link ECDHPublicBCPGKey}, {@link ECDSAPublicBCPGKey} or {@link EdDSAPublicBCPGKey}.
  */
 public abstract class ECPublicBCPGKey
     extends BCPGObject

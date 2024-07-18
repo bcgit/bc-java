@@ -13,15 +13,15 @@ import org.bouncycastle.util.Arrays;
 /**
  *
  *    Crystal Kyber Private Key Format.
- *    See https://www.ietf.org/archive/id/draft-uni-qsckeys-kyber-00.html for details.
+ *    See https://www.ietf.org/archive/id/draft-uni-qsckeys-kyber-01.html for details.
  *    <pre>
  *        KyberPrivateKey ::= SEQUENCE {
- *        version     INTEGER {v0(0)}   -- version (round 3)
- *        s           OCTET STRING,     -- EMPTY
- *        hpk         OCTET STRING      -- EMPTY
- *        nonce       OCTET STRING,     -- d
- *        publicKey   [0] IMPLICIT KyberPublicKey OPTIONAL,
- *                                      -- see next section
+ *            version     INTEGER {v0(0)}   -- version (round 3)
+ *            s           OCTET STRING,     -- sample s
+ *            publicKey   [0] IMPLICIT KyberPublicKey OPTIONAL,
+ *                                          -- see next section
+ *            hpk         OCTET STRING      -- H(pk)
+ *            nonce       OCTET STRING,     -- z
  *        }
  *    </pre>
  */

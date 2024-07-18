@@ -17,10 +17,9 @@ public class X9IntegerConverter
      * @param c the curve of interest.
      * @return the field size in bytes (rounded up).
      */
-    public int getByteLength(
-        ECCurve c)
+    public int getByteLength(ECCurve c)
     {
-        return (c.getFieldSize() + 7) / 8;
+        return c.getFieldElementEncodingLength();
     }
 
     /**
@@ -29,10 +28,9 @@ public class X9IntegerConverter
      * @param fe the field element of interest.
      * @return the field size in bytes (rounded up).
      */
-    public int getByteLength(
-        ECFieldElement fe)
+    public int getByteLength(ECFieldElement fe)
     {
-        return (fe.getFieldSize() + 7) / 8;
+        return fe.getEncodedLength();
     }
 
     /**

@@ -22,16 +22,16 @@ class ExportX509TrustManager_5
         return x509TrustManager;
     }
 
-    public void checkClientTrusted(X509Certificate[] x509Certificates, String authType)
+    public void checkClientTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        x509TrustManager.checkClientTrusted(x509Certificates, authType);
+        x509TrustManager.checkClientTrusted(chain, authType);
     }
 
-    public void checkServerTrusted(X509Certificate[] x509Certificates, String authType)
+    public void checkServerTrusted(X509Certificate[] chain, String authType)
         throws CertificateException
     {
-        x509TrustManager.checkServerTrusted(x509Certificates, authType);
+        x509TrustManager.checkServerTrusted(chain, authType);
     }
 
     public X509Certificate[] getAcceptedIssuers()

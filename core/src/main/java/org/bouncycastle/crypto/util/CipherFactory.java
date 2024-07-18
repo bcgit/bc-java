@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.util;
 
 import java.io.OutputStream;
 
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -64,6 +65,24 @@ public class CipherFactory
         0xbd, 0x22, 0xbf, 0x9f, 0x7e, 0xa9, 0x51, 0x4b, 0x4c, 0xfb, 0x02, 0xd3, 0x70, 0x86, 0x31, 0xe7,
         0x3b, 0x05, 0x03, 0x54, 0x60, 0x48, 0x65, 0x18, 0xd2, 0xcd, 0x5f, 0x32, 0x88, 0x0e, 0x35, 0xfd
     };
+
+    private static int getRC2EffectiveKeyBits(RC2CBCParameter rc2CbcParameter)
+    {
+        ASN1Integer version = rc2CbcParameter.getRC2ParameterVersionData();
+        if (version == null)
+        {
+            return 32;
+        }
+
+        int encoding = version.intPositiveValueExact();
+        if (encoding >= 256)
+        {
+            return encoding;
+        }
+
+        // TODO Why an entire table when RFC 8018 B.2.3. says only 160, 120, 58, 256+ are defined?
+        return rc2Ekb[encoding] & 0xFFFF;
+    }
 
     /**
      * Create a content cipher for encrypting bulk data.
@@ -144,9 +163,12 @@ public class CipherFactory
                 }
                 else if (encAlg.equals(PKCSObjectIdentifiers.RC2_CBC))
                 {
-                    RC2CBCParameter cbcParams = RC2CBCParameter.getInstance(sParams);
+                    RC2CBCParameter rc2CBCParameter = RC2CBCParameter.getInstance(sParams);
+                    RC2Parameters rc2Parameters = new RC2Parameters(
+                        ((KeyParameter)encKey).getKey(),
+                        getRC2EffectiveKeyBits(rc2CBCParameter));
 
-                    cipher.init(forEncryption, new ParametersWithIV(new RC2Parameters(((KeyParameter)encKey).getKey(), rc2Ekb[cbcParams.getRC2ParameterVersion().intValue()]), cbcParams.getIV()));
+                    cipher.init(forEncryption, new ParametersWithIV(rc2Parameters, rc2CBCParameter.getIV()));
                 }
                 else
                 {

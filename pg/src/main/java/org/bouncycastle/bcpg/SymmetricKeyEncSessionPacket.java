@@ -40,10 +40,17 @@ public class SymmetricKeyEncSessionPacket
     private byte[] authTag;          // V5, V6
 
     public SymmetricKeyEncSessionPacket(
-        BCPGInputStream in)
+            BCPGInputStream in)
+            throws IOException
+    {
+        this(in, false);
+    }
+    public SymmetricKeyEncSessionPacket(
+        BCPGInputStream in,
+        boolean newPacketFormat)
         throws IOException
     {
-        super(SYMMETRIC_KEY_ENC_SESSION);
+        super(SYMMETRIC_KEY_ENC_SESSION, newPacketFormat);
 
         version = in.read();
         if (version == VERSION_4)
@@ -349,6 +356,6 @@ public class SymmetricKeyEncSessionPacket
 
         pOut.close();
 
-        out.writePacket(SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray());
+        out.writePacket(hasNewPacketFormat(), SYMMETRIC_KEY_ENC_SESSION, bOut.toByteArray());
     }
 }

@@ -18,8 +18,11 @@ export BC_JDK21=`openjdk_21`
 export JAVA_HOME=`openjdk_17`
 export PATH=$JAVA_HOME/bin:$PATH
 
+# Checkstyle
 ./gradlew check -x test;
 
 
-
+# OSGI scanner only, no testing
+./gradlew clean build -x test
+./osgi_scan.sh
 

@@ -166,11 +166,29 @@ public class ASN1ObjectIdentifier
     {
         ASN1RelativeOID.checkIdentifier(branchID);
 
-        byte[] branchContents = ASN1RelativeOID.parseIdentifier(branchID);
-        checkContentsLength(this.contents.length + branchContents.length);
+        byte[] contents;
+        if (branchID.length() <= 2)
+        {
+            checkContentsLength(this.contents.length + 1);
+            int subID = branchID.charAt(0) - '0';
+            if (branchID.length() == 2)
+            {
+                subID *= 10;
+                subID += branchID.charAt(1) - '0';
+            }
 
-        byte[] contents = Arrays.concatenate(this.contents, branchContents);
-        String identifier = getId() + "." + branchID; 
+            contents = Arrays.append(this.contents, (byte)subID);
+        }
+        else
+        {
+            byte[] branchContents = ASN1RelativeOID.parseIdentifier(branchID);
+            checkContentsLength(this.contents.length + branchContents.length);
+
+            contents = Arrays.concatenate(this.contents, branchContents);
+        }
+
+        String rootID = getId();
+        String identifier = rootID + "." + branchID;
 
         return new ASN1ObjectIdentifier(contents, identifier);
     }

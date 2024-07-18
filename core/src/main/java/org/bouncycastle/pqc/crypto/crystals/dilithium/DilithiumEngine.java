@@ -222,7 +222,8 @@ class DilithiumEngine
         this.CryptoPublicKeyBytes = SeedBytes + this.DilithiumK * DilithiumPolyT1PackedBytes;
         this.CryptoSecretKeyBytes =
             (
-                3 * SeedBytes
+                2 * SeedBytes
+                    + TrBytes
                     + DilithiumL * this.DilithiumPolyEtaPackedBytes
                     + DilithiumK * this.DilithiumPolyEtaPackedBytes
                     + DilithiumK * DilithiumPolyT0PackedBytes
@@ -379,7 +380,7 @@ class DilithiumEngine
             shake256Digest.update(outSig, 0, DilithiumK * DilithiumPolyW1PackedBytes);
             shake256Digest.doFinal(outSig, 0, DilithiumCTilde);
 
-            cp.challenge(Arrays.copyOfRange(outSig, 0, SeedBytes));  // uses only the first SeedBytes bytes of sig
+            cp.challenge(Arrays.copyOfRange(outSig, 0, DilithiumCTilde));  // uses only the first DilithiumCTilde bytes of sig
             cp.polyNtt();
 
             // Compute z, reject if it reveals secret
@@ -483,7 +484,7 @@ class DilithiumEngine
         // Helper.printByteArray(mu);
 
         // Matrix-vector multiplication; compute Az - c2^dt1
-        cp.challenge(Arrays.copyOfRange(c, 0, SeedBytes));  // use only first SeedBytes of c.
+        cp.challenge(Arrays.copyOfRange(c, 0, DilithiumCTilde));  // use only first DilithiumCTilde of c.
         // System.out.println("cp = ");
         // System.out.println(cp.toString());
 
@@ -536,14 +537,7 @@ class DilithiumEngine
         // Helper.printByteArray(c2);
 
 
-        for (int i = 0; i < DilithiumCTilde; ++i)
-        {
-            if (c[i] != c2[i])
-            {
-                return false;
-            }
-        }
-        return true;
+        return Arrays.constantTimeAreEqual(c, c2);
     }
 
     public boolean signOpen(byte[] msg, byte[] signedMsg, int signedMsglen, byte[] rho, byte[] t1)

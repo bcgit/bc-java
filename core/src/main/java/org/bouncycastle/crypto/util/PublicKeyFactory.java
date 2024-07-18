@@ -32,14 +32,12 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.DHPublicKey;
 import org.bouncycastle.asn1.x9.DomainParameters;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.ValidationParams;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
@@ -291,13 +289,7 @@ public class PublicKeyFactory
             if (params.isNamedCurve())
             {
                 ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
-
-                X9ECParameters x9 = CustomNamedCurves.getByOID(oid);
-                if (x9 == null)
-                {
-                    x9 = ECNamedCurveTable.getByOID(oid);
-                }
-                dParams = new ECNamedDomainParameters(oid, x9);
+                dParams = ECNamedDomainParameters.lookup(oid);
             }
             else if (params.isImplicitlyCA())
             {
