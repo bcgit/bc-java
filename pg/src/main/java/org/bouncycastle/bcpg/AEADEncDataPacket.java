@@ -5,10 +5,13 @@ import java.io.IOException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Packet representing AEAD encrypted data. At the moment this appears to exist in the following
- * expired draft only, but it's appearing despite this.
+ * Packet representing LibrePGP-style AEAD encrypted data.
+ * Known as OCB Encrypted Data Packet in the LibrePGP specification.
+ * Note: This packet is not part of the official OpenPGP standard.
+ * OpenPGP uses the Symmetrically Encrypted Integrity Protected Data Packet version 2 instead.
  *
- * @ref https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-rfc4880bis-04#section-5.16
+ * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-ocb-encrypted-data-packet-t">
+ *     OCB Encrypted Data Packet</a>
  */
 public class AEADEncDataPacket
     extends InputStreamPacket
