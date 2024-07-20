@@ -656,6 +656,8 @@ public class PGPSecretKey
             return null;
         }
 
+        sanitizePrivateKeyProtection();
+
         PublicKeyPacket pubPk = secret.getPublicKeyPacket();
 
         try
@@ -706,6 +708,47 @@ public class PGPSecretKey
         catch (Exception e)
         {
             throw new PGPException("Exception constructing key", e);
+        }
+    }
+
+    private void sanitizePrivateKeyProtection()
+            throws PGPException
+    {
+        // Argon2 S2K, but no AEAD -> not allowed
+        if (secret.getS2KUsage() != SecretKeyPacket.USAGE_AEAD &&
+                getS2K() != null && getS2K().getType() == S2K.ARGON_2)
+        {
+            throw new PGPKeyValidationException("Key MUST NOT be protected using Argon2 if no AEAD is used.");
+        }
+
+        if (getPublicKey().getVersion() == PublicKeyPacket.VERSION_6)
+        {
+            // Malleable CFB not allowed.
+            if (secret.getS2KUsage() == SecretKeyPacket.USAGE_CHECKSUM)
+            {
+                throw new PGPKeyValidationException("V6 key MUST NOT be protected using malleable CFB (USAGE_CHECKSUM).");
+            }
+
+            // CFB
+            if (secret.getS2KUsage() == SecretKeyPacket.USAGE_SHA1)
+            {
+                S2K s2k = secret.getS2K();
+                if (s2k == null)
+                {
+                    throw new PGPKeyValidationException("Missing S2K specifier.");
+                }
+
+                if (s2k.getType() == S2K.SIMPLE)
+                {
+                    throw new PGPKeyValidationException("V6 key MUST NOT be protected using CFB key derived using SIMPLE S2K.");
+                }
+            }
+
+            // Legacy CFB without S2K specifier not allowed
+            if (secret.getS2KUsage() != SecretKeyPacket.USAGE_NONE && getS2K() == null)
+            {
+                throw new PGPKeyValidationException("V6 key MUST NOT be encrypted with Legacy CFB (no S2K specifier)");
+            }
         }
     }
 
