@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp;
 import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.List;
 
@@ -319,5 +320,20 @@ public class KeyIdentifier
             }
         }
         return false;
+    }
+
+    public String toString()
+    {
+        if (isWildcard())
+        {
+            return "*";
+        }
+
+        if (getFingerprint() == null)
+        {
+            return "" + keyId;
+        }
+
+        return Hex.toHexString(fingerprint).toUpperCase();
     }
 }
