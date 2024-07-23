@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
+import java.util.StringJoiner;
+
 class Poly
 {
     private short[] coeffs;
@@ -337,17 +339,10 @@ class Poly
 
     public String toString()
     {
-        StringBuffer out = new StringBuffer();
-        out.append("[");
-        for (int i = 0; i < coeffs.length; i++)
-        {
-            out.append(coeffs[i]);
-            if (i != coeffs.length - 1)
-            {
-                out.append(", ");
-            }
+        final StringJoiner out = new StringJoiner(", ", "[", "]");
+        for (short c : coeffs){
+            out.add(String.valueOf(c));
         }
-        out.append("]");
         return out.toString();
     }
 }
