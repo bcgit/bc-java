@@ -516,24 +516,17 @@ public class GF2Vector
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         for (int i = 0; i < length; i++)
         {
             if ((i != 0) && ((i & 0x1f) == 0))
             {
                 buf.append(' ');
             }
-            int q = i >> 5;
-            int r = i & 0x1f;
-            int bit = v[q] & (1 << r);
-            if (bit == 0)
-            {
-                buf.append('0');
-            }
-            else
-            {
-                buf.append('1');
-            }
+            final int q = i >> 5;
+            final int r = i & 0x1f;
+            final int bit = v[q] & (1 << r);
+            buf.append(bit == 0 ? '0' : '1');
         }
         return buf.toString();
     }
