@@ -23,7 +23,8 @@ public class AllTests
                         new SignaturePacketTest(),
                         new OnePassSignaturePacketTest(),
                         new OpenPgpMessageTest(),
-                        new FingerprintUtilTest()
+                        new FingerprintUtilTest(),
+                        new EncryptedMessagePacketTest()
                 };
 
         for (int i = 0; i != tests.length; i++)
