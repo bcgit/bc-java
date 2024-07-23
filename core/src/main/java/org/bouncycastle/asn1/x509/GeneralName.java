@@ -248,7 +248,7 @@ public class GeneralName
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
 
         buf.append(tag);
         buf.append(": ");
@@ -260,10 +260,10 @@ public class GeneralName
             buf.append(ASN1IA5String.getInstance(obj).getString());
             break;
         case directoryName:
-            buf.append(X500Name.getInstance(obj).toString());
+            buf.append(X500Name.getInstance(obj));
             break;
         default:
-            buf.append(obj.toString());
+            buf.append(obj);
         }
         return buf.toString();
     }
