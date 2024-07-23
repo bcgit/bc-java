@@ -42,6 +42,8 @@ public class AllTests
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(DSA2Test.class);
         suite.addTestSuite(PGPUnicodeTest.class);
+        suite.addTestSuite(AEADWithArgon2Test.class);
+        suite.addTestSuite(Argon2Test.class);
 
         return new BCTestSetup(suite);
     }
