@@ -3,6 +3,8 @@ package org.bouncycastle.util;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
+import java.util.StringJoiner;
+
 /**
  * Basic 20 byte finger print class.
  */
@@ -64,18 +66,16 @@ public class Fingerprint
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i != fingerprint.length; i++)
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : fingerprint)
         {
-            if (i > 0)
-            {
-                sb.append(":");
-            }
-            sb.append(encodingTable[(fingerprint[i] >>> 4) & 0xf]);
-            sb.append(encodingTable[fingerprint[i] & 0x0f]);
+            sb.append(encodingTable[(b >>> 4) & 0xf]);
+            sb.append(encodingTable[b & 0x0f]);
+            sb.append(':'); // eventually remove the last char after finishing (help branch prediction)
         }
 
-        return sb.toString();
+        final int len = sb.length();
+        return len == 0 ? "" : sb.deleteCharAt(len - 1).toString();
     }
 
     public boolean equals(Object o)
