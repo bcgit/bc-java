@@ -1,11 +1,8 @@
 package org.bouncycastle.asn1.x509;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.*;
+
+import java.util.StringJoiner;
 
 public class PolicyInformation
     extends ASN1Object
@@ -89,26 +86,19 @@ public class PolicyInformation
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
 
         sb.append("Policy information: ");
         sb.append(policyIdentifier);
 
         if (policyQualifiers != null)
         {
-            StringBuffer p = new StringBuffer();
-            for (int i = 0; i < policyQualifiers.size(); i++)
+            final StringJoiner joiner = new StringJoiner(", ", "[", "]");
+            for (ASN1Encodable element : policyQualifiers)
             {
-                if (p.length() != 0)
-                {
-                    p.append(", ");
-                }
-                p.append(PolicyQualifierInfo.getInstance(policyQualifiers.getObjectAt(i)));
+                joiner.add(String.valueOf(element));
             }
-
-            sb.append("[");
-            sb.append(p);
-            sb.append("]");
+            sb.append(joiner);
         }
 
         return sb.toString();
