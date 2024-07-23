@@ -71,11 +71,13 @@ public class Fingerprint
         {
             sb.append(encodingTable[(b >>> 4) & 0xf]);
             sb.append(encodingTable[b & 0x0f]);
-            sb.append(':'); // eventually remove the last char after finishing (help branch prediction)
+            // always add the separator, eventually substring
+            // to remove the last char after finishing (help branch prediction avoiding checks in the loop)
+            sb.append(':');
         }
 
         final int len = sb.length();
-        return len == 0 ? "" : sb.deleteCharAt(len - 1).toString();
+        return len == 0 ? "" : sb.substring(0, len - 1);
     }
 
     public boolean equals(Object o)
