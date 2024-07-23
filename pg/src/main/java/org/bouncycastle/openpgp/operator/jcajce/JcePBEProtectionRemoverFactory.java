@@ -7,8 +7,14 @@ import java.security.Provider;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -19,6 +25,7 @@ import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PGPSecretKeyDecryptorWithAAD;
+import org.bouncycastle.util.Arrays;
 
 public class JcePBEProtectionRemoverFactory
     implements PBEProtectionRemoverFactory
@@ -27,6 +34,7 @@ public class JcePBEProtectionRemoverFactory
 
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private PGPDigestCalculatorProvider calculatorProvider;
+    private JceAEADUtil aeadUtil = new JceAEADUtil(helper);
 
     private JcaPGPDigestCalculatorProviderBuilder calculatorProviderBuilder;
 
@@ -45,6 +53,7 @@ public class JcePBEProtectionRemoverFactory
     public JcePBEProtectionRemoverFactory setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -57,6 +66,7 @@ public class JcePBEProtectionRemoverFactory
     public JcePBEProtectionRemoverFactory setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -105,6 +115,37 @@ public class JcePBEProtectionRemoverFactory
                         throw new PGPException("invalid key: " + e.getMessage(), e);
                     }
                 }
+
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData) 
+                    throws PGPException
+                {
+                    byte[] hkdfInfo = new byte[] {
+                        (byte) (0xC0 | packetTag), (byte) keyVersion, (byte) encAlgorithm, (byte) aeadAlgorithm
+                    };
+                    // TODO: Replace HDKF code with JCE based implementation
+                    HKDFParameters hkdfParameters = new HKDFParameters(s2kKey, null, hkdfInfo);
+                    HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
+                    hkdfGen.init(hkdfParameters);
+                    byte[] key = new byte[SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm)];
+                    hkdfGen.generateBytes(key, 0, key.length);
+
+                    byte[] aad = Arrays.prepend(pubkeyData, (byte) (0xC0 | packetTag));
+
+                    SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+                    final Cipher c = aeadUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+                    try
+                    {
+                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, iv, 128, aad);
+                        byte[] data = c.doFinal(keyData);
+                        return data;
+                    }
+                    catch (InvalidAlgorithmParameterException | InvalidKeyException |
+                           IllegalBlockSizeException | BadPaddingException e)
+                    {
+                        throw new PGPException("Cannot extract AEAD protected secret key material", e);
+                    }
+                }
             };
         }
         else
@@ -136,6 +177,37 @@ public class JcePBEProtectionRemoverFactory
                     catch (InvalidKeyException e)
                     {
                         throw new PGPException("invalid key: " + e.getMessage(), e);
+                    }
+                }
+
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData) 
+                    throws PGPException
+                {
+                    byte[] hkdfInfo = new byte[] {
+                        (byte) (0xC0 | packetTag), (byte) keyVersion, (byte) encAlgorithm, (byte) aeadAlgorithm
+                    };
+                    // TODO: Replace HDKF code with JCE based implementation
+                    HKDFParameters hkdfParameters = new HKDFParameters(s2kKey, null, hkdfInfo);
+                    HKDFBytesGenerator hkdfGen = new HKDFBytesGenerator(new SHA256Digest());
+                    hkdfGen.init(hkdfParameters);
+                    byte[] key = new byte[SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm)];
+                    hkdfGen.generateBytes(key, 0, key.length);
+
+                    byte[] aad = Arrays.prepend(pubkeyData, (byte) (0xC0 | packetTag));
+
+                    SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+                    final Cipher c = aeadUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+                    try
+                    {
+                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, iv, 128, aad);
+                        byte[] data = c.doFinal(keyData);
+                        return data;
+                    }
+                    catch (InvalidAlgorithmParameterException | InvalidKeyException |
+                           IllegalBlockSizeException | BadPaddingException e)
+                    {
+                        throw new PGPException("Cannot extract AEAD protected secret key material", e);
                     }
                 }
             };
