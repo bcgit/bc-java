@@ -300,7 +300,7 @@ public class ASN1RelativeOID
 
     static String parseContents(byte[] contents)
     {
-        StringBuilder objId = new StringBuilder();
+        StringBuffer objId = new StringBuffer();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;
