@@ -485,7 +485,7 @@ public class S2K
          */
         public static Argon2Params universallyRecommendedParameters()
         {
-            return new Argon2Params(1, 4, 21, new SecureRandom());
+            return new Argon2Params(1, 4, 21, CryptoServicesRegistrar.getSecureRandom());
         }
 
         /**
@@ -497,7 +497,7 @@ public class S2K
          */
         public static Argon2Params memoryConstrainedParameters()
         {
-            return new Argon2Params(3, 4, 16, new SecureRandom());
+            return new Argon2Params(3, 4, 16, CryptoServicesRegistrar.getSecureRandom());
         }
 
         /**

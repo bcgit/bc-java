@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg.sig;
 
+import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
@@ -35,5 +37,22 @@ public class IssuerFingerprint
     public byte[] getFingerprint()
     {
         return Arrays.copyOfRange(data, 1, data.length);
+    }
+
+    public long getKeyID()
+    {
+        if (getKeyVersion() == PublicKeyPacket.VERSION_4)
+        {
+            return FingerprintUtil.keyIdFromV4Fingerprint(getFingerprint());
+        }
+        if (getKeyVersion() == PublicKeyPacket.LIBREPGP_5)
+        {
+            return FingerprintUtil.keyIdFromLibrePgpFingerprint(getFingerprint());
+        }
+        if (getKeyVersion() == PublicKeyPacket.VERSION_6)
+        {
+            return FingerprintUtil.keyIdFromV6Fingerprint(getFingerprint());
+        }
+        return 0;
     }
 }

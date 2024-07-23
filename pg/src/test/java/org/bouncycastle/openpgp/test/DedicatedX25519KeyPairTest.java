@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -41,40 +42,43 @@ public class DedicatedX25519KeyPairTest
         gen.initialize(new XDHParameterSpec("X25519"));
         KeyPair kp = gen.generateKeyPair();
 
-        JcaPGPKeyPair j1 = new JcaPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
-        byte[] pubEnc = j1.getPublicKey().getEncoded();
-        byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        {
+            JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.X25519, kp, date);
+            byte[] pubEnc = j1.getPublicKey().getEncoded();
+            byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 j1.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 j1.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        BcPGPKeyPair b1 = toBcKeyPair(j1);
-        isEncodingEqual(pubEnc, b1.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            BcPGPKeyPair b1 = toBcKeyPair(j1);
+            isEncodingEqual(pubEnc, b1.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 b1.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 b1.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        JcaPGPKeyPair j2 = toJcaKeyPair(b1);
-        isEncodingEqual(pubEnc, j2.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, j2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            JcaPGPKeyPair j2 = toJcaKeyPair(b1);
+            isEncodingEqual(pubEnc, j2.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, j2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 j2.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 j2.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        BcPGPKeyPair b2 = toBcKeyPair(j2);
-        isEncodingEqual(pubEnc, b2.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, b2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            BcPGPKeyPair b2 = toBcKeyPair(j2);
+            isEncodingEqual(pubEnc, b2.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, b2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 b2.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 b2.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        isEquals("Creation time is preserved",
+            isEquals("Creation time is preserved",
                 date.getTime(), b2.getPublicKey().getCreationTime().getTime());
+        }
     }
 
     private void testConversionOfBcKeyPair()
@@ -85,40 +89,43 @@ public class DedicatedX25519KeyPairTest
         gen.init(new X25519KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        BcPGPKeyPair b1 = new BcPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
-        byte[] pubEnc = b1.getPublicKey().getEncoded();
-        byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        {
+            BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.X25519, kp, date);
+            byte[] pubEnc = b1.getPublicKey().getEncoded();
+            byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 b1.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 b1.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        JcaPGPKeyPair j1 = toJcaKeyPair(b1);
-        isEncodingEqual(pubEnc, j1.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            JcaPGPKeyPair j1 = toJcaKeyPair(b1);
+            isEncodingEqual(pubEnc, j1.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 j1.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 j1.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        BcPGPKeyPair b2 = toBcKeyPair(j1);
-        isEncodingEqual(pubEnc, b2.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, b2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            BcPGPKeyPair b2 = toBcKeyPair(j1);
+            isEncodingEqual(pubEnc, b2.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, b2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 b2.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 b2.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        JcaPGPKeyPair j2 = toJcaKeyPair(b2);
-        isEncodingEqual(pubEnc, j2.getPublicKey().getEncoded());
-        isEncodingEqual(privEnc, j2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
-        isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
+            JcaPGPKeyPair j2 = toJcaKeyPair(b2);
+            isEncodingEqual(pubEnc, j2.getPublicKey().getEncoded());
+            isEncodingEqual(privEnc, j2.getPrivateKey().getPrivateKeyDataPacket().getEncoded());
+            isTrue("Dedicated X25519 public key MUST be instanceof X25519PublicBCPGKey",
                 j2.getPublicKey().getPublicKeyPacket().getKey() instanceof X25519PublicBCPGKey);
-        isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
+            isTrue("Dedicated X25519 secret key MUST be instanceof X25519SecretBCPGKey",
                 j2.getPrivateKey().getPrivateKeyDataPacket() instanceof X25519SecretBCPGKey);
 
-        isEquals("Creation time is preserved",
+            isEquals("Creation time is preserved",
                 date.getTime(), j2.getPublicKey().getCreationTime().getTime());
+        }
     }
 
     public static void main(String[] args)

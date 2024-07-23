@@ -93,5 +93,6 @@ artifacts {
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    maxHeapSize = "3g";
 }
 

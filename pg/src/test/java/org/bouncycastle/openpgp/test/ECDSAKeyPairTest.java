@@ -119,7 +119,8 @@ public class ECDSAKeyPairTest
         byte[] privEnc = parsed.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
 
         JcaPGPKeyPair j1 = new JcaPGPKeyPair(
-                parsed.getPublicKey().getAlgorithm(),
+            PublicKeyPacket.VERSION_4,
+            parsed.getPublicKey().getAlgorithm(),
                 new KeyPair(c.getPublicKey(parsed.getPublicKey()),
                         c.getPrivateKey(parsed.getPrivateKey())),
                 parsed.getPublicKey().getCreationTime());
@@ -159,7 +160,8 @@ public class ECDSAKeyPairTest
         byte[] privEnc = parsed.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
 
         BcPGPKeyPair b1 = new BcPGPKeyPair(
-                parsed.getPublicKey().getAlgorithm(),
+            PublicKeyPacket.VERSION_4,
+            parsed.getPublicKey().getAlgorithm(),
                 new AsymmetricCipherKeyPair(
                         c.getPublicKey(parsed.getPublicKey()),
                         c.getPrivateKey(parsed.getPrivateKey())),
@@ -227,7 +229,7 @@ public class ECDSAKeyPairTest
         gen.initialize(new ECNamedCurveGenParameterSpec(curve));
         KeyPair kp = gen.generateKeyPair();
 
-        JcaPGPKeyPair j1 = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDSA, kp, date);
+        JcaPGPKeyPair j1 = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, PublicKeyAlgorithmTags.ECDSA, kp, date);
         byte[] pubEnc = j1.getPublicKey().getEncoded();
         byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
         isTrue("Legacy ECDSA public key MUST be instanceof ECDSAPublicBCPGKey",
