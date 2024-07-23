@@ -1,6 +1,10 @@
 package org.bouncycastle.openpgp;
 
 import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -155,21 +159,7 @@ public class KeyIdentifier
      */
     public boolean matches(PGPPublicKey key)
     {
-        return matches(key, true);
-    }
-
-    /**
-     * Return true, if this {@link KeyIdentifier} matches the given {@link PGPPublicKey}.
-     * This will return true if the fingerprint matches, or if the key-id matches,
-     * or - in case that {@code matchWildcard} is true - if {@link #isWildcard()} returns true.
-     *
-     * @param key key
-     * @param matchWildcard whether to match wildcards
-     * @return whether the identifier matches the key
-     */
-    public boolean matches(PGPPublicKey key, boolean matchWildcard)
-    {
-        if (matchWildcard && isWildcard())
+        if (isWildcard())
         {
             return true;
         }
@@ -198,20 +188,6 @@ public class KeyIdentifier
     }
 
     /**
-     * Return true, if this {@link KeyIdentifier} matches the given {@link PGPSecretKey}.
-     * This will return true if the fingerprint matches, or if the key-id matches,
-     * or - in case that {@code matchWildcard} is true - if {@link #isWildcard()} returns true.
-     *
-     * @param key key
-     * @param matchWildcard whether to match wildcards
-     * @return whether the identifier matches the key
-     */
-    public boolean matches(PGPSecretKey key, boolean matchWildcard)
-    {
-        return matches(key.getPublicKey(), matchWildcard);
-    }
-
-    /**
      * Return true if this {@link KeyIdentifier} matches the given {@link PGPPrivateKey}.
      * This will return true if the fingerprint matches, or if the key-id matches,
      * or in case that {@link #isWildcard()} is true.
@@ -228,22 +204,53 @@ public class KeyIdentifier
         return matches(new PGPPublicKey(key.getPublicKeyPacket(), fingerprintCalculator));
     }
 
-    /**
-     * Return true if this {@link KeyIdentifier} matches the given {@link PGPPrivateKey}.
-     * This will return true if the fingerprint matches, or if the key-id matches,
-     * or - in case that {@code matchWildcard} is true - if {@link #isWildcard()} is true.
-     *
-     * @param key key
-     * @param fingerprintCalculator to calculate the fingerprint
-     * @return whether the identifier matches the key
-     * @throws PGPException if an exception happens while calculating the fingerprint
-     */
-    public boolean matches(PGPPrivateKey key,
-                           KeyFingerPrintCalculator fingerprintCalculator,
-                           boolean matchWildcard)
-            throws PGPException
+    public boolean matches(PGPSignature sig)
     {
-        return matches(new PGPPublicKey(key.getPublicKeyPacket(), fingerprintCalculator), matchWildcard);
+        if (isWildcard())
+        {
+            return true;
+        }
+
+        PGPSignatureSubpacketVector hashed = sig.getHashedSubPackets();
+        PGPSignatureSubpacketVector unhashed = sig.getUnhashedSubPackets();
+
+        return matches(hashed) || matches(unhashed);
+    }
+
+    private boolean matches(PGPSignatureSubpacketVector subpackets)
+    {
+        if (fingerprint != null)
+        {
+            for (SignatureSubpacket subpacket : subpackets.getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+            {
+                IssuerFingerprint issuer = (IssuerFingerprint) subpacket;
+                if (Arrays.constantTimeAreEqual(fingerprint, issuer.getFingerprint()))
+                {
+                    return true;
+                }
+                // wildcard fingerprint
+                if (issuer.getFingerprint().length == 0)
+                {
+                    return true;
+                }
+            }
+        }
+
+        for (SignatureSubpacket subpacket : subpackets.getSubpackets(SignatureSubpacketTags.ISSUER_KEY_ID))
+        {
+            IssuerKeyID issuer = (IssuerKeyID) subpacket;
+            if (issuer.getKeyID() == keyId)
+            {
+                return true;
+            }
+            // wildcard key-id
+            if (issuer.getKeyID() == 0)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

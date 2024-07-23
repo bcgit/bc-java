@@ -256,6 +256,74 @@ public class PGPSecretKeyRing
         return null;
     }
 
+    @Override
+    public PGPPublicKey getPublicKey(KeyIdentifier identifier)
+    {
+        for (PGPSecretKey k : keys)
+        {
+            if (k.getPublicKey() != null && identifier.matches(k))
+            {
+                return k.getPublicKey();
+            }
+        }
+
+        for (PGPPublicKey k : extraPubKeys)
+        {
+            if (identifier.matches(k))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> matches = new ArrayList<>();
+        for (PGPSecretKey k : keys)
+        {
+            if (k.getPublicKey() != null && identifier.matches(k))
+            {
+                matches.add(k.getPublicKey());
+            }
+        }
+
+        for (PGPPublicKey k : extraPubKeys)
+        {
+            if (identifier.matches(k))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
+    public PGPSecretKey getSecretKey(KeyIdentifier identifier)
+    {
+        for (PGPSecretKey k : keys)
+        {
+            if (identifier.matches(k))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    public Iterator<PGPSecretKey> getSecretKeys(KeyIdentifier identifier)
+    {
+        List<PGPSecretKey> matches = new ArrayList<>();
+        for (PGPSecretKey k : keys)
+        {
+            if (identifier.matches(k))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
     /**
      * Return any keys carrying a signature issued by the key represented by keyID.
      *
@@ -278,6 +346,32 @@ public class PGPSecretKeyRing
             }
         }
 
+        return keysWithSigs.iterator();
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier) {
+        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
+        for (PGPSecretKey k : keys)
+        {
+            if (k.getPublicKey() == null)
+            {
+                continue;
+            }
+            Iterator<PGPSignature> sigIt = k.getPublicKey().getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k.getPublicKey());
+            }
+        }
+        for (PGPPublicKey k : extraPubKeys)
+        {
+            Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
         return keysWithSigs.iterator();
     }
 
