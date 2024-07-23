@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -34,6 +35,33 @@ import org.bouncycastle.bcpg.sig.TrustSignature;
  */
 public class PGPSignatureSubpacketVector
 {
+    /**
+     * Create a new {@link PGPSignatureSubpacketVector} from the given {@link Collection} of
+     * {@link SignatureSubpacket} items.
+     * If the collection is <pre>null</pre>, return an empty {@link PGPSignatureSubpacketVector}.
+     *
+     * @param packets collection of items or null
+     * @return PGPSignatureSubpacketVector
+     */
+    public static PGPSignatureSubpacketVector fromSubpackets(Collection<SignatureSubpacket> packets)
+    {
+        if (packets == null)
+        {
+            return fromSubpackets((SignatureSubpacket[]) null);
+        }
+        else
+        {
+            return fromSubpackets(packets.toArray(new SignatureSubpacket[0]));
+        }
+    }
+
+    /**
+     * Create a new {@link PGPSignatureSubpacketVector} from the given {@link SignatureSubpacket[]}.
+     * If the array is <pre>null</pre>, return an empty {@link PGPSignatureSubpacketVector}.
+     *
+     * @param packets array of items or null
+     * @return PGPSignatureSubpacketVector
+     */
     public static PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
     {
         if (packets == null)

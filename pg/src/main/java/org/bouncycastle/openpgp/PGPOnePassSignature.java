@@ -6,11 +6,14 @@ import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A one pass signature object.
@@ -41,6 +44,8 @@ public class PGPOnePassSignature
     PGPOnePassSignature(
         OnePassSignaturePacket sigPack)
     {
+        // v3 OPSs are typically used with v4 sigs
+        super(sigPack.getVersion() == OnePassSignaturePacket.VERSION_3 ? SignaturePacket.VERSION_4 : sigPack.getVersion());
         this.sigPack = sigPack;
         this.sigType = sigPack.getSignatureType();
     }
@@ -61,6 +66,41 @@ public class PGPOnePassSignature
 
         lastb = 0;
         sigOut = verifier.getOutputStream();
+
+        checkSaltSize();
+        updateWithSalt();
+    }
+
+    private void checkSaltSize()
+        throws PGPException
+    {
+        if (getVersion() != SignaturePacket.VERSION_6)
+        {
+            return;
+        }
+
+        int expectedSaltSize = HashUtils.getV6SignatureSaltSizeInBytes(getHashAlgorithm());
+        if (expectedSaltSize != getSalt().length)
+        {
+            throw new PGPException("RFC9580 defines the salt size for " + PGPUtil.getDigestName(getHashAlgorithm()) +
+                " as " + expectedSaltSize + " octets, but signature has " + getSalt().length + " octets.");
+        }
+    }
+
+    private void updateWithSalt()
+        throws PGPException
+    {
+        if (version == SignaturePacket.VERSION_6)
+        {
+            try
+            {
+                sigOut.write(getSalt());
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Cannot salt the signature.", e);
+            }
+        }
     }
 
     /**
@@ -74,6 +114,8 @@ public class PGPOnePassSignature
         PGPSignature pgpSig)
         throws PGPException
     {
+        compareSalt(pgpSig);
+        
         try
         {
             sigOut.write(pgpSig.getSignatureTrailer());
@@ -86,6 +128,19 @@ public class PGPOnePassSignature
         }
 
         return verifier.verify(pgpSig.getSignature());
+    }
+
+    private void compareSalt(PGPSignature signature)
+        throws PGPException
+    {
+        if (version != SignaturePacket.VERSION_6)
+        {
+            return;
+        }
+        if (!Arrays.constantTimeAreEqual(getSalt(), signature.getSalt()))
+        {
+            throw new PGPException("Salt in OnePassSignaturePacket does not match salt in SignaturePacket.");
+        }
     }
 
     /**

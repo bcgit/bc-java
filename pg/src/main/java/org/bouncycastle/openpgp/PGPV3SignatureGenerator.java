@@ -29,6 +29,7 @@ public class PGPV3SignatureGenerator
     public PGPV3SignatureGenerator(
         PGPContentSignerBuilder contentSignerBuilder)
     {
+        super(SignaturePacket.VERSION_3);
         this.contentSignerBuilder = contentSignerBuilder;
     }
     
