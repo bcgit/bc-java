@@ -96,14 +96,7 @@ public class CramerShoupCiphertext
 
     public String toString()
     {
-        StringBuffer result = new StringBuffer();
-
-        result.append("u1: " + u1.toString());
-        result.append("\nu2: " + u2.toString());
-        result.append("\ne: " + e.toString());
-        result.append("\nv: " + v.toString());
-
-        return result.toString();
+        return "u1: " + u1 + "\nu2: " + u2 + "\ne: " + e + "\nv: "  + v;
     }
 
     /**
