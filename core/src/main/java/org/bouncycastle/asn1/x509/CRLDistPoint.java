@@ -81,17 +81,14 @@ public class CRLDistPoint
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String       sep = Strings.lineSeparator();
+        final StringBuilder buf = new StringBuilder();
+        final String nl = Strings.lineSeparator();
 
-        buf.append("CRLDistPoint:");
-        buf.append(sep);
-        DistributionPoint dp[] = getDistributionPoints();
-        for (int i = 0; i != dp.length; i++)
+        buf.append("CRLDistPoint:").append(nl);
+        
+        for (DistributionPoint dp : getDistributionPoints())
         {
-            buf.append("    ");
-            buf.append(dp[i]);
-            buf.append(sep);
+            buf.append("    ").append(dp).append(nl);
         }
         return buf.toString();
     }
