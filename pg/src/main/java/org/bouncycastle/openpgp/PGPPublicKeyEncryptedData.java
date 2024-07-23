@@ -78,7 +78,7 @@ public class PGPPublicKeyEncryptedData
         }
         else if (keyData.getVersion() == PublicKeyEncSessionPacket.VERSION_6)
         {
-            // PKESK v5 stores the cipher algorithm in the SEIPD v2 packet fields.
+            // PKESK v6 stores the cipher algorithm in the SEIPD v2 packet fields.
             return ((SymmetricEncIntegrityPacket)encData).getCipherAlgorithm();
         }
         else
