@@ -203,7 +203,7 @@ public class CompositeSignaturesTest
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initVerify(compositePublicKey);
             signature.update(Base64.decode(messageBase64));
-            assertTrue(signature.verify(Base64.decode(signatureValueBase64)));
+            assertTrue(oid.toString(), signature.verify(Base64.decode(signatureValueBase64)));
             count++;
         }
 

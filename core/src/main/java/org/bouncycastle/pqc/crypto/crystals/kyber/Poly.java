@@ -261,6 +261,9 @@ class Poly
 
     public byte[] toMsg()
     {
+        int LOWER = KyberEngine.KyberQ >>> 2;
+        int UPPER = KyberEngine.KyberQ - LOWER;
+
         byte[] outMsg = new byte[KyberEngine.getKyberIndCpaMsgBytes()];
 
         this.conditionalSubQ();
@@ -270,16 +273,12 @@ class Poly
             outMsg[i] = 0;
             for (int j = 0; j < 8; j++)
             {
-//                short t = (short)(((((short)(this.getCoeffIndex(8 * i + j) << 1) + KyberEngine.KyberQ / 2) / KyberEngine.KyberQ) & 1));
-//                outMsg[i] |= (byte)(t << j);
-                // we've done it like this as there is a chance a division instruction might
-                // get generated introducing a timing signal on the secret input
-                int t = this.getCoeffIndex(8 * i + j) & 0xFFFF;
-                t <<= 1;
-                t += 1665;
-                t *= 80635;
-                t >>= 28;
-                t &= 1;
+                int c_j = this.getCoeffIndex(8 * i + j);
+
+                // KyberSlash: division by Q is not constant time.
+//                int t = (((c_j << 1) + (KyberEngine.KyberQ / 2)) / KyberEngine.KyberQ) & 1;
+                int t = ((LOWER - c_j) & (c_j - UPPER)) >>> 31;
+
                 outMsg[i] |= (byte)(t << j);
             }
         }
