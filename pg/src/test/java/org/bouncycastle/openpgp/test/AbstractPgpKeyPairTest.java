@@ -26,7 +26,7 @@ public abstract class AbstractPgpKeyPairTest
             throws PGPException
     {
         BcPGPKeyConverter c = new BcPGPKeyConverter();
-        return new BcPGPKeyPair(keyPair.getPublicKey().getAlgorithm(),
+        return new BcPGPKeyPair(keyPair.getPublicKey().getVersion(), keyPair.getPublicKey().getAlgorithm(),
                 new AsymmetricCipherKeyPair(
                         c.getPublicKey(keyPair.getPublicKey()),
                         c.getPrivateKey(keyPair.getPrivateKey())),
@@ -37,7 +37,7 @@ public abstract class AbstractPgpKeyPairTest
             throws PGPException
     {
         JcaPGPKeyConverter c = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
-        return new JcaPGPKeyPair(keyPair.getPublicKey().getAlgorithm(),
+        return new JcaPGPKeyPair(keyPair.getPublicKey().getVersion(), keyPair.getPublicKey().getAlgorithm(),
                 new KeyPair(
                         c.getPublicKey(keyPair.getPublicKey()),
                         c.getPrivateKey(keyPair.getPrivateKey())),

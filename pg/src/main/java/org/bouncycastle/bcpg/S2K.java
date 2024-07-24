@@ -10,13 +10,39 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 
 /**
  * Parameter specifier for the PGP string-to-key password based key derivation function.
- * <p>
- * In iterated mode, S2K takes a single byte iteration count specifier, which is converted to an
- * actual iteration count using a formula that grows the iteration count exponentially as the byte
- * value increases.
- * </p><p>
- * e.g. <code>0x01</code> == 1088 iterations, and <code>0xFF</code> == 65,011,712 iterations.
- * </p>
+ * There are different S2K modes:
+ * <ul>
+ *     <li>
+ *         In {@link #SIMPLE} mode, a single iteration of the hash algorithm is performed to derived a key
+ *         from the given passphrase.
+ *         This mode is deprecated and MUST NOT be generated.
+ *     </li>
+ *     <li>
+ *         The {@link #SALTED} mode is like {@link #SIMPLE}, but uses an additional salt value.
+ *         This mode is deprecated and MUST NOT be generated.
+ *     </li>
+ *     <li>
+ *         In {@link #SALTED_AND_ITERATED} mode, S2K takes a single byte iteration count specifier, which is converted to an
+ *         actual iteration count using a formula that grows the iteration count exponentially as the byte
+ *         value increases.
+ *         e.g. <code>0x01</code> == 1088 iterations, and <code>0xFF</code> == 65,011,712 iterations.
+ *     </li>
+ *     <li>
+ *         The {@link #SALTED_AND_ITERATED} mode uses both iteration and a salt value.
+ *         This mode is recommended for applications that want to stay backwards compatible.
+ *     </li>
+ *     <li>
+ *         The new {@link #ARGON_2} mode does key derivation using salted Argon2, which is a memory-hard hash algorithm.
+ *         This mode is generally recommended over {@link #SALTED_AND_ITERATED}.
+ *     </li>
+ * </ul>
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-3.7">
+ *     rfc4880 - String-to-Key (S2K) Specifiers</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-string-to-key-s2k-specifier">
+ *     C-R - String-to-Key (S2K) Specifier</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-string-to-key-s2k-specifier">
+ *     LibrePGP - String-to-Key (S2K) Specifiers</a>
  */
 public class S2K
     extends BCPGObject
@@ -54,13 +80,33 @@ public class S2K
 
     /**
      * Memory-hard, salted key generation using Argon2 hash algorithm.
+     * @see Argon2Params
      */
     public static final int ARGON_2 = 4;
 
+    /**
+     * GNU S2K extension.
+     * @see GNUDummyParams
+     */
     public static final int GNU_DUMMY_S2K = 101;
 
+    /**
+     * Do not store the secret part at all.
+     * @see GNUDummyParams
+     */
     public static final int GNU_PROTECTION_MODE_NO_PRIVATE_KEY = 1;
+
+    /**
+     * A stub to access smartcards.
+     * @see GNUDummyParams
+     */
     public static final int GNU_PROTECTION_MODE_DIVERT_TO_CARD = 2;
+
+    /**
+     * The (GnuPG) internal representation of a private key.
+     * @see GNUDummyParams
+     */
+    public static final int GNU_PROTECTION_MODE_INTERNAL = 3;
 
     int type;
     int algorithm;
@@ -71,6 +117,12 @@ public class S2K
     int parallelism;
     int memorySizeExponent;
 
+    /**
+     * Parse an S2K specifier from an OpenPGP packet input stream.
+     * @param in packet input stream
+     * @throws IOException
+     * @throws UnsupportedPacketVersionException if an unsupported S2K type is encountered
+     */
     S2K(
         InputStream in)
         throws IOException
@@ -255,7 +307,14 @@ public class S2K
     }
 
     /**
-     * Gets the {@link HashAlgorithmTags digest algorithm} specified.
+     * Gets the S2K specifier type.
+     *
+     * @see #SIMPLE
+     * @see #SALTED
+     * @see #SALTED_AND_ITERATED
+     * @see #ARGON_2
+     *
+     * @return type
      */
     public int getType()
     {
@@ -264,6 +323,9 @@ public class S2K
 
     /**
      * Gets the {@link HashAlgorithmTags hash algorithm} for this S2K.
+     * Only used for {@link #SIMPLE}, {@link #SALTED}, {@link #SALTED_AND_ITERATED}
+     *
+     * @return hash algorithm
      */
     public int getHashAlgorithm()
     {
@@ -272,6 +334,15 @@ public class S2K
 
     /**
      * Gets the iv/salt to use for the key generation.
+     * The value of this field depends on the S2K {@link #type}:
+     * <ul>
+     *     <li>{@link #SIMPLE}: <pre>null</pre></li>
+     *     <li>{@link #SALTED}: 8 octets</li>
+     *     <li>{@link #SALTED_AND_ITERATED}: 8 octets</li>
+     *     <li>{@link #ARGON_2}: 16 octets</li>
+     * </ul>
+     *
+     * @return IV
      */
     public byte[] getIV()
     {
@@ -280,6 +351,9 @@ public class S2K
 
     /**
      * Gets the actual (expanded) iteration count.
+     * Only used for {@link #SALTED_AND_ITERATED}.
+     *
+     * @return iteration count
      */
     public long getIterationCount()
     {
@@ -291,7 +365,7 @@ public class S2K
     }
 
     /**
-     * Return the number of passes - only Argon2
+     * Return the number of passes - only Argon2.
      *
      * @return number of passes
      */
@@ -301,7 +375,12 @@ public class S2K
     }
 
     /**
-     * Gets the protection mode - only if GNU_DUMMY_S2K
+     * Gets the protection mode - only if GNU_DUMMY_S2K.
+     *
+     * @see #GNU_PROTECTION_MODE_NO_PRIVATE_KEY
+     * @see #GNU_PROTECTION_MODE_DIVERT_TO_CARD
+     *
+     * @return GNU dummy-s2k protection mode
      */
     public int getProtectionMode()
     {
@@ -309,7 +388,7 @@ public class S2K
     }
 
     /**
-     * Gets the degree of parallelism - only if ARGON_2
+     * Gets the degree of parallelism - only if ARGON_2.
      *
      * @return parallelism
      */
@@ -319,7 +398,7 @@ public class S2K
     }
 
     /**
-     * Gets the memory size exponent - only if ARGON_2
+     * Gets the memory size exponent - only if ARGON_2.
      *
      * @return memory size exponent
      */
@@ -328,6 +407,11 @@ public class S2K
         return memorySizeExponent;
     }
 
+    /**
+     * Encode the packet into the given {@link BCPGOutputStream}.
+     * @param out packet output stream
+     * @throws IOException
+     */ 
     public void encode(
         BCPGOutputStream out)
         throws IOException
@@ -396,6 +480,8 @@ public class S2K
 
     /**
      * Parameters for Argon2 S2K.
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-argon2">
+     *     C-R - Argon2</a>
      */
     public static class Argon2Params
     {
@@ -431,7 +517,7 @@ public class S2K
          *
          * @param passes       number of iterations, must be greater than 0
          * @param parallelism  number of lanes, must be greater 0
-         * @param memSizeExp   exponent for memory consumption, must be between 3+ceil(log_2(p)) and 31
+         * @param memSizeExp   exponent for memory consumption, must be between <pre>3 + ⌈log₂p⌉</pre> and <pre>31</pre>
          * @param secureRandom secure random generator to initialize the salt vector
          */
         public Argon2Params(int passes, int parallelism, int memSizeExp, SecureRandom secureRandom)
@@ -445,7 +531,7 @@ public class S2K
          * @param salt        16 bytes of random salt
          * @param passes      number of iterations, must be greater than 0
          * @param parallelism number of lanes, must be greater 0
-         * @param memSizeExp  exponent for memory consumption, must be between 3+ceil(log_2(p)) and 31
+         * @param memSizeExp  exponent for memory consumption, must be between <pre>3 + ⌈log₂p⌉</pre> and <pre>31</pre>
          */
         public Argon2Params(byte[] salt, int passes, int parallelism, int memSizeExp)
         {
@@ -467,12 +553,12 @@ public class S2K
             }
             this.parallelism = parallelism;
 
-            // log_2(p) = log_e(p) / log_e(2)
+            // log₂p = logₑp / logₑ2
             double log2_p = Math.log(parallelism) / Math.log(2);
             // see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-05.html#section-3.7.1.4-5
             if (memSizeExp < (3 + Math.ceil(log2_p)) || memSizeExp > 31)
             {
-                throw new IllegalArgumentException("Memory size exponent MUST be between 3+ceil(log_2(parallelism)) and 31");
+                throw new IllegalArgumentException("Memory size exponent MUST be between 3 + ⌈log₂(parallelism)⌉ and 31");
             }
             this.memSizeExp = memSizeExp;
         }
@@ -485,7 +571,7 @@ public class S2K
          */
         public static Argon2Params universallyRecommendedParameters()
         {
-            return new Argon2Params(1, 4, 21, new SecureRandom());
+            return new Argon2Params(1, 4, 21, CryptoServicesRegistrar.getSecureRandom());
         }
 
         /**
@@ -497,7 +583,7 @@ public class S2K
          */
         public static Argon2Params memoryConstrainedParameters()
         {
-            return new Argon2Params(3, 4, 16, new SecureRandom());
+            return new Argon2Params(3, 4, 16, CryptoServicesRegistrar.getSecureRandom());
         }
 
         /**
@@ -556,6 +642,9 @@ public class S2K
 
     /**
      * Parameters for the {@link #GNU_DUMMY_S2K} method.
+     *
+     * @see <a href="https://github.com/gpg/gnupg/blob/master/doc/DETAILS#gnu-extensions-to-the-s2k-algorithm">
+     *     GNU extensions to the S2K algorithm</a>
      */
     public static class GNUDummyParams
     {
@@ -587,6 +676,16 @@ public class S2K
             return new GNUDummyParams(GNU_PROTECTION_MODE_DIVERT_TO_CARD);
         }
 
+        /**
+         * Factory method for a GNU Dummy S2K indicating an internal private key.
+         *
+         * @return params
+         */
+        public static GNUDummyParams internal()
+        {
+            return new GNUDummyParams(GNU_PROTECTION_MODE_INTERNAL);
+        }
+        
         /**
          * Return the GNU Dummy S2K protection method.
          *

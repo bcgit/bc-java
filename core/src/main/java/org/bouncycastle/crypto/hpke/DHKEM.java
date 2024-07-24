@@ -36,6 +36,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 
 class DHKEM
+    extends KEM
 {
     private AsymmetricCipherKeyPairGenerator kpGen;
 
@@ -48,6 +49,7 @@ class DHKEM
     private byte bitmask;
     private int Nsk;
     private int Nsecret;
+    private int Nenc;
 
     ECDomainParameters domainParams;
 
@@ -74,7 +76,7 @@ class DHKEM
             bitmask = (byte)0xff;
             Nsk = 32;
             Nsecret = 32;
-
+            Nenc = 65;
             this.kpGen = new ECKeyPairGenerator();
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
 
@@ -96,6 +98,7 @@ class DHKEM
             bitmask = (byte)0xff;
             Nsk = 48;
             Nsecret = 48;
+            Nenc = 97;
 
             this.kpGen = new ECKeyPairGenerator();
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
@@ -119,6 +122,7 @@ class DHKEM
             bitmask = 0x01;
             Nsk = 66;
             Nsecret = 64;
+            Nenc = 133;
 
             this.kpGen = new ECKeyPairGenerator();
             this.kpGen.init(new ECKeyGenerationParameters(domainParams, new SecureRandom()));
@@ -129,6 +133,7 @@ class DHKEM
             this.agreement = new XDHBasicAgreement();
             Nsecret = 32;
             Nsk = 32;
+            Nenc = 32;
             this.kpGen = new X25519KeyPairGenerator();
             this.kpGen.init(new X25519KeyGenerationParameters(new SecureRandom()));
 
@@ -138,6 +143,7 @@ class DHKEM
             this.agreement = new XDHBasicAgreement();
             Nsecret = 64;
             Nsk = 56;
+            Nenc = 56;
 
             this.kpGen = new X448KeyPairGenerator();
             this.kpGen.init(new X448KeyGenerationParameters(new SecureRandom()));
@@ -240,6 +246,11 @@ class DHKEM
             default:
                 throw new IllegalStateException("invalid kem id");
         }
+    }
+
+    int getEncryptionSize()
+    {
+        return Nenc;
     }
 
     private boolean ValidateSk(BigInteger d)

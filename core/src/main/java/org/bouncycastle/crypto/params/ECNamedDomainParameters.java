@@ -3,7 +3,9 @@ package org.bouncycastle.crypto.params;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -11,6 +13,16 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECNamedDomainParameters
     extends ECDomainParameters
 {
+    public static ECNamedDomainParameters lookup(ASN1ObjectIdentifier name)
+    {
+        X9ECParameters x9 = CustomNamedCurves.getByOID(name);
+        if (x9 == null)
+        {
+            x9 = ECNamedCurveTable.getByOID(name);
+        }
+        return new ECNamedDomainParameters(name, x9);
+    }
+
     private ASN1ObjectIdentifier name;
 
     public ECNamedDomainParameters(ASN1ObjectIdentifier name, ECCurve curve, ECPoint G, BigInteger n)
