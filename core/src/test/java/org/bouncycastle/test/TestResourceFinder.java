@@ -12,7 +12,7 @@ public class TestResourceFinder
     /**
      * We search starting at the working directory looking for the bc-test-data directory.
      *
-     * @throws FileNotFoundException
+     * @throws FileNotFoundException in case the test data directory is missing
      */
     public static InputStream findTestResource(String homeDir, String fileName)
         throws FileNotFoundException
