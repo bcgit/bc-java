@@ -282,6 +282,7 @@ public class SignaturePacket
 
         setIssuerKeyId();
         setCreationTime();
+        return vec;
     }
 
     /**
