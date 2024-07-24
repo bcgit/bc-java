@@ -13,12 +13,13 @@ import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
 import org.bouncycastle.asn1.sec.ECPrivateKey;
-import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
@@ -199,13 +200,24 @@ public class OpenSSHPrivateKeyUtil
                     && sequence.getObjectAt(2) instanceof ASN1TaggedObject)
                 {
                     ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(sequence);
-                    ASN1ObjectIdentifier curveOID = ASN1ObjectIdentifier.getInstance(ecPrivateKey.getParametersObject());
-                    X9ECParameters x9Params = ECNamedCurveTable.getByOID(curveOID);
-                    result = new ECPrivateKeyParameters(
-                        ecPrivateKey.getKey(),
-                        new ECNamedDomainParameters(
-                            curveOID,
-                            x9Params));
+
+                    X962Parameters parameters = X962Parameters.getInstance(
+                        ecPrivateKey.getParametersObject().toASN1Primitive());
+                    ECDomainParameters domainParams;
+                    if (parameters.isNamedCurve())
+                    {
+                        ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(parameters.getParameters());
+                        domainParams = ECNamedDomainParameters.lookup(oid);
+                    }
+                    else
+                    {
+                        X9ECParameters x9 = X9ECParameters.getInstance(parameters.getParameters());
+                        domainParams = new ECDomainParameters(x9);
+                    }
+
+                    BigInteger d = ecPrivateKey.getKey();
+
+                    result = new ECPrivateKeyParameters(d, domainParams);
                 }
             }
         }

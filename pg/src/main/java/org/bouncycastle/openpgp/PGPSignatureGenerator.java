@@ -29,16 +29,60 @@ public class PGPSignatureGenerator
     private PGPContentSignerBuilder contentSignerBuilder;
     private PGPContentSigner contentSigner;
     //private int providedKeyAlgorithm = -1;
+    private int providedKeyAlgorithm = -1;
+    private PGPPublicKey signingPubKey;
+
+    /**
+     * Create a version 4 signature generator built on the passed in contentSignerBuilder.
+     *
+     * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures.
+     * @deprecated use {@link #PGPSignatureGenerator(PGPContentSignerBuilder, PGPPublicKey)} instead.
+     */
+    public PGPSignatureGenerator(
+        PGPContentSignerBuilder contentSignerBuilder)
+    {
+        this(contentSignerBuilder, SignaturePacket.VERSION_4);
+    }
 
     /**
      * Create a signature generator built on the passed in contentSignerBuilder.
      *
      * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures.
+     * @param version signature version
+     */
+    PGPSignatureGenerator(
+        PGPContentSignerBuilder contentSignerBuilder,
+        int version)
+    {
+        super(version);
+        this.contentSignerBuilder = contentSignerBuilder;
+    }
+
+    /**
+     * Create a signature generator built on the passed in contentSignerBuilder.
+     * The produces signature version will match the version of the passed in signing key.
+     *
+     * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures
+     * @param signingKey signing key
      */
     public PGPSignatureGenerator(
-        PGPContentSignerBuilder contentSignerBuilder)
+        PGPContentSignerBuilder contentSignerBuilder,
+        PGPPublicKey signingKey)
     {
-        this.contentSignerBuilder = contentSignerBuilder;
+        this(contentSignerBuilder, signingKey, signingKey.getVersion());
+    }
+
+    public PGPSignatureGenerator(
+        PGPContentSignerBuilder contentSignerBuilder,
+        PGPPublicKey signingKey,
+        int signatureVersion)
+    {
+        this(contentSignerBuilder, signatureVersion);
+        this.signingPubKey = signingKey;
+        if (signingKey.getVersion() == 6 && signatureVersion != 6)
+        {
+            throw new IllegalArgumentException("Version 6 keys MUST only generate version 6 signatures.");
+        }
     }
 
     /**
@@ -53,6 +97,10 @@ public class PGPSignatureGenerator
         PGPPrivateKey key)
         throws PGPException
     {
+        if (signatureType == 0xFF)
+        {
+            throw new PGPException("Illegal signature type 0xFF provided.");
+        }
         contentSigner = contentSignerBuilder.build(signatureType, key);
         sigOut = contentSigner.getOutputStream();
         sigType = contentSigner.getType();
@@ -167,6 +215,7 @@ public class PGPSignatureGenerator
             throw new PGPException("exception encoding hashed data.", e);
         }
 
+
         byte[] trailer = sOut.toByteArray();
 
         blockUpdate(trailer, 0, trailer.length);
@@ -207,13 +256,13 @@ public class PGPSignatureGenerator
         if (sigValues != null)
         {
             return new PGPSignature(new SignaturePacket(sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
-                contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, sigValues));
+                    contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, sigValues));
         }
         else
         {
             // Ed25519, Ed448 use raw encoding instead of MPI
             return new PGPSignature(new SignaturePacket(4, sigType, contentSigner.getKeyID(), contentSigner.getKeyAlgorithm(),
-                contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, contentSigner.getSignature()));
+                    contentSigner.getHashAlgorithm(), hPkts, unhPkts, fingerPrint, contentSigner.getSignature(), null));
         }
     }
 

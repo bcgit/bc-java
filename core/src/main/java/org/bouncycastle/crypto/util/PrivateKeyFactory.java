@@ -26,7 +26,6 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
@@ -155,33 +154,24 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(X9ObjectIdentifiers.id_ecPublicKey))
         {
-            X962Parameters params = X962Parameters.getInstance(algId.getParameters());
+            ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
-            X9ECParameters x9;
-            ECDomainParameters dParams;
-
-            if (params.isNamedCurve())
+            X962Parameters parameters = X962Parameters.getInstance(algId.getParameters().toASN1Primitive());
+            ECDomainParameters domainParams;
+            if (parameters.isNamedCurve())
             {
-                ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)params.getParameters();
-
-                x9 = CustomNamedCurves.getByOID(oid);
-                if (x9 == null)
-                {
-                    x9 = ECNamedCurveTable.getByOID(oid);
-                }
-                dParams = new ECNamedDomainParameters(oid, x9);
+                ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(parameters.getParameters());
+                domainParams = ECNamedDomainParameters.lookup(oid);
             }
             else
             {
-                x9 = X9ECParameters.getInstance(params.getParameters());
-                dParams = new ECDomainParameters(
-                    x9.getCurve(), x9.getG(), x9.getN(), x9.getH(), x9.getSeed());
+                X9ECParameters x9 = X9ECParameters.getInstance(parameters.getParameters());
+                domainParams = new ECDomainParameters(x9);
             }
 
-            ECPrivateKey ec = ECPrivateKey.getInstance(keyInfo.parsePrivateKey());
-            BigInteger d = ec.getKey();
+            BigInteger d = ecPrivateKey.getKey();
 
-            return new ECPrivateKeyParameters(d, dParams);
+            return new ECPrivateKeyParameters(d, domainParams);
         }
         else if (algOID.equals(EdECObjectIdentifiers.id_X25519))
         {

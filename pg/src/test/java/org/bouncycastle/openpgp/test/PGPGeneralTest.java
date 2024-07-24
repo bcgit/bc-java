@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collection;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -25,6 +26,7 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
+import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.attr.ImageAttribute;
@@ -2101,8 +2103,36 @@ public class PGPGeneralTest
         isTrue(hashedPcks.getIssuerFingerprint().getKeyVersion() == publicKey.getVersion());
         isTrue("isPrimaryUserID should be true", hashedPcks.isPrimaryUserID());
 
+        hashedPcks = PGPSignatureSubpacketVector.fromSubpackets(java.util.Arrays.asList(hashedPcks.toArray()));
 
-        PGPSignatureSubpacketVector hashedPcks2 = PGPSignatureSubpacketVector.fromSubpackets(null);
+        isTrue("IntendedRecipientFingerprint should not be null", hashedPcks.getIntendedRecipientFingerprint() == null);
+        isTrue("RegularExpression should not be null", hashedPcks.getRegularExpression() != null);
+        isTrue("RegularExpressions should be empty", hashedPcks.getRegularExpressions().length == 2);
+        isTrue("Revocable should not be null", hashedPcks.getRevocable() != null);
+        isTrue("Revocable should be false", !hashedPcks.isRevocable());
+        isTrue("RevocationKeys should not be empty", hashedPcks.getRevocationKeys().length == 1);
+        revocationKey = hashedPcks.getRevocationKeys()[0];
+        isTrue(publicKey.hasFingerprint(revocationKey.getFingerprint()));
+        isTrue(revocationKey.getAlgorithm() == PublicKeyAlgorithmTags.DSA);
+        // TODO: addRevocationKey has no parameter for setting signatureClass
+        isTrue(revocationKey.getSignatureClass() == RevocationKeyTags.CLASS_DEFAULT);
+        isTrue("IssuerKeyID should not be 0", hashedPcks.getIssuerKeyID() != 0L);
+        revocationReason = hashedPcks.getRevocationReason();
+        isTrue("RevocationReason should not be null", revocationReason != null);
+        isTrue(revocationReason.getRevocationReason() == RevocationReasonTags.KEY_SUPERSEDED);
+        isTrue(revocationReason.getRevocationDescription().equals(description));
+        trustSignature = hashedPcks.getTrust();
+        isTrue("Trust should be null", trustSignature != null);
+        isTrue("Trust level depth should be " + depth, trustSignature.getDepth() == depth);
+        isTrue("Trust amount should be " + trustAmount, trustSignature.getTrustAmount() == trustAmount);
+        isTrue("Exporable should be false", !hashedPcks.isExportable());
+        isTrue(hashedPcks.getIssuerFingerprint().getKeyVersion() == publicKey.getVersion());
+        isTrue("isPrimaryUserID should be true", hashedPcks.isPrimaryUserID());
+
+
+        PGPSignatureSubpacketVector hashedPcks2 = PGPSignatureSubpacketVector.fromSubpackets((SignatureSubpacket[]) null);
+        isTrue("Empty PGPSignatureSubpacketVector", hashedPcks2.size() == 0);
+        hashedPcks2 = PGPSignatureSubpacketVector.fromSubpackets((Collection<SignatureSubpacket>) null);
         isTrue("Empty PGPSignatureSubpacketVector", hashedPcks2.size() == 0);
 
         hashedGen = new PGPSignatureSubpacketGenerator();
