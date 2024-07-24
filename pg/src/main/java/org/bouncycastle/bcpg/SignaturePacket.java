@@ -197,6 +197,9 @@ public class SignaturePacket
 
             unhashedData[i] = p;
         }
+
+        setIssuerKeyId();
+        setCreationTime();
     }
 
     private Vector<SignatureSubpacket> readSignatureSubpacketVector(BCPGInputStream in)
@@ -211,77 +214,22 @@ public class SignaturePacket
         {
             hashedLength = StreamUtil.read2OctetLength(in);
         }
-        byte[]    hashed = new byte[hashedLength];
+        byte[] hashed = new byte[hashedLength];
 
         in.readFully(hashed);
 
         //
         // read the signature sub packet data.
         //
-        SignatureSubpacket    sub;
-        SignatureSubpacketInputStream    sIn = new SignatureSubpacketInputStream(
-                new ByteArrayInputStream(hashed));
+        SignatureSubpacket sub;
+        SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
+            new ByteArrayInputStream(hashed));
 
-        Vector<SignatureSubpacket>    vec = new Vector<SignatureSubpacket>();
+        Vector<SignatureSubpacket> vec = new Vector<SignatureSubpacket>();
         while ((sub = sIn.readPacket()) != null)
         {
             vec.addElement(sub);
         }
-
-        hashedData = new SignatureSubpacket[vec.size()];
-
-        for (int i = 0; i != hashedData.length; i++)
-        {
-            SignatureSubpacket    p = vec.elementAt(i);
-            if (p instanceof IssuerKeyID)
-            {
-                keyID = ((IssuerKeyID)p).getKeyID();
-            }
-            else if (p instanceof SignatureCreationTime)
-            {
-                creationTime = ((SignatureCreationTime)p).getTime().getTime();
-            }
-
-            hashedData[i] = p;
-        }
-
-        int unhashedLength;
-        if (version == VERSION_6)
-        {
-            unhashedLength = StreamUtil.read4OctetLength(in);
-        }
-        else
-        {
-            unhashedLength = StreamUtil.read2OctetLength(in);
-        }
-        byte[]    unhashed = new byte[unhashedLength];
-
-        in.readFully(unhashed);
-
-        sIn = new SignatureSubpacketInputStream(
-                new ByteArrayInputStream(unhashed));
-
-        vec.removeAllElements();
-        while ((sub = sIn.readPacket()) != null)
-        {
-            vec.addElement(sub);
-        }
-
-        unhashedData = new SignatureSubpacket[vec.size()];
-
-        for (int i = 0; i != unhashedData.length; i++)
-        {
-            SignatureSubpacket    p = vec.elementAt(i);
-            if (p instanceof IssuerKeyID)
-            {
-                keyID = ((IssuerKeyID)p).getKeyID();
-            }
-
-            unhashedData[i] = p;
-        }
-
-        setIssuerKeyId();
-        setCreationTime();
         return vec;
     }
 
