@@ -18,22 +18,23 @@ public class TestResourceFinder
         throws FileNotFoundException
     {
         String wrkDirName = System.getProperty("user.dir");
-        String separator = System.getProperty("file.separator");
         File wrkDir = new File(wrkDirName);
         File dataDir = new File(wrkDir, dataDirName);
-        while (!dataDir.exists() && wrkDirName.length() > 1)
+        while (!dataDir.exists())
         {
-            wrkDirName = wrkDirName.substring(0, wrkDirName.lastIndexOf(separator));
+            wrkDirName = wrkDir.getParent();
+            if (wrkDirName == null) break;
             wrkDir = new File(wrkDirName);
             dataDir = new File(wrkDir, dataDirName);
         }
 
         if (!dataDir.exists())
         {
-            String ln = System.getProperty("line.separator");
+            final String ln = System.getProperty("line.separator");
             throw new FileNotFoundException("Test data directory " + dataDirName + " not found." + ln + "Test data available from: https://github.com/bcgit/bc-test-data.git");
         }
 
-        return new FileInputStream(new File(dataDir, homeDir + separator + fileName));
+        final File homeDirFile = new File(dataDir, homeDir);
+        return new FileInputStream(new File(homeDirFile, fileName));
     }
 }
