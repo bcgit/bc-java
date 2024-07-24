@@ -14,7 +14,6 @@ import java.util.Objects;
 public class ASN1Dump
 {
     private static final String NL = System.lineSeparator();
-    private static final String TAB = IndentingAppendable.TAB;
     private static final int SAMPLE_SIZE = 32;
 
     /**
@@ -274,14 +273,6 @@ public class ASN1Dump
             this(new StringBuilder(), TAB);
         }
 
-        public IndentingAppendable(String indentWith) {
-            this(new StringBuilder(), indentWith);
-        }
-
-        public IndentingAppendable(Appendable baseAppendable) {
-            this(baseAppendable, TAB);
-        }
-
         private IndentingAppendable(Appendable baseAppendable, String indentWith) {
             this.baseAppendable = Objects.requireNonNull(baseAppendable, "base appendable");
             this.indentWith = Objects.requireNonNull(indentWith, "indent string");
@@ -299,10 +290,6 @@ public class ASN1Dump
                 this.indentLevel--;
             this.indent = repeat(indentWith, indentLevel);
             return this;
-        }
-
-        public int getIndentLevel(){
-            return indentLevel;
         }
 
         static String repeat(String base, int times) {
