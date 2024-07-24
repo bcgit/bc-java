@@ -17,9 +17,9 @@ public class DERDump
     public static String dumpAsString(
         ASN1Primitive obj)
     {
-        StringBuffer buf = new StringBuffer();
+        final IndentingAppendable buf = new IndentingAppendable();
 
-        _dumpAsString("", false, obj, buf);
+        _dumpAsString(false, obj, buf);
 
         return buf.toString();
     }
