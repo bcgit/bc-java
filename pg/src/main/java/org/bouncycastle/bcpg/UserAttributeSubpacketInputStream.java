@@ -72,15 +72,15 @@ public class UserAttributeSubpacketInputStream
     {
         boolean[] flags = new boolean[3];
         int bodyLen = StreamUtil.readBodyLen(this, flags);
-        if (flags[0])
+        if (flags[StreamUtil.flag_eof])
         {
             return null;
         }
-        else if (flags[2])
+        else if (flags[StreamUtil.flag_partial])
         {
             throw new IOException("unrecognised length reading user attribute sub packet");
         }
-        boolean longLength = flags[1];
+        boolean longLength = flags[StreamUtil.flag_isLongLength];
 
         int tag = in.read();
 

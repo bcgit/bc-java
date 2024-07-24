@@ -204,7 +204,7 @@ public class BCPGInputStream
             tag = hdr & 0x3f;
             boolean[] flags = new boolean[3];
             bodyLen = StreamUtil.readBodyLen(this, flags);
-            partial = flags[2];
+            partial = flags[StreamUtil.flag_partial];
         }
         else
         {
@@ -377,11 +377,11 @@ public class BCPGInputStream
         {
             boolean[] flags = new boolean[3];
             dataLength = StreamUtil.readBodyLen(in, flags);
-            if (flags[0])
+            if (flags[StreamUtil.flag_eof])
             {
                 return -1;
             }
-            partial = flags[2];
+            partial = flags[StreamUtil.flag_partial];
             return dataLength;
         }
 
