@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -142,6 +143,9 @@ public abstract class PGPKeyRing
         throws IOException;
 
     public abstract byte[] getEncoded()
+        throws IOException;
+
+    public abstract byte[] getEncoded(PacketFormat format)
         throws IOException;
 
     private static boolean isUserTag(int tag)
