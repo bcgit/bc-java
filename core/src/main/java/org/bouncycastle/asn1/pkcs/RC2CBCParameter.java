@@ -72,6 +72,11 @@ public class RC2CBCParameter
         return version.getValue();
     }
 
+    public ASN1Integer getRC2ParameterVersionData()
+    {
+        return version;
+    }
+
     public byte[] getIV()
     {
         return iv.getOctets();

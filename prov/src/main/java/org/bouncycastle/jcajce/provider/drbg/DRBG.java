@@ -223,7 +223,8 @@ public class DRBG
 
     // unfortunately new SecureRandom() can cause a regress and it's the only reliable way of getting access
     // to the JVM's seed generator.
-    private static EntropySourceProvider createInitialEntropySource()
+
+    private static EntropySourceProvider createCoreEntropySourceProvider()
     {
         boolean hasGetInstanceStrong = AccessController.doPrivileged(new PrivilegedAction<Boolean>()
         {
@@ -254,20 +255,25 @@ public class DRBG
                     }
                     catch (Exception e)
                     {
-                        return new CoreSecureRandom(findSource());
+                        return null;
                     }
                 }
             });
+
+            if (strong == null)
+            {
+                return createInitialEntropySource();
+            }
 
             return new IncrementalEntropySourceProvider(strong, true);
         }
         else
         {
-            return new IncrementalEntropySourceProvider(new CoreSecureRandom(findSource()), true);
+            return createInitialEntropySource();
         }
     }
 
-    private static EntropySourceProvider createCoreEntropySourceProvider()
+    private static EntropySourceProvider createInitialEntropySource()
     {
         String source = AccessController.doPrivileged(new PrivilegedAction<String>()
         {
@@ -279,7 +285,7 @@ public class DRBG
 
         if (source == null)
         {
-            return createInitialEntropySource();
+            return new IncrementalEntropySourceProvider(new CoreSecureRandom(findSource()), true);
         }
         else
         {
@@ -289,7 +295,7 @@ public class DRBG
             }
             catch (Exception e)
             {
-                return createInitialEntropySource();
+                return new IncrementalEntropySourceProvider(new CoreSecureRandom(findSource()), true);
             }
         }
     }

@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.cms;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -184,42 +182,100 @@ public class EnvelopedData
 
     public static int calculateVersion(OriginatorInfo originatorInfo, ASN1Set recipientInfos, ASN1Set unprotectedAttrs)
     {
-        // TODO: still not quite correct
-        Enumeration e = recipientInfos.getObjects();
+        /*
+         * IF (originatorInfo is present) AND
+         *    ((any certificates with a type of other are present) OR
+         *    (any crls with a type of other are present))
+         * THEN version is 4
+         * ELSE
+         *    IF ((originatorInfo is present) AND
+         *       (any version 2 attribute certificates are present)) OR
+         *       (any RecipientInfo structures include pwri) OR
+         *       (any RecipientInfo structures include ori)
+         *    THEN version is 3
+         *    ELSE
+         *       IF (originatorInfo is absent) AND
+         *          (unprotectedAttrs is absent) AND
+         *          (all RecipientInfo structures are version 0)
+         *       THEN version is 0
+         *       ELSE version is 2
+         */
 
-        boolean nonZeroFound = false;
-        boolean pwriOrOri = false;
-
-        while (e.hasMoreElements())
+        if (originatorInfo != null)
         {
-            RecipientInfo ri = RecipientInfo.getInstance(e.nextElement());
-
-            if (!ri.getVersion().hasValue(0))
+            ASN1Set crls = originatorInfo.getCRLs();
+            if (crls != null)
             {
-                nonZeroFound = true;
+                for (int i = 0, count = crls.size(); i < count; ++i)
+                {
+                    ASN1Encodable element = crls.getObjectAt(i);
+                    if (element instanceof ASN1TaggedObject)
+                    {
+                        ASN1TaggedObject tagged = (ASN1TaggedObject)element;
+
+                        // RevocationInfoChoice.other
+                        if (tagged.hasContextTag(1))
+                        {
+                            return 4;
+                        }
+                    }
+                }
             }
-            ASN1Encodable info = ri.getInfo();
-            if (info instanceof PasswordRecipientInfo || info instanceof OtherRecipientInfo)
+
+            ASN1Set certs = originatorInfo.getCertificates();
+            if (certs != null)
             {
-                pwriOrOri = true;
+                boolean anyV2AttrCerts = false;
+
+                for (int i = 0, count = certs.size(); i < count; ++i)
+                {
+                    ASN1Encodable element = certs.getObjectAt(i);
+                    if (element instanceof ASN1TaggedObject)
+                    {
+                        ASN1TaggedObject tagged = (ASN1TaggedObject)element;
+
+                        // CertificateChoices.other
+                        if (tagged.hasContextTag(3))
+                        {
+                            return 4;
+                        }
+
+                        // CertificateChoices.v2AttrCert
+                        anyV2AttrCerts = anyV2AttrCerts || tagged.hasContextTag(2);
+                    }
+                }
+
+                if (anyV2AttrCerts)
+                {
+                    return 3;
+                }
             }
         }
 
-        if (pwriOrOri)
+        boolean allV0Recipients = true;
+        for (int i = 0, count = recipientInfos.size(); i < count; ++i)
         {
-            return 3;
+            RecipientInfo recipientInfo = RecipientInfo.getInstance(recipientInfos.getObjectAt(i));
+
+            // (any RecipientInfo structures include pwri) OR
+            // (any RecipientInfo structures include ori)
+            if (recipientInfo.isPasswordOrOther())
+            {
+                return 3;
+            }
+
+            // (all RecipientInfo structures are version 0)
+            // -- 'kari.version' is always 3
+            // -- 'kekri.version' is always 4
+            // -- 'pwri' and 'ori' have already been excluded
+            allV0Recipients = allV0Recipients && recipientInfo.isKeyTransV0();
         }
 
-        if (nonZeroFound)
+        if (originatorInfo == null && unprotectedAttrs == null && allV0Recipients)
         {
-            return 2;
+            return 0;
         }
 
-        if (originatorInfo != null || unprotectedAttrs != null)
-        {
-            return 2;
-        }
-
-        return 0;
+        return 2;
     }
 }
