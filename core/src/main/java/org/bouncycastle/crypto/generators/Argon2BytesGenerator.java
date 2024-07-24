@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.generators;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.crypto.params.Argon2Parameters;
+import org.bouncycastle.crypto.params.Argon2Parameters.BlockPool;
+import org.bouncycastle.crypto.params.Argon2Parameters.FixedBlockPool;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
@@ -37,6 +39,8 @@ public class Argon2BytesGenerator
     private static final byte[] ZERO_BYTES = new byte[4];
 
     private Argon2Parameters parameters;
+    private BlockPool pool;
+    private int memoryBlocks;
     private Block[] memory;
     private int segmentLength;
     private int laneLength;
@@ -98,6 +102,7 @@ public class Argon2BytesGenerator
 
         byte[] tmpBlockBytes = new byte[ARGON2_BLOCK_SIZE];
 
+        initMemory(memoryBlocks);
         initialize(tmpBlockBytes, password, outLen);
         fillMemoryBlocks();
         digest(tmpBlockBytes, out, outOff, outLen);
@@ -118,17 +123,18 @@ public class Argon2BytesGenerator
                 Block b = memory[i];
                 if (null != b)
                 {
-                    b.clear();
+                    pool.deallocate(b);
                 }
             }
         }
+        memory = null;
     }
 
     private void doInit(Argon2Parameters parameters)
     {
         /* 2. Align memory size */
         /* Minimum memoryBlocks = 8L blocks, where L is the number of lanes */
-        int memoryBlocks = parameters.getMemory();
+        memoryBlocks = parameters.getMemory();
 
         if (memoryBlocks < 2 * Argon2BytesGenerator.ARGON2_SYNC_POINTS * parameters.getLanes())
         {
@@ -141,7 +147,11 @@ public class Argon2BytesGenerator
         /* Ensure that all segments have equal length */
         memoryBlocks = segmentLength * (parameters.getLanes() * Argon2BytesGenerator.ARGON2_SYNC_POINTS);
 
-        initMemory(memoryBlocks);
+        pool = parameters.getBlockPool();
+        if (pool == null) {
+            // if no pool is provided hold on to enough blocks for the primary memory
+            pool = new FixedBlockPool(memoryBlocks);
+        }
     }
 
     private void initMemory(int memoryBlocks)
@@ -150,13 +160,13 @@ public class Argon2BytesGenerator
 
         for (int i = 0; i < memory.length; i++)
         {
-            memory[i] = new Block();
+            memory[i] = pool.allocate();
         }
     }
 
     private void fillMemoryBlocks()
     {
-        FillBlock filler = new FillBlock();
+        FillBlock filler = new FillBlock(pool);
         Position position = new Position();
         for (int pass = 0; pass < parameters.getIterations(); ++pass)
         {
@@ -174,6 +184,7 @@ public class Argon2BytesGenerator
                 }
             }
         }
+        filler.deallocate(pool);
     }
 
     private void fillSegment(FillBlock filler, Position position)
@@ -548,16 +559,31 @@ public class Argon2BytesGenerator
 
     private long intToLong(int x)
     {
-        return (long)(x & M32L);
+        return x & M32L;
     }
 
     private static class FillBlock
     {
-        Block R = new Block();
-        Block Z = new Block();
+        final Block R;
+        final Block Z;
 
-        Block addressBlock = new Block();
-        Block inputBlock = new Block();
+        final Block addressBlock;
+        final Block inputBlock;
+
+        private FillBlock(BlockPool pool) {
+            R = pool.allocate();
+            Z = pool.allocate();
+
+            addressBlock = pool.allocate();
+            inputBlock = pool.allocate();
+        }
+
+        public void deallocate(BlockPool pool) {
+            pool.deallocate(addressBlock);
+            pool.deallocate(inputBlock);
+            pool.deallocate(R);
+            pool.deallocate(Z);
+        }
 
         private void applyBlake()
         {
@@ -618,14 +644,14 @@ public class Argon2BytesGenerator
         }
     }
 
-    private static class Block
+    public static class Block
     {
         private static final int SIZE = ARGON2_QWORDS_IN_BLOCK;
 
         /* 128 * 8 Byte QWords */
         private final long[] v;
 
-        private Block()
+        public Block()
         {
             v = new long[SIZE];
         }
