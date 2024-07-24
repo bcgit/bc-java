@@ -73,18 +73,18 @@ public class SymmetricKeyEncSessionPacket
             int s2kOctetCount = in.read();
 
             //TODO: use this line to replace the following code?
-            //s2k = new S2K(in);
-            s2kBytes = new byte[s2kOctetCount];
-            in.readFully(s2kBytes);
-            try
-            {
-                s2k = new S2K(new ByteArrayInputStream(s2kBytes));
-            }
-            catch (UnsupportedPacketVersionException e)
-            {
-
-                // We gracefully catch the error.
-            }
+            s2k = new S2K(in);
+//            s2kBytes = new byte[s2kOctetCount];
+//            in.readFully(s2kBytes);
+//            try
+//            {
+//                s2k = new S2K(new ByteArrayInputStream(s2kBytes));
+//            }
+//            catch (UnsupportedPacketVersionException e)
+//            {
+//
+//                // We gracefully catch the error.
+//            }
 
             int ivLen = next5Fields5Count - 3 - s2kOctetCount;
             iv = new byte[ivLen]; // also called nonce

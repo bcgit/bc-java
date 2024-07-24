@@ -70,15 +70,15 @@ public class SignatureSubpacketInputStream
     {
         boolean[] flags = new boolean[3];
         int bodyLen = StreamUtil.readBodyLen(this, flags);
-        if (flags[0])
+        if (flags[StreamUtil.flag_eof])
         {
             return null;
         }
-        else if (flags[2])
+        else if (flags[StreamUtil.flag_partial])
         {
             throw new IOException("unexpected length header");
         }
-        boolean isLongLength = flags[1];
+        boolean isLongLength = flags[StreamUtil.flag_isLongLength];
 
         int tag = in.read();
 
