@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
@@ -389,10 +391,16 @@ public class PGPSecretKeyRing
     public byte[] getEncoded()
         throws IOException
     {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    @Override
+    public byte[] getEncoded(PacketFormat format) throws IOException
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        this.encode(bOut);
-
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        this.encode(pOut);
+        pOut.close();
         return bOut.toByteArray();
     }
 
