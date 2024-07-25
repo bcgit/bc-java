@@ -17,7 +17,6 @@ import javax.crypto.Cipher;
 import javax.crypto.interfaces.DHKey;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -31,7 +30,6 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -257,7 +255,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             String agreementName;
             ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
             // XDH
-            if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+            if (JcaJcePGPUtil.isX25519(ecKey.getCurveOID()))
             {
                 agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
                 if (pEnc.length != (1 + X25519PublicBCPGKey.LENGTH) || 0x40 != pEnc[0])
@@ -265,6 +263,15 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                     throw new IllegalArgumentException("Invalid Curve25519 public key");
                 }
                 publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X25519, 1);
+            }
+            else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+            {
+                agreementName = RFC6637Utils.getXDHAlgorithm(pubKeyData);
+                if (pEnc.length != (1 + X448PublicBCPGKey.LENGTH) || 0x40 != pEnc[0])
+                {
+                    throw new IllegalArgumentException("Invalid Curve25519 public key");
+                }
+                publicKey = getPublicKey(pEnc, EdECObjectIdentifiers.id_X448, 1);
             }
             else
             {
@@ -307,7 +314,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, publicKey, symmetricKeyAlgorithm, keyEnc,
                 JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
             symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
-            return Arrays.concatenate(new byte[]{(byte)symmetricKeyAlgorithm}, paddedSessionKey.getEncoded());
+            return Arrays.prepend(paddedSessionKey.getEncoded(), (byte)symmetricKeyAlgorithm);
         }
         catch (Exception e)
         {
@@ -320,7 +327,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         throws PGPException, GeneralSecurityException
     {
         PrivateKey privateKey = converter.getPrivateKey(privKey);
-        Key key = JcaJcePGPUtil.getSecret(helper, publicKey, RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId(),  agreementName, ukms, privateKey);
+        Key key = JcaJcePGPUtil.getSecret(helper, publicKey, RFC6637Utils.getKeyEncryptionOID(symmetricKeyAlgorithm).getId(), agreementName, ukms, privateKey);
         Cipher c = helper.createKeyWrapper(symmetricKeyAlgorithm);
         c.init(Cipher.UNWRAP_MODE, key);
         return c.unwrap(keyEnc, "Session", Cipher.SECRET_KEY);

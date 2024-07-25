@@ -206,8 +206,7 @@ public class BCPGOutputStream
                 else if (bodyLen <= 0xffff)
                 {
                     this.write(hdr | 0x01);
-                    this.write((byte)(bodyLen >> 8));
-                    this.write((byte)(bodyLen));
+                    StreamUtil.write2OctetLength(this, (int)bodyLen);
                 }
                 else
                 {

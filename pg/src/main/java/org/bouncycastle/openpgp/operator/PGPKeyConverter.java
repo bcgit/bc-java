@@ -75,7 +75,7 @@ public abstract class PGPKeyConverter
      *     <td>AES-128</td>
      *   </tr>
      *   <tr>
-     *     <td>Curve448</td>
+     *     <td>Curve448Legacy (not in RFC Draft)</td>
      *     <td>SHA2-512</td>
      *     <td>AES-256</td>
      *   </tr>

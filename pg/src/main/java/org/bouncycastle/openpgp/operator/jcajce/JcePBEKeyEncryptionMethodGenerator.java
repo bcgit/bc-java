@@ -15,11 +15,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
@@ -150,15 +147,8 @@ public class JcePBEKeyEncryptionMethodGenerator
     }
 
     protected byte[] generateV6KEK(int kekAlgorithm, byte[] ikm, byte[] info)
-         throws PGPException
      {
-         HKDFBytesGenerator hkdf = new HKDFBytesGenerator(new SHA256Digest());
-         hkdf.init(new HKDFParameters(ikm, null, info));
-
-         int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm);
-         byte[] kek = new byte[kekLen];
-         hkdf.generateBytes(kek, 0, kek.length);
-         return kek;
+         return JceAEADUtil.generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
      }
 
      protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo, byte[] key, byte[] iv, byte[] info)

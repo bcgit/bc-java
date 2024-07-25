@@ -165,7 +165,7 @@ public class SExpression
                 else if (c == '#')
                 {
                     consumeUntilSkipWhiteSpace(src, accumulator, '#');
-                    expr.addValue(Hex.decode(Strings.fromByteArray(accumulator.toByteArray())));
+                    expr.addValue(Hex.decode(accumulator.toByteArray()));
                 }
                 else if (c == '"')
                 {

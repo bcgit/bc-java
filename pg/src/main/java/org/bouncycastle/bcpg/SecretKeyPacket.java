@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -348,7 +349,7 @@ public class SecretKeyPacket
         this.aeadAlgorithm = aeadAlgorithm;
         this.s2kUsage = s2kUsage;
         this.s2k = s2k;
-        this.iv = iv;
+        this.iv = Arrays.clone(iv);
         this.secKeyData = secKeyData;
 
         if (s2k != null && s2k.getType() == S2K.ARGON_2 && s2kUsage != USAGE_AEAD)
@@ -398,7 +399,7 @@ public class SecretKeyPacket
      */
     public byte[] getIV()
     {
-        return iv;
+        return Arrays.clone(iv);
     }
 
     /**

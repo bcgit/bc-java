@@ -3,7 +3,7 @@ package org.bouncycastle.openpgp.operator.bc;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -110,7 +110,7 @@ public class BcPublicKeyDataDecryptorFactory
 
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pgpPrivKey.getPublicKeyPacket().getKey();
                 // XDH
-                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecPubKey.getCurveOID()))
                 {
                     if (pEnc.length != 1 + X25519PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0])
                     {
@@ -118,6 +118,15 @@ public class BcPublicKeyDataDecryptorFactory
                     }
                     // skip the 0x40 header byte.
                     secret = BcUtil.getSecret(new X25519Agreement(), privKey, new X25519PublicKeyParameters(pEnc, 1));
+                }
+                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    if (pEnc.length != 1 + X448PublicKeyParameters.KEY_SIZE || 0x40 != pEnc[0])
+                    {
+                        throw new IllegalArgumentException("Invalid Curve448 public key");
+                    }
+                    // skip the 0x40 header byte.
+                    secret = BcUtil.getSecret(new X448Agreement(), privKey, new X448PublicKeyParameters(pEnc, 1));
                 }
                 else
                 {
@@ -245,7 +254,7 @@ public class BcPublicKeyDataDecryptorFactory
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
             Arrays.concatenate(pEnc, pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
 
-        return Arrays.concatenate(new byte[]{enc[pLen + 1]}, unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key));
+        return Arrays.prepend(unwrapSessionData(keyEnc, symmetricKeyAlgorithm, key), enc[pLen + 1]);
     }
 
     private static byte[] unwrapSessionData(byte[] keyEnc, int symmetricKeyAlgorithm, KeyParameter key)

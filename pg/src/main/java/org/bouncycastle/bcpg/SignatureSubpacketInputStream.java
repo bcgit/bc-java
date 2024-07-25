@@ -68,33 +68,17 @@ public class SignatureSubpacketInputStream
     public SignatureSubpacket readPacket()
         throws IOException
     {
-        int l = this.read();
-        int bodyLen = 0;
-
-        if (l < 0)
+        boolean[] flags = new boolean[3];
+        int bodyLen = StreamUtil.readBodyLen(this, flags);
+        if (flags[StreamUtil.flag_eof])
         {
             return null;
         }
-
-        boolean isLongLength = false;
-
-        if (l < 192)
-        {
-            bodyLen = l;
-        }
-        else if (l <= 223)
-        {
-            bodyLen = ((l - 192) << 8) + (in.read()) + 192;
-        }
-        else if (l == 255)
-        {
-            isLongLength = true;
-            bodyLen = (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
-        }
-        else
+        else if (flags[StreamUtil.flag_partial])
         {
             throw new IOException("unexpected length header");
         }
+        boolean isLongLength = flags[StreamUtil.flag_isLongLength];
 
         int tag = in.read();
 

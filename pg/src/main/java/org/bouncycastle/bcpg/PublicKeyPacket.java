@@ -134,20 +134,20 @@ public class PublicKeyPacket
             throw new UnsupportedPacketVersionException("Unsupported Public Key Packet version encountered: " + version);
         }
 
-        time = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
+        time = StreamUtil.read4OctetLength(in);
 
         if (version == 2 || version == VERSION_3)
         {
-            validDays = (in.read() << 8) | in.read();
+            validDays = StreamUtil.read2OctetLength(in);
         }
 
         algorithm = (byte)in.read();
         long keyOctets = -1;
-        
+
         if (version == LIBREPGP_5 || version == VERSION_6)
         {
             // TODO: Use keyOctets to be able to parse unknown keys
-            keyOctets = ((long)in.read() << 24) | ((long)in.read() << 16) | ((long)in.read() << 8) | in.read();
+            keyOctets = StreamUtil.read4OctetLength(in);
         }
 
         parseKey(in, algorithm, keyOctets);
@@ -328,16 +328,14 @@ public class PublicKeyPacket
 
         if (version <= VERSION_3)
         {
-            pOut.write((byte)(validDays >> 8));
-            pOut.write((byte)validDays);
+            StreamUtil.write2OctetLength(pOut, validDays);
         }
 
         pOut.write(algorithm);
 
         if (version == VERSION_6 || version == LIBREPGP_5)
         {
-            int keyOctets = key.getEncoded().length;
-            StreamUtil.write4OctetLength(pOut, keyOctets);
+            StreamUtil.write4OctetLength(pOut, key.getEncoded().length);
         }
 
         pOut.writeObject((BCPGObject)key);
