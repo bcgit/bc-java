@@ -39,6 +39,10 @@ public class PaddingPacket
 
     private static byte[] randomBytes(int octetCount, SecureRandom random)
     {
+        if (octetCount <= 0)
+        {
+            throw new IllegalArgumentException("Octet count MUST NOT be 0 nor negative.");
+        }
         byte[] bytes = new byte[octetCount];
         random.nextBytes(bytes);
         return bytes;
