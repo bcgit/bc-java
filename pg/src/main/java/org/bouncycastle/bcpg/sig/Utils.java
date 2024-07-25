@@ -1,5 +1,7 @@
 package org.bouncycastle.bcpg.sig;
 
+import org.bouncycastle.util.Pack;
+
 class Utils
 {
     /**
@@ -55,19 +57,11 @@ class Utils
             throw new IllegalStateException("Byte array has unexpected length. Expected length 4, got " + bytes.length);
         }
 
-        return ((long)(bytes[0] & 0xff) << 24)
-            |  ((bytes[1] & 0xff) << 16)
-            |  ((bytes[2] & 0xff) << 8)
-            |   (bytes[3] & 0xff);
+        return Pack.bigEndianToInt(bytes, 0);
     }
 
     static byte[] timeToBytes(long t)
     {
-        byte[] data = new byte[4];
-        data[0] = (byte)(t >> 24);
-        data[1] = (byte)(t >> 16);
-        data[2] = (byte)(t >> 8);
-        data[3] = (byte)t;
-        return data;
+        return Pack.intToBigEndian((int)t);
     }
 }

@@ -242,8 +242,7 @@ public class JcaPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()) ||
-                        EdECObjectIdentifiers.id_X25519.equals(ecdhPub.getCurveOID()))
+                if (JcaJcePGPUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGeneratePrivate("XDH", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
@@ -362,7 +361,7 @@ public class JcaPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (JcaJcePGPUtil.isX25519(ecdhK.getCurveOID()))
                 {
                     return get25519PublicKey(ecdhK.getEncodedPoint(), EdECObjectIdentifiers.id_X25519, "XDH", "Curve");
                 }
@@ -754,20 +753,21 @@ public class JcaPGPKeyConverter
 
     private BCPGKey getPublicBCPGKey(PublicKey pubKey, int keySize, BCPGKeyOperation operation)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[keySize];
-
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
+        // refer to getPointEncUncompressed
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return operation.getBCPGKey(pointEnc);
     }
 
     private byte[] getPointEncUncompressed(PublicKey pubKey, int publicKeySize)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[1 + publicKeySize];
 
         pointEnc[0] = 0x40;
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
+        //offset with pointEnc.length - pubInfo.length to avoid leading zero issue
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return pointEnc;
     }
 

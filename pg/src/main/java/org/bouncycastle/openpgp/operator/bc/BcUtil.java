@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
@@ -124,5 +126,10 @@ public class BcUtil
         byte[] secret = new byte[agreement.getAgreementSize()];
         agreement.calculateAgreement(ephPub, secret, 0);
         return secret;
+    }
+
+    static boolean isX25519(ASN1ObjectIdentifier curveID)
+    {
+        return curveID.equals(CryptlibObjectIdentifiers.curvey25519) || curveID.equals(EdECObjectIdentifiers.id_X25519);
     }
 }

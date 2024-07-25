@@ -9,6 +9,7 @@ import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -164,37 +165,13 @@ public class SignaturePacket
     private void parseSubpackets(BCPGInputStream in)
             throws IOException
     {
-        int hashedLength;
-        if (version == 6)
-        {
-            hashedLength = StreamUtil.read4OctetLength(in);
-        }
-        else
-        {
-            hashedLength = StreamUtil.read2OctetLength(in);
-        }
-        byte[]    hashed = new byte[hashedLength];
 
-        in.readFully(hashed);
-
-        //
-        // read the signature sub packet data.
-        //
-        SignatureSubpacket    sub;
-        SignatureSubpacketInputStream    sIn = new SignatureSubpacketInputStream(
-                new ByteArrayInputStream(hashed));
-
-        Vector<SignatureSubpacket>    vec = new Vector<SignatureSubpacket>();
-        while ((sub = sIn.readPacket()) != null)
-        {
-            vec.addElement(sub);
-        }
-
+        Vector<SignatureSubpacket> vec = readSignatureSubpacketVector(in);
         hashedData = new SignatureSubpacket[vec.size()];
 
         for (int i = 0; i != hashedData.length; i++)
         {
-            SignatureSubpacket    p = vec.elementAt(i);
+            SignatureSubpacket p = vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
@@ -207,33 +184,12 @@ public class SignaturePacket
             hashedData[i] = p;
         }
 
-        int unhashedLength;
-        if (version == VERSION_6)
-        {
-            unhashedLength = StreamUtil.read4OctetLength(in);
-        }
-        else
-        {
-            unhashedLength = StreamUtil.read2OctetLength(in);
-        }
-        byte[]    unhashed = new byte[unhashedLength];
-
-        in.readFully(unhashed);
-
-        sIn = new SignatureSubpacketInputStream(
-                new ByteArrayInputStream(unhashed));
-
-        vec.removeAllElements();
-        while ((sub = sIn.readPacket()) != null)
-        {
-            vec.addElement(sub);
-        }
-
+        vec = readSignatureSubpacketVector(in);
         unhashedData = new SignatureSubpacket[vec.size()];
 
         for (int i = 0; i != unhashedData.length; i++)
         {
-            SignatureSubpacket    p = vec.elementAt(i);
+            SignatureSubpacket p = vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
@@ -244,6 +200,37 @@ public class SignaturePacket
 
         setIssuerKeyId();
         setCreationTime();
+    }
+
+    private Vector<SignatureSubpacket> readSignatureSubpacketVector(BCPGInputStream in)
+        throws IOException
+    {
+        int hashedLength;
+        if (version == 6)
+        {
+            hashedLength = StreamUtil.read4OctetLength(in);
+        }
+        else
+        {
+            hashedLength = StreamUtil.read2OctetLength(in);
+        }
+        byte[] hashed = new byte[hashedLength];
+
+        in.readFully(hashed);
+
+        //
+        // read the signature sub packet data.
+        //
+        SignatureSubpacket sub;
+        SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
+            new ByteArrayInputStream(hashed));
+
+        Vector<SignatureSubpacket> vec = new Vector<SignatureSubpacket>();
+        while ((sub = sIn.readPacket()) != null)
+        {
+            vec.addElement(sub);
+        }
+        return vec;
     }
 
     /**
@@ -514,10 +501,7 @@ public class SignaturePacket
             long    time = creationTime / 1000;
 
             trailer[0] = (byte)signatureType;
-            trailer[1] = (byte)(time >> 24);
-            trailer[2] = (byte)(time >> 16);
-            trailer[3] = (byte)(time >> 8);
-            trailer[4] = (byte)(time);
+            Pack.intToBigEndian((int)time, trailer, 1);
         }
         else if (version == VERSION_4 || version == VERSION_5 || version == VERSION_6)
         {
@@ -679,43 +663,10 @@ public class SignaturePacket
             pOut.write(keyAlgorithm);
             pOut.write(hashAlgorithm);
 
-            ByteArrayOutputStream    sOut = new ByteArrayOutputStream();
-
-            for (int i = 0; i != hashedData.length; i++)
-            {
-                hashedData[i].encode(sOut);
-            }
-
-            byte[]                   data = sOut.toByteArray();
-
-            if (version == VERSION_6)
-            {
-                StreamUtil.write4OctetLength(pOut, data.length);
-            }
-            else
-            {
-                StreamUtil.write2OctetLength(pOut, data.length);
-            }
-            pOut.write(data);
-
+            ByteArrayOutputStream sOut = new ByteArrayOutputStream();
+            writeSignatureSubpacketArray(sOut, pOut, hashedData);
             sOut.reset();
-
-            for (int i = 0; i != unhashedData.length; i++)
-            {
-                unhashedData[i].encode(sOut);
-            }
-
-            data = sOut.toByteArray();
-
-            if (version == VERSION_6)
-            {
-                StreamUtil.write4OctetLength(pOut, data.length);
-            }
-            else
-            {
-                StreamUtil.write2OctetLength(pOut, data.length);
-            }
-            pOut.write(data);
+            writeSignatureSubpacketArray(sOut, pOut, unhashedData);
         }
         else
         {
@@ -745,6 +696,27 @@ public class SignaturePacket
         pOut.close();
 
         out.writePacket(hasNewPacketFormat(), SIGNATURE, bOut.toByteArray());
+    }
+
+    private void writeSignatureSubpacketArray(ByteArrayOutputStream sOut, BCPGOutputStream pOut, SignatureSubpacket[] array)
+        throws IOException
+    {
+        for (int i = 0; i != array.length; i++)
+        {
+            array[i].encode(sOut);
+        }
+
+        byte[] data = sOut.toByteArray();
+
+        if (version == VERSION_6)
+        {
+            StreamUtil.write4OctetLength(pOut, data.length);
+        }
+        else
+        {
+            StreamUtil.write2OctetLength(pOut, data.length);
+        }
+        pOut.write(data);
     }
 
     private void setCreationTime()

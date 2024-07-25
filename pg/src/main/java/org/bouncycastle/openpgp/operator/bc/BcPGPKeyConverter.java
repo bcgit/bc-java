@@ -145,7 +145,7 @@ public class BcPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
+                if (BcUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     return PrivateKeyFactory.createKey(getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
                         Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX()))));
@@ -250,7 +250,7 @@ public class BcPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecdhK.getCurveOID()))
                 {
                     byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
                     // skip the 0x40 header byte.

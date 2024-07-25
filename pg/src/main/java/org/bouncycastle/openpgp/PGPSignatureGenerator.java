@@ -28,6 +28,7 @@ public class PGPSignatureGenerator
     private SignatureSubpacket[] hashed = new SignatureSubpacket[0];
     private PGPContentSignerBuilder contentSignerBuilder;
     private PGPContentSigner contentSigner;
+    //private int providedKeyAlgorithm = -1;
     private int providedKeyAlgorithm = -1;
     private PGPPublicKey signingPubKey;
 
@@ -105,10 +106,10 @@ public class PGPSignatureGenerator
         sigType = contentSigner.getType();
         lastb = 0;
 
-        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
-        {
-            throw new PGPException("key algorithm mismatch");
-        }
+//        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
+//        {
+//            throw new PGPException("key algorithm mismatch");
+//        }
     }
 
     public void setHashedSubpackets(
@@ -218,30 +219,32 @@ public class PGPSignatureGenerator
         byte[] trailer = sOut.toByteArray();
 
         blockUpdate(trailer, 0, trailer.length);
-
-        if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_SIGN
-            || contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL)    // an RSA signature
+        switch (contentSigner.getKeyAlgorithm())
+        {
+        case PublicKeyAlgorithmTags.RSA_SIGN:
+        case PublicKeyAlgorithmTags.RSA_GENERAL:
         {
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));
+            break;
         }
-        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+        case PublicKeyAlgorithmTags.EDDSA_LEGACY:
         {
             byte[] enc = contentSigner.getSignature();
             sigValues = new MPInteger[]{
                 new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, 0, enc.length / 2))),
                 new MPInteger(new BigInteger(1, Arrays.copyOfRange(enc, enc.length / 2, enc.length)))
             };
+            break;
         }
-        else if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed25519 ||
-            contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.Ed448)
-        {
+        case PublicKeyAlgorithmTags.Ed25519:
+        case PublicKeyAlgorithmTags.Ed448:
             // Contrary to EDDSA_LEGACY, the new PK algorithms Ed25519, Ed448 do not use MPI encoding
             sigValues = null;
-        }
-        else
-        {
+            break;
+        default:
             sigValues = PGPUtil.dsaSigToMpi(contentSigner.getSignature());
+            break;
         }
 
         byte[] digest = contentSigner.getDigest();

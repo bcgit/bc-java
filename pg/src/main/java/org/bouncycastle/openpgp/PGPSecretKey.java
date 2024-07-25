@@ -794,10 +794,7 @@ public class PGPSecretKey
 
         if (pub.subSigs == null)        // is not a sub key
         {
-            for (int i = 0; i != pub.keySigs.size(); i++)
-            {
-                ((PGPSignature)pub.keySigs.get(i)).encode(out);
-            }
+            Util.encodePGPSignatures(out, pub.keySigs, false);
 
             for (int i = 0; i != pub.ids.size(); i++)
             {
@@ -820,19 +817,12 @@ public class PGPSecretKey
                 }
 
                 List<PGPSignature> sigs = (List<PGPSignature>)pub.idSigs.get(i);
-
-                for (int j = 0; j != sigs.size(); j++)
-                {
-                    ((PGPSignature)sigs.get(j)).encode(out);
-                }
+                Util.encodePGPSignatures(out, sigs, false);
             }
         }
         else
         {
-            for (int j = 0; j != pub.subSigs.size(); j++)
-            {
-                ((PGPSignature)pub.subSigs.get(j)).encode(out);
-            }
+            Util.encodePGPSignatures(out, pub.subSigs, false);
         }
     }
 
