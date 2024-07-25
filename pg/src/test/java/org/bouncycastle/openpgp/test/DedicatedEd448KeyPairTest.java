@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -10,10 +11,20 @@ import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.Date;
 
@@ -32,6 +43,8 @@ public class DedicatedEd448KeyPairTest
     {
         testConversionOfJcaKeyPair();
         testConversionOfBcKeyPair();
+        testV4SigningVerificationWithJcaKey();
+        testV4SigningVerificationWithBcKey();
     }
 
     private void testConversionOfJcaKeyPair()
@@ -126,6 +139,58 @@ public class DedicatedEd448KeyPairTest
             isEquals("Creation time is preserved",
                 date.getTime(), j2.getPublicKey().getCreationTime().getTime());
         }
+    }
+
+    private void testV4SigningVerificationWithJcaKey()
+        throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed448"));
+        KeyPair kp = gen.generateKeyPair();
+        PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
+
+        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+
+        PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
+            keyPair.getPublicKey().getAlgorithm(),
+            HashAlgorithmTags.SHA512)
+            .setProvider(new BouncyCastleProvider());
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(contSigBuilder);
+        sigGen.init(PGPSignature.BINARY_DOCUMENT, keyPair.getPrivateKey());
+        sigGen.update(data);
+        PGPSignature signature = sigGen.generate();
+
+        PGPContentVerifierBuilderProvider contVerBuilder = new JcaPGPContentVerifierBuilderProvider()
+            .setProvider(new BouncyCastleProvider());
+        signature.init(contVerBuilder, keyPair.getPublicKey());
+        signature.update(data);
+        isTrue(signature.verify());
+    }
+
+    private void testV4SigningVerificationWithBcKey()
+        throws PGPException
+    {
+        Date date = currentTimeRounded();
+        Ed448KeyPairGenerator gen = new Ed448KeyPairGenerator();
+        gen.init(new Ed448KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
+
+        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+
+        PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
+            keyPair.getPublicKey().getAlgorithm(),
+            HashAlgorithmTags.SHA512);
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(contSigBuilder);
+        sigGen.init(PGPSignature.BINARY_DOCUMENT, keyPair.getPrivateKey());
+        sigGen.update(data);
+        PGPSignature signature = sigGen.generate();
+
+        PGPContentVerifierBuilderProvider contVerBuilder = new BcPGPContentVerifierBuilderProvider();
+        signature.init(contVerBuilder, keyPair.getPublicKey());
+        signature.update(data);
+        isTrue(signature.verify());
     }
 
     public static void main(String[] args)
