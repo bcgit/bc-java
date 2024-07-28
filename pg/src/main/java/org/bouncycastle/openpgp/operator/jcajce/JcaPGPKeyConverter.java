@@ -76,7 +76,6 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
-import org.bouncycastle.jce.interfaces.ElGamalPublicKey;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.rfc7748.X25519;
@@ -560,8 +559,8 @@ public class JcaPGPKeyConverter
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
             case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
             {
-                ElGamalPublicKey egK = (ElGamalPublicKey) pubKey;
-                return new ElGamalPublicBCPGKey(egK.getParameters().getP(), egK.getParameters().getG(), egK.getY());
+                DHPublicKey egK = (DHPublicKey) pubKey;
+                return new ElGamalPublicBCPGKey(egK.getParams().getP(), egK.getParams().getG(), egK.getY());
             }
             case PublicKeyAlgorithmTags.DSA:
             {
