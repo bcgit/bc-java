@@ -4,6 +4,9 @@ import java.math.BigInteger;
 
 import javax.crypto.interfaces.DHPublicKey;
 
+/**
+ * @deprecated just use DHPublicKey.
+ */
 public interface ElGamalPublicKey
     extends ElGamalKey, DHPublicKey
 {
