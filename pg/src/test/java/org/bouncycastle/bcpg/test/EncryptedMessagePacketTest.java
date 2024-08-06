@@ -121,7 +121,7 @@ public class EncryptedMessagePacketTest
         objFac = new BcPGPObjectFactory(pIn);
         PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
         PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
-        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyIdentifier());
+        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyID());
         PGPPrivateKey privKey = decKey.extractPrivateKey(null);
         PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privKey);
         InputStream in = encData.getDataStream(decryptor);
@@ -148,7 +148,7 @@ public class EncryptedMessagePacketTest
         objFac = new BcPGPObjectFactory(pIn);
         PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
         PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
-        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyIdentifier());
+        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyID());
         PGPPrivateKey privKey = decKey.extractPrivateKey(null);
         PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privKey);
         InputStream in = encData.getDataStream(decryptor);
@@ -175,7 +175,7 @@ public class EncryptedMessagePacketTest
         objFac = new JcaPGPObjectFactory(pIn);
         PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
         PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
-        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyIdentifier());
+        PGPSecretKey decKey = secretKeys.getSecretKey(encData.getKeyID());
         PGPPrivateKey privKey = decKey.extractPrivateKey(null);
         PublicKeyDataDecryptorFactory decryptor = new JcePublicKeyDataDecryptorFactoryBuilder()
                 .setProvider(new BouncyCastleProvider())
