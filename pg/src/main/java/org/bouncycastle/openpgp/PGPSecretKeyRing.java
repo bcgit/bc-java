@@ -350,7 +350,8 @@ public class PGPSecretKeyRing
     }
 
     @Override
-    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier) {
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
+    {
         List<PGPPublicKey> keysWithSigs = new ArrayList<>();
         for (PGPSecretKey k : keys)
         {
