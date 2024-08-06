@@ -341,6 +341,7 @@ public class KeyIdentifier
             return "" + keyId;
         }
 
+        // -DM Hex.toHexString
         return Hex.toHexString(fingerprint).toUpperCase();
     }
 }
