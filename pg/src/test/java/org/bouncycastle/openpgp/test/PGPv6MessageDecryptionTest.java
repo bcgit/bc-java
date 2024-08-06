@@ -1,20 +1,25 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.asn1.cms.KEKIdentifier;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
-import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
-import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
 public class PGPv6MessageDecryptionTest
@@ -34,7 +39,7 @@ public class PGPv6MessageDecryptionTest
     }
 
     private void decryptMessageEncryptedUsingPKESKv6()
-            throws IOException
+            throws IOException, PGPException
     {
         String key = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
                 "\n" +
@@ -78,7 +83,16 @@ public class PGPv6MessageDecryptionTest
 
         isEquals(PublicKeyEncSessionPacket.VERSION_6, encData.getVersion());
         isEquals(PublicKeyAlgorithmTags.X25519, encData.getAlgorithm());
-
+        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyIdentifier());
+        isNotNull("Decryption key MUST be identifiable", decryptionKey);
+        PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
+        PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privateKey);
+        InputStream decrypted = encData.getDataStream(decryptor);
+        PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
+        isEncodingEqual(
+                "Hello World :)".getBytes(StandardCharsets.UTF_8),
+                Streams.readAll(lit.getDataStream()));
     }
 
     public static void main(String[] args)
