@@ -35,9 +35,10 @@ public class PGPPublicKeyEncryptedData
     }
 
     private boolean confirmCheckSum(
-            byte[] sessionInfo)
+        byte[] sessionInfo)
     {
         int check = 0;
+
         for (int i = 1; i != sessionInfo.length - 2; i++)
         {
             check += sessionInfo[i] & 0xff;
@@ -98,6 +99,8 @@ public class PGPPublicKeyEncryptedData
         throws PGPException
     {
         byte[] sessionInfo = dataDecryptorFactory.recoverSessionData(keyData, encData);
+
+        // Confirm and discard checksum
         if (containsChecksum(keyData.getAlgorithm()))
         {
             if (!confirmCheckSum(sessionInfo))
@@ -107,15 +110,13 @@ public class PGPPublicKeyEncryptedData
             sessionInfo = Arrays.copyOf(sessionInfo, sessionInfo.length - 2);
         }
 
-
-        byte[] sessionKey;
+        byte[] sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
         int algorithm;
 
         // OCB (LibrePGP v5 style AEAD)
         if (encData instanceof AEADEncDataPacket)
         {
             algorithm = ((AEADEncDataPacket) encData).getAlgorithm();
-            sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
         }
 
         // SEIPD (OpenPGP v4 / OpenPGP v6)
@@ -125,12 +126,10 @@ public class PGPPublicKeyEncryptedData
             if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
             {
                 algorithm = sessionInfo[0];
-                sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
             }
             else if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_2)
             {
                 algorithm = seipd.getCipherAlgorithm();
-                sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
             }
             else
             {
@@ -141,7 +140,6 @@ public class PGPPublicKeyEncryptedData
         else
         {
             algorithm = sessionInfo[0];
-            sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
         }
 
         return new PGPSessionKey(algorithm & 0xff, sessionKey);
