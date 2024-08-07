@@ -56,22 +56,12 @@ public abstract class AbstractPublicKeyDataDecryptorFactory
         return pkeskVersion != PublicKeyEncSessionPacket.VERSION_6;
     }
 
-    protected boolean confirmCheckSum(
-            byte[] sessionInfo, int algorithm)
+    protected static void checkRange(int pLen, byte[] enc)
+            throws PGPException
     {
-        // X25519, X448 does not include a checksum
-        if (algorithm == PublicKeyAlgorithmTags.X25519 || algorithm == PublicKeyAlgorithmTags.X448)
+        if (pLen > enc.length)
         {
-            return true;
+            throw new PGPException("encoded length out of range");
         }
-
-        int check = 0;
-        for (int i = 1; i != sessionInfo.length - 2; i++)
-        {
-            check += sessionInfo[i] & 0xff;
-        }
-
-        return (sessionInfo[sessionInfo.length - 2] == (byte)(check >> 8))
-                && (sessionInfo[sessionInfo.length - 1] == (byte)(check));
     }
 }

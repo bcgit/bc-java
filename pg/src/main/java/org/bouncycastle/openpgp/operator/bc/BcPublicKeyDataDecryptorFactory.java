@@ -307,13 +307,4 @@ public class BcPublicKeyDataDecryptorFactory
         c.init(false, key);
         return c.unwrap(keyEnc, 0, keyEnc.length);
     }
-
-    private static void checkRange(int pLen, byte[] enc)
-        throws PGPException
-    {
-        if (pLen > enc.length)
-        {
-            throw new PGPException("encoded length out of range");
-        }
-    }
 }
