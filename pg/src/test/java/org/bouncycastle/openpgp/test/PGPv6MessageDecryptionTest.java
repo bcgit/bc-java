@@ -83,7 +83,7 @@ public class PGPv6MessageDecryptionTest
 
         isEquals(PublicKeyEncSessionPacket.VERSION_6, encData.getVersion());
         isEquals(PublicKeyAlgorithmTags.X25519, encData.getAlgorithm());
-        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID());
+        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID()); // TODO: getKeyIdentifier()
         isNotNull("Decryption key MUST be identifiable", decryptionKey);
         PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
         PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privateKey);
