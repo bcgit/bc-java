@@ -24,9 +24,7 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
-import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -135,14 +133,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
 
             @Override
-            public byte[] recoverSessionData(PublicKeyEncSessionPacket pkesk, InputStreamPacket encData)
-                    throws PGPException
-            {
-                byte[] sessionData = recoverSessionData(pkesk.getAlgorithm(), pkesk.getEncSessionKey(), pkesk.getVersion());
-                return prependSKAlgorithmToSessionData(pkesk, encData, sessionData);
-            }
-
-            @Override
             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
                 throws PGPException
             {
@@ -183,14 +173,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
     {
         return new AbstractPublicKeyDataDecryptorFactory()
         {
-            @Override
-            public byte[] recoverSessionData(PublicKeyEncSessionPacket pkesk, InputStreamPacket encData)
-                    throws PGPException
-            {
-                byte[] sessionData = recoverSessionData(pkesk.getAlgorithm(), pkesk.getEncSessionKey(), pkesk.getVersion());
-                return prependSKAlgorithmToSessionData(pkesk, encData, sessionData);
-            }
-
             @Override
             public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
                 throws PGPException

@@ -13,6 +13,15 @@ public abstract class AbstractPublicKeyDataDecryptorFactory
         implements PublicKeyDataDecryptorFactory
 {
 
+    @Override
+    public final byte[] recoverSessionData(PublicKeyEncSessionPacket pkesk, InputStreamPacket encData)
+            throws PGPException
+    {
+        byte[] sessionData = recoverSessionData(pkesk.getAlgorithm(), pkesk.getEncSessionKey(), pkesk.getVersion());
+        return prependSKAlgorithmToSessionData(pkesk, encData, sessionData);
+    }
+
+
     protected byte[] prependSKAlgorithmToSessionData(PublicKeyEncSessionPacket pkesk,
                                                    InputStreamPacket encData,
                                                    byte[] decryptedSessionData)

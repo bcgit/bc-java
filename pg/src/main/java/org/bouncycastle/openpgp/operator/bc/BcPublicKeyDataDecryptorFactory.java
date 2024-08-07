@@ -56,13 +56,6 @@ public class BcPublicKeyDataDecryptorFactory
         this.pgpPrivKey = pgpPrivKey;
     }
 
-    public byte[] recoverSessionData(PublicKeyEncSessionPacket pkesk, InputStreamPacket encData)
-        throws PGPException
-    {
-        byte[] sessionData = recoverSessionData(pkesk.getAlgorithm(), pkesk.getEncSessionKey(), pkesk.getVersion());
-        return prependSKAlgorithmToSessionData(pkesk, encData, sessionData);
-    }
-
     @Override
     public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
         throws PGPException
