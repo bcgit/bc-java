@@ -194,6 +194,33 @@ public class PGPPublicKeyRing
         return null;
     }
 
+    @Override
+    public PGPPublicKey getPublicKey(KeyIdentifier identifier)
+    {
+        for (PGPPublicKey k : keys)
+        {
+            if (identifier.matches(k))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> matches = new ArrayList<>();
+        for (PGPPublicKey k : keys)
+        {
+            if (identifier.matches(k))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
     /**
      * Return any keys carrying a signature issued by the key represented by keyID.
      *
@@ -216,6 +243,21 @@ public class PGPPublicKeyRing
             }
         }
 
+        return keysWithSigs.iterator();
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
+        for (PGPPublicKey k : keys)
+        {
+            Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
         return keysWithSigs.iterator();
     }
 
