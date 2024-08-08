@@ -8,8 +8,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.21">
  *     RFC4880 - Key Flags</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-key-flags">
- *     C-R - Key Flags</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-key-flags">
+ *     RFC9580 - Key Flags</a>
  */
 public class KeyFlags 
     extends SignatureSubpacket

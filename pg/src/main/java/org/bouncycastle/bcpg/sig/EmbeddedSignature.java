@@ -11,8 +11,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.26">
  *     RFC4880 - Embedded Signature</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-embedded-signature">
- *     C-R: Embedded Signature</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-embedded-signature">
+ *     RFC9580 - Embedded Signature</a>
  */
 public class EmbeddedSignature
     extends SignatureSubpacket

@@ -11,8 +11,8 @@ import org.bouncycastle.util.Strings;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.20">
  *     RFC4880 - Policy URI</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-policy-uri">
- *     C-R - Policy URI</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-policy-uri">
+ *     RFC9580 - Policy URI</a>
  */
 public class PolicyURI
     extends SignatureSubpacket

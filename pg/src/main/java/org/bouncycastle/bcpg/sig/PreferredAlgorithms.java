@@ -11,18 +11,18 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
  *     <li>Preferred Compression Algorithms</li>
  * </ul>
  *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-symmetric-ciphers">
+ *     RFC9580 - Preferred Symmetric Ciphers for v1 SEIPD</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-hash-algorithms">
+ *     RFC9580 - Preferred Hash Algorithms</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-compression-algor">
+ *     RFC9580 - Preferred Compression Algorithms</a>
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.7">
  *     RFC4880 - Preferred Symmetric Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-preferred-symmetric-ciphers">
- *     C-R - Preferred Symmetric Ciphers for v1 SEIPD</a>
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.8">
  *     RFC4880 - Preferred Hash Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-preferred-hash-algorithms">
- *     C-R - Preferred Hash Algorithms</a>
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.9">
  *     RFC4880 - Preferred Compression Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-preferred-compression-algor">
- *     C-R - Preferred Compression Algorithms</a>
  */
 public class PreferredAlgorithms 
     extends SignatureSubpacket

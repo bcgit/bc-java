@@ -8,8 +8,8 @@ import org.bouncycastle.util.Arrays;
  * Signature Subpacket containing the fingerprint of the intended recipients primary key.
  * This packet can be used to prevent malicious forwarding/replay attacks.
  *
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-intended-recipient-fingerpr">
- *     C-R - Intended Recipient Fingerprint</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-intended-recipient-fingerpr">
+ *     RFC9580 - Intended Recipient Fingerprint</a>
  */
 public class IntendedRecipientFingerprint
     extends SignatureSubpacket

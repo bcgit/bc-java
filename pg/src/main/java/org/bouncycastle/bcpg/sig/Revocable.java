@@ -8,8 +8,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.12">
  *     RFC4880 - Revocable</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-revocable">
- *     C-R - Revocable</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-revocable">
+ *     RFC9580 - Revocable</a>
  */
 public class Revocable 
     extends SignatureSubpacket

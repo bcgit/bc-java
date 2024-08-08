@@ -9,8 +9,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.6">
  *     RFC4880 - Key Expiration Time</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-key-expiration-time">
- *     C-R - Key Expiration Time</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-key-expiration-time">
+ *     RFC9580 - Key Expiration Time</a>
  */
 public class KeyExpirationTime 
     extends SignatureSubpacket

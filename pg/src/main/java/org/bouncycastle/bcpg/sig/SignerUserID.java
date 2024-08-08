@@ -10,8 +10,8 @@ import org.bouncycastle.util.Strings;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.22">
  *     RFC4880 - Signer's User ID</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-signers-user-id">
- *     C-R - Signer's User ID</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-signers-user-id">
+ *     RFC9580 - Signer's User ID</a>
  */
 public class SignerUserID 
     extends SignatureSubpacket

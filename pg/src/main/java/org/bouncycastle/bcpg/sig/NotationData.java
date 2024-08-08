@@ -12,8 +12,8 @@ import org.bouncycastle.util.Strings;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.16">
  *     RFC4880 - Notation Data</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-notation-data">
- *     C-R - Notation Data</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-notation-data">
+ *     RFC9580 - Notation Data</a>
  */
 public class NotationData
     extends SignatureSubpacket
