@@ -18,6 +18,8 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
+import static org.bouncycastle.util.io.pem.PemReader.LAX_PARSING_SYSTEM_PROPERTY_NAME;
+
 public class AllTests
     extends TestCase
 {
@@ -120,6 +122,34 @@ public class AllTests
         {
             assertEquals("-----END BLOB----- not found", e.getMessage());
         }
+    }
+
+    public void testRegularBlobEndLaxParsing()
+        throws IOException
+    {
+        String original = System.setProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME, "true");
+        PemReader rd = new PemReader(new StringReader(blob4));
+
+        PemObject obj;
+        try
+        {
+            obj = rd.readPemObject();
+        }
+        finally
+        {
+            if (original != null)
+            {
+                System.setProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME, original);
+            }
+            else
+            {
+                System.clearProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME);
+            }
+        }
+
+        assertEquals("BLOB", obj.getType());
+        assertTrue(Arrays.areEqual(new byte[64], obj.getContent()));
+
     }
 
     private void lengthTest(String type, List headers, byte[] data)
