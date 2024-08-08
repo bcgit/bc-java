@@ -279,8 +279,6 @@ public class BCPGInputStream
             return new PublicSubkeyPacket(objStream, newPacket);
         case SYM_ENC_INTEGRITY_PRO:
             return new SymmetricEncIntegrityPacket(objStream, newPacket);
-        case MOD_DETECTION_CODE:
-            return new ModDetectionCodePacket(objStream, newPacket);
         case AEAD_ENC_DATA:
             return new AEADEncDataPacket(objStream, newPacket);
         case PADDING:
