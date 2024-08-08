@@ -14,8 +14,8 @@ import org.bouncycastle.util.Strings;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.18">
  *     RFC4880 - Preferred Key Server</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-preferred-key-server">
- *     C-R - Preferred Key Server</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-key-server">
+ *     RFC9580 - Preferred Key Server</a>
  */
 public class PreferredKeyServer
         extends SignatureSubpacket
