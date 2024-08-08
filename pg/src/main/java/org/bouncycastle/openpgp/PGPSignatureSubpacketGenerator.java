@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PreferredKeyServer;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
@@ -200,6 +201,18 @@ public class PGPSignatureSubpacketGenerator
     {
         packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
             algorithms));
+    }
+
+    /**
+     * Specify the preferred key server for the signed user-id / key.
+     * Note, that the key server might also be a http/ftp etc. URI pointing to the key itself.
+     *
+     * @param isCritical true if the subpacket should be treated as critical
+     * @param uri key server URI
+     */
+    public void setPreferredKeyServer(boolean isCritical, String uri)
+    {
+        packets.add(new PreferredKeyServer(isCritical, uri));
     }
 
     public void addPolicyURI(boolean isCritical, String policyUri)
