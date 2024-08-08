@@ -47,6 +47,19 @@ public class FingerprintUtilTest
             -3812177997909612905L, FingerprintUtil.keyIdFromLibrePgpFingerprint(decoded));
     }
 
+    private void testKeyIdFromFingerprint()
+    {
+        isEquals("v4 key-id from fingerprint mismatch",
+                -5425419407118114754L, FingerprintUtil.keyIdFromFingerprint(
+                        4, Hex.decode("1D018C772DF8C5EF86A1DCC9B4B509CB5936E03E")));
+        isEquals("v5 key-id from fingerprint mismatch",
+                -3812177997909612905L, FingerprintUtil.keyIdFromFingerprint(
+                        5, Hex.decode("cb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc9")));
+        isEquals("v6 key-id from fingerprint mismatch",
+                -3812177997909612905L, FingerprintUtil.keyIdFromFingerprint(
+                        6, Hex.decode("cb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc9")));
+    }
+
     private void testLeftMostEqualsRightMostFor8Bytes()
     {
         byte[] bytes = new byte[] {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
@@ -79,6 +92,23 @@ public class FingerprintUtilTest
         }
     }
 
+    private void testPrettifyFingerprint()
+    {
+        isEquals("Prettified v4 fingerprint mismatch",
+                "1D01 8C77 2DF8 C5EF 86A1  DCC9 B4B5 09CB 5936 E03E",
+                FingerprintUtil.prettifyFingerprint(Hex.decode("1D018C772DF8C5EF86A1DCC9B4B509CB5936E03E")));
+        isEquals("Prettified v5/v6 fingerprint mismatch",
+                "CB186C4F 0609A697 E4D52DFA 6C722B0C  1F1E27C1 8A56708F 6525EC27 BAD9ACC9",
+                FingerprintUtil.prettifyFingerprint(Hex.decode("cb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc9")));
+    }
+
+    private void testPrettifyFingerprintReturnsHexForUnknownFormat()
+    {
+        String fp = "C0FFEE1DECAFF0";
+        isEquals("Prettifying fingerprint with unknown format MUST return uppercase hex fingerprint",
+                fp, FingerprintUtil.prettifyFingerprint(Hex.decode(fp)));
+    }
+
     @Override
     public String getName()
     {
@@ -95,6 +125,9 @@ public class FingerprintUtilTest
         testLibrePgpKeyIdFromFingerprint();
         testLeftMostEqualsRightMostFor8Bytes();
         testWriteKeyIdToBytes();
+        testKeyIdFromFingerprint();
+        testPrettifyFingerprint();
+        testPrettifyFingerprintReturnsHexForUnknownFormat();
     }
 
     public static void main(String[] args)
