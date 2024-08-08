@@ -22,7 +22,7 @@ public class SignaturePacket
     public static final int VERSION_3 = 3;
     public static final int VERSION_4 = 4;  // https://datatracker.ietf.org/doc/rfc4880/
     public static final int VERSION_5 = 5;  // https://datatracker.ietf.org/doc/draft-koch-librepgp/
-    public static final int VERSION_6 = 6;  // https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/
+    public static final int VERSION_6 = 6;  // https://www.rfc-editor.org/rfc/rfc9580.html
 
     private int                    version;
     private int                    signatureType;
@@ -128,12 +128,12 @@ public class SignaturePacket
     /**
      * Parse a version 6 signature.
      * Version 6 signatures do use 4 octet subpacket area length descriptors and contain an additional salt value
-     * (which may or may not be of size 0, librepgp and crypto-refresh are in disagreement here).
+     * (which may or may not be of size 0, LibrePGP and OpenPGP are in disagreement here).
      * @param in input stream which already skipped over the version number
      * @throws IOException if the packet is malformed
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-and-6-signature-p">
-     *     Version 6 packet format</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-4-and-6-signature-p">
+     *     OpenPGP - Version 6 packet format</a>
      */
     private void parseV6(BCPGInputStream in)
             throws IOException

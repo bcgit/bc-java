@@ -16,8 +16,8 @@ import org.bouncycastle.math.ec.ECPoint;
  * If you want to be compatible with legacy applications however, you should use this class instead.
  * Note though, that for v6 keys, {@link X25519PublicBCPGKey} or {@link X448PublicBCPGKey} MUST be used for X25519, X448.
  *
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ecd">
- *     Crypto-Refresh - Algorithm-Specific Parts for ECDH Keys</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-algorithm-specific-part-for-ecd">
+ *     OpenPGP - Algorithm-Specific Parts for ECDH Keys</a>
  */
 public class ECDHPublicBCPGKey
     extends ECPublicBCPGKey

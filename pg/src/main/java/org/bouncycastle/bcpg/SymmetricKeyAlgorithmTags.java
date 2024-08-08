@@ -3,12 +3,12 @@ package org.bouncycastle.bcpg;
 /**
  * Basic tags for symmetric key algorithms.
  *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-symmetric-key-algorithms">
+ *     RFC9580 - Symmetric-Key Algorithms</a>
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-9.2">
  *     RFC4880 - Symmetric-Key Algorithms</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-symmetric-key-algorithms">
  *     LibrePGP - Symmetric-Key Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-symmetric-key-algorithms">
- *     Crypto-Refresh - Symmetric-Key Algorithms</a>
  */
 public interface SymmetricKeyAlgorithmTags 
 {

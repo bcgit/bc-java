@@ -3,12 +3,12 @@ package org.bouncycastle.bcpg;
 /**
  * Public Key Algorithm IDs.
  *
- * @see <a href="RFC4880 - Public-Key Algorithms">
- *     https://www.rfc-editor.org/rfc/rfc4880.html#section-9.1</a>
- * @see <a href="LibrePGP - Public-Key Algorithms">
- *     https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-algorithms</a>
- * @see <a href="Crypto-Refresh - Public-Key Algorithms">
- *     https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-public-key-algorithms</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-public-key-algorithms">
+ *     RFC9580 - Public-Key Algorithms</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-9.1">
+ *     RFC4880 - Public-Key Algorithms</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-algorithms">
+ *     LibrePGP - Public-Key Algorithms</a>
  */
 public interface PublicKeyAlgorithmTags 
 {
@@ -80,7 +80,7 @@ public interface PublicKeyAlgorithmTags
     int AEDSA = 24;            // Reserved
     /**
      * X25519 encryption algorithm.
-     * C-R compliant implementations MUST implement support for this.
+     * RFC9580-compliant implementations MUST implement support for this.
      */
     int X25519 = 25;           // X25519
     /**
@@ -89,7 +89,7 @@ public interface PublicKeyAlgorithmTags
     int X448 = 26;             // X448
     /**
      * Ed25519 signing algorithm.
-     * C-R compliant implementations MUST implement support for this.
+     * RFC9580-compliant implementations MUST implement support for this.
      */
     int Ed25519 = 27;          // new style Ed25519
     /**

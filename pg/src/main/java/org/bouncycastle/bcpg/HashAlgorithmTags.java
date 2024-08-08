@@ -5,10 +5,10 @@ package org.bouncycastle.bcpg;
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-9.4">
  *     RFC4880 - Hash Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-hash-algorithms">
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-hash-algorithms">
+ *     RFC9580 - Hash Algorithms</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-hash-algorithms">
  *     LibrePGP - Hash Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-hash-algorithms">
- *     Crypto-Refresh - Hash Algorithms</a>
  */
 public interface HashAlgorithmTags 
 {

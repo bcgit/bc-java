@@ -52,8 +52,8 @@ public class Packet
      * Tags 40 to 59 are reserved for unassigned, non-critical packets.
      * Tags 60 to 63 are non-critical private or experimental packets.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-09.html#name-packet-tags">
-     *     Packet Tags</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-packet-tags">
+     *     OpenPGP - Packet Tags</a>
      * @return true if the packet is critical, false otherwise.
      */
     public boolean isCritical()

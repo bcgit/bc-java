@@ -13,8 +13,8 @@ import org.bouncycastle.math.ec.ECPoint;
  * Modern OpenPGP uses dedicated key types:
  * For {@link PublicKeyAlgorithmTags#Ed25519} see {@link Ed25519PublicBCPGKey} instead.
  * For {@link PublicKeyAlgorithmTags#Ed448} see {@link Ed448PublicBCPGKey} instead.
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ed">
- *     Crypto-Refresh - Algorithm-Specific Parts for EdDSALegacy Keys (deprecated)</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-algorithm-specific-part-for-ed">
+ *     OpenPGP - Algorithm-Specific Parts for EdDSALegacy Keys (deprecated)</a>
  */
 public class EdDSAPublicBCPGKey
     extends ECPublicBCPGKey

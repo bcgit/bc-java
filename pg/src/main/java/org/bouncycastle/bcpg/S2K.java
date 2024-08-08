@@ -38,10 +38,10 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
  * </ul>
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-3.7">
- *     rfc4880 - String-to-Key (S2K) Specifiers</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-string-to-key-s2k-specifier">
- *     C-R - String-to-Key (S2K) Specifier</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-string-to-key-s2k-specifier">
+ *     RFC4880 - String-to-Key (S2K) Specifiers</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-string-to-key-s2k-specifier">
+ *     RFC9580 - String-to-Key (S2K) Specifier</a>
+ * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-string-to-key-s2k-specifier">
  *     LibrePGP - String-to-Key (S2K) Specifiers</a>
  */
 public class S2K
@@ -480,8 +480,8 @@ public class S2K
 
     /**
      * Parameters for Argon2 S2K.
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-argon2">
-     *     C-R - Argon2</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-argon2">
+     *     OpenPGP - Argon2</a>
      */
     public static class Argon2Params
     {
@@ -555,7 +555,7 @@ public class S2K
 
             // log₂p = logₑp / logₑ2
             double log2_p = Math.log(parallelism) / Math.log(2);
-            // see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-05.html#section-3.7.1.4-5
+            // see https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.1.4-5
             if (memSizeExp < (3 + Math.ceil(log2_p)) || memSizeExp > 31)
             {
                 throw new IllegalArgumentException("Memory size exponent MUST be between 3 + ⌈log₂(parallelism)⌉ and 31");
