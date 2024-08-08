@@ -169,7 +169,8 @@ public class Curve25519PrivateKeyEncodingTest
     /**
      * Test proper functionality of the {@link #containsSubsequence(byte[], byte[])} method.
      */
-    private void containsTest() {
+    private void containsTest()
+    {
         // Make sure our containsSubsequence method functions correctly
         byte[] s = new byte[] {0x00, 0x01, 0x02, 0x03};
         isTrue(containsSubsequence(s, new byte[] {0x00, 0x01}));
