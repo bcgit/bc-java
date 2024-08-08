@@ -460,13 +460,14 @@ public class LocalizedMessage
     
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         sb.append("Resource: \"").append(resource);
-        sb.append("\" Id: \"").append(id).append("\"");
+        sb.append("\" Id: \"").append(id).append('"');
         sb.append(" Arguments: ").append(arguments.getArguments().length).append(" normal");
-        if (extraArgs != null && extraArgs.getArguments().length > 0)
+        if (extraArgs != null)
         {
-            sb.append(", ").append(extraArgs.getArguments().length).append(" extra");
+            final int extraLen = extraArgs.getArguments().length;
+            if (extraLen > 0) sb.append(", ").append(extraLen).append(" extra");
         }
         sb.append(" Encoding: ").append(encoding);
         sb.append(" ClassLoader: ").append(loader);

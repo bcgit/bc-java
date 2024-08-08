@@ -233,22 +233,13 @@ public class GF2mVector
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        for (int i = 0; i < vector.length; i++)
-        {
-            for (int j = 0; j < field.getDegree(); j++)
-            {
-                int r = j & 0x1f;
-                int bitMask = 1 << r;
-                int coeff = vector[i] & bitMask;
-                if (coeff != 0)
-                {
-                    buf.append('1');
-                }
-                else
-                {
-                    buf.append('0');
-                }
+        final StringBuilder buf = new StringBuilder(Math.max(vector.length, 16));
+        for (int k : vector) {
+            for (int j = 0; j < field.getDegree(); j++) {
+                final int r = j & 0x1f;
+                final int bitMask = 1 << r;
+                final int coeff = k & bitMask;
+                buf.append(coeff == 0 ? '0' : '1');
             }
             buf.append(' ');
         }
