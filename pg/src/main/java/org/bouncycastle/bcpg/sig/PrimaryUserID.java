@@ -8,8 +8,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.19">
  *     RFC4880 - Primary User ID</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-primary-user-id">
- *     C-R - Primary User ID</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-primary-user-id">
+ *     RFC9580 - Primary User ID</a>
  */
 public class PrimaryUserID 
     extends SignatureSubpacket

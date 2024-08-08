@@ -8,8 +8,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.10">
  *     RFC4880 - Trust Packet</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-trust-signature">
- *     C-R - Trust Signature</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-trust-signature">
+ *     RFC9580 - Trust Signature</a>
  */
 public class TrustSignature 
     extends SignatureSubpacket

@@ -8,9 +8,9 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  * Non-exportable signatures are not intended to be published.
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.11">
- *     Exportable Certification</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-exportable-certification">
- *     C-R - Exportable Certification</a>
+ *     RFC4880 - Exportable Certification</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-exportable-certification">
+ *     RFC9580 - Exportable Certification</a>
  */
 public class Exportable 
     extends SignatureSubpacket

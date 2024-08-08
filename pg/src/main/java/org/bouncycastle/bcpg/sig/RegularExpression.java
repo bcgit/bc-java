@@ -11,8 +11,8 @@ import org.bouncycastle.util.Strings;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.14">
  *     RFC4880 - Regular Expression</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-regular-expression">
- *     C-R - Regular Expression</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-regular-expression">
+ *     RFC9580 - Regular Expression</a>
  */
 public class RegularExpression
     extends SignatureSubpacket

@@ -11,8 +11,8 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.5">
  *     RFC4880 - Issuer</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-issuer-key-id">
- *     C-R - Issuer Key ID</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-issuer-key-id">
+ *     RFC9580 - Issuer Key ID</a>
  */
 public class IssuerKeyID 
     extends SignatureSubpacket
