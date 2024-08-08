@@ -4,7 +4,13 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving time after creation at which the key expires.
+ * Signature Subpacket containing the number of seconds after the key's creation date, after which the key expires.
+ * The special value of {@code 0} means that the key never expires.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.6">
+ *     RFC4880 - Key Expiration Time</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-key-expiration-time">
+ *     RFC9580 - Key Expiration Time</a>
  */
 public class KeyExpirationTime 
     extends SignatureSubpacket
