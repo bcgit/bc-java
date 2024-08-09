@@ -56,6 +56,7 @@ public abstract class JceKeyAgreeRecipient
     private PrivateKey recipientKey;
     protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
     protected EnvelopedDataHelper contentHelper = helper;
+    protected EnvelopedDataHelper unwrappingHelper = helper;
     private SecretKeySizeProvider keySizeProvider = new DefaultSecretKeySizeProvider();
     private AlgorithmIdentifier privKeyAlgID = null;
 
@@ -74,6 +75,7 @@ public abstract class JceKeyAgreeRecipient
     {
         this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
         this.contentHelper = helper;
+        this.unwrappingHelper = helper;
 
         return this;
     }
@@ -88,6 +90,33 @@ public abstract class JceKeyAgreeRecipient
     {
         this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
         this.contentHelper = helper;
+        this.unwrappingHelper = helper;
+
+        return this;
+    }
+
+    /**
+     * Set the provider to use for unwrapping the content session key.
+     *
+     * @param provider provider to use.
+     * @return this recipient.
+     */
+    public JceKeyAgreeRecipient setUnwrappingProvider(Provider provider)
+    {
+        this.unwrappingHelper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+
+        return this;
+    }
+
+    /**
+     * Set the provider to use for unwrapping the content session key.
+     *
+     * @param providerName the name of the provider to use.
+     * @return this recipient.
+     */
+    public JceKeyAgreeRecipient setUnwrappingProvider(String providerName)
+    {
+        this.unwrappingHelper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
 
         return this;
     }
@@ -214,7 +243,7 @@ public abstract class JceKeyAgreeRecipient
     protected Key unwrapSessionKey(ASN1ObjectIdentifier wrapAlg, SecretKey agreedKey, ASN1ObjectIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)
         throws CMSException, InvalidKeyException, NoSuchAlgorithmException
     {
-        Cipher keyCipher = helper.createCipher(wrapAlg);
+        Cipher keyCipher = unwrappingHelper.createCipher(wrapAlg);
         keyCipher.init(Cipher.UNWRAP_MODE, agreedKey);
         return keyCipher.unwrap(encryptedContentEncryptionKey, helper.getBaseCipherName(contentEncryptionAlgorithm), Cipher.SECRET_KEY);
     }
