@@ -306,7 +306,7 @@ public class PhotonBeetleEngine
 
     private void PHOTON_Permutation()
     {
-        int i, j, k, l;
+        int i, j, k;
         for (i = 0; i < DSquare; i++)
         {
             state_2d[i >>> Dq][i & Dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
@@ -338,29 +338,25 @@ public class PhotonBeetleEngine
             {
                 for (i = 0; i < D; i++)
                 {
-                    byte sum = 0;
+                    int sum = 0;
+
                     for (k = 0; k < D; k++)
                     {
-                        int x = MixColMatrix[i][k], ret = 0, b = state_2d[k][j];
-                        for (l = 0; l < S; l++)
-                        {
-                            if (((b >>> l) & 1) != 0)
-                            {
-                                ret ^= x;
-                            }
-                            if (((x >>> S_1) & 1) != 0)
-                            {
-                                x <<= 1;
-                                x ^= 0x3;
-                            }
-                            else
-                            {
-                                x <<= 1;
-                            }
-                        }
-                        sum ^= ret & 15;
+                        int x = MixColMatrix[i][k], b = state_2d[k][j];
+
+                        sum ^= x * (b & 1);
+                        sum ^= x * (b & 2);
+                        sum ^= x * (b & 4);
+                        sum ^= x * (b & 8);
                     }
-                    state[i] = sum;
+
+                    int t0 = sum >>> 4;
+                    sum = (sum & 15) ^ t0 ^ (t0 << 1);
+
+                    int t1 = sum >>> 4;
+                    sum = (sum & 15) ^ t1 ^ (t1 << 1);
+
+                    state[i] = (byte)sum;
                 }
                 for (i = 0; i < D; i++)
                 {
