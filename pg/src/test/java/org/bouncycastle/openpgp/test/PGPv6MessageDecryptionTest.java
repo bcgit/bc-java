@@ -36,11 +36,13 @@ public class PGPv6MessageDecryptionTest
             throws Exception
     {
         decryptMessageEncryptedUsingPKESKv6();
+        encryptDecryptMessageUsingV6GopenpgpTestKey();
     }
 
     private void decryptMessageEncryptedUsingPKESKv6()
             throws IOException, PGPException
     {
+        // X25519 test key from rfc9580
         String key = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
                 "\n" +
                 "xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB\n" +
@@ -81,8 +83,10 @@ public class PGPv6MessageDecryptionTest
         PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
         PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
 
-        isEquals(PublicKeyEncSessionPacket.VERSION_6, encData.getVersion());
-        isEquals(PublicKeyAlgorithmTags.X25519, encData.getAlgorithm());
+        isEquals("PKESK version mismatch",
+                PublicKeyEncSessionPacket.VERSION_6, encData.getVersion());
+        isEquals("Public key algorithm mismatch",
+                PublicKeyAlgorithmTags.X25519, encData.getAlgorithm());
         PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID()); // TODO: getKeyIdentifier()
         isNotNull("Decryption key MUST be identifiable", decryptionKey);
         PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
@@ -90,8 +94,74 @@ public class PGPv6MessageDecryptionTest
         InputStream decrypted = encData.getDataStream(decryptor);
         PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
         PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
-        isEncodingEqual(
+        isEncodingEqual("Message plaintext mismatch",
                 "Hello World :)".getBytes(StandardCharsets.UTF_8),
+                Streams.readAll(lit.getDataStream()));
+    }
+
+    private void encryptDecryptMessageUsingV6GopenpgpTestKey()
+            throws IOException, PGPException
+    {
+        // Ed448/X448 test key
+        // Courtesy of @twiss from Proton
+        String key = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+                "\n" +
+                "xX0GZrnFtRwAAAA5wl2q+bhfNkzHsxlLowaUy0sTOeAsmhseHBvPKKc7yehR\n" +
+                "8Qs93LbjQHjw3IaqduMRDRs4pZJyV/+AACKFtkkC3ebcyaOvHGaJpc9rx0Z1\n" +
+                "4YHdd4BG1AJvZuhk8pJ6dQuuQeFtBsQctoktFwlDh0XjnjUrkMLALQYfHAoA\n" +
+                "AABMBYJmucW1AwsJBwUVCAoMDgQWAAIBApsDAh4JIqEGEvURGalOLHznAmcI\n" +
+                "MRsEHorGZ2ikxHawiPyOMw+CAOANJwkDBwMJAQcBCQIHAgAAAACbfCBvUoq6\n" +
+                "bon1bSsp9HLc829xjDINBOvegmk4tMKv392c1LNPJacojQ46YZpkNVhE4sSx\n" +
+                "Gf/vdUqh62KP+vwm5cXs/f11WmdVnclv7uR9s3a1GI79lwOJiuw3AIXA3VjR\n" +
+                "+AhmeoAFJRfcjfT3hwwkBdu8E3BQ+1bGqfXGhOPYcDTJOO+vMExGSTEk+A9j\n" +
+                "DmWnW6snAMd7Bma5xbUaAAAAOAPvCJKYxSQ+SfLb313/tC9N2tGF00x6YJkz\n" +
+                "JLqLKVDofMHmUC1f8IJFtQ3cLMDhHVY0VxffLXT1AEffhVpafxBdelL69esq\n" +
+                "2zQtDp5l8Hx7D/sU+W3+KmGLnRki72g7gfoQuio+wk8UcHmfwYm7AHvuwsAN\n" +
+                "BhgcCgAAACwFgma5xbUCmwwioQYS9REZqU4sfOcCZwgxGwQeisZnaKTEdrCI\n" +
+                "/I4zD4IA4AAAAACQUiBvjI1gFe4O/GDPwIoX8YSK/qP3IsMAwvidXclpmlLN\n" +
+                "RzPkkfUzRgZw8+AHZxV62TPWhxrZETAuEaahrQ6HViQRAfk60gLvT37iWZrG\n" +
+                "BU64272NrJ+UFXrzAEKZ/HK+hIL6yZvYDqIxWBg3Pwt9YxgpOfJ8UeYcrEx3\n" +
+                "B1Hkd6QprSOLFCj53zZ++q3SZkWYz28gAA==\n" +
+                "-----END PGP PRIVATE KEY BLOCK-----\n";
+        ByteArrayInputStream bIn = new ByteArrayInputStream(key.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+        pIn.close();
+        aIn.close();
+        bIn.close();
+
+        // created using gosop 430bb02923c123e39815814f6b97a6d501bdde6a
+        // ./gosop encrypt --profile=rfc9580 cert.asc < msg.plain > msg.asc
+        String MSG = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "wYUGIQaz5Iy7+n5O1bg87Cy2PfSolKK6L8cwIPLJnEeZFjMu2xoAfSM/MwQpXahy\n" +
+                "Od1pknhDyw3X5EgxQG0EffQCMpaKsNtqvVGYBJ5chuAcV/8gayReP/g6RREGeyj4\n" +
+                "Vc2dgJ67/KwaP0Z7k7vExHs79U24DsrU088QbYhk/XLvJHWlXXj90loCCQMMIvmD\n" +
+                "KS5f5WYbntB4N+FspsbQ7GN6taOrAqUtEuKWKzrlhZdtg9qGG4RLCvX1vfL0u6NV\n" +
+                "Yzk9fGVgty73B8pmyYdefLdWt87ljwr8wGGX/Dl8PSBIE3w=\n" +
+                "-----END PGP MESSAGE-----\n";
+        bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
+
+        isEquals("PKESK version mismatch",
+                PublicKeyEncSessionPacket.VERSION_6, encData.getVersion());
+        isEquals("Public Key algorithm mismatch",
+                PublicKeyAlgorithmTags.X448, encData.getAlgorithm());
+        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID()); // TODO: getKeyIdentifier()
+        isNotNull("Decryption key MUST be identifiable", decryptionKey);
+        PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
+        PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privateKey);
+        InputStream decrypted = encData.getDataStream(decryptor);
+        PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
+        isEncodingEqual("Message plaintext mismatch",
+                "Hello, World!\n".getBytes(StandardCharsets.UTF_8),
                 Streams.readAll(lit.getDataStream()));
     }
 
