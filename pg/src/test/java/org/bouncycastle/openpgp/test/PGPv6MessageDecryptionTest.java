@@ -12,9 +12,13 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.PGPSessionKeyEncryptedData;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcSessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
@@ -36,7 +40,8 @@ public class PGPv6MessageDecryptionTest
             throws Exception
     {
         decryptMessageEncryptedUsingPKESKv6();
-        encryptDecryptMessageUsingV6GopenpgpTestKey();
+        decryptMessageUsingV6GopenpgpTestKey();
+        decryptMessageUsingSessionKey();
     }
 
     private void decryptMessageEncryptedUsingPKESKv6()
@@ -99,7 +104,7 @@ public class PGPv6MessageDecryptionTest
                 Streams.readAll(lit.getDataStream()));
     }
 
-    private void encryptDecryptMessageUsingV6GopenpgpTestKey()
+    private void decryptMessageUsingV6GopenpgpTestKey()
             throws IOException, PGPException
     {
         // Ed448/X448 test key
@@ -157,6 +162,38 @@ public class PGPv6MessageDecryptionTest
         isNotNull("Decryption key MUST be identifiable", decryptionKey);
         PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
         PublicKeyDataDecryptorFactory decryptor = new BcPublicKeyDataDecryptorFactory(privateKey);
+        InputStream decrypted = encData.getDataStream(decryptor);
+        PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
+        PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
+        isEncodingEqual("Message plaintext mismatch",
+                "Hello, World!\n".getBytes(StandardCharsets.UTF_8),
+                Streams.readAll(lit.getDataStream()));
+    }
+
+    private void decryptMessageUsingSessionKey()
+            throws IOException, PGPException
+    {
+        // created using gosop 430bb02923c123e39815814f6b97a6d501bdde6a
+        // ./gosop encrypt --profile=rfc9580 cert.asc < msg.plain > msg.asc
+        String MSG = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "wYUGIQaz5Iy7+n5O1bg87Cy2PfSolKK6L8cwIPLJnEeZFjMu2xoAfSM/MwQpXahy\n" +
+                "Od1pknhDyw3X5EgxQG0EffQCMpaKsNtqvVGYBJ5chuAcV/8gayReP/g6RREGeyj4\n" +
+                "Vc2dgJ67/KwaP0Z7k7vExHs79U24DsrU088QbYhk/XLvJHWlXXj90loCCQMMIvmD\n" +
+                "KS5f5WYbntB4N+FspsbQ7GN6taOrAqUtEuKWKzrlhZdtg9qGG4RLCvX1vfL0u6NV\n" +
+                "Yzk9fGVgty73B8pmyYdefLdWt87ljwr8wGGX/Dl8PSBIE3w=\n" +
+                "-----END PGP MESSAGE-----\n";
+        String SESSION_KEY = "9:47343387303C170873252051978966871EE2EA0F68D975F061AF022B78B165C1";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        PGPSessionKeyEncryptedData encData = encList.extractSessionKeyEncryptedData();
+        SessionKeyDataDecryptorFactory decryptor = new BcSessionKeyDataDecryptorFactory(
+                PGPSessionKey.fromAsciiRepresentation(SESSION_KEY));
+
         InputStream decrypted = encData.getDataStream(decryptor);
         PGPObjectFactory decFac = new BcPGPObjectFactory(decrypted);
         PGPLiteralData lit = (PGPLiteralData) decFac.nextObject();
