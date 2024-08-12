@@ -1,7 +1,11 @@
 package org.bouncycastle.openpgp.test;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
@@ -9,15 +13,20 @@ import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyRing;
 import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPOnePassSignatureList;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -26,6 +35,7 @@ import org.bouncycastle.util.io.Streams;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
@@ -63,7 +73,7 @@ public class PGPv6SignatureTest
     @Override
     public String getName()
     {
-        return "PGPV6SignatureTest";
+        return "PGPv6SignatureTest";
     }
 
     @Override
@@ -75,6 +85,10 @@ public class PGPv6SignatureTest
         verifyV6BinarySignature();
         verifyV6InlineSignature();
         verifyV6CleartextSignature();
+
+        generateAndVerifyV6BinarySignature();
+        generateAndVerifyV6InlineSignature();
+        generateAndVerifyV6CleartextSignature();
 
         verifyingSignatureWithMismatchedSaltSizeFails();
         verifyingOPSWithMismatchedSaltSizeFails();
@@ -213,7 +227,8 @@ public class PGPv6SignatureTest
                 plainOut.write(c);
             }
         }
-        isEncodingEqual("Plaintext MUST match", "Hello, World!\n".getBytes(StandardCharsets.UTF_8), plainOut.toByteArray());
+        isEncodingEqual("Plaintext MUST match",
+                "Hello, World!\n".getBytes(StandardCharsets.UTF_8), plainOut.toByteArray());
         pIn = new BCPGInputStream(aIn);
         objFac = new BcPGPObjectFactory(pIn);
         PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
@@ -221,7 +236,7 @@ public class PGPv6SignatureTest
         PGPSignature sig = sigList.get(0);
         sig.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
         sig.update("Hello, World!".getBytes(StandardCharsets.UTF_8));
-        isTrue("Signature MUST verify successfully", sig.verify());
+        isTrue("Cleartext Signature MUST verify successfully", sig.verify());
     }
 
     private void verifyingSignatureWithMismatchedSaltSizeFails()
@@ -487,6 +502,164 @@ public class PGPv6SignatureTest
             }
         }
         return null;
+    }
+
+    private void generateAndVerifyV6BinarySignature()
+            throws IOException, PGPException
+    {
+        String msg = "Hello, World!\n";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        PGPSecretKey signingSecKey = secretKeys.getSecretKey(); // primary key
+        PGPPrivateKey signingPrivKey = signingSecKey.extractPrivateKey(null);
+        PGPPublicKey signingPubKey = signingSecKey.getPublicKey();
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(
+                        signingPubKey.getAlgorithm(),
+                        HashAlgorithmTags.SHA512),
+                signingPubKey);
+        sigGen.init(PGPSignature.BINARY_DOCUMENT, signingPrivKey);
+        sigGen.update(msg.getBytes(StandardCharsets.UTF_8));
+        PGPSignature binarySig = sigGen.generate();
+
+        binarySig.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+        binarySig.update(msg.getBytes(StandardCharsets.UTF_8));
+        isTrue("Detached binary signature MUST verify successful.",
+                binarySig.verify());
+    }
+
+    private void generateAndVerifyV6InlineSignature()
+            throws IOException, PGPException
+    {
+        String msg = "Hello, World!\n";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        PGPSecretKey signingSecKey = secretKeys.getSecretKey(); // primary key
+        PGPPrivateKey signingPrivKey = signingSecKey.extractPrivateKey(null);
+        PGPPublicKey signingPubKey = signingSecKey.getPublicKey();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+                .clearHeaders()
+                .enableCRC(false)
+                .build(bOut);
+        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(signingPubKey.getAlgorithm(), HashAlgorithmTags.SHA512), signingPubKey);
+        sigGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, signingPrivKey);
+        sigGen.generateOnePassVersion(true).encode(pOut);
+
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream litOut = litGen.open(pOut, PGPLiteralDataGenerator.UTF8, "", PGPLiteralDataGenerator.NOW, new byte[512]);
+
+        litOut.write(msg.getBytes(StandardCharsets.UTF_8));
+        litOut.close();
+
+        sigGen.update(msg.getBytes(StandardCharsets.UTF_8));
+        sigGen.generate().encode(pOut);
+
+        pOut.close();
+        aOut.close();
+
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+
+        PGPOnePassSignatureList opsList = (PGPOnePassSignatureList) objFac.nextObject();
+        isEquals("There MUST be exactly 1 OPS", 1, opsList.size());
+        PGPOnePassSignature ops = opsList.get(0);
+
+        ops.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+
+        PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        Streams.pipeAll(lit.getDataStream(), plainOut);
+        isEncodingEqual("Content of LiteralData packet MUST match plaintext",
+                msg.getBytes(StandardCharsets.UTF_8), plainOut.toByteArray());
+
+        ops.update(plainOut.toByteArray());
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+        isEquals("There MUST be exactly one signature", 1, sigList.size());
+        PGPSignature sig = sigList.get(0);
+        isTrue("Generated Inline OPS signature MUST verify successful", ops.verify(sig));
+    }
+
+    private void generateAndVerifyV6CleartextSignature()
+            throws IOException, PGPException
+    {
+        String msg = "Hello, World!\n";
+        String msgS = "Hello, World!";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        PGPSecretKey signingSecKey = secretKeys.getSecretKey(); // primary key
+        PGPPrivateKey signingPrivKey = signingSecKey.extractPrivateKey(null);
+        PGPPublicKey signingPubKey = signingSecKey.getPublicKey();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+                .clearHeaders()
+                .enableCRC(false)
+                .build(bOut);
+
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(signingPubKey.getAlgorithm(), HashAlgorithmTags.SHA512),
+                signingPubKey);
+        sigGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, signingPrivKey);
+
+        aOut.beginClearText();
+        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+
+        sigGen.update(msgS.getBytes(StandardCharsets.UTF_8));
+        aOut.write(msg.getBytes(StandardCharsets.UTF_8));
+
+        aOut.endClearText();
+        sigGen.generate().encode(pOut);
+        pOut.close();
+        aOut.close();
+
+        // Verify
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
+        aIn = new ArmoredInputStream(bIn);
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        while (aIn.isClearText())
+        {
+            int c = aIn.read();
+            if (aIn.isClearText())
+            {
+                plainOut.write(c);
+            }
+        }
+        isEncodingEqual("Plaintext MUST match", msg.getBytes(StandardCharsets.UTF_8), plainOut.toByteArray());
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+        isEquals("There MUST be exactly 1 signature.", 1, sigList.size());
+        PGPSignature sig = sigList.get(0);
+        sig.init(new BcPGPContentVerifierBuilderProvider(), signingPubKey);
+        sig.update(msgS.getBytes(StandardCharsets.UTF_8));
+        boolean v = sig.verify();
+        if (!v)
+        {
+            System.out.println(bOut);
+        }
+        isTrue("Generated Cleartext Signature MUST verify successfully", v);
     }
 
     public static void main(String[] args)
