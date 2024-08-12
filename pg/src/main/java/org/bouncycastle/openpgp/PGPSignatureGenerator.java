@@ -88,8 +88,8 @@ public class PGPSignatureGenerator
     /**
      * Initialise the generator for signing.
      *
-     * @param signatureType
-     * @param key
+     * @param signatureType type of signature
+     * @param key private signing key
      * @throws PGPException
      */
     public void init(
@@ -112,6 +112,11 @@ public class PGPSignatureGenerator
 //        }
     }
 
+    /**
+     * Set the hashed signature subpackets.
+     * Hashed signature subpackets are covered by the signature.
+     * @param hashedPcks hashed signature subpackets
+     */
     public void setHashedSubpackets(
         PGPSignatureSubpacketVector hashedPcks)
     {
@@ -124,6 +129,11 @@ public class PGPSignatureGenerator
         hashed = hashedPcks.toSubpacketArray();
     }
 
+    /**
+     * Set the unhashed signature subpackets.
+     * Unhashed signature subpackets are not covered by the signature.
+     * @param unhashedPcks unhashed signature subpackets
+     */
     public void setUnhashedSubpackets(
         PGPSignatureSubpacketVector unhashedPcks)
     {
