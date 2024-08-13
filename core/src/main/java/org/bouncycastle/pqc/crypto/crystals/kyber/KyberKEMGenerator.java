@@ -23,7 +23,11 @@ public class KyberKEMGenerator
         KyberPublicKeyParameters key = (KyberPublicKeyParameters)recipientKey;
         KyberEngine engine = key.getParameters().getEngine();
         engine.init(sr);
-        byte[][] kemEncrypt = engine.kemEncrypt(key.getEncoded());
+
+        byte[] randBytes = new byte[32];
+        engine.getRandomBytes(randBytes);
+
+        byte[][] kemEncrypt = engine.kemEncrypt(key.getEncoded(), randBytes);
         return new SecretWithEncapsulationImpl(kemEncrypt[0], kemEncrypt[1]);
     }
 }

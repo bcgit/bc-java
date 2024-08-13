@@ -26,7 +26,7 @@ public class KyberKEMExtractor
     public byte[] extractSecret(byte[] encapsulation)
     {
         // Decryption
-        byte[] sharedSecret = engine.kemDecrypt(encapsulation, key.getEncoded());
+        byte[] sharedSecret = engine.kemDecrypt(key.getEncoded(), encapsulation);
         return sharedSecret;
     }
 

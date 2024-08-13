@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.crystals.kyber;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 class KyberIndCpa
 {
@@ -45,20 +46,16 @@ class KyberIndCpa
      *
      * @return KeyPair where each key is represented as bytes
      */
-    byte[][] generateKeyPair()
+    byte[][] generateKeyPair(byte[] d)
     {
         PolyVec secretKey = new PolyVec(engine),
             publicKey = new PolyVec(engine),
             e = new PolyVec(engine);
 
-        byte[] d = new byte[32];
-
-        // (p, sigma) <- G(d)
-
-        engine.getRandomBytes(d);
+        // (p, sigma) <- G(d || k)
 
         byte[] buf = new byte[64];
-        symmetric.hash_g(buf, d);
+        symmetric.hash_g(buf, Arrays.concatenate(d, Pack.intToLittleEndian(kyberK)));
 
         byte[] publicSeed = new byte[32]; // p in docs
         byte[] noiseSeed = new byte[32]; // sigma in docs
@@ -141,7 +138,7 @@ class KyberIndCpa
         return new byte[][]{packPublicKey(publicKey, publicSeed), packSecretKey(secretKey)};
     }
 
-    public byte[] encrypt(byte[] msg, byte[] publicKeyInput, byte[] coins)
+    public byte[] encrypt(byte[] publicKeyInput, byte[] msg, byte[] coins)
     {
         int i;
         byte[] seed;
@@ -180,7 +177,7 @@ class KyberIndCpa
             aMatrixTranspose[i] = new PolyVec(engine);
         }
 
-        generateMatrix(aMatrixTranspose, seed, true);
+        generateMatrix(aMatrixTranspose, seed, false);
 
         // System.out.print("matrix transposed = ");
         // for (i = 0; i < kyberK; i++) {
@@ -383,7 +380,7 @@ class KyberIndCpa
 
     }
 
-    public byte[] decrypt(byte[] cipherText, byte[] secretKey)
+    public byte[] decrypt(byte[] secretKey, byte[] cipherText)
     {
         int i;
         byte[] outputMessage = new byte[KyberEngine.getKyberIndCpaMsgBytes()];

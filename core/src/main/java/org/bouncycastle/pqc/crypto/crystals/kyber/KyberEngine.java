@@ -196,9 +196,10 @@ class KyberEngine
         this.random = random;
     }
 
-    public byte[][] generateKemKeyPair()
+    //Internal functions are deterministic. No randomness is sampled inside them
+    public byte[][] generateKemKeyPairInternal(byte[] d, byte[] z)
     {
-        byte[][] indCpaKeyPair = indCpa.generateKeyPair();
+        byte[][] indCpaKeyPair = indCpa.generateKeyPair(d);
 
         byte[] s = new byte[KyberIndCpaSecretKeyBytes];
 
@@ -208,16 +209,77 @@ class KyberEngine
 
         symmetric.hash_h(hashedPublicKey, indCpaKeyPair[0], 0);
 
-        byte[] z = new byte[KyberSymBytes];
-        random.nextBytes(z);
 
         byte[] outputPublicKey = new byte[KyberIndCpaPublicKeyBytes];
         System.arraycopy(indCpaKeyPair[0], 0, outputPublicKey, 0, KyberIndCpaPublicKeyBytes);
         return new byte[][]{ Arrays.copyOfRange(outputPublicKey, 0, outputPublicKey.length - 32), Arrays.copyOfRange(outputPublicKey, outputPublicKey.length - 32, outputPublicKey.length), s, hashedPublicKey, z };
     }
 
-    public byte[][] kemEncrypt(byte[] publicKeyInput)
+    public byte[][] kemEncryptInternal(byte[] publicKeyInput, byte[] randBytes)
     {
+        byte[] outputCipherText;
+
+        byte[] buf = new byte[2 * KyberSymBytes];
+        byte[] kr = new byte[2 * KyberSymBytes];
+
+        System.arraycopy(randBytes, 0, buf, 0, KyberSymBytes);
+
+        // SHA3-256 Public Key
+        symmetric.hash_h(buf, publicKeyInput, KyberSymBytes);
+
+        // SHA3-512( SHA3-256(RandBytes) || SHA3-256(PublicKey) )
+        symmetric.hash_g(kr, buf);
+
+        // IndCpa Encryption
+        outputCipherText = indCpa.encrypt(publicKeyInput, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, 32, kr.length));
+
+        byte[] outputSharedSecret = new byte[sessionKeyLength];
+
+        System.arraycopy(kr, 0, outputSharedSecret, 0, outputSharedSecret.length);
+
+        byte[][] outBuf = new byte[2][];
+        outBuf[0] = outputSharedSecret;
+        outBuf[1] = outputCipherText;
+        return outBuf;
+    }
+
+    public byte[] kemDecryptInternal(byte[] secretKey, byte[] cipherText)
+    {
+        byte[] buf = new byte[2 * KyberSymBytes],
+                kr = new byte[2 * KyberSymBytes];
+
+        byte[] publicKey = Arrays.copyOfRange(secretKey, KyberIndCpaSecretKeyBytes, secretKey.length);
+
+        System.arraycopy(indCpa.decrypt(secretKey, cipherText), 0, buf, 0, KyberSymBytes);
+
+        System.arraycopy(secretKey, KyberSecretKeyBytes - 2 * KyberSymBytes, buf, KyberSymBytes, KyberSymBytes);
+
+        symmetric.hash_g(kr, buf);
+
+        byte[] cmp = indCpa.encrypt(publicKey, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
+
+        boolean fail = !(Arrays.constantTimeAreEqual(cipherText, cmp));
+
+        symmetric.hash_h(kr, cipherText, KyberSymBytes);
+
+        cmov(kr, Arrays.copyOfRange(secretKey, KyberSecretKeyBytes - KyberSymBytes, KyberSecretKeyBytes), KyberSymBytes, fail);
+
+        return Arrays.copyOfRange(kr, 0, sessionKeyLength);
+    }
+
+    public byte[][] generateKemKeyPair()
+    {
+        byte[] d = new byte[KyberSymBytes];
+        byte[] z = new byte[KyberSymBytes];
+        random.nextBytes(d);
+        random.nextBytes(z);
+
+        return generateKemKeyPairInternal(d, z);
+    }
+
+    public byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
+    {
+        //TODO: do input validation elsewhere?
         // Input validation (6.2 ML-KEM Encaps)
         // Type Check
         if (publicKeyInput.length != KyberIndCpaPublicKeyBytes)
@@ -233,60 +295,12 @@ class KyberEngine
             throw new IllegalArgumentException("Input validation: Modulus check failed for ml-kem encapsulation");
         }
 
-
-        byte[] outputCipherText;
-
-        byte[] buf = new byte[2 * KyberSymBytes];
-        byte[] kr = new byte[2 * KyberSymBytes];
-
-        byte[] randBytes = new byte[KyberSymBytes];
-
-        random.nextBytes(randBytes);
-
-        System.arraycopy(randBytes, 0, buf, 0, KyberSymBytes);
-
-        // SHA3-256 Public Key
-        symmetric.hash_h(buf, publicKeyInput, KyberSymBytes);
-
-        // SHA3-512( SHA3-256(RandBytes) || SHA3-256(PublicKey) )
-        symmetric.hash_g(kr, buf);
-
-        // IndCpa Encryption
-        outputCipherText = indCpa.encrypt(Arrays.copyOfRange(buf, 0, KyberSymBytes), publicKeyInput, Arrays.copyOfRange(kr, 32, kr.length));
-
-        byte[] outputSharedSecret = new byte[sessionKeyLength];
-
-        System.arraycopy(kr, 0, outputSharedSecret, 0, outputSharedSecret.length);
-        
-        byte[][] outBuf = new byte[2][];
-        outBuf[0] = outputSharedSecret;
-        outBuf[1] = outputCipherText;
-
-        return outBuf;
+        return kemEncryptInternal(publicKeyInput, randBytes);
     }
-
-    public byte[] kemDecrypt(byte[] cipherText, byte[] secretKey)
+    public byte[] kemDecrypt(byte[] secretKey, byte[] cipherText)
     {
-        byte[] buf = new byte[2 * KyberSymBytes],
-            kr = new byte[2 * KyberSymBytes];
-
-        byte[] publicKey = Arrays.copyOfRange(secretKey, KyberIndCpaSecretKeyBytes, secretKey.length);
-
-        System.arraycopy(indCpa.decrypt(cipherText, secretKey), 0, buf, 0, KyberSymBytes);
-
-        System.arraycopy(secretKey, KyberSecretKeyBytes - 2 * KyberSymBytes, buf, KyberSymBytes, KyberSymBytes);
-
-        symmetric.hash_g(kr, buf);
-
-        byte[] cmp = indCpa.encrypt(Arrays.copyOfRange(buf, 0, KyberSymBytes), publicKey, Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
-
-        boolean fail = !(Arrays.constantTimeAreEqual(cipherText, cmp));
-
-        symmetric.hash_h(kr, cipherText, KyberSymBytes);
-
-        cmov(kr, Arrays.copyOfRange(secretKey, KyberSecretKeyBytes - KyberSymBytes, KyberSecretKeyBytes), KyberSymBytes, fail);
-
-        return Arrays.copyOfRange(kr, 0, sessionKeyLength);
+        //TODO: do input validation
+        return kemDecryptInternal(secretKey, cipherText);
     }
 
     private void cmov(byte[] r, byte[] x, int xlen, boolean b)
