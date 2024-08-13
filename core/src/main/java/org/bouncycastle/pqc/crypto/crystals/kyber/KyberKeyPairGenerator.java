@@ -45,4 +45,14 @@ public class KyberKeyPairGenerator
         return genKeyPair();
     }
 
+    public AsymmetricCipherKeyPair internalGenerateKeyPair(byte[] d, byte[] z)
+    {
+        byte[][] keyPair = kyberParams.getEngine().generateKemKeyPairInternal(d, z);
+
+        KyberPublicKeyParameters pubKey = new KyberPublicKeyParameters(kyberParams, keyPair[0], keyPair[1]);
+        KyberPrivateKeyParameters privKey = new KyberPrivateKeyParameters(kyberParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
+
+        return new AsymmetricCipherKeyPair(pubKey, privKey);
+    }
+
 }
