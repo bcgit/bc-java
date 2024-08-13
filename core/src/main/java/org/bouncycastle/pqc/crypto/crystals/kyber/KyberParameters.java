@@ -32,7 +32,7 @@ public class KyberParameters
         return name;
     }
 
-    KyberEngine getEngine()
+    public KyberEngine getEngine()
     {
         return new KyberEngine(k, usingAes);
     }
