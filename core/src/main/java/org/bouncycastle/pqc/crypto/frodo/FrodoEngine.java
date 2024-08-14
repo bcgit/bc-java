@@ -322,7 +322,7 @@ class FrodoEngine
     private short[] encode(byte[] k)
     {
         int l, byte_index = 0;
-        byte mask = 1;
+        int bit = 0;
         short[] K = new short[mbar*nbar];
         int temp;
         // 1. for i = 0; i < mbar; i += 1
@@ -335,16 +335,13 @@ class FrodoEngine
                 temp = 0;
                 for (l = 0; l < B; l++)
                 {
-                    //mask
-                    int mult = ((k[byte_index] & mask) == mask) ? 1 : 0;
-                    temp += (1 << l) * mult;
-                    mask <<= 1;
-                    if (mask == 0)
-                    {
-                        mask = 1;
-                        byte_index++;
-                    }
+                    temp += ((k[byte_index] >>> bit) & 1) << l;
+
+                    ++bit;
+                    byte_index += bit >>> 3;
+                    bit &= 7;
                 }
+
                 // 4. K[i][j] = ec(tmp) = tmp * q/2^B
                 K[i*nbar+j] = (short) (temp * (q / (1 << B)));
             }
