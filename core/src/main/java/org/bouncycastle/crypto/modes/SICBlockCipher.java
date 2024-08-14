@@ -244,7 +244,7 @@ public class SICBlockCipher
 
         counter[counter.length - 1] += offSet;
 
-        if (old != 0 && counter[counter.length - 1] < old)
+        if ((old & 0xff) + offSet > 255)
         {
             incrementCounterAt(1);
         }
