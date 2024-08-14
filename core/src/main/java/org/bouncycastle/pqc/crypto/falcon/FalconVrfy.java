@@ -702,7 +702,7 @@ class FalconVrfy
                          byte[] srcf, int f, byte[] srcg, int g, byte[] srcF, int F,
                          int logn, short[] srctmp, int tmp)
     {
-        boolean success = true;
+        int success = -1;
         int u, n;
         int t1, t2;
 
@@ -725,22 +725,20 @@ class FalconVrfy
         mq_NTT(srctmp, t2, logn);
         for (u = 0; u < n; u++)
         {
-            success &= (srctmp[t2 + u] != 0);
+            int tmp2 = srctmp[t2 + u] & 0xffff;
+            success &= -tmp2; // check tmp2 != 0
             srctmp[t1 + u] = (short)mq_div_12289(srctmp[t1 + u], srctmp[t2 + u]);
         }
         mq_iNTT(srctmp, t1, logn);
         for (u = 0; u < n; u++)
         {
-            int w;
-            int gi;
-
-            w = (srctmp[t1 + u] & 0xffff);
-            w -= (Q & ~-((w - (Q >> 1)) >>> 31)); // w is unsigned
-            gi = w; // gi is signed
-            success &= !(gi < -127 || gi > +127);
+            int w = srctmp[t1 + u] & 0xffff;
+            int gi = w - (Q & (((Q >> 1) - w) >> 31));
+            success &= +gi - 128; // check +gi < 128
+            success &= -gi - 128; // check -gi < 128
             srcG[G + u] = (byte)gi;
         }
-        return success;
+        return success < 0;
     }
 
     /* see inner.h */
