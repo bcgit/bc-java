@@ -256,13 +256,19 @@ class KyberEngine
 
         symmetric.hash_g(kr, buf);
 
+        byte[] implicit_rejection = new byte[KyberSymBytes + KyberCipherTextBytes];
+
+        System.arraycopy(secretKey, KyberSecretKeyBytes - KyberSymBytes, implicit_rejection, 0, KyberSymBytes);
+
+        System.arraycopy(cipherText, 0, implicit_rejection, KyberSymBytes, KyberCipherTextBytes);
+
+        symmetric.kdf(implicit_rejection, implicit_rejection ); // J(z||c)
+
         byte[] cmp = indCpa.encrypt(publicKey, Arrays.copyOfRange(buf, 0, KyberSymBytes), Arrays.copyOfRange(kr, KyberSymBytes, kr.length));
 
         boolean fail = !(Arrays.constantTimeAreEqual(cipherText, cmp));
 
-        symmetric.hash_h(kr, cipherText, KyberSymBytes);
-
-        cmov(kr, Arrays.copyOfRange(secretKey, KyberSecretKeyBytes - KyberSymBytes, KyberSecretKeyBytes), KyberSymBytes, fail);
+        cmov(kr, implicit_rejection, KyberSymBytes, fail);
 
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
     }
