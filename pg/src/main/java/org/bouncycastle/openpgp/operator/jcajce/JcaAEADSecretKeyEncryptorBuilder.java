@@ -99,7 +99,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
                     final Cipher c = aeadUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
 
                     JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.ENCRYPT_MODE, iv, 128, aad);
-                    byte[] data = c.doFinal(keyData);
+                    byte[] data = c.doFinal(keyData, keyOff, keyLen);
                     return data;
                 }
                 catch (IOException | InvalidAlgorithmParameterException | InvalidKeyException |
