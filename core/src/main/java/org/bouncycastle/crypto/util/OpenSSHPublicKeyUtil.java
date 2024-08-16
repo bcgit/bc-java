@@ -30,6 +30,9 @@ public class OpenSSHPublicKeyUtil
     private static final String ED_25519 = "ssh-ed25519";
     private static final String DSS = "ssh-dss";
 
+    private static final String FIDO2_EC_P256 = "sk-ecdsa-sha2-nistp256@openssh.com";
+    private static final String FIDO_ED_25519 = "sk-ssh-ed25519@openssh.com";
+    
     /**
      * Parse a public key.
      * <p>
@@ -167,6 +170,29 @@ public class OpenSSHPublicKeyUtil
                 curve.decodePoint(pointRaw),
                 new ECNamedDomainParameters(oid, x9ECParameters));
         }
+        else if (magic.equals(FIDO2_EC_P256))
+        {
+            String curveName = buffer.readString();
+
+            ASN1ObjectIdentifier oid = SSHNamedCurves.getByName(curveName);
+            X9ECParameters x9ECParameters = SSHNamedCurves.getParameters(oid);
+
+            if (x9ECParameters == null)
+            {
+                throw new IllegalStateException("unable to find curve for " + magic + " using curve name " + curveName);
+            }
+
+            ECCurve curve = x9ECParameters.getCurve();
+
+            byte[] pointRaw = buffer.readBlock();
+
+            // TODO: at the moment we have no use for this, but it's there.
+            String application = buffer.readString();
+
+            result = new ECPublicKeyParameters(
+                curve.decodePoint(pointRaw),
+                new ECNamedDomainParameters(oid, x9ECParameters));
+        }
         else if (ED_25519.equals(magic))
         {
             byte[] pubKeyBytes = buffer.readBlock();
@@ -174,6 +200,19 @@ public class OpenSSHPublicKeyUtil
             {
                 throw new IllegalStateException("public key value of wrong length");
             }
+
+            result = new Ed25519PublicKeyParameters(pubKeyBytes, 0);
+        }
+        else if (FIDO2_EC_P256.equals(magic))
+        {
+            byte[] pubKeyBytes = buffer.readBlock();
+            if (pubKeyBytes.length != Ed25519PublicKeyParameters.KEY_SIZE)
+            {
+                throw new IllegalStateException("public key value of wrong length");
+            }
+
+            // TODO: at the moment we have no use for this, but it's there.
+            String application = buffer.readString();
 
             result = new Ed25519PublicKeyParameters(pubKeyBytes, 0);
         }
