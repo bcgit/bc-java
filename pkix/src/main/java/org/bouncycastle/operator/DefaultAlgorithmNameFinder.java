@@ -46,6 +46,19 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
         algorithms.put(BCObjectIdentifiers.falcon_512, "FALCON");
         algorithms.put(BCObjectIdentifiers.falcon_1024, "FALCON");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SPHINCS+");
+        algorithms.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SPHINCS+");
+
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCS+");
@@ -64,7 +77,6 @@ public class DefaultAlgorithmNameFinder
         algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, "SPHINCS+");
-
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, "SPHINCS+");
         algorithms.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, "SPHINCS+");

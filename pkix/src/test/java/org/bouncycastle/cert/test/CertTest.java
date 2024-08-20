@@ -4286,7 +4286,7 @@ public class CertTest
 
         X509Certificate baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
-        isTrue("oid wrong", BCObjectIdentifiers.dilithium2.getId().equals(baseCert.getSigAlgOID()));
+        isTrue("oid wrong", NISTObjectIdentifiers.id_ml_dsa_44.getId().equals(baseCert.getSigAlgOID()));
         isTrue("params wrong", null == baseCert.getSigAlgParams());
 
         //

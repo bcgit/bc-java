@@ -210,7 +210,7 @@ public class PQCTest
 
         RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
 
-        assertEquals(recInfo.getKeyEncryptionAlgOID(), BCObjectIdentifiers.kyber512.getId());
+        assertEquals(recInfo.getKeyEncryptionAlgOID(), NISTObjectIdentifiers.id_alg_ml_kem_512.getId());
 
         // Note: we don't specify the provider here as we're actually using both BC and BCPQC
 

@@ -239,9 +239,9 @@ public class DefaultDigestAlgorithmIdentifierFinder
 
         shake256oids.add(EdECObjectIdentifiers.id_Ed448);
 
-        shake256oids.add(BCObjectIdentifiers.dilithium2);
-        shake256oids.add(BCObjectIdentifiers.dilithium3);
-        shake256oids.add(BCObjectIdentifiers.dilithium5);
+        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_87);
         shake256oids.add(BCObjectIdentifiers.dilithium2_aes);
         shake256oids.add(BCObjectIdentifiers.dilithium3_aes);
         shake256oids.add(BCObjectIdentifiers.dilithium5_aes);

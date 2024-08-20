@@ -219,9 +219,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SPHINCS+-HARAKA-256S-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple);
         algorithms.put("SPHINCS+-HARAKA-256F-SIMPLE", BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple);
         algorithms.put("SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus);
-        algorithms.put("DILITHIUM2", BCObjectIdentifiers.dilithium2);
-        algorithms.put("DILITHIUM3", BCObjectIdentifiers.dilithium3);
-        algorithms.put("DILITHIUM5", BCObjectIdentifiers.dilithium5);
+        algorithms.put("DILITHIUM2", NISTObjectIdentifiers.id_ml_dsa_44);
+        algorithms.put("DILITHIUM3", NISTObjectIdentifiers.id_ml_dsa_65);
+        algorithms.put("DILITHIUM5", NISTObjectIdentifiers.id_ml_dsa_87);
         algorithms.put("DILITHIUM2-AES", BCObjectIdentifiers.dilithium2_aes);
         algorithms.put("DILITHIUM3-AES", BCObjectIdentifiers.dilithium3_aes);
         algorithms.put("DILITHIUM5-AES", BCObjectIdentifiers.dilithium5_aes);
@@ -302,6 +302,19 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         // SPHINCS-PLUS
         //
         noParams.add(BCObjectIdentifiers.sphincsPlus);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
@@ -337,9 +350,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         // Dilithium
         //
         noParams.add(BCObjectIdentifiers.dilithium);
-        noParams.add(BCObjectIdentifiers.dilithium2);
-        noParams.add(BCObjectIdentifiers.dilithium3);
-        noParams.add(BCObjectIdentifiers.dilithium5);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);
         noParams.add(BCObjectIdentifiers.dilithium2_aes);
         noParams.add(BCObjectIdentifiers.dilithium3_aes);
         noParams.add(BCObjectIdentifiers.dilithium5_aes);

@@ -17,6 +17,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -30,9 +31,9 @@ public class DilithiumKeyFactorySpi
 
     static
     {
-        keyOids.add(BCObjectIdentifiers.dilithium2);
-        keyOids.add(BCObjectIdentifiers.dilithium3);
-        keyOids.add(BCObjectIdentifiers.dilithium5);
+        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_87);
         keyOids.add(BCObjectIdentifiers.dilithium2_aes);
         keyOids.add(BCObjectIdentifiers.dilithium3_aes);
         keyOids.add(BCObjectIdentifiers.dilithium5_aes);
@@ -103,7 +104,7 @@ public class DilithiumKeyFactorySpi
     {
         public Base2()
         {
-            super(BCObjectIdentifiers.dilithium2);
+            super(NISTObjectIdentifiers.id_ml_dsa_44);
         }
     }
 
@@ -112,7 +113,7 @@ public class DilithiumKeyFactorySpi
     {
         public Base3()
         {
-            super(BCObjectIdentifiers.dilithium3);
+            super(NISTObjectIdentifiers.id_ml_dsa_65);
         }
     }
 
@@ -121,7 +122,7 @@ public class DilithiumKeyFactorySpi
     {
         public Base5()
         {
-            super(BCObjectIdentifiers.dilithium5);
+            super(NISTObjectIdentifiers.id_ml_dsa_87);
         }
     }
 

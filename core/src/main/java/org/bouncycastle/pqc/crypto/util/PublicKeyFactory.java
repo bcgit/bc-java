@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -87,6 +88,19 @@ public class PublicKeyFactory
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2Converter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SPHINCSPlusConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SPHINCSPlusConverter());
+
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, new SPHINCSPlusConverter());
@@ -105,23 +119,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, new SPHINCSPlusConverter());
-
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, new SPHINCSPlusConverter());
 
@@ -193,9 +194,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
-        converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
         converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
@@ -211,9 +212,9 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sntrup953, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1013, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1277, new SNTRUPrimeConverter());
-        converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
-        converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
-        converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new DilithiumConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new DilithiumConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium2_aes, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3_aes, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5_aes, new DilithiumConverter());

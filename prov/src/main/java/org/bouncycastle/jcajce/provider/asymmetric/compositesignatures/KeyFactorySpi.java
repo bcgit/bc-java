@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -45,9 +46,9 @@ public class KeyFactorySpi
 {
 
     //Specific algorithm identifiers of all component signature algorithms for SubjectPublicKeyInfo. These do not need to be all initialized here but makes the code more readable IMHO.
-    private static final AlgorithmIdentifier dilithium2Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.dilithium2);
-    private static final AlgorithmIdentifier dilithium3Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.dilithium3);
-    private static final AlgorithmIdentifier dilithium5Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.dilithium5);
+    private static final AlgorithmIdentifier dilithium2Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44);
+    private static final AlgorithmIdentifier dilithium3Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65);
+    private static final AlgorithmIdentifier dilithium5Identifier = new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_87);
     private static final AlgorithmIdentifier falcon512Identifier = new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512);
     private static final AlgorithmIdentifier ed25519Identifier = new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519);
     private static final AlgorithmIdentifier ecdsaP256Identifier = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(SECObjectIdentifiers.secp256r1));

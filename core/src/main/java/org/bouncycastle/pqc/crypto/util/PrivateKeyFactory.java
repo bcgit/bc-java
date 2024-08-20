@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -224,7 +225,9 @@ public class PrivateKeyFactory
 
             return new NTRUPrivateKeyParameters(spParams, keyEnc);
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
+        else if (algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_512) ||
+                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
+                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
             ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
             KyberParameters kyberParams = Utils.kyberParamsLookup(algOID);
@@ -256,8 +259,8 @@ public class PrivateKeyFactory
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
-        else if (algOID.equals(BCObjectIdentifiers.dilithium2)
-            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+        else if (algOID.equals(NISTObjectIdentifiers.id_ml_dsa_44)
+            || algOID.equals(NISTObjectIdentifiers.id_ml_dsa_65) || algOID.equals(NISTObjectIdentifiers.id_ml_dsa_87))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             DilithiumParameters spParams = Utils.dilithiumParamsLookup(algOID);

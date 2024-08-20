@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -40,7 +41,19 @@ public class SPHINCSPlus
             
             addSignatureAlgorithm(provider, "SPHINCSPLUS", PREFIX + "SignatureSpi$Direct", BCObjectIdentifiers.sphincsPlus);
 
-            addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+
             addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
             addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
             addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_128f_r3);
@@ -82,6 +95,19 @@ public class SPHINCSPlus
             AsymmetricKeyInfoConverter keyFact = new SPHINCSPlusKeyFactorySpi();
 
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256f, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SPHINCSPLUS", keyFact);
+            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SPHINCSPLUS", keyFact);
+
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCSPLUS", keyFact);
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCSPLUS", keyFact);
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCSPLUS", keyFact);
