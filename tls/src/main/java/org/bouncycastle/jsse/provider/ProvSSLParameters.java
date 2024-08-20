@@ -44,6 +44,7 @@ final class ProvSSLParameters
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
     private String[] signatureSchemes = null;
+    private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
 
     private BCApplicationProtocolSelector<SSLEngine> engineAPSelector;
@@ -72,6 +73,7 @@ final class ProvSSLParameters
         p.maximumPacketSize = maximumPacketSize;
         p.applicationProtocols = applicationProtocols;
         p.signatureSchemes = signatureSchemes;
+        p.signatureSchemesCert = signatureSchemesCert;
         p.namedGroups = namedGroups;
         p.engineAPSelector = engineAPSelector;
         p.socketAPSelector = socketAPSelector;
@@ -255,6 +257,16 @@ final class ProvSSLParameters
     public void setSignatureSchemes(String[] signatureSchemes)
     {
         this.signatureSchemes = TlsUtils.clone(signatureSchemes);
+    }
+
+    public String[] getSignatureSchemesCert()
+    {
+        return TlsUtils.clone(signatureSchemesCert);
+    }
+
+    public void setSignatureSchemesCert(String[] signatureSchemesCert)
+    {
+        this.signatureSchemesCert = TlsUtils.clone(signatureSchemesCert);
     }
 
     public String[] getNamedGroups()

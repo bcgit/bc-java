@@ -41,6 +41,7 @@ public final class BCSSLParameters
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
     private String[] signatureSchemes = null;
+    private String[] signatureSchemesCert = null;
     private String[] namedGroups = null;
 
     public BCSSLParameters()
@@ -259,6 +260,30 @@ public final class BCSSLParameters
         }
 
         this.signatureSchemes = check;
+    }
+
+    public String[] getSignatureSchemesCert()
+    {
+        return TlsUtils.clone(signatureSchemesCert);
+    }
+
+    public void setSignatureSchemesCert(String[] signatureSchemesCert)
+    {
+        String[] check = null;
+
+        if (signatureSchemesCert != null)
+        {
+            check = TlsUtils.clone(signatureSchemesCert);
+            for (String entry : check)
+            {
+                if (TlsUtils.isNullOrEmpty(entry))
+                {
+                    throw new IllegalArgumentException("'signatureSchemesCert' entries cannot be null or empty strings");
+                }
+            }
+        }
+
+        this.signatureSchemesCert = check;
     }
 
     public String[] getNamedGroups()
