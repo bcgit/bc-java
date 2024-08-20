@@ -54,6 +54,7 @@ abstract class SSLParametersUtil
         ssl.setEnableRetransmissions(prov.getEnableRetransmissions());
         ssl.setMaximumPacketSize(prov.getMaximumPacketSize());
         ssl.setSignatureSchemes(prov.getSignatureSchemes());
+        ssl.setSignatureSchemesCert(prov.getSignatureSchemesCert());
         ssl.setNamedGroups(prov.getNamedGroups());
 
         return ssl;
@@ -128,6 +129,13 @@ abstract class SSLParametersUtil
         {
             set(ssl, setNamedGroups, prov.getNamedGroups());
         }
+
+        // Unsupported as of JDK 21
+
+//        if (null != setSignatureSchemesCert)
+//        {
+//            set(ssl, setSignatureSchemesCert, prov.getSignatureSchemesCert());
+//        }
 
         return ssl;
     }
@@ -214,6 +222,13 @@ abstract class SSLParametersUtil
             bc.setNamedGroups((String[])get(ssl, getNamedGroups));
         }
 
+        // Unsupported as of JDK 21
+
+//        if (null != getSignatureSchemesCert)
+//        {
+//            bc.setSignatureSchemesCert((String[])get(ssl, getSignatureSchemesCert));
+//        }
+
         return bc;
     }
 
@@ -280,6 +295,8 @@ abstract class SSLParametersUtil
         prov.setSignatureSchemes(ssl.getSignatureSchemes());
 
         prov.setNamedGroups(ssl.getNamedGroups());
+
+        prov.setSignatureSchemesCert(ssl.getSignatureSchemesCert());
     }
 
     static void setSSLParameters(ProvSSLParameters prov, SSLParameters ssl)
@@ -373,6 +390,13 @@ abstract class SSLParametersUtil
         {
             prov.setNamedGroups((String[])get(ssl, getNamedGroups));
         }
+
+        // Unsupported as of JDK 21
+
+//        if (null != getSignatureSchemesCert)
+//        {
+//            prov.setSignatureSchemesCert((String[])get(ssl, getSignatureSchemesCert));
+//        }
     }
 
     private static Object get(Object obj, Method method)
