@@ -173,7 +173,19 @@ public class PrivateKeyFactory
                 return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
-        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop))
+        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_128s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_128f) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_192s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_192f) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_256s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_256f) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_128s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_128f) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_192s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_192f) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_256s) ||
+                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_256f))
         {
             SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
 
