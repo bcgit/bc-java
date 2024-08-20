@@ -226,4 +226,56 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_384       = sigAlgs.branch("15");
     /** 2.16.840.1.101.3.4.3.16 */
     static final ASN1ObjectIdentifier    id_rsassa_pkcs1_v1_5_with_sha3_512       = sigAlgs.branch("16");
+
+    // "pure" ML-DSA
+    /** 2.16.840.1.101.3.4.3.17 */
+    static final ASN1ObjectIdentifier    id_ml_dsa_44       = sigAlgs.branch("17");
+    /** 2.16.840.1.101.3.4.3.18 */
+    static final ASN1ObjectIdentifier    id_ml_dsa_65       = sigAlgs.branch("18");
+    /** 2.16.840.1.101.3.4.3.19 */
+    static final ASN1ObjectIdentifier    id_ml_dsa_87       = sigAlgs.branch("19");
+
+    // "pure" SLH-DSA
+    /** 2.16.840.1.101.3.4.3.20 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_128s       = sigAlgs.branch("20");
+    /** 2.16.840.1.101.3.4.3.21 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_128f       = sigAlgs.branch("21");
+    /** 2.16.840.1.101.3.4.3.22 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_192s       = sigAlgs.branch("22");
+    /** 2.16.840.1.101.3.4.3.23 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_192f       = sigAlgs.branch("23");
+    /** 2.16.840.1.101.3.4.3.24 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_256s       = sigAlgs.branch("24");
+    /** 2.16.840.1.101.3.4.3.25 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_sha2_256f       = sigAlgs.branch("25");
+    /** 2.16.840.1.101.3.4.3.26 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_128s      = sigAlgs.branch("26");
+    /** 2.16.840.1.101.3.4.3.27 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_128f      = sigAlgs.branch("27");
+    /** 2.16.840.1.101.3.4.3.28 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_192s      = sigAlgs.branch("28");
+    /** 2.16.840.1.101.3.4.3.29 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_192f      = sigAlgs.branch("29");
+    /** 2.16.840.1.101.3.4.3.30 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_256s      = sigAlgs.branch("30");
+    /** 2.16.840.1.101.3.4.3.31 */
+    static final ASN1ObjectIdentifier    id_slh_dsa_shake_256f      = sigAlgs.branch("31");
+
+
+    //
+    // KEMs - Key-Establishment Mechanisms
+    //
+    /**
+     * 2.16.840.1.101.3.4.4
+     */
+    static final ASN1ObjectIdentifier kems = nistAlgorithm.branch("4");
+
+    // ML-KEM
+    /** 2.16.840.1.101.3.4.4.1 */
+    static final ASN1ObjectIdentifier    id_alg_ml_kem_512      = kems.branch("1");
+    /** 2.16.840.1.101.3.4.4.2 */
+    static final ASN1ObjectIdentifier    id_alg_ml_kem_768      = kems.branch("2");
+    /** 2.16.840.1.101.3.4.4.3 */
+    static final ASN1ObjectIdentifier    id_alg_ml_kem_1024     = kems.branch("3");
+
 }

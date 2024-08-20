@@ -8,6 +8,7 @@ import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
@@ -36,9 +37,9 @@ public class DilithiumKeyPairGeneratorTest
         throws Exception
     {
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[] {
-            BCObjectIdentifiers.dilithium2,
-            BCObjectIdentifiers.dilithium3,
-            BCObjectIdentifiers.dilithium5
+            NISTObjectIdentifiers.id_ml_dsa_44,
+            NISTObjectIdentifiers.id_ml_dsa_65,
+            NISTObjectIdentifiers.id_ml_dsa_87
         };
 
         String[] algs = new String[]{

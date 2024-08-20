@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -347,6 +348,19 @@ public final class BouncyCastleProvider extends Provider
     private void loadPQCKeys()
     {
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SPHINCSPlusKeyFactorySpi());
+
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, new SPHINCSPlusKeyFactorySpi());
@@ -402,15 +416,12 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.dilithium2, new DilithiumKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.dilithium3, new DilithiumKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.dilithium5, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.dilithium2_aes, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.dilithium3_aes, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.dilithium5_aes, new DilithiumKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.kyber512, new KyberKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.kyber768, new KyberKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mceliece348864_r3, new CMCEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mceliece460896_r3, new CMCEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mceliece6688128_r3, new CMCEKeyFactorySpi());
@@ -422,7 +433,9 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.hqc128, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hqc192, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hqc256, new HQCKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.kyber1024, new KyberKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber1024_aes, new KyberKeyFactorySpi());

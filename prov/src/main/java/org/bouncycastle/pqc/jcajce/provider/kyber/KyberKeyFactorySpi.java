@@ -16,6 +16,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -29,9 +30,9 @@ public class KyberKeyFactorySpi
 
     static
     {
-        keyOids.add(BCObjectIdentifiers.kyber512);
-        keyOids.add(BCObjectIdentifiers.kyber768);
-        keyOids.add(BCObjectIdentifiers.kyber1024);
+        keyOids.add(NISTObjectIdentifiers.id_alg_ml_kem_512);
+        keyOids.add(NISTObjectIdentifiers.id_alg_ml_kem_768);
+        keyOids.add(NISTObjectIdentifiers.id_alg_ml_kem_1024);
         keyOids.add(BCObjectIdentifiers.kyber512_aes);
         keyOids.add(BCObjectIdentifiers.kyber768_aes);
         keyOids.add(BCObjectIdentifiers.kyber1024_aes);
@@ -102,7 +103,7 @@ public class KyberKeyFactorySpi
     {
         public Kyber512()
         {
-            super(BCObjectIdentifiers.kyber512);
+            super(NISTObjectIdentifiers.id_alg_ml_kem_512);
         }
     }
 
@@ -111,7 +112,7 @@ public class KyberKeyFactorySpi
     {
         public Kyber768()
         {
-            super(BCObjectIdentifiers.kyber768);
+            super(NISTObjectIdentifiers.id_alg_ml_kem_768);
         }
     }
 
@@ -120,7 +121,7 @@ public class KyberKeyFactorySpi
     {
         public Kyber1024()
         {
-            super(BCObjectIdentifiers.kyber1024);
+            super(NISTObjectIdentifiers.id_alg_ml_kem_1024);
         }
     }
 
