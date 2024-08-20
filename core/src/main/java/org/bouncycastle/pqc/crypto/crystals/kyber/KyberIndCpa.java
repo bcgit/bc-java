@@ -55,11 +55,9 @@ class KyberIndCpa
         // (p, sigma) <- G(d || k)
 
         byte[] buf = new byte[64];
-        //TODO: specs specifies K to be concatenated to with d but acvp tests says otherwise
-        symmetric.hash_g(buf, d);
-//        byte[] k = new byte[1];
-//        k[0] = (byte)kyberK;
-//        symmetric.hash_g(buf, Arrays.concatenate(d, k));
+        byte[] k = new byte[1];
+        k[0] = (byte)kyberK;
+        symmetric.hash_g(buf, Arrays.concatenate(d, k));
 
         byte[] publicSeed = new byte[32]; // p in docs
         byte[] noiseSeed = new byte[32]; // sigma in docs

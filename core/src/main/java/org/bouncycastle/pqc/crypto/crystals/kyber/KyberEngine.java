@@ -209,7 +209,6 @@ class KyberEngine
 
         symmetric.hash_h(hashedPublicKey, indCpaKeyPair[0], 0);
 
-
         byte[] outputPublicKey = new byte[KyberIndCpaPublicKeyBytes];
         System.arraycopy(indCpaKeyPair[0], 0, outputPublicKey, 0, KyberIndCpaPublicKeyBytes);
         return new byte[][]{ Arrays.copyOfRange(outputPublicKey, 0, outputPublicKey.length - 32), Arrays.copyOfRange(outputPublicKey, outputPublicKey.length - 32, outputPublicKey.length), s, hashedPublicKey, z };
