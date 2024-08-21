@@ -95,18 +95,6 @@ public class SPHINCSPlus
             AsymmetricKeyInfoConverter keyFact = new SPHINCSPlusKeyFactorySpi();
 
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256f, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SPHINCSPLUS", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SPHINCSPLUS", keyFact);
 
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCSPLUS", keyFact);
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCSPLUS", keyFact);

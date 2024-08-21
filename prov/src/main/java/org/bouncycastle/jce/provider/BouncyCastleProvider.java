@@ -24,6 +24,7 @@ import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.slhdsa.SLHDSAKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
@@ -348,18 +349,18 @@ public final class BouncyCastleProvider extends Provider
     private void loadPQCKeys()
     {
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SPHINCSPlusKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SPHINCSPlusKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SLHDSAKeyFactorySpi());
 
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusKeyFactorySpi());
