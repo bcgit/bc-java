@@ -320,6 +320,7 @@ class Utils
         sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, SPHINCSPlusParameters.shake_256s);
         sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, SPHINCSPlusParameters.shake_256f);
 
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s_robust, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f_robust, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s_robust, BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f_robust, BCObjectIdentifiers.sphincsPlus_shake_128f_r3);
