@@ -46,6 +46,8 @@ public class AllTests
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(SphincsPlusKeyPairGeneratorTest.class);
+        suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
+        suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(PicnicTest.class);
         suite.addTestSuite(PicnicKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
