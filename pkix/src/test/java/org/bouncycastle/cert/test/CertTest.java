@@ -105,6 +105,7 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
+import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -3619,9 +3620,9 @@ public class CertTest
         //
         // set up the keys
         //
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", BC);
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SLH-DSA", BC);
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256s, new SecureRandom());
+        kpg.initialize(SLHDSAParameterSpec.slh_dsa_sha2_256f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -3672,7 +3673,7 @@ public class CertTest
         //
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("SPHINCSPlus", BC);
 
-        kpg.initialize(SPHINCSPlusParameterSpec.sha2_256f, new SecureRandom());
+        kpg.initialize(SPHINCSPlusParameterSpec.haraka_128f, new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
