@@ -131,7 +131,7 @@ public class PQCTSPTest
 
         try
         {
-            KeyPairGenerator g = KeyPairGenerator.getInstance("SPHINCS+", BC);
+            KeyPairGenerator g = KeyPairGenerator.getInstance("SLH-DSA", BC);
 
             KeyPair p = g.generateKeyPair();
 
@@ -152,7 +152,7 @@ public class PQCTSPTest
         // create the certificate - version 1
         //
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("SPHINCS+")
+        ContentSigner sigGen = new JcaContentSignerBuilder("SLH-DSA-SHA2-128F")
             .setProvider(BC).build(privKey);
         JcaX509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             new X500Name("CN=Test"),
@@ -167,7 +167,7 @@ public class PQCTSPTest
         X509Certificate cert = new JcaX509CertificateConverter()
             .setProvider("BC").getCertificate(certGen.build(sigGen));
 
-        ContentSigner signer = new JcaContentSignerBuilder("SPHINCS+").setProvider(BC).build(privKey);
+        ContentSigner signer = new JcaContentSignerBuilder("SLH-DSA-SHA2-128F").setProvider(BC).build(privKey);
 
         TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
             new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().build())
