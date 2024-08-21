@@ -2,6 +2,7 @@ stages:
   - check
   - build
   - test
+  - sync
 
 check-code:
   stage: check
@@ -111,3 +112,11 @@ test-code-21:
         - "util/build/test-results/**/*.xml"
         - "tls/build/test-results/**/*.xml"
         - "mls/build/test-results/**/*.xml"
+
+
+spongycastle:
+  stage: "sync"
+  variables:
+    AUTOMATE_JOB: "sync"
+  trigger:
+    project: "spongycastle/automation"  
