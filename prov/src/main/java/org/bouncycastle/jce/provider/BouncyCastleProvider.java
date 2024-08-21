@@ -24,6 +24,8 @@ import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.mldsa.MLDSAKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.MLKEMKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.slhdsa.SLHDSAKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
@@ -128,7 +130,7 @@ public final class BouncyCastleProvider extends Provider
 
     private static final String[] ASYMMETRIC_CIPHERS =
     {
-        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "SPHINCSPlus", "Dilithium", "Falcon", "NTRU", "SLHDSA"
+        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "SPHINCSPlus", "Dilithium", "Falcon", "NTRU", "SLHDSA", "MLDSA", "MLKEM"
     };
 
     /*
@@ -417,6 +419,11 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi());
+
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi());
+
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new DilithiumKeyFactorySpi());
@@ -434,6 +441,11 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.hqc128, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hqc192, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hqc256, new HQCKeyFactorySpi());
+
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMKeyFactorySpi());
+
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberKeyFactorySpi());

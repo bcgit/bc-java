@@ -65,8 +65,12 @@ public class AllTests
         suite.addTestSuite(SNTRUPrimeKeyPairGeneratorTest.class);
         suite.addTestSuite(KyberTest.class);
         suite.addTestSuite(KyberKeyPairGeneratorTest.class);
+        suite.addTestSuite(MLKEMTest.class);
+        suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumTest.class);
+        suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
+        suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCKeyPairGeneratorTest.class);
