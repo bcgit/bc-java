@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider;
 
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
@@ -40,19 +39,6 @@ public class SPHINCSPlus
             addKeyPairGeneratorAlgorithm(provider, "SPHINCS+-SHAKE-256F", PREFIX + "SPHINCSPlusKeyPairGeneratorSpi$Shake_256f", BCObjectIdentifiers.sphincsPlus_shake_256f);
             
             addSignatureAlgorithm(provider, "SPHINCSPLUS", PREFIX + "SignatureSpi$Direct", BCObjectIdentifiers.sphincsPlus);
-
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_128s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_128f);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_192s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_192f);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_256s);
-            addSignatureAlias(provider, "SPHINCSPLUS", NISTObjectIdentifiers.id_slh_dsa_shake_256f);
 
             addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
             addSignatureAlias(provider, "SPHINCSPLUS", BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
