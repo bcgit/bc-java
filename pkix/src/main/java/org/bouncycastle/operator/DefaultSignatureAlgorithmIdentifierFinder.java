@@ -226,6 +226,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("DILITHIUM3-AES", BCObjectIdentifiers.dilithium3_aes);
         algorithms.put("DILITHIUM5-AES", BCObjectIdentifiers.dilithium5_aes);
 
+        algorithms.put("ML-DSA-44", NISTObjectIdentifiers.id_ml_dsa_44);
+        algorithms.put("ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65);
+        algorithms.put("ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87);
+
         algorithms.put("SLH-DSA-SHA2-128S", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
         algorithms.put("SLH-DSA-SHA2-128F", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
         algorithms.put("SLH-DSA-SHA2-192S", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
