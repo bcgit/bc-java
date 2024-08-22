@@ -7,7 +7,6 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
@@ -43,9 +42,9 @@ public class DilithiumKeyPairGeneratorTest
         };
 
         String[] algs = new String[]{
-            "DILITHIUM2",
-            "DILITHIUM3",
-            "DILITHIUM5"
+            "ML-DSA-44",
+            "ML-DSA-65",
+            "ML-DSA-87"
         };
 
         for (int i = 0; i != oids.length; i++)

@@ -74,7 +74,7 @@ class TestUtils
         algIds.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIds.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
         algIds.put("Ed448", new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed448));
-        algIds.put("Dilithium3", new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65));
+        algIds.put("ML-DSA-65", new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_65));
         algIds.put("Falcon-512", new AlgorithmIdentifier(BCObjectIdentifiers.falcon_512));
         algIds.put("SPHINCS+", new AlgorithmIdentifier(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3));
     }
