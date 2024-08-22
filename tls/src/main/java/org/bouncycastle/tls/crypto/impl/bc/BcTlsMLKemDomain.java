@@ -21,13 +21,13 @@ public class BcTlsMLKemDomain implements TlsKemDomain
         switch (namedGroup)
         {
         case NamedGroup.OQS_mlkem512:
-            return MLKEMParameters.kyber512;
+            return MLKEMParameters.ml_kem_512;
         case NamedGroup.OQS_mlkem768:
         case NamedGroup.DRAFT_mlkem768:
-            return MLKEMParameters.kyber768;
+            return MLKEMParameters.ml_kem_768;
         case NamedGroup.OQS_mlkem1024:
         case NamedGroup.DRAFT_mlkem1024:
-            return MLKEMParameters.kyber1024;
+            return MLKEMParameters.ml_kem_1024;
         default:
             return null;
         }

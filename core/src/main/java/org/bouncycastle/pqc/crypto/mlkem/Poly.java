@@ -316,14 +316,14 @@ class Poly
     {
         byte[] buf = new byte[MLKEMEngine.KyberN * eta1 / 4];
         symmetric.prf(buf, seed, nonce);
-        CBD.kyberCBD(this, buf, eta1);
+        CBD.mlkemCBD(this, buf, eta1);
     }
 
     public void getEta2Noise(byte[] seed, byte nonce)
     {
         byte[] buf = new byte[MLKEMEngine.KyberN * eta2 / 4];
         symmetric.prf(buf, seed, nonce);
-        CBD.kyberCBD(this, buf, eta2);
+        CBD.mlkemCBD(this, buf, eta2);
     }
 
     public void polySubtract(Poly b)

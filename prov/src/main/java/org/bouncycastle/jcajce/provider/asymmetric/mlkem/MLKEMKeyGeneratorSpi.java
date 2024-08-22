@@ -1,5 +1,14 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.KeyGeneratorSpi;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
@@ -9,14 +18,6 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.util.Arrays;
-
-import javax.crypto.KeyGeneratorSpi;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.security.auth.DestroyFailedException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
 
 public class MLKEMKeyGeneratorSpi
         extends KeyGeneratorSpi
@@ -133,7 +134,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM512()
         {
-            super(MLKEMParameters.kyber512);
+            super(MLKEMParameters.ml_kem_512);
         }
     }
 
@@ -142,7 +143,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM768()
         {
-            super(MLKEMParameters.kyber768);
+            super(MLKEMParameters.ml_kem_768);
         }
     }
 
@@ -151,7 +152,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM1024()
         {
-            super(MLKEMParameters.kyber1024);
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

@@ -340,7 +340,7 @@ class KyberCipherSpi
     {
         public Kyber512()
         {
-            super(MLKEMParameters.kyber512);
+            super(MLKEMParameters.ml_kem_512);
         }
     }
 
@@ -349,7 +349,7 @@ class KyberCipherSpi
     {
         public Kyber768()
         {
-            super(MLKEMParameters.kyber768);
+            super(MLKEMParameters.ml_kem_768);
         }
     }
 
@@ -358,7 +358,7 @@ class KyberCipherSpi
     {
         public Kyber1024()
         {
-            super(MLKEMParameters.kyber1024);
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

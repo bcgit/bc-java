@@ -24,7 +24,7 @@ public class XWingPrivateKeyParameters
     {
         super(false);
 
-        this.kybPriv = new MLKEMPrivateKeyParameters(MLKEMParameters.kyber768, Arrays.copyOfRange(encoding, 0, encoding.length - X25519PrivateKeyParameters.KEY_SIZE));
+        this.kybPriv = new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_768, Arrays.copyOfRange(encoding, 0, encoding.length - X25519PrivateKeyParameters.KEY_SIZE));
         this.xdhPriv = new X25519PrivateKeyParameters(encoding, encoding.length - X25519PrivateKeyParameters.KEY_SIZE);
     }
 

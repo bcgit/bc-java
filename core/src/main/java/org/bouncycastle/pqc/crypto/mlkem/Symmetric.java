@@ -1,15 +1,7 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
-import org.bouncycastle.crypto.ExtendedDigest;
-import org.bouncycastle.crypto.StreamCipher;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.modes.SICBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 abstract class Symmetric
 {
@@ -97,87 +89,6 @@ abstract class Symmetric
         {
             shakeDigest.update(in, 0, in.length);
             shakeDigest.doFinal(out, 0, out.length);
-        }
-    }
-
-    /**
-     * @deprecated
-     * obsolete to be removed
-     */
-    @Deprecated
-    static class AesSymmetric
-        extends Symmetric
-    {
-        private final SHA256Digest sha256Digest;
-        private final SHA512Digest sha512Digest;
-        private final StreamCipher cipher;
-
-        AesSymmetric()
-        {
-            super(64);
-            this.sha256Digest = new SHA256Digest();
-            this.sha512Digest = new SHA512Digest();
-            this.cipher = SICBlockCipher.newInstance(AESEngine.newInstance());
-        }
-
-        private void doDigest(ExtendedDigest digest, byte[] out, byte[] in, int outOffset)
-        {
-            digest.update(in, 0, in.length);
-            digest.doFinal(out, outOffset);
-        }
-
-        private void aes128(byte[] out, int offset, int size)
-        {
-            byte[] buf = new byte[size];   // TODO: there might be a more efficient way of doing this...
-            cipher.processBytes(buf, 0, size, out, offset);
-        }
-
-        @Override
-        void hash_h(byte[] out, byte[] in, int outOffset)
-        {
-            doDigest(sha256Digest, out, in, outOffset);
-        }
-
-        @Override
-        void hash_g(byte[] out, byte[] in)
-        {
-            doDigest(sha512Digest, out, in, 0);
-        }
-
-        @Override
-        void xofAbsorb(byte[] key, byte x, byte y)
-        {
-            byte[] expnonce = new byte[12];
-            expnonce[0] = x;
-            expnonce[1] = y;
-
-            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(key, 0, 32), expnonce);
-            cipher.init(true, kp);
-        }
-
-        @Override
-        void xofSqueezeBlocks(byte[] out, int outOffset, int outLen)
-        {
-            aes128(out, outOffset, outLen);
-        }
-
-        @Override
-        void prf(byte[] out, byte[] key, byte nonce)
-        {
-            byte[] expnonce = new byte[12];
-            expnonce[0] = nonce;
-
-            ParametersWithIV kp = new ParametersWithIV(new KeyParameter(key, 0, 32), expnonce);
-            cipher.init(true, kp);
-            aes128(out, 0, out.length);
-        }
-
-        @Override
-        void kdf(byte[] out, byte[] in)
-        {
-            byte[] buf = new byte[32];
-            doDigest(sha256Digest, buf, in, 0);
-            System.arraycopy(buf, 0, out, 0, out.length);
         }
     }
 }

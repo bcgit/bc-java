@@ -9,28 +9,28 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 public class MLKEMKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
-    private MLKEMParameters kyberParams;
+    private MLKEMParameters mlkemParams;
 
     private SecureRandom random;
 
     private void initialize(
         KeyGenerationParameters param)
     {
-        this.kyberParams = ((MLKEMKeyGenerationParameters)param).getParameters();
+        this.mlkemParams = ((MLKEMKeyGenerationParameters)param).getParameters();
         this.random = param.getRandom();
 
     }
 
     private AsymmetricCipherKeyPair genKeyPair()
     {
-        MLKEMEngine engine = kyberParams.getEngine();
+        MLKEMEngine engine = mlkemParams.getEngine();
 
         engine.init(random);
 
         byte[][] keyPair = engine.generateKemKeyPair();
 
-        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(kyberParams, keyPair[0], keyPair[1]);
-        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(kyberParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
+        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(mlkemParams, keyPair[0], keyPair[1]);
+        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(mlkemParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
         
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
@@ -47,10 +47,10 @@ public class MLKEMKeyPairGenerator
 
     public AsymmetricCipherKeyPair internalGenerateKeyPair(byte[] d, byte[] z)
     {
-        byte[][] keyPair = kyberParams.getEngine().generateKemKeyPairInternal(d, z);
+        byte[][] keyPair = mlkemParams.getEngine().generateKemKeyPairInternal(d, z);
 
-        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(kyberParams, keyPair[0], keyPair[1]);
-        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(kyberParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
+        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(mlkemParams, keyPair[0], keyPair[1]);
+        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(mlkemParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }

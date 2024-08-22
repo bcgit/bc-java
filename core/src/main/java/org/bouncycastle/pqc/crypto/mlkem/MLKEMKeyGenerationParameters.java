@@ -11,10 +11,10 @@ public class MLKEMKeyGenerationParameters
 
     public MLKEMKeyGenerationParameters(
         SecureRandom random,
-        MLKEMParameters kyberParameters)
+        MLKEMParameters mlkemParameters)
     {
         super(random, 256);
-        this.params = kyberParameters;
+        this.params = mlkemParameters;
     }
 
     public MLKEMParameters getParameters()

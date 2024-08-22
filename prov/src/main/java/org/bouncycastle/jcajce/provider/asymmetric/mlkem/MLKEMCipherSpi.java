@@ -1,5 +1,24 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.CipherSpi;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
+
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
@@ -13,24 +32,6 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.ShortBufferException;
-import javax.crypto.spec.SecretKeySpec;
-import javax.security.auth.DestroyFailedException;
-import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.InvalidParameterException;
-import java.security.Key;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
 
 class MLKEMCipherSpi
         extends CipherSpi
@@ -339,7 +340,7 @@ class MLKEMCipherSpi
     {
         public MLKEM512()
         {
-            super(MLKEMParameters.kyber512);
+            super(MLKEMParameters.ml_kem_512);
         }
     }
 
@@ -348,7 +349,7 @@ class MLKEMCipherSpi
     {
         public MLKEM768()
         {
-            super(MLKEMParameters.kyber768);
+            super(MLKEMParameters.ml_kem_768);
         }
     }
 
@@ -357,7 +358,7 @@ class MLKEMCipherSpi
     {
         public MLKEM1024()
         {
-            super(MLKEMParameters.kyber1024);
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

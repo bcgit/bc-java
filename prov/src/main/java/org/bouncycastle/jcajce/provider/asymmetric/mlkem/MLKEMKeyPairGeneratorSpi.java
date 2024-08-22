@@ -1,5 +1,12 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -11,13 +18,6 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
-import java.security.SecureRandom;
-import java.security.spec.AlgorithmParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
-
 public class MLKEMKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
@@ -25,9 +25,9 @@ public class MLKEMKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(MLKEMParameterSpec.ml_kem_512.getName(), MLKEMParameters.kyber512);
-        parameters.put(MLKEMParameterSpec.ml_kem_768.getName(), MLKEMParameters.kyber768);
-        parameters.put(MLKEMParameterSpec.ml_kem_1024.getName(), MLKEMParameters.kyber1024);
+        parameters.put(MLKEMParameterSpec.ml_kem_512.getName(), MLKEMParameters.ml_kem_512);
+        parameters.put(MLKEMParameterSpec.ml_kem_768.getName(), MLKEMParameters.ml_kem_768);
+        parameters.put(MLKEMParameterSpec.ml_kem_1024.getName(), MLKEMParameters.ml_kem_1024);
     }
 
     MLKEMKeyGenerationParameters param;
@@ -95,7 +95,7 @@ public class MLKEMKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber768);
+            param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_768);
 
             engine.init(param);
             initialised = true;

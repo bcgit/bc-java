@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.crypto.mlkem;
 final class CBD
 {
 
-    public static void kyberCBD(Poly r, byte[] bytes, int eta)
+    public static void mlkemCBD(Poly r, byte[] bytes, int eta)
     {
         long t, d;
         int a, b;
