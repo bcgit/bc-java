@@ -8,7 +8,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
@@ -19,10 +19,10 @@ public class BCSLHDSAPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient SPHINCSPlusPublicKeyParameters params;
+    private transient SLHDSAPublicKeyParameters params;
 
     public BCSLHDSAPublicKey(
-        SPHINCSPlusPublicKeyParameters params)
+        SLHDSAPublicKeyParameters params)
     {
         this.params = params;
     }
@@ -36,7 +36,7 @@ public class BCSLHDSAPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (SPHINCSPlusPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.params = (SLHDSAPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
     
     /**

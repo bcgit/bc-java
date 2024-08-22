@@ -11,15 +11,15 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSASigner;
 
 public class SignatureSpi
     extends java.security.SignatureSpi
 {
     private final Digest digest;
-    private final SPHINCSPlusSigner signer;
+    private final SLHDSASigner signer;
 
-    protected SignatureSpi(Digest digest, SPHINCSPlusSigner signer)
+    protected SignatureSpi(Digest digest, SLHDSASigner signer)
     {
         this.digest = digest;
         this.signer = signer;
@@ -138,7 +138,7 @@ public class SignatureSpi
     {
         public Direct()
         {
-            super(new NullDigest(), new SPHINCSPlusSigner());
+            super(new NullDigest(), new SLHDSASigner());
         }
     }
 }

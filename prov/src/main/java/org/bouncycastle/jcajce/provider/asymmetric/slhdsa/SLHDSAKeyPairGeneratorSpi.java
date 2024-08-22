@@ -10,11 +10,11 @@ import java.util.Map;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
@@ -25,37 +25,37 @@ public class SLHDSAKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128f.getName(), SPHINCSPlusParameters.sha2_128f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128s.getName(), SPHINCSPlusParameters.sha2_128s);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192f.getName(), SPHINCSPlusParameters.sha2_192f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192s.getName(), SPHINCSPlusParameters.sha2_192s);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256f.getName(), SPHINCSPlusParameters.sha2_256f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256s.getName(), SPHINCSPlusParameters.sha2_256s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128f.getName(), SLHDSAParameters.sha2_128f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128s.getName(), SLHDSAParameters.sha2_128s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192f.getName(), SLHDSAParameters.sha2_192f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192s.getName(), SLHDSAParameters.sha2_192s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256f.getName(), SLHDSAParameters.sha2_256f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256s.getName(), SLHDSAParameters.sha2_256s);
 
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128f.getName(), SPHINCSPlusParameters.shake_128f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128s.getName(), SPHINCSPlusParameters.shake_128s);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192f.getName(), SPHINCSPlusParameters.shake_192f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192s.getName(), SPHINCSPlusParameters.shake_192s);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256f.getName(), SPHINCSPlusParameters.shake_256f);
-        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256s.getName(), SPHINCSPlusParameters.shake_256s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128f.getName(), SLHDSAParameters.shake_128f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128s.getName(), SLHDSAParameters.shake_128s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192f.getName(), SLHDSAParameters.shake_192f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192s.getName(), SLHDSAParameters.shake_192s);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256f.getName(), SLHDSAParameters.shake_256f);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256s.getName(), SLHDSAParameters.shake_256s);
     }
 
-    SPHINCSPlusKeyGenerationParameters param;
-    SPHINCSPlusKeyPairGenerator engine = new SPHINCSPlusKeyPairGenerator();
+    SLHDSAKeyGenerationParameters param;
+    SLHDSAKeyPairGenerator engine = new SLHDSAKeyPairGenerator();
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public SLHDSAKeyPairGeneratorSpi()
     {
-        super("SPHINCS+");
+        super("SLH-DSA");
     }
 
     protected SLHDSAKeyPairGeneratorSpi(SLHDSAParameterSpec paramSpec)
     {
-        super("SPHINCS+" + "-" + Strings.toUpperCase(paramSpec.getName()));
+        super("SLH-DSA" + "-" + Strings.toUpperCase(paramSpec.getName()));
 
-        param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(paramSpec.getName()));
+        param = new SLHDSAKeyGenerationParameters(random, (SLHDSAParameters)parameters.get(paramSpec.getName()));
 
         engine.init(param);
         initialised = true;
@@ -77,7 +77,7 @@ public class SLHDSAKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new SPHINCSPlusKeyGenerationParameters(random, (SPHINCSPlusParameters)parameters.get(name));
+            param = new SLHDSAKeyGenerationParameters(random, (SLHDSAParameters)parameters.get(name));
 
             engine.init(param);
             initialised = true;
@@ -92,15 +92,15 @@ public class SLHDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new SPHINCSPlusKeyGenerationParameters(random, SPHINCSPlusParameters.sha2_256s);
+            param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s);
 
             engine.init(param);
             initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();
-        SPHINCSPlusPublicKeyParameters pub = (SPHINCSPlusPublicKeyParameters)pair.getPublic();
-        SPHINCSPlusPrivateKeyParameters priv = (SPHINCSPlusPrivateKeyParameters)pair.getPrivate();
+        SLHDSAPublicKeyParameters pub = (SLHDSAPublicKeyParameters)pair.getPublic();
+        SLHDSAPrivateKeyParameters priv = (SLHDSAPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCSLHDSAPublicKey(pub), new BCSLHDSAPrivateKey(priv));
     }

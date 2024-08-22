@@ -9,8 +9,8 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
@@ -21,11 +21,11 @@ public class BCSLHDSAPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient SPHINCSPlusPrivateKeyParameters params;
+    private transient SLHDSAPrivateKeyParameters params;
     private transient ASN1Set attributes;
 
     public BCSLHDSAPrivateKey(
-        SPHINCSPlusPrivateKeyParameters params)
+        SLHDSAPrivateKeyParameters params)
     {
         this.params = params;
     }
@@ -40,7 +40,7 @@ public class BCSLHDSAPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();
-        this.params = (SPHINCSPlusPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+        this.params = (SLHDSAPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -96,7 +96,7 @@ public class BCSLHDSAPrivateKey
 
     public SLHDSAPublicKey getPublicKey()
     {
-        return new BCSLHDSAPublicKey(new SPHINCSPlusPublicKeyParameters(params.getParameters(), params.getPublicKey()));
+        return new BCSLHDSAPublicKey(new SLHDSAPublicKeyParameters(params.getParameters(), params.getPublicKey()));
     }
 
     public SLHDSAParameterSpec getParameterSpec()
@@ -109,7 +109,7 @@ public class BCSLHDSAPrivateKey
         return "PKCS#8";
     }
 
-    SPHINCSPlusPrivateKeyParameters getKeyParams()
+    SLHDSAPrivateKeyParameters getKeyParams()
     {
         return params;
     }

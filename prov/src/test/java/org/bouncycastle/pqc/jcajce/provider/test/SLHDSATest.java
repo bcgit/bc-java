@@ -25,7 +25,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
 /**
- * Test cases for the use of SPHINCS+ with the BCPQC provider.
+ * Test cases for the use of SLH-DSA with the provider.
  */
 public class SLHDSATest
     extends TestCase
