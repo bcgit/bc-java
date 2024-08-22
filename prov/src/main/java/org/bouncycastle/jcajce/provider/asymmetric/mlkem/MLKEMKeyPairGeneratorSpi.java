@@ -3,12 +3,11 @@ package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
@@ -26,17 +25,17 @@ public class MLKEMKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(MLKEMParameterSpec.ml_kem_512.getName(), KyberParameters.kyber512);
-        parameters.put(MLKEMParameterSpec.ml_kem_768.getName(), KyberParameters.kyber768);
-        parameters.put(MLKEMParameterSpec.ml_kem_1024.getName(), KyberParameters.kyber1024);
+        parameters.put(MLKEMParameterSpec.ml_kem_512.getName(), MLKEMParameters.kyber512);
+        parameters.put(MLKEMParameterSpec.ml_kem_768.getName(), MLKEMParameters.kyber768);
+        parameters.put(MLKEMParameterSpec.ml_kem_1024.getName(), MLKEMParameters.kyber1024);
     }
 
-    KyberKeyGenerationParameters param;
-    KyberKeyPairGenerator engine = new KyberKeyPairGenerator();
+    MLKEMKeyGenerationParameters param;
+    MLKEMKeyPairGenerator engine = new MLKEMKeyPairGenerator();
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
-    private KyberParameters kyberParameters;
+    private MLKEMParameters kyberParameters;
 
     public MLKEMKeyPairGeneratorSpi()
     {
@@ -46,11 +45,11 @@ public class MLKEMKeyPairGeneratorSpi
     protected MLKEMKeyPairGeneratorSpi(MLKEMParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.kyberParameters = (KyberParameters) parameters.get(paramSpec.getName());
+        this.kyberParameters = (MLKEMParameters) parameters.get(paramSpec.getName());
 
         if (param == null)
         {
-            param = new KyberKeyGenerationParameters(random, kyberParameters);
+            param = new MLKEMKeyGenerationParameters(random, kyberParameters);
         }
 
         engine.init(param);
@@ -72,11 +71,11 @@ public class MLKEMKeyPairGeneratorSpi
 
         String name = getNameFromParams(params);
 
-        KyberParameters kyberParams = (KyberParameters)parameters.get(name);
+        MLKEMParameters kyberParams = (MLKEMParameters)parameters.get(name);
 
         if (name != null)
         {
-            param = new KyberKeyGenerationParameters(random, (KyberParameters) parameters.get(name));
+            param = new MLKEMKeyGenerationParameters(random, (MLKEMParameters) parameters.get(name));
 
             if (kyberParameters != null && !kyberParams.getName().equals(kyberParameters.getName()))
             {
@@ -96,15 +95,15 @@ public class MLKEMKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new KyberKeyGenerationParameters(random, KyberParameters.kyber768);
+            param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber768);
 
             engine.init(param);
             initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();
-        KyberPublicKeyParameters pub = (KyberPublicKeyParameters)pair.getPublic();
-        KyberPrivateKeyParameters priv = (KyberPrivateKeyParameters)pair.getPrivate();
+        MLKEMPublicKeyParameters pub = (MLKEMPublicKeyParameters)pair.getPublic();
+        MLKEMPrivateKeyParameters priv = (MLKEMPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCMLKEMPublicKey(pub), new BCMLKEMPrivateKey(priv));
     }

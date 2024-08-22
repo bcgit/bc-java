@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 class Reduce
 {
@@ -8,8 +8,8 @@ class Reduce
         int t;
         short u;
 
-        u = (short)(a * KyberEngine.KyberQinv);
-        t = (int)(u * KyberEngine.KyberQ);
+        u = (short)(a * MLKEMEngine.KyberQinv);
+        t = (int)(u * MLKEMEngine.KyberQ);
         t = a - t;
         t >>= 16;
         return (short)t;
@@ -19,16 +19,16 @@ class Reduce
     {
         short t;
         long shift = (((long)1) << 26);
-        short v = (short)((shift + (KyberEngine.KyberQ / 2)) / KyberEngine.KyberQ);
+        short v = (short)((shift + (MLKEMEngine.KyberQ / 2)) / MLKEMEngine.KyberQ);
         t = (short)((v * a) >> 26);
-        t = (short)(t * KyberEngine.KyberQ);
+        t = (short)(t * MLKEMEngine.KyberQ);
         return (short)(a - t);
     }
 
     public static short conditionalSubQ(short a)
     {
-        a -= KyberEngine.KyberQ;
-        a += (a >> 15) & KyberEngine.KyberQ;
+        a -= MLKEMEngine.KyberQ;
+        a += (a >> 15) & MLKEMEngine.KyberQ;
         return a;
     }
 

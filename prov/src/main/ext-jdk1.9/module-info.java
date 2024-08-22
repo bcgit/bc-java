@@ -110,7 +110,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.bike;
     exports org.bouncycastle.pqc.crypto.cmce;
     exports org.bouncycastle.pqc.crypto.crystals.dilithium;
-    exports org.bouncycastle.pqc.crypto.crystals.kyber;
+    exports org.bouncycastle.pqc.crypto.mlkem;
     exports org.bouncycastle.pqc.crypto.falcon;
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.crypto.gemss;

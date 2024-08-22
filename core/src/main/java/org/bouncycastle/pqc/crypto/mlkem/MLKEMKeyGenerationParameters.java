@@ -1,23 +1,23 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
-public class KyberKeyGenerationParameters
+public class MLKEMKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private final KyberParameters params;
+    private final MLKEMParameters params;
 
-    public KyberKeyGenerationParameters(
+    public MLKEMKeyGenerationParameters(
         SecureRandom random,
-        KyberParameters kyberParameters)
+        MLKEMParameters kyberParameters)
     {
         super(random, 256);
         this.params = kyberParameters;
     }
 
-    public KyberParameters getParameters()
+    public MLKEMParameters getParameters()
     {
         return params;
     }

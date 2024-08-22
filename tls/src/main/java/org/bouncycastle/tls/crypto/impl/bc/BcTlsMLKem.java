@@ -4,8 +4,8 @@ import java.io.IOException;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -13,8 +13,8 @@ public class BcTlsMLKem implements TlsAgreement
 {
     protected final BcTlsMLKemDomain domain;
 
-    protected KyberPrivateKeyParameters privateKey;
-    protected KyberPublicKeyParameters publicKey;
+    protected MLKEMPrivateKeyParameters privateKey;
+    protected MLKEMPublicKeyParameters publicKey;
     protected TlsSecret secret;
 
     public BcTlsMLKem(BcTlsMLKemDomain domain)
@@ -34,8 +34,8 @@ public class BcTlsMLKem implements TlsAgreement
         else
         {
             AsymmetricCipherKeyPair kp = domain.generateKeyPair();
-            this.privateKey = (KyberPrivateKeyParameters)kp.getPrivate();
-            return domain.encodePublicKey((KyberPublicKeyParameters)kp.getPublic());
+            this.privateKey = (MLKEMPrivateKeyParameters)kp.getPrivate();
+            return domain.encodePublicKey((MLKEMPublicKeyParameters)kp.getPublic());
         }
     }
 

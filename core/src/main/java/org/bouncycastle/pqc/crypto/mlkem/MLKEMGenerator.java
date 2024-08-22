@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import java.security.SecureRandom;
 
@@ -7,21 +7,21 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 
-public class KyberKEMGenerator
+public class MLKEMGenerator
     implements EncapsulatedSecretGenerator
 {
     // the source of randomness
     private final SecureRandom sr;
 
-    public KyberKEMGenerator(SecureRandom random)
+    public MLKEMGenerator(SecureRandom random)
     {
         this.sr = random;
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
-        KyberPublicKeyParameters key = (KyberPublicKeyParameters)recipientKey;
-        KyberEngine engine = key.getParameters().getEngine();
+        MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
+        MLKEMEngine engine = key.getParameters().getEngine();
         engine.init(sr);
 
         byte[] randBytes = new byte[32];
@@ -32,8 +32,8 @@ public class KyberKEMGenerator
     }
     public SecretWithEncapsulation internalGenerateEncapsulated(AsymmetricKeyParameter recipientKey, byte[] randBytes)
     {
-        KyberPublicKeyParameters key = (KyberPublicKeyParameters)recipientKey;
-        KyberEngine engine = key.getParameters().getEngine();
+        MLKEMPublicKeyParameters key = (MLKEMPublicKeyParameters)recipientKey;
+        MLKEMEngine engine = key.getParameters().getEngine();
         engine.init(sr);
 
         byte[][] kemEncrypt = engine.kemEncryptInternal(key.getEncoded(), randBytes);

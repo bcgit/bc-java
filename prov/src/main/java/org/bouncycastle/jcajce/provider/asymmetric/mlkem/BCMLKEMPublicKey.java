@@ -1,15 +1,12 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -20,13 +17,13 @@ public class BCMLKEMPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient KyberPublicKeyParameters params;
+    private transient MLKEMPublicKeyParameters params;
 
     private transient String algorithm;
     private transient byte[] encoding;
 
     public BCMLKEMPublicKey(
-            KyberPublicKeyParameters params)
+            MLKEMPublicKeyParameters params)
     {
         init(params);
     }
@@ -40,11 +37,11 @@ public class BCMLKEMPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (KyberPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.params = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
         this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
     }
 
-    private void init(KyberPublicKeyParameters params)
+    private void init(MLKEMPublicKeyParameters params)
     {
         this.params = params;
         this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
@@ -109,7 +106,7 @@ public class BCMLKEMPublicKey
         return MLKEMParameterSpec.fromName(params.getParameters().getName());
     }
 
-    KyberPublicKeyParameters getKeyParams()
+    MLKEMPublicKeyParameters getKeyParams()
     {
         return params;
     }

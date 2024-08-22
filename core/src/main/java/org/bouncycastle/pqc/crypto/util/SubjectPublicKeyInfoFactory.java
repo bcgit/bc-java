@@ -19,7 +19,7 @@ import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
@@ -219,9 +219,9 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
         }
-        else if (publicKey instanceof KyberPublicKeyParameters)
+        else if (publicKey instanceof MLKEMPublicKeyParameters)
         {
-            KyberPublicKeyParameters params = (KyberPublicKeyParameters)publicKey;
+            MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
 

@@ -1,14 +1,13 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.security.SecureRandom;
 
-class KyberEngine
+class MLKEMEngine
 {
     private SecureRandom random;
-    private KyberIndCpa indCpa;
+    private MLKEMIndCpa indCpa;
 
     // constant parameters
     public final static int KyberN = 256;
@@ -137,7 +136,7 @@ class KyberEngine
         return KyberEta1;
     }
 
-    public KyberEngine(int k, boolean usingAes)
+    public MLKEMEngine(int k, boolean usingAes)
     {
         this.KyberK = k;
         switch (k)
@@ -188,7 +187,7 @@ class KyberEngine
             symmetric = new Symmetric.ShakeSymmetric();
         }
 
-        this.indCpa = new KyberIndCpa(this);
+        this.indCpa = new MLKEMIndCpa(this);
     }
 
     public void init(SecureRandom random)

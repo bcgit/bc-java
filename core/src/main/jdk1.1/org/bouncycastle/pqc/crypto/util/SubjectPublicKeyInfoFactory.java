@@ -14,7 +14,7 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;

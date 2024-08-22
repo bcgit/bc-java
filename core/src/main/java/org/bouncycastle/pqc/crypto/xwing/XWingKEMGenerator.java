@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -31,7 +31,7 @@ public class XWingKEMGenerator
     {
         XWingPublicKeyParameters key = (XWingPublicKeyParameters)recipientKey;
 
-        KyberKEMGenerator kybKem = new KyberKEMGenerator(sr);
+        MLKEMGenerator kybKem = new MLKEMGenerator(sr);
 
         SecretWithEncapsulation kybSecWithEnc = kybKem.generateEncapsulated(key.getKyberPublicKey());
         X25519Agreement xdhAgree = new X25519Agreement();

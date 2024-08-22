@@ -1,16 +1,16 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
-public class KyberKEMExtractor
+public class MLKEMExtractor
     implements EncapsulatedSecretExtractor
 {
-    private KyberEngine engine;
+    private MLKEMEngine engine;
 
-    private KyberPrivateKeyParameters key;
+    private MLKEMPrivateKeyParameters key;
 
-    public KyberKEMExtractor(KyberPrivateKeyParameters privParams)
+    public MLKEMExtractor(MLKEMPrivateKeyParameters privParams)
     {
         this.key = privParams;
         initCipher(privParams);
@@ -18,7 +18,7 @@ public class KyberKEMExtractor
 
     private void initCipher(AsymmetricKeyParameter recipientKey)
     {
-        KyberPrivateKeyParameters key = (KyberPrivateKeyParameters)recipientKey;
+        MLKEMPrivateKeyParameters key = (MLKEMPrivateKeyParameters)recipientKey;
         engine = key.getParameters().getEngine();
     }
 

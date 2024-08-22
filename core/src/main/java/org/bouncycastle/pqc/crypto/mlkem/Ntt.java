@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 class Ntt
 {
@@ -29,7 +29,7 @@ class Ntt
 
     public static short[] ntt(short[] inp)
     {
-        short[] r = new short[KyberEngine.KyberN];
+        short[] r = new short[MLKEMEngine.KyberN];
         System.arraycopy(inp, 0, r, 0, r.length);
         int len, start, j, k;
         short t, zeta;
@@ -53,8 +53,8 @@ class Ntt
 
     public static short[] invNtt(short[] inp)
     {
-        short[] r = new short[KyberEngine.KyberN];
-        System.arraycopy(inp, 0, r, 0, KyberEngine.KyberN);
+        short[] r = new short[MLKEMEngine.KyberN];
+        System.arraycopy(inp, 0, r, 0, MLKEMEngine.KyberN);
         int len, start, j, k;
         short t, zeta;
         k = 0;

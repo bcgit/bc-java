@@ -12,8 +12,8 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.KyberKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.KyberKEMGenerator;
 import org.bouncycastle.util.Arrays;
 
 public class KyberKeyGeneratorSpi

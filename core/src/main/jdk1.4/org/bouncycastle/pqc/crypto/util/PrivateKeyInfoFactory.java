@@ -21,7 +21,7 @@ import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;

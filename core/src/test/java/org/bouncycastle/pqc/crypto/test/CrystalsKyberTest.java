@@ -1,7 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -15,13 +14,13 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
@@ -30,17 +29,16 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class CrystalsKyberTest
     extends TestCase
 {
     public void testKeyGen() throws IOException
     {
-        KyberParameters[] params = new KyberParameters[]{
-                KyberParameters.kyber512,
-                KyberParameters.kyber768,
-                KyberParameters.kyber1024,
+        MLKEMParameters[] params = new MLKEMParameters[]{
+                MLKEMParameters.kyber512,
+                MLKEMParameters.kyber768,
+                MLKEMParameters.kyber1024,
         };
 
         String[] files = new String[]{
@@ -76,21 +74,21 @@ public class CrystalsKyberTest
                         byte[] ek = Hex.decode((String)buf.get("ek"));
                         byte[] dk = Hex.decode((String)buf.get("dk"));
 
-                        KyberParameters parameters = params[fileIndex];
+                        MLKEMParameters parameters = params[fileIndex];
 
 
-                        KyberKeyPairGenerator kpGen = new KyberKeyPairGenerator();
-                        KyberKeyGenerationParameters genParam = new KyberKeyGenerationParameters(new SecureRandom(), parameters);
+                        MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
+                        MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new SecureRandom(), parameters);
                         //
                         // Generate keys and test.
                         //
                         kpGen.init(genParam);
                         AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(d, z);
 
-                        KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((KyberPublicKeyParameters)kp.getPublic()));
-                        KyberPrivateKeyParameters privParams = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((KyberPrivateKeyParameters)kp.getPrivate()));
+                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)kp.getPublic()));
+                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)kp.getPrivate()));
 
                         assertTrue(name + ": public key", Arrays.areEqual(ek, pubParams.getEncoded()));
                         assertTrue(name + ": secret key", Arrays.areEqual(dk, privParams.getEncoded()));
@@ -112,10 +110,10 @@ public class CrystalsKyberTest
     }
     public void testEncapDecap_encapsulation() throws IOException
     {
-        KyberParameters[] params = new KyberParameters[]{
-                KyberParameters.kyber512,
-                KyberParameters.kyber768,
-                KyberParameters.kyber1024,
+        MLKEMParameters[] params = new MLKEMParameters[]{
+                MLKEMParameters.kyber512,
+                MLKEMParameters.kyber768,
+                MLKEMParameters.kyber1024,
         };
 
         String[] files = new String[]{
@@ -153,20 +151,20 @@ public class CrystalsKyberTest
                         byte[] ek = Hex.decode((String)buf.get("ek"));
                         byte[] dk = Hex.decode((String)buf.get("dk"));
 
-                        KyberParameters parameters = params[fileIndex];
+                        MLKEMParameters parameters = params[fileIndex];
 
-                        KyberPublicKeyParameters pubKey = new KyberPublicKeyParameters(parameters, ek);
-                        KyberPrivateKeyParameters privKey = new KyberPrivateKeyParameters(parameters,  dk);
+                        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(parameters, ek);
+                        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(parameters,  dk);
 
 
 
-                        KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((KyberPublicKeyParameters)pubKey));
-                        KyberPrivateKeyParameters privParams = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((KyberPrivateKeyParameters)privKey));
+                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)pubKey));
+                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)privKey));
 
                         // KEM Enc
-                        KyberKEMGenerator KyberEncCipher = new KyberKEMGenerator(new SecureRandom());
+                        MLKEMGenerator KyberEncCipher = new MLKEMGenerator(new SecureRandom());
                         SecretWithEncapsulation secWenc = KyberEncCipher.internalGenerateEncapsulated(pubParams, m);
                         byte[] generated_cipher_text = secWenc.getEncapsulation();
 
@@ -192,10 +190,10 @@ public class CrystalsKyberTest
     }
     public void testEncapDecap_decapsulation() throws IOException
     {
-        KyberParameters[] params = new KyberParameters[]{
-                KyberParameters.kyber512,
-                KyberParameters.kyber768,
-                KyberParameters.kyber1024,
+        MLKEMParameters[] params = new MLKEMParameters[]{
+                MLKEMParameters.kyber512,
+                MLKEMParameters.kyber768,
+                MLKEMParameters.kyber1024,
         };
 
         String[] files = new String[]{
@@ -232,20 +230,20 @@ public class CrystalsKyberTest
                         byte[] ek = Hex.decode((String)buf.get("ek"));
                         byte[] dk = Hex.decode((String)buf.get("dk"));
 
-                        KyberParameters parameters = params[fileIndex];
+                        MLKEMParameters parameters = params[fileIndex];
 
-                        KyberPublicKeyParameters pubKey = new KyberPublicKeyParameters(parameters, ek);
-                        KyberPrivateKeyParameters privKey = new KyberPrivateKeyParameters(parameters,  dk);
-
-
-
-                        KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((KyberPublicKeyParameters)pubKey));
-                        KyberPrivateKeyParameters privParams = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((KyberPrivateKeyParameters)privKey));
+                        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(parameters, ek);
+                        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(parameters,  dk);
 
 
-                        KyberKEMExtractor KyberDecCipher = new KyberKEMExtractor(privParams);
+
+                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)pubKey));
+                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)privKey));
+
+
+                        MLKEMExtractor KyberDecCipher = new MLKEMExtractor(privParams);
 
                         byte[] dec_key = KyberDecCipher.extractSecret(c);
 
@@ -268,10 +266,10 @@ public class CrystalsKyberTest
     }
     public void testModulus() throws IOException
     {
-        KyberParameters[] params = new KyberParameters[]{
-                KyberParameters.kyber512,
-                KyberParameters.kyber768,
-                KyberParameters.kyber1024,
+        MLKEMParameters[] params = new MLKEMParameters[]{
+                MLKEMParameters.kyber512,
+                MLKEMParameters.kyber768,
+                MLKEMParameters.kyber1024,
         };
 
         String[] files = new String[]{
@@ -294,15 +292,15 @@ public class CrystalsKyberTest
                 line = line.trim();
                 line = line.trim();
                 byte[] key = Hex.decode(line);
-                KyberParameters parameters = params[fileIndex];
+                MLKEMParameters parameters = params[fileIndex];
 
 
-                KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters) PublicKeyFactory.createKey(
-                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new KyberPublicKeyParameters(parameters, key)));
+                MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters) PublicKeyFactory.createKey(
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(new MLKEMPublicKeyParameters(parameters, key)));
 
                 // KEM Enc
                 SecureRandom random = new SecureRandom();
-                KyberKEMGenerator KyberEncCipher = new KyberKEMGenerator(random);
+                MLKEMGenerator KyberEncCipher = new MLKEMGenerator(random);
                 try
                 {
                     SecretWithEncapsulation secWenc = KyberEncCipher.generateEncapsulated(pubParams);
@@ -320,11 +318,11 @@ public class CrystalsKyberTest
         throws IOException
     {
         SecureRandom random = new SecureRandom();
-        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(MLKEMParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
 
         byte[] partA = partyU.getSuppPrivInfoPartA();
 
-        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(KyberParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(MLKEMParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
 
         byte[] partB = partyV.getSuppPrivInfoPartB(partA);
 
@@ -343,16 +341,16 @@ public class CrystalsKyberTest
         String expectedPrivKey = "8C8B3722A82E550565521611EBBC63079944C9B1ABB3B0020FF12F631891A9C468D3A67BF6271280DA58D03CB042B3A461441637F929C273469AD15311E910DE18CB9537BA1BE42E98BB59E498A13FD440D0E69EE832B45CD95C382177D67096A18C07F1781663651BDCAC90DEDA3DDD143485864181C91FA2080F6DAB3F86204CEB64A7B4446895C03987A031CB4B6D9E0462FDA829172B6C012C638B29B5CD75A2C930A5596A3181C33A22D574D30261196BC350738D4FD9183A763336243ACED99B3221C71D8866895C4E52C119BF3280DAF80A95E15209A795C4435FBB3570FDB8AA9BF9AEFD43B094B781D5A81136DAB88B8799696556FEC6AE14B0BB8BE4695E9A124C2AB8FF4AB1229B8AAA8C6F41A60C34C7B56182C55C2C685E737C6CA00A23FB8A68C1CD61F30D3993A1653C1675AC5F0901A7160A73966408B8876B715396CFA4903FC69D60491F8146808C97CD5C533E71017909E97B835B86FF847B42A696375435E006061CF7A479463272114A89EB3EAF2246F0F8C104A14986828E0AD20420C9B37EA23F5C514949E77AD9E9AD12290DD1215E11DA274457AC86B1CE6864B122677F3718AA31B02580E64317178D38F25F609BC6C55BC374A1BF78EA8ECC219B30B74CBB3272A599238C93985170048F176775FB19962AC3B135AA59DB104F7114DBC2C2D42949ADECA6A85B323EE2B2B23A77D9DB235979A8E2D67CF7D2136BBBA71F269574B38888E1541340C19284074F9B7C8CF37EB01384E6E3822EC4882DFBBEC4E6098EF2B2FC177A1F0BCB65A57FDAA89315461BEB7885FB68B3CD096EDA596AC0E61DD7A9C507BC6345E0827DFCC8A3AC2DCE51AD731AA0EB932A6D0983992347CBEB3CD0D9C9719797CC21CF0062B0AD94CAD734C63E6B5D859CBE19F0368245351BF464D7505569790D2BB724D8659A9FEB1C7C473DC4D061E29863A2714BAC42ADCD1A8372776556F7928A7A44E94B6A25322D03C0A1622A7FD261522B7358F085BDFB60758762CB901031901B5EECF4920C81020A9B1781BCB9DD19A9DFB66458E7757C52CEC75B4BA740A24099CB56BB60A76B6901AA3E0169C9E83496D73C4C99435A28D613E97A1177F58B6CC595D3B2331E9CA7B57B74DC2C5277D26F2FE19240A55C35D6CFCA26C73E9A2D7C980D97960AE1A04698C16B398A5F20C35A0914145CE1674B71ABC6066A909A3E4B911E69D5A849430361F731B07246A6329B52361904225082D0AAC5B21D6B34862481A890C3C360766F04263603A6B73E802B1F70B2EB00046836B8F493BF10B90B8737C6C548449B294C47253BE26CA72336A632063AD3D0B48C8B0F4A34447EF13B764020DE739EB79ABA20E2BE1951825F293BEDD1089FCB0A91F560C8E17CDF52541DC2B81F972A7375B201F10C08D9B5BC8B95100054A3D0AAFF89BD08D6A0E7F2115A435231290460C9AD435A3B3CF35E52091EDD1890047BCC0AABB1ACEBC75F4A32BC1451ACC4969940788E89412188946C9143C5046BD1B458DF617C5DF533B052CD6038B7754034A23C2F7720134C7B4EACE01FAC0A2853A9285847ABBD06A3343A778AC6062E458BC5E61ECE1C0DE0206E6FE8A84034A7C5F1B005FB0A584051D3229B86C909AC5647B3D75569E05A88279D80E5C30F574DC327512C6BBE8101239EC62861F4BE67B05B9CDA9C545C13E7EB53CFF260AD9870199C21F8C63D64F0458A7141285023FEB829290872389644B0C3B73AC2C8E121A29BB1C43C19A233D56BED82740EB021C97B8EBBA40FF328B541760FCC372B52D3BC4FCBC06F424EAF253804D4CB46F41FF254C0C5BA483B44A87C219654555EC7C163C79B9CB760A2AD9BB722B93E0C28BD4B1685949C496EAB1AFF90919E3761B346838ABB2F01A91E554375AFDAAAF3826E6DB79FE7353A7A578A7C0598CE28B6D9915214236BBFFA6D45B6376A07924A39A7BE818286715C8A3C110CD76C02E0417AF138BDB95C3CCA798AC809ED69CFB672B6FDDC24D89C06A6558814AB0C21C62B2F84C0E3E0803DB337A4E0C7127A6B4C8C08B1D1A76BF07EB6E5B5BB47A16C74BC548375FB29CD789A5CFF91BDBD071859F4846E355BB0D29484E264DFF36C9177A7ACA78908879695CA87F25436BC12630724BB22F0CB64897FE5C41195280DA04184D4BC7B532A0F70A54D7757CDE6175A6843B861CB2BC4830C0012554CFC5D2C8A2027AA3CD967130E9B96241B11C4320C7649CC23A71BAFE691AFC08E680BCEF42907000718E4EACE8DA28214197BE1C269DA9CB541E1A3CE97CFADF9C6058780FE6793DBFA8218A2760B802B8DA2AA271A38772523A76736A7A31B9D3037AD21CEBB11A472B8792EB17558B940E70883F264592C689B240BB43D5408BF446432F412F4B9A5F6865CC252A43CF40A320391555591D67561FDD05353AB6B019B3A08A73353D51B6113AB2FA51D975648EE254AF89A230504A236A4658257740BDCBBE1708AB022C3C588A410DB3B9C308A06275BDF5B4859D3A2617A295E1A22F90198BAD0166F4A943417C5B831736CB2C8580ABFDE5714B586ABEEC0A175A08BC710C7A2895DE93AC438061BF7765D0D21CD418167CAF89D1EFC3448BCBB96D69B3E010C82D15CAB6CACC6799D3639669A5B21A633C865F8593B5B7BC800262BB837A924A6C5440E4FC73B41B23092C3912F4C6BEBB4C7B4C62908B03775666C22220DF9C88823E344C7308332345C8B795D34E8C051F21F5A21C214B69841358709B1C305B32CC2C3806AE9CCD3819FFF4507FE520FBFC27199BC23BE6B9B2D2AC1717579AC769279E2A7AAC68A371A47BA3A7DBE016F14E1A727333663C4A5CD1A0F8836CF7B5C49AC51485CA60345C990E06888720003731322C5B8CD5E6907FDA1157F468FD3FC20FA8175EEC95C291A262BA8C5BE990872418930852339D88A19B37FEFA3CFE82175C224407CA414BAEB37923B4D2D83134AE154E490A9B45A0563B06C953C3301450A2176A07C614A74E3478E48509F9A60AE945A8EBC7815121D90A3B0E07091A096CF02C57B25BCA58126AD0C629CE166A7EDB4B33221A0D3F72B85D562EC698B7D0A913D73806F1C5C87B38EC003CB303A3DC51B4B35356A67826D6EDAA8FEB93B98493B2D1C11B676A6AD9506A1AAAE13A824C7C08D1C6C2C4DBA9642C76EA7F6C8264B64A23CCCA9A74635FCBF03E00F1B5722B214376790793B2C4F0A13B5C40760B4218E1D2594DCB30A70D9C1782A5DD30576FA4144BFC8416EDA8118FC6472F56A979586F33BB070FB0F1B0B10BC4897EBE01BCA3893D4E16ADB25093A7417D0708C83A26322E22E6330091E30152BF823597C04CCF4CFC7331578F43A2726CCB428289A90C863259DD180C5FF142BEF41C7717094BE07856DA2B140FA67710967356AA47DFBC8D255B4722AB86D439B7E0A6090251D2D4C1ED5F20BBE6807BF65A90B7CB2EC0102AF02809DC9AC7D0A3ABC69C18365BCFF59185F33996887746185906C0191AED4407E139446459BE29C6822717644353D24AB6339156A9C424909F0A9025BB74720779BE43F16D81C8CC666E99710D8C68BB5CC4E12F314E925A551F09CC59003A1F88103C254BB978D75F394D3540E31E771CDA36E39EC54A62B5832664D821A72F1E6AFBBA27F84295B2694C498498E812BC8E9378FE541CEC5891B25062901CB7212E3CDC46179EC5BCEC10BC0B9311DE05074290687FD6A5392671654284CD9C8CC3EBA80EB3B662EB53EB75116704A1FEB5C2D056338532868DDF24EB8992AB8565D9E490CADF14804360DAA90718EAB616BAB0765D33987B47EFB6599C5563235E61E4BE670E97955AB292D9732CB8930948AC82DF230AC72297A23679D6B94C17F1359483254FEDC2F05819F0D069A443B78E3FC6C3EF4714B05A3FCA81CBBA60242A7060CD885D8F39981BB18092B23DAA59FD9578388688A09BBA079BC809A54843A60385E2310BBCBCC0213CE3DFAAB33B47F9D6305BC95C6107813C585C4B657BF30542833B14949F573C0612AD524BAAE69590C1277B86C286571BF66B3CFF46A3858C09906A794DF4A06E9D4B0A2E43F10F72A6C6C47E5646E2C799B71C33ED2F01EEB45938EB7A4E2E2908C53558A540D350369FA189C616943F7981D7618CF02A5B0A2BCC422E857D1A47871253D08293C1C179BCDC0437069107418205FDB9856623B8CA6B694C96C084B17F13BB6DF12B2CFBBC2B0E0C34B00D0FCD0AECFB27924F6984E747BE2A09D83A8664590A8077331491A4F7D720843F23E652C6FA840308DB4020337AAD37967034A9FB523B67CA70330F02D9EA20C1E84CB8E5757C9E1896B60581441ED618AA5B26DA56C0A5A73C4DCFD755E610B4FC81FF84E21D2E574DFD8CD0AE893AA7E125B44B924F45223EC09F2AD1141EA93A68050DBF699E3246884181F8E1DD44E0C7629093330221FD67D9B7D6E1510B2DBAD8762F7";
 
         SecureRandom random = new SecureRandom();
-        KyberKeyPairGenerator keyGen = new KyberKeyPairGenerator();
+        MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
 
-        keyGen.init(new KyberKeyGenerationParameters(random, KyberParameters.kyber1024));
+        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber1024));
 
         AsymmetricCipherKeyPair keyPair = keyGen.internalGenerateKeyPair(d, z);
-        assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((KyberPublicKeyParameters)keyPair.getPublic()).getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((MLKEMPublicKeyParameters)keyPair.getPublic()).getEncoded()));
 
-        assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((KyberPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((MLKEMPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
 
-        KyberKEMGenerator kemGen = new KyberKEMGenerator(random);
+        MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
         byte[] message = Hex.decode("59C5154C04AE43AAFF32700F081700389D54BEC4C37C088B1C53F66212B12C72");
 
@@ -366,7 +364,7 @@ public class CrystalsKyberTest
 
         assertTrue(Arrays.areEqual(Hex.decode(expectedCipherText), secretEncap.getEncapsulation()));
 
-        KyberKEMExtractor kemExtract = new KyberKEMExtractor((KyberPrivateKeyParameters)keyPair.getPrivate());
+        MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters)keyPair.getPrivate());
 
         byte[] decryptedSharedSecret = kemExtract.extractSecret(secretEncap.getEncapsulation());
 
@@ -390,9 +388,9 @@ public class CrystalsKyberTest
     public void testParameters()
         throws Exception
     {
-        assertEquals(256, KyberParameters.kyber512.getSessionKeySize());
-        assertEquals(256, KyberParameters.kyber768.getSessionKeySize());
-        assertEquals(256, KyberParameters.kyber1024.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.kyber512.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.kyber768.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.kyber1024.getSessionKeySize());
     }
 
     public void testVectors()
@@ -510,19 +508,19 @@ public class CrystalsKyberTest
     public void testKyberRandom()
     {
         SecureRandom random = new SecureRandom();
-        KyberKeyPairGenerator keyGen = new KyberKeyPairGenerator();
+        MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
 
-        keyGen.init(new KyberKeyGenerationParameters(random, KyberParameters.kyber1024));
+        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber1024));
 
         for (int i = 0; i != 1000; i++)
         {
             AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
 
-            KyberKEMGenerator kemGen = new KyberKEMGenerator(random);
+            MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
             SecretWithEncapsulation secretEncap = kemGen.generateEncapsulated(keyPair.getPublic());
 
-            KyberKEMExtractor kemExtract = new KyberKEMExtractor((KyberPrivateKeyParameters)keyPair.getPrivate());
+            MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters)keyPair.getPrivate());
 
             byte[] decryptedSharedSecret = kemExtract.extractSecret(secretEncap.getEncapsulation());
 

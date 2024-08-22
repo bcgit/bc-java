@@ -1,13 +1,13 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.pqc.crypto.KEMParameters;
 
-public class KyberParameters
+public class MLKEMParameters
     implements KEMParameters
 {
-    public static final KyberParameters kyber512 = new KyberParameters("kyber512", 2, 256, false);
-    public static final KyberParameters kyber768 = new KyberParameters("kyber768", 3, 256, false);
-    public static final KyberParameters kyber1024 = new KyberParameters("kyber1024", 4, 256, false);
+    public static final MLKEMParameters kyber512 = new MLKEMParameters("kyber512", 2, 256, false);
+    public static final MLKEMParameters kyber768 = new MLKEMParameters("kyber768", 3, 256, false);
+    public static final MLKEMParameters kyber1024 = new MLKEMParameters("kyber1024", 4, 256, false);
 
     private final String name;
     private final int k;
@@ -19,7 +19,7 @@ public class KyberParameters
      */
     private final boolean usingAes;
 
-    private KyberParameters(String name, int k, int sessionKeySize, boolean usingAes)
+    private MLKEMParameters(String name, int k, int sessionKeySize, boolean usingAes)
     {
         this.name = name;
         this.k = k;
@@ -32,9 +32,9 @@ public class KyberParameters
         return name;
     }
 
-    public KyberEngine getEngine()
+    public MLKEMEngine getEngine()
     {
-        return new KyberEngine(k, usingAes);
+        return new MLKEMEngine(k, usingAes);
     }
 
     public int getSessionKeySize()
