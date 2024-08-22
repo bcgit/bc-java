@@ -38,13 +38,13 @@ public class BCMLKEMPublicKey
         throws IOException
     {
         this.params = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
+        this.algorithm = params.getParameters().getName();
     }
 
     private void init(MLKEMPublicKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
+        this.algorithm = params.getParameters().getName();
     }
     /**
      * Compare this ML-KEM public key with another object.
@@ -106,7 +106,7 @@ public class BCMLKEMPublicKey
         return MLKEMParameterSpec.fromName(params.getParameters().getName());
     }
 
-    MLKEMPublicKeyParameters getKeyParams()
+    public MLKEMPublicKeyParameters getKeyParams()
     {
         return params;
     }

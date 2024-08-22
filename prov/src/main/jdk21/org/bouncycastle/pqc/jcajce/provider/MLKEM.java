@@ -20,10 +20,10 @@ public class MLKEM
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("KeyFactory.MLKEM", PREFIX + "MLKEMKeyFactorySpi");
-            provider.addAlgorithm("KeyPairGenerator.MLKEM", PREFIX + "MLKEMKeyPairGeneratorSpi");
+            provider.addAlgorithm("KeyFactory.ML-KEM", PREFIX + "MLKEMKeyFactorySpi");
+            provider.addAlgorithm("KeyPairGenerator.ML-KEM", PREFIX + "MLKEMKeyPairGeneratorSpi");
 
-            provider.addAlgorithm("KeyGenerator.MLKEM", PREFIX + "MLKEMKeyGeneratorSpi");
+            provider.addAlgorithm("KeyGenerator.ML-KEM", PREFIX + "MLKEMKeyGeneratorSpi");
 
             AsymmetricKeyInfoConverter keyFact = new MLKEMKeyFactorySpi();
 

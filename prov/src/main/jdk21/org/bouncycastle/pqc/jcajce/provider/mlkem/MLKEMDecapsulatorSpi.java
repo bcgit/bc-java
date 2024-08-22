@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.jcajce.provider.mlkem;
 
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.jcajce.provider.Util;
 
 import javax.crypto.DecapsulateException;
@@ -18,14 +18,14 @@ public class MLKEMDecapsulatorSpi
 {
     BCMLKEMPrivateKey privateKey;
     KTSParameterSpec parameterSpec;
-    KyberKEMExtractor kemExt;
+    MLKEMExtractor kemExt;
 
     public MLKEMDecapsulatorSpi(BCMLKEMPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
         this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
 
-        this.kemExt = new KyberKEMExtractor(privateKey.getKeyParams());
+        this.kemExt = new MLKEMExtractor(privateKey.getKeyParams());
     }
 
     @Override

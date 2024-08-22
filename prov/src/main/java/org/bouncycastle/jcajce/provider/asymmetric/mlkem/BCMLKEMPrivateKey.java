@@ -27,7 +27,7 @@ public class BCMLKEMPrivateKey
             MLKEMPrivateKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
+        this.algorithm = params.getParameters().getName();
     }
 
     public BCMLKEMPrivateKey(PrivateKeyInfo keyInfo)
@@ -41,7 +41,7 @@ public class BCMLKEMPrivateKey
     {
         this.attributes = keyInfo.getAttributes();;
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
+        this.algorithm = params.getParameters().getName();
     }
 
     /**
@@ -110,7 +110,7 @@ public class BCMLKEMPrivateKey
         return "PKCS#8";
     }
 
-    MLKEMPrivateKeyParameters getKeyParams()
+    public MLKEMPrivateKeyParameters getKeyParams()
     {
         return params;
     }
