@@ -225,7 +225,7 @@ public class PKCS10Test
 
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), p256Kp.getPublic());
 
-        ContentSigner deltaSigner = new JcaContentSignerBuilder("Dilithium2").setProvider("BC").build(dilKp.getPrivate());
+        ContentSigner deltaSigner = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate());
 
         DeltaCertificateRequestAttributeValueBuilder deltaAttrBldr = new DeltaCertificateRequestAttributeValueBuilder(
             SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()));
