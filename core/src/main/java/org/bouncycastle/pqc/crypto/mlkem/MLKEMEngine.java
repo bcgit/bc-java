@@ -177,15 +177,7 @@ class MLKEMEngine
         this.CryptoPublicKeyBytes = KyberPublicKeyBytes;
         this.CryptoCipherTextBytes = KyberCipherTextBytes;
 
-
-        if(usingAes)
-        {
-            symmetric = new Symmetric.AesSymmetric();
-        }
-        else
-        {
-            symmetric = new Symmetric.ShakeSymmetric();
-        }
+        this.symmetric = new Symmetric.ShakeSymmetric();
 
         this.indCpa = new MLKEMIndCpa(this);
     }
