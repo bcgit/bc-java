@@ -32,8 +32,6 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -42,6 +40,8 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
@@ -55,6 +55,8 @@ import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
@@ -88,18 +90,6 @@ public class PublicKeyFactory
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2Converter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SPHINCSPlusConverter());
-        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SPHINCSPlusConverter());
 
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusConverter());
@@ -230,6 +220,19 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.rainbow_V_classic, new RainbowConverter());
         converters.put(BCObjectIdentifiers.rainbow_V_circumzenithal, new RainbowConverter());
         converters.put(BCObjectIdentifiers.rainbow_V_compressed, new RainbowConverter());
+
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SLHDSAConverter());
     }
 
     /**
@@ -704,6 +707,31 @@ public class PublicKeyFactory
                 HQCParameters hqcParams = Utils.hqcParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new HQCPublicKeyParameters(hqcParams, keyEnc);
+            }
+        }
+    }
+
+    private static class SLHDSAConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+                SLHDSAParameters spParams = Utils.slhdsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new SLHDSAPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+            }
+            catch (Exception e)
+            {
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                SLHDSAParameters spParams = Utils.slhdsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new SLHDSAPublicKeyParameters(spParams, keyEnc);
             }
         }
     }

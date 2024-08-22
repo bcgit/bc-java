@@ -36,8 +36,6 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -46,6 +44,8 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
@@ -59,6 +59,8 @@ import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
@@ -173,19 +175,7 @@ public class PrivateKeyFactory
                 return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
         }
-        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_128s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_128f) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_192s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_192f) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_256s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_sha2_256f) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_128s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_128f) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_192s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_192f) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_256s) ||
-                algOID.equals(NISTObjectIdentifiers.id_slh_dsa_shake_256f))
+        else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop))
         {
             SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
 
@@ -200,6 +190,23 @@ public class PrivateKeyFactory
             else
             {
                 return new SPHINCSPlusPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
+            }
+        }
+        else if (Utils.shldsaParams.containsKey(algOID))
+        {
+            SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
+
+            ASN1Encodable obj = keyInfo.parsePrivateKey();
+            if (obj instanceof ASN1Sequence)
+            {
+                SPHINCSPLUSPrivateKey spKey = SPHINCSPLUSPrivateKey.getInstance(obj);
+                SPHINCSPLUSPublicKey publicKey = spKey.getPublicKey();
+                return new SLHDSAPrivateKeyParameters(spParams, spKey.getSkseed(), spKey.getSkprf(),
+                    publicKey.getPkseed(), publicKey.getPkroot());
+            }
+            else
+            {
+                return new SLHDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
             }
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))

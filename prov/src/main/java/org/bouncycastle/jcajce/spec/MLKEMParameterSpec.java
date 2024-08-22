@@ -1,10 +1,10 @@
 package org.bouncycastle.jcajce.spec;
 
-import org.bouncycastle.util.Strings;
-
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bouncycastle.util.Strings;
 
 /**
  * AlgorithmSpec for ML-KEM
@@ -20,9 +20,9 @@ public class MLKEMParameterSpec
 
     static
     {
-        parameters.put("ML-KEM-512", MLKEMParameterSpec.ml_kem_512);
-        parameters.put("ML-KEM-768", MLKEMParameterSpec.ml_kem_768);
-        parameters.put("ML-KEM-1024", MLKEMParameterSpec.ml_kem_1024);
+        parameters.put("ml-kem-512", MLKEMParameterSpec.ml_kem_512);
+        parameters.put("ml-kem-768", MLKEMParameterSpec.ml_kem_768);
+        parameters.put("ml-kem-1024", MLKEMParameterSpec.ml_kem_1024);
 
         parameters.put("kyber512", MLKEMParameterSpec.ml_kem_512);
         parameters.put("kyber768", MLKEMParameterSpec.ml_kem_768);

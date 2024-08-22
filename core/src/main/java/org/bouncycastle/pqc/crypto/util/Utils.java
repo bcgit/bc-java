@@ -28,6 +28,7 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -94,6 +95,9 @@ class Utils
     static final Map rainbowOids = new HashMap();
     static final Map rainbowParams = new HashMap();
 
+    static final Map shldsaOids = new HashMap<ASN1ObjectIdentifier, SLHDSAParameters>();
+    static final Map shldsaParams = new HashMap<SLHDSAParameters, ASN1ObjectIdentifier>();
+    
     static
     {
         categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
@@ -294,31 +298,44 @@ class Utils
         rainbowOids.put(RainbowParameters.rainbowVcircumzenithal, BCObjectIdentifiers.rainbow_V_circumzenithal);
         rainbowOids.put(RainbowParameters.rainbowVcompressed, BCObjectIdentifiers.rainbow_V_compressed);
 
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s, NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f, NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192s, NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192f, NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256s, NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256f, NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s, NISTObjectIdentifiers.id_slh_dsa_shake_128s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f, NISTObjectIdentifiers.id_slh_dsa_shake_128f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192s, NISTObjectIdentifiers.id_slh_dsa_shake_192s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192f, NISTObjectIdentifiers.id_slh_dsa_shake_192f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256s, NISTObjectIdentifiers.id_slh_dsa_shake_256s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256f, NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+        shldsaOids.put(SLHDSAParameters.sha2_128s, NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        shldsaOids.put(SLHDSAParameters.sha2_128f, NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        shldsaOids.put(SLHDSAParameters.sha2_192s, NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        shldsaOids.put(SLHDSAParameters.sha2_192f, NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        shldsaOids.put(SLHDSAParameters.sha2_256s, NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        shldsaOids.put(SLHDSAParameters.sha2_256f, NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        shldsaOids.put(SLHDSAParameters.shake_128s, NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        shldsaOids.put(SLHDSAParameters.shake_128f, NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        shldsaOids.put(SLHDSAParameters.shake_192s, NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        shldsaOids.put(SLHDSAParameters.shake_192f, NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        shldsaOids.put(SLHDSAParameters.shake_256s, NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+        shldsaOids.put(SLHDSAParameters.shake_256f, NISTObjectIdentifiers.id_slh_dsa_shake_256f);
 
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, SPHINCSPlusParameters.sha2_128s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, SPHINCSPlusParameters.sha2_128f);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, SPHINCSPlusParameters.sha2_192s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, SPHINCSPlusParameters.sha2_192f);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, SPHINCSPlusParameters.sha2_256s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, SPHINCSPlusParameters.sha2_256f);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, SPHINCSPlusParameters.shake_128s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, SPHINCSPlusParameters.shake_128f);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, SPHINCSPlusParameters.shake_192s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, SPHINCSPlusParameters.shake_192f);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, SPHINCSPlusParameters.shake_256s);
-        sphincsPlusParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, SPHINCSPlusParameters.shake_256f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, SLHDSAParameters.sha2_128s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, SLHDSAParameters.sha2_128f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, SLHDSAParameters.sha2_192s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, SLHDSAParameters.sha2_192f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, SLHDSAParameters.sha2_256s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, SLHDSAParameters.sha2_256f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, SLHDSAParameters.shake_128s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, SLHDSAParameters.shake_128f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, SLHDSAParameters.shake_192s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, SLHDSAParameters.shake_192f);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, SLHDSAParameters.shake_256s);
+        shldsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, SLHDSAParameters.shake_256f);
+
+        sphincsPlusOids.put(SLHDSAParameters.sha2_128s, BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_128f, BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_192s, BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_192f, BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_256s, BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_256f, BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_256s, BCObjectIdentifiers.sphincsPlus_shake_256s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_256f, BCObjectIdentifiers.sphincsPlus_shake_256f);
 
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s_robust, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f_robust, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
@@ -344,6 +361,20 @@ class Utils
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_192f_simple, BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256s_simple, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256f_simple, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple);
+
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s, BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f, BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192s, BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192f, BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256s, BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256f, BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256s, BCObjectIdentifiers.sphincsPlus_shake_256s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_256f, BCObjectIdentifiers.sphincsPlus_shake_256f);
+
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, SPHINCSPlusParameters.sha2_128s);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, SPHINCSPlusParameters.sha2_128f);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128s, SPHINCSPlusParameters.shake_128s);
@@ -394,6 +425,16 @@ class Utils
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, SPHINCSPlusParameters.haraka_256f_simple);
     }
 
+    static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
+    {
+        return (ASN1ObjectIdentifier)shldsaOids.get(params);
+    }
+
+    static SLHDSAParameters slhdsaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SLHDSAParameters)shldsaParams.get(oid);
+    }
+    
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
     {
         return ((Integer)categories.get(algorithm.getAlgorithm())).intValue();

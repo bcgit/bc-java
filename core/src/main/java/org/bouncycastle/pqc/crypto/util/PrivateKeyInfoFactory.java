@@ -25,13 +25,13 @@ import org.bouncycastle.pqc.crypto.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
@@ -39,6 +39,7 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.BDS;
@@ -136,8 +137,16 @@ public class PrivateKeyInfoFactory
         else if (privateKey instanceof SPHINCSPlusPrivateKeyParameters)
         {
             SPHINCSPlusPrivateKeyParameters params = (SPHINCSPlusPrivateKeyParameters)privateKey;
-
+                                                               
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
+
+            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
+        }
+        else if (privateKey instanceof SLHDSAPrivateKeyParameters)
+        {
+            SLHDSAPrivateKeyParameters params = (SLHDSAPrivateKeyParameters)privateKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
         }
