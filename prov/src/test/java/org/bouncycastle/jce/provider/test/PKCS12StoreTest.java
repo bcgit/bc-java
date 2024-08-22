@@ -21,8 +21,6 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Enumeration;
 
-import javax.swing.KeyStroke;
-
 import org.bouncycastle.asn1.ASN1BMPString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -48,12 +46,12 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.provider.JDKPKCS12StoreParameter;
 import org.bouncycastle.jce.provider.X509CertificateObject;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
@@ -1097,13 +1095,13 @@ public class PKCS12StoreTest
     private void testDilithiumStore()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        kpg.initialize(DilithiumParameterSpec.dilithium3);
+        kpg.initialize(MLDSAParameterSpec.ml_dsa_65);
 
         KeyPair kp = kpg.generateKeyPair();
 
-        Certificate cert = TestUtils.createSelfSignedCert("CN=Dilithium Test", "Dilithium3", kp);
+        Certificate cert = TestUtils.createSelfSignedCert("CN=Dilithium Test", "ML-DSA-65", kp);
 
         KeyStore pkcs12 = KeyStore.getInstance("PKCS12", BC);
 
