@@ -105,6 +105,7 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.interfaces.ECPointEncoder;
@@ -4252,9 +4253,9 @@ public class CertTest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
 
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ML-DSA-65", "BC");
 
-        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+        kpGen.initialize(MLDSAParameterSpec.ml_dsa_65, new SecureRandom());
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -4269,7 +4270,7 @@ public class CertTest
         //
         // create base certificate - version 3
         //
-        ContentSigner sigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder("ML-DSA-65").setProvider("BC").build(privKey);
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             builder.build(), BigInteger.valueOf(1),
             new Date(System.currentTimeMillis() - 50000),
@@ -4284,7 +4285,7 @@ public class CertTest
 
         X509Certificate baseCert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
 
-        isTrue("oid wrong", NISTObjectIdentifiers.id_ml_dsa_44.getId().equals(baseCert.getSigAlgOID()));
+        isTrue("oid wrong", NISTObjectIdentifiers.id_ml_dsa_65.getId().equals(baseCert.getSigAlgOID()));
         isTrue("params wrong", null == baseCert.getSigAlgParams());
 
         //
@@ -4301,7 +4302,7 @@ public class CertTest
 
         cert.verify(cert.getPublicKey());
 
-        isEquals("name mismatch: " + cert.getSigAlgName(), "DILITHIUM2", cert.getSigAlgName());
+        isEquals("name mismatch: " + cert.getSigAlgName(), "ML-DSA-65", cert.getSigAlgName());
 
         // check encoded works
         cert.getEncoded();
