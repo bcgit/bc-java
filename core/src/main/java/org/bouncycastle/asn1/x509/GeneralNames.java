@@ -95,17 +95,14 @@ public class GeneralNames
 
     public String toString()
     {
-        StringBuffer  buf = new StringBuffer();
-        String        sep = Strings.lineSeparator();
+        final StringBuilder buf = new StringBuilder();
+        final String nl = Strings.lineSeparator();
 
-        buf.append("GeneralNames:");
-        buf.append(sep);
+        buf.append("GeneralNames:").append(nl);
 
-        for (int i = 0; i != names.length; i++)
+        for (GeneralName name : names)
         {
-            buf.append("    ");
-            buf.append(names[i]);
-            buf.append(sep);
+            buf.append("    ").append(name).append(nl);
         }
         return buf.toString();
     }

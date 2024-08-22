@@ -216,15 +216,17 @@ public class RoleSyntax
     
     public String toString() 
     {
-        StringBuffer buff = new StringBuffer("Name: " + this.getRoleNameAsString() +
-                " - Auth: ");
+        final StringBuilder buff = new StringBuilder("Name: ")
+                .append(this.getRoleNameAsString())
+                .append(" - Auth: ");
+
         if(this.roleAuthority == null || roleAuthority.getNames().length == 0)
         {
             buff.append("N/A");
         }
         else 
         {
-            String[] names = this.getRoleAuthorityAsString();
+            final String[] names = this.getRoleAuthorityAsString();
             buff.append('[').append(names[0]);
             for(int i = 1; i < names.length; i++) 
             {
