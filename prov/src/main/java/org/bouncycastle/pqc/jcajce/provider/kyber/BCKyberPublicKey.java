@@ -5,9 +5,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
@@ -19,12 +18,12 @@ public class BCKyberPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient KyberPublicKeyParameters params;
+    private transient MLKEMPublicKeyParameters params;
     private transient String algorithm;
     private transient byte[] encoding;
 
     public BCKyberPublicKey(
-        KyberPublicKeyParameters params)
+        MLKEMPublicKeyParameters params)
     {
         init(params);
     }
@@ -38,10 +37,10 @@ public class BCKyberPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        init((KyberPublicKeyParameters)PublicKeyFactory.createKey(keyInfo));
+        init((MLKEMPublicKeyParameters)PublicKeyFactory.createKey(keyInfo));
     }
 
-    private void init(KyberPublicKeyParameters params)
+    private void init(MLKEMPublicKeyParameters params)
     {
         this.params = params;
         this.algorithm = Strings.toUpperCase(params.getParameters().getName());
@@ -103,7 +102,7 @@ public class BCKyberPublicKey
         return KyberParameterSpec.fromName(params.getParameters().getName());
     }
 
-    KyberPublicKeyParameters getKeyParams()
+    MLKEMPublicKeyParameters getKeyParams()
     {
         return params;
     }

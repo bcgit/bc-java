@@ -18,7 +18,7 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -220,13 +220,13 @@ class Utils
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
 
-        kyberOids.put(KyberParameters.kyber512, NISTObjectIdentifiers.id_alg_ml_kem_512);
-        kyberOids.put(KyberParameters.kyber768, NISTObjectIdentifiers.id_alg_ml_kem_768);
-        kyberOids.put(KyberParameters.kyber1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
+        kyberOids.put(MLKEMParameters.kyber512, NISTObjectIdentifiers.id_alg_ml_kem_512);
+        kyberOids.put(MLKEMParameters.kyber768, NISTObjectIdentifiers.id_alg_ml_kem_768);
+        kyberOids.put(MLKEMParameters.kyber1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
 
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, KyberParameters.kyber512);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, KyberParameters.kyber768);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, KyberParameters.kyber1024);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.kyber512);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.kyber768);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.kyber1024);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
@@ -614,14 +614,14 @@ class Utils
         return (NTRUParameters)ntruParams.get(oid);
     }
 
-    static ASN1ObjectIdentifier kyberOidLookup(KyberParameters params)
+    static ASN1ObjectIdentifier kyberOidLookup(MLKEMParameters params)
     {
         return (ASN1ObjectIdentifier)kyberOids.get(params);
     }
 
-    static KyberParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
+    static MLKEMParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
     {
-        return (KyberParameters)kyberParams.get(oid);
+        return (MLKEMParameters)kyberParams.get(oid);
     }
 
     static ASN1ObjectIdentifier ntrulprimeOidLookup(NTRULPRimeParameters params)

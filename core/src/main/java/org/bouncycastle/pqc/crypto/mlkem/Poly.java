@@ -1,22 +1,22 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 class Poly
 {
     private short[] coeffs;
-    private KyberEngine engine;
+    private MLKEMEngine engine;
     private int polyCompressedBytes;
     private int eta1;
     private int eta2;
 
     private Symmetric symmetric;
 
-    public Poly(KyberEngine engine)
+    public Poly(MLKEMEngine engine)
     {
-        this.coeffs = new short[KyberEngine.KyberN];
+        this.coeffs = new short[MLKEMEngine.KyberN];
         this.engine = engine;
         polyCompressedBytes = engine.getKyberPolyCompressedBytes();
         this.eta1 = engine.getKyberEta1();
-        this.eta2 = KyberEngine.getKyberEta2();
+        this.eta2 = MLKEMEngine.getKyberEta2();
         this.symmetric = engine.getSymmetric();
     }
 
@@ -54,7 +54,7 @@ class Poly
     public void reduce()
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN; i++)
+        for (i = 0; i < MLKEMEngine.KyberN; i++)
         {
             this.setCoeffIndex(i, Reduce.barretReduce(this.getCoeffIndex(i)));
         }
@@ -63,7 +63,7 @@ class Poly
     public static void baseMultMontgomery(Poly r, Poly a, Poly b)
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN / 4; i++)
+        for (i = 0; i < MLKEMEngine.KyberN / 4; i++)
         {
             Ntt.baseMult(r, 4 * i,
                 a.getCoeffIndex(4 * i), a.getCoeffIndex(4 * i + 1),
@@ -79,7 +79,7 @@ class Poly
     public void addCoeffs(Poly b)
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN; i++)
+        for (i = 0; i < MLKEMEngine.KyberN; i++)
         {
             this.setCoeffIndex(i, (short)(this.getCoeffIndex(i) + b.getCoeffIndex(i)));
         }
@@ -88,8 +88,8 @@ class Poly
     public void convertToMont()
     {
         int i;
-        final short f = (short)(((long)1 << 32) % KyberEngine.KyberQ);
-        for (i = 0; i < KyberEngine.KyberN; i++)
+        final short f = (short)(((long)1 << 32) % MLKEMEngine.KyberQ);
+        for (i = 0; i < MLKEMEngine.KyberN; i++)
         {
             this.setCoeffIndex(i, Reduce.montgomeryReduce(this.getCoeffIndex(i) * f));
         }
@@ -109,7 +109,7 @@ class Poly
 
         if (polyCompressedBytes == 128)
         {
-            for (i = 0; i < KyberEngine.KyberN / 8; i++)
+            for (i = 0; i < MLKEMEngine.KyberN / 8; i++)
             {
                 for (j = 0; j < 8; j++)
                 {
@@ -139,7 +139,7 @@ class Poly
         }
         else if (polyCompressedBytes == 160)
         {
-            for (i = 0; i < KyberEngine.KyberN / 8; i++)
+            for (i = 0; i < MLKEMEngine.KyberN / 8; i++)
             {
                 for (j = 0; j < 8; j++)
                 {
@@ -186,10 +186,10 @@ class Poly
 
         if (engine.getKyberPolyCompressedBytes() == 128)
         {
-            for (i = 0; i < KyberEngine.KyberN / 2; i++)
+            for (i = 0; i < MLKEMEngine.KyberN / 2; i++)
             {
-                this.setCoeffIndex(2 * i + 0, (short)((((short)((compressedPolyCipherText[count] & 0xFF) & 15) * KyberEngine.KyberQ) + 8) >> 4));
-                this.setCoeffIndex(2 * i + 1, (short)((((short)((compressedPolyCipherText[count] & 0xFF) >> 4) * KyberEngine.KyberQ) + 8) >> 4));
+                this.setCoeffIndex(2 * i + 0, (short)((((short)((compressedPolyCipherText[count] & 0xFF) & 15) * MLKEMEngine.KyberQ) + 8) >> 4));
+                this.setCoeffIndex(2 * i + 1, (short)((((short)((compressedPolyCipherText[count] & 0xFF) >> 4) * MLKEMEngine.KyberQ) + 8) >> 4));
                 count += 1;
             }
         }
@@ -197,7 +197,7 @@ class Poly
         {
             int j;
             byte[] t = new byte[8];
-            for (i = 0; i < KyberEngine.KyberN / 8; i++)
+            for (i = 0; i < MLKEMEngine.KyberN / 8; i++)
             {
                 t[0] = (byte)((compressedPolyCipherText[count + 0] & 0xFF) >> 0);
                 t[1] = (byte)(((compressedPolyCipherText[count + 0] & 0xFF) >> 5) | ((compressedPolyCipherText[count + 1] & 0xFF) << 3));
@@ -210,7 +210,7 @@ class Poly
                 count += 5;
                 for (j = 0; j < 8; j++)
                 {
-                    this.setCoeffIndex(8 * i + j, (short)(((t[j] & 31) * KyberEngine.KyberQ + 16) >> 5));
+                    this.setCoeffIndex(8 * i + j, (short)(((t[j] & 31) * MLKEMEngine.KyberQ + 16) >> 5));
                 }
             }
         }
@@ -223,10 +223,10 @@ class Poly
 
     public byte[] toBytes()
     {
-        byte[] r = new byte[KyberEngine.KyberPolyBytes];
+        byte[] r = new byte[MLKEMEngine.KyberPolyBytes];
         short t0, t1;
         this.conditionalSubQ();
-        for (int i = 0; i < KyberEngine.KyberN / 2; i++)
+        for (int i = 0; i < MLKEMEngine.KyberN / 2; i++)
         {
             t0 = this.getCoeffIndex(2 * i);
             t1 = this.getCoeffIndex(2 * i + 1);
@@ -242,7 +242,7 @@ class Poly
     public void fromBytes(byte[] inpBytes)
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN / 2; i++)
+        for (i = 0; i < MLKEMEngine.KyberN / 2; i++)
         {
             this.setCoeffIndex(2 * i, (short)(
                 (
@@ -261,14 +261,14 @@ class Poly
 
     public byte[] toMsg()
     {
-        int LOWER = KyberEngine.KyberQ >>> 2;
-        int UPPER = KyberEngine.KyberQ - LOWER;
+        int LOWER = MLKEMEngine.KyberQ >>> 2;
+        int UPPER = MLKEMEngine.KyberQ - LOWER;
 
-        byte[] outMsg = new byte[KyberEngine.getKyberIndCpaMsgBytes()];
+        byte[] outMsg = new byte[MLKEMEngine.getKyberIndCpaMsgBytes()];
 
         this.conditionalSubQ();
 
-        for (int i = 0; i < KyberEngine.KyberN / 8; i++)
+        for (int i = 0; i < MLKEMEngine.KyberN / 8; i++)
         {
             outMsg[i] = 0;
             for (int j = 0; j < 8; j++)
@@ -289,16 +289,16 @@ class Poly
     {
         int i, j;
         short mask;
-        if (msg.length != KyberEngine.KyberN / 8)
+        if (msg.length != MLKEMEngine.KyberN / 8)
         {
             throw new RuntimeException("KYBER_INDCPA_MSGBYTES must be equal to KYBER_N/8 bytes!");
         }
-        for (i = 0; i < KyberEngine.KyberN / 8; i++)
+        for (i = 0; i < MLKEMEngine.KyberN / 8; i++)
         {
             for (j = 0; j < 8; j++)
             {
                 mask = (short)((-1) * (short)(((msg[i] & 0xFF) >> j) & 1));
-                this.setCoeffIndex(8 * i + j, (short)(mask & (short)((KyberEngine.KyberQ + 1) / 2)));
+                this.setCoeffIndex(8 * i + j, (short)(mask & (short)((MLKEMEngine.KyberQ + 1) / 2)));
             }
         }
     }
@@ -306,7 +306,7 @@ class Poly
     public void conditionalSubQ()
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN; i++)
+        for (i = 0; i < MLKEMEngine.KyberN; i++)
         {
             this.setCoeffIndex(i, Reduce.conditionalSubQ(this.getCoeffIndex(i)));
         }
@@ -314,14 +314,14 @@ class Poly
 
     public void getEta1Noise(byte[] seed, byte nonce)
     {
-        byte[] buf = new byte[KyberEngine.KyberN * eta1 / 4];
+        byte[] buf = new byte[MLKEMEngine.KyberN * eta1 / 4];
         symmetric.prf(buf, seed, nonce);
         CBD.kyberCBD(this, buf, eta1);
     }
 
     public void getEta2Noise(byte[] seed, byte nonce)
     {
-        byte[] buf = new byte[KyberEngine.KyberN * eta2 / 4];
+        byte[] buf = new byte[MLKEMEngine.KyberN * eta2 / 4];
         symmetric.prf(buf, seed, nonce);
         CBD.kyberCBD(this, buf, eta2);
     }
@@ -329,7 +329,7 @@ class Poly
     public void polySubtract(Poly b)
     {
         int i;
-        for (i = 0; i < KyberEngine.KyberN; i++)
+        for (i = 0; i < MLKEMEngine.KyberN; i++)
         {
             this.setCoeffIndex(i, (short)(b.getCoeffIndex(i) - this.getCoeffIndex(i)));
         }

@@ -1,9 +1,9 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.util.Arrays;
 
-public class KyberPrivateKeyParameters
-    extends KyberKeyParameters
+public class MLKEMPrivateKeyParameters
+    extends MLKEMKeyParameters
 {
     final byte[] s;
     final byte[] hpk;
@@ -11,7 +11,7 @@ public class KyberPrivateKeyParameters
     final byte[] t;
     final byte[] rho;
 
-    public KyberPrivateKeyParameters(KyberParameters params, byte[] s, byte[] hpk, byte[] nonce, byte[] t, byte[] rho)
+    public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] s, byte[] hpk, byte[] nonce, byte[] t, byte[] rho)
     {
         super(true, params);
 
@@ -22,17 +22,17 @@ public class KyberPrivateKeyParameters
         this.rho = Arrays.clone(rho);
     }
 
-    public KyberPrivateKeyParameters(KyberParameters params, byte[] encoding)
+    public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding)
     {
         super(true, params);
 
-        KyberEngine eng = params.getEngine();
+        MLKEMEngine eng = params.getEngine();
         int index = 0;
         this.s = Arrays.copyOfRange(encoding, 0, eng.getKyberIndCpaSecretKeyBytes()); index += eng.getKyberIndCpaSecretKeyBytes();
-        this.t = Arrays.copyOfRange(encoding, index, index + eng.getKyberIndCpaPublicKeyBytes() - KyberEngine.KyberSymBytes); index += eng.getKyberIndCpaPublicKeyBytes() - KyberEngine.KyberSymBytes;
+        this.t = Arrays.copyOfRange(encoding, index, index + eng.getKyberIndCpaPublicKeyBytes() - MLKEMEngine.KyberSymBytes); index += eng.getKyberIndCpaPublicKeyBytes() - MLKEMEngine.KyberSymBytes;
         this.rho = Arrays.copyOfRange(encoding, index, index + 32); index += 32;
         this.hpk = Arrays.copyOfRange(encoding, index, index + 32); index += 32;
-        this.nonce = Arrays.copyOfRange(encoding, index, index + KyberEngine.KyberSymBytes);
+        this.nonce = Arrays.copyOfRange(encoding, index, index + MLKEMEngine.KyberSymBytes);
     }
 
     public byte[] getEncoded()
@@ -58,12 +58,12 @@ public class KyberPrivateKeyParameters
 
     public byte[] getPublicKey()
     {
-        return KyberPublicKeyParameters.getEncoded(t, rho);
+        return MLKEMPublicKeyParameters.getEncoded(t, rho);
     }
 
-    public KyberPublicKeyParameters getPublicKeyParameters()
+    public MLKEMPublicKeyParameters getPublicKeyParameters()
     {
-        return new KyberPublicKeyParameters(getParameters(), t, rho);
+        return new MLKEMPublicKeyParameters(getParameters(), t, rho);
     }
 
     public byte[] getRho()

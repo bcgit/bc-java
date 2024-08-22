@@ -32,8 +32,8 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -573,19 +573,19 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            MLKEMParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             try
             {
                 ASN1Primitive obj = keyInfo.parsePublicKey();
                 KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
 
-                return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
+                return new MLKEMPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
             }
             catch (Exception e)
             {
                 // we're a raw encoding
-                return new KyberPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
+                return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
             }
         }
     }

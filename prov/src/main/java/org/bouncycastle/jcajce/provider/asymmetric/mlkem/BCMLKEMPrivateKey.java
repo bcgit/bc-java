@@ -5,13 +5,10 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -22,12 +19,12 @@ public class BCMLKEMPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient KyberPrivateKeyParameters params;
+    private transient MLKEMPrivateKeyParameters params;
     private transient String algorithm;
     private transient ASN1Set attributes;
 
     public BCMLKEMPrivateKey(
-            KyberPrivateKeyParameters params)
+            MLKEMPrivateKeyParameters params)
     {
         this.params = params;
         this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
@@ -43,7 +40,7 @@ public class BCMLKEMPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();;
-        this.params = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+        this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName();
     }
 
@@ -113,7 +110,7 @@ public class BCMLKEMPrivateKey
         return "PKCS#8";
     }
 
-    KyberPrivateKeyParameters getKeyParams()
+    MLKEMPrivateKeyParameters getKeyParams()
     {
         return params;
     }

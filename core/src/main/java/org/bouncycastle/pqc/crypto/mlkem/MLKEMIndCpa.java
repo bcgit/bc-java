@@ -1,12 +1,11 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
-class KyberIndCpa
+class MLKEMIndCpa
 {
-    private KyberEngine engine;
+    private MLKEMEngine engine;
     private int kyberK;
     private int eta1;
     private int indCpaPublicKeyBytes;
@@ -17,7 +16,7 @@ class KyberIndCpa
 
     private Symmetric symmetric;
 
-    public KyberIndCpa(KyberEngine engine)
+    public MLKEMIndCpa(MLKEMEngine engine)
     {
         this.engine = engine;
         this.kyberK = engine.getKyberK();
@@ -32,9 +31,9 @@ class KyberIndCpa
         KyberGenerateMatrixNBlocks =
             (
                 (
-                    12 * KyberEngine.KyberN
+                    12 * MLKEMEngine.KyberN
                         / 8 * (1 << 12)
-                        / KyberEngine.KyberQ + symmetric.xofBlockBytes
+                        / MLKEMEngine.KyberQ + symmetric.xofBlockBytes
                 )
                     / symmetric.xofBlockBytes
             );
@@ -294,15 +293,15 @@ class KyberIndCpa
     {
         byte[] buf = new byte[indCpaPublicKeyBytes];
         System.arraycopy(publicKeyPolyVec.toBytes(), 0, buf, 0, polyVecBytes);
-        System.arraycopy(seed, 0, buf, polyVecBytes, KyberEngine.KyberSymBytes);
+        System.arraycopy(seed, 0, buf, polyVecBytes, MLKEMEngine.KyberSymBytes);
         return buf;
     }
 
     public byte[] unpackPublicKey(PolyVec publicKeyPolyVec, byte[] publicKey)
     {
-        byte[] outputSeed = new byte[KyberEngine.KyberSymBytes];
+        byte[] outputSeed = new byte[MLKEMEngine.KyberSymBytes];
         publicKeyPolyVec.fromBytes(publicKey);
-        System.arraycopy(publicKey, polyVecBytes, outputSeed, 0, KyberEngine.KyberSymBytes);
+        System.arraycopy(publicKey, polyVecBytes, outputSeed, 0, MLKEMEngine.KyberSymBytes);
         return outputSeed;
     }
 
@@ -338,9 +337,9 @@ class KyberIndCpa
                 symmetric.xofSqueezeBlocks(buf, 0, symmetric.xofBlockBytes * KyberGenerateMatrixNBlocks);
 
                 int buflen = KyberGenerateMatrixNBlocks * symmetric.xofBlockBytes;
-                ctr = rejectionSampling(aMatrix[i].getVectorIndex(j), 0, KyberEngine.KyberN, buf, buflen);
+                ctr = rejectionSampling(aMatrix[i].getVectorIndex(j), 0, MLKEMEngine.KyberN, buf, buflen);
 
-                while (ctr < KyberEngine.KyberN)
+                while (ctr < MLKEMEngine.KyberN)
                 {
                     off = buflen % 3;
                     for (k = 0; k < off; k++)
@@ -350,7 +349,7 @@ class KyberIndCpa
                     symmetric.xofSqueezeBlocks(buf, off, symmetric.xofBlockBytes * 2);
                     buflen = off + symmetric.xofBlockBytes;
                     // Error in code Section Unsure
-                    ctr += rejectionSampling(aMatrix[i].getVectorIndex(j), ctr, KyberEngine.KyberN - ctr, buf, buflen);
+                    ctr += rejectionSampling(aMatrix[i].getVectorIndex(j), ctr, MLKEMEngine.KyberN - ctr, buf, buflen);
                 }
             }
         }
@@ -367,12 +366,12 @@ class KyberIndCpa
             val0 = (short)(((((short)(inpBuf[pos] & 0xFF)) >> 0) | (((short)(inpBuf[pos + 1] & 0xFF)) << 8)) & 0xFFF);
             val1 = (short)(((((short)(inpBuf[pos + 1] & 0xFF)) >> 4) | (((short)(inpBuf[pos + 2] & 0xFF)) << 4)) & 0xFFF);
             pos = pos + 3;
-            if (val0 < (short)KyberEngine.KyberQ)
+            if (val0 < (short)MLKEMEngine.KyberQ)
             {
                 outputBuffer.setCoeffIndex(coeffOff + ctr, (short)val0);
                 ctr++;
             }
-            if (ctr < len && val1 < (short)KyberEngine.KyberQ)
+            if (ctr < len && val1 < (short)MLKEMEngine.KyberQ)
             {
                 outputBuffer.setCoeffIndex(coeffOff + ctr, (short)val1);
                 ctr++;
@@ -385,7 +384,7 @@ class KyberIndCpa
     public byte[] decrypt(byte[] secretKey, byte[] cipherText)
     {
         int i;
-        byte[] outputMessage = new byte[KyberEngine.getKyberIndCpaMsgBytes()];
+        byte[] outputMessage = new byte[MLKEMEngine.getKyberIndCpaMsgBytes()];
 
         PolyVec bp = new PolyVec(engine), secretKeyPolyVec = new PolyVec(engine);
         Poly v = new Poly(engine), mp = new Poly(engine);

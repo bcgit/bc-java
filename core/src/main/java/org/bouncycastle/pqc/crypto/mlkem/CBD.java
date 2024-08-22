@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 final class CBD
 {
@@ -11,7 +11,7 @@ final class CBD
         switch (eta)
         {
         case 3:
-            for (int i = 0; i < KyberEngine.KyberN / 4; i++)
+            for (int i = 0; i < MLKEMEngine.KyberN / 4; i++)
             {
                 t = convertByteTo24BitUnsignedInt(bytes, 3 * i);
                 d = t & 0x00249249;
@@ -28,7 +28,7 @@ final class CBD
             break;
         default:
             // Only for Kyber512 where eta = 2
-            for (int i = 0; i < KyberEngine.KyberN / 8; i++)
+            for (int i = 0; i < MLKEMEngine.KyberN / 8; i++)
             {
                 t = convertByteTo32BitUnsignedInt(bytes, 4 * i); // ? Problem
                 d = t & 0x55555555;

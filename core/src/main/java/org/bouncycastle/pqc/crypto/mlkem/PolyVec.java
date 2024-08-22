@@ -1,15 +1,15 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.util.Arrays;
 
 class PolyVec
 {
     Poly[] vec;
-    private KyberEngine engine;
+    private MLKEMEngine engine;
     private int kyberK;
     private int polyVecBytes;
 
-    public PolyVec(KyberEngine engine)
+    public PolyVec(MLKEMEngine engine)
     {
         this.engine = engine;
         this.kyberK = engine.getKyberK();
@@ -63,7 +63,7 @@ class PolyVec
             t = new short[4];
             for (i = 0; i < kyberK; i++)
             {
-                for (j = 0; j < KyberEngine.KyberN / 4; j++)
+                for (j = 0; j < MLKEMEngine.KyberN / 4; j++)
                 {
                     for (k = 0; k < 4; k++)
                     {
@@ -98,7 +98,7 @@ class PolyVec
             t = new short[8];
             for (i = 0; i < kyberK; i++)
             {
-                for (j = 0; j < KyberEngine.KyberN / 8; j++)
+                for (j = 0; j < MLKEMEngine.KyberN / 8; j++)
                 {
                     for (k = 0; k < 8; k++)
                     {
@@ -150,7 +150,7 @@ class PolyVec
             short[] t = new short[4];
             for (i = 0; i < kyberK; i++)
             {
-                for (j = 0; j < KyberEngine.KyberN / 4; j++)
+                for (j = 0; j < MLKEMEngine.KyberN / 4; j++)
                 {
                     t[0] = (short)(((compressedPolyVecCipherText[count] & 0xFF) >> 0) | (short)((compressedPolyVecCipherText[count + 1] & 0xFF) << 8));
                     t[1] = (short)(((compressedPolyVecCipherText[count + 1] & 0xFF) >> 2) | (short)((compressedPolyVecCipherText[count + 2] & 0xFF) << 6));
@@ -159,7 +159,7 @@ class PolyVec
                     count += 5;
                     for (k = 0; k < 4; k++)
                     {
-                        this.vec[i].setCoeffIndex(4 * j + k, (short)(((t[k] & 0x3FF) * KyberEngine.KyberQ + 512) >> 10));
+                        this.vec[i].setCoeffIndex(4 * j + k, (short)(((t[k] & 0x3FF) * MLKEMEngine.KyberQ + 512) >> 10));
                     }
                 }
 
@@ -171,7 +171,7 @@ class PolyVec
             short[] t = new short[8];
             for (i = 0; i < kyberK; i++)
             {
-                for (j = 0; j < KyberEngine.KyberN / 8; j++)
+                for (j = 0; j < MLKEMEngine.KyberN / 8; j++)
                 {
                     t[0] = (short)(((compressedPolyVecCipherText[count] & 0xFF) >> 0) | ((short)(compressedPolyVecCipherText[count + 1] & 0xFF) << 8));
                     t[1] = (short)(((compressedPolyVecCipherText[count + 1] & 0xFF) >> 3) | ((short)(compressedPolyVecCipherText[count + 2] & 0xFF) << 5));
@@ -184,7 +184,7 @@ class PolyVec
                     count += 11;
                     for (k = 0; k < 8; k++)
                     {
-                        this.vec[i].setCoeffIndex(8 * j + k, (short)(((t[k] & 0x7FF) * KyberEngine.KyberQ + 1024) >> 11));
+                        this.vec[i].setCoeffIndex(8 * j + k, (short)(((t[k] & 0x7FF) * MLKEMEngine.KyberQ + 1024) >> 11));
                     }
                 }
             }
@@ -195,7 +195,7 @@ class PolyVec
         }
     }
 
-    public static void pointwiseAccountMontgomery(Poly out, PolyVec inp1, PolyVec inp2, KyberEngine engine)
+    public static void pointwiseAccountMontgomery(Poly out, PolyVec inp1, PolyVec inp2, MLKEMEngine engine)
     {
         int i;
         Poly t = new Poly(engine);
@@ -232,7 +232,7 @@ class PolyVec
         byte[] r = new byte[polyVecBytes];
         for (int i = 0; i < kyberK; i++)
         {
-            System.arraycopy(this.vec[i].toBytes(), 0, r, i * KyberEngine.KyberPolyBytes, KyberEngine.KyberPolyBytes);
+            System.arraycopy(this.vec[i].toBytes(), 0, r, i * MLKEMEngine.KyberPolyBytes, MLKEMEngine.KyberPolyBytes);
         }
 
         return r;
@@ -242,7 +242,7 @@ class PolyVec
     {
         for (int i = 0; i < kyberK; i++)
         {
-            this.getVectorIndex(i).fromBytes(Arrays.copyOfRange(inputBytes, i * KyberEngine.KyberPolyBytes, (i + 1) * KyberEngine.KyberPolyBytes));
+            this.getVectorIndex(i).fromBytes(Arrays.copyOfRange(inputBytes, i * MLKEMEngine.KyberPolyBytes, (i + 1) * MLKEMEngine.KyberPolyBytes));
         }
     }
 

@@ -1,21 +1,21 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
-public class KyberKeyParameters
+public class MLKEMKeyParameters
     extends AsymmetricKeyParameter
 {
-    private KyberParameters params;
+    private MLKEMParameters params;
 
-    public KyberKeyParameters(
+    public MLKEMKeyParameters(
         boolean isPrivate,
-        KyberParameters params)
+        MLKEMParameters params)
     {
         super(isPrivate);
         this.params = params;
     }
 
-    public KyberParameters getParameters()
+    public MLKEMParameters getParameters()
     {
         return params;
     }

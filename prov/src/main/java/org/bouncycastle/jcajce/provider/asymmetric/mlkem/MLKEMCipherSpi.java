@@ -7,13 +7,12 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Strings;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -37,13 +36,13 @@ class MLKEMCipherSpi
         extends CipherSpi
 {
     private final String algorithmName;
-    private KyberKEMGenerator kemGen;
+    private MLKEMGenerator kemGen;
     private KTSParameterSpec kemParameterSpec;
     private BCMLKEMPublicKey wrapKey;
     private BCMLKEMPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
-    private KyberParameters kyberParameters;
+    private MLKEMParameters kyberParameters;
 
     MLKEMCipherSpi(String algorithmName)
     {
@@ -51,7 +50,7 @@ class MLKEMCipherSpi
         this.kyberParameters = null;
     }
 
-    MLKEMCipherSpi(KyberParameters kyberParameters)
+    MLKEMCipherSpi(MLKEMParameters kyberParameters)
     {
         this.kyberParameters = kyberParameters;
         this.algorithmName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
@@ -154,7 +153,7 @@ class MLKEMCipherSpi
             if (key instanceof BCMLKEMPublicKey)
             {
                 wrapKey = (BCMLKEMPublicKey)key;
-                kemGen = new KyberKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
+                kemGen = new MLKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
             {
@@ -296,7 +295,7 @@ class MLKEMCipherSpi
         byte[] secret = null;
         try
         {
-            KyberKEMExtractor kemExt = new KyberKEMExtractor(unwrapKey.getKeyParams());
+            MLKEMExtractor kemExt = new MLKEMExtractor(unwrapKey.getKeyParams());
 
             secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
@@ -340,7 +339,7 @@ class MLKEMCipherSpi
     {
         public MLKEM512()
         {
-            super(KyberParameters.kyber512);
+            super(MLKEMParameters.kyber512);
         }
     }
 
@@ -349,7 +348,7 @@ class MLKEMCipherSpi
     {
         public MLKEM768()
         {
-            super(KyberParameters.kyber768);
+            super(MLKEMParameters.kyber768);
         }
     }
 
@@ -358,7 +357,7 @@ class MLKEMCipherSpi
     {
         public MLKEM1024()
         {
-            super(KyberParameters.kyber1024);
+            super(MLKEMParameters.kyber1024);
         }
     }
 }

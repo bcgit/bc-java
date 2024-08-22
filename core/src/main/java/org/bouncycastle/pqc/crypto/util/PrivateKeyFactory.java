@@ -36,8 +36,8 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -242,9 +242,9 @@ public class PrivateKeyFactory
                  algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
             ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-            KyberParameters kyberParams = Utils.kyberParamsLookup(algOID);
+            MLKEMParameters kyberParams = Utils.kyberParamsLookup(algOID);
 
-            return new KyberPrivateKeyParameters(kyberParams, kyberKey.getOctets());
+            return new MLKEMPrivateKeyParameters(kyberParams, kyberKey.getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {

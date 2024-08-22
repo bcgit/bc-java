@@ -4,16 +4,13 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPrivateKey;
 import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
-import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -23,12 +20,12 @@ public class BCKyberPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient KyberPrivateKeyParameters params;
+    private transient MLKEMPrivateKeyParameters params;
     private transient String algorithm;
     private transient ASN1Set attributes;
 
     public BCKyberPrivateKey(
-            KyberPrivateKeyParameters params)
+            MLKEMPrivateKeyParameters params)
     {
         this.params = params;
         this.algorithm = Strings.toUpperCase(params.getParameters().getName());
@@ -44,7 +41,7 @@ public class BCKyberPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();;
-        this.params = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+        this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
@@ -113,7 +110,7 @@ public class BCKyberPrivateKey
         return "PKCS#8";
     }
 
-    KyberPrivateKeyParameters getKeyParams()
+    MLKEMPrivateKeyParameters getKeyParams()
     {
         return params;
     }

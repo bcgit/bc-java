@@ -5,11 +5,10 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 import javax.crypto.KeyGeneratorSpi;
 import javax.crypto.SecretKey;
@@ -25,14 +24,14 @@ public class MLKEMKeyGeneratorSpi
     private KEMGenerateSpec genSpec;
     private SecureRandom random;
     private KEMExtractSpec extSpec;
-    private KyberParameters kyberParameters;
+    private MLKEMParameters kyberParameters;
 
     public MLKEMKeyGeneratorSpi()
     {
         this(null);
     }
 
-    protected MLKEMKeyGeneratorSpi(KyberParameters kyberParameters)
+    protected MLKEMKeyGeneratorSpi(MLKEMParameters kyberParameters)
     {
         this.kyberParameters = kyberParameters;
     }
@@ -88,7 +87,7 @@ public class MLKEMKeyGeneratorSpi
         if (genSpec != null)
         {
             BCMLKEMPublicKey pubKey = (BCMLKEMPublicKey)genSpec.getPublicKey();
-            KyberKEMGenerator kemGen = new KyberKEMGenerator(random);
+            MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
@@ -113,7 +112,7 @@ public class MLKEMKeyGeneratorSpi
         else
         {
             BCMLKEMPrivateKey privKey = (BCMLKEMPrivateKey)extSpec.getPrivateKey();
-            KyberKEMExtractor kemExt = new KyberKEMExtractor(privKey.getKeyParams());
+            MLKEMExtractor kemExt = new MLKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] sharedSecret = kemExt.extractSecret(encapsulation);
@@ -134,7 +133,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM512()
         {
-            super(KyberParameters.kyber512);
+            super(MLKEMParameters.kyber512);
         }
     }
 
@@ -143,7 +142,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM768()
         {
-            super(KyberParameters.kyber768);
+            super(MLKEMParameters.kyber768);
         }
     }
 
@@ -152,7 +151,7 @@ public class MLKEMKeyGeneratorSpi
     {
         public MLKEM1024()
         {
-            super(KyberParameters.kyber1024);
+            super(MLKEMParameters.kyber1024);
         }
     }
 }

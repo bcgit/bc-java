@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.crystals.kyber;
+package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.StreamCipher;
