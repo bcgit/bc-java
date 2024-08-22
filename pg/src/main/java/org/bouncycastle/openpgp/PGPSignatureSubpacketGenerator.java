@@ -368,8 +368,8 @@ public class PGPSignatureSubpacketGenerator
      *
      * @param isCritical   true if should be treated as critical, false otherwise.
      * @param keyAlgorithm algorithm of the revocation key
-     * @param fingerprint  fingerprint of the revocation key
-     * @deprecated use {@link #addRevocationKey(boolean, int, byte[])} instead.
+     * @param fingerprint  fingerprint of the revocation key (v4 only)
+     * @deprecated the revocation key mechanism is deprecated. Applications MUST NOT generate such a packet.
      */
     public void setRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {
@@ -381,7 +381,8 @@ public class PGPSignatureSubpacketGenerator
      *
      * @param isCritical   true if should be treated as critical, false otherwise.
      * @param keyAlgorithm algorithm of the revocation key
-     * @param fingerprint  fingerprint of the revocation key
+     * @param fingerprint  fingerprint of the revocation key (v4 only)
+     * @deprecated the revocation key mechanism is deprecated. Applications MUST NOT generate such a packet.
      */
     public void addRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {
