@@ -30,7 +30,7 @@ import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
-public class CrystalsKyberTest
+public class MLKEMTest
     extends TestCase
 {
     public void testKeyGen() throws IOException
