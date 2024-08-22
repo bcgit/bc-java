@@ -35,6 +35,7 @@ import org.bouncycastle.util.io.Streams;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
@@ -95,6 +96,7 @@ public class PGPv6SignatureTest
         verifyingInlineSignatureWithSignatureSaltValueMismatchFails();
 
         verifySignaturesOnEd448X448Key();
+        generateAndVerifyInlineSignatureUsingRSAKey();
     }
 
     private void verifyV6DirectKeySignatureTestVector()
@@ -426,6 +428,7 @@ public class PGPv6SignatureTest
             }
             else
             {
+                // -DM System.out.println
                 System.out.println("Did not find signing key for DK sig");
             }
         }
@@ -447,6 +450,7 @@ public class PGPv6SignatureTest
                 }
                 else
                 {
+                    // -DM System.out.println
                     System.out.println("Did not find signing key for UID sig for " + uid);
                 }
             }
@@ -468,6 +472,8 @@ public class PGPv6SignatureTest
                 }
                 else
                 {
+                    // -DM System.out.println
+                    // -DM Hex.toHexString
                     System.out.println("Did not find singing key for subkey " + Hex.toHexString(subkey.getFingerprint()) + " binding signature");
                 }
             }
@@ -488,7 +494,8 @@ public class PGPv6SignatureTest
             for (SignatureSubpacket p : sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
             {
                 IssuerFingerprint fp = (IssuerFingerprint) p;
-                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
+                {
                     return k;
                 }
             }
@@ -496,7 +503,8 @@ public class PGPv6SignatureTest
             for (SignatureSubpacket p : sig.getUnhashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
             {
                 IssuerFingerprint fp = (IssuerFingerprint) p;
-                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
+                {
                     return k;
                 }
             }
@@ -657,9 +665,120 @@ public class PGPv6SignatureTest
         boolean v = sig.verify();
         if (!v)
         {
+            // -DM System.out.println
             System.out.println(bOut);
         }
         isTrue("Generated Cleartext Signature MUST verify successfully", v);
+    }
+
+    private void generateAndVerifyInlineSignatureUsingRSAKey()
+            throws PGPException, IOException
+    {
+        String KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+                "Comment: B79E376A49446A250AB1738F657EAA7E8F91796B3CA950263C38FBBBEADC2352\n" +
+                "\n" +
+                "xcZaBmbHNIkBAAACBxAAuastS0RHPZwMZ70ii4hbfOxC3+7bwhVjlAvmp7ZYcShe\n" +
+                "96bfDEv+8ydU2oqKbFtokL5pJ3iZhG8h74iYE2E74BQjgEqpFTzc26MjpbbRnldK\n" +
+                "BiDpXEiBrDke49ycVkgXFXIUyMLSNNZ2FJTgJenFtjfevFAZTSDMjhr3MebD3TPL\n" +
+                "dipor45D4W7GmEqOBpMju3XX31HFq1ON/KPHYCJuVOoGj9UMgpDg1xNhxiq5cqLu\n" +
+                "OYmp/PU4YaHgvXsA6w2QKjfA9aDaDmidWtuzzDYM1KfcC0bht1iQYLlPgG9XOe3F\n" +
+                "+IHEJ9riviInOqrLeiYKJ2RW9ZT5C6Db2+lV3Fz3bYfNgXjY+BaUG1y3JdwFnvcR\n" +
+                "qxawqRCHHeHzmhD4+QwKxjkNQG+jl/s8Vtng1E5GopOe7t38KCnm2A6hnLIvUN4z\n" +
+                "0RjU95vA5o+e+x7I4RuCCi2iOqZoLIhQ4JstR+c2Nz8AQ/mXCAzw1EfrndtENyur\n" +
+                "FK2/ocBz59UVYHucPvgnSa4gKKVgB1DIBsDAA9Y7/HnMYdJlN6LJoFj6En/4CPlo\n" +
+                "WOqytXdDdFwtE5p9yZFJxXCpcwkOaupTTVBepXgzb6MMq4b8YU1pGCaK7EHC4P47\n" +
+                "OEZB8/WhXmGyEfU0KWDvje+UG3A/BvqRmWERwAEb1+VcXpRo6b01FWLK6stjlI8A\n" +
+                "EQEAAQAP/RDguCnW55j4pgIKJelEOHjXK08a8fwnIJm1KT8GquyCbHubvjvqbp8g\n" +
+                "7Kw/Gs011AAQZxOw+VeaGJ4jLxvX427/tah0YQFuum722gc24sA/lBmRhVUfvDXx\n" +
+                "LVcuV0HapMqMx8nmN+CYvDwrumKH6TKiyosYxuwFdsLWPbFaFmT1z+GKgmCvEIme\n" +
+                "Hcx7PoTnfECOulRxJQRpgIc+RiH9j0UFzxnlFpGJ5P54IxO2D4yVtg0h8ANwMTNi\n" +
+                "2UCwPUmgvoGv9sj9WcUkimVXgnUmVq1AIxcdVuhpUxqPzePRez7nV+86sJ+k3KbH\n" +
+                "CQTiwMN2UMb67pK9e5Qsh7/qaqUxCEbTfc8QZb9qygN5t3V0Zb1tYxlk7mqGyFa/\n" +
+                "g5i4hAfmkwUxgafqr4s8ZuCo5VjbX2KvO1tMDnL/7Ywv2FLx+FZiCdWNIXE7IM1Z\n" +
+                "9zXFOLvFQ1SL5aHJ+2NoOqyJpmH50DoI3483qMEu4R/GKqhbJOyk8Ta95SV/lAcf\n" +
+                "lBcIjWOWgd6qXzhi3QCoDGSFH7KYQdJkJ3gKYSer9ETCb4ZHWMBxHeWaSeL8WsWd\n" +
+                "1feX+Job9CJ/Kd5d9pCDQOeXd3MNFf5TNmEAU3z7+B71eTvlYpNwYvBvH9h4XKbR\n" +
+                "Z3GJsvt/kPttEx7wAfiNSeXH9pzWqmbqLpRofxiwnF7mIPc9I5vxCADRfxtk8eWZ\n" +
+                "ilCYBEmnfXiKWcU0/pfD8KEfdWv4Btng0LdZCkSL+i8i8ldUxOsLWM+ge9uy3zHc\n" +
+                "ms1jIrSZg5FW6XvGG1zcn5PaJqd/nizk7lnqDwHZXRePRtaLF8D0jFXAGAgUr7zI\n" +
+                "n2LdDGabvxSsoTWIbWT6z+UzRsZlsOwEXeOpIuAG3kjPamPtxpJoPn15AJ/kpnxG\n" +
+                "XsOdGH1FvyIxOp+31sqO8fbjW5NacuzaOvJAvt2JOV5b8rcbnNyIu5pn5YjZ876T\n" +
+                "i4K+jrGlByDVUB8IWILe2N0sgVrhTNTO4tqysWHir0SM+s/dSa9OISHpMLChGI08\n" +
+                "UH/eZAP9msC/CADi4gX8UdH8wEzaceFur03jXDqIhG8jr2jDVmZ4eyj2NDPZuQ45\n" +
+                "J4LuPgytx+RU8edgoB6POZ8TdLr2llA5XBYOVsqBttE7GadULlIDZYgagzIiWc34\n" +
+                "VDkxPepWFlwTa5nQ09GeC6H/h594TaaCOHZGJqeD3MJWfrPnj7V+upw+beJeB8Hs\n" +
+                "PwfgTuTesjWNK1b/g0dLvF3D7+8z4xlj8iMj80B8Kwl4lSC23W2wd79SC0KvKM4D\n" +
+                "dJoA0A9u1KB/hs/qUMllDsRlS0UyWV/R7slK9OdZh742jhluKJ4a/jQ2EihlXMMW\n" +
+                "RyLHjRKdT5U7Ou16gXehu7Hrx+EEcKPkt1AxB/0acvo9+ipYTqfV0j8zIH+/m4D0\n" +
+                "mtFPRiQi/XviyHIHHsyEx7JHkegynqdU1a6NxAi/o4VNXkSVTFcarln6sxrRmDbg\n" +
+                "Uaxc2pcXMXXzfpbW/jjobOGOBLCRJSzV5NbGknm0VAIaOm/ln4d8PT+FydoNhxEr\n" +
+                "7fgqtl/hAJ9F1QJeol3cHioJzJ7ye6vMLLIYCdiZAoHMijKOiLAUca3svIqG1Nxw\n" +
+                "iUuX6F3ZUvpcG1utgVt8psibOtQGHwJmOGTIEscGVynrVrxZiUhcUmXdW3VaAQAb\n" +
+                "2esz7bth6DWbJaKWWxtBkehliuX6A/h//izVCZAb6c05bn3farOe+MrTH9hlwsGz\n" +
+                "Bh8BDgAAAEIioQa3njdqSURqJQqxc49lfqp+j5F5azypUCY8OPu76twjUgWCZsc0\n" +
+                "iQMLCQcFFQoOCAwCFgACmw8CHgkFJwkCBwIAAAAABo0g9kgtw8wX6XUKcHhtGlLb\n" +
+                "fnXOPPHli+iBxjB3y6txtdoQALSr99MU7kF/WbzQNvpdkejLOr6tTxrNHHE5Iw1+\n" +
+                "12t1KprbJV/ViDmJ2GGwSiK5bzhA6jtrfFoSQBLKkJ2IoACPSbA80tazUf4E/P2/\n" +
+                "+157aU3FQfkT8HS6Zcr604xmw1IemkqMxoN/ukyihz+6MJpltb5kgpE2UNgz07jd\n" +
+                "cpXXe4ATKRWIx4I4pVIcXomH9rHDgSLn+bxaCsbfgijnQjJvTJof15rFYGVKtAzx\n" +
+                "DYGE2Y7NlCtbveoLj0+e8t2vDJSISBur+9oPgMHR0DbGT7wAr32kWXDFxVl1pU8o\n" +
+                "KzQ3QaKNddvMnZ9SyP8OUOc0DlevT0Ib+t2mFvU2omcerI9uUAOut4HrJX3bsAFq\n" +
+                "/vC8/pzYLN52sqC6sLrgws28DmMVvN/slK73y5EM+7bkztdJeuHMlED4IRXNQ/tZ\n" +
+                "Erm2KYsjzFVLcgk6M9lDLGwi6NKEBfBxwn01r3AhmeGB9n0whSZE4WtEmB/GgT9d\n" +
+                "9bC6pOYQeVE+5GPhWbrDCtRBxwXxskXwRrC+/HCM4AwecNfDF5cRJfEAAnxY5G7o\n" +
+                "hgHqwbkfY8vm9ePYDJv5+SplEbAQyHaKdKxzeOM6mrpxkkn4tN23ToU14rl17+3d\n" +
+                "eGk3VrSlmawnZyRSDguwZst2mcy/MYL+YLYvYTUalXZegP9uRm0YF4RGvnk9PLlg\n" +
+                "4M2U\n" +
+                "-----END PGP PRIVATE KEY BLOCK-----\n";
+        String MSG = "Hello, World!\n";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+                .clearHeaders()
+                .enableCRC(false)
+                .build(bOut);
+        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+        PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(
+                        secretKeys.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA3_512),
+                secretKeys.getPublicKey());
+        sigGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, secretKeys.getSecretKey().extractPrivateKey(null));
+        PGPOnePassSignature ops = sigGen.generateOnePassVersion(false);
+        ops.encode(pOut);
+
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream litOut = litGen.open(pOut, PGPLiteralDataGenerator.UTF8, "",
+                PGPLiteralDataGenerator.NOW, new byte[512]);
+        byte[] plaintext = MSG.getBytes(StandardCharsets.UTF_8);
+        litOut.write(plaintext);
+        litOut.close();
+        sigGen.update(plaintext);
+        PGPSignature sig = sigGen.generate();
+        sig.encode(pOut);
+        pOut.close();
+        aOut.close();
+
+        bIn = new ByteArrayInputStream(bOut.toByteArray());
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+
+        PGPOnePassSignatureList opsList = (PGPOnePassSignatureList) objFac.nextObject();
+        ops = opsList.get(0);
+        ops.init(new BcPGPContentVerifierBuilderProvider(), secretKeys.getPublicKey());
+        PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
+        InputStream litIn = lit.getDataStream();
+        plaintext = Streams.readAll(litIn);
+        ops.update(plaintext);
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+        sig = sigList.get(0);
+        isTrue("V6 inline sig made using RSA key MUST verify", ops.verify(sig));
     }
 
     public static void main(String[] args)
