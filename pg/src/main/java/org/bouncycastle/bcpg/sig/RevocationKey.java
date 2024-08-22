@@ -5,6 +5,9 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
  * Represents revocation key OpenPGP signature sub packet.
+ * Note: This packet is deprecated. Applications MUST NOT generate such a packet.
+ *
+ * @deprecated since RFC9580
  */
 public class RevocationKey extends SignatureSubpacket
 {
