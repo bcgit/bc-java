@@ -43,18 +43,18 @@ class MLKEMCipherSpi
     private BCMLKEMPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
-    private MLKEMParameters kyberParameters;
+    private MLKEMParameters mlkemParamters;
 
     MLKEMCipherSpi(String algorithmName)
     {
         this.algorithmName = algorithmName;
-        this.kyberParameters = null;
+        this.mlkemParamters = null;
     }
 
     MLKEMCipherSpi(MLKEMParameters kyberParameters)
     {
-        this.kyberParameters = kyberParameters;
-        this.algorithmName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
+        this.mlkemParamters = kyberParameters;
+        this.algorithmName = kyberParameters.getName();
     }
 
     @Override
@@ -177,9 +177,9 @@ class MLKEMCipherSpi
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
         }
 
-        if (kyberParameters != null)
+        if (mlkemParamters != null)
         {
-            String canonicalAlgName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
+            String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParamters.getName()).getName();
             if (!canonicalAlgName.equals(key.getAlgorithm()))
             {
                 throw new InvalidKeyException("cipher locked to " + canonicalAlgName);

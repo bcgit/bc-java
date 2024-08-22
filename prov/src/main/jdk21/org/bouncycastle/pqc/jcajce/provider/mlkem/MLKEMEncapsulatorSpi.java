@@ -3,7 +3,7 @@ package org.bouncycastle.pqc.jcajce.provider.mlkem;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.jcajce.provider.Util;
 
 import javax.crypto.KEM;
@@ -19,14 +19,14 @@ public class MLKEMEncapsulatorSpi
 {
     private final BCMLKEMPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
-    private final KyberKEMGenerator kemGen;
+    private final MLKEMGenerator kemGen;
 
     public MLKEMEncapsulatorSpi(BCMLKEMPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
 
-        this.kemGen = new KyberKEMGenerator(random);
+        this.kemGen = new MLKEMGenerator(random);
     }
 
 
@@ -88,6 +88,17 @@ public class MLKEMEncapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return kemGen.getEncapsulationSize(publicKey.getKeyParams());
+        //TODO: Maybe make parameterSet public or add getEncapsulationSize() in KEMGenerator.java
+        switch (publicKey.getKeyParams().getParameters().getName())
+        {
+            case "ML-KEM-512":
+                return 768;
+            case "ML-KEM-768":
+                return 1088;
+            case "ML-KEM-1024":
+                return 1568;
+            default:
+                return -1;
+        }
     }
 }
