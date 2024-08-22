@@ -424,9 +424,10 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi());
 
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new DilithiumKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new DilithiumKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new DilithiumKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMKeyFactorySpi());
+
         addKeyInfoConverter(BCObjectIdentifiers.dilithium2_aes, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.dilithium3_aes, new DilithiumKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.dilithium5_aes, new DilithiumKeyFactorySpi());
@@ -442,13 +443,7 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.hqc192, new HQCKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.hqc256, new HQCKeyFactorySpi());
 
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMKeyFactorySpi());
 
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber512_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber768_aes, new KyberKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.kyber1024_aes, new KyberKeyFactorySpi());

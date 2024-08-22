@@ -1,7 +1,6 @@
 package org.bouncycastle.cert.test;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -12,11 +11,9 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bc.ExternalValue;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -26,7 +23,6 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v1CertificateBuilder;
 import org.bouncycastle.jcajce.ExternalPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.BigIntegers;
@@ -96,7 +92,7 @@ public class ExternalKeyTest
     private void checkCertificateDilithium()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium5");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ML-DSA-87");
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -109,7 +105,7 @@ public class ExternalKeyTest
         JcaX509v1CertificateBuilder certBldr = new JcaX509v1CertificateBuilder(
             name, BigInteger.valueOf(System.currentTimeMillis()), new Date(time - 5000), new Date(time + 365L * 24L * 60 * 60 * 5000), name, externalKey);
 
-        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("Dilithium5").build(kp.getPrivate()));
+        X509CertificateHolder certHolder = certBldr.build(new JcaContentSignerBuilder("ML-DSA-87").build(kp.getPrivate()));
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
 //        System.err.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(cert.getEncoded())));
