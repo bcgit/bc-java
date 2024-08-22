@@ -24,7 +24,7 @@ public class BasicTlsTest
     protected void setUp()
     {
         ProviderUtils.setupLowPriority(false);
-//        System.setProperty("jdk.tls.namedGroups", "kyber768");
+        // System.setProperty("jdk.tls.namedGroups", "OQS_secp521Mlkem1024");
     }
 
     private static final String HOST = "localhost";
