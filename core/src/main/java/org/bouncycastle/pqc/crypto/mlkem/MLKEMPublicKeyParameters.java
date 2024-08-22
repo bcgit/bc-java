@@ -32,12 +32,6 @@ public class MLKEMPublicKeyParameters
         return getEncoded(t, rho);
     }
 
-    /** @deprecated Use {@link #getEncoded()} instead. */
-    public byte[] getPublicKey()
-    {
-        return getEncoded();
-    }
-
     public byte[] getRho()
     {
         return Arrays.clone(rho);

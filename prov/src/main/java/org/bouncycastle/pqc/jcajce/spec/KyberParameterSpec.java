@@ -10,9 +10,9 @@ import org.bouncycastle.util.Strings;
 public class KyberParameterSpec
     implements AlgorithmParameterSpec
 {
-    public static final KyberParameterSpec kyber512 = new KyberParameterSpec(MLKEMParameters.kyber512);
-    public static final KyberParameterSpec kyber768 = new KyberParameterSpec(MLKEMParameters.kyber768);
-    public static final KyberParameterSpec kyber1024 = new KyberParameterSpec(MLKEMParameters.kyber1024);
+    public static final KyberParameterSpec kyber512 = new KyberParameterSpec(MLKEMParameters.ml_kem_512);
+    public static final KyberParameterSpec kyber768 = new KyberParameterSpec(MLKEMParameters.ml_kem_768);
+    public static final KyberParameterSpec kyber1024 = new KyberParameterSpec(MLKEMParameters.ml_kem_1024);
 
     private static Map parameters = new HashMap();
 

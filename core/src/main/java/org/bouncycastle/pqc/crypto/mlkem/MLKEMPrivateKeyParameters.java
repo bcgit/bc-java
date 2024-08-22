@@ -50,12 +50,6 @@ public class MLKEMPrivateKeyParameters
         return Arrays.clone(nonce);
     }
 
-    /** @deprecated Use {@link #getEncoded()} instead. */
-    public byte[] getPrivateKey()
-    {
-        return getEncoded();
-    }
-
     public byte[] getPublicKey()
     {
         return MLKEMPublicKeyParameters.getEncoded(t, rho);

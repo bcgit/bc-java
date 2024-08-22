@@ -26,7 +26,7 @@ public class XWingKeyPairGenerator
     {
         MLKEMKeyPairGenerator kyberKeyGen = new MLKEMKeyPairGenerator();
 
-        kyberKeyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber768));
+        kyberKeyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_768));
 
         X25519KeyPairGenerator x25519KeyGen = new X25519KeyPairGenerator();
 

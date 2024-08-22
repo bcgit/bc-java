@@ -36,9 +36,9 @@ public class CrystalsKyberTest
     public void testKeyGen() throws IOException
     {
         MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.kyber512,
-                MLKEMParameters.kyber768,
-                MLKEMParameters.kyber1024,
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024,
         };
 
         String[] files = new String[]{
@@ -111,9 +111,9 @@ public class CrystalsKyberTest
     public void testEncapDecap_encapsulation() throws IOException
     {
         MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.kyber512,
-                MLKEMParameters.kyber768,
-                MLKEMParameters.kyber1024,
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024,
         };
 
         String[] files = new String[]{
@@ -191,9 +191,9 @@ public class CrystalsKyberTest
     public void testEncapDecap_decapsulation() throws IOException
     {
         MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.kyber512,
-                MLKEMParameters.kyber768,
-                MLKEMParameters.kyber1024,
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024,
         };
 
         String[] files = new String[]{
@@ -267,9 +267,9 @@ public class CrystalsKyberTest
     public void testModulus() throws IOException
     {
         MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.kyber512,
-                MLKEMParameters.kyber768,
-                MLKEMParameters.kyber1024,
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024,
         };
 
         String[] files = new String[]{
@@ -318,11 +318,11 @@ public class CrystalsKyberTest
         throws IOException
     {
         SecureRandom random = new SecureRandom();
-        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(MLKEMParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(MLKEMParameters.ml_kem_512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
 
         byte[] partA = partyU.getSuppPrivInfoPartA();
 
-        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(MLKEMParameters.kyber512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
+        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(MLKEMParameters.ml_kem_512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
 
         byte[] partB = partyV.getSuppPrivInfoPartB(partA);
 
@@ -343,7 +343,7 @@ public class CrystalsKyberTest
         SecureRandom random = new SecureRandom();
         MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
 
-        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber1024));
+        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_1024));
 
         AsymmetricCipherKeyPair keyPair = keyGen.internalGenerateKeyPair(d, z);
         assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((MLKEMPublicKeyParameters)keyPair.getPublic()).getEncoded()));
@@ -388,9 +388,9 @@ public class CrystalsKyberTest
     public void testParameters()
         throws Exception
     {
-        assertEquals(256, MLKEMParameters.kyber512.getSessionKeySize());
-        assertEquals(256, MLKEMParameters.kyber768.getSessionKeySize());
-        assertEquals(256, MLKEMParameters.kyber1024.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.ml_kem_512.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.ml_kem_768.getSessionKeySize());
+        assertEquals(256, MLKEMParameters.ml_kem_1024.getSessionKeySize());
     }
 
     public void testVectors()
@@ -510,7 +510,7 @@ public class CrystalsKyberTest
         SecureRandom random = new SecureRandom();
         MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
 
-        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber1024));
+        keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_1024));
 
         for (int i = 0; i != 1000; i++)
         {

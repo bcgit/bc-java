@@ -25,9 +25,9 @@ public class KyberKeyPairGeneratorSpi
 
     static
     {
-        parameters.put(KyberParameterSpec.kyber512.getName(), MLKEMParameters.kyber512);
-        parameters.put(KyberParameterSpec.kyber768.getName(), MLKEMParameters.kyber768);
-        parameters.put(KyberParameterSpec.kyber1024.getName(), MLKEMParameters.kyber1024);
+        parameters.put(KyberParameterSpec.kyber512.getName(), MLKEMParameters.ml_kem_512);
+        parameters.put(KyberParameterSpec.kyber768.getName(), MLKEMParameters.ml_kem_768);
+        parameters.put(KyberParameterSpec.kyber1024.getName(), MLKEMParameters.ml_kem_1024);
     }
 
     MLKEMKeyGenerationParameters param;
@@ -106,7 +106,7 @@ public class KyberKeyPairGeneratorSpi
             }
             else
             {
-                param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.kyber1024);
+                param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_1024);
             }
 
             engine.init(param);
@@ -125,7 +125,7 @@ public class KyberKeyPairGeneratorSpi
     {
         public Kyber512()
         {
-            super(MLKEMParameters.kyber512);
+            super(MLKEMParameters.ml_kem_512);
         }
     }
 
@@ -134,7 +134,7 @@ public class KyberKeyPairGeneratorSpi
     {
         public Kyber768()
         {
-            super(MLKEMParameters.kyber768);
+            super(MLKEMParameters.ml_kem_768);
         }
     }
 
@@ -143,7 +143,7 @@ public class KyberKeyPairGeneratorSpi
     {
         public Kyber1024()
         {
-            super(MLKEMParameters.kyber1024);
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

@@ -18,10 +18,10 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
@@ -220,13 +220,13 @@ class Utils
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
 
-        kyberOids.put(MLKEMParameters.kyber512, NISTObjectIdentifiers.id_alg_ml_kem_512);
-        kyberOids.put(MLKEMParameters.kyber768, NISTObjectIdentifiers.id_alg_ml_kem_768);
-        kyberOids.put(MLKEMParameters.kyber1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
+        kyberOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
+        kyberOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);
+        kyberOids.put(MLKEMParameters.ml_kem_1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
 
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.kyber512);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.kyber768);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.kyber1024);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
+        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.ml_kem_1024);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);

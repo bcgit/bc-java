@@ -134,7 +134,7 @@ public class KyberKeyGeneratorSpi
     {
         public Kyber512()
         {
-            super(MLKEMParameters.kyber512);
+            super(MLKEMParameters.ml_kem_512);
         }
     }
 
@@ -143,7 +143,7 @@ public class KyberKeyGeneratorSpi
     {
         public Kyber768()
         {
-            super(MLKEMParameters.kyber768);
+            super(MLKEMParameters.ml_kem_768);
         }
     }
 
@@ -152,7 +152,7 @@ public class KyberKeyGeneratorSpi
     {
         public Kyber1024()
         {
-            super(MLKEMParameters.kyber1024);
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

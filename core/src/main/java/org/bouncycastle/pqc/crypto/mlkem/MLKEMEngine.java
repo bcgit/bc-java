@@ -1,8 +1,8 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
-import org.bouncycastle.util.Arrays;
-
 import java.security.SecureRandom;
+
+import org.bouncycastle.util.Arrays;
 
 class MLKEMEngine
 {
@@ -136,7 +136,7 @@ class MLKEMEngine
         return KyberEta1;
     }
 
-    public MLKEMEngine(int k, boolean usingAes)
+    public MLKEMEngine(int k)
     {
         this.KyberK = k;
         switch (k)
