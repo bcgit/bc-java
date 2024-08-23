@@ -322,6 +322,16 @@ public class PrivateKeyFactory
                         null);
                 }
             }
+            else if (keyObj instanceof DEROctetString)
+            {
+                byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
+                if (keyInfo.getPublicKeyData() != null)
+                {
+                    MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+                    return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
+                }
+                return new MLDSAPrivateKeyParameters(spParams, data, null);
+            }
             else
             {
                 throw new IOException("not supported");
