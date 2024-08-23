@@ -3039,9 +3039,9 @@ public class CertTest
         PrivateKey ecPriv = ecKp.getPrivate();
         PublicKey ecPub = ecKp.getPublic();
 
-        KeyPairGenerator dlKpg = KeyPairGenerator.getInstance("Dilithium2", "BCPQC");
+        KeyPairGenerator dlKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dlKpg.initialize(DilithiumParameterSpec.dilithium2);
+        dlKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
 
         KeyPair dlKp = dlKpg.generateKeyPair();
 
@@ -3057,7 +3057,7 @@ public class CertTest
         // create the CRL - version 2
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecPriv);
-        ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(dlPriv);
+        ContentSigner altSigGen = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dlPriv);
 
         Date now = new Date();
 
@@ -3098,7 +3098,7 @@ public class CertTest
         crl.verify(ecPub, BC);
 
         isTrue("crl primary failed", crlHolder.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(ecPub)));
-        isTrue("crl secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(dlPub)));
+        isTrue("crl secondary failed", crlHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(dlPub)));
 
         if (!crl.getIssuerX500Principal().equals(new X500Principal("CN=Test CA")))
         {
@@ -4434,9 +4434,9 @@ public class CertTest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
 
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+        kpGen.initialize(MLDSAParameterSpec.ml_dsa_44, new SecureRandom());
 
         KeyPair kp = kpGen.generateKeyPair();
 
@@ -4462,7 +4462,7 @@ public class CertTest
         //
         ContentSigner sigGen = new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(ecPrivKey);
 
-        ContentSigner altSigGen = new JcaContentSignerBuilder("Dilithium2").setProvider("BCPQC").build(privKey);
+        ContentSigner altSigGen = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(privKey);
 
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             builder.build(), BigInteger.valueOf(1),
@@ -4500,7 +4500,7 @@ public class CertTest
         isTrue("alt sig alg wrong", AltSignatureAlgorithm.fromExtensions(certHolder.getExtensions()).equals(altSigGen.getAlgorithmIdentifier()));
         isTrue("alt key wrong", SubjectAltPublicKeyInfo.fromExtensions(certHolder.getExtensions()).equals(ASN1Primitive.fromByteArray(pubKey.getEncoded())));
 
-        isTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(pubKey)));
+        isTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(pubKey)));
     }
 
     public void checkCreationComposite()
@@ -5504,7 +5504,7 @@ public class CertTest
 
             CompositePublicKey compositePublicKey = new CompositePublicKey(subjectPublicKeyInfo);
 
-            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "DILITHIUM2");
+            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
             isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
         }
         catch (Exception e)
@@ -5551,7 +5551,7 @@ public class CertTest
 
             CompositePublicKey compositePublicKey = (CompositePublicKey)certificate.getPublicKey();
 
-            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "DILITHIUM2");
+            isEquals(compositePublicKey.getPublicKeys().get(0).getAlgorithm(), "ML-DSA-44");
             isEquals(compositePublicKey.getPublicKeys().get(1).getAlgorithm(), "ECDSA");
 
             certificate.verify(compositePublicKey);
