@@ -21,6 +21,7 @@ import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
@@ -74,9 +75,6 @@ class Utils
     static final Map falconOids = new HashMap();
     static final Map falconParams = new HashMap();
 
-    static final Map kyberOids = new HashMap();
-    static final Map kyberParams = new HashMap();
-
     static final Map ntruprimeOids = new HashMap();
     static final Map ntruprimeParams = new HashMap();
 
@@ -94,6 +92,12 @@ class Utils
 
     static final Map rainbowOids = new HashMap();
     static final Map rainbowParams = new HashMap();
+
+    static final Map mlkemOids = new HashMap<ASN1ObjectIdentifier, MLKEMParameters>();
+    static final Map mlkemParams = new HashMap<MLKEMParameters, ASN1ObjectIdentifier>();
+
+    static final Map mldsaOids = new HashMap<ASN1ObjectIdentifier, MLDSAParameters>();
+    static final Map mldsaParams = new HashMap<MLDSAParameters, ASN1ObjectIdentifier>();
 
     static final Map shldsaOids = new HashMap<ASN1ObjectIdentifier, SLHDSAParameters>();
     static final Map shldsaParams = new HashMap<SLHDSAParameters, ASN1ObjectIdentifier>();
@@ -224,13 +228,13 @@ class Utils
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
 
-        kyberOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
-        kyberOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);
-        kyberOids.put(MLKEMParameters.ml_kem_1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
+        mlkemOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
+        mlkemOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);
+        mlkemOids.put(MLKEMParameters.ml_kem_1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
 
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
-        kyberParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.ml_kem_1024);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.ml_kem_1024);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
@@ -260,13 +264,21 @@ class Utils
         sntruprimeParams.put(BCObjectIdentifiers.sntrup1013, SNTRUPrimeParameters.sntrup1013);
         sntruprimeParams.put(BCObjectIdentifiers.sntrup1277, SNTRUPrimeParameters.sntrup1277);
 
-        dilithiumOids.put(DilithiumParameters.dilithium2, NISTObjectIdentifiers.id_ml_dsa_44);
-        dilithiumOids.put(DilithiumParameters.dilithium3, NISTObjectIdentifiers.id_ml_dsa_65);
-        dilithiumOids.put(DilithiumParameters.dilithium5, NISTObjectIdentifiers.id_ml_dsa_87);
+        mldsaOids.put(MLDSAParameters.ml_dsa_44, NISTObjectIdentifiers.id_ml_dsa_44);
+        mldsaOids.put(MLDSAParameters.ml_dsa_65, NISTObjectIdentifiers.id_ml_dsa_65);
+        mldsaOids.put(MLDSAParameters.ml_dsa_87, NISTObjectIdentifiers.id_ml_dsa_87);
 
-        dilithiumParams.put(NISTObjectIdentifiers.id_ml_dsa_44, DilithiumParameters.dilithium2);
-        dilithiumParams.put(NISTObjectIdentifiers.id_ml_dsa_65, DilithiumParameters.dilithium3);
-        dilithiumParams.put(NISTObjectIdentifiers.id_ml_dsa_87, DilithiumParameters.dilithium5);
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_44, MLDSAParameters.ml_dsa_44);
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_65, MLDSAParameters.ml_dsa_65);
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_87, MLDSAParameters.ml_dsa_87);
+
+        dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
+        dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
+        dilithiumOids.put(DilithiumParameters.dilithium5, BCObjectIdentifiers.dilithium5);
+
+        dilithiumParams.put(BCObjectIdentifiers.dilithium2, DilithiumParameters.dilithium2);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium3, DilithiumParameters.dilithium3);
+        dilithiumParams.put(BCObjectIdentifiers.dilithium5, DilithiumParameters.dilithium5);
 
         bikeParams.put(BCObjectIdentifiers.bike128, BIKEParameters.bike128);
         bikeParams.put(BCObjectIdentifiers.bike192, BIKEParameters.bike192);
@@ -657,12 +669,12 @@ class Utils
 
     static ASN1ObjectIdentifier kyberOidLookup(MLKEMParameters params)
     {
-        return (ASN1ObjectIdentifier)kyberOids.get(params);
+        return (ASN1ObjectIdentifier)mlkemOids.get(params);
     }
 
     static MLKEMParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
     {
-        return (MLKEMParameters)kyberParams.get(oid);
+        return (MLKEMParameters)mlkemParams.get(oid);
     }
 
     static ASN1ObjectIdentifier ntrulprimeOidLookup(NTRULPRimeParameters params)
@@ -683,6 +695,16 @@ class Utils
     static SNTRUPrimeParameters sntruprimeParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SNTRUPrimeParameters)sntruprimeParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier mldsaOidLookup(MLDSAParameters params)
+    {
+        return (ASN1ObjectIdentifier)mldsaOids.get(params);
+    }
+
+    static MLDSAParameters mldsaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (MLDSAParameters)mldsaParams.get(oid);
     }
 
     static ASN1ObjectIdentifier dilithiumOidLookup(DilithiumParameters params)

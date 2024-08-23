@@ -74,8 +74,8 @@ public class CompositeSignaturesTest
             {
             case MLDSA44_RSA2048_PSS_SHA256:
             case MLDSA44_RSA2048_PKCS15_SHA256:
-                TestCase.assertEquals("DILITHIUM2", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM2", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("RSA", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("RSA", secondPrivateKeyAlgorithm);
                 rsaPublicKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
@@ -84,22 +84,22 @@ public class CompositeSignaturesTest
                 TestCase.assertEquals(2048, rsaPrivateKey.getModulus().bitLength());
                 break;
             case MLDSA44_Ed25519_SHA512:
-                TestCase.assertEquals("DILITHIUM2", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM2", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ED25519", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
                 break;
             case MLDSA44_ECDSA_P256_SHA256:
             case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                TestCase.assertEquals("DILITHIUM2", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM2", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-44", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
                 break;
             case MLDSA65_RSA3072_PSS_SHA512:
             case MLDSA65_RSA3072_PKCS15_SHA512:
-                TestCase.assertEquals("DILITHIUM3", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM3", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("RSA", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("RSA", secondPrivateKeyAlgorithm);
                 rsaPublicKey = (BCRSAPublicKey)compositePublicKey.getPublicKeys().get(1);
@@ -108,28 +108,28 @@ public class CompositeSignaturesTest
                 TestCase.assertEquals(3072, rsaPrivateKey.getModulus().bitLength());
                 break;
             case MLDSA65_Ed25519_SHA512:
-                TestCase.assertEquals("DILITHIUM3", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM3", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ED25519", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ED25519", secondPrivateKeyAlgorithm);
                 break;
             case MLDSA65_ECDSA_P256_SHA512:
             case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                TestCase.assertEquals("DILITHIUM3", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM3", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-65", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
                 break;
             case MLDSA87_Ed448_SHA512:
-                TestCase.assertEquals("DILITHIUM5", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM5", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-87", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-87", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ED448", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ED448", secondPrivateKeyAlgorithm);
                 break;
             case MLDSA87_ECDSA_P384_SHA512:
             case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                TestCase.assertEquals("DILITHIUM5", firstPublicKeyAlgorithm);
-                TestCase.assertEquals("DILITHIUM5", firstPrivateKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-87", firstPublicKeyAlgorithm);
+                TestCase.assertEquals("ML-DSA-87", firstPrivateKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPublicKeyAlgorithm);
                 TestCase.assertEquals("ECDSA", secondPrivateKeyAlgorithm);
                 break;
@@ -199,7 +199,7 @@ public class CompositeSignaturesTest
             X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(Base64.decode(publicKeyBase64));
             KeyFactory keyFactory = KeyFactory.getInstance(oid, "BC");
             CompositePublicKey compositePublicKey = (CompositePublicKey)keyFactory.generatePublic(pubKeySpec);
-
+             
             Signature signature = Signature.getInstance(oid, "BC");
             signature.initVerify(compositePublicKey);
             signature.update(Base64.decode(messageBase64));

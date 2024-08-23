@@ -1,35 +1,31 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 public class BCMLDSAPrivateKey
     implements MLDSAPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient DilithiumPrivateKeyParameters params;
+    private transient MLDSAPrivateKeyParameters params;
     private transient String algorithm;
     private transient byte[] encoding;
     private transient ASN1Set attributes;
 
     public BCMLDSAPrivateKey(
-            DilithiumPrivateKeyParameters params)
+            MLDSAPrivateKeyParameters params)
     {
         this.params = params;
         algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
@@ -44,10 +40,10 @@ public class BCMLDSAPrivateKey
     private void init(PrivateKeyInfo keyInfo)
             throws IOException
     {
-        init((DilithiumPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
+        init((MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
     }
 
-    private void init(DilithiumPrivateKeyParameters params, ASN1Set attributes)
+    private void init(MLDSAPrivateKeyParameters params, ASN1Set attributes)
     {
         this.attributes = attributes;
         this.params = params;
@@ -115,7 +111,7 @@ public class BCMLDSAPrivateKey
         return "PKCS#8";
     }
 
-    DilithiumPrivateKeyParameters getKeyParams()
+    MLDSAPrivateKeyParameters getKeyParams()
     {
         return params;
     }

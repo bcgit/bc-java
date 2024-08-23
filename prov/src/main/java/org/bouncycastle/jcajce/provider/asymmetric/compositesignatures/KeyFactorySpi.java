@@ -9,7 +9,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -22,17 +21,17 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
@@ -183,18 +182,18 @@ public class KeyFactorySpi
         {
         case MLDSA44_Ed25519_SHA512:
         case MLDSA65_Ed25519_SHA512:
-            algorithmNames.add("Dilithium");
+            algorithmNames.add("ML-DSA");
             algorithmNames.add("Ed25519");
             break;
         case MLDSA87_Ed448_SHA512:
-            algorithmNames.add("Dilithium");
+            algorithmNames.add("ML-DSA");
             algorithmNames.add("Ed448");
             break;
         case MLDSA44_RSA2048_PSS_SHA256:
         case MLDSA44_RSA2048_PKCS15_SHA256:
         case MLDSA65_RSA3072_PSS_SHA512:
         case MLDSA65_RSA3072_PKCS15_SHA512:
-            algorithmNames.add("Dilithium");
+            algorithmNames.add("ML-DSA");
             algorithmNames.add("RSA");
             break;
         case MLDSA44_ECDSA_P256_SHA256:
@@ -203,7 +202,7 @@ public class KeyFactorySpi
         case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
         case MLDSA87_ECDSA_P384_SHA512:
         case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-            algorithmNames.add("Dilithium");
+            algorithmNames.add("ML-DSA");
             algorithmNames.add("ECDSA");
             break;
         case Falcon512_Ed25519_SHA512:

@@ -40,6 +40,8 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
@@ -202,9 +204,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sntrup953, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1013, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1277, new SNTRUPrimeConverter());
-        converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new DilithiumConverter());
-        converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new DilithiumConverter());
-        converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new DilithiumConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAConverter());
+        converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
+        converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
+        converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium2_aes, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3_aes, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5_aes, new DilithiumConverter());
@@ -656,6 +661,45 @@ public class PublicKeyFactory
             {
                 // we're a raw encoding
                 return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
+            }
+        }
+    }
+
+    static class MLDSAConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            MLDSAParameters dilithiumParams = Utils.mldsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
+        }
+
+        static MLDSAPublicKeyParameters getPublicKeyParams(MLDSAParameters dilithiumParams, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLDSAPublicKeyParameters(dilithiumParams,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLDSAPublicKeyParameters(dilithiumParams, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLDSAPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
             }
         }
     }
