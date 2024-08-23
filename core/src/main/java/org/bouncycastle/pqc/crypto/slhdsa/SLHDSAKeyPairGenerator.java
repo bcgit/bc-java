@@ -18,14 +18,10 @@ public class SLHDSAKeyPairGenerator
         parameters = ((SLHDSAKeyGenerationParameters)param).getParameters();
     }
 
-    public AsymmetricCipherKeyPair generateKeyPair()
+    public AsymmetricCipherKeyPair internalGenerateKeyPair(byte[] skSeed, byte[] skPrf, byte[] pkSeed)
     {
         SLHDSAEngine engine = parameters.getEngine();
-        byte[] pkSeed;
-        SK sk;
-
-        sk = new SK(sec_rand(engine.N), sec_rand(engine.N));
-        pkSeed = sec_rand(engine.N);
+        SK sk = new SK(skSeed, skPrf);
 
         engine.init(pkSeed);
 
@@ -33,7 +29,21 @@ public class SLHDSAKeyPairGenerator
         PK pk = new PK(pkSeed, new HT(engine, sk.seed, pkSeed).htPubKey);
 
         return new AsymmetricCipherKeyPair(new SLHDSAPublicKeyParameters(parameters, pk),
-            new SLHDSAPrivateKeyParameters(parameters, sk, pk));
+                new SLHDSAPrivateKeyParameters(parameters, sk, pk));
+    }
+
+    public AsymmetricCipherKeyPair generateKeyPair()
+    {
+        SLHDSAEngine engine = parameters.getEngine();
+        byte[] pkSeed;
+        byte[] skSeed;
+        byte[] skPrf;
+
+
+        skSeed = sec_rand(engine.N);
+        skPrf = sec_rand(engine.N);
+        pkSeed = sec_rand(engine.N);
+        return internalGenerateKeyPair(skSeed, skPrf, pkSeed);
     }
 
     private byte[] sec_rand(int n)
