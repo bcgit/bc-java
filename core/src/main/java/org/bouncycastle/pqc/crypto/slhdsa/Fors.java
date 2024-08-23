@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
+import java.math.BigInteger;
 import java.util.LinkedList;
 
 import org.bouncycastle.util.Arrays;
@@ -63,7 +64,8 @@ class Fors
     {
         ADRS adrs = new ADRS(paramAdrs);
 
-        int[] idxs = message_to_idxs(md, engine.K, engine.A);
+//        int[] idxs = message_to_idxs(md, engine.K, engine.A);
+        int[] idxs = base2B(md, engine.A, engine.K);
         SIG_FORS[] sig_fors = new SIG_FORS[engine.K];
 // compute signature elements
         int t = engine.T;
@@ -99,7 +101,8 @@ class Fors
         byte[][] root = new byte[engine.K][];
         int t = engine.T;
 
-        int[] idxs = message_to_idxs(message, engine.K, engine.A);
+//        int[] idxs = message_to_idxs(message, engine.K, engine.A);
+        int[] idxs = base2B(message, engine.A, engine.K);
         // compute roots
         for (int i = 0; i < engine.K; i++)
         {
@@ -137,24 +140,25 @@ class Fors
         return engine.T_l(pkSeed, forspkADRS, Arrays.concatenate(root));
     }
 
-    /**
-     * Interprets m as SPX_FORS_HEIGHT-bit unsigned integers.
-     * Assumes m contains at least SPX_FORS_HEIGHT * SPX_FORS_TREES bits.
-     * Assumes indices has space for SPX_FORS_TREES integers.
-     */
-    static int[] message_to_idxs(byte[] msg, int fors_trees, int fors_height)
+    static int[] base2B(byte[] msg, int b, int outLen)
     {
-        int offset = 0;
-        int[] idxs = new int[fors_trees];
-        for (int i = 0; i < fors_trees; i++)
+        int[] baseB = new int[outLen];
+        int i = 0;
+        int bits = 0;
+        BigInteger total = BigInteger.ZERO;
+
+        for (int o = 0; o < outLen; o++)
         {
-            idxs[i] = 0;
-            for (int j = 0; j < fors_height; j++)
+            while (bits < b)
             {
-                idxs[i] ^= ((msg[offset >> 3] >> (offset & 0x7)) & 0x1) << j;
-                offset++;
+                total = total.shiftLeft(8).add(BigInteger.valueOf(msg[i] & 0xff));
+                i+= 1;
+                bits += 8;
             }
+            bits -= b;
+            baseB[o] = (total.shiftRight(bits).mod(BigInteger.valueOf(2).pow(b))).intValue();
         }
-        return idxs;
+
+        return baseB;
     }
 }
