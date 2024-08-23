@@ -4,8 +4,6 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -18,7 +16,7 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 
 
@@ -64,71 +62,71 @@ public class KeyPairGeneratorSpi
             switch (this.algorithmIdentifier)
             {
             case MLDSA44_Ed25519_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-44", "BC"));
                 generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_44, this.secureRandom);
                 generators.get(1).initialize(256, this.secureRandom);
                 break;
             case MLDSA65_Ed25519_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-65", "BC"));
                 generators.add(KeyPairGenerator.getInstance("Ed25519", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_65, this.secureRandom);
                 generators.get(1).initialize(256, this.secureRandom);
                 break;
             case MLDSA87_Ed448_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-87", "BC"));
                 generators.add(KeyPairGenerator.getInstance("Ed448", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_87, this.secureRandom);
                 generators.get(1).initialize(448, this.secureRandom);
                 break;
             case MLDSA44_RSA2048_PSS_SHA256:
             case MLDSA44_RSA2048_PKCS15_SHA256:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-44", "BC"));
                 generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_44, this.secureRandom);
                 generators.get(1).initialize(2048, this.secureRandom);
                 break;
             case MLDSA65_RSA3072_PSS_SHA512:
             case MLDSA65_RSA3072_PKCS15_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-65", "BC"));
                 generators.add(KeyPairGenerator.getInstance("RSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_65, this.secureRandom);
                 generators.get(1).initialize(3072, this.secureRandom);
                 break;
             case MLDSA44_ECDSA_P256_SHA256:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-44", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_44, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
                 break;
             case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-44", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium2, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_44, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
                 break;
             case MLDSA65_ECDSA_P256_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-65", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_65, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("P-256"), this.secureRandom);
                 break;
             case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-65", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium3, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_65, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("brainpoolP256r1"), this.secureRandom);
                 break;
             case MLDSA87_ECDSA_P384_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-87", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_87, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("P-384"), this.secureRandom);
                 break;
             case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                generators.add(KeyPairGenerator.getInstance("Dilithium", "BC"));
+                generators.add(KeyPairGenerator.getInstance("ML-DSA-87", "BC"));
                 generators.add(KeyPairGenerator.getInstance("ECDSA", "BC"));
-                generators.get(0).initialize(DilithiumParameterSpec.dilithium5, this.secureRandom);
+                generators.get(0).initialize(MLDSAParameterSpec.ml_dsa_87, this.secureRandom);
                 generators.get(1).initialize(new ECGenParameterSpec("brainpoolP384r1"), this.secureRandom);
                 break;
             case Falcon512_ECDSA_P256_SHA256:

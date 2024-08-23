@@ -1,29 +1,27 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 public class BCMLDSAPublicKey
     implements MLDSAPublicKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient DilithiumPublicKeyParameters params;
+    private transient MLDSAPublicKeyParameters params;
 
     public BCMLDSAPublicKey(
-        DilithiumPublicKeyParameters params)
+        MLDSAPublicKeyParameters params)
     {
         this.params = params;
     }
@@ -37,7 +35,7 @@ public class BCMLDSAPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (DilithiumPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.params = (MLDSAPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
     }
     
     /**

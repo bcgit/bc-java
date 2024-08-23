@@ -5,8 +5,6 @@ import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -58,47 +56,55 @@ public class SignatureSpi
             switch (this.algorithmIdentifier)
             {
             case MLDSA44_Ed25519_SHA512:
+                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
+                componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
             case MLDSA65_Ed25519_SHA512:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
                 componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA87_Ed448_SHA512:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-87", "BC"));
                 componentSignatures.add(Signature.getInstance("Ed448", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_RSA2048_PSS_SHA256:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withRSA/PSS", "BC")); //PSS with SHA-256 as digest algo and MGF.
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_RSA3072_PSS_SHA512:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withRSA/PSS", "BC")); //PSS with SHA-512 as digest algo and MGF.
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_RSA2048_PKCS15_SHA256:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withRSA", "BC")); //PKCS15
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_RSA3072_PKCS15_SHA512:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withRSA", "BC")); //PKCS15
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_ECDSA_P256_SHA256:
             case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_ECDSA_P256_SHA512:
             case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
+                componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
+                this.digest = DigestFactory.createSHA512();
+                break;
             case MLDSA87_ECDSA_P384_SHA512:
             case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                componentSignatures.add(Signature.getInstance("Dilithium", "BC"));
+                componentSignatures.add(Signature.getInstance("ML-DSA-87", "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;

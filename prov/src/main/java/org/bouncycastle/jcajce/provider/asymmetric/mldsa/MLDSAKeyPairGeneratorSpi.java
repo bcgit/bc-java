@@ -1,22 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
-import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyPairGeneratorSpi;
-import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
-import org.bouncycastle.util.Strings;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -25,6 +8,17 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.SpecUtil;
+import org.bouncycastle.util.Strings;
+
 public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
@@ -32,13 +26,13 @@ public class MLDSAKeyPairGeneratorSpi
     
     static
     {
-        parameters.put(MLDSAParameterSpec.ml_dsa_44.getName(), DilithiumParameters.dilithium2);
-        parameters.put(MLDSAParameterSpec.ml_dsa_65.getName(), DilithiumParameters.dilithium3);
-        parameters.put(MLDSAParameterSpec.ml_dsa_87.getName(), DilithiumParameters.dilithium5);
+        parameters.put(MLDSAParameterSpec.ml_dsa_44.getName(), MLDSAParameters.ml_dsa_44);
+        parameters.put(MLDSAParameterSpec.ml_dsa_65.getName(), MLDSAParameters.ml_dsa_65);
+        parameters.put(MLDSAParameterSpec.ml_dsa_87.getName(), MLDSAParameters.ml_dsa_87);
     }
-    private final DilithiumParameters dilithiumParameters;
-    DilithiumKeyGenerationParameters param;
-    DilithiumKeyPairGenerator engine = new DilithiumKeyPairGenerator();
+    private final MLDSAParameters mldsaParameters;
+    MLDSAKeyGenerationParameters param;
+    MLDSAKeyPairGenerator engine = new MLDSAKeyPairGenerator();
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
@@ -46,17 +40,17 @@ public class MLDSAKeyPairGeneratorSpi
     public MLDSAKeyPairGeneratorSpi()
     {
         super("MLDSA");
-        this.dilithiumParameters = null;
+        this.mldsaParameters = null;
     }
 
     protected MLDSAKeyPairGeneratorSpi(MLDSAParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.dilithiumParameters = (DilithiumParameters) parameters.get(paramSpec.getName());
+        this.mldsaParameters = (MLDSAParameters) parameters.get(paramSpec.getName());
 
         if (param == null)
         {
-            param = new DilithiumKeyGenerationParameters(random, dilithiumParameters);
+            param = new MLDSAKeyGenerationParameters(random, mldsaParameters);
         }
 
 
@@ -80,13 +74,13 @@ public class MLDSAKeyPairGeneratorSpi
 
         if (name != null && parameters.containsKey(name))
         {
-            DilithiumParameters dilithiumParams = (DilithiumParameters)parameters.get(name);
+            MLDSAParameters mldsaParams = (MLDSAParameters)parameters.get(name);
 
-            param = new DilithiumKeyGenerationParameters(random, (DilithiumParameters)parameters.get(name));
+            param = new MLDSAKeyGenerationParameters(random, (MLDSAParameters)parameters.get(name));
 
-            if (dilithiumParameters != null && !dilithiumParams.getName().equals(dilithiumParameters.getName()))
+            if (mldsaParameters != null && !mldsaParams.getName().equals(mldsaParameters.getName()))
             {
-                throw new InvalidAlgorithmParameterException("key pair generator locked to " +  MLDSAParameterSpec.fromName(dilithiumParameters.getName()).getName());
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " +  MLDSAParameterSpec.fromName(mldsaParameters.getName()).getName());
             }
             engine.init(param);
             initialised = true;
@@ -103,15 +97,15 @@ public class MLDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new DilithiumKeyGenerationParameters(random, DilithiumParameters.dilithium3);
+            param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87);
 
             engine.init(param);
             initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();
-        DilithiumPublicKeyParameters pub = (DilithiumPublicKeyParameters)pair.getPublic();
-        DilithiumPrivateKeyParameters priv = (DilithiumPrivateKeyParameters)pair.getPrivate();
+        MLDSAPublicKeyParameters pub = (MLDSAPublicKeyParameters)pair.getPublic();
+        MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCMLDSAPublicKey(pub), new BCMLDSAPrivateKey(priv));
     }

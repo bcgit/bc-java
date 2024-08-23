@@ -1,15 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.NullDigest;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumSigner;
-import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusSigner;
-import org.bouncycastle.util.Strings;
-
 import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -19,14 +9,20 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
+
 public class SignatureSpi
     extends java.security.Signature
 {
     private ByteArrayOutputStream bOut;
-    private DilithiumSigner signer;
-    private DilithiumParameters parameters;
+    private MLDSASigner signer;
+    private MLDSAParameters parameters;
 
-    protected SignatureSpi(DilithiumSigner signer)
+    protected SignatureSpi(MLDSASigner signer)
     {
         super("MLDSA");
 
@@ -34,7 +30,8 @@ public class SignatureSpi
         this.signer = signer;
         this.parameters = null;
     }
-    protected SignatureSpi(DilithiumSigner signer, DilithiumParameters parameters)
+
+    protected SignatureSpi(MLDSASigner signer, MLDSAParameters parameters)
     {
         super(MLDSAParameterSpec.fromName(parameters.getName()).getName());
 
@@ -176,7 +173,7 @@ public class SignatureSpi
     {
         public MLDSA()
         {
-            super(new DilithiumSigner());
+            super(new MLDSASigner());
         }
     }
     public static class MLDSA44
@@ -184,7 +181,7 @@ public class SignatureSpi
     {
         public MLDSA44()
         {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium2);
+            super(new MLDSASigner(), MLDSAParameters.ml_dsa_44);
         }
     }
 
@@ -193,7 +190,7 @@ public class SignatureSpi
     {
         public MLDSA65()
         {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium3);
+            super(new MLDSASigner(), MLDSAParameters.ml_dsa_65);
         }
     }
 
@@ -203,7 +200,7 @@ public class SignatureSpi
         public MLDSA87()
                 throws NoSuchAlgorithmException
         {
-            super(new DilithiumSigner(), DilithiumParameters.dilithium5);
+            super(new MLDSASigner(), MLDSAParameters.ml_dsa_87);
         }
     }
 }
