@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.mlkem;
+package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
