@@ -7,7 +7,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
@@ -36,15 +36,15 @@ public class DilithiumKeyPairGeneratorTest
         throws Exception
     {
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[] {
-            NISTObjectIdentifiers.id_ml_dsa_44,
-            NISTObjectIdentifiers.id_ml_dsa_65,
-            NISTObjectIdentifiers.id_ml_dsa_87
+            BCObjectIdentifiers.dilithium2,
+            BCObjectIdentifiers.dilithium3,
+            BCObjectIdentifiers.dilithium5
         };
 
         String[] algs = new String[]{
-            "ML-DSA-44",
-            "ML-DSA-65",
-            "ML-DSA-87"
+            "DILITHIUM2",
+            "DILITHIUM3",
+            "DILITHIUM5"
         };
 
         for (int i = 0; i != oids.length; i++)
@@ -68,9 +68,9 @@ public class DilithiumKeyPairGeneratorTest
                         DilithiumParameterSpec.dilithium3,
                         DilithiumParameterSpec.dilithium5,
                 };
-        kf = KeyFactory.getInstance("Dilithium", "BC");
+        kf = KeyFactory.getInstance("Dilithium", "BCPQC");
 
-        kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         for (int i = 0; i != specs.length; i++)
         {
