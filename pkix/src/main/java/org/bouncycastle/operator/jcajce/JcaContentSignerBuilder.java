@@ -46,12 +46,15 @@ import org.bouncycastle.util.io.TeeOutputStream;
 public class JcaContentSignerBuilder
 {
     private static final Set isAlgIdFromPrivate = new HashSet();
+    private static final DefaultSignatureAlgorithmIdentifierFinder SIGNATURE_ALGORITHM_IDENTIFIER_FINDER = new DefaultSignatureAlgorithmIdentifierFinder();
 
     static
     {
         isAlgIdFromPrivate.add("DILITHIUM");
         isAlgIdFromPrivate.add("SPHINCS+");
         isAlgIdFromPrivate.add("SPHINCSPlus");
+        isAlgIdFromPrivate.add("ML-DSA");
+        isAlgIdFromPrivate.add("SLH-DSA");
     }
 
     private final String signatureAlgorithm;
@@ -130,12 +133,16 @@ public class JcaContentSignerBuilder
             {
                 if (isAlgIdFromPrivate.contains(Strings.toUpperCase(signatureAlgorithm)))
                 {
-                    sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+                    this.sigAlgId = SIGNATURE_ALGORITHM_IDENTIFIER_FINDER.find(privateKey.getAlgorithm());
+                    if (this.sigAlgId == null)
+                    {
+                       this.sigAlgId = PrivateKeyInfo.getInstance(privateKey.getEncoded()).getPrivateKeyAlgorithm();
+                    }
                     this.sigAlgSpec = null;
                 }
                 else
                 {
-                    this.sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find(signatureAlgorithm);
+                    this.sigAlgId = SIGNATURE_ALGORITHM_IDENTIFIER_FINDER.find(signatureAlgorithm);
                     this.sigAlgSpec = null;
                 }
             }
