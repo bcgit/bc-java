@@ -52,6 +52,8 @@ import org.bouncycastle.cms.RecipientInformationStore;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
@@ -66,9 +68,7 @@ import org.bouncycastle.pkcs.jcajce.JcePBMac1CalculatorProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.BigIntegers;
 
@@ -86,24 +86,24 @@ public class PQCTest
 
     }
 
-    public void testKyberRequestWithDilithiumCA()
+    public void testMlKemRequestWithMlDsaCA()
         throws Exception
     {
         char[] senderMacPassword = "secret".toCharArray();
-        GeneralName sender = new GeneralName(new X500Name("CN=Kyber Subject"));
-        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+        GeneralName sender = new GeneralName(new X500Name("CN=ML-KEM Subject"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+        dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_65);
 
         KeyPair dilKp = dilKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+        X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
-        KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("Kyber", "BCPQC");
+        KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("ML-KEM", "BC");
 
-        kybKpGen.initialize(KyberParameterSpec.kyber512);
+        kybKpGen.initialize(MLKEMParameterSpec.ml_kem_768);
 
         KeyPair kybKp = kybKpGen.generateKeyPair();
 
@@ -140,7 +140,7 @@ public class PQCTest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -163,7 +163,7 @@ public class PQCTest
 
         repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
         CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -210,7 +210,7 @@ public class PQCTest
 
         RecipientInformation recInfo = (RecipientInformation)c.iterator().next();
 
-        assertEquals(recInfo.getKeyEncryptionAlgOID(), NISTObjectIdentifiers.id_alg_ml_kem_512.getId());
+        assertEquals(recInfo.getKeyEncryptionAlgOID(), NISTObjectIdentifiers.id_alg_ml_kem_768.getId());
 
         // Note: we don't specify the provider here as we're actually using both BC and BCPQC
 
@@ -248,20 +248,20 @@ public class PQCTest
         assertTrue(recContent.getStatusMessages()[0].isVerified(receivedCert, new JcaDigestCalculatorProviderBuilder().build()));
     }
 
-    public void testNTRURequestWithDilithiumCA()
+    public void testNTRURequestWithMlDsaCA()
         throws Exception
     {
         char[] senderMacPassword = "secret".toCharArray();
         GeneralName sender = new GeneralName(new X500Name("CN=NTRU Subject"));
-        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+        dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
 
         KeyPair dilKp = dilKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+        X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
         KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("NTRU", "BCPQC");
 
@@ -302,7 +302,7 @@ public class PQCTest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -325,7 +325,7 @@ public class PQCTest
 
         repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
         CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -420,20 +420,20 @@ public class PQCTest
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
-    public void testBIKERequestWithDilithiumCA()
+    public void testBIKERequestWithMlDsaCA()
         throws Exception
     {
         char[] senderMacPassword = "secret".toCharArray();
         GeneralName sender = new GeneralName(new X500Name("CN=Bike128 Subject"));
-        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+        dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
 
         KeyPair dilKp = dilKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+        X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
         KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("BIKE", "BCPQC");
 
@@ -474,7 +474,7 @@ public class PQCTest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -497,7 +497,7 @@ public class PQCTest
 
         repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
         CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -592,20 +592,20 @@ public class PQCTest
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
-    public void testHQCRequestWithDilithiumCA()
+    public void testHQCRequestWithMlDsaCA()
         throws Exception
     {
         char[] senderMacPassword = "secret".toCharArray();
         GeneralName sender = new GeneralName(new X500Name("CN=HQC128 Subject"));
-        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+        dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
 
         KeyPair dilKp = dilKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+        X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
         KeyPairGenerator kybKpGen = KeyPairGenerator.getInstance("HQC", "BCPQC");
 
@@ -646,7 +646,7 @@ public class PQCTest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -669,7 +669,7 @@ public class PQCTest
 
         repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
         CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -764,20 +764,20 @@ public class PQCTest
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
-    public void testCMCERequestWithDilithiumCA()
+    public void testCMCERequestWithMlDsaCA()
         throws Exception
     {
         char[] senderMacPassword = "secret".toCharArray();
         GeneralName sender = new GeneralName(new X500Name("CN=mceliece3488864 Subject"));
-        GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-        dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+        dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
 
         KeyPair dilKp = dilKpGen.generateKeyPair();
 
-        X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+        X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
         KeyPairGenerator cmceKpGen = KeyPairGenerator.getInstance("CMCE", "BCPQC");
 
@@ -818,7 +818,7 @@ public class PQCTest
         CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
         CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+        X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
         // Send response with encrypted certificate
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -841,7 +841,7 @@ public class PQCTest
 
         repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
         CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -936,20 +936,20 @@ public class PQCTest
 //        System.err.println(ASN1Dump.dumpAsString(receivedEnvelope.toASN1Structure()));
     }
 
-    public void testExternalCMCERequestWithDilithiumCA()
+    public void testExternalCMCERequestWithMlDsaCA()
             throws Exception
         {
             char[] senderMacPassword = "secret".toCharArray();
             GeneralName sender = new GeneralName(new X500Name("CN=mceliece3488864 Subject"));
-            GeneralName recipient = new GeneralName(new X500Name("CN=Dilithium Issuer"));
+            GeneralName recipient = new GeneralName(new X500Name("CN=ML-DSA Issuer"));
 
-            KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+            KeyPairGenerator dilKpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
-            dilKpGen.initialize(DilithiumParameterSpec.dilithium2);
+            dilKpGen.initialize(MLDSAParameterSpec.ml_dsa_44);
 
             KeyPair dilKp = dilKpGen.generateKeyPair();
 
-            X509CertificateHolder caCert = makeV3Certificate("CN=Dilithium Issuer", dilKp);
+            X509CertificateHolder caCert = makeV3Certificate("CN=ML-DSA Issuer", dilKp);
 
             KeyPairGenerator cmceKpGen = KeyPairGenerator.getInstance("CMCE", "BCPQC");
 
@@ -990,7 +990,7 @@ public class PQCTest
             CertificateRequestMessage senderReqMessage = requestMessages.getRequests()[0];
             CertTemplate certTemplate = senderReqMessage.getCertTemplate();
 
-            X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=Dilithium Issuer");
+            X509CertificateHolder cert = makeV3Certificate(certTemplate.getPublicKey(), certTemplate.getSubject(), dilKp, "CN=ML-DSA Issuer");
 
             // Send response with encrypted certificate
             CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
@@ -1013,7 +1013,7 @@ public class PQCTest
 
             repMessageBuilder.addCertificateResponse(certRespBuilder.build());
 
-            ContentSigner signer = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(dilKp.getPrivate());
+            ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(dilKp.getPrivate());
 
             CertificateRepMessage repMessage = repMessageBuilder.build();
 
@@ -1124,7 +1124,7 @@ public class PQCTest
 
         certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").build(issPriv);
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").build(issPriv);
 
         X509CertificateHolder certHolder = certGen.build(signer);
 
@@ -1151,7 +1151,7 @@ public class PQCTest
 
         certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
 
-        ContentSigner signer = new JcaContentSignerBuilder("Dilithium").build(issPriv);
+        ContentSigner signer = new JcaContentSignerBuilder("ML-DSA").build(issPriv);
 
         X509CertificateHolder certHolder = certGen.build(signer);
 
