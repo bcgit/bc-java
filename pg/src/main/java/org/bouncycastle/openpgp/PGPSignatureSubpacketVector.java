@@ -16,8 +16,10 @@ import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -295,6 +297,40 @@ public class PGPSignatureSubpacketVector
         }
 
         return ((PreferredAlgorithms)p).getPreferences();
+    }
+
+    /**
+     * Return the preferred AEAD ciphersuites denoted in the signature.
+     *
+     * @return OpenPGP AEAD ciphersuites
+     */
+    public PreferredAEADCiphersuites getPreferredAEADCiphersuites()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+        return (PreferredAEADCiphersuites) p;
+    }
+
+    /**
+     * Return the preferred LibrePGP encryption modes denoted in the signature.
+     * Note: The LibrePGP spec states that this subpacket shall be ignored and the application
+     * shall instead assume {@link org.bouncycastle.bcpg.AEADAlgorithmTags#OCB}.
+     *
+     * @return LibrePGP encryption modes
+     */
+    public int[] getPreferredLibrePgpEncryptionModes()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+        return ((LibrePGPPreferredEncryptionModes) p).getPreferences();
     }
 
     public int getKeyFlags()
