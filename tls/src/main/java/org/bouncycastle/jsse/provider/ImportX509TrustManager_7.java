@@ -32,12 +32,14 @@ class ImportX509TrustManager_7
         x509TrustManager.checkClientTrusted(chain, authType);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         x509TrustManager.checkClientTrusted(chain, authType, socket);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
@@ -50,12 +52,14 @@ class ImportX509TrustManager_7
         x509TrustManager.checkServerTrusted(chain, authType);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         x509TrustManager.checkServerTrusted(chain, authType, socket);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {

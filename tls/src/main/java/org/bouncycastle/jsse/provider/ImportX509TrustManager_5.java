@@ -44,6 +44,7 @@ class ImportX509TrustManager_5
         checkAdditionalTrust(chain, authType, null, false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
@@ -51,6 +52,7 @@ class ImportX509TrustManager_5
         checkAdditionalTrust(chain, authType, TransportData.from(socket), false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
@@ -65,6 +67,7 @@ class ImportX509TrustManager_5
         checkAdditionalTrust(chain, authType, null, true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
@@ -72,6 +75,7 @@ class ImportX509TrustManager_5
         checkAdditionalTrust(chain, authType, TransportData.from(socket), true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
