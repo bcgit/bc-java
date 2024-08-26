@@ -16,6 +16,7 @@ import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -156,6 +157,17 @@ public class PGPSignature
         {
             throw new PGPException("Illegal signature type 0xFF provided.");
         }
+
+        if (getVersion() == SignaturePacket.VERSION_6 && pubKey.getVersion() != PublicKeyPacket.VERSION_6)
+        {
+            throw new PGPException("MUST NOT verify v6 signature with non-v6 key.");
+        }
+
+        if (getVersion() == SignaturePacket.VERSION_4 && pubKey.getVersion() != PublicKeyPacket.VERSION_4)
+        {
+            throw new PGPException("MUST NOT verify v4 signature with non-v4 key.");
+        }
+
         PGPContentVerifierBuilder verifierBuilder = createVerifierProvider(verifierBuilderProvider);
 
         init(verifierBuilder.build(pubKey));
