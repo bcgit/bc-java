@@ -1699,7 +1699,7 @@ public class X509CertSelector implements CertSelector
      */
     public Collection getSubjectAlternativeNames()
     {
-        if (subjectAltNames != null)
+        if (subjectAltNames == null)
         {
             return null;
         }
