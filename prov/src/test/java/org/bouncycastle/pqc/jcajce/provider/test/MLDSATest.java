@@ -12,12 +12,14 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLDSAKey;
@@ -44,6 +46,51 @@ public class MLDSATest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    public void testKeyFactory()
+        throws Exception
+    {
+        KeyFactory kFact = KeyFactory.getInstance("ML-DSA", "BC");
+        KeyPairGenerator kpGen44 = KeyPairGenerator.getInstance("ML-DSA-44");
+        KeyPair kp44 = kpGen44.generateKeyPair();
+        KeyPairGenerator kpGen65 = KeyPairGenerator.getInstance("ML-DSA-65");
+        KeyPair kp65 = kpGen65.generateKeyPair();
+        KeyPairGenerator kpGen87 = KeyPairGenerator.getInstance("ML-DSA-87");
+        KeyPair kp87 = kpGen87.generateKeyPair();
+
+        tryKeyFact(KeyFactory.getInstance("ML-DSA-44", "BC"), kp44, kp65, "2.16.840.1.101.3.4.3.18");
+        tryKeyFact(KeyFactory.getInstance(NISTObjectIdentifiers.id_ml_dsa_44.toString(), "BC"), kp44, kp65, "2.16.840.1.101.3.4.3.18");
+        tryKeyFact(KeyFactory.getInstance("ML-DSA-65", "BC"), kp65, kp44, "2.16.840.1.101.3.4.3.17");
+        tryKeyFact(KeyFactory.getInstance(NISTObjectIdentifiers.id_ml_dsa_65.toString(), "BC"), kp65, kp44, "2.16.840.1.101.3.4.3.17");
+        tryKeyFact(KeyFactory.getInstance("ML-DSA-87", "BC"), kp87, kp65, "2.16.840.1.101.3.4.3.18");
+        tryKeyFact(KeyFactory.getInstance(NISTObjectIdentifiers.id_ml_dsa_87.toString(), "BC"), kp87, kp65, "2.16.840.1.101.3.4.3.18");
+    }
+
+    private void tryKeyFact(KeyFactory kFact, KeyPair kpValid, KeyPair kpInvalid, String oid)
+        throws Exception
+    {
+        kFact.generatePrivate(new PKCS8EncodedKeySpec(kpValid.getPrivate().getEncoded()));
+        kFact.generatePublic(new X509EncodedKeySpec(kpValid.getPublic().getEncoded()));
+
+        try
+        {
+            kFact.generatePrivate(new PKCS8EncodedKeySpec(kpInvalid.getPrivate().getEncoded()));
+            fail("no exception");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + oid, e.getMessage());
+        }
+        try
+        {
+            kFact.generatePublic(new X509EncodedKeySpec(kpInvalid.getPublic().getEncoded()));
+            fail("no exception");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + oid, e.getMessage());
+        }
     }
 
     public void testPrivateKeyRecovery()

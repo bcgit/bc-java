@@ -23,6 +23,22 @@ public class SLHDSA
             provider.addAlgorithm("KeyFactory.SLH-DSA", PREFIX + "SLHDSAKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.SLH-DSA", PREFIX + "SLHDSAKeyPairGeneratorSpi");
 
+            AsymmetricKeyInfoConverter keyFact = new SLHDSAKeyFactorySpi();
+
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-128S", PREFIX + "SLHDSAKeyFactorySpi$Sha2_128s", NISTObjectIdentifiers.id_slh_dsa_sha2_128s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-128F", PREFIX + "SLHDSAKeyFactorySpi$Sha2_128f", NISTObjectIdentifiers.id_slh_dsa_sha2_128f, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-192S", PREFIX + "SLHDSAKeyFactorySpi$Sha2_192s", NISTObjectIdentifiers.id_slh_dsa_sha2_192s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-192F", PREFIX + "SLHDSAKeyFactorySpi$Sha2_192f", NISTObjectIdentifiers.id_slh_dsa_sha2_192f, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-256S", PREFIX + "SLHDSAKeyFactorySpi$Sha2_256s", NISTObjectIdentifiers.id_slh_dsa_sha2_256s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHA2-256F", PREFIX + "SLHDSAKeyFactorySpi$Sha2_256f", NISTObjectIdentifiers.id_slh_dsa_sha2_256f, keyFact);
+
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-128S", PREFIX + "SLHDSAKeyFactorySpi$Shake_128s", NISTObjectIdentifiers.id_slh_dsa_shake_128s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-128F", PREFIX + "SLHDSAKeyFactorySpi$Shake_128f", NISTObjectIdentifiers.id_slh_dsa_shake_128f, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-192S", PREFIX + "SLHDSAKeyFactorySpi$Shake_192s", NISTObjectIdentifiers.id_slh_dsa_shake_192s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-192F", PREFIX + "SLHDSAKeyFactorySpi$Shake_192f", NISTObjectIdentifiers.id_slh_dsa_shake_192f, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-256S", PREFIX + "SLHDSAKeyFactorySpi$Shake_256s", NISTObjectIdentifiers.id_slh_dsa_shake_256s, keyFact);
+            addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-256F", PREFIX + "SLHDSAKeyFactorySpi$Shake_256f", NISTObjectIdentifiers.id_slh_dsa_shake_256f, keyFact);
+
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-128S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_128s", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-128F", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_128f", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-192S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_192s", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
@@ -61,20 +77,19 @@ public class SLHDSA
                 provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], "SLH-DSA");
             }
 
-            AsymmetricKeyInfoConverter keyFact = new SLHDSAKeyFactorySpi();
 
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_sha2_256f, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SLH-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SLH-DSA", keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_128f, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_192f, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256s, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256f, keyFact);
         }
     }
 }

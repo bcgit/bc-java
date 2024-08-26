@@ -1,13 +1,11 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.MLKEMKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
-import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 
 public class MLKEM
 {
@@ -49,8 +47,10 @@ public class MLKEM
             addCipherAlgorithm(provider, "ML-KEM-512", PREFIX + "MLKEMCipherSpi$MLKEM512", NISTObjectIdentifiers.id_alg_ml_kem_512);
             addCipherAlgorithm(provider, "ML-KEM-768", PREFIX + "MLKEMCipherSpi$MLKEM768", NISTObjectIdentifiers.id_alg_ml_kem_768);
             addCipherAlgorithm(provider, "ML-KEM-1024", PREFIX + "MLKEMCipherSpi$MLKEM1024", NISTObjectIdentifiers.id_alg_ml_kem_1024);
-
-            registerOid(provider, (ASN1ObjectIdentifier) null, "ML-KEM", keyFact);
+            
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, keyFact);
         }
     }
 }
