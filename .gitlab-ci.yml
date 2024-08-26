@@ -116,7 +116,5 @@ test-code-21:
 
 spongycastle:
   stage: "sync"
-  variables:
-    AUTOMATE_JOB: "sync"
-  trigger:
-    project: "spongycastle/automation"  
+  script:
+    - "syncpongy.sh"  
