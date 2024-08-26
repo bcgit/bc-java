@@ -35,6 +35,7 @@ import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationKeyTags;
@@ -104,7 +105,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -1927,9 +1928,12 @@ public class PGPGeneralTest
 
         PGPSignatureSubpacketGenerator svg = new PGPSignatureSubpacketGenerator();
 
-        int[] aeadAlgs = new int[]{AEADAlgorithmTags.EAX,
-            AEADAlgorithmTags.OCB, AEADAlgorithmTags.GCM, AEADAlgorithmTags.GCM};
-        svg.setPreferredAEADAlgorithms(true, aeadAlgs);
+        PreferredAEADCiphersuites.Builder builder = PreferredAEADCiphersuites.builder(true);
+        builder.addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.EAX)
+                .addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB)
+                .addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.GCM)
+                .addCombination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.GCM);
+        svg.setPreferredAEADCiphersuites(builder);
         svg.setFeature(true, Features.FEATURE_MODIFICATION_DETECTION);
         svg.setKeyFlags(true, KeyFlags.CERTIFY_OTHER + KeyFlags.SIGN_DATA);
         PGPSignatureSubpacketVector hashedPcks = svg.generate();
@@ -1961,7 +1965,7 @@ public class PGPGeneralTest
                 {
                     PGPSignature sig = (PGPSignature)sit.next();
                     PGPSignatureSubpacketVector v = sig.getHashedSubPackets();
-                    if (!Arrays.areEqual(v.getPreferredAEADAlgorithms(), aeadAlgs))
+                    if (!Objects.areEqual(v.getPreferredAEADCiphersuites(), builder.build()))
                     {
                         fail("preferred aead algs don't match");
                     }
