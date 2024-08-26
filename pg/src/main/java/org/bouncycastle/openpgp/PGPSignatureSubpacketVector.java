@@ -287,6 +287,13 @@ public class PGPSignatureSubpacketVector
         return ((PreferredAlgorithms)p).getPreferences();
     }
 
+    /**
+     * This method is BROKEN!
+     * @deprecated use {@link #getPreferredAEADCiphersuites()} or {@link #getPreferredLibrePgpEncryptionModes()}
+     * instead.
+     * @return preferred AEAD Algorithms
+     */
+    @Deprecated
     public int[] getPreferredAEADAlgorithms()
     {
         SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);

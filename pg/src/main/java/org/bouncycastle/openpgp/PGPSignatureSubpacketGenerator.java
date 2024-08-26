@@ -193,11 +193,15 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
+     * This method is BROKEN!
      * Specify the preferred AEAD algorithms of this key.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param algorithms array of algorithms in descending preference
+     * @deprecated use {@link #setPreferredAEADCiphersuites(boolean, PreferredAEADCiphersuites.Combination[])}
+     * or {@link #setPreferredLibrePgpEncryptionModes(boolean, int[])} instead.
      */
+    @Deprecated
     public void setPreferredAEADAlgorithms(boolean isCritical, int[] algorithms)
     {
         packets.add(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS, isCritical,
