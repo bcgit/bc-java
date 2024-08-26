@@ -91,7 +91,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
     private static final String AUTH_INFO_ACCESS = Extension.authorityInfoAccess.getId();
     
     private static final String RESOURCE_NAME = "org.bouncycastle.x509.CertPathReviewerMessages";
-    
+
+    private static final int NAME_CHECK_MAX = (1 << 10);
+
     // input parameters
     
     protected CertPath certPath;
@@ -501,9 +503,15 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.subjAltNameExtError");
                         throw new CertPathReviewerException(msg,ae,certPath,index);
                     }
-                    
+
                     if (altName != null)
                     {
+                        if (altName.size() > NAME_CHECK_MAX)
+                        {
+                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.subjAltNameExtError");
+                            throw new CertPathReviewerException(msg,certPath,index);
+                        }
+
                         for (int j = 0; j < altName.size(); j++)
                         {
                             GeneralName name = GeneralName.getInstance(altName.getObjectAt(j));
@@ -519,87 +527,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                                         new Object[] {new UntrustedInput(name)});
                                 throw new CertPathReviewerException(msg,cpve,certPath,index);
                             }
-//                            switch(o.getTagNo())            TODO - move resources to PKIXNameConstraints
-//                            {
-//                            case 1:
-//                                String email = ASN1IA5String.getInstance(o, true).getString();
-//
-//                                try
-//                                {
-//                                    checkPermittedEmail(permittedSubtreesEmail, email);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedEmail",
-//                                            new Object[] {new UntrustedInput(email)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//
-//                                try
-//                                {
-//                                    checkExcludedEmail(excludedSubtreesEmail, email);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedEmail",
-//                                            new Object[] {new UntrustedInput(email)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//
-//                                break;
-//                            case 4:
-//                                ASN1Sequence altDN = ASN1Sequence.getInstance(o, true);
-//
-//                                try
-//                                {
-//                                    checkPermittedDN(permittedSubtreesDN, altDN);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    X509Name altDNName = new X509Name(altDN);
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedDN",
-//                                            new Object[] {new UntrustedInput(altDNName)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//
-//                                try
-//                                {
-//                                    checkExcludedDN(excludedSubtreesDN, altDN);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    X509Name altDNName = new X509Name(altDN);
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedDN",
-//                                            new Object[] {new UntrustedInput(altDNName)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//
-//                                break;
-//                            case 7:
-//                                byte[] ip = ASN1OctetString.getInstance(o, true).getOctets();
-//
-//                                try
-//                                {
-//                                    checkPermittedIP(permittedSubtreesIP, ip);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedIP",
-//                                            new Object[] {IPtoString(ip)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//
-//                                try
-//                                {
-//                                    checkExcludedIP(excludedSubtreesIP, ip);
-//                                }
-//                                catch (CertPathValidatorException cpve)
-//                                {
-//                                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedIP",
-//                                            new Object[] {IPtoString(ip)});
-//                                    throw new CertPathReviewerException(msg,cpve,certPath,index);
-//                                }
-//                            }
                         }
                     }
                 }

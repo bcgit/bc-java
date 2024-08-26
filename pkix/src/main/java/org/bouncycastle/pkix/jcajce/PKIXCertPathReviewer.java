@@ -500,7 +500,12 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         ErrorBundle msg = createErrorBundle("CertPathReviewer.subjAltNameExtError");
                         throw new CertPathReviewerException(msg,ae,certPath,index);
                     }
-                    
+
+                    /*
+                     * TODO RFC3280CertPathUtilities (used in CertPath validation) has a block checking name
+                     * constraints against subject's EmailAddress, which could be worth adding here too.
+                     */
+
                     if (altName != null)
                     {
                         if (altName.size() > NAME_CHECK_MAX)

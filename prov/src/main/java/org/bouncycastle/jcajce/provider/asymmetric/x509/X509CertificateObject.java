@@ -15,8 +15,8 @@ import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -288,13 +288,13 @@ class X509CertificateObject
     {
         try
         {
-            byte[] extOctets = getExtensionOctets(c, "2.5.29.19");
+            byte[] extOctets = getExtensionOctets(c, Extension.basicConstraints);
             if (null == extOctets)
             {
                 return null;
             }
 
-            return BasicConstraints.getInstance(ASN1Primitive.fromByteArray(extOctets));
+            return BasicConstraints.getInstance(extOctets);
         }
         catch (Exception e)
         {
@@ -306,13 +306,13 @@ class X509CertificateObject
     {
         try
         {
-            byte[] extOctets = getExtensionOctets(c, "2.5.29.15");
+            byte[] extOctets = getExtensionOctets(c, Extension.keyUsage);
             if (null == extOctets)
             {
                 return null;
             }
 
-            ASN1BitString bits = ASN1BitString.getInstance(ASN1Primitive.fromByteArray(extOctets));
+            ASN1BitString bits = ASN1BitString.getInstance(extOctets);
 
             byte[] bytes = bits.getBytes();
             int length = (bytes.length * 8) - bits.getPadBits();
