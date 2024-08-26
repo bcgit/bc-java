@@ -11,10 +11,10 @@ public class MLDSAKeyGenerationParameters
 
     public MLDSAKeyGenerationParameters(
         SecureRandom random,
-        MLDSAParameters dilithiumParameters)
+        MLDSAParameters mldsaParameters)
     {
         super(random, 256);
-        this.params = dilithiumParameters;
+        this.params = mldsaParameters;
     }
 
     public MLDSAParameters getParameters()
