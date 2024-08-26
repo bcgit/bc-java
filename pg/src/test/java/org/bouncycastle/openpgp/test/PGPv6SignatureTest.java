@@ -6,6 +6,8 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketFormat;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
@@ -25,6 +27,7 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Iterator;
 
 public class PGPv6SignatureTest
@@ -97,6 +101,8 @@ public class PGPv6SignatureTest
 
         verifySignaturesOnEd448X448Key();
         generateAndVerifyInlineSignatureUsingRSAKey();
+
+        testVerificationOfV3SigWithV6KeyFails();
     }
 
     private void verifyV6DirectKeySignatureTestVector()
@@ -779,6 +785,39 @@ public class PGPv6SignatureTest
         PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
         sig = sigList.get(0);
         isTrue("V6 inline sig made using RSA key MUST verify", ops.verify(sig));
+    }
+
+    private void testVerificationOfV3SigWithV6KeyFails()
+            throws IOException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        // v4 timestamp signature containing an IssuerKeyId subpacket
+        String V4_SIG = "-----BEGIN PGP SIGNATURE-----\n" +
+                "\n" +
+                "wloEQBsKABAJEMsYbE8GCaaXBQJmzHd2AAA5wlKWl7C0Dp6dVGDrCFCiISbyL4UE\n" +
+                "eYFLRZRnfn25OQmobhAHm2WgY/YOH5bTRLLBSIJiJlstQXMwGQvNNtheQAA=\n" +
+                "-----END PGP SIGNATURE-----";
+
+        bIn = new ByteArrayInputStream(V4_SIG.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPSignatureList sigs = (PGPSignatureList) objFac.nextObject();
+        PGPSignature sig = sigs.get(0);
+
+        isNotNull(testException("MUST NOT verify v4 signature with non-v4 key.", "PGPException",
+                new TestExceptionOperation() {
+                    @Override
+                    public void operation() throws Exception {
+                        sig.init(new BcPGPContentVerifierBuilderProvider(), secretKeys.getPublicKey());
+                        sig.verify();
+                    }
+                }));
     }
 
     public static void main(String[] args)
