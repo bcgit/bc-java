@@ -10,10 +10,13 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.SLHDSAKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
@@ -40,6 +43,85 @@ public class SLHDSATest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    public void testKeyFactory()
+        throws Exception
+    {
+        KeyPairGenerator kpGen44 = KeyPairGenerator.getInstance("ML-DSA-44");
+        KeyPair kp44 = kpGen44.generateKeyPair();
+
+        KeyFactory kFact = KeyFactory.getInstance("SLH-DSA", "BC");
+
+        String[] names = new String[] {
+            "SLH-DSA-SHA2-128F",
+            "SLH-DSA-SHA2-128S",
+            "SLH-DSA-SHA2-192F",
+            "SLH-DSA-SHA2-192S",
+            "SLH-DSA-SHA2-256F",
+            "SLH-DSA-SHA2-256S",
+            "SLH-DSA-SHAKE-128F",
+            "SLH-DSA-SHAKE-128S",
+            "SLH-DSA-SHAKE-192F",
+            "SLH-DSA-SHAKE-192S",
+            "SLH-DSA-SHAKE-256F",
+            "SLH-DSA-SHAKE-256S",
+        };
+
+        ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[] {
+            NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
+            NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
+            NISTObjectIdentifiers.id_slh_dsa_sha2_192f,
+            NISTObjectIdentifiers.id_slh_dsa_sha2_192s,
+            NISTObjectIdentifiers.id_slh_dsa_sha2_256f,
+            NISTObjectIdentifiers.id_slh_dsa_sha2_256s,
+            NISTObjectIdentifiers.id_slh_dsa_shake_128f,
+            NISTObjectIdentifiers.id_slh_dsa_shake_128s,
+            NISTObjectIdentifiers.id_slh_dsa_shake_192f,
+            NISTObjectIdentifiers.id_slh_dsa_shake_192s,
+            NISTObjectIdentifiers.id_slh_dsa_shake_256f,
+            NISTObjectIdentifiers.id_slh_dsa_shake_256s,
+        };
+
+        KeyPairGenerator kpGen768 = KeyPairGenerator.getInstance("ML-KEM-768");
+        KeyPair kp768 = kpGen768.generateKeyPair();
+        KeyPairGenerator kpGen1024 = KeyPairGenerator.getInstance("ML-KEM-1024");
+        KeyPair kp1024 = kpGen1024.generateKeyPair();
+
+        for (int i = 0; i != names.length; i++)
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance(names[i]);
+            KeyPair kp = kpGen.generateKeyPair();
+
+            tryKeyFact(KeyFactory.getInstance(names[i], "BC"), kp, kp44, "2.16.840.1.101.3.4.3.17");
+            tryKeyFact(KeyFactory.getInstance(oids[i].toString(), "BC"), kp, kp44, "2.16.840.1.101.3.4.3.17");
+        }
+    }
+
+    private void tryKeyFact(KeyFactory kFact, KeyPair kpValid, KeyPair kpInvalid, String oid)
+        throws Exception
+    {
+        kFact.generatePrivate(new PKCS8EncodedKeySpec(kpValid.getPrivate().getEncoded()));
+        kFact.generatePublic(new X509EncodedKeySpec(kpValid.getPublic().getEncoded()));
+
+        try
+        {
+            kFact.generatePrivate(new PKCS8EncodedKeySpec(kpInvalid.getPrivate().getEncoded()));
+            fail("no exception");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + oid, e.getMessage());
+        }
+        try
+        {
+            kFact.generatePublic(new X509EncodedKeySpec(kpInvalid.getPublic().getEncoded()));
+            fail("no exception");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + oid, e.getMessage());
+        }
     }
 
 //    public void testSphincsDefaultKeyGen()

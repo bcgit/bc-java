@@ -3,65 +3,51 @@ package org.bouncycastle.jcajce.provider.asymmetric.slhdsa;
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.KeyFactorySpi;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.HashSet;
+import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
 public class SLHDSAKeyFactorySpi
-    extends KeyFactorySpi
-    implements AsymmetricKeyInfoConverter
+    extends BaseKeyFactorySpi
 {
-    public PrivateKey engineGeneratePrivate(KeySpec keySpec)
-        throws InvalidKeySpecException
+    private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
+
+    static
     {
-        if (keySpec instanceof PKCS8EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to PKCS#8 from the spec
-            byte[] encKey = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
 
-            try
-            {
-                return generatePrivate(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(encKey)));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unsupported key specification: "
-            + keySpec.getClass() + ".");
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+        keyOids.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
     }
 
-    public PublicKey engineGeneratePublic(KeySpec keySpec)
-        throws InvalidKeySpecException
+    public SLHDSAKeyFactorySpi()
     {
-        if (keySpec instanceof X509EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to X.509 from the spec
-            byte[] encKey = ((X509EncodedKeySpec)keySpec).getEncoded();
+        super(keyOids);
+    }
 
-            // decode the SubjectPublicKeyInfo data structure to the pki object
-            try
-            {
-                return generatePublic(SubjectPublicKeyInfo.getInstance(encKey));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unknown key specification: " + keySpec + ".");
+    public SLHDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid)
+    {
+        super(keyOid);
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
@@ -112,5 +98,113 @@ public class SLHDSAKeyFactorySpi
         throws IOException
     {
         return new BCSLHDSAPublicKey(keyInfo);
+    }
+
+    public static class Sha2_128f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_128f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        }
+    }
+
+    public static class Sha2_128s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_128s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        }
+    }
+    
+    public static class Sha2_192f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_192f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        }
+    }
+
+    public static class Sha2_192s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_192s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        }
+    }
+    
+    public static class Sha2_256f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_256f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        }
+    }
+
+    public static class Sha2_256s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Sha2_256s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        }
+    }
+    
+    public static class Shake_128f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_128f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        }
+    }
+
+    public static class Shake_128s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_128s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        }
+    }
+    
+    public static class Shake_192f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_192f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        }
+    }
+
+    public static class Shake_192s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_192s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        }
+    }
+    
+    public static class Shake_256f
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_256f()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+        }
+    }
+
+    public static class Shake_256s
+            extends SLHDSAKeyFactorySpi
+    {
+        public Shake_256s()
+        {
+            super(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+        }
     }
 }

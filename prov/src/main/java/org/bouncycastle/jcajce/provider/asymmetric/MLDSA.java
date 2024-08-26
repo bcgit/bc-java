@@ -23,10 +23,9 @@ public class MLDSA
             provider.addAlgorithm("KeyFactory.ML-DSA", PREFIX + "MLDSAKeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.ML-DSA", PREFIX + "MLDSAKeyPairGeneratorSpi");
 
-//            addKeyFactoryAlgorithm(provider, "ML-DSA-44", PREFIX + "MLDSAKeyFactorySpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi.MLDSA44());
-//            addKeyFactoryAlgorithm(provider, "ML-DSA-65", PREFIX + "MLDSAKeyFactorySpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi.MLDSA65());
-//            addKeyFactoryAlgorithm(provider, "ML-DSA-87", PREFIX + "MLDSAKeyFactorySpi$MLDSA87", NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi.MLDSA87());
-
+            addKeyFactoryAlgorithm(provider, "ML-DSA-44", PREFIX + "MLDSAKeyFactorySpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi.MLDSA44());
+            addKeyFactoryAlgorithm(provider, "ML-DSA-65", PREFIX + "MLDSAKeyFactorySpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi.MLDSA65());
+            addKeyFactoryAlgorithm(provider, "ML-DSA-87", PREFIX + "MLDSAKeyFactorySpi$MLDSA87", NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi.MLDSA87());
 
             addKeyPairGeneratorAlgorithm(provider, "ML-DSA-44", PREFIX + "MLDSAKeyPairGeneratorSpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44);
             addKeyPairGeneratorAlgorithm(provider, "ML-DSA-65", PREFIX + "MLDSAKeyPairGeneratorSpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65);
@@ -50,12 +49,9 @@ public class MLDSA
 
             AsymmetricKeyInfoConverter keyFact = new MLDSAKeyFactorySpi();
 
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA", keyFact);
-            registerKeyFactoryOid(provider, NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA", keyFact);
-
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, keyFact);
+            provider.addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, keyFact);
         }
-
-
     }
 }
