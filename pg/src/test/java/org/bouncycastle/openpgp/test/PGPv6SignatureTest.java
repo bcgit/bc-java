@@ -83,6 +83,7 @@ public class PGPv6SignatureTest
         throws Exception
     {
         verifySignatureOnTestKey();
+        verifyKnownGoodCleartextSignedMessage();
 
         verifyV6DetachedSignature();
         verifyV6InlineSignature();
@@ -127,6 +128,50 @@ public class PGPv6SignatureTest
         subkeyBinding.init(new BcPGPContentVerifierBuilderProvider(), primaryKey);
         isTrue("Subkey-Binding Signature MUST be correct.",
             subkeyBinding.verifyCertification(primaryKey, subkey));
+    }
+
+    private void verifyKnownGoodCleartextSignedMessage() throws IOException, PGPException {
+        // https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-cleartext-signed-mes
+        String MSG = "-----BEGIN PGP SIGNED MESSAGE-----\n" +
+                "\n" +
+                "What we need from the grocery store:\n" +
+                "\n" +
+                "- - tofu\n" +
+                "- - vegetables\n" +
+                "- - noodles\n" +
+                "\n" +
+                "-----BEGIN PGP SIGNATURE-----\n" +
+                "\n" +
+                "wpgGARsKAAAAKQWCY5ijYyIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6\n" +
+                "2azJAAAAAGk2IHZJX1AhiJD39eLuPBgiUU9wUA9VHYblySHkBONKU/usJ9BvuAqo\n" +
+                "/FvLFuGWMbKAdA+epq7V4HOtAPlBWmU8QOd6aud+aSunHQaaEJ+iTFjP2OMW0KBr\n" +
+                "NK2ay45cX1IVAQ==\n" +
+                "-----END PGP SIGNATURE-----";
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_CERT.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPPublicKeyRing cert = (PGPPublicKeyRing) objFac.nextObject();
+
+        bIn = new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        while (aIn.isClearText())
+        {
+            int c = aIn.read();
+            if (aIn.isClearText())
+            {
+                bOut.write(c);
+            }
+        }
+        byte[] plaintext = Arrays.copyOf(bOut.toByteArray(), bOut.size()- 1);
+        objFac = new BcPGPObjectFactory(aIn);
+        PGPSignatureList sigs = (PGPSignatureList) objFac.nextObject();
+        PGPSignature sig = sigs.get(0);
+        sig.init(new BcPGPContentVerifierBuilderProvider(), cert.getPublicKey(sig.getKeyID()));
+        sig.update(plaintext);
+        isTrue("Known good cleartext signature MUST verify successful", sig.verify());
     }
 
     /**
