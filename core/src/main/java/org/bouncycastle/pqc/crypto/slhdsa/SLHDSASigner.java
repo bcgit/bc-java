@@ -57,7 +57,7 @@ public class SLHDSASigner
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
 
-        if (!engine.isPreHash())
+        if (engine.isPreHash())
         {
             throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
@@ -86,7 +86,7 @@ public class SLHDSASigner
     {
         SLHDSAEngine engine = pubKey.getParameters().getEngine();
 
-        if (!engine.isPreHash())
+        if (engine.isPreHash())
         {
             throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
