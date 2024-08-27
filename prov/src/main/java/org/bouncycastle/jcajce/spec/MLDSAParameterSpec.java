@@ -4,6 +4,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.util.Strings;
+
 /**
  * AlgorithmSpec for ML-DSA
  */
@@ -42,6 +44,6 @@ public class MLDSAParameterSpec
     
     public static MLDSAParameterSpec fromName(String name)
     {
-        return (MLDSAParameterSpec)parameters.get(name);
+        return (MLDSAParameterSpec)parameters.get(Strings.toLowerCase(name));
     }
 }
