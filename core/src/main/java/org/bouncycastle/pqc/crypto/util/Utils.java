@@ -267,16 +267,18 @@ class Utils
         mldsaOids.put(MLDSAParameters.ml_dsa_44, NISTObjectIdentifiers.id_ml_dsa_44);
         mldsaOids.put(MLDSAParameters.ml_dsa_65, NISTObjectIdentifiers.id_ml_dsa_65);
         mldsaOids.put(MLDSAParameters.ml_dsa_87, NISTObjectIdentifiers.id_ml_dsa_87);
-        mldsaOids.put(MLDSAParameters.hash_ml_dsa_44, NISTObjectIdentifiers.id_ml_dsa_44);
-        mldsaOids.put(MLDSAParameters.hash_ml_dsa_65, NISTObjectIdentifiers.id_ml_dsa_65);
-        mldsaOids.put(MLDSAParameters.hash_ml_dsa_87, NISTObjectIdentifiers.id_ml_dsa_87);
+        // TODO: no final OIDs yet, using the old dilithium ones.
+        mldsaOids.put(MLDSAParameters.hash_ml_dsa_44, BCObjectIdentifiers.dilithium2);
+        mldsaOids.put(MLDSAParameters.hash_ml_dsa_65, BCObjectIdentifiers.dilithium3);
+        mldsaOids.put(MLDSAParameters.hash_ml_dsa_87, BCObjectIdentifiers.dilithium5);
 
         mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_44, MLDSAParameters.ml_dsa_44);
         mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_65, MLDSAParameters.ml_dsa_65);
         mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_87, MLDSAParameters.ml_dsa_87);
-        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_44, MLDSAParameters.hash_ml_dsa_44);
-        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_65, MLDSAParameters.hash_ml_dsa_65);
-        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_87, MLDSAParameters.hash_ml_dsa_87);
+        // TODO: no final OIDs yet, using the old dilithium ones.
+        mldsaParams.put(BCObjectIdentifiers.dilithium2, MLDSAParameters.hash_ml_dsa_44);
+        mldsaParams.put(BCObjectIdentifiers.dilithium3, MLDSAParameters.hash_ml_dsa_65);
+        mldsaParams.put(BCObjectIdentifiers.dilithium5, MLDSAParameters.hash_ml_dsa_87);
 
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);

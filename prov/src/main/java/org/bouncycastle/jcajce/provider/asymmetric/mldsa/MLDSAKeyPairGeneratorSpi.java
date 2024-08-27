@@ -39,7 +39,7 @@ public class MLDSAKeyPairGeneratorSpi
 
     public MLDSAKeyPairGeneratorSpi()
     {
-        super("MLDSA");
+        super("ML-DSA");
         this.mldsaParameters = null;
     }
 
