@@ -50,6 +50,12 @@ class MLDSAEngine
     private final int PolyUniformGamma1NBlocks;
 
     private final Symmetric symmetric;
+    private final boolean isPreHash;
+
+    public boolean isPreHash()
+    {
+        return isPreHash;
+    }
 
     protected Symmetric GetSymmetric()
     {
@@ -156,9 +162,10 @@ class MLDSAEngine
         return this.shake128Digest;
     }
 
-    MLDSAEngine(int mode, SecureRandom random)
+    MLDSAEngine(int mode, SecureRandom random, boolean isPreHash)
     {
         this.DilithiumMode = mode;
+        this.isPreHash = isPreHash;
         switch (mode)
         {
         case 2:
@@ -315,7 +322,7 @@ class MLDSAEngine
         return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
     }
 
-    public byte[] signSignatureInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    public byte[] signInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
     {
         int n;
         byte[] outSig = new byte[CryptoBytes + msglen];
@@ -416,7 +423,7 @@ class MLDSAEngine
         return null;
     }
 
-    public boolean signVerifyInternal(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
+    public boolean verifyInternal(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
     {
         byte[] buf,
                 mu = new byte[CrhBytes],
@@ -527,8 +534,6 @@ class MLDSAEngine
         return Arrays.constantTimeAreEqual(c, c2);
     }
 
-
-
     public byte[][] generateKeyPair()
     {
         byte[] seedBuf = new byte[SeedBytes];
@@ -536,41 +541,5 @@ class MLDSAEngine
         return generateKeyPairInternal(seedBuf);
 
     }
-
-    public byte[] signSignature(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc)
-    {
-        byte[] rnd = new byte[RndBytes];
-        if (random != null)
-        {
-            random.nextBytes(rnd);
-        }
-        return signSignatureInternal(msg, msglen, rho, key, tr, t0Enc, s1Enc, s2Enc, rnd);
-    }
-
-    public byte[] sign(byte[] msg, int mlen, byte[] rho, byte[] key, byte[] tr, byte[] t0, byte[] s1, byte[] s2)
-    {
-        return signSignature(msg, mlen, rho, key, tr, t0, s1, s2);
-    }
-
-    public boolean signVerify(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
-    {
-        //TODO: add domain separation
-        // M' <- BytesToBits( IntegerToBytes(0, 1) || IntegerToBytes(|ctx|, 1) || ctx ) || M
-        return signVerifyInternal(sig, siglen, msg, msglen, rho, encT1);
-    }
-
-    public boolean signOpen(byte[] msg, byte[] signedMsg, int signedMsglen, byte[] rho, byte[] t1)
-    {
-        //TODO: add domain separation
-        // M' <- BytesToBits( IntegerToBytes(0, 1) || IntegerToBytes(|ctx|, 1) || ctx ) || M
-        return signVerify(signedMsg, signedMsglen, msg, msg.length, rho, t1);
-    }
-
-    // HashML-DSA
-    //TODO: Generate a "pre-hash" ML-DSA signature
-//    public byte[] hashSign(byte[] sk, byte[] message, byte[] ctx, Digest ph) {}
-    //TODO: Verify a pre-hash HashML-DSA signature
-//    public boolean hashVerify(byte[] pk, byte[] message, byte[] sig) {}
-
 
 }
