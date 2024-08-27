@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -23,13 +24,13 @@ import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.jcajce.PKIXCertRevocationChecker;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Properties;
 
 class ProvRevocationChecker
     extends PKIXRevocationChecker
     implements PKIXCertRevocationChecker
 {
-    private static final int DEFAULT_OCSP_TIMEOUT = 15000;
-    private static final int DEFAULT_OCSP_MAX_RESPONSE_SIZE = 32 * 1024;
+    private static final Logger LOG = Logger.getLogger(ProvRevocationChecker.class.getName());
 
     private static final Map oids = new HashMap();
 
@@ -75,17 +76,15 @@ class ProvRevocationChecker
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
     }
 
-    private final JcaJceHelper helper;
     private final ProvCrlRevocationChecker crlChecker;
     private final ProvOcspRevocationChecker ocspChecker;
-
-    private PKIXCertRevocationCheckerParameters parameters;
+    private final boolean noFallbackOverride;
 
     public ProvRevocationChecker(JcaJceHelper helper)
     {
-        this.helper = helper;
-        this.crlChecker = new ProvCrlRevocationChecker(helper);
-        this.ocspChecker = new ProvOcspRevocationChecker(this, helper);
+        crlChecker = new ProvCrlRevocationChecker(helper);
+        ocspChecker = new ProvOcspRevocationChecker(helper);
+        noFallbackOverride = Properties.isOverrideSet("org.bouncycastle.prov.revocation.checker.no-fallback");
     }
 
     public void setParameter(String name, Object value)
@@ -95,9 +94,9 @@ class ProvRevocationChecker
 
     public void initialize(PKIXCertRevocationCheckerParameters parameters)
     {
-        this.parameters = parameters;
         crlChecker.initialize(parameters);
         ocspChecker.initialize(parameters);
+        ocspChecker.update(getOcspResponses(), getOcspExtensions(), getOcspResponder(), getOcspResponderCert());
     }
 
     public List<CertPathValidatorException> getSoftFailExceptions()
@@ -108,9 +107,8 @@ class ProvRevocationChecker
     public void init(boolean forForward)
         throws CertPathValidatorException
     {
-        this.parameters = null;
-         crlChecker.init(forForward);
-         ocspChecker.init(forForward);
+        crlChecker.init(forForward);
+        ocspChecker.init(forForward);
     }
 
     public boolean isForwardCheckingSupported()
@@ -131,23 +129,27 @@ class ProvRevocationChecker
         // only check end-entity certificates.
         if (hasOption(Option.ONLY_END_ENTITY) && cert.getBasicConstraints() != -1)
         {
+            LOG.info("[revocation check] ONLY_END_ENTITY option selected. Skipping cert: " + cert.getSubjectX500Principal());
             return;
         }
 
         if (hasOption(Option.PREFER_CRLS))
         {
+            LOG.info("[revocation check] PREFER_CRLS option selected. Checking CRLs for cert: " + cert.getSubjectX500Principal());
             try
             {
                 crlChecker.check(certificate);
             }
             catch (RecoverableCertPathValidatorException e)
             {
-                if (!hasOption(Option.NO_FALLBACK))
+                LOG.severe("[revocation check] Error during CRL check for cert: " + cert.getSubjectX500Principal());
+                if (!hasOption(Option.NO_FALLBACK) && !noFallbackOverride)
                 {
                     ocspChecker.check(certificate);
                 }
                 else
                 {
+                    LOG.warning("[revocation check] NO_FALLBACK option selected. Will not attempt to check OCSP");
                     throw e;
                 }
             }
@@ -160,12 +162,15 @@ class ProvRevocationChecker
             }
             catch (RecoverableCertPathValidatorException e)
             {
-                if (!hasOption(Option.NO_FALLBACK))
+                LOG.severe("[revocation check] Error during OCSP check for cert: " + cert.getSubjectX500Principal());
+                if (!hasOption(Option.NO_FALLBACK) && !noFallbackOverride)
                 {
+                    LOG.info("[revocation check] Checking CRL for cert: " + cert.getSubjectX500Principal());
                     crlChecker.check(certificate);
                 }
                 else
                 {
+                    LOG.warning("[revocation check] NO_FALLBACK option selected. Will not attempt to check CRLs");
                     throw e;
                 }
             }

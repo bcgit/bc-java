@@ -3,7 +3,6 @@ package org.bouncycastle.jce.provider;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -15,10 +14,11 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -27,7 +27,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
@@ -46,12 +45,9 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStrictStyle;
-import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -66,13 +62,11 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Properties;
 
 class ProvOcspRevocationChecker
     implements PKIXCertRevocationChecker
 {
-    private static final int DEFAULT_OCSP_TIMEOUT = 15000;
-    private static final int DEFAULT_OCSP_MAX_RESPONSE_SIZE = 32 * 1024;
+    private static final Logger LOG = Logger.getLogger(ProvOcspRevocationChecker.class.getName());
 
     private static final Map oids = new HashMap();
 
@@ -118,16 +112,18 @@ class ProvOcspRevocationChecker
         oids.put(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
     }
 
-    private final ProvRevocationChecker parent;
     private final JcaJceHelper helper;
 
     private PKIXCertRevocationCheckerParameters parameters;
-    private boolean isEnabledOCSP;
-    private String ocspURL;
 
-    public ProvOcspRevocationChecker(ProvRevocationChecker parent, JcaJceHelper helper)
+    // properties from the parent PKIXRevocationChecker
+    private Map<X509Certificate, byte[]> ocspResponses = new HashMap<X509Certificate, byte[]>();
+    private List<Extension> ocspExtensions = new ArrayList<Extension>();
+    private URI ocspResponder;
+    private X509Certificate ocspResponderCert;
+
+    public ProvOcspRevocationChecker(JcaJceHelper helper)
     {
-        this.parent = parent;
         this.helper = helper;
     }
 
@@ -139,8 +135,14 @@ class ProvOcspRevocationChecker
     public void initialize(PKIXCertRevocationCheckerParameters parameters)
     {
         this.parameters = parameters;
-        this.isEnabledOCSP = Properties.isOverrideSet("ocsp.enable");
-        this.ocspURL = Properties.getPropertyValue("ocsp.responderURL");
+    }
+
+    public void update(Map<X509Certificate, byte[]> ocspResponses, List<Extension> ocspExtensions, URI ocspResponder, X509Certificate ocspResponderCert)
+    {
+        this.ocspResponses = ocspResponses;
+        this.ocspExtensions = ocspExtensions;
+        this.ocspResponder = ocspResponder;
+        this.ocspResponderCert = ocspResponderCert;
     }
 
     public List<CertPathValidatorException> getSoftFailExceptions()
@@ -157,71 +159,24 @@ class ProvOcspRevocationChecker
         }
 
         this.parameters = null;
-        this.isEnabledOCSP = Properties.isOverrideSet("ocsp.enable");
-        this.ocspURL = Properties.getPropertyValue("ocsp.responderURL");
-    }
-
-    public boolean isForwardCheckingSupported()
-    {
-        return false;
-    }
-
-    public Set<String> getSupportedExtensions()
-    {
-        return null;
     }
 
     public void check(Certificate certificate)
         throws CertPathValidatorException
     {
-        X509Certificate cert = (X509Certificate)certificate;
-        Map<X509Certificate, byte[]> ocspResponses = parent.getOcspResponses();
-        URI ocspUri = parent.getOcspResponder();
+        X509Certificate cert = (X509Certificate) certificate;
+        LOG.info("[revocation check] OCSP check for cert: " + cert.getSubjectX500Principal());
 
-        if (ocspUri == null)
+        if (ocspResponses.get(cert) == null)
         {
-            if (this.ocspURL != null)
-            {
-                try
-                {
-                    ocspUri = new URI(this.ocspURL);
-                }
-                catch (URISyntaxException e)
-                {
-                    throw new CertPathValidatorException("configuration error: " + e.getMessage(),
-                        e, parameters.getCertPath(), parameters.getIndex());
-                }
-            }
-            else
-            {
-                ocspUri = getOcspResponderURI(cert);
-            }
-        }
-
-        byte[] nonce = null;
-        boolean preValidated = false;
-        if (ocspResponses.get(cert) == null && ocspUri != null)
-        {
-            // if we're here we need to make a network access, if we haven't been given a URL explicitly block it.
-            if (ocspURL == null
-                && parent.getOcspResponder() == null
-                && !isEnabledOCSP)
-            {
-                throw new RecoverableCertPathValidatorException("OCSP disabled by \"ocsp.enable\" setting",
-                                    null, parameters.getCertPath(), parameters.getIndex());
-            }
-
-            org.bouncycastle.asn1.x509.Certificate issuer = extractCert();
-
-            // TODO: configure hash algorithm
-            CertID id = createCertID(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), issuer, new ASN1Integer(cert.getSerialNumber()));
-
-            OCSPResponse response = OcspCache.getOcspResponse(id, parameters, ocspUri, parent.getOcspResponderCert(), parent.getOcspExtensions(), helper);
-
+            LOG.info("[revocation check] No stapled OCSP response found");
             try
             {
-                ocspResponses.put(cert, response.getEncoded());
-                preValidated = true;
+                OCSPResponse response = OcspResponseManager.getOCSPResponseForRevocationCheck(cert, parameters.getSigningCert(), ocspExtensions, ocspResponder, helper);
+                if (response != null)
+                {
+                    ocspResponses.put(cert, response.getEncoded());
+                }
             }
             catch (IOException e)
             {
@@ -231,19 +186,23 @@ class ProvOcspRevocationChecker
         }
         else
         {
-            List exts = parent.getOcspExtensions();
-            for (int i = 0; i != exts.size(); i++)
-            {
-                Extension ext = (Extension)exts.get(i);
-                byte[] value = ext.getValue();
+            LOG.info("[revocation check] Found stapled OCSP response");
+        }
 
-                if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId().equals(ext.getId()))
-                {
-                    nonce = value;
-                }
+        // get the nonce from the request extensions to validate the response later
+        byte[] nonce = null;
+        for (int i = 0; i < ocspExtensions.size(); i++)
+        {
+            Extension ext = ocspExtensions.get(i);
+            byte[] value = ext.getValue();
+
+            if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId().equals(ext.getId()))
+            {
+                nonce = value;
             }
         }
 
+        // validate the OCSP responses
         if (!ocspResponses.isEmpty())
         {
             OCSPResponse ocspResponse = OCSPResponse.getInstance(ocspResponses.get(cert));
@@ -261,7 +220,7 @@ class ProvOcspRevocationChecker
                         {
                             BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
 
-                            if (preValidated || validatedOcspResponse(basicResp, parameters, nonce, parent.getOcspResponderCert(), helper))
+                            if (validatedOcspResponse(basicResp, parameters, nonce, ocspResponderCert, helper))
                             {
                                 ResponseData responseData = ResponseData.getInstance(basicResp.getTbsResponseData());
 
@@ -290,6 +249,7 @@ class ProvOcspRevocationChecker
                                             if (resp.getCertStatus().getTagNo() == 0)
                                             {
                                                 // we're good!
+                                                LOG.info("[revocation check] OCSP response successfully validated");
                                                 return;
                                             }
                                             if (resp.getCertStatus().getTagNo() == 1)
@@ -337,43 +297,6 @@ class ProvOcspRevocationChecker
         {
             throw new RecoverableCertPathValidatorException(
                 "no OCSP response found for any certificate", null, parameters.getCertPath(), parameters.getIndex());
-        }
-    }
-
-    static URI getOcspResponderURI(X509Certificate cert)
-    {
-        byte[] extValue = cert.getExtensionValue(org.bouncycastle.asn1.x509.Extension.authorityInfoAccess.getId());
-        if (extValue == null)
-        {
-            return null;
-        }
-        else
-        {
-            AuthorityInformationAccess aiAccess = AuthorityInformationAccess.getInstance(
-                ASN1OctetString.getInstance(extValue).getOctets());
-
-            AccessDescription[] descriptions = aiAccess.getAccessDescriptions();
-            for (int i = 0; i != descriptions.length; i++)
-            {
-                AccessDescription aDesc = descriptions[i];
-                if (AccessDescription.id_ad_ocsp.equals(aDesc.getAccessMethod()))
-                {
-                    GeneralName name = aDesc.getAccessLocation();
-                    if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
-                    {
-                        try
-                        {
-                            return new URI(((ASN1String)name.getName()).getString());
-                        }
-                        catch (URISyntaxException e)
-                        {
-                            // ignore...
-                        }
-                    }
-                }
-            }
-
-            return null;
         }
     }
 
