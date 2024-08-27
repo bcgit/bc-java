@@ -1,12 +1,19 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.DigestUtils;
+import org.bouncycastle.util.Arrays;
+
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.security.SecureRandom;
-
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.util.Arrays;
 
 /**
  * SLH-DA signer.
@@ -18,19 +25,26 @@ import org.bouncycastle.util.Arrays;
  *     for further details.
  * </p>
  */
-public class SLHDSASigner
-    implements MessageSigner
+public class HashSLHDSASigner
+    implements Signer
 {
     private SLHDSAPrivateKeyParameters privKey;
     private SLHDSAPublicKeyParameters pubKey;
 
     private SecureRandom random;
+    private final Digest digest;
+    private final byte[] oidEncoding;
 
-    /**
-     * Base constructor.
-     */
-    public SLHDSASigner()
+
+    public HashSLHDSASigner(Digest digest, ASN1ObjectIdentifier digestOid) throws IOException
     {
+        this.digest = digest;
+        this.oidEncoding = digestOid.getEncoded(ASN1Encoding.DER);
+    }
+    public HashSLHDSASigner(Digest digest) throws IOException
+    {
+        this(digest, DigestUtils.getDigestOid(digest.getAlgorithmName()));
+
     }
 
     public void init(boolean forSigning, CipherParameters param)
@@ -51,15 +65,31 @@ public class SLHDSASigner
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
         }
+
+        reset();
+
     }
 
-    public byte[] generateSignature(byte[] message)
+    @Override
+    public void update(byte b)
+    {
+        digest.update(b);
+    }
+
+    @Override
+    public void update(byte[] in, int off, int len)
+    {
+        digest.update(in, off, len);
+    }
+
+    @Override
+    public byte[] generateSignature() throws CryptoException, DataLengthException
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
 
         if (!engine.isPreHash())
         {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
+            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
         }
 
         engine.init(privKey.pk.seed);
@@ -70,85 +100,56 @@ public class SLHDSASigner
             throw new RuntimeException("Context too long");
         }
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
-        ds_message[0] = 0;
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+
+        byte[] ds_message = new byte[1 + 1 + ctx.length + oidEncoding.length + hash.length];
+        ds_message[0] = 1;
         ds_message[1] = (byte)ctx.length;
         System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(message, 0, ds_message, 2 + ctx.length, message.length);
+        System.arraycopy(oidEncoding, 0, ds_message, 2 + ctx.length, oidEncoding.length);
+        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + oidEncoding.length, hash.length);
 
         // generate randomizer
         byte[] optRand = new byte[engine.N];
         return internalGenerateSignature(ds_message, optRand);
     }
 
-    // Equivalent to slh_verify_internal from specs
-    public boolean verifySignature(byte[] message, byte[] signature)
+    @Override
+    public boolean verifySignature(byte[] signature)
     {
         SLHDSAEngine engine = pubKey.getParameters().getEngine();
 
         if (!engine.isPreHash())
         {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
+            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
         }
 
         byte[] ctx = pubKey.getContext();
+
         if (ctx.length > 255)
         {
             throw new RuntimeException("Context too long");
         }
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
-        ds_message[0] = 0;
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+
+        byte[] ds_message = new byte[1 + 1 + ctx.length + oidEncoding.length + hash.length];
+        ds_message[0] = 1;
         ds_message[1] = (byte)ctx.length;
         System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(message, 0, ds_message, 2 + ctx.length, message.length);
+        System.arraycopy(oidEncoding, 0, ds_message, 2 + ctx.length, oidEncoding.length);
+        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + oidEncoding.length, hash.length);
 
         return internalVerifySignature(ds_message, signature);
     }
-    public boolean internalVerifySignature(byte[] message, byte[] signature)
+
+    @Override
+    public void reset()
     {
-        //# Input: Message M, signature SIG, public key PK
-        //# Output: Boolean
-
-        // init
-        SLHDSAEngine engine = pubKey.getParameters().getEngine();
-
-        engine.init(pubKey.getSeed());
-
-        ADRS adrs = new ADRS();
-
-        if (((1 + engine.K * (1 + engine.A) + engine.H + engine.D *engine.WOTS_LEN)* engine.N) != signature.length)
-        {
-            return false;
-        }
-
-        SIG sig = new SIG(engine.N, engine.K, engine.A, engine.D, engine.H_PRIME, engine.WOTS_LEN, signature);
-
-        byte[] R = sig.getR();
-        SIG_FORS[] sig_fors = sig.getSIG_FORS();
-        SIG_XMSS[] SIG_HT = sig.getSIG_HT();
-
-        // compute message digest and index
-        IndexedDigest idxDigest = engine.H_msg(R, pubKey.getSeed(), pubKey.getRoot(), message);
-        byte[] mHash = idxDigest.digest;
-        long idx_tree = idxDigest.idx_tree;
-        int idx_leaf = idxDigest.idx_leaf;
-
-        // compute FORS public key
-        adrs.setType(ADRS.FORS_TREE);
-        adrs.setLayerAddress(0);
-        adrs.setTreeAddress(idx_tree);
-        adrs.setKeyPairAddress(idx_leaf);
-        byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pubKey.getSeed(), adrs);
-        // verify HT signature
-        adrs.setType(ADRS.TREE);
-        adrs.setLayerAddress(0);
-        adrs.setTreeAddress(idx_tree);
-        adrs.setKeyPairAddress(idx_leaf);
-        HT ht = new HT(engine, null, pubKey.getSeed());
-        return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
+        digest.reset();
     }
-
     public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
@@ -197,6 +198,50 @@ public class SLHDSASigner
         sigComponents[sigComponents.length - 1] = SIG_HT;
 
         return Arrays.concatenate(sigComponents);
+    }
+
+    public boolean internalVerifySignature(byte[] message, byte[] signature)
+    {
+        //# Input: Message M, signature SIG, public key PK
+        //# Output: Boolean
+
+        // init
+        SLHDSAEngine engine = pubKey.getParameters().getEngine();
+
+        engine.init(pubKey.getSeed());
+
+        ADRS adrs = new ADRS();
+
+        if (((1 + engine.K * (1 + engine.A) + engine.H + engine.D *engine.WOTS_LEN)* engine.N) != signature.length)
+        {
+            return false;
+        }
+
+        SIG sig = new SIG(engine.N, engine.K, engine.A, engine.D, engine.H_PRIME, engine.WOTS_LEN, signature);
+
+        byte[] R = sig.getR();
+        SIG_FORS[] sig_fors = sig.getSIG_FORS();
+        SIG_XMSS[] SIG_HT = sig.getSIG_HT();
+
+        // compute message digest and index
+        IndexedDigest idxDigest = engine.H_msg(R, pubKey.getSeed(), pubKey.getRoot(), message);
+        byte[] mHash = idxDigest.digest;
+        long idx_tree = idxDigest.idx_tree;
+        int idx_leaf = idxDigest.idx_leaf;
+
+        // compute FORS public key
+        adrs.setType(ADRS.FORS_TREE);
+        adrs.setLayerAddress(0);
+        adrs.setTreeAddress(idx_tree);
+        adrs.setKeyPairAddress(idx_leaf);
+        byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pubKey.getSeed(), adrs);
+        // verify HT signature
+        adrs.setType(ADRS.TREE);
+        adrs.setLayerAddress(0);
+        adrs.setTreeAddress(idx_tree);
+        adrs.setKeyPairAddress(idx_leaf);
+        HT ht = new HT(engine, null, pubKey.getSeed());
+        return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
     }
 }
 

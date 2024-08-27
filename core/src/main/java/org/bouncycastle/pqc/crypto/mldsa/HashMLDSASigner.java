@@ -3,18 +3,17 @@ package org.bouncycastle.pqc.crypto.mldsa;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.security.SecureRandom;
-import java.util.Hashtable;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.DigestUtils;
+
 
 public class HashMLDSASigner
     implements Signer
@@ -26,29 +25,7 @@ public class HashMLDSASigner
     private final Digest digest;
     private final byte[] oidEncoding;
 
-    private static final Hashtable oidMap = new Hashtable();
 
-    /*
-     * Load OID table.
-     */
-    static
-    {
-        oidMap.put("SHA-1", X509ObjectIdentifiers.id_SHA1);
-        oidMap.put("SHA-224", NISTObjectIdentifiers.id_sha224);
-        oidMap.put("SHA-256", NISTObjectIdentifiers.id_sha256);
-        oidMap.put("SHA-384", NISTObjectIdentifiers.id_sha384);
-        oidMap.put("SHA-512", NISTObjectIdentifiers.id_sha512);
-        oidMap.put("SHA-512/224", NISTObjectIdentifiers.id_sha512_224);
-        oidMap.put("SHA-512/256", NISTObjectIdentifiers.id_sha512_256);
-
-        oidMap.put("SHA3-224", NISTObjectIdentifiers.id_sha3_224);
-        oidMap.put("SHA3-256", NISTObjectIdentifiers.id_sha3_256);
-        oidMap.put("SHA3-384", NISTObjectIdentifiers.id_sha3_384);
-        oidMap.put("SHA3-512", NISTObjectIdentifiers.id_sha3_512);
-
-        oidMap.put("SHAKE128", NISTObjectIdentifiers.id_shake128);
-        oidMap.put("SHAKE256", NISTObjectIdentifiers.id_shake256);
-    }
 
     public HashMLDSASigner(Digest digest, ASN1ObjectIdentifier digestOid) throws IOException
     {
@@ -57,7 +34,7 @@ public class HashMLDSASigner
     }
     public HashMLDSASigner(Digest digest) throws IOException
     {
-        this(digest, (ASN1ObjectIdentifier)oidMap.get(digest.getAlgorithmName()));
+        this(digest, DigestUtils.getDigestOid(digest.getAlgorithmName()));
     }
 
     public void init(boolean forSigning, CipherParameters param)

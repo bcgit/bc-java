@@ -110,7 +110,7 @@ public class SLHDSAParameters
     private static class Sha2EngineProvider
         implements SLHDSAEngineProvider
     {
-        private final boolean robust;
+        private final boolean isPreHash;
         private final int n;
         private final int w;
         private final int d;
@@ -118,9 +118,9 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Sha2EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        public Sha2EngineProvider(boolean isPreHash, int n, int w, int d, int a, int k, int h)
         {
-            this.robust = robust;
+            this.isPreHash = isPreHash;
             this.n = n;
             this.w = w;
             this.d = d;
@@ -136,14 +136,14 @@ public class SLHDSAParameters
 
         public SLHDSAEngine get()
         {
-            return new SLHDSAEngine.Sha2Engine(robust, n, w, d, a, k, h);
+            return new SLHDSAEngine.Sha2Engine(isPreHash, n, w, d, a, k, h);
         }
     }
 
     private static class Shake256EngineProvider
         implements SLHDSAEngineProvider
     {
-        private final boolean robust;
+        private final boolean isPreHash;
         private final int n;
         private final int w;
         private final int d;
@@ -151,9 +151,9 @@ public class SLHDSAParameters
         private final int k;
         private final int h;
 
-        public Shake256EngineProvider(boolean robust, int n, int w, int d, int a, int k, int h)
+        public Shake256EngineProvider(boolean isPreHash, int n, int w, int d, int a, int k, int h)
         {
-            this.robust = robust;
+            this.isPreHash = isPreHash;
             this.n = n;
             this.w = w;
             this.d = d;
@@ -169,7 +169,7 @@ public class SLHDSAParameters
 
         public SLHDSAEngine get()
         {
-            return new SLHDSAEngine.Shake256Engine(robust, n, w, d, a, k, h);
+            return new SLHDSAEngine.Shake256Engine(isPreHash, n, w, d, a, k, h);
         }
     }
 }
