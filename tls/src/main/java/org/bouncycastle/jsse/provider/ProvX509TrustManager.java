@@ -157,12 +157,14 @@ class ProvX509TrustManager
         checkTrusted(chain, authType, null, false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         checkTrusted(chain, authType, TransportData.from(socket), false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
@@ -175,12 +177,14 @@ class ProvX509TrustManager
         checkTrusted(chain, authType, null, true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         checkTrusted(chain, authType, TransportData.from(socket), true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
