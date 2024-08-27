@@ -39,7 +39,7 @@ public class MLKEMKeyPairGeneratorSpi
 
     public MLKEMKeyPairGeneratorSpi()
     {
-        super("MLKEM");
+        super("ML-KEM");
     }
 
     protected MLKEMKeyPairGeneratorSpi(MLKEMParameterSpec paramSpec)
