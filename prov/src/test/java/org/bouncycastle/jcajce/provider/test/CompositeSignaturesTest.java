@@ -1,14 +1,9 @@
 package org.bouncycastle.jcajce.provider.test;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.security.Signature;
-import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -17,9 +12,7 @@ import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Base64;
 
 public class CompositeSignaturesTest
     extends TestCase
@@ -171,6 +164,8 @@ public class CompositeSignaturesTest
         }
     }
 
+    /*
+    //TODO: samples now out of date
     public void testDecodingAndVerificationExternal()
         throws Exception
     {
@@ -209,4 +204,5 @@ public class CompositeSignaturesTest
 
         assertEquals(compositeSignaturesOIDs.length, count);
     }
+     */
 }
