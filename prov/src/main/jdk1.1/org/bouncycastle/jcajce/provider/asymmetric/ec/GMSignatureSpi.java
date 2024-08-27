@@ -31,7 +31,7 @@ public class GMSignatureSpi
 
     private SM2Signer signer;
 
-    GMSignatureSpi(SM2Signer signer)
+    protected GMSignatureSpi(SM2Signer signer)
     {
         super("SM3withSM2");
         this.signer = signer;
