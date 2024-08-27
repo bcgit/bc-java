@@ -1,13 +1,13 @@
 package org.bouncycastle.pqc.crypto.mldsa;
 
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.security.SecureRandom;
+import java.util.Hashtable;
+
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
@@ -15,13 +15,6 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.security.SecureRandom;
-import java.util.Hashtable;
 
 public class HashMLDSASigner
     implements Signer
@@ -144,7 +137,7 @@ public class HashMLDSASigner
 
         if (!engine.isPreHash())
         {
-            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters.");
+            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters");
         }
 
         byte[] ctx = pubKey.getContext();
@@ -182,7 +175,7 @@ public class HashMLDSASigner
 
         if (!engine.isPreHash())
         {
-            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters.");
+            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters");
         }
         return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.tr, privKey.t0, privKey.s1, privKey.s2, random);
     }
@@ -193,7 +186,7 @@ public class HashMLDSASigner
 
         if (!engine.isPreHash())
         {
-            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters.");
+            throw new InvalidParameterException("pre-hash ml-dsa must use non \"pure\" parameters");
         }
 
         return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
