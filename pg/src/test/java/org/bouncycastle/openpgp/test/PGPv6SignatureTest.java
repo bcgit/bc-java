@@ -6,8 +6,6 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketFormat;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
@@ -27,7 +25,6 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
-import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
@@ -41,13 +38,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.Iterator;
 
 public class PGPv6SignatureTest
     extends AbstractPacketTest
 {
-
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-version-6-certificat
     private static final String ARMORED_CERT = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
         "\n" +
         "xioGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laPCsQYf\n" +
@@ -60,6 +56,7 @@ public class PGPv6SignatureTest
         "j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805\n" +
         "I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==\n" +
         "-----END PGP PUBLIC KEY BLOCK-----";
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-version-6-secret-key
     private static final String ARMORED_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
         "\n" +
         "xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB\n" +
@@ -85,13 +82,13 @@ public class PGPv6SignatureTest
     public void performTest()
         throws Exception
     {
-        verifyV6DirectKeySignatureTestVector();
+        verifySignatureOnTestKey();
 
-        verifyV6BinarySignature();
+        verifyV6DetachedSignature();
         verifyV6InlineSignature();
         verifyV6CleartextSignature();
 
-        generateAndVerifyV6BinarySignature();
+        generateAndVerifyV6DetachedSignature();
         generateAndVerifyV6InlineSignature();
         generateAndVerifyV6CleartextSignature();
 
@@ -102,10 +99,13 @@ public class PGPv6SignatureTest
         verifySignaturesOnEd448X448Key();
         generateAndVerifyInlineSignatureUsingRSAKey();
 
-        testVerificationOfV3SigWithV6KeyFails();
+        testVerificationOfV4SigWithV6KeyFails();
     }
 
-    private void verifyV6DirectKeySignatureTestVector()
+    /**
+     * Verify that the known-good key signatures on the minimal test key verify properly.
+     */
+    private void verifySignatureOnTestKey()
         throws IOException, PGPException
     {
         ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_CERT.getBytes(StandardCharsets.UTF_8));
@@ -129,7 +129,10 @@ public class PGPv6SignatureTest
             subkeyBinding.verifyCertification(primaryKey, subkey));
     }
 
-    private void verifyV6BinarySignature()
+    /**
+     * Verify that a good v6 detached signature is verified properly.
+     */
+    private void verifyV6DetachedSignature()
         throws IOException, PGPException
     {
         String msg = "Hello, World!\n";
@@ -161,6 +164,9 @@ public class PGPv6SignatureTest
             binarySig.verify());
     }
 
+    /**
+     * Verify that a good v6 inline signature is verified properly.
+     */
     private void verifyV6InlineSignature()
         throws IOException, PGPException
     {
@@ -203,6 +209,9 @@ public class PGPv6SignatureTest
         isTrue("Verifying OPS signature MUST succeed", ops.verify(sig));
     }
 
+    /**
+     * Verify that a good v6 cleartext signature is verified properly.
+     */
     private void verifyV6CleartextSignature()
         throws IOException, PGPException
     {
@@ -247,6 +256,10 @@ public class PGPv6SignatureTest
         isTrue("Cleartext Signature MUST verify successfully", sig.verify());
     }
 
+    /**
+     * A v6 signature with too few salt bytes.
+     * This test verifies that the signature is properly rejected.
+     */
     private void verifyingSignatureWithMismatchedSaltSizeFails()
         throws IOException
     {
@@ -285,6 +298,10 @@ public class PGPv6SignatureTest
         }
     }
 
+    /**
+     * Verify that a OPS signature where the length of the salt array does not match the expectations
+     * is rejected properly.
+     */
     private void verifyingOPSWithMismatchedSaltSizeFails()
         throws IOException
     {
@@ -325,6 +342,10 @@ public class PGPv6SignatureTest
         }
     }
 
+    /**
+     * Test verifying that an inline signature where the salt of the OPS packet mismatches that of the signature
+     * is rejected properly.
+     */
     private void verifyingInlineSignatureWithSignatureSaltValueMismatchFails()
         throws IOException, PGPException
     {
@@ -378,6 +399,9 @@ public class PGPv6SignatureTest
         }
     }
 
+    /**
+     * Verify self signatures on a v6 Ed448/X448 key.
+     */
     private void verifySignaturesOnEd448X448Key()
         throws PGPException, IOException
     {
@@ -518,7 +542,10 @@ public class PGPv6SignatureTest
         return null;
     }
 
-    private void generateAndVerifyV6BinarySignature()
+    /**
+     * Generate and verify a detached v6 signature using the v6 test key.
+     */
+    private void generateAndVerifyV6DetachedSignature()
             throws IOException, PGPException
     {
         String msg = "Hello, World!\n";
@@ -547,6 +574,9 @@ public class PGPv6SignatureTest
                 binarySig.verify());
     }
 
+    /**
+     * Generate and verify a v6 inline signature using the v6 test key.
+     */
     private void generateAndVerifyV6InlineSignature()
             throws IOException, PGPException
     {
@@ -610,6 +640,9 @@ public class PGPv6SignatureTest
         isTrue("Generated Inline OPS signature MUST verify successful", ops.verify(sig));
     }
 
+    /**
+     * Generate and verify a v6 signature using the cleartext signature framework and the v6 test key.
+     */
     private void generateAndVerifyV6CleartextSignature()
             throws IOException, PGPException
     {
@@ -677,6 +710,9 @@ public class PGPv6SignatureTest
         isTrue("Generated Cleartext Signature MUST verify successfully", v);
     }
 
+    /**
+     * Generate and verify an inline text signature using a v6 RSA key.
+     */
     private void generateAndVerifyInlineSignatureUsingRSAKey()
             throws PGPException, IOException
     {
@@ -787,7 +823,11 @@ public class PGPv6SignatureTest
         isTrue("V6 inline sig made using RSA key MUST verify", ops.verify(sig));
     }
 
-    private void testVerificationOfV3SigWithV6KeyFails()
+    /**
+     * A version 4 signature generated using the v6 key.
+     * This test verifies that the signature is properly rejected.
+     */
+    private void testVerificationOfV4SigWithV6KeyFails()
             throws IOException
     {
         ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_KEY.getBytes(StandardCharsets.UTF_8));
