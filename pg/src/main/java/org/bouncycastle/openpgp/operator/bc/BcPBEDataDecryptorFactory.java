@@ -5,6 +5,7 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -89,12 +90,24 @@ public class BcPBEDataDecryptorFactory
         }
 
         byte[] hkdfInfo = keyData.getAAData(); // Between v5 and v6, these bytes differ
-        int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
 
-        // HKDF
-        // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-        byte[] kek = BcAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
-        final KeyParameter secretKey = new KeyParameter(kek);
+        KeyParameter secretKey;
+        if (keyData.getVersion() == SymmetricKeyEncSessionPacket.VERSION_5)
+        {
+            secretKey = new KeyParameter(ikm);
+        }
+        else if (keyData.getVersion() == SymmetricKeyEncSessionPacket.VERSION_6)
+        {
+            // HKDF
+            // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
+            int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
+            byte[] kek = BcAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
+            secretKey = new KeyParameter(kek);
+        }
+        else
+        {
+            throw new UnsupportedPacketVersionException("Unsupported SKESK packet version encountered: " + keyData.getVersion());
+        }
 
         // AEAD
         AEADBlockCipher aead = BcAEADUtil.createAEADCipher(keyData.getEncAlgorithm(), keyData.getAeadAlgorithm());
