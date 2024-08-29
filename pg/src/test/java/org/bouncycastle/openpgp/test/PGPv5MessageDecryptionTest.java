@@ -1,18 +1,26 @@
 package org.bouncycastle.openpgp.test;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
+import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -25,6 +33,31 @@ import java.nio.charset.StandardCharsets;
 public class PGPv5MessageDecryptionTest
         extends AbstractPacketTest
 {
+    // LibrePGP v5 test key "emma"
+    private static final String V5KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+            "\n" +
+            "lGEFXJH05BYAAAAtCSsGAQQB2kcPAQEHQFhZlVcVVtwf+21xNQPX+ecMJJBL0MPd\n" +
+            "fj75iux+my8QAAAAAAAiAQCHZ1SnSUmWqxEsoI6facIVZQu6mph3cBFzzTvcm5lA\n" +
+            "Ng5ctBhlbW1hLmdvbGRtYW5AZXhhbXBsZS5uZXSIlgUTFggASCIhBRk0e8mHJGQC\n" +
+            "X5nfPsLgAA7ZiEiS4fez6kyUAJFZVptUBQJckfTkAhsDBQsJCAcCAyICAQYVCgkI\n" +
+            "CwIEFgIDAQIeBwIXgAAA9cAA/jiR3yMsZMeEQ40u6uzEoXa6UXeV/S3wwJAXRJy9\n" +
+            "M8s0AP9vuL/7AyTfFXwwzSjDnYmzS0qAhbLDQ643N+MXGBJ2BZxmBVyR9OQSAAAA\n" +
+            "MgorBgEEAZdVAQUBAQdA+nysrzml2UCweAqtpDuncSPlvrcBWKU0yfU0YvYWWAoD\n" +
+            "AQgHAAAAAAAiAP9OdAPppjU1WwpqjIItkxr+VPQRT8Zm/Riw7U3F6v3OiBFHiHoF\n" +
+            "GBYIACwiIQUZNHvJhyRkAl+Z3z7C4AAO2YhIkuH3s+pMlACRWVabVAUCXJH05AIb\n" +
+            "DAAAOSQBAP4BOOIR/sGLNMOfeb5fPs/02QMieoiSjIBnijhob2U5AQC+RtOHCHx7\n" +
+            "TcIYl5/Uyoi+FOvPLcNw4hOv2nwUzSSVAw==\n" +
+            "=IiS2\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+    // Test message using an OCB encrypted data packet created using GnuPG 2.4.4
+    private static final String V5OEDMessage = "-----BEGIN PGP MESSAGE-----\n" +
+            "\n" +
+            "hF4D5FV8KwL/v0sSAQdAHddL3yiZVtJCvAv9Yo5zRj1w0xuCQ1Mpw3wxfw2KWm0w\n" +
+            "v423Al38Vd5L99TDTZBUzMAt4MlqfYwHTf6+xh1cFq1o+kpw0UJzGpa+MKtd6QQv\n" +
+            "1FMBCQIQ3MhiVgXm2GZjYYWf4R0/+70VwlOXKz05uk4ejoRZ5g9vfCdWg6r50neP\n" +
+            "HCcT7hIFpq6xSGNbj8hx2N3Y6bVmP2gR+AKBZlxoBj+/gbeDXQ==\n" +
+            "=FbPu\n" +
+            "-----END PGP MESSAGE-----";
 
     // https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-sample-ocb-encryption-and-d
     private static final byte[] MSG0_SKESK5 = Hex.decode("c33d05070203089f0b7da3e5ea647790" +
@@ -49,6 +82,9 @@ public class PGPv5MessageDecryptionTest
     {
         decryptSKESK5OCBED1_bc();
         decryptSKESK5OCBED1_jce();
+
+        decryptPKESK3OCBED1_bc();
+        decryptPKESK3OCBED1_jce();
     }
 
     private void decryptSKESK5OCBED1_bc()
@@ -88,6 +124,64 @@ public class PGPv5MessageDecryptionTest
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
         isEncodingEqual("Plaintext mismatch", plaintext, "Hello, world!\n".getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void decryptPKESK3OCBED1_jce()
+            throws IOException, PGPException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(V5KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new JcaPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new JcaPGPObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
+        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID());
+        PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
+        InputStream decIn = encData.getDataStream(new JcePublicKeyDataDecryptorFactoryBuilder()
+                .setProvider(new BouncyCastleProvider())
+                .build(privateKey));
+        pIn = new BCPGInputStream(decIn);
+        objFac = new JcaPGPObjectFactory(pIn);
+        PGPCompressedData com = (PGPCompressedData) objFac.nextObject();
+        InputStream comIn = com.getDataStream();
+        objFac = new JcaPGPObjectFactory(comIn);
+        PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
+        byte[] plaintext = Streams.readAll(lit.getDataStream());
+        isEncodingEqual("Plaintext mismatch", plaintext, "Hello World :)".getBytes(StandardCharsets.UTF_8));
+    }
+
+    private void decryptPKESK3OCBED1_bc()
+            throws IOException, PGPException
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(V5KEY.getBytes(StandardCharsets.UTF_8));
+        ArmoredInputStream aIn = new ArmoredInputStream(bIn);
+        BCPGInputStream pIn = new BCPGInputStream(aIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
+
+        bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        aIn = new ArmoredInputStream(bIn);
+        pIn = new BCPGInputStream(aIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPEncryptedDataList encList = (PGPEncryptedDataList) objFac.nextObject();
+        PGPPublicKeyEncryptedData encData = (PGPPublicKeyEncryptedData) encList.get(0);
+        PGPSecretKey decryptionKey = secretKeys.getSecretKey(encData.getKeyID());
+        PGPPrivateKey privateKey = decryptionKey.extractPrivateKey(null);
+        InputStream decIn = encData.getDataStream(new BcPublicKeyDataDecryptorFactory(privateKey));
+        pIn = new BCPGInputStream(decIn);
+        objFac = new BcPGPObjectFactory(pIn);
+        PGPCompressedData com = (PGPCompressedData) objFac.nextObject();
+        InputStream comIn = com.getDataStream();
+        objFac = new BcPGPObjectFactory(comIn);
+        PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
+        byte[] plaintext = Streams.readAll(lit.getDataStream());
+        isEncodingEqual("Plaintext mismatch", plaintext, "Hello World :)".getBytes(StandardCharsets.UTF_8));
     }
 
     public static void main(String[] args)
