@@ -364,6 +364,20 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SLHDSAKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SLHDSAKeyFactorySpi());
 
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, new SLHDSAKeyFactorySpi());
+
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, new SLHDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, new SLHDSAKeyFactorySpi());
+
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, new SPHINCSPlusKeyFactorySpi());
@@ -423,6 +437,9 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, new MLDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, new MLDSAKeyFactorySpi());
+        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, new MLDSAKeyFactorySpi());
 
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi());

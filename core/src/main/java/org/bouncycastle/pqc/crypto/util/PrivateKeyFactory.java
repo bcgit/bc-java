@@ -281,7 +281,7 @@ public class PrivateKeyFactory
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
         }
-        else if (Utils.mldsaOids.containsKey(algOID))
+        else if (Utils.mldsaParams.containsKey(algOID))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
             MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
