@@ -31,11 +31,9 @@ abstract class SLHDSAEngine
     final int H_PRIME;  // H / D
 
     final int T; // T = 1 << A
-    final boolean isPreHash;
 
-    public SLHDSAEngine(boolean isPreHash, int n, int w, int d, int a, int k, int h)
+    public SLHDSAEngine(int n, int w, int d, int a, int k, int h)
     {
-        this.isPreHash = isPreHash;
         this.N = n;
 
         /* SPX_WOTS_LEN2 is floor(log(len_1 * (w - 1)) / log(w)) + 1; we precompute */
@@ -92,11 +90,6 @@ abstract class SLHDSAEngine
         this.T = 1 << a;
     }
 
-    public boolean isPreHash()
-    {
-        return isPreHash;
-    }
-
     abstract void init(byte[] pkSeed);
 
     abstract byte[] F(byte[] pkSeed, ADRS adrs, byte[] m1);
@@ -126,9 +119,9 @@ abstract class SLHDSAEngine
         private Memoable msgMemo;
         private Memoable sha256Memo;
 
-        public Sha2Engine(boolean isPreHash, int n, int w, int d, int a, int k, int h)
+        public Sha2Engine(int n, int w, int d, int a, int k, int h)
         {
-            super(isPreHash, n, w, d, a, k, h);
+            super(n, w, d, a, k, h);
             if (n == 16)
             {
                 this.msgDigest = new SHA256Digest();
@@ -314,9 +307,9 @@ abstract class SLHDSAEngine
         private final Xof treeDigest;
         private final Xof maskDigest;
 
-        public Shake256Engine(boolean isPreHash, int n, int w, int d, int a, int k, int h)
+        public Shake256Engine(int n, int w, int d, int a, int k, int h)
         {
-            super(isPreHash, n, w, d, a, k, h);
+            super(n, w, d, a, k, h);
 
             this.treeDigest = new SHAKEDigest(256);
             this.maskDigest = new SHAKEDigest(256);

@@ -35,6 +35,7 @@ public class SLHDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        boolean isPreHash;
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -46,21 +47,23 @@ public class SLHDSASigner
             {
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
+            isPreHash = privKey.getParameters().getDigest() != null;
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
+            isPreHash = pubKey.getParameters().getDigest() != null;
+        }
+
+        if (isPreHash)
+        {
+            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
     }
 
     public byte[] generateSignature(byte[] message)
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
-
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
-        }
 
         engine.init(privKey.pk.seed);
         byte[] ctx = privKey.getContext();
@@ -84,13 +87,6 @@ public class SLHDSASigner
     // Equivalent to slh_verify_internal from specs
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        SLHDSAEngine engine = pubKey.getParameters().getEngine();
-
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
-        }
-
         byte[] ctx = pubKey.getContext();
         if (ctx.length > 255)
         {
