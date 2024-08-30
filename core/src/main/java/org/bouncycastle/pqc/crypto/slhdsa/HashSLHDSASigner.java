@@ -32,19 +32,12 @@ public class HashSLHDSASigner
     private SLHDSAPublicKeyParameters pubKey;
 
     private SecureRandom random;
-    private final Digest digest;
-    private final byte[] oidEncoding;
+    private Digest digest;
+    private byte[] oidEncoding;
 
 
-    public HashSLHDSASigner(Digest digest, ASN1ObjectIdentifier digestOid) throws IOException
+    public HashSLHDSASigner()
     {
-        this.digest = digest;
-        this.oidEncoding = digestOid.getEncoded(ASN1Encoding.DER);
-    }
-    public HashSLHDSASigner(Digest digest) throws IOException
-    {
-        this(digest, DigestUtils.getDigestOid(digest.getAlgorithmName()));
-
     }
 
     public void init(boolean forSigning, CipherParameters param)
@@ -60,10 +53,28 @@ public class HashSLHDSASigner
             {
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
+
+            digest = privKey.getParameters().getDigest();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
+
+            digest = pubKey.getParameters().getDigest();
+        }
+
+        if (digest == null)
+        {
+            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
+        }
+
+        try
+        {
+            this.oidEncoding = DigestUtils.getDigestOid(digest.getAlgorithmName()).getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
         }
 
         reset();
@@ -86,11 +97,6 @@ public class HashSLHDSASigner
     public byte[] generateSignature() throws CryptoException, DataLengthException
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
-
-        if (!engine.isPreHash())
-        {
-            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
-        }
 
         engine.init(privKey.pk.seed);
         byte[] ctx = privKey.getContext();
@@ -118,13 +124,6 @@ public class HashSLHDSASigner
     @Override
     public boolean verifySignature(byte[] signature)
     {
-        SLHDSAEngine engine = pubKey.getParameters().getEngine();
-
-        if (!engine.isPreHash())
-        {
-            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
-        }
-
         byte[] ctx = pubKey.getContext();
 
         if (ctx.length > 255)

@@ -49,13 +49,7 @@ class MLDSAEngine
 
     private final int PolyUniformGamma1NBlocks;
 
-    private final Symmetric symmetric;
-    private final boolean isPreHash;
-
-    public boolean isPreHash()
-    {
-        return isPreHash;
-    }
+    private final Symmetric symmetric;;
 
     protected Symmetric GetSymmetric()
     {
@@ -162,10 +156,9 @@ class MLDSAEngine
         return this.shake128Digest;
     }
 
-    MLDSAEngine(int mode, SecureRandom random, boolean isPreHash)
+    MLDSAEngine(int mode, SecureRandom random)
     {
         this.DilithiumMode = mode;
-        this.isPreHash = isPreHash;
         switch (mode)
         {
         case 2:

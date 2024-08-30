@@ -234,6 +234,13 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_ml_dsa_65       = sigAlgs.branch("18");
     /** 2.16.840.1.101.3.4.3.19 */
     static final ASN1ObjectIdentifier    id_ml_dsa_87       = sigAlgs.branch("19");
+    // "pre-hash" ML-DSA
+    /** 2.16.840.1.101.3.4.3.32 */
+    static final ASN1ObjectIdentifier    id_hash_ml_dsa_44_with_sha512    = sigAlgs.branch("32");
+    /** 2.16.840.1.101.3.4.3.33 */
+    static final ASN1ObjectIdentifier    id_hash_ml_dsa_65_with_sha512    = sigAlgs.branch("33");
+    /** 2.16.840.1.101.3.4.3.34 */
+    static final ASN1ObjectIdentifier    id_hash_ml_dsa_87_with_sha512    = sigAlgs.branch("34");
 
     // "pure" SLH-DSA
     /** 2.16.840.1.101.3.4.3.20 */
@@ -260,6 +267,32 @@ public interface NISTObjectIdentifiers
     static final ASN1ObjectIdentifier    id_slh_dsa_shake_256s      = sigAlgs.branch("30");
     /** 2.16.840.1.101.3.4.3.31 */
     static final ASN1ObjectIdentifier    id_slh_dsa_shake_256f      = sigAlgs.branch("31");
+    // "pre-hash" SLH-DSA
+
+    /** 2.16.840.1.101.3.4.3.35 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_128s_with_sha256     = sigAlgs.branch("35");
+    /** 2.16.840.1.101.3.4.3.36 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_128f_with_sha256     = sigAlgs.branch("36");
+    /** 2.16.840.1.101.3.4.3.37 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_192s_with_sha512     = sigAlgs.branch("37");
+    /** 2.16.840.1.101.3.4.3.38 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_192f_with_sha512     = sigAlgs.branch("38");
+    /** 2.16.840.1.101.3.4.3.39 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_256s_with_sha512     = sigAlgs.branch("39");
+    /** 2.16.840.1.101.3.4.3.40 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_sha2_256f_with_sha512     = sigAlgs.branch("40");
+    /** 2.16.840.1.101.3.4.3.41 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_128s_with_shake128  = sigAlgs.branch("41");
+    /** 2.16.840.1.101.3.4.3.42 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_128f_with_shake128  = sigAlgs.branch("42");
+    /** 2.16.840.1.101.3.4.3.43 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_192s_with_shake256  = sigAlgs.branch("43");
+    /** 2.16.840.1.101.3.4.3.44 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_192f_with_shake256  = sigAlgs.branch("44");
+    /** 2.16.840.1.101.3.4.3.45 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_256s_with_shake256  = sigAlgs.branch("45");
+    /** 2.16.840.1.101.3.4.3.46 */
+    static final ASN1ObjectIdentifier    id_hash_slh_dsa_shake_256f_with_shake256  = sigAlgs.branch("46");
 
 
     //

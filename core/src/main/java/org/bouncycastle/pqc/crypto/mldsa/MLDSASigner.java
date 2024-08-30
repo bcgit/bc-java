@@ -21,6 +21,7 @@ public class MLDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        boolean isPreHash;
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -33,21 +34,24 @@ public class MLDSASigner
                 privKey = (MLDSAPrivateKeyParameters)param;
                 random = null;
             }
+
+            isPreHash = privKey.getParameters().getDigest() != null;
         }
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
+            isPreHash = pubKey.getParameters().getDigest() != null;
+        }
+
+        if (isPreHash)
+        {
+            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
     }
 
     public byte[] generateSignature(byte[] message)
     {
         MLDSAEngine engine = privKey.getParameters().getEngine(random);
-
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" ml-dsa must use non pre-hash parameters.");
-        }
 
         byte[] ctx = privKey.getContext();
         if (ctx.length > 255)
@@ -73,22 +77,12 @@ public class MLDSASigner
     {
         MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
 
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" ml-dsa must use non pre-hash parameters.");
-        }
-
         return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.tr, privKey.t0, privKey.s1, privKey.s2, random);
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
         MLDSAEngine engine = pubKey.getParameters().getEngine(random);
-
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" ml-dsa must use non pre-hash parameters.");
-        }
 
         byte[] ctx = pubKey.getContext();
         if (ctx.length > 255)
@@ -107,11 +101,6 @@ public class MLDSASigner
     public boolean internalVerifySignature(byte[] message, byte[] signature)
     {
         MLDSAEngine engine = pubKey.getParameters().getEngine(random);
-
-        if (engine.isPreHash())
-        {
-            throw new InvalidParameterException("\"pure\" ml-dsa must use non pre-hash parameters.");
-        }
 
         return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
     }
