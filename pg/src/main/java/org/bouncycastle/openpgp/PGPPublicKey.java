@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
+import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -29,7 +30,6 @@ import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 /**
  * general class to handle a PGP public key object.
@@ -68,15 +68,15 @@ public class PGPPublicKey
         }
         else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
         {
-            this.keyID = Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
+            this.keyID = FingerprintUtil.keyIdFromV4Fingerprint(fingerprint);
         }
         else if (publicPk.getVersion() == PublicKeyPacket.LIBREPGP_5)
         {
-            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
+            this.keyID = FingerprintUtil.keyIdFromLibrePgpFingerprint(fingerprint);
         }
         else if (publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
-            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
+            this.keyID = FingerprintUtil.keyIdFromV6Fingerprint(fingerprint);
         }
 
         // key strength
