@@ -55,7 +55,8 @@ public class RegressionTest
         new DLExternalTest(),
         new KMACParamsTest(),
         new DERPrivateTest(),
-        new X509AltTest()
+        new X509AltTest(),
+        new CertIDTest()
     };
 
     public static void main(String[] args)
