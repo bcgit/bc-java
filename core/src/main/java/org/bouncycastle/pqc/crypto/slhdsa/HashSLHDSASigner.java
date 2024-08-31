@@ -10,6 +10,9 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Arrays;
@@ -45,13 +48,13 @@ public class HashSLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
-            digest = privKey.getParameters().createDigest();
+            initDigest(privKey);
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
 
-            digest = pubKey.getParameters().createDigest();
+            initDigest(pubKey);
         }
 
         reset();
@@ -62,7 +65,7 @@ public class HashSLHDSASigner
     {
         if (key.getParameters().isPreHash())
         {
-            digest = key.getParameters().createDigest();
+            digest = createDigest(key);
         }
 
         ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
@@ -144,6 +147,7 @@ public class HashSLHDSASigner
     {
         digest.reset();
     }
+
     public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
@@ -236,6 +240,51 @@ public class HashSLHDSASigner
         adrs.setKeyPairAddress(idx_leaf);
         HT ht = new HT(engine, null, pubKey.getSeed());
         return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
+    }
+
+    private static Digest createDigest(SLHDSAKeyParameters key)
+    {
+        int type = key.getParameters().getType();
+
+        switch (type)
+        {
+        case SLHDSAParameters.TYPE_PURE:
+            String name = key.getParameters().getName();
+            if (name.startsWith("sha2"))
+            {
+                if (SLHDSAParameters.sha2_128f == key.parameters
+                    || SLHDSAParameters.sha2_128s == key.parameters)
+                {
+                    return SHA256Digest.newInstance();
+                }
+                else
+                {
+                    return new SHA512Digest();
+                }
+            }
+            else
+            {
+                if (SLHDSAParameters.shake_128f == key.parameters
+                    || SLHDSAParameters.shake_128s == key.parameters)
+                {
+                    return new SHAKEDigest(128);
+                }
+                else
+                {
+                    return new SHAKEDigest(256);
+                }
+            }
+        case SLHDSAParameters.TYPE_SHA2_256:
+            return SHA256Digest.newInstance();
+        case SLHDSAParameters.TYPE_SHA2_512:
+            return new SHA512Digest();
+        case SLHDSAParameters.TYPE_SHAKE128:
+            return new SHAKEDigest(128);
+        case SLHDSAParameters.TYPE_SHAKE256:
+            return new SHAKEDigest(256);
+        default:
+            throw new IllegalArgumentException("unknown parameters type");
+        }
     }
 }
 

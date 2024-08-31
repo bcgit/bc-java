@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
-import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -36,6 +35,7 @@ public class SLHDSASigner
     public void init(boolean forSigning, CipherParameters param)
     {
         boolean isPreHash;
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -47,17 +47,18 @@ public class SLHDSASigner
             {
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
-            isPreHash = privKey.getParameters().createDigest() != null;
+
+            isPreHash = privKey.parameters.isPreHash();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
-            isPreHash = pubKey.getParameters().createDigest() != null;
+            isPreHash = pubKey.parameters.isPreHash();
         }
 
         if (isPreHash)
         {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
+            throw new IllegalArgumentException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
     }
 
