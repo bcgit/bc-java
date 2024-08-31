@@ -14,6 +14,7 @@ public class SLHDSAKeyParameters
         this.parameters = parameters;
         this.context = context;
     }
+
     protected SLHDSAKeyParameters(boolean isPrivate, SLHDSAParameters parameters)
     {
         super(isPrivate);

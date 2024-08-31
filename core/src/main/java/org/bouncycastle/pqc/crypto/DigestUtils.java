@@ -1,11 +1,11 @@
 package org.bouncycastle.pqc.crypto;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class DigestUtils
 {
@@ -42,7 +42,7 @@ public class DigestUtils
         {
             return (ASN1ObjectIdentifier)digestOids.get(digestName);
         }
-        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
 
+        throw new IllegalArgumentException("unrecognised digest algorithm: " + digestName);
     }
 }

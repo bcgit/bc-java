@@ -35,12 +35,12 @@ public class MLDSASigner
                 random = null;
             }
 
-            isPreHash = privKey.getParameters().getDigest() != null;
+            isPreHash = privKey.getParameters().createDigest() != null;
         }
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
-            isPreHash = pubKey.getParameters().getDigest() != null;
+            isPreHash = pubKey.getParameters().createDigest() != null;
         }
 
         if (isPreHash)
