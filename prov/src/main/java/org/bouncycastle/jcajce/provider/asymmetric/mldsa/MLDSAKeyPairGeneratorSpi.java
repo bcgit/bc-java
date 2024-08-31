@@ -99,7 +99,14 @@ public class MLDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87);
+            if (this.getAlgorithm().startsWith("HASH"))
+            {
+                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87_with_sha512);
+            }
+            else
+            {
+                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87);
+            }
 
             engine.init(param);
             initialised = true;
