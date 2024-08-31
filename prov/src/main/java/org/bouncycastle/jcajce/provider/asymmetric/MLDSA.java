@@ -43,20 +43,14 @@ public class MLDSA
             addSignatureAlgorithm(provider, "ML-DSA-44", PREFIX + "SignatureSpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44);
             addSignatureAlgorithm(provider, "ML-DSA-65", PREFIX + "SignatureSpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65);
             addSignatureAlgorithm(provider, "ML-DSA-87", PREFIX + "SignatureSpi$MLDSA87", NISTObjectIdentifiers.id_ml_dsa_87);
+            provider.addAlgorithm("Alg.Alias.Signature.MLDSA", "ML-DSA");
 
             addSignatureAlgorithm(provider, "HASH-ML-DSA", PREFIX + "HashSignatureSpi$MLDSA", (ASN1ObjectIdentifier)null);
             addSignatureAlgorithm(provider, "ML-DSA-44-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA44", NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
             addSignatureAlgorithm(provider, "ML-DSA-65-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA65", NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
             addSignatureAlgorithm(provider, "ML-DSA-87-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA87", NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
 
-//            provider.addAlgorithm("Alg.Alias.Signature." + NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA");
-//            provider.addAlgorithm("Alg.Alias.Signature.OID." + NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA");
-//
-//            provider.addAlgorithm("Alg.Alias.Signature." + NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA");
-//            provider.addAlgorithm("Alg.Alias.Signature.OID." + NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA");
-//
-//            provider.addAlgorithm("Alg.Alias.Signature." + NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA");
-//            provider.addAlgorithm("Alg.Alias.Signature.OID." + NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA");
+            provider.addAlgorithm("Alg.Alias.Signature.SHA512WITHMLDSA", "HASH-ML-DSA");
 
             AsymmetricKeyInfoConverter keyFact = new MLDSAKeyFactorySpi.Hash();
 

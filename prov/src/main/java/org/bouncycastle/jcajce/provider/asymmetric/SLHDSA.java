@@ -84,7 +84,9 @@ public class SLHDSA
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-256F-WITH-SHAKE256", PREFIX + "SLHDSAKeyPairGeneratorSpi$HashShake_256f", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256);
 
             addSignatureAlgorithm(provider, "SLH-DSA", PREFIX + "SignatureSpi$Direct", (ASN1ObjectIdentifier)null);
+            provider.addAlgorithm("Alg.Alias.Signature.SLHDSA", "SLH-DSA");
             addSignatureAlgorithm(provider, "HASH-SLH-DSA", PREFIX + "HashSignatureSpi$Direct", (ASN1ObjectIdentifier)null);
+            provider.addAlgorithm("Alg.Alias.Signature.HASHWITHSLHDSA", "HASH-SLH-DSA");
 
             ASN1ObjectIdentifier[] nistOids = new ASN1ObjectIdentifier[]
             {
