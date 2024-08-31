@@ -40,7 +40,6 @@ public class MLDSA
             addKeyPairGeneratorAlgorithm(provider, "ML-DSA-87-WITH-SHA512", PREFIX + "MLDSAKeyPairGeneratorSpi$MLDSA87withSHA512", NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
 
             addSignatureAlgorithm(provider, "ML-DSA", PREFIX + "SignatureSpi$MLDSA", (ASN1ObjectIdentifier)null);
-
             addSignatureAlgorithm(provider, "ML-DSA-44", PREFIX + "SignatureSpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44);
             addSignatureAlgorithm(provider, "ML-DSA-65", PREFIX + "SignatureSpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65);
             addSignatureAlgorithm(provider, "ML-DSA-87", PREFIX + "SignatureSpi$MLDSA87", NISTObjectIdentifiers.id_ml_dsa_87);

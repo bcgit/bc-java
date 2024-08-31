@@ -58,15 +58,11 @@ public class HashSLHDSASigner
         }
 
         reset();
-
     }
 
     private void initDigest(SLHDSAKeyParameters key)
     {
-        if (key.getParameters().isPreHash())
-        {
-            digest = createDigest(key);
-        }
+        digest = createDigest(key);
 
         ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
         try

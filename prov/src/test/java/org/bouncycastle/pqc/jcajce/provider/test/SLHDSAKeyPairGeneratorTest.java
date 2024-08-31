@@ -45,6 +45,18 @@ public class SLHDSAKeyPairGeneratorTest
         kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_slh_dsa_shake_192f.getId(), "BC");
         kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_slh_dsa_shake_256s.getId(), "BC");
         kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_slh_dsa_shake_256f.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256.getId(), "BC");
+        kf = KeyFactory.getInstance(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256.getId(), "BC");
     }
 
     public void testKeySpecs()
@@ -66,7 +78,7 @@ public class SLHDSAKeyPairGeneratorTest
     public void testKeyPairEncoding()
         throws Exception
     {
-        kf = KeyFactory.getInstance("SLH-DSA", "BC");
+        kf = KeyFactory.getInstance("HASH-SLH-DSA", "BC");
 
         SLHDSAParameterSpec[] params =
             {
@@ -83,6 +95,20 @@ public class SLHDSAKeyPairGeneratorTest
                 SLHDSAParameterSpec.slh_dsa_shake_192f,
                 SLHDSAParameterSpec.slh_dsa_shake_256s,
                 SLHDSAParameterSpec.slh_dsa_shake_256f,
+
+                SLHDSAParameterSpec.slh_dsa_sha2_128s_with_sha256,
+                SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256,
+                SLHDSAParameterSpec.slh_dsa_sha2_192s_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_sha2_192f_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_sha2_256s_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_sha2_256f_with_sha512,
+
+                SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128,
+                SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128,
+                SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256,
             };
         
         // expected object identifiers
@@ -99,10 +125,22 @@ public class SLHDSAKeyPairGeneratorTest
                 NISTObjectIdentifiers.id_slh_dsa_shake_192s,
                 NISTObjectIdentifiers.id_slh_dsa_shake_192f,
                 NISTObjectIdentifiers.id_slh_dsa_shake_256s,
-                NISTObjectIdentifiers.id_slh_dsa_shake_256f
+                NISTObjectIdentifiers.id_slh_dsa_shake_256f,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
             };
         
-        kpg = KeyPairGenerator.getInstance("SLH-DSA", "BC");
+        kpg = KeyPairGenerator.getInstance("HASH-SLH-DSA", "BC");
         
         for (int i = 0; i != params.length; i++)
         {

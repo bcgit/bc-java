@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.slhdsa;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
@@ -38,6 +39,20 @@ public class SLHDSAKeyPairGeneratorSpi
         parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192s.getName(), SLHDSAParameters.shake_192s);
         parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256f.getName(), SLHDSAParameters.shake_256f);
         parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256s.getName(), SLHDSAParameters.shake_256s);
+        
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256.getName(), SLHDSAParameters.sha2_128f_with_sha256);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_128s_with_sha256.getName(), SLHDSAParameters.sha2_128s_with_sha256);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192f_with_sha512.getName(), SLHDSAParameters.sha2_192f_with_sha512);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_192s_with_sha512.getName(), SLHDSAParameters.sha2_192s_with_sha512);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256f_with_sha512.getName(), SLHDSAParameters.sha2_256f_with_sha512);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_sha2_256s_with_sha512.getName(), SLHDSAParameters.sha2_256s_with_sha512);
+
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128.getName(), SLHDSAParameters.shake_128f_with_shake128);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128.getName(), SLHDSAParameters.shake_128s_with_shake128);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256.getName(), SLHDSAParameters.shake_192f_with_shake256);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256.getName(), SLHDSAParameters.shake_192s_with_shake256);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256.getName(), SLHDSAParameters.shake_256f_with_shake256);
+        parameters.put(SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256.getName(), SLHDSAParameters.shake_256s_with_shake256);
     }
 
     SLHDSAKeyGenerationParameters param;
@@ -46,9 +61,9 @@ public class SLHDSAKeyPairGeneratorSpi
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
-    public SLHDSAKeyPairGeneratorSpi()
+    public SLHDSAKeyPairGeneratorSpi(String name)
     {
-        super("SLH-DSA");
+        super(name);
     }
 
     protected SLHDSAKeyPairGeneratorSpi(SLHDSAParameterSpec paramSpec)
@@ -92,7 +107,14 @@ public class SLHDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s);
+            if (this.getAlgorithm().startsWith("HASH"))
+            {
+                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s_with_sha512);
+            }
+            else
+            {
+                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s);
+            }
 
             engine.init(param);
             initialised = true;
@@ -115,6 +137,16 @@ public class SLHDSAKeyPairGeneratorSpi
         else
         {
             return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
+        }
+    }
+
+    public static class Pure
+        extends SLHDSAKeyPairGeneratorSpi
+    {
+        public Pure()
+            throws NoSuchAlgorithmException
+        {
+            super("SLH-DSA");
         }
     }
 
@@ -217,12 +249,130 @@ public class SLHDSAKeyPairGeneratorSpi
        }
     }
 
+    public static class Hash
+        extends SLHDSAKeyPairGeneratorSpi
+    {
+        public Hash()
+            throws NoSuchAlgorithmException
+        {
+            super("HASH-SLH-DSA");
+        }
+    }
+
     public static class Shake_256f
        extends SLHDSAKeyPairGeneratorSpi
     {
         public Shake_256f()
         {
             super(SLHDSAParameterSpec.slh_dsa_shake_256f);
+        }
+    }
+    
+    public static class HashSha2_128s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashSha2_128s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_sha2_128s_with_sha256);
+       }
+    }
+
+    public static class HashSha2_128f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashSha2_128f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256);
+        }
+    }
+
+    public static class HashSha2_192s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashSha2_192s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_sha2_192s_with_sha512);
+       }
+    }
+
+    public static class HashSha2_192f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashSha2_192f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_sha2_192f_with_sha512);
+        }
+    }
+
+    public static class HashSha2_256s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashSha2_256s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_sha2_256s_with_sha512);
+       }
+    }
+
+    public static class HashSha2_256f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashSha2_256f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_sha2_256f_with_sha512);
+        }
+    }
+    
+    public static class HashShake_128s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashShake_128s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128);
+       }
+    }
+
+    public static class HashShake_128f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashShake_128f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128);
+        }
+    }
+
+    public static class HashShake_192s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashShake_192s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256);
+       }
+    }
+
+    public static class HashShake_192f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashShake_192f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256);
+        }
+    }
+
+    public static class HashShake_256s
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+       public HashShake_256s()
+       {
+           super(SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256);
+       }
+    }
+
+    public static class HashShake_256f
+       extends SLHDSAKeyPairGeneratorSpi
+    {
+        public HashShake_256f()
+        {
+            super(SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256);
         }
     }
 }
