@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.mldsa;
 
-import java.security.InvalidParameterException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -22,6 +21,7 @@ public class MLDSASigner
     public void init(boolean forSigning, CipherParameters param)
     {
         boolean isPreHash;
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -35,17 +35,17 @@ public class MLDSASigner
                 random = null;
             }
 
-            isPreHash = privKey.getParameters().createDigest() != null;
+            isPreHash = privKey.getParameters().isPreHash();
         }
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
-            isPreHash = pubKey.getParameters().createDigest() != null;
+            isPreHash = pubKey.getParameters().isPreHash();
         }
 
         if (isPreHash)
         {
-            throw new InvalidParameterException("\"pure\" slh-dsa must use non pre-hash parameters");
+            throw new IllegalArgumentException("\"pure\" ml-dsa must use non pre-hash parameters");
         }
     }
 
@@ -73,6 +73,7 @@ public class MLDSASigner
 
         return engine.signInternal(ds_message, ds_message.length, privKey.rho, privKey.k, privKey.tr, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
+    
     public byte[] internalGenerateSignature(byte[] message, byte[] random)
     {
         MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
