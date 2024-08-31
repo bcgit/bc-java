@@ -55,6 +55,8 @@ public class JcaContentSignerBuilder
         isAlgIdFromPrivate.add("SPHINCSPlus");
         isAlgIdFromPrivate.add("ML-DSA");
         isAlgIdFromPrivate.add("SLH-DSA");
+        isAlgIdFromPrivate.add("HASH-ML-DSA");
+        isAlgIdFromPrivate.add("HASH-SLH-DSA");
     }
 
     private final String signatureAlgorithm;

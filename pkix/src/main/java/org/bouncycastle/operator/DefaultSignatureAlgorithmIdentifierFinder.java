@@ -230,6 +230,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65);
         algorithms.put("ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87);
 
+        algorithms.put("ML-DSA-44-WITH-SHA512", NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+        algorithms.put("ML-DSA-65-WITH-SHA512", NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+        algorithms.put("ML-DSA-87-WITH-SHA512", NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
+
         algorithms.put("SLH-DSA-SHA2-128S", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
         algorithms.put("SLH-DSA-SHA2-128F", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
         algorithms.put("SLH-DSA-SHA2-192S", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
@@ -331,7 +335,18 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
-
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
         noParams.add(BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
@@ -370,6 +385,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        noParams.add(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+        noParams.add(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
         noParams.add(BCObjectIdentifiers.dilithium2_aes);
         noParams.add(BCObjectIdentifiers.dilithium3_aes);
         noParams.add(BCObjectIdentifiers.dilithium5_aes);

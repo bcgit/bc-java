@@ -1,9 +1,11 @@
 package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
@@ -35,6 +38,7 @@ import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
@@ -55,9 +59,11 @@ public class PQCSignedDataTest
     private static X509Certificate _origFalconCert;
     private static KeyPair _origPicnicKP;
     private static X509Certificate _origPicnicCert;
-    private static KeyPair _origDilithiumKP;
-    private static X509Certificate _origDilithiumCert;
-    
+    private static KeyPair _origMlDsaKP;
+    private static X509Certificate _origMlDsaCert;
+    private static KeyPair _origSlhDsaKP;
+    private static X509Certificate _origSlhDsaCert;
+
     private static String _signDN;
     private static KeyPair _signKP;
     private static X509Certificate _signCert;
@@ -65,9 +71,11 @@ public class PQCSignedDataTest
     private static X509Certificate _signFalconCert;
     private static KeyPair _signPicnicKP;
     private static X509Certificate _signPicnicCert;
-    private static KeyPair _signDilithiumKP;
-    private static X509Certificate _signDilithiumCert;
-    
+    private static KeyPair _signMlDsaKP;
+    private static X509Certificate _signMlDsaCert;
+    private static KeyPair _signSlhDsaKP;
+    private static X509Certificate _signSlhDsaCert;
+
     private static boolean _initialised = false;
 
     private static final Set noParams = new HashSet();
@@ -140,12 +148,18 @@ public class PQCSignedDataTest
 
             _signPicnicKP = PQCTestUtil.makePicnicKeyPair();
             _signPicnicCert = PQCTestUtil.makeCertificate(_signPicnicKP, _signDN, _origPicnicKP, _origDN);
-            
-            _origDilithiumKP = PQCTestUtil.makeDilithiumKeyPair();
-            _origDilithiumCert = PQCTestUtil.makeCertificate(_origDilithiumKP, _origDN, _origDilithiumKP, _origDN);
-            
-            _signDilithiumKP = PQCTestUtil.makeDilithiumKeyPair();
-            _signDilithiumCert = PQCTestUtil.makeCertificate(_signDilithiumKP, _signDN, _origDilithiumKP, _origDN);
+
+            _origMlDsaKP = PQCTestUtil.makeMlDsaKeyPair();
+            _origMlDsaCert = PQCTestUtil.makeCertificate(_origMlDsaKP, _origDN, _origMlDsaKP, _origDN);
+
+            _signMlDsaKP = PQCTestUtil.makeMlDsaKeyPair();
+            _signMlDsaCert = PQCTestUtil.makeCertificate(_signMlDsaKP, _signDN, _origMlDsaKP, _origDN);
+
+            _origSlhDsaKP = PQCTestUtil.makeSlhDsaKeyPair();
+            _origSlhDsaCert = PQCTestUtil.makeCertificate(_origSlhDsaKP, _origDN, _origSlhDsaKP, _origDN);
+
+            _signSlhDsaKP = PQCTestUtil.makeSlhDsaKeyPair();
+            _signSlhDsaCert = PQCTestUtil.makeCertificate(_signSlhDsaKP, _signDN, _origSlhDsaKP, _origDN);
         }
     }
 
@@ -263,7 +277,7 @@ public class PQCSignedDataTest
     }
 
     public void testPicnicEncapsulated()
-            throws Exception
+        throws Exception
     {
         List certList = new ArrayList();
         CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
@@ -283,52 +297,17 @@ public class PQCSignedDataTest
 
         CMSSignedData s = gen.generate(msg, true);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
-
-        certs = s.getCertificates();
-
-        SignerInformationStore signers = s.getSignerInfos();
-
-        Collection c = signers.getSigners();
-        Iterator it = c.iterator();
-
-
-        while (it.hasNext())
-        {
-            SignerInformation signer = (SignerInformation)it.next();
-            Collection certCollection = certs.getMatches(signer.getSID());
-
-            Iterator certIt = certCollection.iterator();
-            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
-
-            cert.getSubjectPublicKeyInfo();
-
-            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
-
-            //
-            // check content digest
-            //
-
-            byte[] contentDigest = (byte[])gen.getGeneratedDigests().get(signer.getDigestAlgOID());
-
-            AttributeTable table = signer.getSignedAttributes();
-            Attribute hash = table.get(CMSAttributes.messageDigest);
-
-            assertTrue(MessageDigest.isEqual(contentDigest, ((ASN1OctetString)hash.getAttrValues().getObjectAt(0)).getOctets()));
-        }
+        checkSignature(s, gen);
     }
-    
-    public void testDilithiumEncapsulated()
-            throws Exception
+
+    public void testMLDSAEncapsulated()
+        throws Exception
     {
         List certList = new ArrayList();
         CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
 
-        certList.add(_origDilithiumCert);
-        certList.add(_signDilithiumCert);
+        certList.add(_origMlDsaCert);
+        certList.add(_signMlDsaCert);
 
         Store certs = new JcaCertStore(certList);
 
@@ -336,12 +315,91 @@ public class PQCSignedDataTest
 
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("Dilithium").setProvider(BCPQC).build(_origDilithiumKP.getPrivate()), _origDilithiumCert));
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("ML-DSA").setProvider(BC).build(_origMlDsaKP.getPrivate()), _origMlDsaCert));
 
         gen.addCertificates(certs);
 
         CMSSignedData s = gen.generate(msg, true);
 
+        checkSignature(s, gen);
+    }
+
+    public void testHashMLDSAEncapsulated()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origMlDsaCert);
+        certList.add(_signMlDsaCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("HASH-ML-DSA").setProvider(BC).build(_origMlDsaKP.getPrivate()), _origMlDsaCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        checkSignature(s, gen);
+    }
+
+    public void testSLHDSAEncapsulated()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origSlhDsaCert);
+        certList.add(_signSlhDsaCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("SLH-DSA").setProvider(BC).build(_origSlhDsaKP.getPrivate()), _origSlhDsaCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        checkSignature(s, gen);
+    }
+
+    public void testHashSLHDSAEncapsulated()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origSlhDsaCert);
+        certList.add(_signSlhDsaCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("HASH-SLH-DSA").setProvider(BC).build(_origSlhDsaKP.getPrivate()), _origSlhDsaCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        checkSignature(s, gen);
+    }
+
+    private void checkSignature(CMSSignedData s, CMSSignedDataGenerator gen)
+        throws IOException, CMSException, OperatorCreationException, CertificateException
+    {
+        Store certs;
         ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
         ASN1InputStream aIn = new ASN1InputStream(bIn);
 
