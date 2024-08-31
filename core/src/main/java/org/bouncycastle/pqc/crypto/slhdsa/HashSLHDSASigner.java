@@ -1,5 +1,8 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
+import java.io.IOException;
+import java.security.SecureRandom;
+
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
@@ -11,19 +14,8 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Arrays;
 
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.security.SecureRandom;
-
 /**
  * SLH-DA signer.
- * <p>
- *     This version is based on the 3rd submission with deference to the updated reference
- *     implementation on github as at November 9th 2021. This version includes the changes
- *     for the countermeasure for the long-message second preimage attack - see
- *     "https://github.com/sphincs/sphincsplus/commit/61cd2695c6f984b4f4d6ed675378ed9a486cbede"
- *     for further details.
- * </p>
  */
 public class HashSLHDSASigner
     implements Signer
@@ -33,8 +25,7 @@ public class HashSLHDSASigner
 
     private SecureRandom random;
     private Digest digest;
-    private byte[] oidEncoding;
-
+    private byte[] digestOidEncoding;
 
     public HashSLHDSASigner()
     {
@@ -54,31 +45,35 @@ public class HashSLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
-            digest = privKey.getParameters().getDigest();
+            digest = privKey.getParameters().createDigest();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
 
-            digest = pubKey.getParameters().getDigest();
-        }
-
-        if (digest == null)
-        {
-            throw new InvalidParameterException("pre-hash slh-dsa must use non \"pure\" parameters");
-        }
-
-        try
-        {
-            this.oidEncoding = DigestUtils.getDigestOid(digest.getAlgorithmName()).getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
+            digest = pubKey.getParameters().createDigest();
         }
 
         reset();
 
+    }
+
+    private void initDigest(SLHDSAKeyParameters key)
+    {
+        if (key.getParameters().isPreHash())
+        {
+            digest = key.getParameters().createDigest();
+        }
+
+        ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
+        try
+        {
+            digestOidEncoding = oid.getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("oid encoding failed: " + e.getMessage());
+        }
     }
 
     @Override
@@ -109,12 +104,12 @@ public class HashSLHDSASigner
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + oidEncoding.length + hash.length];
+        byte[] ds_message = new byte[1 + 1 + ctx.length + digestOidEncoding.length + hash.length];
         ds_message[0] = 1;
         ds_message[1] = (byte)ctx.length;
         System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(oidEncoding, 0, ds_message, 2 + ctx.length, oidEncoding.length);
-        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + oidEncoding.length, hash.length);
+        System.arraycopy(digestOidEncoding, 0, ds_message, 2 + ctx.length, digestOidEncoding.length);
+        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + digestOidEncoding.length, hash.length);
 
         // generate randomizer
         byte[] optRand = new byte[engine.N];
@@ -134,12 +129,12 @@ public class HashSLHDSASigner
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + oidEncoding.length + hash.length];
+        byte[] ds_message = new byte[1 + 1 + ctx.length + digestOidEncoding.length + hash.length];
         ds_message[0] = 1;
         ds_message[1] = (byte)ctx.length;
         System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(oidEncoding, 0, ds_message, 2 + ctx.length, oidEncoding.length);
-        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + oidEncoding.length, hash.length);
+        System.arraycopy(digestOidEncoding, 0, ds_message, 2 + ctx.length, digestOidEncoding.length);
+        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + digestOidEncoding.length, hash.length);
 
         return internalVerifySignature(ds_message, signature);
     }

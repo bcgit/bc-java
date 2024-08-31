@@ -47,12 +47,12 @@ public class SLHDSASigner
             {
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
-            isPreHash = privKey.getParameters().getDigest() != null;
+            isPreHash = privKey.getParameters().createDigest() != null;
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
-            isPreHash = pubKey.getParameters().getDigest() != null;
+            isPreHash = pubKey.getParameters().createDigest() != null;
         }
 
         if (isPreHash)
