@@ -18,7 +18,6 @@ public class MLDSAKeyPairGenerator
     {
         this.dilithiumParams = ((MLDSAKeyGenerationParameters)param).getParameters();
         this.random = param.getRandom();
-
     }
 
     private AsymmetricCipherKeyPair genKeyPair()

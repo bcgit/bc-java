@@ -16,6 +16,9 @@ public class MLDSAParameterSpec
     public static final MLDSAParameterSpec ml_dsa_65 = new MLDSAParameterSpec("ML-DSA-65");
     public static final MLDSAParameterSpec ml_dsa_87 = new MLDSAParameterSpec("ML-DSA-87");
 
+    public static final MLDSAParameterSpec ml_dsa_44_with_sha512 = new MLDSAParameterSpec("ML-DSA-44-WITH-SHA512");
+    public static final MLDSAParameterSpec ml_dsa_65_with_sha512 = new MLDSAParameterSpec("ML-DSA-65-WITH-SHA512");
+    public static final MLDSAParameterSpec ml_dsa_87_with_sha512 = new MLDSAParameterSpec("ML-DSA-87-WITH-SHA512");
 
     private static Map parameters = new HashMap();
 
@@ -24,10 +27,9 @@ public class MLDSAParameterSpec
         parameters.put("ml-dsa-44", MLDSAParameterSpec.ml_dsa_44);
         parameters.put("ml-dsa-65", MLDSAParameterSpec.ml_dsa_65);
         parameters.put("ml-dsa-87", MLDSAParameterSpec.ml_dsa_87);
-
-        parameters.put("dilithium2", MLDSAParameterSpec.ml_dsa_44);
-        parameters.put("dilithium3", MLDSAParameterSpec.ml_dsa_65);
-        parameters.put("dilithium5", MLDSAParameterSpec.ml_dsa_87);
+        parameters.put("ml-dsa-44-with-sha512", MLDSAParameterSpec.ml_dsa_44_with_sha512);
+        parameters.put("ml-dsa-65-with-sha512", MLDSAParameterSpec.ml_dsa_65_with_sha512);
+        parameters.put("ml-dsa-87-with-sha512", MLDSAParameterSpec.ml_dsa_87_with_sha512);
     }
 
     private final String name;

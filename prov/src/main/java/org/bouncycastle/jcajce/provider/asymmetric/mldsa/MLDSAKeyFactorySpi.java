@@ -21,16 +21,24 @@ import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 public class MLDSAKeyFactorySpi
         extends BaseKeyFactorySpi
 {
-    private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
+    private static final Set<ASN1ObjectIdentifier> pureKeyOids = new HashSet<ASN1ObjectIdentifier>();
+    private static final Set<ASN1ObjectIdentifier> hashKeyOids = new HashSet<ASN1ObjectIdentifier>();
 
     static
     {
-        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_44);
-        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_65);
-        keyOids.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        pureKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        pureKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        pureKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_87);
+
+        hashKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        hashKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        hashKeyOids.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        hashKeyOids.add(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+        hashKeyOids.add(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+        hashKeyOids.add(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
     }
 
-    public MLDSAKeyFactorySpi()
+    public MLDSAKeyFactorySpi(Set<ASN1ObjectIdentifier> keyOids)
     {
         super(keyOids);
     }
@@ -90,6 +98,15 @@ public class MLDSAKeyFactorySpi
         return new BCMLDSAPublicKey(keyInfo);
     }
 
+    public static class Pure
+            extends MLDSAKeyFactorySpi
+    {
+        public Pure()
+        {
+            super(pureKeyOids);
+        }
+    }
+
     public static class MLDSA44
             extends MLDSAKeyFactorySpi
     {
@@ -117,4 +134,39 @@ public class MLDSAKeyFactorySpi
         }
     }
 
+    public static class Hash
+            extends MLDSAKeyFactorySpi
+    {
+        public Hash()
+        {
+            super(hashKeyOids);
+        }
+    }
+
+    public static class HashMLDSA44
+            extends MLDSAKeyFactorySpi
+    {
+        public HashMLDSA44()
+        {
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+        }
+    }
+
+    public static class HashMLDSA65
+            extends MLDSAKeyFactorySpi
+    {
+        public HashMLDSA65()
+        {
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+        }
+    }
+
+    public static class HashMLDSA87
+            extends MLDSAKeyFactorySpi
+    {
+        public HashMLDSA87()
+        {
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
+        }
+    }
 }

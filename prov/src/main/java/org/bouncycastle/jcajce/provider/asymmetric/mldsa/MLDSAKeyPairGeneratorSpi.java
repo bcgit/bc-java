@@ -23,13 +23,17 @@ public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
     private static Map parameters = new HashMap();
-    
+
     static
     {
         parameters.put(MLDSAParameterSpec.ml_dsa_44.getName(), MLDSAParameters.ml_dsa_44);
         parameters.put(MLDSAParameterSpec.ml_dsa_65.getName(), MLDSAParameters.ml_dsa_65);
         parameters.put(MLDSAParameterSpec.ml_dsa_87.getName(), MLDSAParameters.ml_dsa_87);
+        parameters.put(MLDSAParameterSpec.ml_dsa_44_with_sha512.getName(), MLDSAParameters.ml_dsa_44_with_sha512);
+        parameters.put(MLDSAParameterSpec.ml_dsa_65_with_sha512.getName(), MLDSAParameters.ml_dsa_65_with_sha512);
+        parameters.put(MLDSAParameterSpec.ml_dsa_87_with_sha512.getName(), MLDSAParameters.ml_dsa_87_with_sha512);
     }
+
     private final MLDSAParameters mldsaParameters;
     MLDSAKeyGenerationParameters param;
     MLDSAKeyPairGenerator engine = new MLDSAKeyPairGenerator();
@@ -37,22 +41,21 @@ public class MLDSAKeyPairGeneratorSpi
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
-    public MLDSAKeyPairGeneratorSpi()
+    public MLDSAKeyPairGeneratorSpi(String name)
     {
-        super("ML-DSA");
+        super(name);
         this.mldsaParameters = null;
     }
 
     protected MLDSAKeyPairGeneratorSpi(MLDSAParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.mldsaParameters = (MLDSAParameters) parameters.get(paramSpec.getName());
+        this.mldsaParameters = (MLDSAParameters)parameters.get(paramSpec.getName());
 
         if (param == null)
         {
             param = new MLDSAKeyGenerationParameters(random, mldsaParameters);
         }
-
 
         engine.init(param);
         initialised = true;
@@ -80,7 +83,7 @@ public class MLDSAKeyPairGeneratorSpi
 
             if (mldsaParameters != null && !mldsaParams.getName().equals(mldsaParameters.getName()))
             {
-                throw new InvalidAlgorithmParameterException("key pair generator locked to " +  MLDSAParameterSpec.fromName(mldsaParameters.getName()).getName());
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + MLDSAParameterSpec.fromName(mldsaParameters.getName()).getName());
             }
             engine.init(param);
             initialised = true;
@@ -90,7 +93,6 @@ public class MLDSAKeyPairGeneratorSpi
             throw new InvalidAlgorithmParameterException("invalid ParameterSpec: " + params);
         }
     }
-
 
 
     public KeyPair generateKeyPair()
@@ -123,33 +125,83 @@ public class MLDSAKeyPairGeneratorSpi
         }
     }
 
+    public static class Pure
+        extends MLDSAKeyPairGeneratorSpi
+    {
+        public Pure()
+            throws NoSuchAlgorithmException
+        {
+            super("ML-DSA");
+        }
+    }
+
     public static class MLDSA44
-            extends MLDSAKeyPairGeneratorSpi
+        extends MLDSAKeyPairGeneratorSpi
     {
         public MLDSA44()
-                throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
         {
             super(MLDSAParameterSpec.ml_dsa_44);
         }
     }
 
     public static class MLDSA65
-            extends MLDSAKeyPairGeneratorSpi
+        extends MLDSAKeyPairGeneratorSpi
     {
         public MLDSA65()
-                throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
         {
             super(MLDSAParameterSpec.ml_dsa_65);
         }
     }
 
     public static class MLDSA87
-            extends MLDSAKeyPairGeneratorSpi
+        extends MLDSAKeyPairGeneratorSpi
     {
         public MLDSA87()
-                throws NoSuchAlgorithmException
+            throws NoSuchAlgorithmException
         {
             super(MLDSAParameterSpec.ml_dsa_87);
+        }
+    }
+
+    public static class Hash
+        extends MLDSAKeyPairGeneratorSpi
+    {
+        public Hash()
+            throws NoSuchAlgorithmException
+        {
+            super("HASH-ML-DSA");
+        }
+    }
+
+    public static class MLDSA44withSHA512
+        extends MLDSAKeyPairGeneratorSpi
+    {
+        public MLDSA44withSHA512()
+            throws NoSuchAlgorithmException
+        {
+            super(MLDSAParameterSpec.ml_dsa_44_with_sha512);
+        }
+    }
+
+    public static class MLDSA65withSHA512
+        extends MLDSAKeyPairGeneratorSpi
+    {
+        public MLDSA65withSHA512()
+            throws NoSuchAlgorithmException
+        {
+            super(MLDSAParameterSpec.ml_dsa_65_with_sha512);
+        }
+    }
+
+    public static class MLDSA87withSHA512
+        extends MLDSAKeyPairGeneratorSpi
+    {
+        public MLDSA87withSHA512()
+            throws NoSuchAlgorithmException
+        {
+            super(MLDSAParameterSpec.ml_dsa_87_with_sha512);
         }
     }
 }

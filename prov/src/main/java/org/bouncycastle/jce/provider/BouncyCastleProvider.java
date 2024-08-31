@@ -24,7 +24,6 @@ import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.mldsa.MLDSAKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.MLKEMKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.asymmetric.slhdsa.SLHDSAKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -433,13 +432,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.picnic_key, new PicnicKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi());
-
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, new MLDSAKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, new MLDSAKeyFactorySpi());
-        addKeyInfoConverter(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, new MLDSAKeyFactorySpi());
 
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi());
         addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi());
