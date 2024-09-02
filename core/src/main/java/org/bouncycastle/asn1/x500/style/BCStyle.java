@@ -291,9 +291,9 @@ public class BCStyle
         DefaultLookUp.put("telephonenumber", TELEPHONE_NUMBER);
         DefaultLookUp.put("name", NAME);
         DefaultLookUp.put("organizationidentifier", ORGANIZATION_IDENTIFIER);
-        DefaultLookUp.put("jurisdictionCountry", JURISDICTION_C);
-        DefaultLookUp.put("jurisdictionState", JURISDICTION_ST);
-        DefaultLookUp.put("jurisdictionLocality", JURISDICTION_L);
+        DefaultLookUp.put("jurisdictioncountry", JURISDICTION_C);
+        DefaultLookUp.put("jurisdictionstate", JURISDICTION_ST);
+        DefaultLookUp.put("jurisdictionlocality", JURISDICTION_L);
     }
 
     /**
