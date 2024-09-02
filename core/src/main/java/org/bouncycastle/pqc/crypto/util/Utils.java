@@ -699,12 +699,12 @@ class Utils
         return (NTRUParameters)ntruParams.get(oid);
     }
 
-    static ASN1ObjectIdentifier kyberOidLookup(MLKEMParameters params)
+    static ASN1ObjectIdentifier mlkemOidLookup(MLKEMParameters params)
     {
         return (ASN1ObjectIdentifier)mlkemOids.get(params);
     }
 
-    static MLKEMParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
+    static MLKEMParameters mlkemParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (MLKEMParameters)mlkemParams.get(oid);
     }
