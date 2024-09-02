@@ -245,7 +245,7 @@ public class PrivateKeyInfoFactory
         {
             MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
             
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
         }

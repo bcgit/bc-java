@@ -596,7 +596,7 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            MLKEMParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            MLKEMParameters kyberParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             try
             {

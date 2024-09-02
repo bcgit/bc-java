@@ -234,7 +234,7 @@ public class SubjectPublicKeyInfoFactory
         {
             MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }

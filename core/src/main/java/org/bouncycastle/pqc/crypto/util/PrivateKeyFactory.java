@@ -252,7 +252,7 @@ public class PrivateKeyFactory
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
             ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-            MLKEMParameters kyberParams = Utils.kyberParamsLookup(algOID);
+            MLKEMParameters kyberParams = Utils.mlkemParamsLookup(algOID);
 
             return new MLKEMPrivateKeyParameters(kyberParams, kyberKey.getOctets());
         }
