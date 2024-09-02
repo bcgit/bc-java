@@ -16,9 +16,10 @@ import org.bouncycastle.util.encoders.Base64;
 public class PemReader
     extends BufferedReader
 {
+    public static final String LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME = "org.bouncycastle.pemreader.lax";
+
     private static final String BEGIN = "-----BEGIN ";
     private static final String END = "-----END ";
-    public static final String LAX_PARSING_SYSTEM_PROPERTY_NAME = "org.bouncycastle.pemreader.lax";
     private static final Logger LOG = Logger.getLogger(PemReader.class.getName());
 
     public PemReader(Reader reader)
@@ -79,7 +80,7 @@ public class PemReader
                 continue;
             }
 
-            if (System.getProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME, "false").equalsIgnoreCase("true"))
+            if (System.getProperty(LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, "false").equalsIgnoreCase("true"))
             {
                 String trimmedLine = line.trim();
                 if (!trimmedLine.equals(line) && LOG.isLoggable(Level.WARNING))
