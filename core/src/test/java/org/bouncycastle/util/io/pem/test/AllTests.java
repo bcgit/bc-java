@@ -18,7 +18,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 import org.bouncycastle.util.io.pem.PemWriter;
 
-import static org.bouncycastle.util.io.pem.PemReader.LAX_PARSING_SYSTEM_PROPERTY_NAME;
+import static org.bouncycastle.util.io.pem.PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME;
 
 public class AllTests
     extends TestCase
@@ -127,7 +127,7 @@ public class AllTests
     public void testRegularBlobEndLaxParsing()
         throws IOException
     {
-        String original = System.setProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME, "true");
+        String original = System.setProperty(LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, "true");
         PemReader rd = new PemReader(new StringReader(blob4));
 
         PemObject obj;
@@ -139,11 +139,11 @@ public class AllTests
         {
             if (original != null)
             {
-                System.setProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME, original);
+                System.setProperty(LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, original);
             }
             else
             {
-                System.clearProperty(LAX_PARSING_SYSTEM_PROPERTY_NAME);
+                System.clearProperty(LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME);
             }
         }
 
