@@ -5,12 +5,12 @@ import java.math.BigInteger;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
 
-public class KeyTransRecipientId
+public class KEMRecipientId
     extends PKIXRecipientId
 {
-    private KeyTransRecipientId(X509CertificateHolderSelector baseSelector)
+    private KEMRecipientId(X509CertificateHolderSelector baseSelector)
     {
-        super(keyTrans, baseSelector);
+        super(kem, baseSelector);
     }
 
     /**
@@ -18,9 +18,9 @@ public class KeyTransRecipientId
      *
      * @param subjectKeyId a subjectKeyId
      */
-    public KeyTransRecipientId(byte[] subjectKeyId)
+    public KEMRecipientId(byte[] subjectKeyId)
     {
-        super(keyTrans, null, null, subjectKeyId);
+        super(kem, null, null, subjectKeyId);
     }
 
     /**
@@ -30,9 +30,9 @@ public class KeyTransRecipientId
      * @param issuer the issuer of the recipient's associated certificate.
      * @param serialNumber the serial number of the recipient's associated certificate.
      */
-    public KeyTransRecipientId(X500Name issuer, BigInteger serialNumber)
+    public KEMRecipientId(X500Name issuer, BigInteger serialNumber)
     {
-        super(keyTrans, issuer, serialNumber, null);
+        super(kem, issuer, serialNumber, null);
     }
 
     /**
@@ -43,34 +43,21 @@ public class KeyTransRecipientId
      * @param serialNumber the serial number of the recipient's associated certificate.
      * @param subjectKeyId the subject key identifier to use to match the recipients associated certificate.
      */
-    public KeyTransRecipientId(X500Name issuer, BigInteger serialNumber, byte[] subjectKeyId)
+    public KEMRecipientId(X500Name issuer, BigInteger serialNumber, byte[] subjectKeyId)
     {
-        super(keyTrans, issuer, serialNumber, subjectKeyId);
-    }
-
-    public boolean equals(
-        Object  o)
-    {
-        if (!(o instanceof KeyTransRecipientId))
-        {
-            return false;
-        }
-
-        KeyTransRecipientId id = (KeyTransRecipientId)o;
-
-        return this.baseSelector.equals(id.baseSelector);
+        super(kem, issuer, serialNumber, subjectKeyId);
     }
 
     public Object clone()
     {
-        return new KeyTransRecipientId(this.baseSelector);
+        return new KEMRecipientId(this.baseSelector);
     }
 
     public boolean match(Object obj)
     {
-        if (obj instanceof KeyTransRecipientInformation)
+        if (obj instanceof KEMRecipientInformation)
         {
-            return ((KeyTransRecipientInformation)obj).getRID().equals(this);
+            return ((KEMRecipientInformation)obj).getRID().equals(this);
         }
 
         return super.match(obj);
