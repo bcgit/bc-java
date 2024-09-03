@@ -290,7 +290,6 @@ public class MLKEMTest
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
-                line = line.trim();
                 byte[] key = Hex.decode(line);
                 MLKEMParameters parameters = params[fileIndex];
 
