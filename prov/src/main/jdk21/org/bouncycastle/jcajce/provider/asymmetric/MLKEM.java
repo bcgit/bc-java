@@ -21,12 +21,14 @@ public class MLKEM
         public void configure(ConfigurableProvider provider)
         {
             provider.addAlgorithm("KeyFactory.ML-KEM", PREFIX + "MLKEMKeyFactorySpi");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.MLKEM", "ML-KEM");
 
             addKeyFactoryAlgorithm(provider, "ML-KEM-512", PREFIX + "MLKEMKeyFactorySpi$MLKEM512", NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyFactorySpi.MLKEM512());
             addKeyFactoryAlgorithm(provider, "ML-KEM-768", PREFIX + "MLKEMKeyFactorySpi$MLKEM768", NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyFactorySpi.MLKEM768());
             addKeyFactoryAlgorithm(provider, "ML-KEM-1024", PREFIX + "MLKEMKeyFactorySpi$MLKEM1024", NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMKeyFactorySpi.MLKEM1024());
 
             provider.addAlgorithm("KeyPairGenerator.ML-KEM", PREFIX + "MLKEMKeyPairGeneratorSpi");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.MLKEM", "ML-KEM");
 
             addKeyPairGeneratorAlgorithm(provider, "ML-KEM-512", PREFIX + "MLKEMKeyPairGeneratorSpi$MLKEM512", NISTObjectIdentifiers.id_alg_ml_kem_512);
             addKeyPairGeneratorAlgorithm(provider, "ML-KEM-768", PREFIX + "MLKEMKeyPairGeneratorSpi$MLKEM768", NISTObjectIdentifiers.id_alg_ml_kem_768);
@@ -41,7 +43,7 @@ public class MLKEM
             AsymmetricKeyInfoConverter keyFact = new MLKEMKeyFactorySpi();
 
             provider.addAlgorithm("Cipher.ML-KEM", PREFIX + "MLKEMCipherSpi$Base");
-            provider.addAlgorithm("Alg.Alias.Cipher." + (ASN1ObjectIdentifier) null, "ML-KEM");
+            provider.addAlgorithm("Alg.Alias.Cipher.MLKEM", "ML-KEM");
 
             addCipherAlgorithm(provider, "ML-KEM-512", PREFIX + "MLKEMCipherSpi$MLKEM512", NISTObjectIdentifiers.id_alg_ml_kem_512);
             addCipherAlgorithm(provider, "ML-KEM-768", PREFIX + "MLKEMCipherSpi$MLKEM768", NISTObjectIdentifiers.id_alg_ml_kem_768);

@@ -48,8 +48,8 @@ public class KyberTest
         performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES-KWP"));
 
         kpg.initialize(KyberParameterSpec.kyber768, new SecureRandom());
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES"));
-        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KEMParameterSpec("AES-KWP"));
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("AES", 256).build());
+        performKEMScipher(kpg.generateKeyPair(), "Kyber", new KTSParameterSpec.Builder("AES-KWP", 256).build());
     }
 
     public void testBasicKEMCamellia()
