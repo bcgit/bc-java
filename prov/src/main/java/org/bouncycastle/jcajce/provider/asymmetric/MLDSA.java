@@ -22,8 +22,12 @@ public class MLDSA
         {
             provider.addAlgorithm("KeyFactory.ML-DSA", PREFIX + "MLDSAKeyFactorySpi$Pure");
             provider.addAlgorithm("KeyPairGenerator.ML-DSA", PREFIX + "MLDSAKeyPairGeneratorSpi$Pure");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.MLDSA", "ML-DSA");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.MLDSA", "ML-DSA");
             provider.addAlgorithm("KeyFactory.HASH-ML-DSA", PREFIX + "MLDSAKeyFactorySpi$Hash");
             provider.addAlgorithm("KeyPairGenerator.HASH-ML-DSA", PREFIX + "MLDSAKeyPairGeneratorSpi$Hash");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.SHA512WITHMLDSA", "HASH-ML-DSA");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.SHA512WITHMLDSA", "HASH-ML-DSA");
 
             addKeyFactoryAlgorithm(provider, "ML-DSA-44", PREFIX + "MLDSAKeyFactorySpi$MLDSA44", NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAKeyFactorySpi.MLDSA44());
             addKeyFactoryAlgorithm(provider, "ML-DSA-65", PREFIX + "MLDSAKeyFactorySpi$MLDSA65", NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAKeyFactorySpi.MLDSA65());

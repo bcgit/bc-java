@@ -8,6 +8,7 @@ application {
     mainClass.set("org.bouncycastle.crypto.fpe.SP80038GMicroBenchmark")
 }
 
+jar.archiveBaseName = "bccore-$vmrange"
 
 test {
     forkEvery = 1;

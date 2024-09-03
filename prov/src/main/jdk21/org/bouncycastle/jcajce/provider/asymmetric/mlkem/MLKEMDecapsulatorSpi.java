@@ -3,7 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
@@ -59,19 +59,7 @@ public class MLKEMDecapsulatorSpi
         boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         byte[] secret = kemExt.extractSecret(encapsulation);
-
-        if (useKDF)
-        {
-            try
-            {
-                secret = Util.makeKeyBytes(parameterSpec, secret);
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
         return new SecretKeySpec(secretKey, algorithm);
     }
