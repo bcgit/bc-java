@@ -1,6 +1,5 @@
 package org.bouncycastle.bcpg;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -19,6 +18,7 @@ public class SymmetricKeyEncSessionPacket
 
     /**
      * Version 5 SKESK packet.
+     * LibrePGP only.
      * Used only with {@link AEADEncDataPacket AED} packets.
      */
     public static final int VERSION_5 = 5;
@@ -40,8 +40,8 @@ public class SymmetricKeyEncSessionPacket
     private byte[] authTag;          // V5, V6
 
     public SymmetricKeyEncSessionPacket(
-            BCPGInputStream in)
-            throws IOException
+        BCPGInputStream in)
+        throws IOException
     {
         this(in, false);
     }
@@ -61,7 +61,32 @@ public class SymmetricKeyEncSessionPacket
 
             this.secKeyData = in.readAll();
         }
-        else if (version == VERSION_5 || version == VERSION_6)
+        else if (version == VERSION_5)
+        {
+            encAlgorithm = in.read();
+            aeadAlgorithm = in.read();
+
+            s2k = new S2K(in);
+
+            int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+            iv = new byte[ivLen]; // also called nonce
+            if (in.read(iv) != iv.length)
+            {
+                throw new EOFException("Premature end of stream.");
+            }
+
+            int authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+            authTag = new byte[authTagLen];
+
+            // Read all trailing bytes
+            byte[] sessKeyAndAuthTag = in.readAll();
+            // determine session key length by subtracting auth tag
+            this.secKeyData = new byte[sessKeyAndAuthTag.length - authTagLen];
+
+            System.arraycopy(sessKeyAndAuthTag, 0, secKeyData, 0, secKeyData.length);
+            System.arraycopy(sessKeyAndAuthTag, secKeyData.length, authTag, 0, authTagLen);
+        }
+        else if (version == VERSION_6)
         {
             // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.2
             // SymAlg + AEADAlg + S2KCount + S2K + IV
@@ -108,7 +133,6 @@ public class SymmetricKeyEncSessionPacket
         {
             throw new UnsupportedPacketVersionException("Unsupported PGP symmetric-key encrypted session key packet version encountered: " + version);
         }
-
     }
 
     /**

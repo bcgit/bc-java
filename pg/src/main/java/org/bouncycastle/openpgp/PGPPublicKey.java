@@ -70,6 +70,10 @@ public class PGPPublicKey
         {
             this.keyID = Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
         }
+        else if (publicPk.getVersion() == PublicKeyPacket.LIBREPGP_5)
+        {
+            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
+        }
         else if (publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
             this.keyID = Pack.bigEndianToLong(fingerprint, 0);
