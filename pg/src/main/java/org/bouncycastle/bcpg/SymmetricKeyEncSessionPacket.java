@@ -45,6 +45,7 @@ public class SymmetricKeyEncSessionPacket
     {
         this(in, false);
     }
+
     public SymmetricKeyEncSessionPacket(
         BCPGInputStream in,
         boolean newPacketFormat)
@@ -61,57 +62,29 @@ public class SymmetricKeyEncSessionPacket
 
             this.secKeyData = in.readAll();
         }
-        else if (version == VERSION_5)
+        else if (version == VERSION_5 || version == VERSION_6)
         {
+            int ivLen = 0;
+            if (version == VERSION_6)
+            {
+                // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.2
+                // SymAlg + AEADAlg + S2KCount + S2K + IV
+                ivLen = in.read(); // next5Fields5Count
+            }
             encAlgorithm = in.read();
             aeadAlgorithm = in.read();
-
-            s2k = new S2K(in);
-
-            int ivLen = AEADUtils.getIVLength(aeadAlgorithm);
-            iv = new byte[ivLen]; // also called nonce
-            if (in.read(iv) != iv.length)
+            if (version == VERSION_6)
             {
-                throw new EOFException("Premature end of stream.");
+                int s2kOctetCount = in.read();
+                ivLen = ivLen - 3 - s2kOctetCount;
+            }
+            else
+            {
+                ivLen = AEADUtils.getIVLength(aeadAlgorithm);
             }
 
-            int authTagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
-            authTag = new byte[authTagLen];
-
-            // Read all trailing bytes
-            byte[] sessKeyAndAuthTag = in.readAll();
-            // determine session key length by subtracting auth tag
-            this.secKeyData = new byte[sessKeyAndAuthTag.length - authTagLen];
-
-            System.arraycopy(sessKeyAndAuthTag, 0, secKeyData, 0, secKeyData.length);
-            System.arraycopy(sessKeyAndAuthTag, secKeyData.length, authTag, 0, authTagLen);
-        }
-        else if (version == VERSION_6)
-        {
-            // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.2
-            // SymAlg + AEADAlg + S2KCount + S2K + IV
-            int next5Fields5Count = in.read();
-            encAlgorithm = in.read();
-            aeadAlgorithm = in.read();
-
-            // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.5
-            int s2kOctetCount = in.read();
-
-            //TODO: use this line to replace the following code?
             s2k = new S2K(in);
-//            s2kBytes = new byte[s2kOctetCount];
-//            in.readFully(s2kBytes);
-//            try
-//            {
-//                s2k = new S2K(new ByteArrayInputStream(s2kBytes));
-//            }
-//            catch (UnsupportedPacketVersionException e)
-//            {
-//
-//                // We gracefully catch the error.
-//            }
 
-            int ivLen = next5Fields5Count - 3 - s2kOctetCount;
             iv = new byte[ivLen]; // also called nonce
             if (in.read(iv) != iv.length)
             {

@@ -76,7 +76,10 @@ public class RegressionTest
 
         new Curve25519PrivateKeyEncodingTest(),
         new EdDSAKeyConversionWithLeadingZeroTest(),
-        new ECDSAKeyPairTest()
+        new ECDSAKeyPairTest(),
+
+        new PGPv5KeyTest(),
+        new PGPv5MessageDecryptionTest(),
     };
 
     public static void main(String[] args)
