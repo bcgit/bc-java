@@ -47,6 +47,7 @@ public class AllTests
         suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
+        suite.addTestSuite(SLHDSATest.class);
 
         return new BCTestSetup(suite);
     }
