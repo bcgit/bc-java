@@ -17,6 +17,7 @@ import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
 public class MLKEMKeyGeneratorSpi
@@ -93,7 +94,8 @@ public class MLKEMKeyGeneratorSpi
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
             byte[] sharedSecret = secEnc.getSecret();
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            byte[] secret = KdfUtil.makeKeyBytes(genSpec, sharedSecret);
 
             Arrays.clear(sharedSecret);
 
@@ -117,7 +119,7 @@ public class MLKEMKeyGeneratorSpi
 
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] sharedSecret = kemExt.extractSecret(encapsulation);
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+            byte[] secret = KdfUtil.makeKeyBytes(extSpec, sharedSecret);
 
             Arrays.clear(sharedSecret);
 

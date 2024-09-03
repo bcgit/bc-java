@@ -55,7 +55,7 @@ public class X509CertificateHolderSelector
     {
         this.issuer = issuer;
         this.serialNumber = serialNumber;
-        this.subjectKeyId = subjectKeyId;
+        this.subjectKeyId = Arrays.clone(subjectKeyId);
     }
 
     public X500Name getIssuer()

@@ -9,6 +9,7 @@ public abstract class RecipientId
     public static final int kek = 1;
     public static final int keyAgree = 2;
     public static final int password = 3;
+    public static final int kem = 4;
 
     private final int type;
 
