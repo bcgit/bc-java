@@ -99,24 +99,24 @@ public class RecipientInformationStore
     public Collection<RecipientInformation> getRecipients(
         RecipientId selector)
     {
-        if (selector instanceof KeyTransRecipientId)
+        if (selector instanceof PKIXRecipientId)
         {
-            KeyTransRecipientId keyTrans = (KeyTransRecipientId)selector;
+            PKIXRecipientId pkixId = (PKIXRecipientId)selector;
 
-            X500Name issuer = keyTrans.getIssuer();
-            byte[] subjectKeyId = keyTrans.getSubjectKeyIdentifier();
+            X500Name issuer = pkixId.getIssuer();
+            byte[] subjectKeyId = pkixId.getSubjectKeyIdentifier();
 
             if (issuer != null && subjectKeyId != null)
             {
                 List<RecipientInformation> results = new ArrayList();
 
-                Collection<RecipientInformation> match1 = getRecipients(new KeyTransRecipientId(issuer, keyTrans.getSerialNumber()));
+                List<RecipientInformation> match1 = (ArrayList<RecipientInformation>)table.get(new PKIXRecipientId(pkixId.getType(), issuer, pkixId.getSerialNumber(), null));
                 if (match1 != null)
                 {
                     results.addAll(match1);
                 }
 
-                Collection<RecipientInformation> match2 = getRecipients(new KeyTransRecipientId(subjectKeyId));
+                Collection<RecipientInformation> match2 = (ArrayList<RecipientInformation>)table.get(new PKIXRecipientId(pkixId.getType(), null, null, subjectKeyId));
                 if (match2 != null)
                 {
                     results.addAll(match2);
