@@ -118,6 +118,8 @@ public class RFC6637Utils
         byte[] fp = fingerPrintCalculator.calculateFingerprint(pubKeyData);
         if (pubKeyData.getVersion() == PublicKeyPacket.LIBREPGP_5)
         {
+            // For some reason LibrePGP only uses the leftmost 20 octets of the 32 octets v5 fingerprint
+            // https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#section-13.5-4.5
             pOut.write(fp, 0, 20);
         }
         else
