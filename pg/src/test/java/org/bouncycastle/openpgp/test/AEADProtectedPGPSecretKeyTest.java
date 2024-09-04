@@ -272,7 +272,8 @@ public class AEADProtectedPGPSecretKeyTest
             {
                 sk.extractPrivateKey(jceDecBuilder.build("Yang".toCharArray()));
                 fail("Expected PGPException due to wrong passphrase");
-            } catch (PGPException e)
+            }
+            catch (PGPException e)
             {
                 // expected
             }

@@ -85,8 +85,6 @@ public class CRC24Test
         fastImpl.update(0);
         fastImpl.reset();
 
-        long start = System.currentTimeMillis();
-
         for (int j = 0; j < 100; ++j)
         {
             for (int i = 0; i != LARGE_RANDOM.length; i += 3)
@@ -95,7 +93,6 @@ public class CRC24Test
             }
         }
         int defVal = defaultImpl.getValue();
-        long afterDefault = System.currentTimeMillis();
 
         for (int j = 0; j < 100; ++j)
         {
@@ -105,14 +102,7 @@ public class CRC24Test
             }
         }
         int fastVal = fastImpl.getValue();
-        long afterFast = System.currentTimeMillis();
 
         isEquals("Calculated value of default and fast CRC-24 implementations diverges", defVal, fastVal);
-        long defDuration = afterDefault - start;
-        System.out.println("Default Implementation: " + defDuration / 1000 + "s" + defDuration % 1000);
-
-        long fastDuration = afterFast - afterDefault;
-        System.out.println("Fast Implementation: " + fastDuration / 1000 + "s" + fastDuration % 1000);
-
     }
 }
