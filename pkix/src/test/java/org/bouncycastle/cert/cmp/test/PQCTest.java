@@ -212,9 +212,7 @@ public class PQCTest
 
         assertEquals(recInfo.getKeyEncryptionAlgOID(), NISTObjectIdentifiers.id_alg_ml_kem_768.getId());
 
-        // Note: we don't specify the provider here as we're actually using both BC and BCPQC
-
-        byte[] recData = recInfo.getContent(new JceKEMEnvelopedRecipient(kybKp.getPrivate()));
+        byte[] recData = recInfo.getContent(new JceKEMEnvelopedRecipient(kybKp.getPrivate()).setProvider("BC"));
 
         assertEquals(true, Arrays.equals(new CMPCertificate(cert.toASN1Structure()).getEncoded(), recData));
 
