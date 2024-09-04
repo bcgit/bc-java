@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MLDSATest extends TestCase
 {
@@ -77,8 +78,6 @@ public class MLDSATest extends TestCase
                                 SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
                         MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters) PrivateKeyFactory.createKey(
                                 PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
-
-
 
 
                         assertTrue(name + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
@@ -169,7 +168,6 @@ public class MLDSATest extends TestCase
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            // System.out.println("testing successful!");
         }
     }
 
@@ -191,7 +189,6 @@ public class MLDSATest extends TestCase
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/dilithium/acvp", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -212,14 +209,12 @@ public class MLDSATest extends TestCase
                         boolean testPassed = Boolean.parseBoolean((String) buf.get("testPassed"));
                         String reason = buf.get("reason");
                         byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
                         byte[] message = Hex.decode((String) buf.get("message"));
                         byte[] signature = Hex.decode((String) buf.get("signature"));
 
                         MLDSAParameters parameters = params[fileIndex];
 
                         MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
-                        MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
 
                         MLDSASigner verifier = new MLDSASigner();
@@ -301,17 +296,149 @@ public class MLDSATest extends TestCase
 
                     boolean ok = verifier.verifySignature(msg, sigGenerated);
 
-                    if (!ok) {
+                    if (!ok)
+                    {
                         System.out.println("Verify failed");
-                        System.out.println("MSG:"+Hex.toHexString(msg));
-                        System.out.println("SIG: "+Hex.toHexString(sigGenerated));
-                        System.out.println("PK: "+Hex.toHexString(pkparam.getEncoded()));
-                        System.out.println("SK: "+Hex.toHexString(skparam.getEncoded()));
+                        System.out.println("MSG:" + Hex.toHexString(msg));
+                        System.out.println("SIG: " + Hex.toHexString(sigGenerated));
+                        System.out.println("PK: " + Hex.toHexString(pkparam.getEncoded()));
+                        System.out.println("SK: " + Hex.toHexString(skparam.getEncoded()));
                     }
 
                     assertTrue("count = " + i, ok);
                 }
             }
         }
+    }
+
+    public void testSigGenCombinedVectorSet() throws IOException
+    {
+
+        Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
+        {
+            {
+                put("ML-DSA-44", MLDSAParameters.ml_dsa_44);
+                put("ML-DSA-65", MLDSAParameters.ml_dsa_65);
+                put("ML-DSA-87", MLDSAParameters.ml_dsa_87);
+            }
+        };
+
+
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/mldsa", "ML-DSA-sigGen.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+        String line = null;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
+
+            if (line.startsWith("#"))
+            {
+                continue;
+            }
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    boolean deterministic = Boolean.valueOf(buf.get("deterministic"));
+                    byte[] sk = Hex.decode((String) buf.get("sk"));
+                    byte[] message = Hex.decode((String) buf.get("message"));
+                    byte[] signature = Hex.decode((String) buf.get("signature"));
+                    byte[] rnd = null;
+                    if (!deterministic)
+                    {
+                        rnd = Hex.decode((String) buf.get("rnd"));
+                    }
+                    else
+                    {
+                        rnd = new byte[32];
+                    }
+
+                    MLDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
+
+                    MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
+
+                    // sign
+                    MLDSASigner signer = new MLDSASigner();
+
+                    signer.init(true, privParams);
+                    byte[] sigGenerated;
+
+                    sigGenerated = signer.internalGenerateSignature(message, rnd);
+                    assertTrue(Arrays.areEqual(sigGenerated, signature));
+
+                }
+                buf.clear();
+
+                continue;
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    public void testSigVerCombinedVectorSet() throws IOException
+    {
+        Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
+        {
+            {
+                put("ML-DSA-44", MLDSAParameters.ml_dsa_44);
+                put("ML-DSA-65", MLDSAParameters.ml_dsa_65);
+                put("ML-DSA-87", MLDSAParameters.ml_dsa_87);
+            }
+        };
+
+
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/mldsa", "ML-DSA-sigVer.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
+        String line = null;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
+
+            if (line.startsWith("#"))
+            {
+                continue;
+            }
+            if (line.isEmpty())
+            {
+                if (!buf.isEmpty())
+                {
+                    boolean expectedResult = Boolean.parseBoolean((String) buf.get("testPassed"));
+
+                    byte[] pk = Hex.decode((String) buf.get("pk"));
+                    byte[] message = Hex.decode((String) buf.get("message"));
+                    byte[] signature = Hex.decode((String) buf.get("signature"));
+
+                    MLDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
+
+                    MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
+
+                    MLDSASigner verifier = new MLDSASigner();
+                    verifier.init(false, pubParams);
+
+
+                    boolean verifyResult = verifier.internalVerifySignature(message, signature);
+                    assertEquals(expectedResult, verifyResult);
+                }
+                buf.clear();
+
+                continue;
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+
     }
 }
