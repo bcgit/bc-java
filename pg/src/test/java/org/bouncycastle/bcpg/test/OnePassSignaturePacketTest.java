@@ -36,6 +36,7 @@ public class OnePassSignaturePacketTest
                 issuerFp, ops.getFingerprint());
         isTrue("OPS packet key-ID mismatch",
                 // key-ID are the first 8 octets of the fingerprint
+                // -DM Hex.toHexString
                 Hex.toHexString(issuerFp).startsWith(Long.toHexString(ops.getKeyID())));
         isEncodingEqual("OPS packet salt mismatch",
                 salt, ops.getSalt());

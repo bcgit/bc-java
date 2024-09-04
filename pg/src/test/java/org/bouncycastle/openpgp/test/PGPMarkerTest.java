@@ -4,12 +4,10 @@ import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.util.encoders.Base64;
-import org.bouncycastle.util.test.SimpleTestResult;
-import org.bouncycastle.util.test.Test;
-import org.bouncycastle.util.test.TestResult;
+import org.bouncycastle.util.test.SimpleTest;
 
 public class PGPMarkerTest
-    implements Test
+    extends SimpleTest
 {
     private byte[] message1 = Base64.decode(
         "qANQR1DBwU4DdrlXatQSHgoQCADWlhY3bWWaOTm4t2espRWPFQmETeinnieHce64"
@@ -44,48 +42,31 @@ public class PGPMarkerTest
      + "ZMyLFqGXiKlyVCPlUTN2uVisYQGr6iNGYSPxpKjwiAzdeeQBPOETG0vd3nTO"
      + "MN4BMKcG+kRJd5FU72SRfmbGwPPjd1gts9xFvtj4Tvpkam8=");
 
-    public TestResult perform()
+    @Override
+    public void performTest()
+            throws Exception
     {
-        try
+
+        JcaPGPObjectFactory pgpFact = new JcaPGPObjectFactory(message1);
+
+        if (pgpFact.nextObject() instanceof PGPMarker)
         {
-            //
-            // test encrypted message
-            //
-            JcaPGPObjectFactory        pgpFact = new JcaPGPObjectFactory(message1);
-
-            Object    o;
-            
-            if (pgpFact.nextObject() instanceof PGPMarker)
-            {
-                if (pgpFact.nextObject() instanceof PGPEncryptedDataList)
-                {
-                    return new SimpleTestResult(true, getName() + ": Okay");
-                }
-                else
-                {
-                    return new SimpleTestResult(false, getName() + ": error processing after marker.");
-                }
-            }
-            
-            pgpFact = new JcaPGPObjectFactory(message2);
-
-            if (pgpFact.nextObject() instanceof PGPMarker)
-            {
-                if (pgpFact.nextObject() instanceof PGPEncryptedDataList)
-                {
-                    return new SimpleTestResult(true, getName() + ": Okay");
-                }
-                else
-                {
-                    return new SimpleTestResult(false, getName() + ": error processing after marker.");
-                }
-            }
-            
-            return new SimpleTestResult(false, getName() + ": marker not found");
+            isTrue(pgpFact.nextObject() instanceof PGPEncryptedDataList);
         }
-        catch (Exception e)
+        else
         {
-            return new SimpleTestResult(false, getName() + ": exception - " + e.toString());
+            fail("marker not found");
+        }
+
+        pgpFact = new JcaPGPObjectFactory(message2);
+
+        if (pgpFact.nextObject() instanceof PGPMarker)
+        {
+            isTrue(pgpFact.nextObject() instanceof PGPEncryptedDataList);
+        }
+        else
+        {
+            fail("marker not found");
         }
     }
 
@@ -97,9 +78,6 @@ public class PGPMarkerTest
     public static void main(
         String[]    args)
     {
-        Test            test = new PGPMarkerTest();
-        TestResult      result = test.perform();
-
-        System.out.println(result.toString());
+        runTest(new PGPMarkerTest());
     }
 }
