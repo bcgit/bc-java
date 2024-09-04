@@ -63,13 +63,13 @@ public class SymmetricKeyEncSessionPacket
         }
         else if (version == VERSION_5 || version == VERSION_6)
         {
-            // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.2
+            // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.2.1
             // SymAlg + AEADAlg + S2KCount + S2K + IV
             int next5Fields5Count = in.read();
             encAlgorithm = in.read();
             aeadAlgorithm = in.read();
 
-            // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.5
+            // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.5.1
             int s2kOctetCount = in.read();
 
             //TODO: use this line to replace the following code?

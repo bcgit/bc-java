@@ -20,6 +20,8 @@ public class PreferredAEADCiphersuites
     /**
      * AES-128 + OCB is a MUST implement and is therefore implicitly supported.
      *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
+     * OpenPGP - Preferred AEAD Ciphersuites</a>
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html">
      * OpenPGP - Preferred AEAD Ciphersuites</a>
      */
