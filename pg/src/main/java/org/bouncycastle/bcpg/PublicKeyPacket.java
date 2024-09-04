@@ -10,9 +10,9 @@ import java.util.Date;
  * An OpenPGP certificate (transferable public key) consists of one primary key and optionally multiple subkey packets.
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-5.5.1.1">
- *     rfc4880 - Public-Key Packet</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-public-key-packet-type-id-6">
- *     C-R - Public-Key Packet</a>
+ *     RFC4880 - Public-Key Packet</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-public-key-packet-type-id-6">
+ *     RFC9580 - Public-Key Packet</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-packet-tag-6">
  *     LibrePGP - Public-Key Packet</a>
  */
@@ -24,15 +24,15 @@ public class PublicKeyPacket
      * OpenPGP v3 keys are deprecated.
      * They can only be used with RSA.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-3-public-keys">
-     *     C-R - Version 3 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-keys">
+     *     OpenPGP - Version 3 Public Keys</a>
      */
     public static final int VERSION_3 = 3;
     /**
      * OpenPGP v4 keys are (at the time of writing) widely used, but are subject to some attacks.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-public-keys">
-     *     C-R - Version 4 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-4-public-keys">
+     *     OpenPGP - Version 4 Public Keys</a>
      */
     public static final int VERSION_4 = 4;
     /**
@@ -42,8 +42,8 @@ public class PublicKeyPacket
     /**
      * OpenPGP v6 keys are newly introduced.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-6-public-keys">
-     *     C-R - Version 6 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-keys">
+     *     OpenPGP - Version 6 Public Keys</a>
      */
     public static final int VERSION_6 = 6;
 
@@ -111,12 +111,12 @@ public class PublicKeyPacket
      * @param newPacketFormat packet format
      * @throws IOException if the key packet cannot be parsed
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-3-public-keys">
-     *     C-R - Version 3 Public Keys</a>
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-4-public-keys">
-     *     C-R - Version 4 Public Keys</a>
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-version-6-public-keys">
-     *     C-R - Version 6 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-keys">
+     *     OpenPGP - Version 3 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-4-public-keys">
+     *     OpenPGP - Version 4 Public Keys</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-keys">
+     *     OpenPGP - Version 6 Public Keys</a>
      * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-public-key-packet-formats">
      *     LibrePGP - Public-Key Packet Formats</a>
      */
