@@ -16,7 +16,7 @@ public class KEMGenerateSpec
     private static AlgorithmIdentifier DefKdf = new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
 
     /**
-     * Builder class for creating a KTSParameterSpec.
+     * Builder class for creating a KEMGenerateSpec.
      */
     public static final class Builder
     {
