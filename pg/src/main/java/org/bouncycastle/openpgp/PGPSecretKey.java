@@ -477,6 +477,16 @@ public class PGPSecretKey
     }
 
     /**
+     * Return a {@link KeyIdentifier} for this key.
+     *
+     * @return identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(this);
+    }
+
+    /**
      * Return the fingerprint of the public key associated with this key.
      *
      * @return key fingerprint.

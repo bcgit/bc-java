@@ -125,12 +125,18 @@ public abstract class PGPKeyRing
      */
     public abstract PGPPublicKey getPublicKey(byte[] fingerprint);
 
+    public abstract PGPPublicKey getPublicKey(KeyIdentifier identifier);
+
+    public abstract Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier);
+
     /**
      * Return an iterator containing all the public keys carrying signatures issued from key keyID.
      *
      * @return an iterator (possibly empty) of the public keys associated with keyID.
      */
     public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID);
+
+    public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier);
 
     /**
      * Return the number of keys in the key ring.

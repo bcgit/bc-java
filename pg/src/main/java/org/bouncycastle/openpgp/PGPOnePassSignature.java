@@ -175,6 +175,16 @@ public class PGPOnePassSignature
     }
 
     /**
+     * Return a {@link KeyIdentifier} identifying this {@link PGPOnePassSignature}.
+     *
+     * @return key identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getFingerprint(), getKeyID());
+    }
+
+    /**
      * Return the salt used in the corresponding signature.
      * Only for {@link OnePassSignaturePacket#VERSION_6} packets.
      * @return salt
