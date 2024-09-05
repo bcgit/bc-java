@@ -4,6 +4,9 @@ import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PreferredAEADCiphersuites
     extends PreferredAlgorithms
 {
@@ -142,6 +145,51 @@ public class PreferredAEADCiphersuites
             throw new IllegalArgumentException("Even number of bytes expected.");
         }
         return encodedCombinations;
+    }
+
+    /**
+     * Return a {@link Builder} for constructing a {@link PreferredAEADCiphersuites} packet.
+     * @param isCritical true if the packet is considered critical.
+     * @return builder
+     */
+    public static Builder builder(boolean isCritical)
+    {
+        return new Builder(isCritical);
+    }
+
+    public static final class Builder
+    {
+
+        private final List<Combination> combinations = new ArrayList<>();
+        private final boolean isCritical;
+
+        private Builder(boolean isCritical)
+        {
+            this.isCritical = isCritical;
+        }
+
+        /**
+         * Add a combination of cipher- and AEAD algorithm to the list of supported ciphersuites.
+         * @see SymmetricKeyAlgorithmTags for cipher algorithms
+         * @see AEADAlgorithmTags for AEAD algorithms
+         * @param symmetricAlgorithmId symmetric cipher algorithm ID
+         * @param aeadAlgorithmId AEAD algorithm ID
+         * @return builder
+         */
+        public Builder addCombination(int symmetricAlgorithmId, int aeadAlgorithmId)
+        {
+            combinations.add(new Combination(symmetricAlgorithmId, aeadAlgorithmId));
+            return this;
+        }
+
+        /**
+         * Build a {@link PreferredAEADCiphersuites} from this builder.
+         * @return finished packet
+         */
+        public PreferredAEADCiphersuites build()
+        {
+            return new PreferredAEADCiphersuites(isCritical, combinations.toArray(new Combination[0]));
+        }
     }
 
     /**
