@@ -7,17 +7,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Date;
-import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
@@ -42,7 +37,7 @@ public class Argon2S2KTest
 
     static final String TEST_MSG_PASSWORD = "password";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-
     static final String TEST_MSG_AES128 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 128-bit key\n" +
         "Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F\n" +
@@ -53,7 +48,7 @@ public class Argon2S2KTest
         "=uIks\n" +
         "-----END PGP MESSAGE-----";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-a
     private static final String TEST_MSG_AES192 = "-----BEGIN PGP MESSAGE-----\n" +
         "Comment: Encrypted using AES with 192-bit key\n" +
         "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
@@ -64,16 +59,16 @@ public class Argon2S2KTest
         "=n8Ma\n" +
         "-----END PGP MESSAGE-----";
 
-    // Test message from the crypto-refresh-05 document
+    // https://www.rfc-editor.org/rfc/rfc9580.html#name-v4-skesk-using-argon2-with-ae
     private static final String TEST_MSG_AES256 = "-----BEGIN PGP MESSAGE-----\n" +
-        "Comment: Encrypted using AES with 192-bit key\n" +
-        "Comment: Session key: 27006DAE68E509022CE45A14E569E91001C2955AF8DFE194\n" +
-        "\n" +
-        "wy8ECAThTKxHFTRZGKli3KNH4UP4AQQVhzLJ2va3FG8/pmpIPd/H/mdoVS5VBLLw\n" +
-        "F9I+AdJ1Sw56PRYiKZjCvHg+2bnq02s33AJJoyBexBI4QKATFRkyez2gldJldRys\n" +
-        "LVg77Mwwfgl2n/d572WciAM=\n" +
-        "=n8Ma\n" +
-        "-----END PGP MESSAGE-----";
+            "Comment: Encrypted using AES with 256-bit key\n" +
+            "Comment: Session key: BBEDA55B9AAE63DAC45D4F49D89DACF4AF37FEF...\n" +
+            "Comment: Session key: ...C13BAB2F1F8E18FB74580D8B0\n" +
+            "\n" +
+            "wzcECQS4eJUgIG/3mcaILEJFpmJ8AQQVnZ9l7KtagdClm9UaQ/Z6M/5roklSGpGu\n" +
+            "623YmaXezGj80j4B+Ku1sgTdJo87X1Wrup7l0wJypZls21Uwd67m9koF60eefH/K\n" +
+            "95D1usliXOEm8ayQJQmZrjf6K6v9PWwqMQ==\n" +
+            "-----END PGP MESSAGE-----";
 
     static final String TEST_MSG_PLAIN = "Hello, world!";
 
