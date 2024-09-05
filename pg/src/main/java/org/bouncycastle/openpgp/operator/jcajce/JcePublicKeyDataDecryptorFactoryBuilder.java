@@ -39,7 +39,6 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSessionKey;
-import org.bouncycastle.openpgp.operator.AbstractPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
@@ -128,12 +127,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public PublicKeyDataDecryptorFactory build(final PrivateKey privKey)
     {
-        return new AbstractPublicKeyDataDecryptorFactory()
+        return new PublicKeyDataDecryptorFactory()
         {
             final int expectedPayLoadSize = getExpectedPayloadSize(privKey);
 
             @Override
-            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                 throws PGPException
             {
                 if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH || keyAlgorithm == PublicKeyAlgorithmTags.X25519 || keyAlgorithm == PublicKeyAlgorithmTags.X448)
@@ -171,13 +170,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public PublicKeyDataDecryptorFactory build(final PGPPrivateKey privKey)
     {
-        return new AbstractPublicKeyDataDecryptorFactory()
+        return new PublicKeyDataDecryptorFactory()
         {
             @Override
-            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData, int pkeskVersion)
+            public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
                 throws PGPException
             {
-                boolean containsSKAlg = containsSKAlg(pkeskVersion);
                 if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData);
@@ -185,12 +183,12 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
                 else if (keyAlgorithm == PublicKeyAlgorithmTags.X25519)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData[0], X25519PublicBCPGKey.LENGTH, "X25519withSHA256HKDF",
-                        SymmetricKeyAlgorithmTags.AES_128, EdECObjectIdentifiers.id_X25519, "X25519", containsSKAlg);
+                        SymmetricKeyAlgorithmTags.AES_128, EdECObjectIdentifiers.id_X25519, "X25519");
                 }
                 else if (keyAlgorithm == PublicKeyAlgorithmTags.X448)
                 {
                     return decryptSessionData(keyConverter, privKey, secKeyData[0], X448PublicBCPGKey.LENGTH, "X448withSHA512HKDF",
-                        SymmetricKeyAlgorithmTags.AES_256, EdECObjectIdentifiers.id_X448, "X448", containsSKAlg);
+                        SymmetricKeyAlgorithmTags.AES_256, EdECObjectIdentifiers.id_X448, "X448");
                 }
                 PrivateKey jcePrivKey = keyConverter.getPrivateKey(privKey);
                 int expectedPayLoadSize = getExpectedPayloadSize(jcePrivKey);
@@ -224,14 +222,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         };
     }
 
-    /**
-     * Decrypt ECDH encrypted session keys.
-     * @param converter key converter
-     * @param privKey our private key
-     * @param secKeyData encrypted session key
-     * @return decrypted session key
-     * @throws PGPException
-     */
     private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[][] secKeyData)
         throws PGPException
     {
@@ -243,12 +233,18 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         byte[] keyEnc;
 
         pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-        checkRange(2 + pLen + 1, enc);
+        if ((2 + pLen + 1) > enc.length)
+        {
+            throw new PGPException("encoded length out of range");
+        }
 
         pEnc = new byte[pLen];
         System.arraycopy(enc, 2, pEnc, 0, pLen);
         int keyLen = enc[pLen + 2] & 0xff;
-        checkRange(2 + pLen + 1 + keyLen, enc);
+        if ((2 + pLen + 1 + keyLen) > enc.length)
+        {
+            throw new PGPException("encoded length out of range");
+        }
 
         keyEnc = new byte[keyLen];
         System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
@@ -299,42 +295,26 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
     }
 
-    /**
-     * Decrypt X25519 / X448 encrypted session keys.
-     * @param converter key converter
-     * @param privKey our private key
-     * @param enc encrypted session key
-     * @param pLen Key length
-     * @param agreementAlgorithm agreement algorithm
-     * @param symmetricKeyAlgorithm wrapping algorithm
-     * @param algorithmIdentifier ephemeral key algorithm identifier
-     * @param algorithmName public key algorithm name
-     * @param containsSKAlg whether the PKESK packet is version 3
-     * @return decrypted session data
-     * @throws PGPException
-     */
     private byte[] decryptSessionData(JcaPGPKeyConverter converter, PGPPrivateKey privKey, byte[] enc, int pLen, String agreementAlgorithm,
-                                      int symmetricKeyAlgorithm, ASN1ObjectIdentifier algorithmIdentifier, String algorithmName, boolean containsSKAlg)
+                                      int symmetricKeyAlgorithm, ASN1ObjectIdentifier algprithmIdentifier, String algorithmName)
         throws PGPException
     {
         try
         {
-            // ephemeral key (32 / 56 octets)
-            byte[] ephemeralKey = Arrays.copyOf(enc, pLen);
-
-            int size = enc[pLen] & 0xff;
-
-            checkRange(pLen + 1 + size, enc);
-
-            // encrypted session key
-            int sesKeyLen = size - (containsSKAlg ? 1 : 0);
-            int sesKeyOff = pLen + 1 + (containsSKAlg ? 1 : 0);
-            byte[] keyEnc = Arrays.copyOfRange(enc, sesKeyOff, sesKeyOff + sesKeyLen);
-
-            PublicKey ephemeralPubKey = getPublicKey(ephemeralKey, algorithmIdentifier, 0);
-            Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, ephemeralPubKey, symmetricKeyAlgorithm, keyEnc,
-                    JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(ephemeralKey, privKey.getPublicKeyPacket(), algorithmName));
-            return paddedSessionKey.getEncoded();
+            byte[] pEnc = new byte[pLen];
+            System.arraycopy(enc, 0, pEnc, 0, pLen);
+            int keyLen = enc[pLen] & 0xff;
+            if ((pLen + 1 + keyLen) > enc.length)
+            {
+                throw new PGPException("encoded length out of range");
+            }
+            byte[] keyEnc = new byte[keyLen - 1];
+            System.arraycopy(enc, pLen + 2, keyEnc, 0, keyEnc.length);
+            PublicKey publicKey = getPublicKey(pEnc, algprithmIdentifier, 0);
+            Key paddedSessionKey = getSessionKey(converter, privKey, agreementAlgorithm, publicKey, symmetricKeyAlgorithm, keyEnc,
+                JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(pEnc, privKey.getPublicKeyPacket(), algorithmName));
+            symmetricKeyAlgorithm = enc[pLen + 1] & 0xff;
+            return Arrays.prepend(paddedSessionKey.getEncoded(), (byte)symmetricKeyAlgorithm);
         }
         catch (Exception e)
         {
@@ -385,15 +365,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         }
     }
 
-    /**
-     * Decrypt RSA / Elgamal encrypted session keys.
-     * @param keyAlgorithm public key algorithm
-     * @param privKey our private key
-     * @param expectedPayloadSize payload size
-     * @param secKeyData ESK data
-     * @return session data
-     * @throws PGPException
-     */
     private byte[] decryptSessionData(int keyAlgorithm, PrivateKey privKey, int expectedPayloadSize, byte[][] secKeyData)
         throws PGPException
     {
@@ -427,15 +398,6 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
         catch (Exception e)
         {
             throw new PGPException("exception decrypting session data", e);
-        }
-    }
-
-    private static void checkRange(int pLen, byte[] enc)
-            throws PGPException
-    {
-        if (pLen > enc.length)
-        {
-            throw new PGPException("encoded length out of range");
         }
     }
 }
