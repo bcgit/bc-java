@@ -937,6 +937,7 @@ public class OpenPGPTest
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+        isTrue((encP.getKeyIdentifier().getKeyId())==encP.getVersion());
         isEquals(encP.getAlgorithm(), 1);
         isEquals(encP.getVersion(), 3);
         PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));
