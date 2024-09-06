@@ -542,12 +542,13 @@ public class PGPSignatureTest
 
         int[] criticalHashed = hashedPcks.getCriticalTags();
 
-        if (criticalHashed.length != 1)
+        // SignerUserID and SignatureCreationTime are critical.
+        if (criticalHashed.length != 2)
         {
             fail("wrong number of critical packets found.");
         }
 
-        if (criticalHashed[0] != SignatureSubpacketTags.SIGNER_USER_ID)
+        if (criticalHashed[1] != SignatureSubpacketTags.SIGNER_USER_ID)
         {
             fail("wrong critical packet found in tag list.");
         }
