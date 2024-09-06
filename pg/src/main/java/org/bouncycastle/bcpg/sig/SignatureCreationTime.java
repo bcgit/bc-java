@@ -36,6 +36,12 @@ public class SignatureCreationTime
         super(SignatureSubpacketTags.CREATION_TIME, critical, false, timeToBytes(date));
     }
 
+    public SignatureCreationTime(
+            Date date)
+    {
+        this(true, date);
+    }
+
     public Date getTime()
     {
         long time = Utils.timeFromBytes(data);
