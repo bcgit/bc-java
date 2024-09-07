@@ -39,6 +39,7 @@ public class AllTests
         suite.addTestSuite(FalconTest.class);
         suite.addTestSuite(MLKEMTest.class);
         suite.addTestSuite(CrystalsDilithiumTest.class);
+        suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(NTRULPRimeTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(BIKETest.class);
@@ -47,6 +48,7 @@ public class AllTests
         suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
+        suite.addTestSuite(SLHDSATest.class);
 
         return new BCTestSetup(suite);
     }
