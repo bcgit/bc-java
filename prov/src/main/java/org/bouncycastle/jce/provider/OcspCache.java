@@ -73,6 +73,7 @@ class OcspCache
                 ResponseData responseData = ResponseData.getInstance(basicResp.getTbsResponseData());
 
                 ASN1Sequence s = responseData.getResponses();
+                boolean matchFound = false;
 
                 for (int i = 0; i != s.size(); i++)
                 {
@@ -80,6 +81,7 @@ class OcspCache
 
                     if (certID.equals(resp.getCertID()))
                     {
+                        matchFound = true;
                         ASN1GeneralizedTime nextUp = resp.getNextUpdate();
                         try
                         {
@@ -97,9 +99,18 @@ class OcspCache
                         }
                     }
                 }
-                if (response != null)
+
+                if (matchFound)
                 {
-                    return response;
+                    if (response != null)
+                    {
+                        return response;
+                    }
+                }
+                else
+                {
+                    // this should also never happen, however...
+                    responseMap.remove(certID);
                 }
             }
         }
