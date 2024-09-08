@@ -276,7 +276,8 @@ public final class BouncyCastleProvider extends Provider
                         public Service run()
                         {
                             Service service = BouncyCastleProvider.super.getService(type, algorithm);
-                            if (service == null)
+                            // from Java21 services started to return with null class names...
+                            if (service == null || service.getClassName() == null)
                             {
                                 return null;
                             }
