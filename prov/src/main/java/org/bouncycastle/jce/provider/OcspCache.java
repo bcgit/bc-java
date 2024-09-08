@@ -74,10 +74,7 @@ class OcspCache
                 boolean matchFound = isCertIDFoundAndCurrent(basicResp, parameters.getValidDate(), certID);
                 if (matchFound)
                 {
-                    if (response != null)
-                    {
-                        return response;
-                    }
+                    return response;
                 }
                 else
                 {
