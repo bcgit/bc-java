@@ -13,6 +13,7 @@ import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,36 +71,7 @@ class OcspCache
                 BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(
                     ASN1OctetString.getInstance(response.getResponseBytes().getResponse()).getOctets());
 
-                ResponseData responseData = ResponseData.getInstance(basicResp.getTbsResponseData());
-
-                ASN1Sequence s = responseData.getResponses();
-                boolean matchFound = false;
-
-                for (int i = 0; i != s.size(); i++)
-                {
-                    SingleResponse resp = SingleResponse.getInstance(s.getObjectAt(i));
-
-                    if (certID.equals(resp.getCertID()))
-                    {
-                        matchFound = true;
-                        ASN1GeneralizedTime nextUp = resp.getNextUpdate();
-                        try
-                        {
-                            if (nextUp != null && parameters.getValidDate().after(nextUp.getDate()))
-                            {
-                                responseMap.remove(certID);
-                                response = null;
-                            }
-                        }
-                        catch (ParseException e)
-                        {
-                            // this should never happen, but...
-                            responseMap.remove(certID);
-                            response = null;
-                        }
-                    }
-                }
-
+                boolean matchFound = isCertIDFoundAndCurrent(basicResp, parameters.getValidDate(), certID);
                 if (matchFound)
                 {
                     if (response != null)
@@ -109,7 +81,6 @@ class OcspCache
                 }
                 else
                 {
-                    // this should also never happen, however...
                     responseMap.remove(certID);
                 }
             }
@@ -201,7 +172,8 @@ class OcspCache
                 {
                     BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
 
-                    validated = ProvOcspRevocationChecker.validatedOcspResponse(basicResp, parameters, nonce, responderCert, helper);
+                    validated = ProvOcspRevocationChecker.validatedOcspResponse(basicResp, parameters, nonce, responderCert, helper)
+                                && isCertIDFoundAndCurrent(basicResp, parameters.getValidDate(), certID);
                 }
 
                 if (!validated)
@@ -241,5 +213,37 @@ class OcspCache
             throw new CertPathValidatorException("configuration error: " + e.getMessage(),
                      e, parameters.getCertPath(), parameters.getIndex());
         }
+    }
+
+    private static boolean isCertIDFoundAndCurrent(BasicOCSPResponse basicResp, Date validDate, CertID certID)
+    {
+        ResponseData responseData = ResponseData.getInstance(basicResp.getTbsResponseData());
+        ASN1Sequence s = responseData.getResponses();
+
+        for (int i = 0; i != s.size(); i++)
+        {
+            SingleResponse resp = SingleResponse.getInstance(s.getObjectAt(i));
+
+            if (certID.equals(resp.getCertID()))
+            {
+                ASN1GeneralizedTime nextUp = resp.getNextUpdate();
+                try
+                {
+                    if (nextUp != null && validDate.after(nextUp.getDate()))
+                    {
+                        return false;
+                    }
+                }
+                catch (ParseException e)
+                {
+                    // this should never happen, but...
+                    return false;
+                }
+
+                return true;
+            }
+        }
+
+        return false;
     }
 }
