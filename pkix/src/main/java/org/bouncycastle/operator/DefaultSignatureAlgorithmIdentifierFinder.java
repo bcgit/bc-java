@@ -350,6 +350,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
         noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
         noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256);
+        noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256);
         noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512);
         noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512);
         noParams.add(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512);
