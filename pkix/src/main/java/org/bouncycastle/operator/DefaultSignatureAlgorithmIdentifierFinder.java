@@ -247,6 +247,19 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("SLH-DSA-SHAKE-256S", NISTObjectIdentifiers.id_slh_dsa_shake_256s);
         algorithms.put("SLH-DSA-SHAKE-256F", NISTObjectIdentifiers.id_slh_dsa_shake_256f);
 
+        algorithms.put("SLH-DSA-SHA2-128S-WITH-SHA256", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256);
+        algorithms.put("SLH-DSA-SHA2-128F-WITH-SHA256", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256);
+        algorithms.put("SLH-DSA-SHA2-192S-WITH-SHA512", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512);
+        algorithms.put("SLH-DSA-SHA2-192F-WITH-SHA512", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512);
+        algorithms.put("SLH-DSA-SHA2-256S-WITH-SHA512", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512);
+        algorithms.put("SLH-DSA-SHA2-256F-WITH-SHA512", NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512);
+        algorithms.put("SLH-DSA-SHAKE-128S-WITH-SHAKE128", NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128);
+        algorithms.put("SLH-DSA-SHAKE-128F-WITH-SHAKE128", NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128);
+        algorithms.put("SLH-DSA-SHAKE-192S-WITH-SHAKE256", NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256);
+        algorithms.put("SLH-DSA-SHAKE-192F-WITH-SHAKE256", NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256);
+        algorithms.put("SLH-DSA-SHAKE-256S-WITH-SHAKE256", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256);
+        algorithms.put("SLH-DSA-SHAKE-256F-WITH-SHAKE256", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256);
+
         algorithms.put("FALCON-512", BCObjectIdentifiers.falcon_512);
         algorithms.put("FALCON-1024", BCObjectIdentifiers.falcon_1024);
 
