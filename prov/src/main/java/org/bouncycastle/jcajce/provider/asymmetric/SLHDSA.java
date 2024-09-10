@@ -54,14 +54,14 @@ public class SLHDSA
             addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-192F-WITH-SHAKE256", PREFIX + "SLHDSAKeyFactorySpi$HashShake_192f", NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, keyFact);
             addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-256S-WITH-SHAKE256", PREFIX + "SLHDSAKeyFactorySpi$HashShake_256s", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, keyFact);
             addKeyFactoryAlgorithm(provider, "SLH-DSA-SHAKE-256F-WITH-SHAKE256", PREFIX + "SLHDSAKeyFactorySpi$HashShake_256f", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, keyFact);
-            
+
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-128S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_128s", NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-128F", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_128f", NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-192S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_192s", NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-192F", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_192f", NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-256S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_256s", NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHA2-256F", PREFIX + "SLHDSAKeyPairGeneratorSpi$Sha2_256f", NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
-                
+
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-128S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Shake_128s", NISTObjectIdentifiers.id_slh_dsa_shake_128s);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-128F", PREFIX + "SLHDSAKeyPairGeneratorSpi$Shake_128f", NISTObjectIdentifiers.id_slh_dsa_shake_128f);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-192S", PREFIX + "SLHDSAKeyPairGeneratorSpi$Shake_192s", NISTObjectIdentifiers.id_slh_dsa_shake_192s);
@@ -89,37 +89,47 @@ public class SLHDSA
             provider.addAlgorithm("Alg.Alias.Signature.HASHWITHSLHDSA", "HASH-SLH-DSA");
 
             ASN1ObjectIdentifier[] nistOids = new ASN1ObjectIdentifier[]
-            {
-                NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
-                NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
-                NISTObjectIdentifiers.id_slh_dsa_shake_128s,
-                NISTObjectIdentifiers.id_slh_dsa_shake_128f,
-                NISTObjectIdentifiers.id_slh_dsa_sha2_192s,
-                NISTObjectIdentifiers.id_slh_dsa_sha2_192f,
-                NISTObjectIdentifiers.id_slh_dsa_shake_192s,
-                NISTObjectIdentifiers.id_slh_dsa_shake_192f,
-                NISTObjectIdentifiers.id_slh_dsa_sha2_256s,
-                NISTObjectIdentifiers.id_slh_dsa_sha2_256f,
-                NISTObjectIdentifiers.id_slh_dsa_shake_256s,
-                NISTObjectIdentifiers.id_slh_dsa_shake_256f,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512,
-                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
-                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
-            };
-            
+                {
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_128s,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_128f,
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_192s,
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_192f,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_192s,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_192f,
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_256s,
+                    NISTObjectIdentifiers.id_slh_dsa_sha2_256f,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_256s,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_256f
+                };
+
             for (int i = 0; i != nistOids.length; i++)
             {
                 provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], "SLH-DSA");
                 provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], "SLH-DSA");
+            }
+
+            nistOids = new ASN1ObjectIdentifier[]
+                {
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
+                };
+
+            for (int i = 0; i != nistOids.length; i++)
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], "HASH-SLH-DSA");
+                provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], "HASH-SLH-DSA");
             }
         }
     }
