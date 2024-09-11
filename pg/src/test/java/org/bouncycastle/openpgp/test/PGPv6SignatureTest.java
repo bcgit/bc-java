@@ -411,6 +411,7 @@ public class PGPv6SignatureTest
             }
             else
             {
+                // -DM System.out.println
                 System.out.println("Did not find signing key for DK sig");
             }
         }
@@ -432,6 +433,7 @@ public class PGPv6SignatureTest
                 }
                 else
                 {
+                    // -DM System.out.println
                     System.out.println("Did not find signing key for UID sig for " + uid);
                 }
             }
@@ -453,6 +455,8 @@ public class PGPv6SignatureTest
                 }
                 else
                 {
+                    // -DM System.out.println
+                    // -DM Hex.toHexString
                     System.out.println("Did not find singing key for subkey " + Hex.toHexString(subkey.getFingerprint()) + " binding signature");
                 }
             }
@@ -473,7 +477,8 @@ public class PGPv6SignatureTest
             for (SignatureSubpacket p : sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
             {
                 IssuerFingerprint fp = (IssuerFingerprint) p;
-                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
+                {
                     return k;
                 }
             }
@@ -481,7 +486,8 @@ public class PGPv6SignatureTest
             for (SignatureSubpacket p : sig.getUnhashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
             {
                 IssuerFingerprint fp = (IssuerFingerprint) p;
-                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint())) {
+                if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
+                {
                     return k;
                 }
             }
