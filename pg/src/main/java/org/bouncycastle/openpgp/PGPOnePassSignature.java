@@ -210,8 +210,8 @@ public class PGPOnePassSignature
     }
 
     /**
-     * Return true, if the signature is contains any signatures that follow.
-     * An bracketing OPS is followed by additional OPS packets and is calculated over all the data between itself
+     * Return true, if the signature contains any signatures that follow.
+     * A bracketing OPS is followed by additional OPS packets and is calculated over all the data between itself
      * and its corresponding signature (it is an attestation for contained signatures).
      *
      * @return true if containing, false otherwise
