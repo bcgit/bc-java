@@ -129,8 +129,8 @@ public class SecretKeyPacket
      * @param newPacketFormat packet format
      * @throws IOException if the secret key packet cannot be parsed
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-secret-key-packet-formats">
-     *     C-R - Secret-Key Packet Formats</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-secret-key-packet-formats">
+     *     OpenPGP - Secret-Key Packet Formats</a>
      * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-secret-key-packet-formats">
      *     LibrePGP - Secret-Key Packet Formats</a>
      * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-hardware-secrets/">

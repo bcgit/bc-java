@@ -19,7 +19,7 @@ public class OpenPgpMessageTest
 
     /*
     Inline-signed message using a version 6 signature
-    see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
+    see https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-inline-signed-messag
     */
     public static final String INLINE_SIGNED = "-----BEGIN PGP MESSAGE-----\n" +
             "\n" +
@@ -34,7 +34,7 @@ public class OpenPgpMessageTest
 
     /*
     Cleartext-signed message using a version 6 signature
-    see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-cleartext-signed-mes
+    see https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-cleartext-signed-mes
      */
     public static final String CLEARTEXT_SIGNED = "-----BEGIN PGP SIGNED MESSAGE-----\n" +
             "\n" +

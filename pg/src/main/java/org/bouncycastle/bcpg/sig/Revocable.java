@@ -4,7 +4,12 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving whether or not is revocable.
+ * Signature Subpacket marking a signature as non-revocable.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.12">
+ *     RFC4880 - Revocable</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-revocable">
+ *     RFC9580 - Revocable</a>
  */
 public class Revocable 
     extends SignatureSubpacket

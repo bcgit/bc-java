@@ -396,6 +396,16 @@ public class PGPPublicKey
     }
 
     /**
+     * Return a {@link KeyIdentifier} identifying this key.
+     *
+     * @return key identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(this);
+    }
+
+    /**
      * Return the fingerprint of the public key.
      *
      * @return key fingerprint.
@@ -565,6 +575,20 @@ public class PGPPublicKey
             }
         }
 
+        return sigs.iterator();
+    }
+
+    public Iterator<PGPSignature> getSignaturesForKey(KeyIdentifier identifier)
+    {
+        List<PGPSignature> sigs = new ArrayList<>();
+        for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
+        {
+            PGPSignature sig = it.next();
+            if (identifier.matches(sig))
+            {
+                sigs.add(sig);
+            }
+        }
         return sigs.iterator();
     }
 

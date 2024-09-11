@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PreferredKeyServer;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
@@ -155,6 +156,8 @@ public class SignatureSubpacketInputStream
             return new LibrePGPPreferredEncryptionModes(isCritical, isLongLength, data);
         case PREFERRED_AEAD_ALGORITHMS:
             return new PreferredAEADCiphersuites(isCritical, isLongLength, data);
+        case PREFERRED_KEY_SERV:
+            return new PreferredKeyServer(isCritical, isLongLength, data);
         case KEY_FLAGS:
             return new KeyFlags(isCritical, isLongLength, data);
         case POLICY_URL:

@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.IOException;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.DSAParameterSpec;
@@ -98,10 +99,25 @@ public class AlgorithmParametersTest
         }
     }
 
+    private void java21NullCheck()
+        throws Exception
+    {
+        try
+        {
+            AlgorithmParameters algParams = AlgorithmParameters.getInstance("1.2.840.113549.1.1.1", "BC");
+            fail("no exception");
+        }
+        catch (GeneralSecurityException e)
+        {
+            // okay..
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         basicTest("DSA", DSAParameterSpec.class, dsaParams);
+        java21NullCheck();
 
         AlgorithmParameters al = AlgorithmParameters.getInstance("EC", "BC");
 

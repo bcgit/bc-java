@@ -25,7 +25,8 @@ public abstract class PGPKeyConverter
     }
 
     /**
-     * Reference: <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/13/">RFC Draft-ietf-openpgp-crypto-refresh-13</a>
+     * Reference: <a href="https://www.rfc-editor.org/rfc/rfc9580.html">
+     *     RFC9580 - OpenPGP</a>
      * <p>
      * This class provides information about the recommended algorithms to use
      * depending on the key version and curve type in OpenPGP keys.

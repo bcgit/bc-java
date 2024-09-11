@@ -3,7 +3,7 @@ package org.bouncycastle.bcpg;
 /**
  * OpenPGP Packet Header Length Format.
  *
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-packet-headers">
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-packet-headers">
  * OpenPGP Packet Headers</a>
  */
 public enum PacketFormat
