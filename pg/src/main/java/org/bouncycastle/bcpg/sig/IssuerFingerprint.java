@@ -7,7 +7,11 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
 
 /**
- * packet giving the issuer key fingerprint.
+ * Signature Subpacket containing the fingerprint of the issuers signing (sub-) key.
+ * This packet supersedes the {@link IssuerKeyID} subpacket.
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-issuer-fingerprint">
+ *     RFC9580 - Issuer Fingerprint</a>
  */
 public class IssuerFingerprint
     extends SignatureSubpacket

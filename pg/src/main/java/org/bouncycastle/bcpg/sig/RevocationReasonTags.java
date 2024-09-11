@@ -1,5 +1,13 @@
 package org.bouncycastle.bcpg.sig;
 
+/**
+ * Revocation reason tags.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.23">
+ *     RFC4880 - Reason for Revocation</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-reason-for-revocation">
+ *     RFC9580 - Reason for Revocation</a>
+ */
 public interface RevocationReasonTags
 {
     byte NO_REASON = 0;              // No reason specified (key revocations or cert revocations)

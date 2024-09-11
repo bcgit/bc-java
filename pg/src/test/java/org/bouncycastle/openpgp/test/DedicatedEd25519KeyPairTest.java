@@ -195,7 +195,7 @@ public class DedicatedEd25519KeyPairTest
     {
         JcaPGPKeyConverter jc = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
         BcPGPKeyConverter bc = new BcPGPKeyConverter();
-        // ed25519 public key from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-hashed-data-stream-for-sign
+        // ed25519 public key from https://www.rfc-editor.org/rfc/rfc9580.html#name-hashed-data-stream-for-sign
         Date creationTime = new Date(Pack.bigEndianToInt(Hex.decode("63877fe3"), 0) * 1000L);
         byte[] k = Hex.decode("f94da7bb48d60a61e567706a6587d0331999bb9d891a08242ead84543df895a3");
         for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
