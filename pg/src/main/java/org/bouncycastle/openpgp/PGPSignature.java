@@ -19,6 +19,8 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
+import org.bouncycastle.bcpg.sig.IssuerFingerprint;
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
@@ -588,12 +590,75 @@ public class PGPSignature
 
     /**
      * Return the id of the key that created the signature.
+     * Note: Since signatures of version 4 or later encode the issuer information inside a
+     * signature subpacket ({@link IssuerKeyID} or {@link IssuerFingerprint}), there is not
+     * a single source of truth for the key-id.
+     * To match any suitable issuer keys, use {@link #getKeyIdentifiers()} instead.
      *
      * @return keyID of the signatures corresponding key.
      */
     public long getKeyID()
     {
         return sigPck.getKeyID();
+    }
+
+    /**
+     * Create a list of {@link KeyIdentifier} objects, for all {@link IssuerFingerprint}
+     * and {@link IssuerKeyID} signature subpackets found in either the hashed or unhashed areas
+     * of the signature.
+     *
+     * @return all detectable {@link KeyIdentifier KeyIdentifiers}
+     */
+    public List<KeyIdentifier> getKeyIdentifiers()
+    {
+        List<KeyIdentifier> identifiers = new ArrayList<>();
+        identifiers.addAll(getHashedKeyIdentifiers());
+        identifiers.addAll(getUnhashedKeyIdentifiers());
+        return identifiers;
+    }
+
+    /**
+     * Return a list of all {@link KeyIdentifier KeyIdentifiers} that could be derived from
+     * any {@link IssuerFingerprint} or {@link IssuerKeyID} subpackets of the hashed signature
+     * subpacket area.
+     *
+     * @return hashed key identifiers
+     */
+    public List<KeyIdentifier> getHashedKeyIdentifiers()
+    {
+        return extractKeyIdentifiers(sigPck.getHashedSubPackets());
+    }
+
+    /**
+     * Return a list of all {@link KeyIdentifier KeyIdentifiers} that could be derived from
+     * any {@link IssuerFingerprint} or {@link IssuerKeyID} subpackets of the unhashed signature
+     * subpacket area.
+     *
+     * @return unhashed key identifiers
+     */
+    public List<KeyIdentifier> getUnhashedKeyIdentifiers()
+    {
+        return extractKeyIdentifiers(sigPck.getUnhashedSubPackets());
+    }
+
+    private List<KeyIdentifier> extractKeyIdentifiers(SignatureSubpacket[] subpackets)
+    {
+        List<KeyIdentifier> identifiers = new ArrayList<>();
+        for (SignatureSubpacket s : subpackets)
+        {
+            if (s instanceof IssuerFingerprint)
+            {
+                IssuerFingerprint issuer = (IssuerFingerprint) s;
+                identifiers.add(new KeyIdentifier(issuer.getFingerprint()));
+            }
+
+            if (s instanceof IssuerKeyID)
+            {
+                IssuerKeyID issuer = (IssuerKeyID) s;
+                identifiers.add(new KeyIdentifier(issuer.getKeyID()));
+            }
+        }
+        return identifiers;
     }
 
     /**
