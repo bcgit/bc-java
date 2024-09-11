@@ -29,6 +29,8 @@ public class DumpUtil
         {
             return "<null>";
         }
+
+        // -DM Hex.toHexString
         String hex = Hex.toHexString(array);
         StringBuilder withWhiteSpace = new StringBuilder();
         // shift the dump a number of octets to the right
