@@ -5,10 +5,10 @@ package org.bouncycastle.bcpg;
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-9.3">
  *     RFC4880 - Compression Algorithms</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-compression-algorithms">
+ *     RFC9580 - Compression Algorithms</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-compression-algorithms">
  *     LibrePGP - Compression Algorithms</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-compression-algorithms">
- *     Crypto-Refresh - Compression Algorithms</a>
  */
 public interface CompressionAlgorithmTags
 {

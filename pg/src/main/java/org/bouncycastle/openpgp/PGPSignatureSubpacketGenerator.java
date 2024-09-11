@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PreferredKeyServer;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
@@ -256,6 +257,18 @@ public class PGPSignatureSubpacketGenerator
         packets.add(new LibrePGPPreferredEncryptionModes(isCritical, algorithms));
     }
 
+    /**
+     * Specify the preferred key server for the signed user-id / key.
+     * Note, that the key server might also be a http/ftp etc. URI pointing to the key itself.
+     *
+     * @param isCritical true if the subpacket should be treated as critical
+     * @param uri key server URI
+     */
+    public void setPreferredKeyServer(boolean isCritical, String uri)
+    {
+        packets.add(new PreferredKeyServer(isCritical, uri));
+    }
+
     public void addPolicyURI(boolean isCritical, String policyUri)
     {
         packets.add(new PolicyURI(isCritical, policyUri));
@@ -422,8 +435,8 @@ public class PGPSignatureSubpacketGenerator
      *
      * @param isCritical   true if should be treated as critical, false otherwise.
      * @param keyAlgorithm algorithm of the revocation key
-     * @param fingerprint  fingerprint of the revocation key
-     * @deprecated use {@link #addRevocationKey(boolean, int, byte[])} instead.
+     * @param fingerprint  fingerprint of the revocation key (v4 only)
+     * @deprecated the revocation key mechanism is deprecated. Applications MUST NOT generate such a packet.
      */
     public void setRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {
@@ -435,7 +448,8 @@ public class PGPSignatureSubpacketGenerator
      *
      * @param isCritical   true if should be treated as critical, false otherwise.
      * @param keyAlgorithm algorithm of the revocation key
-     * @param fingerprint  fingerprint of the revocation key
+     * @param fingerprint  fingerprint of the revocation key (v4 only)
+     * @deprecated the revocation key mechanism is deprecated. Applications MUST NOT generate such a packet.
      */
     public void addRevocationKey(boolean isCritical, int keyAlgorithm, byte[] fingerprint)
     {

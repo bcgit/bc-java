@@ -29,15 +29,22 @@ public class JcaPEMKeyConverter
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
 
-    private static final Map algorithms = new HashMap();
+    private final Map algorithms = new HashMap();
+
+    private static final Map baseMappings = new HashMap();
 
     static
     {
-        algorithms.put(X9ObjectIdentifiers.id_ecPublicKey, "ECDSA");
-        algorithms.put(PKCSObjectIdentifiers.rsaEncryption, "RSA");
-        algorithms.put(X9ObjectIdentifiers.id_dsa, "DSA");
+        baseMappings.put(X9ObjectIdentifiers.id_ecPublicKey, "ECDSA");
+        baseMappings.put(PKCSObjectIdentifiers.rsaEncryption, "RSA");
+        baseMappings.put(X9ObjectIdentifiers.id_dsa, "DSA");
     }
 
+    public JcaPEMKeyConverter()
+    {
+        this.algorithms.putAll(baseMappings);
+    }
+    
     public JcaPEMKeyConverter setProvider(Provider provider)
     {
         this.helper = new ProviderJcaJceHelper(provider);
@@ -52,6 +59,27 @@ public class JcaPEMKeyConverter
         return this;
     }
 
+    /**
+     * Set the algorithm mapping for a particular OID to the given algorithm name.
+     *
+     * @param algOid object identifier used to identify the public/private key
+     * @param algorithmName algorithm name we want to map to in the provider.
+     * @return the current builder instance.
+     */
+    public JcaPEMKeyConverter setAlgorithmMapping(ASN1ObjectIdentifier algOid, String algorithmName)
+    {
+        this.algorithms.put(algOid, algorithmName);
+
+        return this;
+    }
+
+    /**
+     * Convert a PEMKeyPair into a KeyPair, returning the converted result.
+     *
+     * @param keyPair the PEMKeyPair to be converted.
+     * @return the result of the conversion
+     * @throws PEMException if an exception is thrown attempting to do the conversion.
+     */
     public KeyPair getKeyPair(PEMKeyPair keyPair)
         throws PEMException
     {

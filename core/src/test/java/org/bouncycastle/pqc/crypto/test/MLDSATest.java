@@ -1,19 +1,5 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import junit.framework.TestCase;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.crystals.dilithium.*;
-import org.bouncycastle.pqc.crypto.mldsa.*;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.test.TestResourceFinder;
-import org.bouncycastle.util.Arrays;
-
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +7,25 @@ import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
+import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
+
+import junit.framework.TestCase;
 
 public class MLDSATest extends TestCase
 {
@@ -38,7 +43,6 @@ public class MLDSATest extends TestCase
                 MLDSAParameters.ml_dsa_87,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -64,28 +68,26 @@ public class MLDSATest extends TestCase
                         byte[] pk = Hex.decode((String) buf.get("pk"));
                         byte[] sk = Hex.decode((String) buf.get("sk"));
 
+                        FixedSecureRandom random = new FixedSecureRandom(seed);
                         MLDSAParameters parameters = params[fileIndex];
 
                         MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
-                        MLDSAKeyGenerationParameters genParam = new MLDSAKeyGenerationParameters(new SecureRandom(), parameters);
+                        kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
+
                         //
                         // Generate keys and test.
                         //
-                        kpGen.init(genParam);
-                        AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(seed);
+                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
                         MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters) PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
                         MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters) PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
-
+                            PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
 
                         assertTrue(name + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
                         assertTrue(name + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-
                     }
                     buf.clear();
-
                     continue;
                 }
 
@@ -113,7 +115,6 @@ public class MLDSATest extends TestCase
                 MLDSAParameters.ml_dsa_87,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -185,7 +186,6 @@ public class MLDSATest extends TestCase
                 MLDSAParameters.ml_dsa_87,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];

@@ -41,6 +41,16 @@ public class PGPKeyPair
     {
         return pub.getKeyID();
     }
+
+    /**
+     * Return the {@link KeyIdentifier} associated with the public key.
+     *
+     * @return key identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getPublicKey());
+    }
     
     public PGPPublicKey getPublicKey()
     {

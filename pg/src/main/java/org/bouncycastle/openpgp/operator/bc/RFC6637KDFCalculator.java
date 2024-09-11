@@ -53,7 +53,7 @@ class RFC6637KDFCalculator
      * Creates a session key for X25519 or X448 encryption based on the provided algorithm and key algorithm.
      * <p>
      * The method follows the specifications outlined in the OpenPGP standards, specifically sections 5.1.6 and 5.1.7
-     * of draft-ietf-openpgp-crypto-refresh-13.
+     * of rfc9580.
      *
      * @param algorithm    The algorithm to use for key derivation, such as SHA256 or SHA512.
      * @param keyAlgorithm The key algorithm identifier, representing AES-128 or AES-256.
@@ -65,7 +65,7 @@ class RFC6637KDFCalculator
      *                     For X448, use "OpenPGP X448".
      * @return The derived key for encryption.
      * @throws PGPException If an error occurs during key derivation.
-     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh/13/">draft-ietf-openpgp-crypto-refresh-13</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html">rfc9580 - OpenPGP</a>
      */
     public static byte[] createKey(int algorithm, int keyAlgorithm, byte[] prepend, String info)
         throws PGPException

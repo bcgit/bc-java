@@ -3,6 +3,14 @@ package org.bouncycastle.bcpg.sig;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
+/**
+ * Signature Subpacket encoding, which features are supported by the key-holders implementation.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.24">
+ *     RFC4880 - Features</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-features">
+ *     RFC9580 - Features</a>
+ */
 public class Features
     extends SignatureSubpacket
 {

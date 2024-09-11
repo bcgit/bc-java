@@ -237,7 +237,7 @@ class MLDSAEngine
     }
 
     //Internal functions are deterministic. No randomness is sampled inside them
-    public byte[][] generateKeyPairInternal(byte[] seed)
+    private byte[][] generateKeyPairInternal(byte[] seed)
     {
         byte[] buf = new byte[2 * SeedBytes + CrhBytes];
         byte[] tr = new byte[TrBytes];

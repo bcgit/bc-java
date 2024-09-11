@@ -6,19 +6,26 @@ import org.bouncycastle.util.encoders.Hex;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-public class OCBEncryptedDataPacketTest extends AbstractPacketTest {
+public class OCBEncryptedDataPacketTest
+        extends AbstractPacketTest
+{
     @Override
-    public String getName() {
+    public String getName()
+    {
         return "OCBEncryptedDataPacketTest";
     }
 
     @Override
-    public void performTest() throws Exception {
+    public void performTest()
+            throws Exception
+    {
         parseTestVector();
         parseUnsupportedPacketVersion();
     }
 
-    private void parseTestVector() throws IOException {
+    private void parseTestVector()
+            throws IOException
+    {
         String testVector = "" +
             "d45301090210c265ff63a61ed8af00fa" +
             "43866be8eb9eef77241518a3d60e387b" +
@@ -39,7 +46,9 @@ public class OCBEncryptedDataPacketTest extends AbstractPacketTest {
         isEncodingEqual("IV mismatch", Hex.decode("C265FF63A61ED8AF00FA43866BE8EB"), p.getIV());
     }
 
-    private void parseUnsupportedPacketVersion() throws IOException {
+    private void parseUnsupportedPacketVersion()
+            throws IOException
+    {
         // Test vector with modified packet version 99
         String testVector = "" +
             "d45399090210c265ff63a61ed8af00fa" +
