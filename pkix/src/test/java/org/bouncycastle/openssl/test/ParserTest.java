@@ -34,6 +34,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
@@ -160,6 +161,21 @@ public class ParserTest
         }
 
         if (!pair.getPrivate().getAlgorithm().equals("ECDSA"))
+        {
+            fail("wrong algorithm name on private");
+        }
+
+        //
+        // Check for algorithm replacement
+        //
+        pair = new JcaPEMKeyConverter().setProvider("BC").setAlgorithmMapping(X9ObjectIdentifiers.id_ecPublicKey, "EC").getKeyPair(pemPair);
+
+        if (!pair.getPublic().getAlgorithm().equals("EC"))
+        {
+            fail("wrong algorithm name on public got: " + pair.getPublic().getAlgorithm());
+        }
+
+        if (!pair.getPrivate().getAlgorithm().equals("EC"))
         {
             fail("wrong algorithm name on private");
         }

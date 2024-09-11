@@ -4429,11 +4429,6 @@ public class CertTest
     public void checkCreationDilithiumSigWithECDSASig()
         throws Exception
     {
-        if (Security.getProvider("BCPQC") == null)
-        {
-            Security.addProvider(new BouncyCastlePQCProvider());
-        }
-
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
 
         kpGen.initialize(MLDSAParameterSpec.ml_dsa_44, new SecureRandom());

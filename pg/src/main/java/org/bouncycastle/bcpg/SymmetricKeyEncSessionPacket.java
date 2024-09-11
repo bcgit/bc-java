@@ -67,7 +67,7 @@ public class SymmetricKeyEncSessionPacket
             int ivLen = 0;
             if (version == VERSION_6)
             {
-                // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#section-5.3.2-3.2
+                // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.2.1
                 // SymAlg + AEADAlg + S2KCount + S2K + IV
                 ivLen = in.read(); // next5Fields5Count
             }
@@ -75,6 +75,7 @@ public class SymmetricKeyEncSessionPacket
             aeadAlgorithm = in.read();
             if (version == VERSION_6)
             {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.5.1
                 int s2kOctetCount = in.read();
                 ivLen = ivLen - 3 - s2kOctetCount;
             }

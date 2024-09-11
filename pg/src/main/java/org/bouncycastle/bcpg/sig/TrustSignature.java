@@ -4,7 +4,12 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving trust.
+ * Signature Subpacket encoding the level and amount of trust the issuer places into the certified key or identity.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.10">
+ *     RFC4880 - Trust Packet</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-trust-signature">
+ *     RFC9580 - Trust Signature</a>
  */
 public class TrustSignature 
     extends SignatureSubpacket

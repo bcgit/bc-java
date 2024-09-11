@@ -14,6 +14,7 @@ public class PrintTestResult
         {
             while (e.hasMoreElements())
             {
+                // -DM System.out.println
                 System.out.println(e.nextElement());
             }
         }
@@ -23,12 +24,14 @@ public class PrintTestResult
         {
             while (e.hasMoreElements())
             {
+                // -DM System.out.println
                 System.out.println(e.nextElement());
             }
         }
 
         if (!result.wasSuccessful())
         {
+            // -DM System.exit
             System.exit(1);
         }
     }

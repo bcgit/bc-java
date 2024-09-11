@@ -32,7 +32,9 @@ public class UnknownPublicKeyPacketTest
         parseUnknownPublicKey();
     }
 
-    private void parseUnknownPublicKey() throws ParseException, IOException {
+    private void parseUnknownPublicKey()
+            throws ParseException, IOException
+    {
         SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
         parser.setTimeZone(TimeZone.getTimeZone("UTC"));
 

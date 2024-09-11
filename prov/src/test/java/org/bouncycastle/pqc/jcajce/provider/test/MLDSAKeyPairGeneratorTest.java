@@ -24,9 +24,8 @@ public class MLDSAKeyPairGeneratorTest
         super.setUp();
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastlePQCProvider());
+            Security.addProvider(new BouncyCastleProvider());
         }
-        Security.addProvider(new BouncyCastleProvider());
     }
 
     public void testKeyFactory()
