@@ -6,15 +6,11 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
 
 public class KeyTransRecipientId
-    extends RecipientId
+    extends PKIXRecipientId
 {
-    private X509CertificateHolderSelector baseSelector;
-
     private KeyTransRecipientId(X509CertificateHolderSelector baseSelector)
     {
-        super(keyTrans);
-
-        this.baseSelector = baseSelector;
+        super(keyTrans, baseSelector);
     }
 
     /**
@@ -24,7 +20,7 @@ public class KeyTransRecipientId
      */
     public KeyTransRecipientId(byte[] subjectKeyId)
     {
-        this(null, null, subjectKeyId);
+        super(keyTrans, null, null, subjectKeyId);
     }
 
     /**
@@ -36,7 +32,7 @@ public class KeyTransRecipientId
      */
     public KeyTransRecipientId(X500Name issuer, BigInteger serialNumber)
     {
-        this(issuer, serialNumber, null);
+        super(keyTrans, issuer, serialNumber, null);
     }
 
     /**
@@ -49,27 +45,7 @@ public class KeyTransRecipientId
      */
     public KeyTransRecipientId(X500Name issuer, BigInteger serialNumber, byte[] subjectKeyId)
     {
-        this(new X509CertificateHolderSelector(issuer, serialNumber, subjectKeyId));
-    }
-
-    public X500Name getIssuer()
-    {
-        return baseSelector.getIssuer();
-    }
-
-    public BigInteger getSerialNumber()
-    {
-        return baseSelector.getSerialNumber();
-    }
-
-    public byte[] getSubjectKeyIdentifier()
-    {
-        return baseSelector.getSubjectKeyIdentifier();
-    }
-
-    public int hashCode()
-    {
-        return baseSelector.hashCode();
+        super(keyTrans, issuer, serialNumber, subjectKeyId);
     }
 
     public boolean equals(
@@ -97,6 +73,6 @@ public class KeyTransRecipientId
             return ((KeyTransRecipientInformation)obj).getRID().equals(this);
         }
 
-        return baseSelector.match(obj);
+        return super.match(obj);
     }
 }

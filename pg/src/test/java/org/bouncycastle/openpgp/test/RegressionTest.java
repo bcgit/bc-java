@@ -80,6 +80,7 @@ public class RegressionTest
 
         new PGPv5KeyTest(),
         new PGPv5MessageDecryptionTest(),
+        new PGPv6SignatureTest()
     };
 
     public static void main(String[] args)

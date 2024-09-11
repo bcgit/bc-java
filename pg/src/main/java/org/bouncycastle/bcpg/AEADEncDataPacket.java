@@ -67,6 +67,10 @@ public class AEADEncDataPacket
         return version;
     }
 
+    /**
+     * Return the algorithm-id of the symmetric encryption algorithm used to encrypt the data.
+     * @return symmetric encryption algorithm
+     */
     public byte getAlgorithm()
     {
         return algorithm;

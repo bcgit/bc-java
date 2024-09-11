@@ -19,9 +19,11 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.PreferredKeyServer;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -458,6 +460,7 @@ public class OpenPGPTest
 
         PGPSignatureSubpacketGenerator hashed = new PGPSignatureSubpacketGenerator();
         hashed.addNotationData(false, true, "test@bouncycastle.org", "hashedNotation");
+        hashed.setPreferredKeyServer(false, "www.testuri.com");
         PGPSignatureSubpacketGenerator unhashed = new PGPSignatureSubpacketGenerator();
 
         PGPContentSignerBuilder signerBuilder = new BcPGPContentSignerBuilder(PublicKeyAlgorithmTags.ECDSA, HashAlgorithmTags.SHA512);
@@ -471,6 +474,10 @@ public class OpenPGPTest
 
         PGPSignature signature = (PGPSignature)signatures.next();
         isTrue(!signatures.hasNext());
+
+        PreferredKeyServer pks = (PreferredKeyServer)signature.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.PREFERRED_KEY_SERV)[0];
+        isTrue(pks.getURI().equals("www.testuri.com"));
+        isTrue(pks.getRawURI().length == 15);
 
         verifier = new PGPSignatureVerifierBuilder(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), publicKey).buildDirectKeyVerifier(signature, publicKey);
         isTrue(verifier.isVerified());
@@ -937,6 +944,7 @@ public class OpenPGPTest
         PGPEncryptedDataList encList = (PGPEncryptedDataList)pgpF.nextObject();
 
         PGPPublicKeyEncryptedData encP = (PGPPublicKeyEncryptedData)encList.get(0);
+        isTrue((encP.getKeyIdentifier().getKeyId())==encP.getKeyID());
         isEquals(encP.getAlgorithm(), 1);
         isEquals(encP.getVersion(), 3);
         PGPPrivateKey pgpPrivKey = pgpPriv.getSecretKey(encP.getKeyID()).extractPrivateKey(new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(pass));

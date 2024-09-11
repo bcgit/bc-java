@@ -22,7 +22,7 @@ class Packing
 
         for (i = 0; i < engine.getDilithiumK(); ++i)
         {
-            t1.getVectorIndex(i).polyt1Unpack(Arrays.copyOfRange(publicKey, i * MLDSAEngine.DilithiumPolyT1PackedBytes, MLDSAEngine.SeedBytes + (i + 1) * MLDSAEngine.DilithiumPolyT1PackedBytes));
+            t1.getVectorIndex(i).polyt1Unpack(Arrays.copyOfRange(publicKey, i * MLDSAEngine.DilithiumPolyT1PackedBytes, (i + 1) * MLDSAEngine.DilithiumPolyT1PackedBytes));
         }
         return t1;
     }

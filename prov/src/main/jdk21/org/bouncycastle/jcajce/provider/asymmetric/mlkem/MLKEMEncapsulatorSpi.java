@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
@@ -58,22 +58,7 @@ public class MLKEMEncapsulatorSpi
 
         byte[] encapsulation = secEnc.getEncapsulation();
         byte[] secret = secEnc.getSecret();
-
-        byte[] secretKey;
-
-        if (useKDF)
-        {
-            try
-            {
-                secret = Util.makeKeyBytes(parameterSpec, secret);
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        secretKey = Arrays.copyOfRange(secret, from, to);
+        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
         return new KEM.Encapsulated(new SecretKeySpec(secretKey, algorithm), encapsulation, null); //TODO: DER encoding for params    }
     }

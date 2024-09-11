@@ -4,7 +4,12 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 
 /**
- * packet giving whether or not the signature is signed using the primary user ID for the key.
+ * Signature Subpacket marking a User ID as primary.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.19">
+ *     RFC4880 - Primary User ID</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-primary-user-id">
+ *     RFC9580 - Primary User ID</a>
  */
 public class PrimaryUserID 
     extends SignatureSubpacket

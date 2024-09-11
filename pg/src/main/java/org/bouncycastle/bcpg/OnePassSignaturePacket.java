@@ -19,8 +19,8 @@ import java.io.IOException;
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc4880.html#section-5.4">
  *     Definition of version 3 OPS packets in RFC4880</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-one-pass-signature-packet-t">
- *     Definition of version 3 and 6 OPS packets in crypto-refresh</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-one-pass-signature-packet-t">
+ *     Definition of version 3 and 6 OPS packets in RFC9580</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#section-5.4">
  *     Definition of version 3 and 6 OPS packets in librepgp</a>
  */

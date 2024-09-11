@@ -17,8 +17,7 @@
 
     <jar file="${ENV.BCHOME}/libs/jakarta.activation-api-2.0.0.jar"/>
     <jar file="${ENV.BCHOME}/libs/jakarta.mail-2.0.1.jar"/>
-    <jar file="${ENV.BCHOME}/core/build/libs/core-${version}.jar"/>
-    <jar file="${ENV.BCHOME}/core/build/libs/core-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/core/build/libs/bccore-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/jmail/build/libs/bcjmail-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/mls/build/libs/bcmls-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/pg/build/libs/bcpg-jdk18on-${version}.jar"/>

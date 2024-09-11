@@ -71,7 +71,7 @@ public class AEADProtectedPGPSecretKeyTest
         throws IOException, PGPException
     {
         // AEAD encrypted test vector extracted from here:
-        // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-locked-v6-secret-key
+        // https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-locked-v6-secret-key
         String armoredVector = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
             "xYIGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP9JgkC\n" +
@@ -90,7 +90,7 @@ public class AEADProtectedPGPSecretKeyTest
             "-----END PGP PRIVATE KEY BLOCK-----";
         char[] passphrase = "correct horse battery staple".toCharArray();
         // Plaintext vectors extracted from here:
-        // https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-v6-secret-key-transf
+        // https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-v6-secret-key-transf
         byte[] plainPrimaryKey = Hex.decode("1972817b12be707e8d5f586ce61361201d344eb266a2c82fde6835762b65b0b7");
         byte[] plainSubkey = Hex.decode("4d600a4f794d44775c57a26e0feefed558e9afffd6ad0d582d57fb2ba2dcedb8");
 
@@ -272,7 +272,8 @@ public class AEADProtectedPGPSecretKeyTest
             {
                 sk.extractPrivateKey(jceDecBuilder.build("Yang".toCharArray()));
                 fail("Expected PGPException due to wrong passphrase");
-            } catch (PGPException e)
+            }
+            catch (PGPException e)
             {
                 // expected
             }
