@@ -29,6 +29,21 @@ public interface PublicKeyDataDecryptorFactory
      * @deprecated use {@link #recoverSessionData(PublicKeyEncSessionPacket, InputStreamPacket)} instead.
      * @param keyAlgorithm public key algorithm
      * @param secKeyData encrypted session key data
+     * @return decrypted session info
+     * @throws PGPException
+     */
+    byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+        throws PGPException;
+
+    /**
+     * Recover the plain session info by decrypting the encrypted session key.
+     * This method returns the decrypted session info as-is (without prefixing missing cipher algorithm),
+     * so the return value is:
+     * <pre>[sym-alg]?[session-key][checksum]?</pre>
+     *
+     * @deprecated use {@link #recoverSessionData(PublicKeyEncSessionPacket, InputStreamPacket)} instead.
+     * @param keyAlgorithm public key algorithm
+     * @param secKeyData encrypted session key data
      * @param pkeskVersion version of the PKESK packet
      * @return decrypted session info
      * @throws PGPException
