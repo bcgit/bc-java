@@ -21,6 +21,12 @@ public abstract class AbstractPublicKeyDataDecryptorFactory
         return prependSKAlgorithmToSessionData(pkesk, encData, sessionData);
     }
 
+    @Override
+    public byte[] recoverSessionData(int keyAlgorithm, byte[][] secKeyData)
+        throws PGPException
+    {
+        return recoverSessionData(keyAlgorithm, secKeyData, PublicKeyEncSessionPacket.VERSION_3);
+    }
 
     protected byte[] prependSKAlgorithmToSessionData(PublicKeyEncSessionPacket pkesk,
                                                    InputStreamPacket encData,
