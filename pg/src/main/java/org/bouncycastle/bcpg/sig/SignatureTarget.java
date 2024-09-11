@@ -5,7 +5,12 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
 
 /**
- * RFC 4880, Section 5.2.3.25 - Signature Target subpacket.
+ * Signature Subpacket containing the hash value of another signature to which this signature applies to.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.25">
+ *     RFC4880 - Signature Target</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-signature-target">
+ *     RFC9580 - Signature Target</a>
  */
 public class SignatureTarget
     extends SignatureSubpacket
