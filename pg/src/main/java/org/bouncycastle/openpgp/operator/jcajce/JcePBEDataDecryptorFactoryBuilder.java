@@ -12,6 +12,7 @@ import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -140,12 +141,24 @@ public class JcePBEDataDecryptorFactoryBuilder
                 }
 
                 byte[] hkdfInfo = keyData.getAAData(); // between v5 and v6, these bytes differ
-                int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
 
-                // HKDF
-                // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
-                byte[] kek = JceAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
-                final SecretKey secretKey = new SecretKeySpec(kek, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
+                SecretKey secretKey;
+                if (keyData.getVersion() == SymmetricKeyEncSessionPacket.VERSION_5)
+                {
+                    secretKey = new SecretKeySpec(ikm, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
+                }
+                else if (keyData.getVersion() == SymmetricKeyEncSessionPacket.VERSION_6)
+                {
+                    // HKDF
+                    // secretKey := HKDF_sha256(ikm, hkdfInfo).generate()
+                    int kekLen = SymmetricKeyUtils.getKeyLengthInOctets(keyData.getEncAlgorithm());
+                    byte[] kek = JceAEADUtil.generateHKDFBytes(ikm, null, hkdfInfo, kekLen);
+                    secretKey = new SecretKeySpec(kek, PGPUtil.getSymmetricCipherName(keyData.getEncAlgorithm()));
+                }
+                else
+                {
+                    throw new UnsupportedPacketVersionException("Unsupported SKESK packet version encountered: " + keyData.getVersion());
+                }
 
                 // AEAD
                 Cipher aead = aeadHelper.createAEADCipher(keyData.getEncAlgorithm(), keyData.getAeadAlgorithm());

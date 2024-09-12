@@ -90,6 +90,10 @@ public class PGPv5KeyTest
         isEncodingEqual("Fingerprint mismatch for the subkey.",
             Hex.decode("E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965"), it.next().getFingerprint());
 
+        it = secretKeys.getPublicKeys();
+        isEquals( "Primary key ID mismatch", 1816212655223104514L, it.next().getKeyID());
+        isEquals("Subkey ID mismatch", -1993550735865823413L, it.next().getKeyID());
+
         bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.LEGACY);
         secretKeys.encode(pOut);

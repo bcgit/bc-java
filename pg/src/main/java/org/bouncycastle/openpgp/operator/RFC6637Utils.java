@@ -115,8 +115,15 @@ public class RFC6637Utils
         pOut.write(ecKey.getHashAlgorithm());
         pOut.write(ecKey.getSymmetricKeyAlgorithm());
         pOut.write(ANONYMOUS_SENDER);
-        pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
-
+        byte[] fp = fingerPrintCalculator.calculateFingerprint(pubKeyData);
+        if (pubKeyData.getVersion() == PublicKeyPacket.LIBREPGP_5)
+        {
+            pOut.write(fp, 0, 20);
+        }
+        else
+        {
+            pOut.write(fp);
+        }
         return pOut.toByteArray();
     }
 
