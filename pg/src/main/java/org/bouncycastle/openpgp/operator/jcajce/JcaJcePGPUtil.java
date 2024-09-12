@@ -70,7 +70,7 @@ class JcaJcePGPUtil
     static HybridValueParameterSpec getHybridValueParameterSpecWithPrepend(byte[] ephmeralPublicKey, PublicKeyPacket pkp, String algorithmName)
         throws IOException
     {
-        return new HybridValueParameterSpec(Arrays.concatenate(ephmeralPublicKey, pkp.getEncoded()), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP " + algorithmName)));
+        return new HybridValueParameterSpec(Arrays.concatenate(ephmeralPublicKey, pkp.getKey().getEncoded()), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP " + algorithmName)));
     }
 
     static Key getSecret(OperatorHelper helper, PublicKey cryptoPublicKey, String keyEncryptionOID, String agreementName, AlgorithmParameterSpec ukmSpec, Key privKey)
