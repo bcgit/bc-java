@@ -1,6 +1,5 @@
 package org.bouncycastle.bcpg;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -19,6 +18,7 @@ public class SymmetricKeyEncSessionPacket
 
     /**
      * Version 5 SKESK packet.
+     * LibrePGP only.
      * Used only with {@link AEADEncDataPacket AED} packets.
      */
     public static final int VERSION_5 = 5;
@@ -40,11 +40,12 @@ public class SymmetricKeyEncSessionPacket
     private byte[] authTag;          // V5, V6
 
     public SymmetricKeyEncSessionPacket(
-            BCPGInputStream in)
-            throws IOException
+        BCPGInputStream in)
+        throws IOException
     {
         this(in, false);
     }
+
     public SymmetricKeyEncSessionPacket(
         BCPGInputStream in,
         boolean newPacketFormat)
@@ -63,30 +64,28 @@ public class SymmetricKeyEncSessionPacket
         }
         else if (version == VERSION_5 || version == VERSION_6)
         {
-            // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.2.1
-            // SymAlg + AEADAlg + S2KCount + S2K + IV
-            int next5Fields5Count = in.read();
+            int ivLen = 0;
+            if (version == VERSION_6)
+            {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.2.1
+                // SymAlg + AEADAlg + S2KCount + S2K + IV
+                ivLen = in.read(); // next5Fields5Count
+            }
             encAlgorithm = in.read();
             aeadAlgorithm = in.read();
+            if (version == VERSION_6)
+            {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.5.1
+                int s2kOctetCount = in.read();
+                ivLen = ivLen - 3 - s2kOctetCount;
+            }
+            else
+            {
+                ivLen = AEADUtils.getIVLength(aeadAlgorithm);
+            }
 
-            // https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.2-3.5.1
-            int s2kOctetCount = in.read();
-
-            //TODO: use this line to replace the following code?
             s2k = new S2K(in);
-//            s2kBytes = new byte[s2kOctetCount];
-//            in.readFully(s2kBytes);
-//            try
-//            {
-//                s2k = new S2K(new ByteArrayInputStream(s2kBytes));
-//            }
-//            catch (UnsupportedPacketVersionException e)
-//            {
-//
-//                // We gracefully catch the error.
-//            }
 
-            int ivLen = next5Fields5Count - 3 - s2kOctetCount;
             iv = new byte[ivLen]; // also called nonce
             if (in.read(iv) != iv.length)
             {
@@ -108,7 +107,6 @@ public class SymmetricKeyEncSessionPacket
         {
             throw new UnsupportedPacketVersionException("Unsupported PGP symmetric-key encrypted session key packet version encountered: " + version);
         }
-
     }
 
     /**
