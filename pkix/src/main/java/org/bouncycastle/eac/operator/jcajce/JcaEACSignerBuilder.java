@@ -142,6 +142,12 @@ public class JcaEACSignerBuilder
 
         byte[] ret;
         int len = max(rLen, sLen);
+        // TODO: ideally this would be based on the field length
+        // if both sides are short, len might be short
+        if ((len & 0x01) != 0)
+        {
+            len++;
+        }
 
         ret = new byte[len * 2];
         Arrays.fill(ret, (byte)0);
