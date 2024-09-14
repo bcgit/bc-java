@@ -27,20 +27,22 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
-public class MLDSATest extends TestCase
+public class MLDSATest
+    extends TestCase
 {
-    public void testKeyGen() throws IOException
+    public void testKeyGen()
+        throws IOException
     {
         String[] files = new String[]{
-                "keyGen_ML-DSA-44.txt",
-                "keyGen_ML-DSA-65.txt",
-                "keyGen_ML-DSA-87.txt",
+            "keyGen_ML-DSA-44.txt",
+            "keyGen_ML-DSA-65.txt",
+            "keyGen_ML-DSA-87.txt",
         };
 
         MLDSAParameters[] params = new MLDSAParameters[]{
-                MLDSAParameters.ml_dsa_44,
-                MLDSAParameters.ml_dsa_65,
-                MLDSAParameters.ml_dsa_87,
+            MLDSAParameters.ml_dsa_44,
+            MLDSAParameters.ml_dsa_65,
+            MLDSAParameters.ml_dsa_87,
         };
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
@@ -64,9 +66,9 @@ public class MLDSATest extends TestCase
                 {
                     if (buf.size() > 0)
                     {
-                        byte[] seed = Hex.decode((String) buf.get("seed"));
-                        byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
+                        byte[] seed = Hex.decode((String)buf.get("seed"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
 
                         FixedSecureRandom random = new FixedSecureRandom(seed);
                         MLDSAParameters parameters = params[fileIndex];
@@ -79,9 +81,9 @@ public class MLDSATest extends TestCase
                         //
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
-                        MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters) PublicKeyFactory.createKey(
+                        MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters)PublicKeyFactory.createKey(
                             SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
-                        MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters) PrivateKeyFactory.createKey(
+                        MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(
                             PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
 
                         assertTrue(name + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
@@ -101,18 +103,19 @@ public class MLDSATest extends TestCase
         }
     }
 
-    public void testSigGen() throws IOException
+    public void testSigGen()
+        throws IOException
     {
         String[] files = new String[]{
-                "sigGen_ML-DSA-44.txt",
-                "sigGen_ML-DSA-65.txt",
-                "sigGen_ML-DSA-87.txt",
+            "sigGen_ML-DSA-44.txt",
+            "sigGen_ML-DSA-65.txt",
+            "sigGen_ML-DSA-87.txt",
         };
 
         MLDSAParameters[] params = new MLDSAParameters[]{
-                MLDSAParameters.ml_dsa_44,
-                MLDSAParameters.ml_dsa_65,
-                MLDSAParameters.ml_dsa_87,
+            MLDSAParameters.ml_dsa_44,
+            MLDSAParameters.ml_dsa_65,
+            MLDSAParameters.ml_dsa_87,
         };
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
@@ -137,13 +140,13 @@ public class MLDSATest extends TestCase
                     if (buf.size() > 0)
                     {
                         boolean deterministic = !buf.containsKey("rnd");
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
+                        byte[] message = Hex.decode((String)buf.get("message"));
+                        byte[] signature = Hex.decode((String)buf.get("signature"));
                         byte[] rnd = new byte[32];
                         if (!deterministic)
                         {
-                            rnd = Hex.decode((String) buf.get("rnd"));
+                            rnd = Hex.decode((String)buf.get("rnd"));
                         }
 
                         MLDSAParameters parameters = params[fileIndex];
@@ -173,18 +176,19 @@ public class MLDSATest extends TestCase
         }
     }
 
-    public void testSigVer() throws IOException
+    public void testSigVer()
+        throws IOException
     {
         String[] files = new String[]{
-                "sigVer_ML-DSA-44.txt",
-                "sigVer_ML-DSA-65.txt",
-                "sigVer_ML-DSA-87.txt",
+            "sigVer_ML-DSA-44.txt",
+            "sigVer_ML-DSA-65.txt",
+            "sigVer_ML-DSA-87.txt",
         };
 
         MLDSAParameters[] params = new MLDSAParameters[]{
-                MLDSAParameters.ml_dsa_44,
-                MLDSAParameters.ml_dsa_65,
-                MLDSAParameters.ml_dsa_87,
+            MLDSAParameters.ml_dsa_44,
+            MLDSAParameters.ml_dsa_65,
+            MLDSAParameters.ml_dsa_87,
         };
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
@@ -207,18 +211,18 @@ public class MLDSATest extends TestCase
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = Boolean.parseBoolean((String) buf.get("testPassed"));
+                        boolean testPassed = Boolean.parseBoolean((String)buf.get("testPassed"));
                         String reason = buf.get("reason");
-                        byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] message = Hex.decode((String)buf.get("message"));
+                        byte[] signature = Hex.decode((String)buf.get("signature"));
 
                         MLDSAParameters parameters = params[fileIndex];
 
                         MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
 
 
-                        MLDSASigner verifier = new MLDSASigner();
+                        InternalMLDSASigner verifier = new InternalMLDSASigner();
                         verifier.init(false, pubParams);
 
                         boolean ver = verifier.internalVerifySignature(message, signature);
@@ -284,7 +288,7 @@ public class MLDSATest extends TestCase
 
                     // sign
                     MLDSASigner signer = new MLDSASigner();
-                    MLDSAPrivateKeyParameters skparam = (MLDSAPrivateKeyParameters) keyPair.getPrivate();
+                    MLDSAPrivateKeyParameters skparam = (MLDSAPrivateKeyParameters)keyPair.getPrivate();
                     ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
                     signer.init(true, skwrand);
 
@@ -302,7 +306,7 @@ public class MLDSATest extends TestCase
 
                     // verify
                     MLDSASigner verifier = new MLDSASigner();
-                    MLDSAPublicKeyParameters pkparam = (MLDSAPublicKeyParameters) keyPair.getPublic();
+                    MLDSAPublicKeyParameters pkparam = (MLDSAPublicKeyParameters)keyPair.getPublic();
                     verifier.init(false, pkparam);
 
                     verifier.update(msg, 0, msg.length);
@@ -324,7 +328,8 @@ public class MLDSATest extends TestCase
         }
     }
 
-    public void testSigGenCombinedVectorSet() throws IOException
+    public void testSigGenCombinedVectorSet()
+        throws IOException
     {
 
         Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
@@ -355,13 +360,13 @@ public class MLDSATest extends TestCase
                 if (buf.size() > 0)
                 {
                     boolean deterministic = Boolean.valueOf(buf.get("deterministic"));
-                    byte[] sk = Hex.decode((String) buf.get("sk"));
-                    byte[] message = Hex.decode((String) buf.get("message"));
-                    byte[] signature = Hex.decode((String) buf.get("signature"));
+                    byte[] sk = Hex.decode((String)buf.get("sk"));
+                    byte[] message = Hex.decode((String)buf.get("message"));
+                    byte[] signature = Hex.decode((String)buf.get("signature"));
                     byte[] rnd = null;
                     if (!deterministic)
                     {
-                        rnd = Hex.decode((String) buf.get("rnd"));
+                        rnd = Hex.decode((String)buf.get("rnd"));
                     }
                     else
                     {
@@ -395,7 +400,8 @@ public class MLDSATest extends TestCase
         }
     }
 
-    public void testSigVerCombinedVectorSet() throws IOException
+    public void testSigVerCombinedVectorSet()
+        throws IOException
     {
         Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
         {
@@ -424,19 +430,18 @@ public class MLDSATest extends TestCase
             {
                 if (!buf.isEmpty())
                 {
-                    boolean expectedResult = Boolean.parseBoolean((String) buf.get("testPassed"));
+                    boolean expectedResult = Boolean.parseBoolean((String)buf.get("testPassed"));
 
-                    byte[] pk = Hex.decode((String) buf.get("pk"));
-                    byte[] message = Hex.decode((String) buf.get("message"));
-                    byte[] signature = Hex.decode((String) buf.get("signature"));
+                    byte[] pk = Hex.decode((String)buf.get("pk"));
+                    byte[] message = Hex.decode((String)buf.get("message"));
+                    byte[] signature = Hex.decode((String)buf.get("signature"));
 
                     MLDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
 
                     MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
 
-                    MLDSASigner verifier = new MLDSASigner();
+                    InternalMLDSASigner verifier = new InternalMLDSASigner();
                     verifier.init(false, pubParams);
-
 
                     boolean verifyResult = verifier.internalVerifySignature(message, signature);
                     assertEquals(expectedResult, verifyResult);
@@ -456,11 +461,16 @@ public class MLDSATest extends TestCase
     }
 
     private class InternalMLDSASigner
-         extends MLDSASigner
+        extends MLDSASigner
     {
         public byte[] internalGenerateSignature(byte[] message, byte[] rnd)
-         {
-             return super.internalGenerateSignature(message, rnd);
-         }
+        {
+            return super.internalGenerateSignature(message, rnd);
+        }
+
+        public boolean internalVerifySignature(byte[] message, byte[] signature)
+        {
+            return super.internalVerifySignature(message, signature);
+        }
     }
 }

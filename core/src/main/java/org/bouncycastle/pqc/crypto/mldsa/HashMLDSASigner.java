@@ -63,6 +63,16 @@ public class HashMLDSASigner
         {
             pubKey = (MLDSAPublicKeyParameters)param;
 
+            engine = pubKey.getParameters().getEngine(this.random);
+
+            byte[] ctx = pubKey.getContext();
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
+            engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
+
             initDigest(pubKey);
         }
 
@@ -114,12 +124,23 @@ public class HashMLDSASigner
 
         byte[] ds_message = Arrays.concatenate(digestOidEncoding, hash);
 
-        return engine.signInternal(ds_message, ds_message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        msgDigest.update(ds_message, 0, ds_message.length);
+
+        return engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
 
     @Override
     public boolean verifySignature(byte[] signature)
     {
+        SHAKEDigest msgDigest = engine.getShake256Digest();
+        byte[] hash = new byte[digest.getDigestSize()];
+
+        digest.doFinal(hash, 0);
+
+        byte[] ds_message = Arrays.concatenate(digestOidEncoding, hash);
+
+        msgDigest.update(ds_message, 0, ds_message.length);
+
         MLDSAEngine engine = pubKey.getParameters().getEngine(random);
 
         byte[] ctx = pubKey.getContext();
@@ -128,17 +149,7 @@ public class HashMLDSASigner
             throw new RuntimeException("Context too long");
         }
 
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
-
-        byte[] ds_message = new byte[1 + 1 + ctx.length + + digestOidEncoding.length + hash.length];
-        ds_message[0] = 1;
-        ds_message[1] = (byte)ctx.length;
-        System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(digestOidEncoding, 0, ds_message, 2 + ctx.length, digestOidEncoding.length);
-        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + digestOidEncoding.length, hash.length);
-
-        return engine.verifyInternal(signature, signature.length, ds_message, ds_message.length, pubKey.rho, pubKey.t1);
+        return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
     }
 
     /**

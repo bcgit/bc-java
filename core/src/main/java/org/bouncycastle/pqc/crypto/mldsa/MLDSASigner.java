@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.mldsa;
 
-import java.io.ByteArrayOutputStream;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
@@ -20,9 +19,6 @@ public class MLDSASigner
     private SHAKEDigest msgDigest;
 
     private SecureRandom random;
-
-    // TODO: temporary
-    private ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
     public MLDSASigner()
     {
@@ -62,8 +58,19 @@ public class MLDSASigner
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
-            engine = null;
-            msgDigest =  null;
+
+            engine = pubKey.getParameters().getEngine(random);
+
+            byte[] ctx = pubKey.getContext();
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
+            engine.initVerify(pubKey.rho, pubKey.t1, false, ctx);
+
+            msgDigest = engine.getShake256Digest();
+
             isPreHash = pubKey.getParameters().isPreHash();
         }
 
@@ -75,26 +82,12 @@ public class MLDSASigner
 
     public void update(byte b)
     {
-        if (msgDigest != null)
-        {
-            msgDigest.update(b);
-        }
-        else
-        {
-            bOut.write(b);
-        }
+        msgDigest.update(b);
     }
 
     public void update(byte[] in, int off, int len)
     {
-        if (msgDigest != null)
-        {
-            msgDigest.update(in, off, len);
-        }
-        else
-        {
-            bOut.write(in, off, len);
-        }
+        msgDigest.update(in, off, len);
     }
 
     public byte[] generateSignature()
@@ -106,32 +99,25 @@ public class MLDSASigner
             random.nextBytes(rnd);
         }
 
-        return engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] sig = engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+
+        reset();
+
+        return sig;
     }
 
     public boolean verifySignature(byte[] signature)
     {
-        boolean isTrue = verifySignature(bOut.toByteArray(), signature);
+        boolean isTrue = engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
 
-        bOut.reset();
-
+        reset();
+                                                 
         return isTrue;
     }
 
     public void reset()
     {
-        bOut.reset();
-    }
-
-    byte[] generateSignature(byte[] message)
-    {
-        byte[] rnd = new byte[MLDSAEngine.RndBytes];
-        if (random != null)
-        {
-            random.nextBytes(rnd);
-        }
-
-        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        msgDigest = engine.getShake256Digest();
     }
     
     protected byte[] internalGenerateSignature(byte[] message, byte[] random)
@@ -143,29 +129,16 @@ public class MLDSASigner
         return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
     }
 
-    boolean verifySignature(byte[] message, byte[] signature)
+    protected boolean internalVerifySignature(byte[] message, byte[] signature)
     {
         MLDSAEngine engine = pubKey.getParameters().getEngine(random);
 
-        byte[] ctx = pubKey.getContext();
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
+        engine.initVerify(pubKey.rho, pubKey.t1, false, null);
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
-        ds_message[0] = 0;
-        ds_message[1] = (byte)ctx.length;
-        System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(message, 0, ds_message, 2 + ctx.length, message.length);
+        SHAKEDigest msgDigest = engine.getShake256Digest();
 
-        return engine.verifyInternal(signature, signature.length, ds_message, ds_message.length, pubKey.rho, pubKey.t1);
-    }
+        msgDigest.update(message, 0, message.length);
 
-    public boolean internalVerifySignature(byte[] message, byte[] signature)
-    {
-        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
-
-        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
+        return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
     }
 }
