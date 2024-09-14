@@ -141,14 +141,6 @@ public class HashMLDSASigner
 
         msgDigest.update(ds_message, 0, ds_message.length);
 
-        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
-
-        byte[] ctx = pubKey.getContext();
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
-
         return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
     }
 
@@ -161,18 +153,18 @@ public class HashMLDSASigner
         digest.reset();
     }
 
-
-    public byte[] internalGenerateSignature(byte[] message, byte[] random)
-    {
-        MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
-
-        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
-    }
-
-    public boolean internalVerifySignature(byte[] message, byte[] signature)
-    {
-        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
-
-        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
-    }
+//    TODO: these are probably no longer correct and also need to be marked as protected
+//    public byte[] internalGenerateSignature(byte[] message, byte[] random)
+//    {
+//        MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
+//
+//        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
+//    }
+//
+//    public boolean internalVerifySignature(byte[] message, byte[] signature)
+//    {
+//        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
+//
+//        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
+//    }
 }
