@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Arrays;
@@ -19,6 +20,8 @@ import org.bouncycastle.util.Arrays;
 public class HashMLDSASigner
     implements Signer
 {
+    private static final byte[] EMPTY_CONTEXT = new byte[0];
+    
     private MLDSAPrivateKeyParameters privKey;
     private MLDSAPublicKeyParameters pubKey;
 
@@ -34,6 +37,23 @@ public class HashMLDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        byte[] ctx;
+
+        if (param instanceof ParametersWithContext)
+        {
+            ctx = ((ParametersWithContext)param).getContext();
+            param = ((ParametersWithContext)param).getParameters();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+        }
+        else
+        {
+            ctx = EMPTY_CONTEXT;
+        }
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -49,12 +69,6 @@ public class HashMLDSASigner
 
             engine = privKey.getParameters().getEngine(this.random);
 
-            byte[] ctx = privKey.getContext();
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
-
             engine.initSign(privKey.tr, true, ctx);
 
             initDigest(privKey);
@@ -64,13 +78,7 @@ public class HashMLDSASigner
             pubKey = (MLDSAPublicKeyParameters)param;
 
             engine = pubKey.getParameters().getEngine(this.random);
-
-            byte[] ctx = pubKey.getContext();
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
-
+            
             engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
 
             initDigest(pubKey);

@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.slhdsa;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Arrays;
@@ -10,16 +11,18 @@ import org.bouncycastle.util.Arrays;
 /**
  * SLH-DA signer.
  * <p>
- *     This version is based on the 3rd submission with deference to the updated reference
- *     implementation on github as at November 9th 2021. This version includes the changes
- *     for the countermeasure for the long-message second preimage attack - see
- *     "https://github.com/sphincs/sphincsplus/commit/61cd2695c6f984b4f4d6ed675378ed9a486cbede"
- *     for further details.
+ * This version is based on the 3rd submission with deference to the updated reference
+ * implementation on github as at November 9th 2021. This version includes the changes
+ * for the countermeasure for the long-message second preimage attack - see
+ * "https://github.com/sphincs/sphincsplus/commit/61cd2695c6f984b4f4d6ed675378ed9a486cbede"
+ * for further details.
  * </p>
  */
 public class SLHDSASigner
     implements MessageSigner
 {
+    private static final byte[] EMPTY_CONTEXT = new byte[0];
+
     private SLHDSAPrivateKeyParameters privKey;
     private SLHDSAPublicKeyParameters pubKey;
     private byte[] ctx;
@@ -36,6 +39,21 @@ public class SLHDSASigner
     {
         boolean isPreHash;
 
+        if (param instanceof ParametersWithContext)
+        {
+            ctx = ((ParametersWithContext)param).getContext();
+            param = ((ParametersWithContext)param).getParameters();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+        }
+        else
+        {
+            ctx = EMPTY_CONTEXT;
+        }
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -48,25 +66,11 @@ public class SLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
-            ctx = privKey.getContext();
-
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
-
             isPreHash = privKey.parameters.isPreHash();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
-
-            ctx = pubKey.getContext();
-
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
 
             isPreHash = pubKey.parameters.isPreHash();
         }
@@ -118,7 +122,7 @@ public class SLHDSASigner
 
         ADRS adrs = new ADRS();
 
-        if (((1 + engine.K * (1 + engine.A) + engine.H + engine.D *engine.WOTS_LEN)* engine.N) != signature.length)
+        if (((1 + engine.K * (1 + engine.A) + engine.H + engine.D * engine.WOTS_LEN) * engine.N) != signature.length)
         {
             return false;
         }
