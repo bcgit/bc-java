@@ -25,7 +25,7 @@ public class HashSLHDSASigner
 {
     private SLHDSAPrivateKeyParameters privKey;
     private SLHDSAPublicKeyParameters pubKey;
-
+    private byte[] ctx;
     private SecureRandom random;
     private Digest digest;
     private byte[] digestOidEncoding;
@@ -48,11 +48,25 @@ public class HashSLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
+            ctx = privKey.getContext();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
             initDigest(privKey);
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
+
+            ctx = pubKey.getContext();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
 
             initDigest(pubKey);
         }
@@ -93,12 +107,6 @@ public class HashSLHDSASigner
         SLHDSAEngine engine = privKey.getParameters().getEngine();
 
         engine.init(privKey.pk.seed);
-        byte[] ctx = privKey.getContext();
-
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
 
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
@@ -118,13 +126,6 @@ public class HashSLHDSASigner
     @Override
     public boolean verifySignature(byte[] signature)
     {
-        byte[] ctx = pubKey.getContext();
-
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
-
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
