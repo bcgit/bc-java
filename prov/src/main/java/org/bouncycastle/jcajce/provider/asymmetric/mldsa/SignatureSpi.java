@@ -127,7 +127,9 @@ public class SignatureSpi
 
             bOut.reset();
 
-            return signer.generateSignature(message);
+            signer.update(message, 0, message.length);
+
+            return signer.generateSignature();
         }
         catch (Exception e)
         {
@@ -142,7 +144,9 @@ public class SignatureSpi
 
         bOut.reset();
 
-        return signer.verifySignature(message, sigBytes);
+        signer.update(message, 0, message.length);
+
+        return signer.verifySignature(sigBytes);
     }
 
     protected void engineSetParameter(AlgorithmParameterSpec params)
