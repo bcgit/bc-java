@@ -22,7 +22,7 @@ public class SLHDSASigner
 {
     private SLHDSAPrivateKeyParameters privKey;
     private SLHDSAPublicKeyParameters pubKey;
-
+    private byte[] ctx;
     private SecureRandom random;
 
     /**
@@ -48,11 +48,26 @@ public class SLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
+            ctx = privKey.getContext();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
             isPreHash = privKey.parameters.isPreHash();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
+
+            ctx = pubKey.getContext();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
             isPreHash = pubKey.parameters.isPreHash();
         }
 
@@ -67,12 +82,6 @@ public class SLHDSASigner
         SLHDSAEngine engine = privKey.getParameters().getEngine();
 
         engine.init(privKey.pk.seed);
-        byte[] ctx = privKey.getContext();
-
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
 
         byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
         ds_message[0] = 0;
@@ -88,12 +97,6 @@ public class SLHDSASigner
     // Equivalent to slh_verify_internal from specs
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        byte[] ctx = pubKey.getContext();
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
-
         byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
         ds_message[0] = 0;
         ds_message[1] = (byte)ctx.length;
@@ -102,6 +105,7 @@ public class SLHDSASigner
 
         return internalVerifySignature(ds_message, signature);
     }
+
     public boolean internalVerifySignature(byte[] message, byte[] signature)
     {
         //# Input: Message M, signature SIG, public key PK
