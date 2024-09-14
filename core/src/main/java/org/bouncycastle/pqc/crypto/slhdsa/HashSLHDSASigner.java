@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 import org.bouncycastle.util.Arrays;
@@ -23,6 +24,8 @@ import org.bouncycastle.util.Arrays;
 public class HashSLHDSASigner
     implements Signer
 {
+    private static final byte[] EMPTY_CONTEXT = new byte[0];
+
     private SLHDSAPrivateKeyParameters privKey;
     private SLHDSAPublicKeyParameters pubKey;
     private byte[] ctx;
@@ -36,6 +39,21 @@ public class HashSLHDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        if (param instanceof ParametersWithContext)
+        {
+            ctx = ((ParametersWithContext)param).getContext();
+            param = ((ParametersWithContext)param).getParameters();
+
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+        }
+        else
+        {
+            ctx = EMPTY_CONTEXT;
+        }
+
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -48,26 +66,12 @@ public class HashSLHDSASigner
                 privKey = (SLHDSAPrivateKeyParameters)param;
             }
 
-            ctx = privKey.getContext();
-
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
-
             initDigest(privKey);
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
-
-            ctx = pubKey.getContext();
-
-            if (ctx.length > 255)
-            {
-                throw new IllegalArgumentException("context too long");
-            }
-
+            
             initDigest(pubKey);
         }
 
