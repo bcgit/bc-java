@@ -309,9 +309,30 @@ class MLDSAEngine
     {
         return new SHAKEDigest(shake256Digest);
     }
+
     void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
     {
         this.shake256Digest.update(tr, 0, TrBytes);
+        if (ctx != null)
+        {
+            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
+            this.shake256Digest.update((byte)ctx.length);
+            this.shake256Digest.update(ctx, 0, ctx.length);
+        }
+    }
+
+    void initVerify(byte[] rho, byte[] encT1, boolean isPreHash, byte[] ctx)
+    {
+        byte[] mu = new byte[TrBytes];
+
+        shake256Digest.update(rho, 0, rho.length);
+        shake256Digest.update(encT1, 0, encT1.length);
+        shake256Digest.doFinal(mu, 0, TrBytes);
+        // System.out.println("mu before = ");
+        // Helper.printByteArray(mu);
+
+        shake256Digest.update(mu, 0, TrBytes);
+
         if (ctx != null)
         {
             this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
@@ -428,6 +449,107 @@ class MLDSAEngine
         return null;
     }
 
+    public boolean verifyInternal(byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    {
+        if (siglen != CryptoBytes)
+        {
+            return false;
+        }
+
+        // System.out.println("publickey = ");
+        // Helper.printByteArray(publicKey);
+        byte[] buf,
+            mu = new byte[CrhBytes],
+            c,
+            c2 = new byte[DilithiumCTilde];
+        Poly cp = new Poly(this);
+        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+        PolyVecL z = new PolyVecL(this);
+        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this), h = new PolyVecK(this);
+
+        t1 = Packing.unpackPublicKey(t1, encT1, this);
+
+        // System.out.println(t1.toString("t1"));
+
+        // System.out.println("rho = ");
+        // Helper.printByteArray(rho);
+
+        if (!Packing.unpackSignature(z, h, sig, this))
+        {
+            return false;
+        }
+        c = Arrays.copyOfRange(sig, 0, DilithiumCTilde);
+
+        // System.out.println(z.toString("z"));
+        // System.out.println(h.toString("h"));
+
+        if (z.checkNorm(getDilithiumGamma1() - getDilithiumBeta()))
+        {
+            return false;
+        }
+
+        shake256Digest.doFinal(mu, 0);
+
+        // System.out.println("mu after = ");
+        // Helper.printByteArray(mu);
+
+        // Matrix-vector multiplication; compute Az - c2^dt1
+        cp.challenge(Arrays.copyOfRange(c, 0, DilithiumCTilde));  // use only first DilithiumCTilde of c.
+        // System.out.println("cp = ");
+        // System.out.println(cp.toString());
+
+        aMatrix.expandMatrix(rho);
+        // System.out.println(aMatrix.toString("aMatrix = "));
+
+
+        z.polyVecNtt();
+        aMatrix.pointwiseMontgomery(w1, z);
+
+        cp.polyNtt();
+        // System.out.println("cp = ");
+        // System.out.println(cp.toString());
+
+        t1.shiftLeft();
+        t1.polyVecNtt();
+        t1.pointwisePolyMontgomery(cp, t1);
+
+        // System.out.println(t1.toString("t1"));
+
+        w1.subtract(t1);
+        w1.reduce();
+        w1.invNttToMont();
+
+        // System.out.println(w1.toString("w1 before caddq"));
+
+        // Reconstruct w1
+        w1.conditionalAddQ();
+        // System.out.println(w1.toString("w1 before hint"));
+        w1.useHint(w1, h);
+        // System.out.println(w1.toString("w1"));
+
+        buf = w1.packW1();
+
+        // System.out.println("buf = ");
+        // Helper.printByteArray(buf);
+
+        // System.out.println("mu = ");
+        // Helper.printByteArray(mu);
+
+        SHAKEDigest shakeDigest256 = new SHAKEDigest(256);
+        shakeDigest256.update(mu, 0, CrhBytes);
+        shakeDigest256.update(buf, 0, DilithiumK * DilithiumPolyW1PackedBytes);
+        shakeDigest256.doFinal(c2, 0, DilithiumCTilde);
+
+        // System.out.println("c = ");
+        // Helper.printByteArray(c);
+
+        // System.out.println("c2 = ");
+        // Helper.printByteArray(c2);
+
+
+        return Arrays.constantTimeAreEqual(c, c2);
+    }
+
     public boolean verifyInternal(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
     {
         if (siglen != CryptoBytes)
@@ -468,13 +590,13 @@ class MLDSAEngine
         }
 
         // Compute crh(crh(rho, t1), msg)
-        shake256Digest.update(rho, 0, rho.length);
-        shake256Digest.update(encT1, 0, encT1.length);
-        shake256Digest.doFinal(mu, 0, TrBytes);
+//        shake256Digest.update(rho, 0, rho.length);
+//        shake256Digest.update(encT1, 0, encT1.length);
+//        shake256Digest.doFinal(mu, 0, TrBytes);
         // System.out.println("mu before = ");
         // Helper.printByteArray(mu);
 
-        shake256Digest.update(mu, 0, TrBytes);
+        //shake256Digest.update(mu, 0, TrBytes);
         shake256Digest.update(msg, 0, msglen);
         shake256Digest.doFinal(mu, 0);
 
