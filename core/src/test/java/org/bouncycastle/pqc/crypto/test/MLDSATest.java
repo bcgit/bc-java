@@ -8,7 +8,9 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
@@ -24,8 +26,6 @@ import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
-
-import junit.framework.TestCase;
 
 public class MLDSATest extends TestCase
 {
@@ -151,9 +151,10 @@ public class MLDSATest extends TestCase
                         MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
                         // sign
-                        MLDSASigner signer = new MLDSASigner();
+                        InternalMLDSASigner signer = new InternalMLDSASigner();
 
                         signer.init(true, privParams);
+
                         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
 
                         assertTrue(Arrays.areEqual(sigGenerated, signature));
@@ -287,14 +288,26 @@ public class MLDSATest extends TestCase
                     ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
                     signer.init(true, skwrand);
 
-                    byte[] sigGenerated = signer.generateSignature(msg);
+                    signer.update(msg, 0, msg.length);
+
+                    byte[] sigGenerated;
+                    try
+                    {
+                        sigGenerated = signer.generateSignature();
+                    }
+                    catch (CryptoException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
 
                     // verify
                     MLDSASigner verifier = new MLDSASigner();
                     MLDSAPublicKeyParameters pkparam = (MLDSAPublicKeyParameters) keyPair.getPublic();
                     verifier.init(false, pkparam);
 
-                    boolean ok = verifier.verifySignature(msg, sigGenerated);
+                    verifier.update(msg, 0, msg.length);
+
+                    boolean ok = verifier.verifySignature(sigGenerated);
 
                     if (!ok)
                     {
@@ -360,7 +373,7 @@ public class MLDSATest extends TestCase
                     MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
                     // sign
-                    MLDSASigner signer = new MLDSASigner();
+                    InternalMLDSASigner signer = new InternalMLDSASigner();
 
                     signer.init(true, privParams);
                     byte[] sigGenerated;
@@ -440,5 +453,14 @@ public class MLDSATest extends TestCase
             }
         }
 
+    }
+
+    private class InternalMLDSASigner
+         extends MLDSASigner
+    {
+        public byte[] internalGenerateSignature(byte[] message, byte[] rnd)
+         {
+             return super.internalGenerateSignature(message, rnd);
+         }
     }
 }

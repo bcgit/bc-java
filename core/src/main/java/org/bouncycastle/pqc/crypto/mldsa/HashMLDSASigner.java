@@ -11,8 +11,10 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
+import org.bouncycastle.util.Arrays;
 
 public class HashMLDSASigner
     implements Signer
@@ -20,6 +22,7 @@ public class HashMLDSASigner
     private MLDSAPrivateKeyParameters privKey;
     private MLDSAPublicKeyParameters pubKey;
 
+    private MLDSAEngine engine;
     private SecureRandom random;
     private Digest digest;
     private byte[] digestOidEncoding;
@@ -43,6 +46,16 @@ public class HashMLDSASigner
                 privKey = (MLDSAPrivateKeyParameters)param;
                 random = null;
             }
+
+            engine = privKey.getParameters().getEngine(this.random);
+
+            byte[] ctx = privKey.getContext();
+            if (ctx.length > 255)
+            {
+                throw new IllegalArgumentException("context too long");
+            }
+
+            engine.initSign(privKey.tr, true, ctx);
 
             initDigest(privKey);
         }
@@ -88,13 +101,7 @@ public class HashMLDSASigner
     @Override
     public byte[] generateSignature() throws CryptoException, DataLengthException
     {
-        MLDSAEngine engine = privKey.getParameters().getEngine(random);
-
-        byte[] ctx = privKey.getContext();
-        if (ctx.length > 255)
-        {
-            throw new RuntimeException("Context too long");
-        }
+        SHAKEDigest msgDigest = engine.getShake256Digest();
 
         byte[] rnd = new byte[MLDSAEngine.RndBytes];
         if (random != null)
@@ -105,14 +112,9 @@ public class HashMLDSASigner
         byte[] hash = new byte[digest.getDigestSize()];
         digest.doFinal(hash, 0);
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + + digestOidEncoding.length + hash.length];
-        ds_message[0] = 1;
-        ds_message[1] = (byte)ctx.length;
-        System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(digestOidEncoding, 0, ds_message, 2 + ctx.length, digestOidEncoding.length);
-        System.arraycopy(hash, 0, ds_message, 2 + ctx.length + digestOidEncoding.length, hash.length);
+        byte[] ds_message = Arrays.concatenate(digestOidEncoding, hash);
 
-        return engine.signInternal(ds_message, ds_message.length, privKey.rho, privKey.k, privKey.tr, privKey.t0, privKey.s1, privKey.s2, rnd);
+        return engine.signInternal(ds_message, ds_message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
 
     @Override
@@ -153,7 +155,7 @@ public class HashMLDSASigner
     {
         MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
 
-        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.tr, privKey.t0, privKey.s1, privKey.s2, random);
+        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
     }
 
     public boolean internalVerifySignature(byte[] message, byte[] signature)

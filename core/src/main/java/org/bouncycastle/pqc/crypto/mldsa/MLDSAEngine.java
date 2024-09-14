@@ -49,7 +49,8 @@ class MLDSAEngine
 
     private final int PolyUniformGamma1NBlocks;
 
-    private final Symmetric symmetric;;
+    private final Symmetric symmetric;
+    ;
 
     protected Symmetric GetSymmetric()
     {
@@ -120,7 +121,7 @@ class MLDSAEngine
     {
         return DilithiumOmega;
     }
-    
+
     int getDilithiumCTilde()
     {
         return DilithiumCTilde;
@@ -144,16 +145,6 @@ class MLDSAEngine
     int getPolyUniformGamma1NBlocks()
     {
         return this.PolyUniformGamma1NBlocks;
-    }
-
-    SHAKEDigest getShake256Digest()
-    {
-        return this.shake256Digest;
-    }
-
-    SHAKEDigest getShake128Digest()
-    {
-        return this.shake128Digest;
     }
 
     MLDSAEngine(int mode, SecureRandom random)
@@ -206,7 +197,7 @@ class MLDSAEngine
         default:
             throw new IllegalArgumentException("The mode " + mode + "is not supported by Crystals Dilithium!");
         }
-        
+
         this.symmetric = new Symmetric.ShakeSymmetric();
 
         this.random = random;
@@ -243,14 +234,13 @@ class MLDSAEngine
         byte[] tr = new byte[TrBytes];
 
         byte[] rho = new byte[SeedBytes],
-                rhoPrime = new byte[CrhBytes],
-                key = new byte[SeedBytes];
+            rhoPrime = new byte[CrhBytes],
+            key = new byte[SeedBytes];
 
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
         PolyVecL s1 = new PolyVecL(this), s1hat;
         PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
-
 
 
         shake256Digest.update(seed, 0, SeedBytes);
@@ -312,14 +302,42 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
+        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
     }
 
-    public byte[] signInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] tr, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    SHAKEDigest getShake256Digest()
     {
+        return new SHAKEDigest(shake256Digest);
+    }
+    void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
+    {
+        this.shake256Digest.update(tr, 0, TrBytes);
+        if (ctx != null)
+        {
+            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
+            this.shake256Digest.update((byte)ctx.length);
+            this.shake256Digest.update(ctx, 0, ctx.length);
+        }
+    }
+
+    public byte[] signInternal(byte[] msg, int msglen, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    {
+        SHAKEDigest shake256 = new SHAKEDigest(shake256Digest);
+
+        shake256.update(msg, 0, msglen);
+
+        return generateSignature(shake256, rho, key, t0Enc, s1Enc, s2Enc, rnd);
+    }
+
+    byte[] generateSignature(SHAKEDigest shake256Digest, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    {
+        byte[] mu = new byte[CrhBytes];
+
+        shake256Digest.doFinal(mu, 0, CrhBytes);
+
         int n;
-        byte[] outSig = new byte[CryptoBytes + msglen];
-        byte[] mu = new byte[CrhBytes], rhoPrime = new byte[CrhBytes];
+        byte[] outSig = new byte[CryptoBytes];
+        byte[] rhoPrime = new byte[CrhBytes];
         short nonce = 0;
         PolyVecL s1 = new PolyVecL(this), y = new PolyVecL(this), z = new PolyVecL(this);
         PolyVecK t0 = new PolyVecK(this), s2 = new PolyVecK(this), w1 = new PolyVecK(this), w0 = new PolyVecK(this), h = new PolyVecK(this);
@@ -327,12 +345,6 @@ class MLDSAEngine
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);
 
         Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
-
-        this.shake256Digest.update(tr, 0, TrBytes);
-        this.shake256Digest.update(msg, 0, msglen);
-        this.shake256Digest.doFinal(mu, 0, CrhBytes);
-
-
 
         byte[] keyMu = Arrays.copyOf(key, SeedBytes + RndBytes + CrhBytes);
         System.arraycopy(rnd, 0, keyMu, SeedBytes, RndBytes);
@@ -418,15 +430,6 @@ class MLDSAEngine
 
     public boolean verifyInternal(byte[] sig, int siglen, byte[] msg, int msglen, byte[] rho, byte[] encT1)
     {
-        byte[] buf,
-                mu = new byte[CrhBytes],
-                c,
-                c2 = new byte[DilithiumCTilde];
-        Poly cp = new Poly(this);
-        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
-        PolyVecL z = new PolyVecL(this);
-        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this), h = new PolyVecK(this);
-
         if (siglen != CryptoBytes)
         {
             return false;
@@ -434,6 +437,14 @@ class MLDSAEngine
 
         // System.out.println("publickey = ");
         // Helper.printByteArray(publicKey);
+        byte[] buf,
+            mu = new byte[CrhBytes],
+            c,
+            c2 = new byte[DilithiumCTilde];
+        Poly cp = new Poly(this);
+        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+        PolyVecL z = new PolyVecL(this);
+        PolyVecK t1 = new PolyVecK(this), w1 = new PolyVecK(this), h = new PolyVecK(this);
 
         t1 = Packing.unpackPublicKey(t1, encT1, this);
 
