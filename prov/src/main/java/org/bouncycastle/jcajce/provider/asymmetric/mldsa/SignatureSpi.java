@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
-import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -18,7 +17,6 @@ import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 public class SignatureSpi
     extends java.security.Signature
 {
-    private ByteArrayOutputStream bOut;
     private MLDSASigner signer;
     private MLDSAParameters parameters;
 
@@ -26,7 +24,6 @@ public class SignatureSpi
     {
         super("MLDSA");
 
-        this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
         this.parameters = null;
     }
@@ -35,7 +32,6 @@ public class SignatureSpi
     {
         super(MLDSAParameterSpec.fromName(parameters.getName()).getName());
 
-        this.bOut = new ByteArrayOutputStream();
         this.signer = signer;
         this.parameters = parameters;
     }
@@ -109,13 +105,13 @@ public class SignatureSpi
     protected void engineUpdate(byte b)
         throws SignatureException
     {
-        bOut.write(b);
+        signer.update(b);
     }
 
     protected void engineUpdate(byte[] b, int off, int len)
         throws SignatureException
     {
-        bOut.write(b, off, len);
+        signer.update(b, off, len);
     }
 
     protected byte[] engineSign()
@@ -123,12 +119,6 @@ public class SignatureSpi
     {
         try
         {
-            byte[] message = bOut.toByteArray();
-
-            bOut.reset();
-
-            signer.update(message, 0, message.length);
-
             return signer.generateSignature();
         }
         catch (Exception e)
@@ -140,12 +130,6 @@ public class SignatureSpi
     protected boolean engineVerify(byte[] sigBytes)
         throws SignatureException
     {
-        byte[] message = bOut.toByteArray();
-
-        bOut.reset();
-
-        signer.update(message, 0, message.length);
-
         return signer.verifySignature(sigBytes);
     }
 
