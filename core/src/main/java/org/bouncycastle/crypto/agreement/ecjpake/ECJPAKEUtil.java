@@ -20,7 +20,7 @@ import java.security.MessageDigest;
 /**
  * Primitives needed for a EC J-PAKE exchange.
  * <p>
- * The recommended way to perform a J-PAKE exchange is by using
+ * The recommended way to perform an EC J-PAKE exchange is by using
  * two {@link ECJPAKEParticipant}s.  Internally, those participants
  * call these primitive operations in {@link ECJPAKEUtil}.
  * <p>
@@ -213,7 +213,6 @@ public class ECJPAKEUtil
          * "Validation of elliptic curve public keys", PKC, 2002
          * https://iacr.org/archive/pkc2003/25670211/25670211.pdf 
          */
-    	
     	// 1. X != infinity
     	if (X.isInfinity())
         {
