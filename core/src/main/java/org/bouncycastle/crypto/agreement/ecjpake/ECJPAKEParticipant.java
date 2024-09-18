@@ -60,8 +60,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
  * (i.e. a new {@link ECJPAKEParticipant} should be constructed for each new J-PAKE exchange).
  * <p>
  */
-
-
 public class ECJPAKEParticipant {
 
     /*
@@ -188,7 +186,7 @@ public class ECJPAKEParticipant {
      *                      A defensive copy of this array is made (and cleared once {@link #calculateKeyingMaterial()} is called).
      *                      Caller should clear the input password as soon as possible.
      * @param curve         elliptic curve
-     *                      See {@link ECJPAKEPrimeOrderGroups} for standard groups
+     *                      See {@link ECJPAKECurves} for standard curves.
      * @throws NullPointerException if any argument is null
      * @throws IllegalArgumentException if password is empty
      */
@@ -216,7 +214,7 @@ public class ECJPAKEParticipant {
      *                      A defensive copy of this array is made (and cleared once {@link #calculateKeyingMaterial()} is called).
      *                      Caller should clear the input password as soon as possible.
      * @param curve         elliptic curve.
-     *                      See {@link ECJPAKECurves} for standard groups
+     *                      See {@link ECJPAKECurves} for standard curves
      * @param digest        digest to use during zero knowledge proofs and key confirmation (SHA-256 or stronger preferred)
      * @param random        source of secure random data for x1 and x2, and for the zero knowledge proofs
      * @throws NullPointerException if any argument is null
@@ -462,7 +460,6 @@ public class ECJPAKEParticipant {
         /*
          * Do not clear gx* yet, since those are needed by round 3.
          */
-
         this.state = STATE_KEY_CALCULATED;
 
         return keyingMaterial;
