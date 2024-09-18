@@ -24,13 +24,17 @@ import org.bouncycastle.tls.TlsUtils;
 public class BcTlsRSASigner
     extends BcTlsSigner
 {
-    private final RSAKeyParameters publicKey;
-
+    /**
+     * @deprecated Use constructor without 'publicKey' parameter.
+     */
     public BcTlsRSASigner(BcTlsCrypto crypto, RSAKeyParameters privateKey, RSAKeyParameters publicKey)
     {
-        super(crypto, privateKey);
+        this(crypto, privateKey);
+    }
 
-        this.publicKey = publicKey;
+    public BcTlsRSASigner(BcTlsCrypto crypto, RSAKeyParameters privateKey)
+    {
+        super(crypto, privateKey);
     }
 
     public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
@@ -63,21 +67,11 @@ public class BcTlsRSASigner
         signer.update(hash, 0, hash.length);
         try
         {
-            byte[] signature = signer.generateSignature();
-
-            signer.init(false, publicKey);
-            signer.update(hash, 0, hash.length);
-
-            if (signer.verifySignature(signature))
-            {
-                return signature;
-            }
+            return signer.generateSignature();
         }
         catch (CryptoException e)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error, e);
         }
-
-        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 }

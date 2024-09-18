@@ -1057,39 +1057,6 @@ public class JcaTlsCrypto
         }
     }
 
-    protected TlsStreamSigner createVerifyingStreamSigner(SignatureAndHashAlgorithm algorithm, PrivateKey privateKey,
-        boolean needsRandom, PublicKey publicKey) throws IOException
-    {
-        String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
-
-        return createVerifyingStreamSigner(algorithmName, null, privateKey, needsRandom, publicKey);
-    }
-
-    protected TlsStreamSigner createVerifyingStreamSigner(String algorithmName, AlgorithmParameterSpec parameter,
-        PrivateKey privateKey, boolean needsRandom, PublicKey publicKey) throws IOException
-    {
-        try
-        {
-            Signature signer = getHelper().createSignature(algorithmName);
-            Signature verifier = getHelper().createSignature(algorithmName);
-
-            if (null != parameter)
-            {
-                signer.setParameter(parameter);
-                verifier.setParameter(parameter);
-            }
-
-            signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
-            verifier.initVerify(publicKey);
-
-            return new JcaVerifyingStreamSigner(signer, verifier);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-        }
-    }
-
     protected Boolean isSupportedEncryptionAlgorithm(int encryptionAlgorithm)
     {
         switch (encryptionAlgorithm)
