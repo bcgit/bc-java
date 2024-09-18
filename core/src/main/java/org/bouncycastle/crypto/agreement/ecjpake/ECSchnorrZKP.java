@@ -5,6 +5,10 @@ import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * Package protected class containing zero knowledge proof, for an EC J-PAKE exchange.
+ * <p>
+ * This class encapsulates the values involved in the Schnorr
+ * zero-knowledge proof used in the EC J-PAKE protocol.
+ * <p>
  */ 
 class ECSchnorrZKP {
 
