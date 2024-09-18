@@ -5,9 +5,6 @@ import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * Package protected class containing zero knowledge proof, for an EC J-PAKE exchange.
- *</p>
- *
- *
  */ 
 class ECSchnorrZKP {
 
