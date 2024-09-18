@@ -1,33 +1,27 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 
 public class MLKEMExtractor
     implements EncapsulatedSecretExtractor
 {
-    private MLKEMEngine engine;
+    private final MLKEMPrivateKeyParameters privateKey;
+    private final MLKEMEngine engine;
 
-    private MLKEMPrivateKeyParameters key;
-
-    public MLKEMExtractor(MLKEMPrivateKeyParameters privParams)
+    public MLKEMExtractor(MLKEMPrivateKeyParameters privateKey)
     {
-        this.key = privParams;
-        initCipher(privParams);
+        if (privateKey == null)
+        {
+            throw new NullPointerException("'privateKey' cannot be null");
+        }
+
+        this.privateKey = privateKey;
+        this.engine = privateKey.getParameters().getEngine();
     }
 
-    private void initCipher(AsymmetricKeyParameter recipientKey)
-    {
-        MLKEMPrivateKeyParameters key = (MLKEMPrivateKeyParameters)recipientKey;
-        engine = key.getParameters().getEngine();
-    }
-
-    @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
-        // Decryption
-        byte[] sharedSecret = engine.kemDecrypt(key.getEncoded(), encapsulation);
-        return sharedSecret;
+        return engine.kemDecrypt(privateKey.getEncoded(), encapsulation);
     }
 
     public int getEncapsulationLength()
