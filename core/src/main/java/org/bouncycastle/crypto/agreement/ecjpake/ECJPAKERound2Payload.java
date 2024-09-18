@@ -16,7 +16,7 @@ import org.bouncycastle.math.ec.ECPoint;
  * Each {@link ECJPAKEParticipant} must also validate the payload
  * received from the other {@link ECJPAKEParticipant}.
  * The received payload should be validated via
- * {@link ECJPAKEParticipant#validateRound2PayloadReceived(JPAKERound2Payload)}
+ * {@link ECJPAKEParticipant#validateRound2PayloadReceived(ECJPAKERound2Payload)}
  */
 public class ECJPAKERound2Payload
 {
