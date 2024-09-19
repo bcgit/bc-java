@@ -922,7 +922,13 @@ public class PGPSignature
     public static PGPSignature join(PGPSignature sig1, PGPSignature sig2)
         throws PGPException
     {
-        if (!isSignatureEncodingEqual(sig1, sig2))
+        if (sig1.getVersion() < SignaturePacket.VERSION_4) {
+            // Version 2/3 signatures have no subpackets, so don't need to get merged.
+            return sig1;
+        }
+
+        if (sig1.getVersion() != sig2.getVersion() ||
+                !isSignatureEncodingEqual(sig1, sig2))
         {
             throw new IllegalArgumentException("These are different signatures.");
         }
