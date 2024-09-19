@@ -184,6 +184,4 @@ public class GaloisField
         }
         return column;
     }
-
-    // Test vectors and properties would go here
 }

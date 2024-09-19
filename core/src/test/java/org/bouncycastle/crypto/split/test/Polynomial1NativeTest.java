@@ -4,15 +4,15 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.crypto.split.GaloisField;
+import org.bouncycastle.crypto.split.Polynomial1Native;
 import org.junit.Test;
 
-public class GaloisFieldTest
+public class Polynomial1NativeTest
     extends TestCase
 {
     public static void main(String[] args)
     {
-        GaloisFieldTest test = new GaloisFieldTest();
+        Polynomial1NativeTest test = new Polynomial1NativeTest();
         test.performTest();
     }
 
@@ -62,8 +62,8 @@ public class GaloisFieldTest
     @Test
     public void testMatrixMultiplication() {
         int[][] TV011B_TV1_P = {
-            { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01) },
-            { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01) }
+            { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01) },
+            { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01) }
         };
 
         int[][] TV011B_TV1_SR = {
@@ -76,14 +76,14 @@ public class GaloisFieldTest
             { 0x3F, 0x93, 0x1B, 0x4D, 0x71 }
         };
 
-        int[][] result = GaloisField.gfMatMul(TV011B_TV1_P, TV011B_TV1_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV1_P, TV011B_TV1_SR);
         assertArrayEquals(TV011B_TV1_SPLITS, result);
     }
 
     @Test
     public void testRecombine() {
         int[][] TV011B_TV1_1_2_R = {
-            { GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x01)), GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)) }
+            { Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x01)), Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)) }
         };
 
         int[][] TV011B_TV1_1_2_SPLITS = {
@@ -95,7 +95,7 @@ public class GaloisFieldTest
             { 0x74, 0x65, 0x73, 0x74, 0x00 }
         };
 
-        int[][] result = GaloisField.gfMatMul(TV011B_TV1_1_2_R, TV011B_TV1_1_2_SPLITS);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV1_1_2_R, TV011B_TV1_1_2_SPLITS);
         assertArrayEquals(TV011B_TV1_SECRET, result);
     }
 
@@ -129,10 +129,10 @@ public class GaloisFieldTest
     @Test
     public void testMatrixMultiplicationTV2() {
         int[][] TV011B_TV2_P = {
-            { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01) },
-            { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01) },
-            { GaloisField.gfPow(0x03, 0x00), GaloisField.gfPow(0x03, 0x01) },
-            { GaloisField.gfPow(0x04, 0x00), GaloisField.gfPow(0x04, 0x01) }
+            { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01) },
+            { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01) },
+            { Polynomial1Native.gfPow(0x03, 0x00), Polynomial1Native.gfPow(0x03, 0x01) },
+            { Polynomial1Native.gfPow(0x04, 0x00), Polynomial1Native.gfPow(0x04, 0x01) }
         };
 
         int[][] TV011B_TV2_SR = {
@@ -147,22 +147,22 @@ public class GaloisFieldTest
             { 0xB7, 0x2E, 0xA9, 0xFF, 0x69 }
         };
 
-        int[][] result = GaloisField.gfMatMul(TV011B_TV2_P, TV011B_TV2_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV2_P, TV011B_TV2_SR);
         assertArrayEquals(TV011B_TV2_SPLITS, result);
     }
 
     @Test
     public void testRecombines() {
         int[][] TV011B_TV2_1_2_R = {
-            { GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)) }
+            { Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)) }
         };
 
         int[][] TV011B_TV2_1_4_R = {
-            { GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x01, 0x04)), GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x04)) }
+            { Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x01, 0x04)), Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x04)) }
         };
 
         int[][] TV011B_TV2_3_4_R = {
-            { GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x03, 0x04)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x03, 0x04)) }
+            { Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x03, 0x04)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x03, 0x04)) }
         };
 
         int[][] TV011B_TV2_1_2_SPLITS = {
@@ -184,23 +184,23 @@ public class GaloisFieldTest
             { 0x53, 0x41, 0x4D, 0x54, 0x43 }
         };
 
-        int[][] result1_2 = GaloisField.gfMatMul(TV011B_TV2_1_2_R, TV011B_TV2_1_2_SPLITS);
+        int[][] result1_2 = Polynomial1Native.gfMatMul(TV011B_TV2_1_2_R, TV011B_TV2_1_2_SPLITS);
         assertArrayEquals(TV011B_TV2_SECRET, result1_2);
 
-        int[][] result1_4 = GaloisField.gfMatMul(TV011B_TV2_1_4_R, TV011B_TV2_1_4_SPLITS);
+        int[][] result1_4 = Polynomial1Native.gfMatMul(TV011B_TV2_1_4_R, TV011B_TV2_1_4_SPLITS);
         assertArrayEquals(TV011B_TV2_SECRET, result1_4);
 
-        int[][] result3_4 = GaloisField.gfMatMul(TV011B_TV2_3_4_R, TV011B_TV2_3_4_SPLITS);
+        int[][] result3_4 = Polynomial1Native.gfMatMul(TV011B_TV2_3_4_R, TV011B_TV2_3_4_SPLITS);
         assertArrayEquals(TV011B_TV2_SECRET, result3_4);
     }
 
     @Test
     public void testMatrixMultiplicationTV3() {
         int[][] TV011B_TV3_P = {
-            { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01), GaloisField.gfPow(0x01, 0x02) },
-            { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01), GaloisField.gfPow(0x02, 0x02) },
-            { GaloisField.gfPow(0x03, 0x00), GaloisField.gfPow(0x03, 0x01), GaloisField.gfPow(0x03, 0x02) },
-            { GaloisField.gfPow(0x04, 0x00), GaloisField.gfPow(0x04, 0x01), GaloisField.gfPow(0x04, 0x02) }
+            { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01), Polynomial1Native.gfPow(0x01, 0x02) },
+            { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01), Polynomial1Native.gfPow(0x02, 0x02) },
+            { Polynomial1Native.gfPow(0x03, 0x00), Polynomial1Native.gfPow(0x03, 0x01), Polynomial1Native.gfPow(0x03, 0x02) },
+            { Polynomial1Native.gfPow(0x04, 0x00), Polynomial1Native.gfPow(0x04, 0x01), Polynomial1Native.gfPow(0x04, 0x02) }
         };
 
         int[][] TV011B_TV3_SR = {
@@ -216,7 +216,7 @@ public class GaloisFieldTest
             { 0x42, 0x9F, 0x84, 0x9E, 0x06 }
         };
 
-        int[][] result = GaloisField.gfMatMul(TV011B_TV3_P, TV011B_TV3_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV3_P, TV011B_TV3_SR);
         assertArrayEquals(TV011B_TV3_SPLITS, result);
     }
 
@@ -224,25 +224,25 @@ public class GaloisFieldTest
     public void testRecombines3() {
         int[][] TV011B_TV3_1_2_3_R = {
             {
-                GaloisField.gfMul(GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x01, 0x03))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x02, 0x03))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x03)))
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x01, 0x03))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x02, 0x03))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x03)))
             }
         };
 
         int[][] TV011B_TV3_1_2_4_R = {
             {
-                GaloisField.gfMul(GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x01, 0x04))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x02, 0x04))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x04)), GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x04)))
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x01, 0x04))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x02, 0x04))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x04)), Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x04)))
             }
         };
 
         int[][] TV011B_TV3_1_3_4_R = {
             {
-                GaloisField.gfMul(GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x01, 0x04))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x03, 0x04))),
-                GaloisField.gfMul(GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x04)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x03, 0x04)))
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x01, 0x04))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x03, 0x04))),
+                Polynomial1Native.gfMul(Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x04)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x03, 0x04)))
             }
         };
 
@@ -268,25 +268,25 @@ public class GaloisFieldTest
             { 0x53, 0x41, 0x4D, 0x54, 0x43 }
         };
 
-        int[][] result1_2_3 = GaloisField.gfMatMul(TV011B_TV3_1_2_3_R, TV011B_TV3_1_2_3_SPLITS);
+        int[][] result1_2_3 = Polynomial1Native.gfMatMul(TV011B_TV3_1_2_3_R, TV011B_TV3_1_2_3_SPLITS);
         assertArrayEquals(TV011B_TV3_SECRET, result1_2_3);
-        int[][] result1_2_4 = GaloisField.gfMatMul(TV011B_TV3_1_2_4_R, TV011B_TV3_1_2_4_SPLITS);
+        int[][] result1_2_4 = Polynomial1Native.gfMatMul(TV011B_TV3_1_2_4_R, TV011B_TV3_1_2_4_SPLITS);
         assertArrayEquals(TV011B_TV3_SECRET, result1_2_4);
 
-        int[][] result1_3_4 = GaloisField.gfMatMul(TV011B_TV3_1_3_4_R, TV011B_TV3_1_3_4_SPLITS);
+        int[][] result1_3_4 = Polynomial1Native.gfMatMul(TV011B_TV3_1_3_4_R, TV011B_TV3_1_3_4_SPLITS);
         assertArrayEquals(TV011B_TV3_SECRET, result1_3_4);
     }
 
     @Test
     public void testMatrixMultiplicationTV4() {
-         int[][] TV011B_TV4_P = {
-            { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01), GaloisField.gfPow(0x01, 0x02), GaloisField.gfPow(0x01, 0x03) },
-            { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01), GaloisField.gfPow(0x02, 0x02), GaloisField.gfPow(0x02, 0x03) },
-            { GaloisField.gfPow(0x03, 0x00), GaloisField.gfPow(0x03, 0x01), GaloisField.gfPow(0x03, 0x02), GaloisField.gfPow(0x03, 0x03) },
-            { GaloisField.gfPow(0x04, 0x00), GaloisField.gfPow(0x04, 0x01), GaloisField.gfPow(0x04, 0x02), GaloisField.gfPow(0x04, 0x03) }
+        int[][] TV011B_TV4_P = {
+            { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01), Polynomial1Native.gfPow(0x01, 0x02), Polynomial1Native.gfPow(0x01, 0x03) },
+            { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01), Polynomial1Native.gfPow(0x02, 0x02), Polynomial1Native.gfPow(0x02, 0x03) },
+            { Polynomial1Native.gfPow(0x03, 0x00), Polynomial1Native.gfPow(0x03, 0x01), Polynomial1Native.gfPow(0x03, 0x02), Polynomial1Native.gfPow(0x03, 0x03) },
+            { Polynomial1Native.gfPow(0x04, 0x00), Polynomial1Native.gfPow(0x04, 0x01), Polynomial1Native.gfPow(0x04, 0x02), Polynomial1Native.gfPow(0x04, 0x03) }
         };
 
-         int[][] TV011B_TV4_SR = {
+        int[][] TV011B_TV4_SR = {
             { 0x53, 0x41, 0x4D, 0x54, 0x43 },
             { 0x1A, 0x1E, 0x0A, 0x9D, 0x44 },
             { 0x22, 0xE9, 0x73, 0x05, 0x34 },
@@ -300,7 +300,7 @@ public class GaloisFieldTest
             { 0xAB, 0xAF, 0x81, 0x82, 0x8D }
         };
 
-        int[][] result = GaloisField.gfMatMul(TV011B_TV4_P, TV011B_TV4_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV4_P, TV011B_TV4_SR);
         assertArrayEquals(TV011B_TV4_SPLITS, result);
     }
 
@@ -308,38 +308,38 @@ public class GaloisFieldTest
     public void testRecombines4() {
 
         int[][] TV011B_TV4_1_2_3_4_R = {
-            { GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x01, 0x04))}),
-                GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x02, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x02, 0x04))}),
-                GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x03, 0x04))}),
-                GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x04)), GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x04)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x03, 0x04))})
+            { Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x01, 0x04))}),
+                Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x02, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x02, 0x04))}),
+                Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x03, 0x04))}),
+                Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x04)), Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x04)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x03, 0x04))})
             }
         };
 
-         int[][] TV011B_TV4_1_2_3_4_SPLITS = {
+        int[][] TV011B_TV4_1_2_3_4_SPLITS = {
             { 0x27, 0xC0, 0x94, 0xBB, 0x54 },
             { 0xB9, 0x69, 0xF9, 0xF4, 0x0E },
             { 0x7E, 0xC7, 0xCD, 0x32, 0x50 },
             { 0xAB, 0xAF, 0x81, 0x82, 0x8D }
         };
 
-         int[][] TV011B_TV4_SECRET = {
+        int[][] TV011B_TV4_SECRET = {
             { 0x53, 0x41, 0x4D, 0x54, 0x43 }
         };
 
-        int[][] result1_2_3_4 = GaloisField.gfMatMul(TV011B_TV4_1_2_3_4_R, TV011B_TV4_1_2_3_4_SPLITS);
+        int[][] result1_2_3_4 = Polynomial1Native.gfMatMul(TV011B_TV4_1_2_3_4_R, TV011B_TV4_1_2_3_4_SPLITS);
         assertArrayEquals(TV011B_TV4_SECRET, result1_2_3_4);
     }
 
     private static final int[][] TV011B_TV5_P = {
-        { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01) },
-        { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01) },
-        { GaloisField.gfPow(0x03, 0x00), GaloisField.gfPow(0x03, 0x01) },
-        { GaloisField.gfPow(0x04, 0x00), GaloisField.gfPow(0x04, 0x01) },
-        { GaloisField.gfPow(0x05, 0x00), GaloisField.gfPow(0x05, 0x01) },
-        { GaloisField.gfPow(0x06, 0x00), GaloisField.gfPow(0x06, 0x01) },
-        { GaloisField.gfPow(0x07, 0x00), GaloisField.gfPow(0x07, 0x01) },
-        { GaloisField.gfPow(0x08, 0x00), GaloisField.gfPow(0x08, 0x01) },
-        { GaloisField.gfPow(0x09, 0x00), GaloisField.gfPow(0x09, 0x01) }
+        { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01) },
+        { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01) },
+        { Polynomial1Native.gfPow(0x03, 0x00), Polynomial1Native.gfPow(0x03, 0x01) },
+        { Polynomial1Native.gfPow(0x04, 0x00), Polynomial1Native.gfPow(0x04, 0x01) },
+        { Polynomial1Native.gfPow(0x05, 0x00), Polynomial1Native.gfPow(0x05, 0x01) },
+        { Polynomial1Native.gfPow(0x06, 0x00), Polynomial1Native.gfPow(0x06, 0x01) },
+        { Polynomial1Native.gfPow(0x07, 0x00), Polynomial1Native.gfPow(0x07, 0x01) },
+        { Polynomial1Native.gfPow(0x08, 0x00), Polynomial1Native.gfPow(0x08, 0x01) },
+        { Polynomial1Native.gfPow(0x09, 0x00), Polynomial1Native.gfPow(0x09, 0x01) }
     };
 
     private static final int[][] TV011B_TV5_SR = {
@@ -360,11 +360,11 @@ public class GaloisFieldTest
     };
 
     private static final int[][] TV011B_TV5_1_2_R = {
-        { GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)) }
+        { Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)) }
     };
 
     private static final int[][] TV011B_TV5_8_9_R = {
-        { GaloisField.gfDiv(0x09, GaloisField.gfAdd(0x08, 0x09)), GaloisField.gfDiv(0x08, GaloisField.gfAdd(0x08, 0x09)) }
+        { Polynomial1Native.gfDiv(0x09, Polynomial1Native.gfAdd(0x08, 0x09)), Polynomial1Native.gfDiv(0x08, Polynomial1Native.gfAdd(0x08, 0x09)) }
     };
 
     private static final int[][] TV011B_TV5_1_2_SPLITS = {
@@ -382,23 +382,23 @@ public class GaloisFieldTest
     };
 
     public void testMatrixMultiplicationTV5() {
-        int[][] result = GaloisField.gfMatMul(TV011B_TV5_P, TV011B_TV5_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV5_P, TV011B_TV5_SR);
         assertArrayEquals(TV011B_TV5_SPLITS, result);
     }
 
     public void testRecombines5() {
-        int[][] result = GaloisField.gfMatMul(TV011B_TV5_1_2_R, TV011B_TV5_1_2_SPLITS);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV5_1_2_R, TV011B_TV5_1_2_SPLITS);
         assertArrayEquals(TV011B_TV5_SECRET, result);
-        result = GaloisField.gfMatMul(TV011B_TV5_8_9_R, TV011B_TV5_8_9_SPLITS);
+        result = Polynomial1Native.gfMatMul(TV011B_TV5_8_9_R, TV011B_TV5_8_9_SPLITS);
         assertArrayEquals(TV011B_TV5_SECRET, result);
     }
 
     private static final int[][] TV011B_TV6_P = {
-        { GaloisField.gfPow(0x01, 0x00), GaloisField.gfPow(0x01, 0x01), GaloisField.gfPow(0x01, 0x02) },
-        { GaloisField.gfPow(0x02, 0x00), GaloisField.gfPow(0x02, 0x01), GaloisField.gfPow(0x02, 0x02) },
-        { GaloisField.gfPow(0x03, 0x00), GaloisField.gfPow(0x03, 0x01), GaloisField.gfPow(0x03, 0x02) },
-        { GaloisField.gfPow(0x04, 0x00), GaloisField.gfPow(0x04, 0x01), GaloisField.gfPow(0x04, 0x02) },
-        { GaloisField.gfPow(0x05, 0x00), GaloisField.gfPow(0x05, 0x01), GaloisField.gfPow(0x05, 0x02) }
+        { Polynomial1Native.gfPow(0x01, 0x00), Polynomial1Native.gfPow(0x01, 0x01), Polynomial1Native.gfPow(0x01, 0x02) },
+        { Polynomial1Native.gfPow(0x02, 0x00), Polynomial1Native.gfPow(0x02, 0x01), Polynomial1Native.gfPow(0x02, 0x02) },
+        { Polynomial1Native.gfPow(0x03, 0x00), Polynomial1Native.gfPow(0x03, 0x01), Polynomial1Native.gfPow(0x03, 0x02) },
+        { Polynomial1Native.gfPow(0x04, 0x00), Polynomial1Native.gfPow(0x04, 0x01), Polynomial1Native.gfPow(0x04, 0x02) },
+        { Polynomial1Native.gfPow(0x05, 0x00), Polynomial1Native.gfPow(0x05, 0x01), Polynomial1Native.gfPow(0x05, 0x02) }
     };
 
     private static final int[][] TV011B_TV6_SR = {
@@ -416,15 +416,15 @@ public class GaloisFieldTest
     };
 
     private static final int[][] TV011B_TV6_1_2_3_R = {
-        { GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x01, 0x03))}),
-            GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x02)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x02, 0x03))}),
-            GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x01, GaloisField.gfAdd(0x01, 0x03)), GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x03))}) }
+        { Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x01, 0x03))}),
+            Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x02)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x02, 0x03))}),
+            Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x01, Polynomial1Native.gfAdd(0x01, 0x03)), Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x03))}) }
     };
 
     private static final int[][] TV011B_TV6_2_3_4_R = {
-        { GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x02, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x02, 0x04))}),
-            GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x03)), GaloisField.gfDiv(0x04, GaloisField.gfAdd(0x03, 0x04))}),
-            GaloisField.gfProd(new int[]{GaloisField.gfDiv(0x02, GaloisField.gfAdd(0x02, 0x04)), GaloisField.gfDiv(0x03, GaloisField.gfAdd(0x03, 0x04))}) }
+        { Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x02, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x02, 0x04))}),
+            Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x03)), Polynomial1Native.gfDiv(0x04, Polynomial1Native.gfAdd(0x03, 0x04))}),
+            Polynomial1Native.gfProd(new int[]{Polynomial1Native.gfDiv(0x02, Polynomial1Native.gfAdd(0x02, 0x04)), Polynomial1Native.gfDiv(0x03, Polynomial1Native.gfAdd(0x03, 0x04))}) }
     };
 
     private static final int[][] TV011B_TV6_1_2_3_SPLITS = {
@@ -444,14 +444,14 @@ public class GaloisFieldTest
     };
 
     public void testMatrixMultiplicationTV6() {
-        int[][] result = GaloisField.gfMatMul(TV011B_TV6_P, TV011B_TV6_SR);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV6_P, TV011B_TV6_SR);
         assertArrayEquals(TV011B_TV6_SPLITS, result);
     }
 
     public void testRecombines6() {
-        int[][] result = GaloisField.gfMatMul(TV011B_TV6_1_2_3_R, TV011B_TV6_1_2_3_SPLITS);
+        int[][] result = Polynomial1Native.gfMatMul(TV011B_TV6_1_2_3_R, TV011B_TV6_1_2_3_SPLITS);
         assertArrayEquals(TV011B_TV6_SECRET, result);
-        result = GaloisField.gfMatMul(TV011B_TV6_2_3_4_R, TV011B_TV6_2_3_4_SPLITS);
+        result = Polynomial1Native.gfMatMul(TV011B_TV6_2_3_4_R, TV011B_TV6_2_3_4_SPLITS);
         assertArrayEquals(TV011B_TV6_SECRET, result);
     }
 
