@@ -1,9 +1,9 @@
 package org.bouncycastle.crypto.split;
 
-public class Polynomial1Native
+public class Polynomial2Native
 {
-    // Irreducible polynomial: x^8 + x^4 + x^3 + x + 1
-    private static final int IRREDUCIBLE = 0x11B;
+    // x^8 + x^4 + x^3 + x + 1
+    private static final int IRREDUCIBLE = 0x11D;
 
     // Galois Field (2^8) operations
     public static int gfAdd(int x, int y)
@@ -158,3 +158,4 @@ public class Polynomial1Native
         return column;
     }
 }
+
