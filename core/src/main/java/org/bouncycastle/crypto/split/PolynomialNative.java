@@ -5,9 +5,11 @@ public class PolynomialNative
 {
     private final int IRREDUCIBLE;
 
-    public PolynomialNative(int algorithm)
+    public PolynomialNative(int algorithm, int l, int m, int n)
     {
-        switch (algorithm){
+        super(l, m, n);
+        switch (algorithm)
+        {
         case AES:
             IRREDUCIBLE = 0x11B;
             break;
@@ -17,9 +19,10 @@ public class PolynomialNative
         default:
             throw new IllegalArgumentException("The algorithm is not correct");
         }
+        init();
     }
 
-    public int gfMul(int x, int y)
+    protected int gfMul(int x, int y)
     {
         int result = pmult(x, y);
         return mod(result, IRREDUCIBLE);
@@ -57,7 +60,7 @@ public class PolynomialNative
         return value & 0xFF;
     }
 
-    public int gfPow(int n, int k)
+    protected int gfPow(int n, int k)
     {
         int result = 1;
         int[] base = new int[]{n};
@@ -73,12 +76,12 @@ public class PolynomialNative
         return result;
     }
 
-    public int gfInv(int x)
+    protected int gfInv(int x)
     {
         return gfPow(x, 254); // Inverse is x^(2^8-2)
     }
 
-    public int gfDiv(int x, int y)
+    protected int gfDiv(int x, int y)
     {
         return gfMul(x, gfInv(y));
     }
