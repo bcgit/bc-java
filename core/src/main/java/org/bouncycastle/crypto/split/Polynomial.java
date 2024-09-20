@@ -4,19 +4,63 @@ public abstract class Polynomial
 {
     public static final int AES = 0;
     public static final int RSA = 1;
+    /**
+     * <summary>
+     * Length of the secret
+     * </summary>
+     */
+    protected int l;
+    /**
+     * <summary>
+     * A threshold number of shares
+     * </summary>
+     */
+    protected int m;
+    /**
+     * <summary>
+     * Total number of shares
+     * m <= n <= 255
+     * </summary>
+     */
+    protected int n;
+    protected int[][] p;
 
-    public static int gfAdd(int x, int y)
+    protected Polynomial(int l, int m, int n)
     {
-        return x ^ y;
+        this.l = l;
+        this.m = m;
+        this.n = n;
     }
 
-    public abstract int gfMul(int x, int y);
+    protected void init()
+    {
+        p = new int[n][m];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                p[i][j] = gfPow(i + 1, j);
+            }
+        }
+    }
 
-    public abstract int gfPow(int n, int k);
+    public int[][] createShares(int[][] sr)
+    {
+        return gfMatMul(p, sr);
+    }
 
-    public abstract int gfDiv(int x, int y);
+    public int[][] recombine(int[] rr, int[][] splits)
+    {
+        return gfMatMul(getR(rr), splits);
+    }
 
-    public int gfProd(int[] ps)
+    protected abstract int gfMul(int x, int y);
+
+    protected abstract int gfPow(int n, int k);
+
+    protected abstract int gfDiv(int x, int y);
+
+    protected int gfProd(int[] ps)
     {
         int prod = 1;
         for (int p : ps)
@@ -26,17 +70,17 @@ public abstract class Polynomial
         return prod;
     }
 
-    public int gfDotProd(int[] xs, int[] ys)
+    protected int gfDotProd(int[] xs, int[] ys)
     {
         int sum = 0;
         for (int i = 0; i < xs.length; i++)
         {
-            sum = Polynomial.gfAdd(sum, gfMul(xs[i], ys[i]));
+            sum = sum ^ gfMul(xs[i], ys[i]);
         }
         return sum;
     }
 
-    public int[] gfVecMul(int[] v, int[][] ms)
+    protected int[] gfVecMul(int[] v, int[][] ms)
     {
         int[] result = new int[ms[0].length];
         for (int i = 0; i < ms[0].length; i++)
@@ -46,7 +90,7 @@ public abstract class Polynomial
         return result;
     }
 
-    public int[][] gfMatMul(int[][] xss, int[][] yss)
+    protected int[][] gfMatMul(int[][] xss, int[][] yss)
     {
         int[][] result = new int[xss.length][yss[0].length];
         for (int i = 0; i < xss.length; i++)
@@ -64,5 +108,29 @@ public abstract class Polynomial
             column[i] = matrix[i][col];
         }
         return column;
+    }
+
+    private int[][] getR(int[] input)
+    {
+        int n = input.length;
+        int[][] result = new int[1][n];
+
+        for (int i = 0; i < n; i++)
+        {
+            int[] products = new int[n - 1];
+            int index = 0;
+
+            for (int j = 0; j < n; j++)
+            {
+                if (j != i)
+                {
+                    products[index++] = gfDiv(input[j], input[i] ^ input[j]);
+                }
+            }
+
+            result[0][i] = gfProd(products);
+        }
+
+        return result;
     }
 }

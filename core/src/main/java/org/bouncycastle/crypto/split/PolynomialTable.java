@@ -5,7 +5,6 @@ import org.bouncycastle.util.Arrays;
 public class PolynomialTable
     extends Polynomial
 {
-
     private int[] LOG;
     private int[] EXP;
     private static final int[] AES_LOG = {
@@ -148,8 +147,9 @@ public class PolynomialTable
         0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83,
         0x1b, 0x36, 0x6c, 0xd8, 0xad, 0x47, 0x8e, 0x01
     };
-    public PolynomialTable(int algorithm)
+    public PolynomialTable(int algorithm, int l, int m, int n)
     {
+        super(l, m, n);
         switch (algorithm){
         case AES:
             LOG = Arrays.clone(AES_LOG);
@@ -162,21 +162,19 @@ public class PolynomialTable
         default:
             throw new IllegalArgumentException("The algorithm is not correct");
         }
+        init();
     }
 
-    public int gfMul(int x, int y)
+    protected int gfMul(int x, int y)
     {
         if (x == 0 || y == 0)
         {
             return 0;
         }
-        int logX = LOG[x];
-        int logY = LOG[y];
-        int logZ = (logX + logY) % 255;
-        return EXP[logZ];
+        return EXP[(LOG[x] + LOG[y]) % 255];
     }
 
-    public int gfPow(int n, int k)
+    protected int gfPow(int n, int k)
     {
         int result = 1;
         for (int i = 0; i < 8; i++)
@@ -190,15 +188,12 @@ public class PolynomialTable
         return result;
     }
 
-    public int gfDiv(int x, int y)
+    protected int gfDiv(int x, int y)
     {
         if (x == 0)
         {
             return 0;
         }
-        int logX = LOG[x];
-        int logY = LOG[y];
-        int logZ = (logX - logY + 255) % 255;
-        return EXP[logZ];
+        return EXP[(LOG[x] - LOG[y] + 255) % 255];
     }
 }

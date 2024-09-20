@@ -11,8 +11,8 @@ import org.bouncycastle.crypto.split.PolynomialTable;
 public class PolynomialTest
     extends TestCase
 {
-    private static Polynomial polynomial1 = new PolynomialTable(Polynomial.AES);
-    private static Polynomial polynomial2 = new PolynomialTable(Polynomial.RSA);
+//    private static Polynomial polynomial1 = new PolynomialTable(Polynomial.AES);
+//    private static Polynomial polynomial2 = new PolynomialTable(Polynomial.RSA);
     // Test test vectors for Polynomial 1 (x^^8 + x^^4 + x^^3 + x + 1)
 
     /*
@@ -27,10 +27,10 @@ public class PolynomialTest
      * split1 = DC 1E 47 E5 B5
      * split2 = 3F 93 1B 4D 71
      */
-    int[][] TV011B_TV1_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)}
-    };
+//    int[][] TV011B_TV1_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)}
+//    };
 
     int[][] TV011B_TV1_SR = {
         {0x74, 0x65, 0x73, 0x74, 0x00},
@@ -42,9 +42,9 @@ public class PolynomialTest
         {0x3F, 0x93, 0x1B, 0x4D, 0x71}
     };
 
-    int[][] TV011B_TV1_1_2_R = {
-        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x01)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
-    };
+//    int[][] TV011B_TV1_1_2_R = {
+//        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x01)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
+//    };
 
     int[][] TV011B_TV1_1_2_SPLITS = {
         {0xDC, 0x1E, 0x47, 0xE5, 0xB5},
@@ -69,12 +69,12 @@ public class PolynomialTest
      * split3 = 18 A6 06 E0 D1
      * split4 = B7 2E A9 FF 69
      */
-    int[][] TV011B_TV2_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)},
-        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01)},
-        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01)}
-    };
+//    int[][] TV011B_TV2_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)},
+//        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01)},
+//        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01)}
+//    };
 
     int[][] TV011B_TV2_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -88,17 +88,17 @@ public class PolynomialTest
         {0xB7, 0x2E, 0xA9, 0xFF, 0x69}
     };
 
-    int[][] TV011B_TV2_1_2_R = {
-        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
-    };
-
-    int[][] TV011B_TV2_1_4_R = {
-        {polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04))}
-    };
-
-    int[][] TV011B_TV2_3_4_R = {
-        {polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))}
-    };
+//    int[][] TV011B_TV2_1_2_R = {
+//        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
+//    };
+//
+//    int[][] TV011B_TV2_1_4_R = {
+//        {polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04))}
+//    };
+//
+//    int[][] TV011B_TV2_3_4_R = {
+//        {polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))}
+//    };
 
     int[][] TV011B_TV2_1_2_SPLITS = {
         {0x6A, 0x1C, 0x74, 0x38, 0xC4},
@@ -119,12 +119,12 @@ public class PolynomialTest
         {0x53, 0x41, 0x4D, 0x54, 0x43}
     };
 
-    int[][] TV011B_TV3_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02)},
-        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02)},
-        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02)}
-    };
+//    int[][] TV011B_TV3_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02)},
+//        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02)},
+//        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02)}
+//    };
 
     int[][] TV011B_TV3_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -154,29 +154,29 @@ public class PolynomialTest
      * split4 = 42 9F 84 9E 06
      */
 
-    int[][] TV011B_TV3_1_2_3_R = {
-        {
-            polynomial1.gfMul(polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)))
-        }
-    };
-
-    int[][] TV011B_TV3_1_2_4_R = {
-        {
-            polynomial1.gfMul(polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)))
-        }
-    };
-
-    int[][] TV011B_TV3_1_3_4_R = {
-        {
-            polynomial1.gfMul(polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))),
-            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04)))
-        }
-    };
+//    int[][] TV011B_TV3_1_2_3_R = {
+//        {
+//            polynomial1.gfMul(polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)))
+//        }
+//    };
+//
+//    int[][] TV011B_TV3_1_2_4_R = {
+//        {
+//            polynomial1.gfMul(polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)))
+//        }
+//    };
+//
+//    int[][] TV011B_TV3_1_3_4_R = {
+//        {
+//            polynomial1.gfMul(polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))),
+//            polynomial1.gfMul(polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04)))
+//        }
+//    };
 
     int[][] TV011B_TV3_1_2_3_SPLITS = {
         {0x4E, 0x73, 0x7F, 0x91, 0x72},
@@ -215,12 +215,12 @@ public class PolynomialTest
      * split4 = AB AF 81 82 8D
      */
 
-    int[][] TV011B_TV4_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02), polynomial1.gfPow(0x01, 0x03)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02), polynomial1.gfPow(0x02, 0x03)},
-        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02), polynomial1.gfPow(0x03, 0x03)},
-        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02), polynomial1.gfPow(0x04, 0x03)}
-    };
+//    int[][] TV011B_TV4_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02), polynomial1.gfPow(0x01, 0x03)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02), polynomial1.gfPow(0x02, 0x03)},
+//        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02), polynomial1.gfPow(0x03, 0x03)},
+//        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02), polynomial1.gfPow(0x04, 0x03)}
+//    };
 
     int[][] TV011B_TV4_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -236,13 +236,13 @@ public class PolynomialTest
         {0xAB, 0xAF, 0x81, 0x82, 0x8D}
     };
 
-    int[][] TV011B_TV4_1_2_3_4_R = {
-        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))})
-        }
-    };
+//    int[][] TV011B_TV4_1_2_3_4_R = {
+//        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x01, 0x04))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x04)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))})
+//        }
+//    };
 
     int[][] TV011B_TV4_1_2_3_4_SPLITS = {
         {0x27, 0xC0, 0x94, 0xBB, 0x54},
@@ -274,17 +274,17 @@ public class PolynomialTest
      * split8 = 81 B2 72 82 D0 8B BF 66 7F
      * split9 = FE 06 9A DA CE 3C E2 AF 3A
      */
-    private static final int[][] TV011B_TV5_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)},
-        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01)},
-        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01)},
-        {polynomial1.gfPow(0x05, 0x00), polynomial1.gfPow(0x05, 0x01)},
-        {polynomial1.gfPow(0x06, 0x00), polynomial1.gfPow(0x06, 0x01)},
-        {polynomial1.gfPow(0x07, 0x00), polynomial1.gfPow(0x07, 0x01)},
-        {polynomial1.gfPow(0x08, 0x00), polynomial1.gfPow(0x08, 0x01)},
-        {polynomial1.gfPow(0x09, 0x00), polynomial1.gfPow(0x09, 0x01)}
-    };
+//    private static final int[][] TV011B_TV5_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01)},
+//        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01)},
+//        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01)},
+//        {polynomial1.gfPow(0x05, 0x00), polynomial1.gfPow(0x05, 0x01)},
+//        {polynomial1.gfPow(0x06, 0x00), polynomial1.gfPow(0x06, 0x01)},
+//        {polynomial1.gfPow(0x07, 0x00), polynomial1.gfPow(0x07, 0x01)},
+//        {polynomial1.gfPow(0x08, 0x00), polynomial1.gfPow(0x08, 0x01)},
+//        {polynomial1.gfPow(0x09, 0x00), polynomial1.gfPow(0x09, 0x01)}
+//    };
 
     private static final int[][] TV011B_TV5_SR = {
         {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61},
@@ -302,14 +302,14 @@ public class PolynomialTest
         {0x81, 0xB2, 0x72, 0x82, 0xD0, 0x8B, 0xBF, 0x66, 0x7F},
         {0xFE, 0x06, 0x9A, 0xDA, 0xCE, 0x3C, 0xE2, 0xAF, 0x3A}
     };
-
-    private static final int[][] TV011B_TV5_1_2_R = {
-        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
-    };
-
-    private static final int[][] TV011B_TV5_8_9_R = {
-        {polynomial1.gfDiv(0x09, polynomial1.gfAdd(0x08, 0x09)), polynomial1.gfDiv(0x08, polynomial1.gfAdd(0x08, 0x09))}
-    };
+//
+//    private static final int[][] TV011B_TV5_1_2_R = {
+//        {polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02))}
+//    };
+//
+//    private static final int[][] TV011B_TV5_8_9_R = {
+//        {polynomial1.gfDiv(0x09, polynomial1.gfAdd(0x08, 0x09)), polynomial1.gfDiv(0x08, polynomial1.gfAdd(0x08, 0x09))}
+//    };
 
     private static final int[][] TV011B_TV5_1_2_SPLITS = {
         {0x2B, 0xD1, 0x9B, 0x2C, 0x3E, 0xF3, 0x3C, 0xBD, 0x24},
@@ -340,13 +340,13 @@ public class PolynomialTest
      * split4 = 3F 99 DD F4 88 9B E1 6A 29 E2 77 3E 10 68 63
      * split5 = 45 E8 2E E9 83 BA C2 F1 80 D2 06 BF 39 4A 85
      */
-    private static final int[][] TV011B_TV6_P = {
-        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02)},
-        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02)},
-        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02)},
-        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02)},
-        {polynomial1.gfPow(0x05, 0x00), polynomial1.gfPow(0x05, 0x01), polynomial1.gfPow(0x05, 0x02)}
-    };
+//    private static final int[][] TV011B_TV6_P = {
+//        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02)},
+//        {polynomial1.gfPow(0x02, 0x00), polynomial1.gfPow(0x02, 0x01), polynomial1.gfPow(0x02, 0x02)},
+//        {polynomial1.gfPow(0x03, 0x00), polynomial1.gfPow(0x03, 0x01), polynomial1.gfPow(0x03, 0x02)},
+//        {polynomial1.gfPow(0x04, 0x00), polynomial1.gfPow(0x04, 0x01), polynomial1.gfPow(0x04, 0x02)},
+//        {polynomial1.gfPow(0x05, 0x00), polynomial1.gfPow(0x05, 0x01), polynomial1.gfPow(0x05, 0x02)}
+//    };
 
     private static final int[][] TV011B_TV6_SR = {
         {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F},
@@ -362,17 +362,17 @@ public class PolynomialTest
         {0x45, 0xE8, 0x2E, 0xE9, 0x83, 0xBA, 0xC2, 0xF1, 0x80, 0xD2, 0x06, 0xBF, 0x39, 0x4A, 0x85}
     };
 
-    private static final int[][] TV011B_TV6_1_2_3_R = {
-        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03))})}
-    };
-
-    private static final int[][] TV011B_TV6_2_3_4_R = {
-        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))}),
-            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))})}
-    };
+//    private static final int[][] TV011B_TV6_1_2_3_R = {
+//        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x01, 0x03))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x02)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x01, polynomial1.gfAdd(0x01, 0x03)), polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03))})}
+//    };
+//
+//    private static final int[][] TV011B_TV6_2_3_4_R = {
+//        {polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x02, 0x04))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x03)), polynomial1.gfDiv(0x04, polynomial1.gfAdd(0x03, 0x04))}),
+//            polynomial1.gfProd(new int[]{polynomial1.gfDiv(0x02, polynomial1.gfAdd(0x02, 0x04)), polynomial1.gfDiv(0x03, polynomial1.gfAdd(0x03, 0x04))})}
+//    };
 
     private static final int[][] TV011B_TV6_1_2_3_SPLITS = {
         {0x7B, 0x73, 0xF0, 0x19, 0x0E, 0x27, 0x24, 0x93, 0xA0, 0x3A, 0x7A, 0x8D, 0x24, 0x2C, 0xE9},
@@ -407,10 +407,10 @@ public class PolynomialTest
 
 
     // Constants for testing
-    public static final int[][] TV011D_TV1_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)}
-    };
+//    public static final int[][] TV011D_TV1_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)}
+//    };
 
     public static final int[][] TV011D_TV1_SR = {
         {0x74, 0x65, 0x73, 0x74, 0x00},
@@ -422,9 +422,9 @@ public class PolynomialTest
         {0x8F, 0xFC, 0x15, 0x6B, 0xF7}
     };
 
-    public static final int[][] TV011D_TV1_1_2_R = {
-        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x01)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
-    };
+//    public static final int[][] TV011D_TV1_1_2_R = {
+//        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x01)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
+//    };
 
     public static final int[][] TV011D_TV1_1_2_SPLITS = {
         {0x87, 0xA7, 0x40, 0xF5, 0xF5},
@@ -449,12 +449,12 @@ public class PolynomialTest
      * split3 = 18 A6 06 E0 D1
      * split4 = B7 2E A9 FF 69
      */
-    public static final int[][] TV011D_TV2_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)},
-        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01)},
-        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01)}
-    };
+//    public static final int[][] TV011D_TV2_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)},
+//        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01)},
+//        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01)}
+//    };
 
     public static final int[][] TV011D_TV2_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -469,17 +469,17 @@ public class PolynomialTest
     };
 
     // Matrices for recombination
-    public static final int[][] TV011D_TV2_1_2_R = {
-        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
-    };
-
-    public static final int[][] TV011D_TV2_1_4_R = {
-        {polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04))}
-    };
-
-    public static final int[][] TV011D_TV2_3_4_R = {
-        {polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))}
-    };
+//    public static final int[][] TV011D_TV2_1_2_R = {
+//        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
+//    };
+//
+//    public static final int[][] TV011D_TV2_1_4_R = {
+//        {polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04))}
+//    };
+//
+//    public static final int[][] TV011D_TV2_3_4_R = {
+//        {polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))}
+//    };
 
     // Split shares
     public static final int[][] TV011D_TV2_1_2_SPLITS = {
@@ -516,12 +516,12 @@ public class PolynomialTest
      */
 
     // Constants for TV3
-    public static final int[][] TV011D_TV3_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02)},
-        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02)},
-        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02)}
-    };
+//    public static final int[][] TV011D_TV3_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02)},
+//        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02)},
+//        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02)}
+//    };
 
     public static final int[][] TV011D_TV3_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -537,29 +537,29 @@ public class PolynomialTest
     };
 
     // Matrices for recombination
-    public static final int[][] TV011D_TV3_1_2_3_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03))})
-        }
-    };
-
-    public static final int[][] TV011D_TV3_1_2_4_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04))})
-        }
-    };
-
-    public static final int[][] TV011D_TV3_1_3_4_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
-        }
-    };
+//    public static final int[][] TV011D_TV3_1_2_3_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03))})
+//        }
+//    };
+//
+//    public static final int[][] TV011D_TV3_1_2_4_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04))})
+//        }
+//    };
+//
+//    public static final int[][] TV011D_TV3_1_3_4_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
+//        }
+//    };
 
     // Split shares
     public static final int[][] TV011D_TV3_1_2_3_SPLITS = {
@@ -600,12 +600,12 @@ public class PolynomialTest
      * split4 = F4 45 A9 D6 07
      */
     // Constants for TV4
-    public static final int[][] TV011D_TV4_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02), polynomial2.gfPow(0x01, 0x03)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02), polynomial2.gfPow(0x02, 0x03)},
-        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02), polynomial2.gfPow(0x03, 0x03)},
-        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02), polynomial2.gfPow(0x04, 0x03)}
-    };
+//    public static final int[][] TV011D_TV4_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02), polynomial2.gfPow(0x01, 0x03)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02), polynomial2.gfPow(0x02, 0x03)},
+//        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02), polynomial2.gfPow(0x03, 0x03)},
+//        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02), polynomial2.gfPow(0x04, 0x03)}
+//    };
 
     public static final int[][] TV011D_TV4_SR = {
         {0x53, 0x41, 0x4D, 0x54, 0x43},
@@ -622,14 +622,14 @@ public class PolynomialTest
     };
 
     // Matrices for recombination
-    public static final int[][] TV011D_TV4_1_2_3_4_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
-        }
-    };
+//    public static final int[][] TV011D_TV4_1_2_3_4_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x01, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x04)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
+//        }
+//    };
 
     public static final int[][] TV011D_TV4_1_2_3_4_SPLITS = {
         {0x19, 0x52, 0xF4, 0x02, 0x33},
@@ -664,17 +664,17 @@ public class PolynomialTest
      * split9 = EA 23 1D 27 59 CD D7 28 69
      */
     // Constants for TV5
-    public static final int[][] TV011D_TV5_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)},
-        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01)},
-        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01)},
-        {polynomial2.gfPow(0x05, 0x00), polynomial2.gfPow(0x05, 0x01)},
-        {polynomial2.gfPow(0x06, 0x00), polynomial2.gfPow(0x06, 0x01)},
-        {polynomial2.gfPow(0x07, 0x00), polynomial2.gfPow(0x07, 0x01)},
-        {polynomial2.gfPow(0x08, 0x00), polynomial2.gfPow(0x08, 0x01)},
-        {polynomial2.gfPow(0x09, 0x00), polynomial2.gfPow(0x09, 0x01)}
-    };
+//    public static final int[][] TV011D_TV5_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01)},
+//        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01)},
+//        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01)},
+//        {polynomial2.gfPow(0x05, 0x00), polynomial2.gfPow(0x05, 0x01)},
+//        {polynomial2.gfPow(0x06, 0x00), polynomial2.gfPow(0x06, 0x01)},
+//        {polynomial2.gfPow(0x07, 0x00), polynomial2.gfPow(0x07, 0x01)},
+//        {polynomial2.gfPow(0x08, 0x00), polynomial2.gfPow(0x08, 0x01)},
+//        {polynomial2.gfPow(0x09, 0x00), polynomial2.gfPow(0x09, 0x01)}
+//    };
 
     public static final int[][] TV011D_TV5_SR = {
         {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61},
@@ -694,13 +694,13 @@ public class PolynomialTest
     };
 
     // Matrices for recombination
-    public static final int[][] TV011D_TV5_1_2_R = {
-        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
-    };
-
-    public static final int[][] TV011D_TV5_8_9_R = {
-        {polynomial2.gfDiv(0x09, polynomial2.gfAdd(0x08, 0x09)), polynomial2.gfDiv(0x08, polynomial2.gfAdd(0x08, 0x09))}
-    };
+//    public static final int[][] TV011D_TV5_1_2_R = {
+//        {polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02))}
+//    };
+//
+//    public static final int[][] TV011D_TV5_8_9_R = {
+//        {polynomial2.gfDiv(0x09, polynomial2.gfAdd(0x08, 0x09)), polynomial2.gfDiv(0x08, polynomial2.gfAdd(0x08, 0x09))}
+//    };
 
     public static final int[][] TV011D_TV5_1_2_SPLITS = {
         {0xFB, 0x98, 0x58, 0x7F, 0xDA, 0x70, 0x52, 0x17, 0xFD},
@@ -733,13 +733,13 @@ public class PolynomialTest
      * split4 = DD 0E 49 40 9F 86 BD B9 15 6F A6 C1 58 10 D4
      * split5 = 95 2B 53 BD 16 12 C7 DB 9C 91 06 E6 98 6C E4
      */
-    private static final int[][] TV011D_TV6_P = {
-        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02)},
-        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02)},
-        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02)},
-        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02)},
-        {polynomial2.gfPow(0x05, 0x00), polynomial2.gfPow(0x05, 0x01), polynomial2.gfPow(0x05, 0x02)}
-    };
+//    private static final int[][] TV011D_TV6_P = {
+//        {polynomial2.gfPow(0x01, 0x00), polynomial2.gfPow(0x01, 0x01), polynomial2.gfPow(0x01, 0x02)},
+//        {polynomial2.gfPow(0x02, 0x00), polynomial2.gfPow(0x02, 0x01), polynomial2.gfPow(0x02, 0x02)},
+//        {polynomial2.gfPow(0x03, 0x00), polynomial2.gfPow(0x03, 0x01), polynomial2.gfPow(0x03, 0x02)},
+//        {polynomial2.gfPow(0x04, 0x00), polynomial2.gfPow(0x04, 0x01), polynomial2.gfPow(0x04, 0x02)},
+//        {polynomial2.gfPow(0x05, 0x00), polynomial2.gfPow(0x05, 0x01), polynomial2.gfPow(0x05, 0x02)}
+//    };
 
     private static final int[][] TV011D_TV6_SR = {
         {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F},
@@ -755,21 +755,21 @@ public class PolynomialTest
         {0x95, 0x2B, 0x53, 0xBD, 0x16, 0x12, 0xC7, 0xDB, 0x9C, 0x91, 0x06, 0xE6, 0x98, 0x6C, 0xE4}
     };
 
-    private static final int[][] TV011D_TV6_1_2_3_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03))})
-        }
-    };
-
-    private static final int[][] TV011D_TV6_2_3_4_R = {
-        {
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
-            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
-        }
-    };
+//    private static final int[][] TV011D_TV6_1_2_3_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x01, 0x03))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x02)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x01, polynomial2.gfAdd(0x01, 0x03)), polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03))})
+//        }
+//    };
+//
+//    private static final int[][] TV011D_TV6_2_3_4_R = {
+//        {
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x02, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x03)), polynomial2.gfDiv(0x04, polynomial2.gfAdd(0x03, 0x04))}),
+//            polynomial2.gfProd(new int[]{polynomial2.gfDiv(0x02, polynomial2.gfAdd(0x02, 0x04)), polynomial2.gfDiv(0x03, polynomial2.gfAdd(0x03, 0x04))})
+//        }
+//    };
 
     private static final int[][] TV011D_TV6_1_2_3_SPLITS = {
         {0x49, 0x27, 0x19, 0xF9, 0x8C, 0x92, 0x7D, 0x6A, 0x80, 0xF4, 0xAB, 0x2B, 0xCD, 0x72, 0x3F},
@@ -793,71 +793,115 @@ public class PolynomialTest
         test.performTest();
     }
 
+    @FunctionalInterface
+    private interface PolynomialFactory
+    {
+        Polynomial newInstance(int l, int m, int n);
+    }
+
     public void performTest()
     {
-        Polynomial poly = new PolynomialNative(Polynomial.AES);
-        testPolynoimial1(poly);
-        poly = new PolynomialTable(Polynomial.AES);
-        testPolynoimial1(poly);
-        poly = new PolynomialNative(Polynomial.RSA);
-        testPolynoimial2(poly);
-        poly = new PolynomialTable(Polynomial.RSA);
-        testPolynoimial2(poly);
+        testPolynoimial1(new PolynomialFactory()
+        {
+            @Override
+            public Polynomial newInstance(int l, int m, int n)
+            {
+                return new PolynomialNative(Polynomial.AES, l, m, n);
+            }
+        });
+        testPolynoimial1(new PolynomialFactory()
+        {
+            @Override
+            public Polynomial newInstance(int l, int m, int n)
+            {
+                return new PolynomialTable(Polynomial.AES, l, m, n);
+            }
+        });
+
+        testPolynoimial2(new PolynomialFactory()
+        {
+            @Override
+            public Polynomial newInstance(int l, int m, int n)
+            {
+                return new PolynomialNative(Polynomial.RSA, l, m, n);
+            }
+        });
+
+        testPolynoimial2(new PolynomialFactory()
+        {
+            @Override
+            public Polynomial newInstance(int l, int m, int n)
+            {
+                return new PolynomialTable(Polynomial.RSA, l, m, n);
+            }
+        });
     }
 
-    private void testPolynoimial1(Polynomial poly)
+    private void testPolynoimial1(PolynomialFactory polynomialFactory)
     {
-        testMatrixMultiplication(poly, TV011B_TV1_P, TV011B_TV1_SR, TV011B_TV1_SPLITS);
-        testRecombine(poly, TV011B_TV1_1_2_R, TV011B_TV1_1_2_SPLITS, TV011B_TV1_SECRET);
-        testMatrixMultiplication(poly, TV011B_TV2_P, TV011B_TV2_SR, TV011B_TV2_SPLITS);
-        testRecombine(poly, TV011B_TV2_1_2_R, TV011B_TV2_1_2_SPLITS, TV011B_TV2_SECRET);
-        testRecombine(poly, TV011B_TV2_1_4_R, TV011B_TV2_1_4_SPLITS, TV011B_TV2_SECRET);
-        testRecombine(poly, TV011B_TV2_3_4_R, TV011B_TV2_3_4_SPLITS, TV011B_TV2_SECRET);
-        testMatrixMultiplication(poly, TV011B_TV3_P, TV011B_TV3_SR, TV011B_TV3_SPLITS);
-        testRecombine(poly, TV011B_TV3_1_2_3_R, TV011B_TV3_1_2_3_SPLITS, TV011B_TV3_SECRET);
-        testRecombine(poly, TV011B_TV3_1_2_4_R, TV011B_TV3_1_2_4_SPLITS, TV011B_TV3_SECRET);
-        testRecombine(poly, TV011B_TV3_1_3_4_R, TV011B_TV3_1_3_4_SPLITS, TV011B_TV3_SECRET);
-        testMatrixMultiplication(poly, TV011B_TV4_P, TV011B_TV4_SR, TV011B_TV4_SPLITS);
-        testRecombine(poly, TV011B_TV4_1_2_3_4_R, TV011B_TV4_1_2_3_4_SPLITS, TV011B_TV4_SECRET);
-        testMatrixMultiplication(poly, TV011B_TV5_P, TV011B_TV5_SR, TV011B_TV5_SPLITS);
-        testRecombine(poly, TV011B_TV5_1_2_R, TV011B_TV5_1_2_SPLITS, TV011B_TV5_SECRET);
-        testRecombine(poly, TV011B_TV5_8_9_R, TV011B_TV5_8_9_SPLITS, TV011B_TV5_SECRET);
-        testMatrixMultiplication(poly, TV011B_TV6_P, TV011B_TV6_SR, TV011B_TV6_SPLITS);
-        testRecombine(poly, TV011B_TV6_1_2_3_R, TV011B_TV6_1_2_3_SPLITS, TV011B_TV6_SECRET);
-        testRecombine(poly, TV011B_TV6_2_3_4_R, TV011B_TV6_2_3_4_SPLITS, TV011B_TV6_SECRET);
+        Polynomial poly = polynomialFactory.newInstance(5, 2, 2);
+        testMatrixMultiplication(poly, TV011B_TV1_SR, TV011B_TV1_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011B_TV1_1_2_SPLITS, TV011B_TV1_SECRET);
+        poly = polynomialFactory.newInstance(5, 2, 4);
+        testMatrixMultiplication(poly, TV011B_TV2_SR, TV011B_TV2_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011B_TV2_1_2_SPLITS, TV011B_TV2_SECRET);
+        testRecombine(poly, new int[]{1, 4}, TV011B_TV2_1_4_SPLITS, TV011B_TV2_SECRET);
+        testRecombine(poly, new int[]{3, 4}, TV011B_TV2_3_4_SPLITS, TV011B_TV2_SECRET);
+        poly = polynomialFactory.newInstance(5, 3, 4);
+        testMatrixMultiplication(poly, TV011B_TV3_SR, TV011B_TV3_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3}, TV011B_TV3_1_2_3_SPLITS, TV011B_TV3_SECRET);
+        testRecombine(poly, new int[]{1, 2, 4}, TV011B_TV3_1_2_4_SPLITS, TV011B_TV3_SECRET);
+        testRecombine(poly, new int[]{1, 3, 4}, TV011B_TV3_1_3_4_SPLITS, TV011B_TV3_SECRET);
+        poly = polynomialFactory.newInstance(5, 4, 4);
+        testMatrixMultiplication(poly, TV011B_TV4_SR, TV011B_TV4_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3, 4}, TV011B_TV4_1_2_3_4_SPLITS, TV011B_TV4_SECRET);
+        poly = polynomialFactory.newInstance(9, 2, 9);
+        testMatrixMultiplication(poly, TV011B_TV5_SR, TV011B_TV5_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011B_TV5_1_2_SPLITS, TV011B_TV5_SECRET);
+        testRecombine(poly, new int[]{8, 9}, TV011B_TV5_8_9_SPLITS, TV011B_TV5_SECRET);
+        poly = polynomialFactory.newInstance(15, 3, 5);
+        testMatrixMultiplication(poly, TV011B_TV6_SR, TV011B_TV6_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3}, TV011B_TV6_1_2_3_SPLITS, TV011B_TV6_SECRET);
+        testRecombine(poly, new int[]{2, 3, 4}, TV011B_TV6_2_3_4_SPLITS, TV011B_TV6_SECRET);
     }
 
-    private void testPolynoimial2(Polynomial poly)
+    private void testPolynoimial2(PolynomialFactory polynomialFactory)
     {
-        testMatrixMultiplication(poly, TV011D_TV1_P, TV011D_TV1_SR, TV011D_TV1_SPLITS);
-        testRecombine(poly, TV011D_TV1_1_2_R, TV011D_TV1_1_2_SPLITS, TV011D_TV1_SECRET);
-        testMatrixMultiplication(poly, TV011D_TV2_P, TV011D_TV2_SR, TV011D_TV2_SPLITS);
-        testRecombine(poly, TV011D_TV2_1_2_R, TV011D_TV2_1_2_SPLITS, TV011D_TV2_SECRET);
-        testRecombine(poly, TV011D_TV2_1_4_R, TV011D_TV2_1_4_SPLITS, TV011D_TV2_SECRET);
-        testRecombine(poly, TV011D_TV2_3_4_R, TV011D_TV2_3_4_SPLITS, TV011D_TV2_SECRET);
-        testMatrixMultiplication(poly, TV011D_TV3_P, TV011D_TV3_SR, TV011D_TV3_SPLITS);
-        testRecombine(poly, TV011D_TV3_1_2_3_R, TV011D_TV3_1_2_3_SPLITS, TV011D_TV3_SECRET);
-        testRecombine(poly, TV011D_TV3_1_2_4_R, TV011D_TV3_1_2_4_SPLITS, TV011D_TV3_SECRET);
-        testRecombine(poly, TV011D_TV3_1_3_4_R, TV011D_TV3_1_3_4_SPLITS, TV011D_TV3_SECRET);
-        testMatrixMultiplication(poly, TV011D_TV4_P, TV011D_TV4_SR, TV011D_TV4_SPLITS);
-        testRecombine(poly, TV011D_TV4_1_2_3_4_R, TV011D_TV4_1_2_3_4_SPLITS, TV011D_TV4_SECRET);
-        testMatrixMultiplication(poly, TV011D_TV5_P, TV011D_TV5_SR, TV011D_TV5_SPLITS);
-        testRecombine(poly, TV011D_TV5_1_2_R, TV011D_TV5_1_2_SPLITS, TV011D_TV5_SECRET);
-        testRecombine(poly, TV011D_TV5_8_9_R, TV011D_TV5_8_9_SPLITS, TV011D_TV5_SECRET);
-        testMatrixMultiplication(poly, TV011D_TV6_P, TV011D_TV6_SR, TV011D_TV6_SPLITS);
-        testRecombine(poly, TV011D_TV6_1_2_3_R, TV011D_TV6_1_2_3_SPLITS, TV011D_TV6_SECRET);
-        testRecombine(poly, TV011D_TV6_2_3_4_R, TV011D_TV6_2_3_4_SPLITS, TV011D_TV6_SECRET);
+        Polynomial poly = polynomialFactory.newInstance(5, 2, 2);
+        testMatrixMultiplication(poly, TV011D_TV1_SR, TV011D_TV1_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011D_TV1_1_2_SPLITS, TV011D_TV1_SECRET);
+        poly = polynomialFactory.newInstance(5, 2, 4);
+        testMatrixMultiplication(poly, TV011D_TV2_SR, TV011D_TV2_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011D_TV2_1_2_SPLITS, TV011D_TV2_SECRET);
+        testRecombine(poly, new int[]{1, 4}, TV011D_TV2_1_4_SPLITS, TV011D_TV2_SECRET);
+        testRecombine(poly, new int[]{3, 4}, TV011D_TV2_3_4_SPLITS, TV011D_TV2_SECRET);
+        poly = polynomialFactory.newInstance(5, 3, 4);
+        testMatrixMultiplication(poly, TV011D_TV3_SR, TV011D_TV3_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3}, TV011D_TV3_1_2_3_SPLITS, TV011D_TV3_SECRET);
+        testRecombine(poly, new int[]{1, 2, 4}, TV011D_TV3_1_2_4_SPLITS, TV011D_TV3_SECRET);
+        testRecombine(poly, new int[]{1, 3, 4}, TV011D_TV3_1_3_4_SPLITS, TV011D_TV3_SECRET);
+        poly = polynomialFactory.newInstance(5, 4, 4);
+        testMatrixMultiplication(poly, TV011D_TV4_SR, TV011D_TV4_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3, 4}, TV011D_TV4_1_2_3_4_SPLITS, TV011D_TV4_SECRET);
+        poly = polynomialFactory.newInstance(9, 2, 9);
+        testMatrixMultiplication(poly, TV011D_TV5_SR, TV011D_TV5_SPLITS);
+        testRecombine(poly, new int[]{1, 2}, TV011D_TV5_1_2_SPLITS, TV011D_TV5_SECRET);
+        testRecombine(poly, new int[]{8, 9}, TV011D_TV5_8_9_SPLITS, TV011D_TV5_SECRET);
+        poly = polynomialFactory.newInstance(15, 3, 5);
+        testMatrixMultiplication(poly, TV011D_TV6_SR, TV011D_TV6_SPLITS);
+        testRecombine(poly, new int[]{1, 2, 3}, TV011D_TV6_1_2_3_SPLITS, TV011D_TV6_SECRET);
+        testRecombine(poly, new int[]{2, 3, 4}, TV011D_TV6_2_3_4_SPLITS, TV011D_TV6_SECRET);
     }
 
-    static void testMatrixMultiplication(Polynomial poly, int[][] p, int[][] sr, int[][] splits)
+    static void testMatrixMultiplication(Polynomial poly, int[][] sr, int[][] splits)
     {
-        int[][] result = poly.gfMatMul(p, sr);
+        int[][] result = poly.createShares(sr);
         assertArrayEquals(splits, result);
     }
 
-    public void testRecombine(Polynomial poly, int[][] r, int[][] splits, int[][] secret)
+    public void testRecombine(Polynomial poly, int[] rr, int[][] splits, int[][] secret)
     {
-        int[][] result = poly.gfMatMul(r, splits);
+        int[][] result = poly.recombine(rr, splits);
         assertArrayEquals(secret, result);
     }
 
