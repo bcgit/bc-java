@@ -56,7 +56,19 @@ public abstract class Polynomial
 
     protected abstract int gfMul(int x, int y);
 
-    protected abstract int gfPow(int n, int k);
+    protected int gfPow(int n, int k)
+    {
+        int result = 1;
+        for (int i = 0; i < 8; i++)
+        {
+            if ((k & (1 << i)) != 0)
+            {
+                result = gfMul(result, n);
+            }
+            n = gfMul(n, n);
+        }
+        return result;
+    }
 
     protected abstract int gfDiv(int x, int y);
 
@@ -70,24 +82,14 @@ public abstract class Polynomial
         return prod;
     }
 
-    protected int gfDotProd(int[] xs, int[] ys)
+    protected int gfDotProd(int[] xs, int[][] yss, int col)
     {
         int sum = 0;
         for (int i = 0; i < xs.length; i++)
         {
-            sum = sum ^ gfMul(xs[i], ys[i]);
+            sum = sum ^ gfMul(xs[i], yss[i][col]);
         }
         return sum;
-    }
-
-    protected int[] gfVecMul(int[] v, int[][] ms)
-    {
-        int[] result = new int[ms[0].length];
-        for (int i = 0; i < ms[0].length; i++)
-        {
-            result[i] = gfDotProd(v, getColumn(ms, i));
-        }
-        return result;
     }
 
     protected int[][] gfMatMul(int[][] xss, int[][] yss)
@@ -95,19 +97,12 @@ public abstract class Polynomial
         int[][] result = new int[xss.length][yss[0].length];
         for (int i = 0; i < xss.length; i++)
         {
-            result[i] = gfVecMul(xss[i], yss);
+            for (int j = 0; j < yss[0].length; j++)
+            {
+                result[i][j] = gfDotProd(xss[i], yss, j);
+            }
         }
         return result;
-    }
-
-    private static int[] getColumn(int[][] matrix, int col)
-    {
-        int[] column = new int[matrix.length];
-        for (int i = 0; i < matrix.length; i++)
-        {
-            column[i] = matrix[i][col];
-        }
-        return column;
     }
 
     private int[][] getR(int[] input)
