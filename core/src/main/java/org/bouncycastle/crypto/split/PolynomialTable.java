@@ -5,8 +5,8 @@ import org.bouncycastle.util.Arrays;
 public class PolynomialTable
     extends Polynomial
 {
-    private int[] LOG;
-    private int[] EXP;
+    private final int[] LOG;
+    private final int[] EXP;
     private static final int[] AES_LOG = {
         0x00, 0xff, 0x19, 0x01, 0x32, 0x02, 0x1a, 0xc6,
         0x4b, 0xc7, 0x1b, 0x68, 0x33, 0xee, 0xdf, 0x03,
@@ -147,10 +147,12 @@ public class PolynomialTable
         0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83,
         0x1b, 0x36, 0x6c, 0xd8, 0xad, 0x47, 0x8e, 0x01
     };
+
     public PolynomialTable(int algorithm, int l, int m, int n)
     {
         super(l, m, n);
-        switch (algorithm){
+        switch (algorithm)
+        {
         case AES:
             LOG = Arrays.clone(AES_LOG);
             EXP = Arrays.clone(AES_EXP);
@@ -172,20 +174,6 @@ public class PolynomialTable
             return 0;
         }
         return EXP[(LOG[x] + LOG[y]) % 255];
-    }
-
-    protected int gfPow(int n, int k)
-    {
-        int result = 1;
-        for (int i = 0; i < 8; i++)
-        {
-            if ((k & (1 << i)) != 0)
-            {
-                result = gfMul(result, n);
-            }
-            n = gfMul(n, n);
-        }
-        return result;
     }
 
     protected int gfDiv(int x, int y)

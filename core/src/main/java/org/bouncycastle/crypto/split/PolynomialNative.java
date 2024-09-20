@@ -24,12 +24,7 @@ public class PolynomialNative
 
     protected int gfMul(int x, int y)
     {
-        int result = pmult(x, y);
-        return mod(result, IRREDUCIBLE);
-    }
-
-    private int pmult(int x, int y)
-    {
+        //pmult
         int result = 0;
         while (y > 0)
         {
@@ -44,36 +39,16 @@ public class PolynomialNative
             }
             y >>= 1;             // Shift y right
         }
-        return result;
-    }
-
-    private static int mod(int value, int irreducible)
-    {
-        while (value >= (1 << 8))
+        //mod
+        while (result >= (1 << 8))
         {
-            if ((value & (1 << 8)) != 0)
+            if ((result & (1 << 8)) != 0)
             {
-                value ^= irreducible;
+                result ^= IRREDUCIBLE;
             }
-            value <<= 1;
+            result <<= 1;
         }
-        return value & 0xFF;
-    }
-
-    protected int gfPow(int n, int k)
-    {
-        int result = 1;
-        int[] base = new int[]{n};
-        while (k > 0)
-        {
-            if ((k & 1) != 0)
-            {
-                result = gfMul(result, base[0]);
-            }
-            base[0] = gfMul(base[0], base[0]);
-            k >>= 1;
-        }
-        return result;
+        return result & 0xFF;
     }
 
     protected int gfInv(int x)
