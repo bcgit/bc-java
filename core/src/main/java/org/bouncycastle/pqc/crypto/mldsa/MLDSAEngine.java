@@ -50,7 +50,6 @@ class MLDSAEngine
     private final int PolyUniformGamma1NBlocks;
 
     private final Symmetric symmetric;
-    ;
 
     protected Symmetric GetSymmetric()
     {
