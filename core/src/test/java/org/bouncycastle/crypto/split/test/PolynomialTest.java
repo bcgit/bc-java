@@ -51,9 +51,7 @@ public class PolynomialTest
         {0x3F, 0x93, 0x1B, 0x4D, 0x71}
     };
 
-    int[][] TV011B_TV1_SECRET = {
-        {0x74, 0x65, 0x73, 0x74, 0x00}
-    };
+    int[] TV011B_TV1_SECRET = {0x74, 0x65, 0x73, 0x74, 0x00};
 
     /*
      * Test vector TV011B_2
@@ -115,9 +113,7 @@ public class PolynomialTest
         {0xB7, 0x2E, 0xA9, 0xFF, 0x69}
     };
 
-    int[][] TV011B_TV2_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    int[] TV011B_TV2_SECRET = {0x53, 0x41, 0x4D, 0x54, 0x43};
 
 //    int[][] TV011B_TV3_P = {
 //        {polynomial1.gfPow(0x01, 0x00), polynomial1.gfPow(0x01, 0x01), polynomial1.gfPow(0x01, 0x02)},
@@ -196,9 +192,7 @@ public class PolynomialTest
         {0x42, 0x9F, 0x84, 0x9E, 0x06}
     };
 
-    int[][] TV011B_TV3_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    int[] TV011B_TV3_SECRET = {0x53, 0x41, 0x4D, 0x54, 0x43};
 
     /*
      * Test vector TV011B_4
@@ -251,9 +245,7 @@ public class PolynomialTest
         {0xAB, 0xAF, 0x81, 0x82, 0x8D}
     };
 
-    int[][] TV011B_TV4_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    int[] TV011B_TV4_SECRET = {0x53, 0x41, 0x4D, 0x54, 0x43};
 
     /*
      * Test vector TV011B_5
@@ -321,9 +313,8 @@ public class PolynomialTest
         {0xFE, 0x06, 0x9A, 0xDA, 0xCE, 0x3C, 0xE2, 0xAF, 0x3A}
     };
 
-    private static final int[][] TV011B_TV5_SECRET = {
-        {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61}
-    };
+    private static final int[] TV011B_TV5_SECRET =
+        {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61};
 
     /*
      * Test vector TV011B_6
@@ -386,9 +377,8 @@ public class PolynomialTest
         {0x3F, 0x99, 0xDD, 0xF4, 0x88, 0x9B, 0xE1, 0x6A, 0x29, 0xE2, 0x77, 0x3E, 0x10, 0x68, 0x63}
     };
 
-    private static final int[][] TV011B_TV6_SECRET = {
-        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F}
-    };
+    private static final int[] TV011B_TV6_SECRET =
+        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
 
     // Test test vectors for Polynomial 1 (x^^8 + x^^4 + x^^3 + x + 1)
 
@@ -431,9 +421,8 @@ public class PolynomialTest
         {0x8F, 0xFC, 0x15, 0x6B, 0xF7}
     };
 
-    public static final int[][] TV011D_TV1_SECRET = {
-        {0x74, 0x65, 0x73, 0x74, 0x00}
-    };
+    public static final int[] TV011D_TV1_SECRET =
+        {0x74, 0x65, 0x73, 0x74, 0x00};
 
     /*
      * Test vector TV011D_2
@@ -497,9 +486,8 @@ public class PolynomialTest
         {0xD3, 0x84, 0x6D, 0x22, 0x73}
     };
 
-    public static final int[][] TV011D_TV2_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    public static final int[] TV011D_TV2_SECRET =
+        {0x53, 0x41, 0x4D, 0x54, 0x43};
     /*
      * Test vector TV011D_3
      * secret = 53 41 4D 54 43
@@ -581,9 +569,8 @@ public class PolynomialTest
     };
 
     // Secret to recover
-    public static final int[][] TV011D_TV3_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    public static final int[] TV011D_TV3_SECRET =
+        {0x53, 0x41, 0x4D, 0x54, 0x43};
 
     /*
      * Test vector TV011D_4
@@ -639,9 +626,8 @@ public class PolynomialTest
     };
 
     // Secret to recover
-    public static final int[][] TV011D_TV4_SECRET = {
-        {0x53, 0x41, 0x4D, 0x54, 0x43}
-    };
+    public static final int[] TV011D_TV4_SECRET =
+        {0x53, 0x41, 0x4D, 0x54, 0x43};
 
 
     /*
@@ -713,9 +699,8 @@ public class PolynomialTest
     };
 
     // Secret to recover
-    public static final int[][] TV011D_TV5_SECRET = {
-        {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61}
-    };
+    public static final int[] TV011D_TV5_SECRET =
+        {0x54, 0x65, 0x73, 0x74, 0x20, 0x44, 0x61, 0x74, 0x61};
 
 
     /*
@@ -783,9 +768,8 @@ public class PolynomialTest
         {0xDD, 0x0E, 0x49, 0x40, 0x9F, 0x86, 0xBD, 0xB9, 0x15, 0x6F, 0xA6, 0xC1, 0x58, 0x10, 0xD4}
     };
 
-    private static final int[][] TV011D_TV6_SECRET = {
-        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F}
-    };
+    private static final int[] TV011D_TV6_SECRET =
+        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
 
     public static void main(String[] args)
     {
@@ -899,14 +883,19 @@ public class PolynomialTest
         assertArrayEquals(splits, result);
     }
 
-    public void testRecombine(Polynomial poly, int[] rr, int[][] splits, int[][] secret)
+    public void testRecombine(Polynomial poly, int[] rr, int[][] splits, int[] secret)
     {
-        int[][] result = poly.recombine(rr, splits);
+        int[] result = poly.recombine(rr, splits);
         assertArrayEquals(secret, result);
     }
 
     private static void assertArrayEquals(int[][] expected, int[][] actual)
     {
         assertEquals(Arrays.deepToString(expected), Arrays.deepToString(actual));
+    }
+
+    private static void assertArrayEquals(int[] expected, int[] actual)
+    {
+        assertTrue(Arrays.equals(expected, actual));
     }
 }

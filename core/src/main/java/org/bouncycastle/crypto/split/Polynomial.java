@@ -46,15 +46,45 @@ public abstract class Polynomial
 
     public int[][] createShares(int[][] sr)
     {
-        return gfMatMul(p, sr);
+        int[][] result = new int[p.length][sr[0].length];
+        for (int i = 0; i < p.length; i++)
+        {
+            result[i] = gfVecMul(p[i], sr);
+        }
+        return result;
     }
 
-    public int[][] recombine(int[] rr, int[][] splits)
+    public int[] recombine(int[] rr, int[][] splits)
     {
-        return gfMatMul(getR(rr), splits);
+        int n = rr.length;
+        int[] r = new int[n];
+        int tmp;
+        int[] products = new int[n - 1];
+        for (int i = 0; i < n; i++)
+        {
+            tmp = 0;
+            for (int j = 0; j < n; j++)
+            {
+                if (j != i)
+                {
+                    products[tmp++] = gfDiv(rr[j], rr[i] ^ rr[j]);
+                }
+            }
+
+            tmp = 1;
+            for (int p : products)
+            {
+                tmp = gfMul(tmp, p);
+            }
+            r[i] = tmp;
+        }
+
+        return gfVecMul(r, splits);
     }
 
     protected abstract int gfMul(int x, int y);
+
+    protected abstract int gfDiv(int x, int y);
 
     protected int gfPow(int n, int k)
     {
@@ -70,62 +100,19 @@ public abstract class Polynomial
         return result;
     }
 
-    protected abstract int gfDiv(int x, int y);
-
-    protected int gfProd(int[] ps)
+    private int[] gfVecMul(int[] xs, int[][] yss)
     {
-        int prod = 1;
-        for (int p : ps)
+        int[] result = new int[yss[0].length];
+        int sum;
+        for (int j = 0; j < yss[0].length; j++)
         {
-            prod = gfMul(prod, p);
-        }
-        return prod;
-    }
-
-    protected int gfDotProd(int[] xs, int[][] yss, int col)
-    {
-        int sum = 0;
-        for (int i = 0; i < xs.length; i++)
-        {
-            sum = sum ^ gfMul(xs[i], yss[i][col]);
-        }
-        return sum;
-    }
-
-    protected int[][] gfMatMul(int[][] xss, int[][] yss)
-    {
-        int[][] result = new int[xss.length][yss[0].length];
-        for (int i = 0; i < xss.length; i++)
-        {
-            for (int j = 0; j < yss[0].length; j++)
+            sum = 0;
+            for (int k = 0; k < xs.length; k++)
             {
-                result[i][j] = gfDotProd(xss[i], yss, j);
+                sum = sum ^ gfMul(xs[k], yss[k][j]);
             }
+            result[j] = sum;
         }
-        return result;
-    }
-
-    private int[][] getR(int[] input)
-    {
-        int n = input.length;
-        int[][] result = new int[1][n];
-
-        for (int i = 0; i < n; i++)
-        {
-            int[] products = new int[n - 1];
-            int index = 0;
-
-            for (int j = 0; j < n; j++)
-            {
-                if (j != i)
-                {
-                    products[index++] = gfDiv(input[j], input[i] ^ input[j]);
-                }
-            }
-
-            result[0][i] = gfProd(products);
-        }
-
         return result;
     }
 }
