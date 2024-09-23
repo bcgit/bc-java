@@ -7,7 +7,6 @@ import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
-import org.bouncycastle.cms.CMSInputAEADDecryptor;
 import org.bouncycastle.cms.RecipientOperator;
 
 public class JceKeyTransAuthEnvelopedRecipient
