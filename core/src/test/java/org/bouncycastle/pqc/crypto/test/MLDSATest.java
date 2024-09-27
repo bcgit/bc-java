@@ -328,10 +328,75 @@ public class MLDSATest
         }
     }
 
+    public void testKeyGenCombinedVectorSet()
+        throws IOException
+    {
+        Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
+        {
+            {
+                put("ML-DSA-44", MLDSAParameters.ml_dsa_44);
+                put("ML-DSA-65", MLDSAParameters.ml_dsa_65);
+                put("ML-DSA-87", MLDSAParameters.ml_dsa_87);
+            }
+        };
+
+
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/mldsa", "ML-DSA-keyGen.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        
+        String line = null;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
+
+            if (line.startsWith("#"))
+            {
+                continue;
+            }
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    byte[] seed = Hex.decode((String)buf.get("seed"));
+                    byte[] pk = Hex.decode((String)buf.get("pk"));
+                    byte[] sk = Hex.decode((String)buf.get("sk"));
+
+                    FixedSecureRandom random = new FixedSecureRandom(seed);
+                    MLDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
+
+                    MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+                    kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
+
+                    //
+                    // Generate keys and test.
+                    //
+                    AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+                    MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters)PublicKeyFactory.createKey(
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+                    MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(
+                        PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
+
+                    assertTrue(Arrays.areEqual(pk, pubParams.getEncoded()));
+                    assertTrue(Arrays.areEqual(sk, privParams.getEncoded()));
+                }
+                buf.clear();
+
+                continue;
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
     public void testSigGenCombinedVectorSet()
         throws IOException
     {
-
         Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
         {
             {
