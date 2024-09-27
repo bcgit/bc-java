@@ -227,7 +227,7 @@ class MLDSAEngine
     }
 
     //Internal functions are deterministic. No randomness is sampled inside them
-    private byte[][] generateKeyPairInternal(byte[] seed)
+    byte[][] generateKeyPairInternal(byte[] seed)
     {
         byte[] buf = new byte[2 * SeedBytes + CrhBytes];
         byte[] tr = new byte[TrBytes];
@@ -301,7 +301,7 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
+        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
     }
 
     SHAKEDigest getShake256Digest()

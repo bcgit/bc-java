@@ -13,8 +13,29 @@ public class MLDSAPrivateKeyParameters
     final byte[] t0;
 
     private final byte[] t1;
+    private final byte[] seed;
+
+    public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] seed)
+    {
+        super(true, params);
+        byte[][] keyDetails = params.getEngine(null).generateKeyPairInternal(seed);
+
+        this.rho = keyDetails[0];
+        this.k = keyDetails[1];
+        this.tr = keyDetails[2];
+        this.s1 = keyDetails[3];
+        this.s2 = keyDetails[4];
+        this.t0 = keyDetails[5];
+        this.t1 = keyDetails[6];
+        this.seed = keyDetails[7];
+    }
 
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1)
+    {
+        this(params, rho, K, tr, s1, s2, t0, t1, null);
+    }
+
+    public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1, byte[] seed)
     {
         super(true, params);
         this.rho = Arrays.clone(rho);
@@ -24,6 +45,7 @@ public class MLDSAPrivateKeyParameters
         this.s2 = Arrays.clone(s2);
         this.t0 = Arrays.clone(t0);
         this.t1 = Arrays.clone(t1);
+        this.seed = Arrays.clone(seed);
     }
 
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] encoding, MLDSAPublicKeyParameters pubKey)
@@ -32,15 +54,21 @@ public class MLDSAPrivateKeyParameters
 
         MLDSAEngine eng = params.getEngine(null);
         int index = 0;
-        this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes); index += MLDSAEngine.SeedBytes;
-        this.k = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.SeedBytes); index += MLDSAEngine.SeedBytes;
-        this.tr = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.TrBytes); index += MLDSAEngine.TrBytes;
+        this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes);
+        index += MLDSAEngine.SeedBytes;
+        this.k = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.SeedBytes);
+        index += MLDSAEngine.SeedBytes;
+        this.tr = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.TrBytes);
+        index += MLDSAEngine.TrBytes;
         int delta = eng.getDilithiumL() * eng.getDilithiumPolyEtaPackedBytes();
-        this.s1 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+        this.s1 = Arrays.copyOfRange(encoding, index, index + delta);
+        index += delta;
         delta = eng.getDilithiumK() * eng.getDilithiumPolyEtaPackedBytes();
-        this.s2 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+        this.s2 = Arrays.copyOfRange(encoding, index, index + delta);
+        index += delta;
         delta = eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
-        this.t0 = Arrays.copyOfRange(encoding, index, index + delta); index += delta;
+        this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
+        index += delta;
 
         if (pubKey != null)
         {
@@ -50,11 +78,12 @@ public class MLDSAPrivateKeyParameters
         {
             this.t1 = null;
         }
+        this.seed = null;
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(new byte[][]{ rho, k, tr, s1, s2, t0 });
+        return Arrays.concatenate(new byte[][]{rho, k, tr, s1, s2, t0});
     }
 
     public byte[] getK()
@@ -62,7 +91,9 @@ public class MLDSAPrivateKeyParameters
         return Arrays.clone(k);
     }
 
-    /** @deprecated Use {@link #getEncoded()} instead. */
+    /**
+     * @deprecated Use {@link #getEncoded()} instead.
+     */
     public byte[] getPrivateKey()
     {
         return getEncoded();
@@ -71,6 +102,11 @@ public class MLDSAPrivateKeyParameters
     public byte[] getPublicKey()
     {
         return MLDSAPublicKeyParameters.getEncoded(rho, t1);
+    }
+
+    public byte[] getSeed()
+    {
+        return Arrays.clone(seed);
     }
 
     public MLDSAPublicKeyParameters getPublicKeyParameters()
