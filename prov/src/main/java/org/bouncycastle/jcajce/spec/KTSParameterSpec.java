@@ -88,6 +88,11 @@ public class KTSParameterSpec
          */
         public Builder withKdfAlgorithm(AlgorithmIdentifier kdfAlgorithm)
         {
+            if (kdfAlgorithm == null)
+            {
+                throw new NullPointerException("kdfAlgorithm cannot be null");
+            }
+
             this.kdfAlgorithm = kdfAlgorithm;
 
             return this;
