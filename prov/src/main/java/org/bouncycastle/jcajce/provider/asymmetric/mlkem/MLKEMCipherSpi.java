@@ -34,7 +34,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 class MLKEMCipherSpi
-        extends CipherSpi
+    extends CipherSpi
 {
     private final String algorithmName;
     private MLKEMGenerator kemGen;

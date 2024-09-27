@@ -124,7 +124,7 @@ public class MLKEMTest
         Cipher w1 = Cipher.getInstance(algorithm, "BC");
 
         byte[] keyBytes;
-        if (algorithm.endsWith("KWP"))
+        if (ktsParameterSpec.getKeyAlgorithmName().endsWith("KWP"))
         {
             keyBytes = Hex.decode("000102030405060708090a0b0c0d0e0faa");
         }
