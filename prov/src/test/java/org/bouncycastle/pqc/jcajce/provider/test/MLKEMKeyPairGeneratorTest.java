@@ -1,19 +1,17 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
-import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
  * KeyFactory/KeyPairGenerator tests for MLKEM with BCPQC provider.
@@ -26,9 +24,8 @@ public class MLKEMKeyPairGeneratorTest
         super.setUp();
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
-            Security.addProvider(new BouncyCastlePQCProvider());
+            Security.addProvider(new BouncyCastleProvider());
         }
-        Security.addProvider(new BouncyCastleProvider());
     }
 
     public void testKeyFactory()

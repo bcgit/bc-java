@@ -24,7 +24,7 @@ public class MLDSAKeyPairGenerator
 
         byte[][] keyPair = engine.generateKeyPair();
         MLDSAPublicKeyParameters pubKey = new MLDSAPublicKeyParameters(dilithiumParams, keyPair[0], keyPair[6]);
-        MLDSAPrivateKeyParameters privKey = new MLDSAPrivateKeyParameters(dilithiumParams, keyPair[0], keyPair[1], keyPair[2], keyPair[3], keyPair[4], keyPair[5], keyPair[6]);
+        MLDSAPrivateKeyParameters privKey = new MLDSAPrivateKeyParameters(dilithiumParams, keyPair[0], keyPair[1], keyPair[2], keyPair[3], keyPair[4], keyPair[5], keyPair[6], keyPair[7]);
 
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }
