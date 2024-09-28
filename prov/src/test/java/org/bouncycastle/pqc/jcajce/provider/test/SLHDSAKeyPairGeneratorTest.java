@@ -1,10 +1,12 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -69,7 +71,7 @@ public class SLHDSAKeyPairGeneratorTest
         PKCS8EncodedKeySpec privSpec = kf.getKeySpec(kp.getPrivate(), PKCS8EncodedKeySpec.class);
 
         assertTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), privSpec.getEncoded()));
-        
+
         X509EncodedKeySpec pubSpec = kf.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class);
 
         assertTrue(Arrays.areEqual(kp.getPublic().getEncoded(), pubSpec.getEncoded()));
@@ -110,7 +112,7 @@ public class SLHDSAKeyPairGeneratorTest
                 SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256,
                 SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256,
             };
-        
+
         // expected object identifiers
         ASN1ObjectIdentifier[] oids =
             {
@@ -139,9 +141,9 @@ public class SLHDSAKeyPairGeneratorTest
                 NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
                 NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
             };
-        
+
         kpg = KeyPairGenerator.getInstance("HASH-SLH-DSA", "BC");
-        
+
         for (int i = 0; i != params.length; i++)
         {
             kpg.initialize(params[i], new SecureRandom());
@@ -151,4 +153,47 @@ public class SLHDSAKeyPairGeneratorTest
         }
     }
 
+    public void testCrossNaming()
+        throws Exception
+    {
+        ASN1ObjectIdentifier[] nistOids = new ASN1ObjectIdentifier[]
+            {
+                NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
+                NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
+                NISTObjectIdentifiers.id_slh_dsa_shake_128s,
+                NISTObjectIdentifiers.id_slh_dsa_shake_128f,
+                NISTObjectIdentifiers.id_slh_dsa_sha2_192s,
+                NISTObjectIdentifiers.id_slh_dsa_sha2_192f,
+                NISTObjectIdentifiers.id_slh_dsa_shake_192s,
+                NISTObjectIdentifiers.id_slh_dsa_shake_192f,
+                NISTObjectIdentifiers.id_slh_dsa_sha2_256s,
+                NISTObjectIdentifiers.id_slh_dsa_sha2_256f,
+                NISTObjectIdentifiers.id_slh_dsa_shake_256s,
+                NISTObjectIdentifiers.id_slh_dsa_shake_256f,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
+                NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
+            };
+
+        for (int i = 0; i != nistOids.length; i++)
+        {
+            KeyPairGenerator ml_dsa_kp = KeyPairGenerator.getInstance(nistOids[i].getId(), "BC");
+            Signature ml_dsa_sig = deriveSignatureFromKey(ml_dsa_kp.generateKeyPair().getPrivate());
+        }
+    }
+    
+    private static Signature deriveSignatureFromKey(Key key)
+        throws Exception
+    {
+        return Signature.getInstance(key.getAlgorithm(), "BC");
+    }
 }
