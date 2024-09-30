@@ -32,6 +32,7 @@ public class XoodyakTest
     public void performTest()
         throws Exception
     {
+        DigestTest.checkDigestReset(this, new XoodyakDigest());
         testVectorsHash();
         testVectors();
         XoodyakEngine xoodyak = new XoodyakEngine();
@@ -96,10 +97,6 @@ public class XoodyakTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("826"))
-//                {
-//                    continue;
-//                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));
@@ -115,10 +112,6 @@ public class XoodyakTest
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
                 xoodyak.reset();
                 xoodyak.init(false, params);
                 //Decrypt

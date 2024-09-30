@@ -1,11 +1,15 @@
 package org.bouncycastle.crypto.test;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.EncodableDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.bouncycastle.util.test.SimpleTestResult;
+import org.bouncycastle.util.test.TestFailedException;
 
 public abstract class DigestTest
     extends SimpleTest
@@ -241,6 +245,33 @@ public abstract class DigestTest
         if (!areEqual(resBuf, Hex.decode(expected)))
         {
             fail("64k test failed", expected, new String(Hex.encode(resBuf)));
+        }
+    }
+
+    static void checkDigestReset(final SimpleTest test, final Digest pDigest)
+    {
+        int DATALEN = 100;
+        /* Obtain some random data */
+        final byte[] myData = new byte[DATALEN];
+        final SecureRandom myRandom = new SecureRandom();
+        myRandom.nextBytes(myData);
+
+        /* Update and finalise digest */
+        final int myHashLen = pDigest.getDigestSize();
+        final byte[] myFirst = new byte[myHashLen];
+        pDigest.update(myData, 0, DATALEN);
+        pDigest.doFinal(myFirst, 0);
+
+
+        /* Reuse the digest */
+        final byte[] mySecond = new byte[myHashLen];
+        pDigest.update(myData, 0, DATALEN);
+        pDigest.doFinal(mySecond, 0);
+
+        /* Check that we have the same result */
+        if (!java.util.Arrays.equals(myFirst, mySecond))
+        {
+            throw new TestFailedException(SimpleTestResult.failed(test,"Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
         }
     }
 }
