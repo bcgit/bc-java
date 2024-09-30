@@ -30,6 +30,7 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
+        DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
         testVectorsHash();
         PhotonBeetleEngine pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32);
         testExceptions(pb, pb.getKeyBytesSize(), pb.getIVBytesSize(), pb.getBlockSize());
@@ -46,22 +47,16 @@ public class PhotonBeetleTest
         throws Exception
     {
         PhotonBeetleDigest PhotonBeetle = new PhotonBeetleDigest();
-        CipherParameters params;
         InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        byte[] ptByte, adByte;
-        byte[] rv;
+        byte[] ptByte;
         HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
         {
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("3"))
-//                {
-//                    continue;
-//                }
                 PhotonBeetle.reset();
                 ptByte = Hex.decode((String)map.get("Msg"));
                 PhotonBeetle.update(ptByte, 0, ptByte.length);
@@ -71,10 +66,6 @@ public class PhotonBeetleTest
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
                 }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
                 map.clear();
                 PhotonBeetle.reset();
             }
@@ -83,7 +74,6 @@ public class PhotonBeetleTest
                 map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        //System.out.print.println("PhotonBeetle Hash pass");
     }
 
     private void testVectors(PhotonBeetleEngine.PhotonBeetleParameters pbp, String filename)
@@ -94,7 +84,6 @@ public class PhotonBeetleTest
         InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", filename + "_LWC_AEAD_KAT_128_128.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        byte[] ptByte, adByte;
         byte[] rv;
         HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
@@ -102,10 +91,6 @@ public class PhotonBeetleTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("133"))
-//                {
-//                    continue;
-//                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));
@@ -121,10 +106,6 @@ public class PhotonBeetleTest
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
                 PhotonBeetle.reset();
                 PhotonBeetle.init(false, params);
                 //Decrypt
