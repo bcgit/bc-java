@@ -75,7 +75,7 @@ class ADRS
     }
 
     // resets part of value to zero in line with 2.7.3
-    public void setType(int type)
+    public void setTypeAndClear(int type)
     {
         Pack.intToBigEndian(type, value, OFFSET_TYPE);
 
