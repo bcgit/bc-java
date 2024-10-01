@@ -18,13 +18,12 @@ class Fors
     // Output: n-byte root node - top node on Stack
     byte[] treehash(byte[] skSeed, int s, int z, byte[] pkSeed, ADRS adrsParam)
     {
-        LinkedList<NodeEntry> stack = new LinkedList<NodeEntry>();
-
-        if (s % (1 << z) != 0)
+        if ((s >>> z) << z != s)
         {
             return null;
         }
 
+        LinkedList<NodeEntry> stack = new LinkedList<NodeEntry>();
         ADRS adrs = new ADRS(adrsParam);
 
         for (int idx = 0; idx < (1 << z); idx++)
@@ -42,19 +41,23 @@ class Fors
 
             adrs.setTreeHeight(1);
 
-            // while ( Top node on Stack has same height as node )
-            while (!stack.isEmpty()
-                && ((NodeEntry)stack.get(0)).nodeHeight == adrs.getTreeHeight())
-            {
-                adrs.setTreeIndex((adrs.getTreeIndex() - 1) / 2);
-                NodeEntry current = ((NodeEntry)stack.remove(0));
+            int adrsTreeHeight = 1;
+            int adrsTreeIndex = s + idx;
 
+            // while ( Top node on Stack has same height as node )
+            while (!stack.isEmpty() && ((NodeEntry)stack.get(0)).nodeHeight == adrsTreeHeight)
+            {
+                adrsTreeIndex = (adrsTreeIndex - 1) / 2;
+                adrs.setTreeIndex(adrsTreeIndex);
+
+                NodeEntry current = ((NodeEntry)stack.remove(0));
                 node = engine.H(pkSeed, adrs, current.nodeValue, node);
-                //topmost node is now one layer higher
-                adrs.setTreeHeight(adrs.getTreeHeight() + 1);
+
+                // topmost node is now one layer higher
+                adrs.setTreeHeight(++adrsTreeHeight);
             }
 
-            stack.add(0, new NodeEntry(node, adrs.getTreeHeight()));
+            stack.add(0, new NodeEntry(node, adrsTreeHeight));
         }
 
         return ((NodeEntry)stack.get(0)).nodeValue;
