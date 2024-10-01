@@ -1,11 +1,5 @@
 package org.bouncycastle.pqc.crypto.slhdsa;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Pack;
-
 public class SLHDSAParameters
 {
     public static final int TYPE_PURE = 0;
@@ -80,9 +74,6 @@ public class SLHDSAParameters
         "shake-256f-with-shake256", new Shake256EngineProvider(32, 16, 17, 9, 35, 68), TYPE_SHAKE256);
     public static final SLHDSAParameters shake_256s_with_shake256 = new SLHDSAParameters(
         "shake-256s-with-shake256", new Shake256EngineProvider(32, 16, 8, 14, 22, 64), TYPE_SHAKE256);
-
-
-    private static final Map<Integer, SLHDSAParameters> ID_TO_PARAMS = new HashMap<Integer, SLHDSAParameters>();
 
     private final String name;
     private final SLHDSAEngineProvider engineProvider;
