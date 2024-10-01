@@ -29,7 +29,7 @@ class Fors
 
         for (int idx = 0; idx < (1 << z); idx++)
         {
-            adrs.setType(ADRS.FORS_PRF);
+            adrs.setTypeAndClear(ADRS.FORS_PRF);
             adrs.setKeyPairAddress(adrsParam.getKeyPairAddress());
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(s + idx);
@@ -74,7 +74,7 @@ class Fors
 // get next index
             int idx = idxs[i];
 // pick private key element
-            adrs.setType(ADRS.FORS_PRF);
+            adrs.setTypeAndClear(ADRS.FORS_PRF);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setTreeHeight(0);
             adrs.setTreeIndex(i * t + idx);
@@ -135,7 +135,7 @@ class Fors
             root[i] = node[0];
         }
         ADRS forspkADRS = new ADRS(adrs); // copy address to create FTS public key address
-        forspkADRS.setType(ADRS.FORS_PK);
+        forspkADRS.setTypeAndClear(ADRS.FORS_PK);
         forspkADRS.setKeyPairAddress(adrs.getKeyPairAddress());
         return engine.T_l(pkSeed, forspkADRS, Arrays.concatenate(root));
     }

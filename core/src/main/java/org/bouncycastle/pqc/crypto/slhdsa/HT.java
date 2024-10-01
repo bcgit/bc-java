@@ -87,7 +87,7 @@ class HT
         ADRS adrs = new ADRS(paramAdrs);
 
         // compute WOTS+ pk from WOTS+ sig
-        adrs.setType(ADRS.WOTS_HASH);
+        adrs.setTypeAndClear(ADRS.WOTS_HASH);
         adrs.setKeyPairAddress(idx);
         byte[] sig = sig_xmss.getWOTSSig();
         byte[][] AUTH = sig_xmss.getXMSSAUTH();
@@ -96,7 +96,7 @@ class HT
         byte[] node1 = null;
 
         // compute root from WOTS+ pk and AUTH
-        adrs.setType(ADRS.TREE);
+        adrs.setTypeAndClear(ADRS.TREE);
         adrs.setTreeIndex(idx);
         for (int k = 0; k < engine.H_PRIME; k++)
         {
@@ -125,7 +125,7 @@ class HT
 
         ADRS adrs = new ADRS(paramAdrs);
 
-        adrs.setType(ADRS.TREE);
+        adrs.setTypeAndClear(ADRS.TREE);
         adrs.setLayerAddress(paramAdrs.getLayerAddress());
         adrs.setTreeAddress(paramAdrs.getTreeAddress());
 
@@ -136,7 +136,7 @@ class HT
             AUTH[j] = treehash(skSeed, k << j, j, pkSeed, adrs);
         }
         adrs = new ADRS(paramAdrs);
-        adrs.setType(ADRS.WOTS_HASH);
+        adrs.setTypeAndClear(ADRS.WOTS_HASH);
         adrs.setKeyPairAddress(idx);
 
         byte[] sig = wots.sign(M, skSeed, pkSeed, adrs);
@@ -161,11 +161,11 @@ class HT
 
         for (int idx = 0; idx < (1 << z); idx++)
         {
-            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setTypeAndClear(ADRS.WOTS_HASH);
             adrs.setKeyPairAddress(s + idx);
             byte[] node = wots.pkGen(skSeed, pkSeed, adrs);
 
-            adrs.setType(ADRS.TREE);
+            adrs.setTypeAndClear(ADRS.TREE);
             adrs.setTreeHeight(1);
             adrs.setTreeIndex(s + idx);
 
