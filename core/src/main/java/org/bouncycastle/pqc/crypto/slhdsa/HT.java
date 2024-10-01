@@ -132,11 +132,11 @@ class HT
         // build authentication path
         for (int j = 0; j < engine.H_PRIME; j++)
         {
-            int k = (idx / (1 << j)) ^ 1;
-            AUTH[j] = treehash(skSeed, k * (1 << j), j, pkSeed, adrs);
+            int k = (idx >>> j) ^ 1;
+            AUTH[j] = treehash(skSeed, k << j, j, pkSeed, adrs);
         }
         adrs = new ADRS(paramAdrs);
-        adrs.setType(ADRS.WOTS_PK);
+        adrs.setType(ADRS.WOTS_HASH);
         adrs.setKeyPairAddress(idx);
 
         byte[] sig = wots.sign(M, skSeed, pkSeed, adrs);
