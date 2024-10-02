@@ -91,7 +91,7 @@ public class PGPKeyRingGenerator
 
         try
         {
-            sigGen = new PGPSignatureGenerator(keySignerBuilder);
+            sigGen = new PGPSignatureGenerator(keySignerBuilder, primaryKey.getPublicKey());
         }
         catch (Exception e)
         {
@@ -237,14 +237,14 @@ public class PGPKeyRingGenerator
             //
             // generate the certification
             //
-            PGPSignatureGenerator  sGen = new PGPSignatureGenerator(keySignerBuilder);
+            PGPSignatureGenerator  sGen = new PGPSignatureGenerator(keySignerBuilder, primaryKey.getPublicKey());
 
             sGen.init(PGPSignature.SUBKEY_BINDING, primaryKey.getPrivateKey());
 
             if (bindingSignerBldr != null)
             {
                 // add primary key binding
-                PGPSignatureGenerator  pGen = new PGPSignatureGenerator(bindingSignerBldr);
+                PGPSignatureGenerator  pGen = new PGPSignatureGenerator(bindingSignerBldr, keyPair.getPublicKey());
 
                 pGen.init(PGPSignature.PRIMARYKEY_BINDING, keyPair.getPrivateKey());
 
