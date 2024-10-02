@@ -18,7 +18,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  */
 public class PGPKeyRingGenerator
 {    
-    List                                keys = new ArrayList();
+    List<PGPSecretKey>                  keys = new ArrayList<PGPSecretKey>();
 
     private PBESecretKeyEncryptor       keyEncryptor;
     private PGPDigestCalculator         checksumCalculator;
@@ -148,7 +148,7 @@ public class PGPKeyRingGenerator
         this.keySignerBuilder = keySignerBuilder;
 
         PGPSignature certSig = (PGPSignature)originalSecretRing.getPublicKey().getSignatures().next();
-        List hashedVec = new ArrayList();
+        List<SignatureSubpacket> hashedVec = new ArrayList<SignatureSubpacket>();
         PGPSignatureSubpacketVector existing = certSig.getHashedSubPackets();
         for (int i = 0; i != existing.size(); i++)
         {
@@ -261,7 +261,7 @@ public class PGPKeyRingGenerator
 
             sGen.setUnhashedSubpackets(unhashedPcks);
 
-            List                 subSigs = new ArrayList();
+            List<PGPSignature> subSigs = new ArrayList<PGPSignature>();
             
             subSigs.add(sGen.generateCertification(primaryKey.getPublicKey(), keyPair.getPublicKey()));
 
@@ -299,14 +299,14 @@ public class PGPKeyRingGenerator
      */
     public PGPPublicKeyRing generatePublicKeyRing()
     {
-        Iterator it = keys.iterator();
-        List     pubKeys = new ArrayList();
-        
-        pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
-        
+        Iterator<PGPSecretKey> it = keys.iterator();
+        List<PGPPublicKey> pubKeys = new ArrayList<PGPPublicKey>();
+
+        pubKeys.add((it.next()).getPublicKey());
+
         while (it.hasNext())
         {
-            pubKeys.add(((PGPSecretKey)it.next()).getPublicKey());
+            pubKeys.add((it.next()).getPublicKey());
         }
         
         return new PGPPublicKeyRing(pubKeys);
