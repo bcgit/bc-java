@@ -159,7 +159,7 @@ public class PGPKeyRingGenerator
             hashedVec.add(existing.packets[i]);
         }
         this.hashedPcks = new PGPSignatureSubpacketVector(
-            (SignatureSubpacket[])hashedVec.toArray(new SignatureSubpacket[hashedVec.size()]));
+            hashedVec.toArray(new SignatureSubpacket[0]));
         this.unhashedPcks = certSig.getUnhashedSubPackets();
 
         keys.addAll(originalSecretRing.keys);
