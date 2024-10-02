@@ -30,12 +30,12 @@ public class PGPKeyRingGenerator
     /**
      * Create a new key ring generator.
      *
-     * @param certificationLevel
-     * @param primaryKey
+     * @param certificationLevel certification level for user-ids
+     * @param primaryKey primary key
      * @param id id to associate with the key.
      * @param checksumCalculator key checksum calculator
-     * @param hashedPcks
-     * @param unhashedPcks
+     * @param hashedPcks hashed signature subpackets
+     * @param unhashedPcks unhashed signature subpackets
      * @param keySignerBuilder builder for key certifications - will be initialised with primary secret key.
      * @param keyEncryptor encryptor for secret subkeys.
      * @throws PGPException
