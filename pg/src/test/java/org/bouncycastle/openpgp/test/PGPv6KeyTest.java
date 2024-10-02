@@ -1,26 +1,46 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -94,6 +114,99 @@ public class PGPv6KeyTest
         parseUnprotectedKeyTest();
         testJcaFingerprintCalculation();
         parseProtectedKeyTest();
+
+        generatePlainV6RSAKey_bc();
+    }
+
+    private void generatePlainV6RSAKey_bc()
+            throws PGPException, IOException
+    {
+        String uid = "Alice <alice@example.com>";
+        Date creationTime = currentTimeRounded();
+        RSAKeyPairGenerator rsaGen = new RSAKeyPairGenerator();
+        rsaGen.init(new RSAKeyGenerationParameters(
+                BigInteger.valueOf(0x10001),
+                CryptoServicesRegistrar.getSecureRandom(),
+                4096,
+                100));
+        AsymmetricCipherKeyPair rsaKp = rsaGen.generateKeyPair();
+
+        PGPKeyPair pgpKp = new BcPGPKeyPair(
+                PublicKeyPacket.VERSION_6,
+                PublicKeyAlgorithmTags.RSA_GENERAL,
+                rsaKp,
+                creationTime);
+        PGPPublicKey primaryKey = pgpKp.getPublicKey();
+
+        PGPSignatureGenerator dkSigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(primaryKey.getAlgorithm(), HashAlgorithmTags.SHA3_512),
+                primaryKey);
+        dkSigGen.init(PGPSignature.DIRECT_KEY, pgpKp.getPrivateKey());
+        PGPSignatureSubpacketGenerator hashed = new PGPSignatureSubpacketGenerator();
+        hashed.setIssuerFingerprint(true, primaryKey);
+        hashed.setSignatureCreationTime(true, creationTime);
+        hashed.setFeature(false, (byte) (Features.FEATURE_MODIFICATION_DETECTION | Features.FEATURE_SEIPD_V2));
+        hashed.setPreferredAEADCiphersuites(false, new PreferredAEADCiphersuites.Combination[]{
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB),
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_192, AEADAlgorithmTags.OCB),
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB)
+        });
+        hashed.setPreferredHashAlgorithms(false,
+                new int[]
+                {
+                        HashAlgorithmTags.SHA3_512, HashAlgorithmTags.SHA3_256,
+                        HashAlgorithmTags.SHA512, HashAlgorithmTags.SHA384, HashAlgorithmTags.SHA256
+                }
+        );
+        hashed.setPreferredSymmetricAlgorithms(false,
+                new int[]
+                {
+                        SymmetricKeyAlgorithmTags.AES_256, SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128
+                }
+        );
+
+        dkSigGen.setHashedSubpackets(hashed.generate());
+        PGPSignature dkSig = dkSigGen.generateCertification(primaryKey);
+
+        PGPSignatureGenerator uidSigGen = new PGPSignatureGenerator(
+                new BcPGPContentSignerBuilder(primaryKey.getAlgorithm(), HashAlgorithmTags.SHA3_512),
+                primaryKey);
+        uidSigGen.init(PGPSignature.POSITIVE_CERTIFICATION, pgpKp.getPrivateKey());
+
+        hashed = new PGPSignatureSubpacketGenerator();
+        hashed.setIssuerFingerprint(true, primaryKey);
+        hashed.setSignatureCreationTime(true, creationTime);
+
+        PGPSignature uidSig = uidSigGen.generateCertification(uid, primaryKey);
+
+        primaryKey = PGPPublicKey.addCertification(primaryKey, dkSig);
+        primaryKey = PGPPublicKey.addCertification(primaryKey, uid, uidSig);
+
+        PGPSecretKey primarySecKey = new PGPSecretKey(
+                pgpKp.getPrivateKey(),
+                primaryKey,
+                new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+                true,
+                null);
+
+        PGPPublicKeyRing certificate = new PGPPublicKeyRing(Collections.singletonList(primaryKey));
+        PGPSecretKeyRing secretKey = new PGPSecretKeyRing(Collections.singletonList(primarySecKey));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = new ArmoredOutputStream(bOut);
+        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+        certificate.encode(pOut);
+        pOut.close();
+        aOut.close();
+        System.out.println(bOut);
+
+        bOut = new ByteArrayOutputStream();
+        aOut = new ArmoredOutputStream(bOut);
+        pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+        secretKey.encode(pOut);
+        pOut.close();
+        aOut.close();
+        System.out.println(bOut);
     }
 
     private void parseUnprotectedCertTest()
