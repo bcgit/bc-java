@@ -13,7 +13,7 @@ import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 
 /**
- * Generator for a PGP master and subkey ring. This class will generate
+ * Generator for a PGP primary and subkey ring. This class will generate
  * both the secret and public key rings
  */
 public class PGPKeyRingGenerator
@@ -21,8 +21,8 @@ public class PGPKeyRingGenerator
     List                                keys = new ArrayList();
 
     private PBESecretKeyEncryptor       keyEncryptor;
-    private PGPDigestCalculator checksumCalculator;
-    private PGPKeyPair                  masterKey;
+    private PGPDigestCalculator         checksumCalculator;
+    private PGPKeyPair                  primaryKey;
     private PGPSignatureSubpacketVector hashedPcks;
     private PGPSignatureSubpacketVector unhashedPcks;
     private PGPContentSignerBuilder     keySignerBuilder;
@@ -31,18 +31,18 @@ public class PGPKeyRingGenerator
      * Create a new key ring generator.
      *
      * @param certificationLevel
-     * @param masterKey
+     * @param primaryKey
      * @param id id to associate with the key.
      * @param checksumCalculator key checksum calculator
      * @param hashedPcks
      * @param unhashedPcks
-     * @param keySignerBuilder builder for key certifications - will be initialised with master secret key.
+     * @param keySignerBuilder builder for key certifications - will be initialised with primary secret key.
      * @param keyEncryptor encryptor for secret subkeys.
      * @throws PGPException
      */
     public PGPKeyRingGenerator(
         int                            certificationLevel,
-        PGPKeyPair                     masterKey,
+        PGPKeyPair                     primaryKey,
         String                         id,
         PGPDigestCalculator checksumCalculator,
         PGPSignatureSubpacketVector    hashedPcks,
@@ -51,19 +51,19 @@ public class PGPKeyRingGenerator
         PBESecretKeyEncryptor          keyEncryptor)
         throws PGPException
     {
-        this.masterKey = masterKey;
+        this.primaryKey = primaryKey;
         this.keyEncryptor = keyEncryptor;
         this.checksumCalculator = checksumCalculator;
         this.keySignerBuilder = keySignerBuilder;
         this.hashedPcks = hashedPcks;
         this.unhashedPcks = unhashedPcks;
 
-        keys.add(new PGPSecretKey(certificationLevel, masterKey, id, checksumCalculator, hashedPcks, unhashedPcks, keySignerBuilder, keyEncryptor));
+        keys.add(new PGPSecretKey(certificationLevel, primaryKey, id, checksumCalculator, hashedPcks, unhashedPcks, keySignerBuilder, keyEncryptor));
     }
 
     /**
      * Create a new key ring generator without a user-id, but instead with a primary key carrying a direct-key signature.
-     * @param masterKey primary key
+     * @param primaryKey primary key
      * @param checksumCalculator checksum calculator
      * @param hashedPcks hashed signature subpackets
      * @param unhashedPcks unhashed signature subpackets
@@ -72,7 +72,7 @@ public class PGPKeyRingGenerator
      * @throws PGPException
      */
     public PGPKeyRingGenerator(
-            PGPKeyPair masterKey,
+            PGPKeyPair primaryKey,
             PGPDigestCalculator checksumCalculator,
             PGPSignatureSubpacketVector hashedPcks,
             PGPSignatureSubpacketVector unhashedPcks,
@@ -80,7 +80,7 @@ public class PGPKeyRingGenerator
             PBESecretKeyEncryptor keyEncryptor)
             throws PGPException
     {
-        this.masterKey = masterKey;
+        this.primaryKey = primaryKey;
         this.keyEncryptor = keyEncryptor;
         this.checksumCalculator = checksumCalculator;
         this.keySignerBuilder = keySignerBuilder;
@@ -99,15 +99,15 @@ public class PGPKeyRingGenerator
         }
 
         // Keyring without user-id needs direct key sig
-        sigGen.init(PGPSignature.DIRECT_KEY, masterKey.getPrivateKey());
+        sigGen.init(PGPSignature.DIRECT_KEY, primaryKey.getPrivateKey());
         sigGen.setHashedSubpackets(hashedPcks);
         sigGen.setUnhashedSubpackets(unhashedPcks);
 
-        PGPSecretKey secretKey = new PGPSecretKey(masterKey.getPrivateKey(), masterKey.getPublicKey(), checksumCalculator, true, keyEncryptor);
+        PGPSecretKey secretKey = new PGPSecretKey(primaryKey.getPrivateKey(), primaryKey.getPublicKey(), checksumCalculator, true, keyEncryptor);
         PGPPublicKey publicKey = secretKey.getPublicKey();
         try
         {
-            PGPSignature certification = sigGen.generateCertification(masterKey.getPublicKey());
+            PGPSignature certification = sigGen.generateCertification(primaryKey.getPublicKey());
 
             publicKey = PGPPublicKey.addCertification(publicKey, certification);
         }
@@ -123,13 +123,13 @@ public class PGPKeyRingGenerator
 
     /**
      * Create a new key ring generator based on an original secret key ring. The default hashed/unhashed sub-packets
-     * for subkey signatures will be inherited from the first signature on the master key (other than CREATION-TIME
+     * for subkey signatures will be inherited from the first signature on the primary key (other than CREATION-TIME
      * which will be ignored).
      *
      * @param originalSecretRing the secret key ring we want to add a subkeyto,
-     * @param secretKeyDecryptor a decryptor for the signing master key.
+     * @param secretKeyDecryptor a decryptor for the signing primary key.
      * @param checksumCalculator key checksum calculator
-     * @param keySignerBuilder builder for key certifications - will be initialised with master secret key.
+     * @param keySignerBuilder builder for key certifications - will be initialised with primary secret key.
      * @param keyEncryptor encryptor for secret subkeys.
      * @throws PGPException
      */
@@ -141,7 +141,7 @@ public class PGPKeyRingGenerator
         PBESecretKeyEncryptor       keyEncryptor)
         throws PGPException
     {
-        this.masterKey = new PGPKeyPair(originalSecretRing.getPublicKey(),
+        this.primaryKey = new PGPKeyPair(originalSecretRing.getPublicKey(),
             originalSecretRing.getSecretKey().extractPrivateKey(secretKeyDecryptor));
         this.keyEncryptor = keyEncryptor;
         this.checksumCalculator = checksumCalculator;
@@ -167,7 +167,7 @@ public class PGPKeyRingGenerator
 
     /**
      * Add a sub key to the key ring to be generated with default certification and inheriting
-     * the hashed/unhashed packets of the master key.
+     * the hashed/unhashed packets of the primary key.
      * 
      * @param keyPair the key pair to add.
      * @throws PGPException
@@ -181,7 +181,7 @@ public class PGPKeyRingGenerator
 
     /**
      * Add a sub key to the key ring to be generated with default certification and inheriting
-     * the hashed/unhashed packets of the master key.  If bindingSignerBldr is not null it will be used to add a Primary Key Binding
+     * the hashed/unhashed packets of the primary key.  If bindingSignerBldr is not null it will be used to add a Primary Key Binding
      * signature (type 0x19) into the hashedPcks for the key (required for signing subkeys).
      *
      * @param keyPair the key pair to add.
@@ -239,7 +239,7 @@ public class PGPKeyRingGenerator
             //
             PGPSignatureGenerator  sGen = new PGPSignatureGenerator(keySignerBuilder);
 
-            sGen.init(PGPSignature.SUBKEY_BINDING, masterKey.getPrivateKey());
+            sGen.init(PGPSignature.SUBKEY_BINDING, primaryKey.getPrivateKey());
 
             if (bindingSignerBldr != null)
             {
@@ -251,7 +251,7 @@ public class PGPKeyRingGenerator
                 PGPSignatureSubpacketGenerator spGen = new PGPSignatureSubpacketGenerator(hashedPcks);
 
                 spGen.addEmbeddedSignature(false,
-                        pGen.generateCertification(masterKey.getPublicKey(), keyPair.getPublicKey()));
+                        pGen.generateCertification(primaryKey.getPublicKey(), keyPair.getPublicKey()));
                 sGen.setHashedSubpackets(spGen.generate());
             }
             else
@@ -263,7 +263,7 @@ public class PGPKeyRingGenerator
 
             List                 subSigs = new ArrayList();
             
-            subSigs.add(sGen.generateCertification(masterKey.getPublicKey(), keyPair.getPublicKey()));
+            subSigs.add(sGen.generateCertification(primaryKey.getPublicKey(), keyPair.getPublicKey()));
 
             // replace the public key packet structure with a public subkey one.
             PGPPublicKey pubSubKey = new PGPPublicKey(keyPair.getPublicKey(), null, subSigs);
