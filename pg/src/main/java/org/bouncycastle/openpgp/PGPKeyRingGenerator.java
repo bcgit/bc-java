@@ -18,14 +18,14 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  */
 public class PGPKeyRingGenerator
 {    
-    List<PGPSecretKey>                  keys = new ArrayList<PGPSecretKey>();
+    private final List<PGPSecretKey>          keys = new ArrayList<PGPSecretKey>();
 
-    private PBESecretKeyEncryptor       keyEncryptor;
-    private PGPDigestCalculator         checksumCalculator;
-    private PGPKeyPair                  primaryKey;
-    private PGPSignatureSubpacketVector hashedPcks;
-    private PGPSignatureSubpacketVector unhashedPcks;
-    private PGPContentSignerBuilder     keySignerBuilder;
+    private final PBESecretKeyEncryptor       keyEncryptor;
+    private final PGPDigestCalculator         checksumCalculator;
+    private final PGPKeyPair                  primaryKey;
+    private final PGPSignatureSubpacketVector hashedPcks;
+    private final PGPSignatureSubpacketVector unhashedPcks;
+    private final PGPContentSignerBuilder     keySignerBuilder;
 
     /**
      * Create a new key ring generator.
