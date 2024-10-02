@@ -38,7 +38,7 @@ public class PGPKeyRingGenerator
      * @param unhashedPcks unhashed signature subpackets
      * @param keySignerBuilder builder for key certifications - will be initialised with primary secret key.
      * @param keyEncryptor encryptor for secret subkeys.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public PGPKeyRingGenerator(
         int                            certificationLevel,
@@ -69,7 +69,7 @@ public class PGPKeyRingGenerator
      * @param unhashedPcks unhashed signature subpackets
      * @param keySignerBuilder signer builder
      * @param keyEncryptor key encryptor
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public PGPKeyRingGenerator(
             PGPKeyPair primaryKey,
@@ -131,7 +131,7 @@ public class PGPKeyRingGenerator
      * @param checksumCalculator key checksum calculator
      * @param keySignerBuilder builder for key certifications - will be initialised with primary secret key.
      * @param keyEncryptor encryptor for secret subkeys.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public PGPKeyRingGenerator(
         PGPSecretKeyRing            originalSecretRing,
@@ -170,7 +170,7 @@ public class PGPKeyRingGenerator
      * the hashed/unhashed packets of the primary key.
      * 
      * @param keyPair the key pair to add.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public void addSubKey(
         PGPKeyPair    keyPair) 
@@ -186,7 +186,7 @@ public class PGPKeyRingGenerator
      *
      * @param keyPair the key pair to add.
      * @param bindingSignerBldr provide a signing builder to create the Primary Key signature.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public void addSubKey(
         PGPKeyPair    keyPair,
@@ -203,7 +203,7 @@ public class PGPKeyRingGenerator
      * @param keyPair public/private key pair.
      * @param hashedPcks hashed packet values to be included in certification.
      * @param unhashedPcks unhashed packets values to be included in certification.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public void addSubKey(
         PGPKeyPair                  keyPair,
@@ -223,7 +223,7 @@ public class PGPKeyRingGenerator
      * @param hashedPcks hashed packet values to be included in certification.
      * @param unhashedPcks unhashed packets values to be included in certification.
      * @param bindingSignerBldr provide a signing builder to create the Primary Key signature.
-     * @throws PGPException
+     * @throws PGPException error during signature generation
      */
     public void addSubKey(
         PGPKeyPair                  keyPair,
