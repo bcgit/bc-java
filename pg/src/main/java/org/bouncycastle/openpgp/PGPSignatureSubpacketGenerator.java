@@ -38,7 +38,7 @@ import org.bouncycastle.bcpg.sig.TrustSignature;
  */
 public class PGPSignatureSubpacketGenerator
 {
-    List packets = new ArrayList();
+    List<SignatureSubpacket> packets = new ArrayList<SignatureSubpacket>();
 
     /**
      * Base constructor, creates an empty generator.
