@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
@@ -17,7 +18,9 @@ import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
+import org.bouncycastle.bcpg.OctetArrayBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -27,6 +30,7 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
@@ -98,6 +102,14 @@ public class PGPPublicKey
                 {
                     this.keyStrength = 256;
                 }
+                else if (curveOID.equals(EdECObjectIdentifiers.id_X448))
+                {
+                    this.keyStrength = X448PublicBCPGKey.LENGTH * 8;
+                }
+                else if (curveOID.equals(EdECObjectIdentifiers.id_Ed448))
+                {
+                    this.keyStrength = Ed448PublicBCPGKey.LENGTH * 8;
+                }
                 else
                 {
                     X9ECParametersHolder ecParameters = ECNamedCurveTable.getByOIDLazy(curveOID);
@@ -111,6 +123,10 @@ public class PGPPublicKey
                         this.keyStrength = -1; // unknown
                     }
                 }
+            }
+            else if (key instanceof OctetArrayBCPGKey)
+            {
+                this.keyStrength = key.getEncoded().length * 8;
             }
         }
     }
