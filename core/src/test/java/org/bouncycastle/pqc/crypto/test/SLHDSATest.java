@@ -146,14 +146,19 @@ public class SLHDSATest
                         byte[] signature = Hex.decode((String) buf.get("signature"));
                         byte[] rnd = null;
 
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
 
                         SLHDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
 
                         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
+
+                        if (!deterministic)
+                        {
+                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
+                        }
+                        else
+                        {
+                            rnd = privParams.getPublicSeed();
+                        }
 
                         // sign
                         SLHDSASigner signer = new SLHDSASigner();
@@ -368,14 +373,21 @@ public class SLHDSATest
                         byte[] signature = Hex.decode((String) buf.get("signature"));
                         byte[] rnd = null;
 
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
+
 
                         SLHDSAParameters parameters = params[fileIndex];
 
                         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
+
+
+                        if (!deterministic)
+                        {
+                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
+                        }
+                        else
+                        {
+                            rnd = privParams.getPublicSeed();
+                        }
 
                         // sign
                         SLHDSASigner signer = new SLHDSASigner();

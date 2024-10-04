@@ -95,6 +95,15 @@ public class SLHDSASigner
 
         // generate randomizer
         byte[] optRand = new byte[engine.N];
+        if (random != null)
+        {
+            random.nextBytes(optRand);
+        }
+        else
+        {
+            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
+        }
+
         return internalGenerateSignature(ds_message, optRand);
     }
 
@@ -158,12 +167,6 @@ public class SLHDSASigner
     {
         SLHDSAEngine engine = privKey.getParameters().getEngine();
         engine.init(privKey.pk.seed);
-
-        if (optRand == null)
-        {
-            optRand = new byte[engine.N];
-            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
-        }
 
         Fors fors = new Fors(engine);
         byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, message);
