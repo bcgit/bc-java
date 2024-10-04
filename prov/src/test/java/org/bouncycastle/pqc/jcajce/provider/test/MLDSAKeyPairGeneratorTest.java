@@ -9,9 +9,11 @@ import java.security.Security;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * KeyFactory/KeyPairGenerator tests for MLDSA with BC provider.
@@ -104,6 +106,7 @@ public class MLDSAKeyPairGeneratorTest
             KeyPair keyPair = kpg.generateKeyPair();
             performKeyPairEncodingTest(keyPair);
             assertEquals(oids[i], SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+            assertTrue(oids[i].toString(), Arrays.areEqual(((MLDSAPublicKey)keyPair.getPublic()).getPublicData(), ((MLDSAPrivateKey)keyPair.getPrivate()).getPublicKey().getPublicData()));
         }
     }
 

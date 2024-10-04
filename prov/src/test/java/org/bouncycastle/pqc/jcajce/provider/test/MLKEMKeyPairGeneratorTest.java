@@ -10,8 +10,11 @@ import java.security.Security;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 
 /**
  * KeyFactory/KeyPairGenerator tests for MLKEM with BCPQC provider.
@@ -61,6 +64,7 @@ public class MLKEMKeyPairGeneratorTest
             KeyPair keyPair = kpg.generateKeyPair();
             performKeyPairEncodingTest(keyPair);
             assertEquals(oids[i], SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+            assertTrue(oids[i].toString(), Arrays.areEqual(((MLKEMPublicKey)keyPair.getPublic()).getPublicData(), ((MLKEMPrivateKey)keyPair.getPrivate()).getPublicKey().getPublicData()));
         }
     }
 
