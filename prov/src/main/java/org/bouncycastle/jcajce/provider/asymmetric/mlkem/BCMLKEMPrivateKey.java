@@ -1,5 +1,9 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
@@ -9,10 +13,9 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLKEMPrivateKey
     implements MLKEMPrivateKey
@@ -41,7 +44,7 @@ public class BCMLKEMPrivateKey
     {
         this.attributes = keyInfo.getAttributes();;
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
-        this.algorithm = params.getParameters().getName();
+        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
     }
 
     /**
@@ -78,11 +81,10 @@ public class BCMLKEMPrivateKey
     public final String getAlgorithm()
     {
         return algorithm;
-//        return MLKEMParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
     }
+
     public byte[] getEncoded()
     {
-
         try
         {
             PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
@@ -110,7 +112,27 @@ public class BCMLKEMPrivateKey
         return "PKCS#8";
     }
 
-    public MLKEMPrivateKeyParameters getKeyParams()
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
+        byte[] keyBytes = params.getPublicKey();
+
+        // -DM Hex.toHexString
+        buf.append(getAlgorithm())
+            .append(" ")
+            .append("Private Key").append(" [")
+            .append(new Fingerprint(keyBytes).toString())
+            .append("]")
+            .append(nl)
+            .append("    public data: ")
+            .append(Hex.toHexString(keyBytes))
+            .append(nl);
+
+        return buf.toString();
+    }
+
+    MLKEMPrivateKeyParameters getKeyParams()
     {
         return params;
     }
