@@ -34,12 +34,15 @@ import java.util.List;
  */
 public class OpenPGPV6KeyGenerator
 {
+    public static final int DEFAULT_SIGNATURE_HASH_ALGORITHM = HashAlgorithmTags.SHA3_512;
+
     private static final long SECONDS_PER_MINUTE = 60;
     private static final long SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
     private static final long SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
     private static final long SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY;
 
-    public static SignatureSubpacketsFunction DEFAULT_AEAD_ALGORITHM_PREFERENCES = subpackets -> {
+    public static SignatureSubpacketsFunction DEFAULT_AEAD_ALGORITHM_PREFERENCES = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
         subpackets.setPreferredAEADCiphersuites(PreferredAEADCiphersuites.builder(false)
                 .addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB)
@@ -48,7 +51,8 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction DEFAULT_SYMMETRIC_KEY_PREFERENCES = subpackets -> {
+    public static SignatureSubpacketsFunction DEFAULT_SYMMETRIC_KEY_PREFERENCES = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
         subpackets.setPreferredSymmetricAlgorithms(false, new int[] {
                 SymmetricKeyAlgorithmTags.AES_256, SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128
@@ -56,7 +60,8 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction DEFAULT_HASH_ALGORITHM_PREFERENCES = subpackets -> {
+    public static SignatureSubpacketsFunction DEFAULT_HASH_ALGORITHM_PREFERENCES = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_HASH_ALGS);
         subpackets.setPreferredHashAlgorithms(false, new int[] {
                 HashAlgorithmTags.SHA3_512, HashAlgorithmTags.SHA3_256,
@@ -65,7 +70,8 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES = subpackets -> {
+    public static SignatureSubpacketsFunction DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
         subpackets.setPreferredCompressionAlgorithms(false, new int[] {
                 CompressionAlgorithmTags.UNCOMPRESSED, CompressionAlgorithmTags.ZIP,
@@ -74,19 +80,22 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction DEFAULT_FEATURES = subpackets -> {
+    public static SignatureSubpacketsFunction DEFAULT_FEATURES = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
         subpackets.setFeature(false, (byte) (Features.FEATURE_MODIFICATION_DETECTION | Features.FEATURE_SEIPD_V2));
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction SIGNING_SUBKEY_SUBPACKETS = subpackets -> {
+    public static SignatureSubpacketsFunction SIGNING_SUBKEY_SUBPACKETS = subpackets ->
+    {
         subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
         subpackets.setKeyFlags(true, KeyFlags.SIGN_DATA);
         return subpackets;
     };
 
-    public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = subpackets -> {
+    public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = subpackets ->
+    {
         subpackets = DEFAULT_FEATURES.apply(subpackets);
         subpackets = DEFAULT_HASH_ALGORITHM_PREFERENCES.apply(subpackets);
         subpackets = DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES.apply(subpackets);
@@ -139,7 +148,8 @@ public class OpenPGPV6KeyGenerator
 
         return primaryKeyWithDirectKeySig(
                 pkPair,
-                subpackets -> {
+                subpackets ->
+                {
                     subpackets.setIssuerFingerprint(true, pkPair.getPublicKey());
                     subpackets.setSignatureCreationTime(conf.creationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
@@ -236,7 +246,8 @@ public class OpenPGPV6KeyGenerator
     {
         return primaryKeyWithDirectKeySig(
                 impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime).generateEd25519KeyPair(),
-                baseSubpackets -> {
+                baseSubpackets ->
+                {
                     // remove unrelated subpackets not needed for sign-only keys
                     baseSubpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
                     baseSubpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
@@ -456,7 +467,8 @@ public class OpenPGPV6KeyGenerator
             PGPSignatureSubpacketGenerator backSigSubpackets = new PGPSignatureSubpacketGenerator();
             backSigSubpackets.setIssuerFingerprint(true, signingKey.getPublicKey());
             backSigSubpackets.setSignatureCreationTime(conf.creationTime);
-            if (backSignatureCallback != null) {
+            if (backSignatureCallback != null)
+            {
                 backSigSubpackets = backSignatureCallback.apply(backSigSubpackets);
             }
 
@@ -520,7 +532,8 @@ public class OpenPGPV6KeyGenerator
             List<PGPSecretKey> keys = new ArrayList<>();
             keys.add(primarySecretKey);
 
-            for (Key key : subkeys) {
+            for (Key key : subkeys)
+            {
                 PGPSecretKey subkey = new PGPSecretKey(
                         key.pair.getPrivateKey(),
                         key.pair.getPublicKey(),
