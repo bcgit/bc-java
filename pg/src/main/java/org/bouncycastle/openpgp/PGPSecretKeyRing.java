@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SecretSubkeyPacket;
@@ -481,6 +482,22 @@ public class PGPSecretKeyRing
     public int size()
     {
         return keys.size();
+    }
+
+    /**
+     * Return the OpenPGP certificate (Transferable Public Key) of this key.
+     *
+     * @return certificate
+     */
+    public PGPPublicKeyRing toCertificate()
+    {
+        List<PGPPublicKey> pubKeys = new ArrayList<>();
+        Iterator<PGPPublicKey> it = getPublicKeys();
+        while (it.hasNext())
+        {
+            pubKeys.add(it.next());
+        }
+        return new PGPPublicKeyRing(pubKeys);
     }
 
     public byte[] getEncoded()
