@@ -79,6 +79,18 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
+     * Specify, whether the signature should be marked as exportable.
+     * If this subpacket is missing, the signature is treated as being exportable.
+     * The subpacket is marked as critical, as is required (for non-exportable signatures) by the spec.
+     *
+     * @param isExportable true if the signature should be exportable, false otherwise.
+     */
+    public void setExportable(boolean isExportable)
+    {
+        setExportable(true, isExportable);
+    }
+
+    /**
      * Specify, whether or not the signature should be marked as exportable.
      * If this subpacket is missing, the signature is treated as being exportable.
      *
@@ -122,6 +134,18 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a key is valid for after the time of its creation. A
      * value of zero means the key never expires.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param seconds seconds from key creation to expiration
+     */
+    public void setKeyExpirationTime(long seconds)
+    {
+        setKeyExpirationTime(true, seconds);
+    }
+
+    /**
+     * Set the number of seconds a key is valid for after the time of its creation. A
+     * value of zero means the key never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
@@ -134,6 +158,18 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a signature is valid for after the time of its creation.
      * A value of zero means the signature never expires.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *.
+     * @param seconds seconds from signature creation to expiration
+     */
+    public void setSignatureExpirationTime(long seconds)
+    {
+        setSignatureExpirationTime(true, seconds);
+    }
+
+    /**
+     * Set the number of seconds a signature is valid for after the time of its creation.
+     * A value of zero means the signature never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
@@ -141,6 +177,19 @@ public class PGPSignatureSubpacketGenerator
     public void setSignatureExpirationTime(boolean isCritical, long seconds)
     {
         packets.add(new SignatureExpirationTime(isCritical, seconds));
+    }
+
+    /**
+     * Set the creation time for the signature.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     * <p>
+     * Note: this overrides the generation of a creation time when the signature is
+     * generated.
+     * @param date date
+     */
+    public void setSignatureCreationTime(Date date)
+    {
+        setSignatureCreationTime(true, date);
     }
 
     /**
@@ -272,6 +321,18 @@ public class PGPSignatureSubpacketGenerator
     public void addPolicyURI(boolean isCritical, String policyUri)
     {
         packets.add(new PolicyURI(isCritical, policyUri));
+    }
+
+    /**
+     * Set this keys key flags.
+     * See {@link PGPKeyFlags}.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param flags      flags
+     */
+    public void setKeyFlags(int flags)
+    {
+        setKeyFlags(true, flags);
     }
 
     /**
@@ -517,6 +578,19 @@ public class PGPSignatureSubpacketGenerator
 
     /**
      * Adds a intended recipient fingerprint for an encrypted payload the signature is associated with.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param publicKey  the public key the encrypted payload was encrypted against.
+     */
+    public void addIntendedRecipientFingerprint(PGPPublicKey publicKey)
+    {
+        // RFC9580 states, that the packet SHOULD be critical if generated in a v6 signature,
+        //  but it doesn't harm to default to critical for any signature version
+        addIntendedRecipientFingerprint(true, publicKey);
+    }
+
+    /**
+     * Adds a intended recipient fingerprint for an encrypted payload the signature is associated with.
      *
      * @param isCritical true if critical, false otherwise.
      * @param publicKey  the public key the encrypted payload was encrypted against.
@@ -625,6 +699,17 @@ public class PGPSignatureSubpacketGenerator
             }
         }
         return false;
+    }
+
+    /**
+     * Adds a regular expression.
+     * The subpacket is marked as critical, as is recommended by the spec.
+     *
+     * @param regularExpression the regular expression
+     */
+    public void addRegularExpression(String regularExpression)
+    {
+        addRegularExpression(true, regularExpression);
     }
 
     /**
