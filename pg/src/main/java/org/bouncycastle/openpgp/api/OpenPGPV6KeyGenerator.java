@@ -18,7 +18,6 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
-import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
@@ -142,7 +141,7 @@ public class OpenPGPV6KeyGenerator
                 pkPair,
                 subpackets -> {
                     subpackets.setIssuerFingerprint(true, pkPair.getPublicKey());
-                    subpackets.setSignatureCreationTime(true, conf.creationTime);
+                    subpackets.setSignatureCreationTime(conf.creationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
                     subpackets = DIRECT_KEY_SIGNATURE_SUBPACKETS.apply(subpackets);
                     subpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
@@ -304,14 +303,38 @@ public class OpenPGPV6KeyGenerator
                 SignatureSubpacketsFunction userIdSubpackets)
                 throws PGPException
         {
+            return addUserId(userId, PGPSignature.POSITIVE_CERTIFICATION, userIdSubpackets);
+        }
+
+        /**
+         * Attach a User-ID with a positive certification to the key.
+         * The subpackets of the user-id certification can be modified using the userIdSubpackets callback.
+         *
+         * @param userId user-id
+         * @param certificationType signature type
+         * @param userIdSubpackets callback to modify the certification subpackets
+         * @return builder
+         * @throws PGPException
+         */
+        public WithPrimaryKey addUserId(
+                String userId,
+                int certificationType,
+                SignatureSubpacketsFunction userIdSubpackets)
+                throws PGPException
+        {
+            if (!PGPSignature.isCertification(certificationType))
+            {
+                throw new IllegalArgumentException("Signature type MUST be a certification type (0x10 - 0x13)");
+            }
+
             PGPSignatureGenerator uidSigGen = new PGPSignatureGenerator(
                     impl.contentSignerBuilderProvider.get(primaryKey.pair.getPublicKey()),
                     primaryKey.pair.getPublicKey());
-            uidSigGen.init(PGPSignature.POSITIVE_CERTIFICATION, primaryKey.pair.getPrivateKey());
+            uidSigGen.init(certificationType, primaryKey.pair.getPrivateKey());
 
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            subpackets.setSignatureCreationTime(true, conf.creationTime);
+            subpackets.setSignatureCreationTime(conf.creationTime);
 
             if (userIdSubpackets != null)
             {
@@ -321,53 +344,6 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignature uidSig = uidSigGen.generateCertification(userId, primaryKey.pair.getPublicKey());
             PGPPublicKey pubKey = PGPPublicKey.addCertification(primaryKey.pair.getPublicKey(), userId, uidSig);
-            primaryKey = new Key(new PGPKeyPair(pubKey, primaryKey.pair.getPrivateKey()), primaryKey.encryptor);
-
-            return this;
-        }
-
-        /**
-         * Attach a UserAttribute with a positive certification to the key.
-         * @param userAttribute user attribute
-         * @return builder
-         * @throws PGPException
-         */
-        public WithPrimaryKey addUserAttribute(PGPUserAttributeSubpacketVector userAttribute)
-                throws PGPException
-        {
-            return addUserAttribute(userAttribute, null);
-        }
-
-        /**
-         * Attach a UserAttribute with a positive certification to the key.
-         * The subpackets of the user-attribute certification can be modified using the userAttributeSubpackets callback.
-         * @param userAttribute user attribute
-         * @param userAttributeSubpackets callback to modify the certification subpackets
-         * @return builder
-         * @throws PGPException
-         */
-        public WithPrimaryKey addUserAttribute(
-                PGPUserAttributeSubpacketVector userAttribute,
-                SignatureSubpacketsFunction userAttributeSubpackets)
-                throws PGPException
-        {
-            PGPSignatureGenerator uAttrSigGen = new PGPSignatureGenerator(
-                    impl.contentSignerBuilderProvider.get(primaryKey.pair.getPublicKey()),
-                    primaryKey.pair.getPublicKey());
-            uAttrSigGen.init(PGPSignature.POSITIVE_CERTIFICATION, primaryKey.pair.getPrivateKey());
-
-            PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
-            subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            subpackets.setSignatureCreationTime(true, conf.creationTime);
-
-            if (userAttributeSubpackets != null)
-            {
-                subpackets = userAttributeSubpackets.apply(subpackets);
-            }
-            uAttrSigGen.setHashedSubpackets(subpackets.generate());
-
-            PGPSignature uAttrSig = uAttrSigGen.generateCertification(userAttribute, primaryKey.pair.getPublicKey());
-            PGPPublicKey pubKey = PGPPublicKey.addCertification(primaryKey.pair.getPublicKey(), userAttribute, uAttrSig);
             primaryKey = new Key(new PGPKeyPair(pubKey, primaryKey.pair.getPrivateKey()), primaryKey.encryptor);
 
             return this;
@@ -428,7 +404,7 @@ public class OpenPGPV6KeyGenerator
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
             subpackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            subpackets.setSignatureCreationTime(true, conf.creationTime);
+            subpackets.setSignatureCreationTime(conf.creationTime);
 
             // allow subpacket customization
             if (bindingSubpacketsCallback != null)
@@ -479,14 +455,14 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignatureSubpacketGenerator backSigSubpackets = new PGPSignatureSubpacketGenerator();
             backSigSubpackets.setIssuerFingerprint(true, signingKey.getPublicKey());
-            backSigSubpackets.setSignatureCreationTime(true, conf.creationTime);
+            backSigSubpackets.setSignatureCreationTime(conf.creationTime);
             if (backSignatureCallback != null) {
                 backSigSubpackets = backSignatureCallback.apply(backSigSubpackets);
             }
 
             PGPSignatureSubpacketGenerator bindingSigSubpackets = new PGPSignatureSubpacketGenerator();
             bindingSigSubpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            bindingSigSubpackets.setSignatureCreationTime(true, conf.creationTime);
+            bindingSigSubpackets.setSignatureCreationTime(conf.creationTime);
             bindingSigSubpackets.setKeyFlags(true, KeyFlags.SIGN_DATA);
 
             PGPSignatureGenerator backSigGen = new PGPSignatureGenerator(
