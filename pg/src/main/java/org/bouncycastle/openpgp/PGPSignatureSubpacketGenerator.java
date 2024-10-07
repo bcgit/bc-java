@@ -631,8 +631,10 @@ public class PGPSignatureSubpacketGenerator
     public boolean removePacketsOfType(int subpacketType)
     {
         boolean remove = false;
-        for (int i = packets.size() - 1; i >= 0; i--) {
-            if (packets.get(i).getType() == subpacketType) {
+        for (int i = packets.size() - 1; i >= 0; i--)
+        {
+            if (packets.get(i).getType() == subpacketType)
+            {
                 packets.remove(i);
                 remove = true;
             }
