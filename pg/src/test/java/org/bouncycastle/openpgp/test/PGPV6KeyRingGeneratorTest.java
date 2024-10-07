@@ -6,11 +6,10 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.api.BcOpenPGPImplementation;
+import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilderProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,12 +36,8 @@ public class PGPV6KeyRingGeneratorTest
     {
         Date creationTime = currentTimeRounded();
         OpenPGPV6KeyGenerator gen = new OpenPGPV6KeyGenerator(
-                new BcPGPKeyPairGeneratorProvider(),
-                new BcPGPContentSignerBuilderProvider(HashAlgorithmTags.SHA3_512),
-                new BcPGPDigestCalculatorProvider(),
-                creationTime
-        );
-        PGPSecretKeyRing secretKeys = gen.withPrimaryKey(
+                new BcOpenPGPImplementation(), HashAlgorithmTags.SHA3_512, false, creationTime);
+        OpenPGPKey key = gen.withPrimaryKey(
                         PGPKeyPairGenerator::generateEd25519KeyPair,
                         subpackets ->
                         {
@@ -51,9 +46,10 @@ public class PGPV6KeyRingGeneratorTest
                         },
                         null)
                 .addUserId("Alice <alice@example.org>")
-                .addEncryptionSubkey(null)
-                .addSigningSubkey(null)
+                .addEncryptionSubkey((char[]) null)
+                .addSigningSubkey((char[]) null)
                 .build();
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ArmoredOutputStream aOut = new ArmoredOutputStream(bOut);
