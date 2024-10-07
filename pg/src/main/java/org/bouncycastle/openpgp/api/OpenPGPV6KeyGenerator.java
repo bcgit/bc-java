@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
@@ -65,9 +66,33 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    public static SignatureSubpacketsFunction DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES = subpackets -> {
+        subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
+        subpackets.setPreferredCompressionAlgorithms(false, new int[] {
+                CompressionAlgorithmTags.UNCOMPRESSED, CompressionAlgorithmTags.ZIP,
+                CompressionAlgorithmTags.ZLIB, CompressionAlgorithmTags.BZIP2
+        });
+        return subpackets;
+    };
+
     public static SignatureSubpacketsFunction DEFAULT_FEATURES = subpackets -> {
         subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
         subpackets.setFeature(false, (byte) (Features.FEATURE_MODIFICATION_DETECTION | Features.FEATURE_SEIPD_V2));
+        return subpackets;
+    };
+
+    public static SignatureSubpacketsFunction SIGNING_SUBKEY_SUBPACKETS = subpackets -> {
+        subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+        subpackets.setKeyFlags(true, KeyFlags.SIGN_DATA);
+        return subpackets;
+    };
+
+    public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = subpackets -> {
+        subpackets = DEFAULT_FEATURES.apply(subpackets);
+        subpackets = DEFAULT_HASH_ALGORITHM_PREFERENCES.apply(subpackets);
+        subpackets = DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES.apply(subpackets);
+        subpackets = DEFAULT_SYMMETRIC_KEY_PREFERENCES.apply(subpackets);
+        subpackets = DEFAULT_AEAD_ALGORITHM_PREFERENCES.apply(subpackets);
         return subpackets;
     };
 
@@ -119,12 +144,7 @@ public class OpenPGPV6KeyGenerator
                     subpackets.setIssuerFingerprint(true, pkPair.getPublicKey());
                     subpackets.setSignatureCreationTime(true, conf.creationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
-                    subpackets = DEFAULT_HASH_ALGORITHM_PREFERENCES.apply(subpackets);
-                    subpackets = DEFAULT_SYMMETRIC_KEY_PREFERENCES.apply(subpackets);
-                    subpackets = DEFAULT_AEAD_ALGORITHM_PREFERENCES.apply(subpackets);
-                    subpackets.setPreferredCompressionAlgorithms(true, new int[] {
-                            // prefer no compression
-                    });
+                    subpackets = DIRECT_KEY_SIGNATURE_SUBPACKETS.apply(subpackets);
                     subpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
                     return subpackets;
                 },
