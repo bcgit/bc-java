@@ -16,10 +16,12 @@ import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.operator.AEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.util.Arrays;
 
 public class BcAEADSecretKeyEncryptorBuilder
+        implements AEADSecretKeyEncryptorBuilder
 {
 
     private int aeadAlgorithm;
