@@ -1,8 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilderProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
+import org.bouncycastle.openpgp.PGPException;
 
 import java.util.Date;
 
@@ -17,6 +15,7 @@ public class BcOpenPGPV6KeyGenerator
      * Create a new key generator for OpenPGP v6 keys.
      */
     public BcOpenPGPV6KeyGenerator()
+            throws PGPException
     {
         this(DEFAULT_SIGNATURE_HASH_ALGORITHM);
     }
@@ -28,6 +27,7 @@ public class BcOpenPGPV6KeyGenerator
      * @param creationTime creation time of the generated OpenPGP key
      */
     public BcOpenPGPV6KeyGenerator(Date creationTime)
+            throws PGPException
     {
         this(DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime);
     }
@@ -39,6 +39,7 @@ public class BcOpenPGPV6KeyGenerator
      * @param signatureHashAlgorithm ID of the hash algorithm to be used for signature generation
      */
     public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm)
+            throws PGPException
     {
         this(signatureHashAlgorithm, new Date());
     }
@@ -50,11 +51,12 @@ public class BcOpenPGPV6KeyGenerator
      * @param creationTime           creation time of the key and signatures
      */
     public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm, Date creationTime)
+            throws PGPException
     {
         super(
-                new BcPGPKeyPairGeneratorProvider(),
-                new BcPGPContentSignerBuilderProvider(signatureHashAlgorithm),
-                new BcPGPDigestCalculatorProvider(),
+                new BcOpenPGPImplementation(),
+                signatureHashAlgorithm,
+                false,
                 creationTime);
     }
 }

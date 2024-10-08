@@ -3,14 +3,11 @@ package org.bouncycastle.openpgp.test;
 import java.security.Security;
 
 import org.bouncycastle.bcpg.test.SignatureSubpacketsTest;
-<<<<<<< HEAD
 import org.bouncycastle.openpgp.api.test.OpenPGPMessageGeneratorTest;
 import org.bouncycastle.openpgp.api.test.OpenPGPMessageProcessorTest;
 import org.bouncycastle.openpgp.api.test.OpenPGPV6KeyGeneratorTest;
 import org.bouncycastle.openpgp.api.test.StaticV6OpenPGPMessageGeneratorTest;
-=======
 import org.bouncycastle.openpgp.api.test.BcOpenPGPV6KeyGeneratorTest;
->>>>>>> 8473d7b16 (Add BcOpenPGPV6KeyGeneratorTest to RegressionTests)
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
