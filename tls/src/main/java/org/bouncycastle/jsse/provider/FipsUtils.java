@@ -15,7 +15,8 @@ abstract class FipsUtils
      * A.5 (when GCM is used in TLS 1.2) and a mechanism has been integrated into this API accordingly to
      * ensure that is the case.
      */
-    private static final boolean provAllowGCMCiphersIn12 = false;
+    private static final boolean provAllowGCMCiphersIn12 = PropertyUtils
+        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowGCMCiphersIn12", false);
 
     private static final boolean provAllowRSAKeyExchange = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", false);
