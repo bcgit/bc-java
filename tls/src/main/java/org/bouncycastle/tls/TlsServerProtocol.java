@@ -1459,7 +1459,7 @@ public class TlsServerProtocol
             .setCertificateType(tlsServerContext.getSecurityParametersHandshake().getClientCertificateType())
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
-        Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
+        Certificate clientCertificate = TlsUtils.parseCertificate(options, tlsServerContext, buf, null);
 
         assertEmpty(buf);
 
@@ -1499,7 +1499,7 @@ public class TlsServerProtocol
             .setCertificateType(tlsServerContext.getSecurityParametersHandshake().getClientCertificateType())
             .setMaxChainLength(tlsServer.getMaxCertificateChainLength());
 
-        Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
+        Certificate clientCertificate = TlsUtils.parseCertificate(options, tlsServerContext, buf, null);
 
         assertEmpty(buf);
 
