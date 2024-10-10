@@ -51,13 +51,8 @@ public class PolynomialNative
         return result & 0xFF;
     }
 
-    protected int gfInv(int x)
-    {
-        return gfPow(x, 254); // Inverse is x^(2^8-2)
-    }
-
     protected int gfDiv(int x, int y)
     {
-        return gfMul(x, gfInv(y));
+        return gfMul(x, gfPow(y, 254));
     }
 }
