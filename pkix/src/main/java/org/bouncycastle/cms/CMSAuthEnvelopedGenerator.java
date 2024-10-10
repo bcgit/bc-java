@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.cms.OriginatorInfo;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
 /**
  * General class for generating a CMS enveloped-data message.
@@ -11,7 +12,9 @@ import org.bouncycastle.asn1.cms.OriginatorInfo;
 public class CMSAuthEnvelopedGenerator
     extends CMSEnvelopedGenerator
 {
-    final List recipientInfoGenerators = new ArrayList();
+    public static final String  AES128_GCM = NISTObjectIdentifiers.id_aes128_GCM.getId();
+    public static final String  AES192_GCM = NISTObjectIdentifiers.id_aes192_GCM.getId();
+    public static final String  AES256_GCM = NISTObjectIdentifiers.id_aes256_GCM.getId();
 
     protected CMSAttributeTableGenerator authAttrsGenerator = null;
     protected CMSAttributeTableGenerator unauthAttrsGenerator = null;

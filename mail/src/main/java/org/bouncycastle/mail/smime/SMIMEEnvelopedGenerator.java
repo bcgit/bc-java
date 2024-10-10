@@ -112,7 +112,25 @@ public class SMIMEEnvelopedGenerator
         fact.setBEREncodeRecipients(berEncodeRecipientSet);
     }
 
-     /**
+    /**
+     * return encrypted content type for enveloped data.
+     */
+    protected String getEncryptedContentType() {
+        return ENCRYPTED_CONTENT_TYPE;
+    }
+
+    /**
+     * return content encryptor.
+     */
+    protected SMIMEStreamingProcessor getContentEncryptor(
+            MimeBodyPart    content,
+            OutputEncryptor encryptor)
+            throws SMIMEException
+    {
+        return new ContentEncryptor(content, encryptor);
+    }
+
+    /**
      * if we get here we expect the Mime body part to be well defined.
      */
     private MimeBodyPart make(
@@ -124,8 +142,8 @@ public class SMIMEEnvelopedGenerator
         {
             MimeBodyPart data = new MimeBodyPart();
 
-            data.setContent(new ContentEncryptor(content, encryptor), ENCRYPTED_CONTENT_TYPE);
-            data.addHeader("Content-Type", ENCRYPTED_CONTENT_TYPE);
+            data.setContent(getContentEncryptor(content, encryptor), getEncryptedContentType());
+            data.addHeader("Content-Type", getEncryptedContentType());
             data.addHeader("Content-Disposition", "attachment; filename=\"smime.p7m\"");
             data.addHeader("Content-Description", "S/MIME Encrypted Message");
             data.addHeader("Content-Transfer-Encoding", encoding);
@@ -210,11 +228,7 @@ public class SMIMEEnvelopedGenerator
 
                 encrypted.close();
             }
-            catch (MessagingException e)
-            {
-                throw new WrappingIOException(e.toString(), e);
-            }
-            catch (CMSException e)
+            catch (MessagingException | CMSException e)
             {
                 throw new WrappingIOException(e.toString(), e);
             }
@@ -249,7 +263,7 @@ public class SMIMEEnvelopedGenerator
         }
     }
 
-    private static class WrappingIOException
+    protected static class WrappingIOException
         extends IOException
     {
         private Throwable cause;
