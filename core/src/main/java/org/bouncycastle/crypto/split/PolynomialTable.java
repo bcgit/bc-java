@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.split;
 
-import org.bouncycastle.util.Arrays;
-
 public class PolynomialTable
     extends Polynomial
 {
@@ -154,12 +152,12 @@ public class PolynomialTable
         switch (algorithm)
         {
         case AES:
-            LOG = Arrays.clone(AES_LOG);
-            EXP = Arrays.clone(AES_EXP);
+            LOG = AES_LOG;
+            EXP = AES_EXP;
             break;
         case RSA:
-            LOG = Arrays.clone(RSA_LOG);
-            EXP = Arrays.clone(RSA_EXP);
+            LOG = RSA_LOG;
+            EXP = RSA_EXP;
             break;
         default:
             throw new IllegalArgumentException("The algorithm is not correct");
