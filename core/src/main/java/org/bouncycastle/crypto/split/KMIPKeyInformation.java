@@ -11,19 +11,19 @@ public class KMIPKeyInformation
     /**
      * Optional cryptographic parameters associated with the encryption key.
      */
-    private KMIPCryptographicParameters KMIPCryptographicParameters;
+    private KMIPCryptographicParameters cryptographicParameters;
 
     /**
      * Constructs a new EncryptionKeyInformation with the specified parameters.
      *
      * @param uniqueIdentifier        The unique identifier of the encryption key.
-     * @param KMIPCryptographicParameters Optional cryptographic parameters.
+     * @param cryptographicParameters Optional cryptographic parameters.
      */
     public KMIPKeyInformation(String uniqueIdentifier,
-                              KMIPCryptographicParameters KMIPCryptographicParameters)
+                              KMIPCryptographicParameters cryptographicParameters)
     {
         this.uniqueIdentifier = uniqueIdentifier;
-        this.KMIPCryptographicParameters = KMIPCryptographicParameters;
+        this.cryptographicParameters = cryptographicParameters;
     }
 
     // Getters and Setters
@@ -40,12 +40,12 @@ public class KMIPKeyInformation
 
     public KMIPCryptographicParameters getCryptographicParameters()
     {
-        return KMIPCryptographicParameters;
+        return cryptographicParameters;
     }
 
     public void setCryptographicParameters(KMIPCryptographicParameters KMIPCryptographicParameters)
     {
-        this.KMIPCryptographicParameters = KMIPCryptographicParameters;
+        this.cryptographicParameters = KMIPCryptographicParameters;
     }
 }
 

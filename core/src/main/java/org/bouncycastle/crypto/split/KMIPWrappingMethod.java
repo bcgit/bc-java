@@ -9,40 +9,58 @@ package org.bouncycastle.crypto.split;
  * be wrapped using encryption or MAC/signing techniques.
  * </p>
  */
-public class KMIPWrappingMethod
+public enum KMIPWrappingMethod
 {
-
     /**
      * Represents encryption only, using a symmetric key or
      * public key, or authenticated encryption algorithms
      * that use a single key.
      */
-    public static final int ENCRYPT = 0x01;
-
+    ENCRYPT(1),
     /**
      * Represents MAC/sign only, either MACing the Key Value
      * with a symmetric key or signing the Key Value with a
      * private key.
      */
-    public static final int MAC_SIGN = 0x02;
-
-    /**
-     * Represents the process of encrypting the Key Value
-     * and then applying MAC/sign.
-     */
-    public static final int ENCRYPT_THEN_MAC_SIGN = 0x03;
-
+    MAC_SIGN(2),
     /**
      * Represents the process of applying MAC/sign to the Key
      * Value and then encrypting it.
      */
-    public static final int MAC_SIGN_THEN_ENCRYPT = 0x04;
-
+    ENCRYPT_THEN_MAC_SIGN(3),
+    /**
+     * Represents the process of applying MAC/sign to the Key
+     * Value and then encrypting it.
+     */
+    MAC_SIGN_THEN_ENCRYPT(4),
     /**
      * Represents TR-31 wrapping method.
      */
-    public static final int TR31 = 0x05;
-        
-    //EXTENSIONS("8XXXXXXX");
+    TR31(5);
+
+    private final int value;
+
+    KMIPWrappingMethod(int value)
+    {
+        this.value = value;
+    }
+
+    public int getValue()
+    {
+        return value;
+    }
+
+    public static KMIPWrappingMethod fromValue(int value)
+    {
+        for (KMIPWrappingMethod method : KMIPWrappingMethod.values())
+        {
+            if (method.value == value)
+            {
+                return method;
+            }
+        }
+        throw new IllegalArgumentException("Invalid WrappingMethod value: " + value);
+    }
+
 }
 
