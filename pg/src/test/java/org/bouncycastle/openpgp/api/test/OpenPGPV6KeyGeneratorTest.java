@@ -3,6 +3,8 @@ package org.bouncycastle.openpgp.api.test;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SecretKeyPacket;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
@@ -70,6 +72,8 @@ public class OpenPGPV6KeyGeneratorTest
 
         testGenerateClassicKeyBaseCase(implementationProvider);
         testGenerateProtectedTypicalKey(implementationProvider);
+
+        testGenerateCustomKey(implementationProvider);
     }
 
     private void testGenerateSignOnlyKeyBaseCase(ImplementationProvider implementationProvider)
@@ -212,6 +216,46 @@ public class OpenPGPV6KeyGeneratorTest
         {
             isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, key.getS2KUsage());
         }
+    }
+
+    private void testGenerateCustomKey(ImplementationProvider implementationProvider)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        OpenPGPV6KeyGenerator generator = implementationProvider.get(creationTime);
+
+        PGPSecretKeyRing secretKey = generator
+                .withPrimaryKey(
+                        keyGen -> keyGen.generateRsaKeyPair(4096),
+                        subpackets ->
+                        {
+                            subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+                            subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER);
+
+                            subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
+                            subpackets.setFeature(false, Features.FEATURE_SEIPD_V2);
+
+                            subpackets.addNotationData(false, true,
+                                    "notation@example.com", "CYBER");
+
+                            subpackets.setPreferredKeyServer(false, "https://example.com/openpgp/cert.asc");
+                            return subpackets;
+                        },
+                        "primary-key-passphrase".toCharArray())
+                .addUserId("Alice <alice@example.com>", PGPSignature.DEFAULT_CERTIFICATION, null)
+                .addSigningSubkey(
+                        keyGen -> keyGen.generateEd448KeyPair(),
+                        bindingSubpackets ->
+                        {
+                            bindingSubpackets.addNotationData(false, true,
+                                    "notation@example.com", "ZAUBER");
+                            return bindingSubpackets;
+                        },
+                        null,
+                        "signing-key-passphrase".toCharArray())
+                .addEncryptionSubkey(keyGenCallback -> keyGenCallback.generateX448KeyPair(),
+                        "encryption-key-passphrase".toCharArray())
+                .build();
     }
 
     private abstract static class ImplementationProvider

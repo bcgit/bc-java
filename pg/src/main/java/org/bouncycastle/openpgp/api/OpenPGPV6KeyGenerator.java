@@ -223,9 +223,7 @@ public class OpenPGPV6KeyGenerator
             SignatureSubpacketsFunction directKeySubpackets)
             throws PGPException
     {
-        PGPKeyPair pkPair = keyGenCallback.generateFrom(
-                impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
-        return withPrimaryKey(pkPair, directKeySubpackets);
+        return withPrimaryKey(keyGenCallback, directKeySubpackets, null);
     }
 
     public WithPrimaryKey withPrimaryKey(
@@ -237,6 +235,19 @@ public class OpenPGPV6KeyGenerator
                 keyPair,
                 directKeySubpackets,
                 null);
+    }
+
+    public WithPrimaryKey withPrimaryKey(
+            KeyPairGeneratorCallback keyGenCallback,
+            SignatureSubpacketsFunction directKeySubpackets,
+            char[] passphrase)
+            throws PGPException
+    {
+        PGPKeyPair pkPair = keyGenCallback.generateFrom(
+                impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+        PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider
+                .build(passphrase, pkPair.getPublicKey().getPublicKeyPacket());
+        return withPrimaryKey(pkPair, directKeySubpackets, keyEncryptor);
     }
 
     public WithPrimaryKey withPrimaryKey(
@@ -417,7 +428,8 @@ public class OpenPGPV6KeyGenerator
         }
 
         /**
-         * Add an encryption-capable X25519 subkey to the OpenPGP key.
+         * Add an encryption-capable subkey to the OpenPGP key.
+         * See {@link PGPKeyPairGenerator#generateEncryptionSubkey()} for the key type.
          * @return builder
          * @throws PGPException
          */
@@ -425,12 +437,29 @@ public class OpenPGPV6KeyGenerator
                 throws PGPException
         {
 
-            return addEncryptionSubkey(PGPKeyPairGenerator::generateEncryptionSubkey, null);
+            return addEncryptionSubkey(PGPKeyPairGenerator::generateEncryptionSubkey);
         }
 
         /**
          * Add an encryption-capable subkey to the OpenPGP key.
+         * The type of the subkey can be decided by implementing the {@link KeyPairGeneratorCallback}.
+         *
+         * @param keyGenCallback callback to decide the encryption subkey type
+         * @return builder
+         * @throws PGPException
+         */
+        public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback)
+                throws PGPException
+        {
+            return addEncryptionSubkey(keyGenCallback, (char[]) null);
+        }
+
+        /**
+         * Add an encryption-capable subkey to the OpenPGP key.
+         * The type of the subkey can be decided by implementing the {@link KeyPairGeneratorCallback}.
+         * The binding signature can be modified by implementing the {@link SignatureSubpacketsFunction}.
          * @param generatorCallback callback to specify the encryption key type.
+         * @param bindingSubpacketsCallback nullable callback to modify the binding signature subpackets
          * @return builder
          * @throws PGPException
          */
@@ -450,9 +479,78 @@ public class OpenPGPV6KeyGenerator
 
         /**
          * Add an encryption-capable subkey to the OpenPGP key.
+         * The subkey will be protected using the provided subkey passphrase.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         * See {@link PGPKeyPairGenerator#generateEncryptionSubkey()} for the key type.
+         *
+         * @param passphrase nullable subkey passphrase
+         * @return builder
+         * @throws PGPException
+         */
+        public WithPrimaryKey addEncryptionSubkey(char[] passphrase)
+                throws PGPException
+        {
+            return addEncryptionSubkey(PGPKeyPairGenerator::generateEncryptionSubkey, passphrase);
+        }
+
+        /**
+         * Add an encryption-capable subkey to the OpenPGP key.
+         * The key type can be specified by overriding {@link KeyPairGeneratorCallback}.
+         * The subkey will be protected using the provided subkey passphrase.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         * @param keyGenCallback callback to specify the key type
+         * @param passphrase nullable passphrase for the encryption subkey
+         * @return builder
+         * @throws PGPException
+         */
+        public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
+                                               char[] passphrase)
+                throws PGPException
+        {
+            return addEncryptionSubkey(keyGenCallback, null, passphrase);
+        }
+
+        /**
+         * Add an encryption-capable subkey to the OpenPGP key.
+         * The key type can be specified by overriding {@link KeyPairGeneratorCallback}.
+         * The binding signatures subpackets can be modified by overriding the {@link SignatureSubpacketsFunction}.
+         * The subkey will be protected using the provided subkey passphrase.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         * @param keyGenCallback callback to specify the key type
+         * @param bindingSignatureCallback nullable callback to modify the binding signature subpackets
+         * @param passphrase nullable passphrase for the encryption subkey
+         * @return builder
+         * @throws PGPException
+         */
+        public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
+                                               SignatureSubpacketsFunction bindingSignatureCallback,
+                                               char[] passphrase)
+                throws PGPException
+        {
+            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+            PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
+            return addEncryptionSubkey(subkey, bindingSignatureCallback, keyEncryptor);
+        }
+
+
+        /**
+         * Add an encryption-capable subkey to the OpenPGP key.
+         * IMPORTANT: The custom key encryptor will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific encryptor is overwritten with an encryptor
+         * built from the argument passed into {@link #build(char[])}.
          * @param encryptionSubkey encryption subkey
-         * @param bindingSubpacketsCallback callback to modify the subkey binding signature subpackets
-         * @param encryptor encryptor to encrypt the encryption subkey
+         * @param bindingSubpacketsCallback nullable callback to modify the subkey binding signature subpackets
+         * @param encryptor nullable encryptor to encrypt the encryption subkey
          * @return builder
          * @throws PGPException
          */
@@ -500,12 +598,31 @@ public class OpenPGPV6KeyGenerator
         public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback generatorCallback)
                 throws PGPException
         {
-            PGPKeyPair signingSubkey = generatorCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
-            return addSigningSubkey(
-                    signingSubkey,
-                    null,
-                    null,
-                    null);
+            return addSigningSubkey(generatorCallback, null);
+        }
+
+        public WithPrimaryKey addSigningSubkey(char[] passphrase)
+                throws PGPException
+        {
+            return addSigningSubkey(PGPKeyPairGenerator::generateSigningSubkey, passphrase);
+        }
+
+        public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback keyGenCallback,
+                                               char[] passphrase)
+                throws PGPException
+        {
+            return addSigningSubkey(keyGenCallback, null, null, passphrase);
+        }
+
+        public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback keyGenCallback,
+                                               SignatureSubpacketsFunction bindingSignatureCallback,
+                                               SignatureSubpacketsFunction backSignatureCallback,
+                                               char[] passphrase)
+                throws PGPException
+        {
+            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+            PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
+            return addSigningSubkey(subkey, bindingSignatureCallback, backSignatureCallback, keyEncryptor);
         }
 
         public WithPrimaryKey addSigningSubkey(PGPKeyPair signingKey,
