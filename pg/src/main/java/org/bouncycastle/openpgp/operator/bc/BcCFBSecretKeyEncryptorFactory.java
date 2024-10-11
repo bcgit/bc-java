@@ -22,6 +22,11 @@ public class BcCFBSecretKeyEncryptorFactory
     @Override
     public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket)
     {
+        if (passphrase == null)
+        {
+            return null;
+        }
+
         PGPDigestCalculator checksumCalc;
         try
         {

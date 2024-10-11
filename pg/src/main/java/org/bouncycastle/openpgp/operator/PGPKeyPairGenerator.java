@@ -21,6 +21,45 @@ public abstract class PGPKeyPairGenerator
         this.random = random;
     }
 
+    /**
+     * Generate a primary key.
+     * A primary key MUST use a signing-capable public key algorithm.
+     *
+     * @return primary key pair
+     * @throws PGPException
+     */
+    public PGPKeyPair generatePrimaryKey()
+            throws PGPException
+    {
+        return generateEd25519KeyPair();
+    }
+
+    /**
+     * Generate an encryption subkey.
+     * An encryption subkey MUST use an encryption-capable public key algorithm.
+     *
+     * @return encryption subkey pair
+     * @throws PGPException
+     */
+    public PGPKeyPair generateEncryptionSubkey()
+            throws PGPException
+    {
+        return generateX25519KeyPair();
+    }
+
+    /**
+     * Generate a signing subkey.
+     * A signing subkey MUST use a signing-capable public key algorithm.
+     *
+     * @return signing subkey pair
+     * @throws PGPException
+     */
+    public PGPKeyPair generateSigningSubkey()
+            throws PGPException
+    {
+        return generateEd25519KeyPair();
+    }
+
     public PGPKeyPair generateRsaKeyPair(int bitStrength)
             throws PGPException
     {

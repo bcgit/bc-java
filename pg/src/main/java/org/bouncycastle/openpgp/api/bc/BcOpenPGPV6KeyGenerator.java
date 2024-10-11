@@ -1,6 +1,9 @@
-package org.bouncycastle.openpgp.api;
+package org.bouncycastle.openpgp.api.bc;
 
+import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcCFBSecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
@@ -19,7 +22,7 @@ public class BcOpenPGPV6KeyGenerator
      */
     public BcOpenPGPV6KeyGenerator()
     {
-        this(DEFAULT_SIGNATURE_HASH_ALGORITHM);
+        this(new Date());
     }
 
     /**
@@ -30,7 +33,7 @@ public class BcOpenPGPV6KeyGenerator
      */
     public BcOpenPGPV6KeyGenerator(Date creationTime)
     {
-        this(DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime);
+        this(DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime, true);
     }
 
     /**
@@ -41,7 +44,7 @@ public class BcOpenPGPV6KeyGenerator
      */
     public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm)
     {
-        this(signatureHashAlgorithm, new Date());
+        this(signatureHashAlgorithm, new Date(), true);
     }
 
     /**
@@ -50,17 +53,25 @@ public class BcOpenPGPV6KeyGenerator
      * @param signatureHashAlgorithm ID of the hash algorithm used for signatures on the key
      * @param creationTime           creation time of the key and signatures
      */
-    public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm, Date creationTime)
+    public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
     {
         super(
                 new BcPGPKeyPairGeneratorProvider(),
                 new BcPGPContentSignerBuilderProvider(signatureHashAlgorithm),
                 new BcPGPDigestCalculatorProvider(),
-                //*
-                new BcAEADSecretKeyEncryptorFactory(),
-                /*/
-                new BcCFBSecretKeyEncryptorFactory(),
-                //*/
+                keyEncryptorFactory(aeadProtection),
                 creationTime);
+    }
+
+    private static PBESecretKeyEncryptorFactory keyEncryptorFactory(boolean aeadProtection)
+    {
+        if (aeadProtection)
+        {
+            return new BcAEADSecretKeyEncryptorFactory();
+        }
+        else
+        {
+            return new BcCFBSecretKeyEncryptorFactory();
+        }
     }
 }

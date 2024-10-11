@@ -20,6 +20,10 @@ public class BcAEADSecretKeyEncryptorFactory
 {
     @Override
     public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket) {
+        if (passphrase == null)
+        {
+            return null;
+        }
         return new BcAEADSecretKeyEncryptorBuilder(
                 AEADAlgorithmTags.OCB,
                 SymmetricKeyAlgorithmTags.AES_256,
