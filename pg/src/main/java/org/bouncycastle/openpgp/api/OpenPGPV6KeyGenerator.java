@@ -292,6 +292,16 @@ public class OpenPGPV6KeyGenerator
         return withPrimaryKey((SignatureSubpacketsFunction)null);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the primary key type
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     *
+     * @param keyGenCallback nullable callback to modify the direct-key signatures subpackets
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
         KeyPairGeneratorCallback keyGenCallback)
         throws PGPException
