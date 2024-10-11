@@ -53,7 +53,9 @@ public class OpenPGPV6KeyGeneratorTest
             @Override
             public OpenPGPV6KeyGenerator getKeyGenerator(int signatureHashAlgorithm,
                                                          Date creationTime,
-                                                         boolean aeadProtection) throws PGPException {
+                                                         boolean aeadProtection)
+                    throws PGPException
+            {
                 return new BcOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection);
             }
         });
