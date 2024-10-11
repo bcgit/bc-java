@@ -8,7 +8,7 @@ package org.bouncycastle.crypto.split;
  * key management operations.
  * </p>
  */
-public class KMIPEncodingOption
+public enum KMIPEncodingOption
 {
 
     /**
@@ -16,14 +16,37 @@ public class KMIPEncodingOption
      * un-encoded value of the Byte String Key Material field
      * is to be used.
      */
-    public static final int NO_ENCODING = 1;
+    NO_ENCODING(1),
 
     /**
      * Represents TTLV encoding, indicating that the wrapped
      * TTLV-encoded Key Value structure is to be used.
      */
-    public static final int NTTLV_ENCODING = 2;
+    NTTLV_ENCODING(2);
 
     //EXTENSIONS("8XXXXXXX");
+    private final int value;
+
+    KMIPEncodingOption(int value)
+    {
+        this.value = value;
+    }
+
+    public int getValue()
+    {
+        return value;
+    }
+
+    public static KMIPEncodingOption fromValue(int value)
+    {
+        for (KMIPEncodingOption algorithm : KMIPEncodingOption.values())
+        {
+            if (algorithm.value == value)
+            {
+                return algorithm;
+            }
+        }
+        throw new IllegalArgumentException("Unknown encoding option value: " + value);
+    }
 }
 

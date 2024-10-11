@@ -8,12 +8,12 @@ public class KMIPCryptographicParameters
 
     // Other Enums can be defined similarly: PaddingMethod, HashingAlgorithm, etc.
 
-    private int blockCipherMode; // Block Cipher Mode
-    private PaddingMethod paddingMethod; // Padding Method
-    private int KMIPHashingAlgorithm; // Hashing Algorithm
-    private int KMIPKeyRoleType; // Key Role Type
-    private int digitalSignatureAlgorithm; // Digital Signature Algorithm
-    private KMIPCryptographicAlgorithm KMIPCryptographicAlgorithm; // Cryptographic Algorithm
+    private KMIPBlockCipherMode blockCipherMode; // Block Cipher Mode
+    private KMIPPaddingMethod KMIPPaddingMethod; // Padding Method
+    private KMIPHashingAlgorithm hashingAlgorithm; // Hashing Algorithm
+    private KMIPKeyRoleType keyRoleType; // Key Role Type
+    private KMIPDigitalSignatureAlgorithm digitalSignatureAlgorithm; // Digital Signature Algorithm
+    private KMIPCryptographicAlgorithm cryptographicAlgorithm; // Cryptographic Algorithm
     private boolean randomIV; // Random IV
     private int ivLength; // IV Length
     private int tagLength; // Tag Length
@@ -22,8 +22,8 @@ public class KMIPCryptographicParameters
     private int counterLength; // Counter Length
     private int initialCounterValue; // Initial Counter Value
     private int saltLength; // Salt Length
-    private int maskGenerator; // Mask Generator
-    private int maskGeneratorKMIPHashingAlgorithm; // Mask Generator Hashing Algorithm
+    private KMIPMaskGenerator maskGenerator; // Mask Generator
+    private KMIPHashingAlgorithm maskGeneratorHashingAlgorithm; // Mask Generator Hashing Algorithm
     private byte[] pSource; // P Source
     private int trailerField; // Trailer Field
 
@@ -35,64 +35,64 @@ public class KMIPCryptographicParameters
 
     // Getters and Setters for each field
 
-    public int getBlockCipherMode()
+    public KMIPBlockCipherMode getBlockCipherMode()
     {
         return blockCipherMode;
     }
 
-    public void setBlockCipherMode(int blockCipherMode)
+    public void setBlockCipherMode(KMIPBlockCipherMode blockCipherMode)
     {
         this.blockCipherMode = blockCipherMode;
     }
 
-    public PaddingMethod getPaddingMethod()
+    public KMIPPaddingMethod getPaddingMethod()
     {
-        return paddingMethod;
+        return KMIPPaddingMethod;
     }
 
-    public void setPaddingMethod(PaddingMethod paddingMethod)
+    public void setPaddingMethod(KMIPPaddingMethod KMIPPaddingMethod)
     {
-        this.paddingMethod = paddingMethod;
+        this.KMIPPaddingMethod = KMIPPaddingMethod;
     }
 
-    public int getHashingAlgorithm()
+    public KMIPHashingAlgorithm getHashingAlgorithm()
     {
-        return KMIPHashingAlgorithm;
+        return hashingAlgorithm;
     }
 
-    public void setHashingAlgorithm(int KMIPHashingAlgorithm)
+    public void setHashingAlgorithm(KMIPHashingAlgorithm hashingAlgorithm)
     {
-        this.KMIPHashingAlgorithm = KMIPHashingAlgorithm;
+        this.hashingAlgorithm = hashingAlgorithm;
     }
 
-    public int getKeyRoleType()
+    public KMIPKeyRoleType getKeyRoleType()
     {
-        return KMIPKeyRoleType;
+        return keyRoleType;
     }
 
-    public void setKeyRoleType(int KMIPKeyRoleType)
+    public void setKeyRoleType(KMIPKeyRoleType KMIPKeyRoleType)
     {
-        this.KMIPKeyRoleType = KMIPKeyRoleType;
+        this.keyRoleType = KMIPKeyRoleType;
     }
 
-    public int getDigitalSignatureAlgorithm()
+    public KMIPDigitalSignatureAlgorithm getDigitalSignatureAlgorithm()
     {
         return digitalSignatureAlgorithm;
     }
 
-    public void setDigitalSignatureAlgorithm(int digitalSignatureAlgorithm)
+    public void setDigitalSignatureAlgorithm(KMIPDigitalSignatureAlgorithm digitalSignatureAlgorithm)
     {
         this.digitalSignatureAlgorithm = digitalSignatureAlgorithm;
     }
 
     public KMIPCryptographicAlgorithm getCryptographicAlgorithm()
     {
-        return KMIPCryptographicAlgorithm;
+        return cryptographicAlgorithm;
     }
 
-    public void setCryptographicAlgorithm(KMIPCryptographicAlgorithm KMIPCryptographicAlgorithm)
+    public void setCryptographicAlgorithm(KMIPCryptographicAlgorithm cryptographicAlgorithm)
     {
-        this.KMIPCryptographicAlgorithm = KMIPCryptographicAlgorithm;
+        this.cryptographicAlgorithm = cryptographicAlgorithm;
     }
 
     public boolean getRandomIV()
@@ -175,24 +175,24 @@ public class KMIPCryptographicParameters
         this.saltLength = saltLength;
     }
 
-    public int getMaskGenerator()
+    public KMIPMaskGenerator getMaskGenerator()
     {
         return maskGenerator;
     }
 
-    public void setMaskGenerator(int maskGenerator)
+    public void setMaskGenerator(KMIPMaskGenerator maskGenerator)
     {
         this.maskGenerator = maskGenerator;
     }
 
-    public int getMaskGeneratorHashingAlgorithm()
+    public KMIPHashingAlgorithm getMaskGeneratorHashingAlgorithm()
     {
-        return maskGeneratorKMIPHashingAlgorithm;
+        return maskGeneratorHashingAlgorithm;
     }
 
-    public void setMaskGeneratorHashingAlgorithm(int maskGeneratorKMIPHashingAlgorithm)
+    public void setMaskGeneratorHashingAlgorithm(KMIPHashingAlgorithm maskGeneratorKMIPHashingAlgorithm)
     {
-        this.maskGeneratorKMIPHashingAlgorithm = maskGeneratorKMIPHashingAlgorithm;
+        this.maskGeneratorHashingAlgorithm = maskGeneratorKMIPHashingAlgorithm;
     }
 
     public byte[] getPSource()

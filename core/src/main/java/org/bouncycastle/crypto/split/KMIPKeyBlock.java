@@ -18,12 +18,12 @@ public class KMIPKeyBlock
     /**
      * The format type of the key (e.g., RSA, AES).
      */
-    private int KMIPKeyFormatType;
+    private KMIPKeyFormatType keyFormatType;
 
     /**
      * The compression type of the key (e.g., compressed, uncompressed).
      */
-    private int KMIPKeyCompressionType;
+    private KMIPKeyCompressionType keyCompressionType;
 
     /**
      * The key value, which can be a wrapped key (byte array) or plaintext (object structure).
@@ -33,7 +33,7 @@ public class KMIPKeyBlock
     /**
      * The cryptographic algorithm used for the key (e.g., RSA, AES).
      */
-    private KMIPCryptographicAlgorithm KMIPCryptographicAlgorithm;
+    private KMIPCryptographicAlgorithm cryptographicAlgorithm;
 
     /**
      * The length of the cryptographic key in bits.
@@ -48,45 +48,45 @@ public class KMIPKeyBlock
     /**
      * Constructs a new KeyBlock with the specified parameters.
      *
-     * @param KMIPKeyFormatType          The format type of the key.
-     * @param KMIPKeyCompressionType     The compression type of the key (optional).
+     * @param keyFormatType      The format type of the key.
+     * @param keyCompressionType     The compression type of the key (optional).
      * @param keyValue               The key value (wrapped or plaintext).
-     * @param KMIPCryptographicAlgorithm The cryptographic algorithm used for the key.
+     * @param cryptographicAlgorithm The cryptographic algorithm used for the key.
      * @param cryptographicLength    The length of the cryptographic key in bits (optional).
-     * @param KMIPKeyWrappingData        The key wrapping data, if the key is wrapped (optional).
+     * @param KMIPKeyWrappingData    The key wrapping data, if the key is wrapped (optional).
      */
-    public KMIPKeyBlock(int KMIPKeyFormatType, int KMIPKeyCompressionType,
-                        Object keyValue, KMIPCryptographicAlgorithm KMIPCryptographicAlgorithm,
+    public KMIPKeyBlock(KMIPKeyFormatType keyFormatType, KMIPKeyCompressionType keyCompressionType,
+                        Object keyValue, KMIPCryptographicAlgorithm cryptographicAlgorithm,
                         Integer cryptographicLength, KMIPKeyWrappingData KMIPKeyWrappingData)
     {
-        this.KMIPKeyFormatType = KMIPKeyFormatType;
-        this.KMIPKeyCompressionType = KMIPKeyCompressionType;
+        this.keyFormatType = keyFormatType;
+        this.keyCompressionType = keyCompressionType;
         this.keyValue = keyValue;
-        this.KMIPCryptographicAlgorithm = KMIPCryptographicAlgorithm;
+        this.cryptographicAlgorithm = cryptographicAlgorithm;
         this.cryptographicLength = cryptographicLength;
         this.KMIPKeyWrappingData = KMIPKeyWrappingData;
     }
 
     // Getters and Setters
 
-    public int getKeyFormatType()
+    public KMIPKeyFormatType getKeyFormatType()
     {
-        return KMIPKeyFormatType;
+        return keyFormatType;
     }
 
-    public void setKeyFormatType(int KMIPKeyFormatType)
+    public void setKeyFormatType(KMIPKeyFormatType keyFormatType)
     {
-        this.KMIPKeyFormatType = KMIPKeyFormatType;
+        this.keyFormatType = keyFormatType;
     }
 
-    public int getKeyCompressionType()
+    public KMIPKeyCompressionType getKeyCompressionType()
     {
-        return KMIPKeyCompressionType;
+        return keyCompressionType;
     }
 
-    public void setKeyCompressionType(int KMIPKeyCompressionType)
+    public void setKeyCompressionType(KMIPKeyCompressionType keyCompressionType)
     {
-        this.KMIPKeyCompressionType = KMIPKeyCompressionType;
+        this.keyCompressionType = keyCompressionType;
     }
 
     public Object getKeyValue()
@@ -101,12 +101,12 @@ public class KMIPKeyBlock
 
     public KMIPCryptographicAlgorithm getCryptographicAlgorithm()
     {
-        return KMIPCryptographicAlgorithm;
+        return cryptographicAlgorithm;
     }
 
     public void setCryptographicAlgorithm(KMIPCryptographicAlgorithm KMIPCryptographicAlgorithm)
     {
-        this.KMIPCryptographicAlgorithm = KMIPCryptographicAlgorithm;
+        this.cryptographicAlgorithm = KMIPCryptographicAlgorithm;
     }
 
     public Integer getCryptographicLength()

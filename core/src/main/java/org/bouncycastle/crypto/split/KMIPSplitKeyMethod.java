@@ -3,7 +3,7 @@ package org.bouncycastle.crypto.split;
 /**
  * Enumeration for Split Key Methods.
  */
-public enum SplitKeyMethod
+public enum KMIPSplitKeyMethod
 {
     XOR(0x00000001),                       // XOR method
     POLYNOMIAL_GF_65536(0x00000002),        // Polynomial Sharing GF (2^16)
@@ -12,7 +12,7 @@ public enum SplitKeyMethod
 
     private final int value;
 
-    SplitKeyMethod(int value)
+    KMIPSplitKeyMethod(int value)
     {
         this.value = value;
     }
@@ -29,9 +29,9 @@ public enum SplitKeyMethod
      * @return the corresponding SplitKeyMethod
      * @throws IllegalArgumentException if the value does not correspond to any SplitKeyMethod
      */
-    public static SplitKeyMethod fromValue(int value)
+    public static KMIPSplitKeyMethod fromValue(int value)
     {
-        for (SplitKeyMethod method : SplitKeyMethod.values())
+        for (KMIPSplitKeyMethod method : KMIPSplitKeyMethod.values())
         {
             if (method.getValue() == value)
             {

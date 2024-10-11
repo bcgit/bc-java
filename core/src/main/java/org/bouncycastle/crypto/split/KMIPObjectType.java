@@ -2,21 +2,22 @@ package org.bouncycastle.crypto.split;
 /**
  * Enumeration of Object Types.
  */
-public enum ObjectTypeEnum {
-    CERTIFICATE(0x00000001),
-    SYMMETRIC_KEY(0x00000002),
-    PUBLIC_KEY(0x00000003),
-    PRIVATE_KEY(0x00000004),
-    SPLIT_KEY(0x00000005),
-    RESERVED(0x00000006),
-    SECRET_DATA(0x00000007),
-    OPAQUE_OBJECT(0x00000008),
-    PGP_KEY(0x00000009),
-    CERTIFICATE_REQUEST(0x0000000A);
+public enum KMIPObjectType
+{
+    CERTIFICATE(0x01),
+    SYMMETRIC_KEY(0x02),
+    PUBLIC_KEY(0x03),
+    PRIVATE_KEY(0x04),
+    SPLIT_KEY(0x05),
+    RESERVED(0x06),
+    SECRET_DATA(0x07),
+    OPAQUE_OBJECT(0x08),
+    PGP_KEY(0x09),
+    CERTIFICATE_REQUEST(0x0A);
 
     private final int value;
 
-    ObjectTypeEnum(int value) {
+    KMIPObjectType(int value) {
         this.value = value;
     }
 
@@ -31,8 +32,8 @@ public enum ObjectTypeEnum {
      * @return the corresponding ObjectType
      * @throws IllegalArgumentException if the value does not correspond to any ObjectType
      */
-    public static ObjectTypeEnum fromValue(int value) {
-        for (ObjectTypeEnum type : ObjectTypeEnum.values()) {
+    public static KMIPObjectType fromValue(int value) {
+        for (KMIPObjectType type : KMIPObjectType.values()) {
             if (type.getValue() == value) {
                 return type;
             }

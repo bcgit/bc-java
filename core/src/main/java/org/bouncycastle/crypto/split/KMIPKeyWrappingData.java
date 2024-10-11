@@ -18,7 +18,7 @@ public class KMIPKeyWrappingData
     /**
      * The method used to wrap the Key Value (e.g., AES, RSA).
      */
-    private int KMIPWrappingMethod;
+    private KMIPWrappingMethod wrappingMethod;
 
     /**
      * Information about the encryption key used to encrypt the Key Value.
@@ -43,43 +43,43 @@ public class KMIPKeyWrappingData
     /**
      * Specifies the encoding of the Key Material within the wrapped Key Value structure.
      */
-    private int KMIPEncodingOption;
+    private KMIPEncodingOption encodingOption;
 
     /**
      * Constructs a new KeyWrappingData with the specified parameters.
      *
-     * @param KMIPWrappingMethod      The method used to wrap the Key Value.
+     * @param wrappingMethod      The method used to wrap the Key Value.
      * @param encryptionKeyInfo   Information about the encryption key (optional).
      * @param macSignatureKeyInfo Information about the MAC/signature key (optional).
      * @param macSignature        A MAC or signature of the Key Value (optional).
      * @param ivCounterNonce      IV, counter, or nonce if required by the wrapping method (optional).
-     * @param KMIPEncodingOption      The encoding option for the Key Value (optional).
+     * @param encodingOption  The encoding option for the Key Value (optional).
      */
-    public KMIPKeyWrappingData(int KMIPWrappingMethod,
+    public KMIPKeyWrappingData(KMIPWrappingMethod wrappingMethod,
                                KMIPKeyInformation encryptionKeyInfo,
                                KMIPKeyInformation macSignatureKeyInfo,
                                byte[] macSignature,
                                byte[] ivCounterNonce,
-                               int KMIPEncodingOption)
+                               KMIPEncodingOption encodingOption)
     {
-        this.KMIPWrappingMethod = KMIPWrappingMethod;
+        this.wrappingMethod = wrappingMethod;
         this.encryptionKeyInfo = encryptionKeyInfo;
         this.macSignatureKeyInfo = macSignatureKeyInfo;
         this.macSignature = macSignature;
         this.ivCounterNonce = ivCounterNonce;
-        this.KMIPEncodingOption = KMIPEncodingOption;
+        this.encodingOption = encodingOption;
     }
 
     // Getters and Setters
 
-    public int getWrappingMethod()
+    public KMIPWrappingMethod getWrappingMethod()
     {
-        return KMIPWrappingMethod;
+        return wrappingMethod;
     }
 
-    public void setWrappingMethod(int KMIPWrappingMethod)
+    public void setWrappingMethod(KMIPWrappingMethod KMIPWrappingMethod)
     {
-        this.KMIPWrappingMethod = KMIPWrappingMethod;
+        this.wrappingMethod = KMIPWrappingMethod;
     }
 
     public KMIPKeyInformation getEncryptionKeyInfo()
@@ -122,13 +122,13 @@ public class KMIPKeyWrappingData
         this.ivCounterNonce = ivCounterNonce;
     }
 
-    public int getEncodingOption()
+    public KMIPEncodingOption getEncodingOption()
     {
-        return KMIPEncodingOption;
+        return encodingOption;
     }
 
-    public void setEncodingOption(int KMIPEncodingOption)
+    public void setEncodingOption(KMIPEncodingOption KMIPEncodingOption)
     {
-        this.KMIPEncodingOption = KMIPEncodingOption;
+        this.encodingOption = KMIPEncodingOption;
     }
 }
