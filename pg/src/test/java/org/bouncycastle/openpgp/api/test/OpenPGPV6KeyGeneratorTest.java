@@ -177,7 +177,8 @@ public class OpenPGPV6KeyGeneratorTest
         for (PGPPublicKey key : secretKeys.toCertificate())
         {
             isEquals(creationTime, key.getCreationTime());
-            for (Iterator<PGPSignature> it = key.getSignatures(); it.hasNext(); ) {
+            for (Iterator<PGPSignature> it = key.getSignatures(); it.hasNext(); )
+            {
                 PGPSignature sig = it.next();
                 isEquals(creationTime, sig.getCreationTime());
             }

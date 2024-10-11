@@ -19,7 +19,8 @@ public class BcAEADSecretKeyEncryptorFactory
         extends PBESecretKeyEncryptorFactory
 {
     @Override
-    public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket) {
+    public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket)
+    {
         if (passphrase == null)
         {
             return null;
