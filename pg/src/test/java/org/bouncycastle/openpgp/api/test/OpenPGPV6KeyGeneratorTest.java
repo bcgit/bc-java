@@ -34,24 +34,29 @@ public class OpenPGPV6KeyGeneratorTest
     public void performTest()
             throws Exception
     {
-        // Run tests using BC implementation
+        // Run tests using the BC implementation
         performTests(new ImplementationProvider()
         {
             @Override
-            public OpenPGPV6KeyGenerator get(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
+            public OpenPGPV6KeyGenerator get(int signatureHashAlgorithm,
+                                             Date creationTime,
+                                             boolean aeadProtection)
             {
                 return new BcOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection);
             }
         });
 
-        // Run tests using Jca implementation
+        // Run tests using the JCA/JCE implementation
         performTests(new ImplementationProvider()
         {
             @Override
-            public OpenPGPV6KeyGenerator get(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
+            public OpenPGPV6KeyGenerator get(int signatureHashAlgorithm,
+                                             Date creationTime,
+                                             boolean aeadProtection)
                     throws PGPException
             {
-                return new JcaOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, new BouncyCastleProvider(), aeadProtection);
+                return new JcaOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection,
+                        new BouncyCastleProvider());
             }
         });
     }
@@ -134,6 +139,10 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(creationTime, primaryKey.getPublicKey().getCreationTime());
         isTrue("Primary key uses signing-capable algorithm",
                 PublicKeyUtils.isSigningAlgorithm(primaryKey.getPublicKey().getAlgorithm()));
+        PGPSignature directKeySig = primaryKey.getPublicKey().getKeySignatures().next();
+        isEquals("Primary key of a classic key MUST carry C key flag.",
+                KeyFlags.CERTIFY_OTHER, directKeySig.getHashedSubPackets().getKeyFlags());
+
         // Test UIDs
         Iterator<String> uids = primaryKey.getUserIDs();
         isEquals("Alice <alice@example.com>", uids.next());
@@ -146,6 +155,11 @@ public class OpenPGPV6KeyGeneratorTest
         isTrue("Signing subkey uses signing-capable algorithm",
                 PublicKeyUtils.isSigningAlgorithm(signingSubkey.getPublicKey().getAlgorithm()));
         isEquals(creationTime, signingSubkey.getPublicKey().getCreationTime());
+        PGPSignature signingKeyBinding = signingSubkey.getPublicKey().getKeySignatures().next();
+        isEquals("Signing subkey MUST carry S key flag.",
+                KeyFlags.SIGN_DATA, signingKeyBinding.getHashedSubPackets().getKeyFlags());
+        isNotNull("Signing subkey binding MUST carry primary key binding sig",
+                signingKeyBinding.getHashedSubPackets().getEmbeddedSignatures().get(0));
 
         // Test encryption subkey
         PGPSecretKey encryptionSubkey = keys.next();
@@ -154,6 +168,10 @@ public class OpenPGPV6KeyGeneratorTest
         isTrue("Encryption subkey uses encryption-capable algorithm",
                 PublicKeyUtils.isEncryptionAlgorithm(encryptionSubkey.getPublicKey().getAlgorithm()));
         isEquals(creationTime, encryptionSubkey.getPublicKey().getCreationTime());
+        PGPSignature encryptionKeyBinding = encryptionSubkey.getPublicKey().getKeySignatures().next();
+        isEquals("Encryption key MUST carry encryption flags",
+                KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE,
+                encryptionKeyBinding.getHashedSubPackets().getKeyFlags());
 
         // Test has no additional keys
         isFalse(keys.hasNext());
