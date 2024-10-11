@@ -52,15 +52,15 @@ public class KMIPTest
                     indentLevel++; // Increase the indent level for child elements
                 }
 
-                // Process character data
-                if (event.isCharacters()) {
-                    Characters characters = event.asCharacters();
-                    String text = characters.getData().trim();
-                    if (!text.isEmpty()) {
-                        printIndent(); // Print indentation
-                        System.out.println("Text: " + text); // Print text content
-                    }
-                }
+//                // Process character data
+//                if (event.isCharacters()) {
+//                    Characters characters = event.asCharacters();
+//                    String text = characters.getData().trim();
+//                    if (!text.isEmpty()) {
+//                        printIndent(); // Print indentation
+//                        System.out.println("Text: " + text); // Print text content
+//                    }
+//                }
 
                 // Process end elements
                 if (event.isEndElement()) {
