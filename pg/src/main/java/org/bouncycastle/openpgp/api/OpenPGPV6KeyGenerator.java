@@ -129,6 +129,19 @@ public class OpenPGPV6KeyGenerator
         this.conf = new Configuration(new Date((creationTime.getTime() / 1000) * 1000));
     }
 
+    /**
+     * Generate an OpenPGP key consisting of a certify-only primary key,
+     * a dedicated signing-subkey and dedicated encryption-subkey.
+     * The key will carry the provided user-id and be protected using the provided passphrase.
+     * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the primary key type,
+     * {@link PGPKeyPairGenerator#generateSigningSubkey()} for the signing-subkey type and
+     * {@link PGPKeyPairGenerator#generateEncryptionSubkey()} for the encryption-subkey key type.
+     *
+     * @param userId user id
+     * @param passphrase nullable passphrase.
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated
+     */
     public PGPSecretKeyRing classicKey(String userId, char[] passphrase)
             throws PGPException
     {
@@ -142,8 +155,9 @@ public class OpenPGPV6KeyGenerator
      * Generate a sign-only OpenPGP key.
      * The key consists of a single, user-id-less Ed25519 key, which is capable of signing and certifying.
      * It carries a single direct-key signature with signing-related preferences.
-     * @return sign-only OpenPGP key
-     * @throws PGPException
+     *
+     * @return sign-only (+certify) OpenPGP key
+     * @throws PGPException if the key cannot be generated
      */
     public PGPSecretKeyRing signOnlyKey()
             throws PGPException
@@ -153,20 +167,30 @@ public class OpenPGPV6KeyGenerator
 
     /**
      * Generate a sign-only OpenPGP key.
-     * The key consists of a single, user-id-less Ed25519 key, which is capable of signing and certifying.
-     * It carries a single direct-key signature with signing-related preferences whose subpackets can be
-     * modified by providing a {@link SignatureSubpacketsFunction}.
-     * @param passphrase passphrase to protect the key with
-     * @return sign-only OpenPGP key
-     * @throws PGPException
+     * The key consists of a single, user-id-less primary key, which is capable of signing and certifying.
+     * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the key type.
+     *
+     * @param passphrase nullable passphrase to protect the key with
+     * @return sign-only (+certify) OpenPGP key
+     * @throws PGPException if the key cannot be generated
      */
-    public PGPSecretKeyRing signOnlyKey(
-            char[] passphrase)
+    public PGPSecretKeyRing signOnlyKey(char[] passphrase)
             throws PGPException
     {
         return signOnlyKey(passphrase, null);
     }
 
+    /**
+     * Generate a sign-only OpenPGP key.
+     * The key consists of a single, user-id-less primary key, which is capable of signing and certifying.
+     * It carries a single direct-key signature with signing-related preferences whose subpackets can be
+     * modified by providing a {@link SignatureSubpacketsFunction}.
+     *
+     * @param passphrase nullable passphrase to protect the key with
+     * @param userSubpackets callback to modify the direct-key signature subpackets with
+     * @return sign-only (+certify) OpenPGP key
+     * @throws PGPException if the key cannot be generated
+     */
     public PGPSecretKeyRing signOnlyKey(
             char[] passphrase,
             SignatureSubpacketsFunction userSubpackets)
@@ -179,6 +203,18 @@ public class OpenPGPV6KeyGenerator
         return signOnlyKey(primaryKey, encryptor, userSubpackets);
     }
 
+    /**
+     * Generate a sign-only OpenPGP key.
+     * The key consists of a single, user-id-less primary key, which is capable of signing and certifying.
+     * It carries a single direct-key signature with signing-related preferences whose subpackets can be
+     * modified by providing a {@link SignatureSubpacketsFunction}.
+     *
+     * @param primaryKey signing-capable primary key
+     * @param keyEncryptor nullable encryptor to protect the primary key with
+     * @param userSubpackets callback to modify the direct-key signature subpackets with
+     * @return sign-only (+certify) OpenPGP key
+     * @throws PGPException if the key cannot be generated
+     */
     public PGPSecretKeyRing signOnlyKey(
             PGPKeyPair primaryKey,
             PBESecretKeyEncryptor keyEncryptor,
@@ -203,12 +239,29 @@ public class OpenPGPV6KeyGenerator
                 .build();
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the primary key type
+     *
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey()
             throws PGPException
     {
         return withPrimaryKey(null);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the primary key type
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     *
+     * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             SignatureSubpacketsFunction directKeySubpackets)
             throws PGPException
@@ -218,6 +271,17 @@ public class OpenPGPV6KeyGenerator
                 directKeySubpackets);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The {@link KeyPairGeneratorCallback} can be used to specify the primary key type.
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     *
+     * @param keyGenCallback callback to specify the primary key type
+     * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             KeyPairGeneratorCallback keyGenCallback,
             SignatureSubpacketsFunction directKeySubpackets)
@@ -226,6 +290,16 @@ public class OpenPGPV6KeyGenerator
         return withPrimaryKey(keyGenCallback, directKeySubpackets, null);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     *
+     * @param keyPair primary key
+     * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             PGPKeyPair keyPair,
             SignatureSubpacketsFunction directKeySubpackets)
@@ -237,6 +311,22 @@ public class OpenPGPV6KeyGenerator
                 null);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The {@link KeyPairGeneratorCallback} can be used to specify the primary key type.
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     * IMPORTANT: The custom primary key passphrase will only be used, if in the final step the key is retrieved
+     * using {@link WithPrimaryKey#build()}.
+     * If instead {@link WithPrimaryKey#build(char[])} is used, the key-specific passphrase is overwritten with the argument
+     * passed into {@link WithPrimaryKey#build(char[])}.
+     *
+     * @param keyGenCallback callback to specify the primary key type
+     * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
+     * @param passphrase nullable passphrase to protect the primary key with
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             KeyPairGeneratorCallback keyGenCallback,
             SignatureSubpacketsFunction directKeySubpackets,
@@ -250,6 +340,22 @@ public class OpenPGPV6KeyGenerator
         return withPrimaryKey(pkPair, directKeySubpackets, keyEncryptor);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The {@link KeyPairGeneratorCallback} can be used to specify the primary key type.
+     * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
+     * given {@link SignatureSubpacketsFunction}.
+     * IMPORTANT: The custom keyEncryptor will only be used, if in the final step the key is retrieved
+     * using {@link WithPrimaryKey#build()}.
+     * If instead {@link WithPrimaryKey#build(char[])} is used, the key-specific encryptor is overwritten with
+     * an encryptor built from the argument passed into {@link WithPrimaryKey#build(char[])}.
+     *
+     * @param keyPair primary key
+     * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
+     * @param keyEncryptor nullable encryptor to protect the primary key with
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             PGPKeyPair keyPair,
             SignatureSubpacketsFunction directKeySubpackets,
@@ -287,7 +393,7 @@ public class OpenPGPV6KeyGenerator
      * @param customSubpackets user-provided signature subpackets callback
      * @param encryptor key encryptor
      * @return builder
-     * @throws PGPException
+     * @throws PGPException if the key cannot be generated
      */
     private WithPrimaryKey primaryKeyWithDirectKeySig(
             PGPKeyPair primaryKeyPair,
@@ -340,10 +446,11 @@ public class OpenPGPV6KeyGenerator
         private final Implementation impl;
         private final Configuration conf;
         private Key primaryKey;
-        private List<Key> subkeys = new ArrayList<Key>();
+        private final List<Key> subkeys = new ArrayList<Key>();
 
         /**
          * Builder.
+         *
          * @param implementation cryptographic implementation
          * @param configuration key configuration
          * @param primaryKey specified primary key
@@ -357,9 +464,10 @@ public class OpenPGPV6KeyGenerator
 
         /**
          * Attach a User-ID with a positive certification to the key.
+         *
          * @param userId user-id
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the user-id cannot be added
          */
         public WithPrimaryKey addUserId(String userId)
                 throws PGPException
@@ -374,7 +482,7 @@ public class OpenPGPV6KeyGenerator
          * @param userId user-id
          * @param userIdSubpackets callback to modify the certification subpackets
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the user-id cannot be added
          */
         public WithPrimaryKey addUserId(
                 String userId,
@@ -392,7 +500,7 @@ public class OpenPGPV6KeyGenerator
          * @param certificationType signature type
          * @param userIdSubpackets callback to modify the certification subpackets
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the user-id cannot be added
          */
         public WithPrimaryKey addUserId(
                 String userId,
@@ -400,6 +508,11 @@ public class OpenPGPV6KeyGenerator
                 SignatureSubpacketsFunction userIdSubpackets)
                 throws PGPException
         {
+            if (userId == null || userId.trim().isEmpty())
+            {
+                throw new IllegalArgumentException("User-ID cannot be null or empty.");
+            }
+
             if (!PGPSignature.isCertification(certificationType))
             {
                 throw new IllegalArgumentException("Signature type MUST be a certification type (0x10 - 0x13)");
@@ -430,8 +543,9 @@ public class OpenPGPV6KeyGenerator
         /**
          * Add an encryption-capable subkey to the OpenPGP key.
          * See {@link PGPKeyPairGenerator#generateEncryptionSubkey()} for the key type.
+         *
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey()
                 throws PGPException
@@ -446,7 +560,7 @@ public class OpenPGPV6KeyGenerator
          *
          * @param keyGenCallback callback to decide the encryption subkey type
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback)
                 throws PGPException
@@ -458,10 +572,11 @@ public class OpenPGPV6KeyGenerator
          * Add an encryption-capable subkey to the OpenPGP key.
          * The type of the subkey can be decided by implementing the {@link KeyPairGeneratorCallback}.
          * The binding signature can be modified by implementing the {@link SignatureSubpacketsFunction}.
+         *
          * @param generatorCallback callback to specify the encryption key type.
          * @param bindingSubpacketsCallback nullable callback to modify the binding signature subpackets
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(
                 KeyPairGeneratorCallback generatorCallback,
@@ -488,7 +603,7 @@ public class OpenPGPV6KeyGenerator
          *
          * @param passphrase nullable subkey passphrase
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(char[] passphrase)
                 throws PGPException
@@ -504,10 +619,11 @@ public class OpenPGPV6KeyGenerator
          * using {@link #build()}.
          * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
          * passed into {@link #build(char[])}.
+         *
          * @param keyGenCallback callback to specify the key type
          * @param passphrase nullable passphrase for the encryption subkey
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
                                                char[] passphrase)
@@ -525,11 +641,12 @@ public class OpenPGPV6KeyGenerator
          * using {@link #build()}.
          * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
          * passed into {@link #build(char[])}.
+         *
          * @param keyGenCallback callback to specify the key type
          * @param bindingSignatureCallback nullable callback to modify the binding signature subpackets
          * @param passphrase nullable passphrase for the encryption subkey
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
                                                SignatureSubpacketsFunction bindingSignatureCallback,
@@ -548,11 +665,12 @@ public class OpenPGPV6KeyGenerator
          * using {@link #build()}.
          * If instead {@link #build(char[])} is used, the key-specific encryptor is overwritten with an encryptor
          * built from the argument passed into {@link #build(char[])}.
+         *
          * @param encryptionSubkey encryption subkey
          * @param bindingSubpacketsCallback nullable callback to modify the subkey binding signature subpackets
          * @param encryptor nullable encryptor to encrypt the encryption subkey
          * @return builder
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(
                 PGPKeyPair encryptionSubkey,
@@ -589,24 +707,64 @@ public class OpenPGPV6KeyGenerator
             return this;
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * See {@link PGPKeyPairGenerator#generateSigningSubkey()} for the key type.
+         *
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey()
                 throws PGPException
         {
             return addSigningSubkey(PGPKeyPairGenerator::generateSigningSubkey);
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * The key type can be specified by overriding {@link KeyPairGeneratorCallback}.
+         *
+         * @param generatorCallback callback to specify the signing-subkey type
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback generatorCallback)
                 throws PGPException
         {
             return addSigningSubkey(generatorCallback, null);
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * See {@link PGPKeyPairGenerator#generateSigningSubkey()} for the key type.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         *
+         * @param passphrase nullable passphrase
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey(char[] passphrase)
                 throws PGPException
         {
             return addSigningSubkey(PGPKeyPairGenerator::generateSigningSubkey, passphrase);
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         *
+         * @param keyGenCallback callback to specify the signing-key type
+         * @param passphrase nullable passphrase
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback keyGenCallback,
                                                char[] passphrase)
                 throws PGPException
@@ -614,6 +772,23 @@ public class OpenPGPV6KeyGenerator
             return addSigningSubkey(keyGenCallback, null, null, passphrase);
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * The contents of the binding signature(s) can be modified by overriding the respective
+         * {@link SignatureSubpacketsFunction} instances.
+         * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
+         * passed into {@link #build(char[])}.
+         *
+         * @param keyGenCallback callback to specify the signing-key type
+         * @param bindingSignatureCallback callback to modify the contents of the signing subkey binding signature
+         * @param backSignatureCallback callback to modify the contents of the embedded primary key binding signature
+         * @param passphrase nullable passphrase
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback keyGenCallback,
                                                SignatureSubpacketsFunction bindingSignatureCallback,
                                                SignatureSubpacketsFunction backSignatureCallback,
@@ -625,6 +800,23 @@ public class OpenPGPV6KeyGenerator
             return addSigningSubkey(subkey, bindingSignatureCallback, backSignatureCallback, keyEncryptor);
         }
 
+        /**
+         * Add a signing-capable subkey to the OpenPGP key.
+         * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * The contents of the binding signature(s) can be modified by overriding the respective
+         * {@link SignatureSubpacketsFunction} instances.
+         * IMPORTANT: The custom key encryptor will only be used, if in the final step the key is retrieved
+         * using {@link #build()}.
+         * If instead {@link #build(char[])} is used, the key-specific encryptor is overwritten with an encryptor
+         * built from the argument passed into {@link #build(char[])}.
+         *
+         * @param signingKey signing subkey
+         * @param bindingSignatureCallback callback to modify the contents of the signing subkey binding signature
+         * @param backSignatureCallback callback to modify the contents of the embedded primary key binding signature
+         * @param keyEncryptor nullable encryptor to protect the signing subkey
+         * @return builder
+         * @throws PGPException if the key cannot be generated
+         */
         public WithPrimaryKey addSigningSubkey(PGPKeyPair signingKey,
                                                SignatureSubpacketsFunction bindingSignatureCallback,
                                                SignatureSubpacketsFunction backSignatureCallback,
@@ -647,7 +839,8 @@ public class OpenPGPV6KeyGenerator
             PGPSignatureSubpacketGenerator bindingSigSubpackets = new PGPSignatureSubpacketGenerator();
             bindingSigSubpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
             bindingSigSubpackets.setSignatureCreationTime(conf.creationTime);
-            bindingSigSubpackets.setKeyFlags(true, KeyFlags.SIGN_DATA);
+
+            bindingSigSubpackets = SIGNING_SUBKEY_SUBPACKETS.apply(bindingSigSubpackets);
 
             PGPSignatureGenerator backSigGen = new PGPSignatureGenerator(
                     impl.contentSignerBuilderProvider.get(signingKey.getPublicKey()),
@@ -689,8 +882,9 @@ public class OpenPGPV6KeyGenerator
 
         /**
          * Build the {@link PGPSecretKeyRing OpenPGP key}, allowing individual passphrases for the subkeys.
+         *
          * @return OpenPGP key
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public PGPSecretKeyRing build()
                 throws PGPException
@@ -721,8 +915,10 @@ public class OpenPGPV6KeyGenerator
         /**
          * Build the {@link PGPSecretKeyRing OpenPGP key} using a single passphrase used to protect all subkeys.
          * The passphrase will override whichever key protectors were specified in previous builder steps.
+         *
+         * @param passphrase nullable passphrase
          * @return OpenPGP key
-         * @throws PGPException
+         * @throws PGPException if the key cannot be generated
          */
         public PGPSecretKeyRing build(char[] passphrase)
                 throws PGPException
@@ -797,17 +993,12 @@ public class OpenPGPV6KeyGenerator
     }
 
     /**
-     * Pair of a {@link PGPKeyPair} and (nullable) {@link PBESecretKeyEncryptor}.
+     * Tuple of a {@link PGPKeyPair} and (nullable) {@link PBESecretKeyEncryptor}.
      */
     private static class Key
     {
-        private PGPKeyPair pair;
-
-        // We introduce Optional here, because that way we can reflect 3 states:
-        //  * The user explicitly wants to encrypt a (sub) key using a dedicated password -> Optional.some(encryptor)
-        //  * The user explicitly wants to keep the key unencrypted -> Optional.empty()
-        //  * The user wants to use one single password for all subkeys -> null
-        private PBESecretKeyEncryptor encryptor;
+        private final PGPKeyPair pair;
+        private final PBESecretKeyEncryptor encryptor;
 
         public Key(PGPKeyPair key, PBESecretKeyEncryptor encryptor)
         {
