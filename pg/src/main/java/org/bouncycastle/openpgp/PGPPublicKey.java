@@ -1227,7 +1227,8 @@ public class PGPPublicKey
             for (int i = 0; isNotNull && i < rlt.size(); i++)
             {
                 PGPSignature existingSubSig = (PGPSignature)rlt.get(i);
-                if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                if (existingSubSig.getVersion() == copySubSig.getVersion() &&
+                        PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                 {
                     found = true;
                     // join existing sig with copy to apply modifications in unhashed subpackets
