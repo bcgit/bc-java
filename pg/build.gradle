@@ -4,6 +4,11 @@ plugins {
 }
 
 sourceSets {
+    main {
+        java {
+            srcDirs = ["$buildDir/generated-src"]
+        }
+    }
     java9 {
         java {
             srcDirs = ['src/main/jdk1.9']
@@ -26,7 +31,16 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 }
 
+task generateSources(type: Copy) {
+    from 'src/main/java'
+    into "$buildDir/generated-src"
+    filter { line -> line.replaceAll('@RELEASE_NAME@', "${version}") }
+}
+
+compileJava.dependsOn generateSources
+
 compileJava {
+
     javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
@@ -36,6 +50,7 @@ compileJava {
 
 
 compileJava9Java {
+
     javaCompiler = javaToolchains.compilerFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
@@ -45,14 +60,17 @@ compileJava9Java {
           '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}"
     ]
 
-    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+    options.sourcepath = files(["$buildDir/generated-src", 'src/main/jdk1.9'])
 }
 
 
 jar.archiveBaseName = "bcpg-$vmrange"
 
 
+
 task sourcesJar(type: Jar) {
+    dependsOn generateSources
+    
     archiveBaseName = jar.archiveBaseName
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
