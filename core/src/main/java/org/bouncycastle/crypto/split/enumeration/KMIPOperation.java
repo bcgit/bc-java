@@ -1,6 +1,7 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
-public enum KMIPOperation {
+public enum KMIPOperation
+{
     CREATE(0x00000001),
     CREATE_KEY_PAIR(0x00000002),
     REGISTER(0x00000003),
@@ -63,17 +64,22 @@ public enum KMIPOperation {
 
     private final int value;
 
-    KMIPOperation(int value) {
+    KMIPOperation(int value)
+    {
         this.value = value;
     }
 
-    public int getValue() {
+    public int getValue()
+    {
         return value;
     }
 
-    public static KMIPOperation fromValue(int value) {
-        for (KMIPOperation op : values()) {
-            if (op.value == value) {
+    public static KMIPOperation fromValue(int value)
+    {
+        for (KMIPOperation op : values())
+        {
+            if (op.value == value)
+            {
                 return op;
             }
         }
@@ -81,7 +87,8 @@ public enum KMIPOperation {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return String.format("%s (0x%08X)", name(), value);
     }
 }
