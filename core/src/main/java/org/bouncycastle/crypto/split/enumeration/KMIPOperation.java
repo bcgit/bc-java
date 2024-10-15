@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.split.enumeration;
 
 public enum KMIPOperation
+    implements KMIPEnumeration
 {
     CREATE(0x00000001),
     CREATE_KEY_PAIR(0x00000002),

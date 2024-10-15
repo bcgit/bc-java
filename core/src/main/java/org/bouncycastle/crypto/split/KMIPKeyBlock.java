@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.split;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+
 /**
  * Represents a Key Block object, a structure used to encapsulate all information
  * associated with a cryptographic key.
