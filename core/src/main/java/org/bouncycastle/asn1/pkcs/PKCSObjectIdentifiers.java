@@ -244,20 +244,22 @@ public interface PKCSObjectIdentifiers
 
 
     /** S/MIME: Algorithm Identifiers ; 1.2.840.113549.1.9.16.3 */
-    ASN1ObjectIdentifier id_alg                  = id_smime.branch("3");
+    ASN1ObjectIdentifier smime_alg = id_smime.branch("3");
+    /** @deprecated use smime_alg instead */
+    ASN1ObjectIdentifier id_alg = id_smime.branch("3");
 
     /** PKCS#9: 1.2.840.113549.1.9.16.3.5 */
-    ASN1ObjectIdentifier    id_alg_ESDH             = id_alg.branch("5");
+    ASN1ObjectIdentifier    id_alg_ESDH             = smime_alg.branch("5");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.6 */
-    ASN1ObjectIdentifier    id_alg_CMS3DESwrap      = id_alg.branch("6");
+    ASN1ObjectIdentifier    id_alg_CMS3DESwrap      = smime_alg.branch("6");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.7 */
-    ASN1ObjectIdentifier    id_alg_CMSRC2wrap       = id_alg.branch("7");
+    ASN1ObjectIdentifier    id_alg_CMSRC2wrap       = smime_alg.branch("7");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.8 */
-    ASN1ObjectIdentifier id_alg_zlibCompress        = id_alg.branch("8");
+    ASN1ObjectIdentifier id_alg_zlibCompress        = smime_alg.branch("8");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.9 */
-    ASN1ObjectIdentifier id_alg_PWRI_KEK            = id_alg.branch("9");
+    ASN1ObjectIdentifier id_alg_PWRI_KEK            = smime_alg.branch("9");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.10 */
-    ASN1ObjectIdentifier    id_alg_SSDH             = id_alg.branch("10");
+    ASN1ObjectIdentifier    id_alg_SSDH             = smime_alg.branch("10");
 
     /**
      * <pre>
@@ -269,7 +271,7 @@ public interface PKCSObjectIdentifiers
      *   }
      * </pre>
      */
-    ASN1ObjectIdentifier id_rsa_KEM              = id_alg.branch("14");
+    ASN1ObjectIdentifier id_rsa_KEM              = smime_alg.branch("14");
 
 
     /**
@@ -277,7 +279,7 @@ public interface PKCSObjectIdentifiers
      *     member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9)
      *    smime(16) alg(3) 17 }
      */
-    public static final ASN1ObjectIdentifier id_alg_hss_lms_hashsig = id_alg.branch("17");
+    public static final ASN1ObjectIdentifier id_alg_hss_lms_hashsig = smime_alg.branch("17");
 
     /**
      * <pre>
@@ -288,7 +290,7 @@ public interface PKCSObjectIdentifiers
      * AEADChaCha20Poly1305Nonce ::= OCTET STRING (SIZE(12))
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = id_alg.branch("18");
+    ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = smime_alg.branch("18");
 
     /**
      * <pre>
@@ -296,7 +298,7 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 28 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha256 = id_alg.branch("28");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha256 = smime_alg.branch("28");
 
     /**
      * <pre>
@@ -304,7 +306,7 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 29 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha384 = id_alg.branch("29");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha384 = smime_alg.branch("29");
 
     /**
      * <pre>
@@ -312,7 +314,7 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 30 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha512 = id_alg.branch("30");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha512 = smime_alg.branch("30");
 
     //
     // id-cti OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
