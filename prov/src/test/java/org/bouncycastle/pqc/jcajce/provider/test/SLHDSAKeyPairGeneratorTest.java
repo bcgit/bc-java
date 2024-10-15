@@ -24,7 +24,7 @@ import org.bouncycastle.util.Arrays;
  * KeyFactory/KeyPairGenerator tests for SLHDSA with the BC provider.
  */
 public class SLHDSAKeyPairGeneratorTest
-    extends KeyPairGeneratorTest
+    extends MainProvKeyPairGeneratorTest
 {
 
     protected void setUp()
@@ -151,6 +151,10 @@ public class SLHDSAKeyPairGeneratorTest
             kpg.initialize(params[i], new SecureRandom());
             KeyPair keyPair = kpg.generateKeyPair();
             performKeyPairEncodingTest(keyPair);
+            performKeyPairEncodingTest(params[i].getName(), keyPair);
+            performKeyPairEncodingTest(oids[i].getId(), keyPair);
+            assertNotNull(((SLHDSAPrivateKey)keyPair.getPrivate()).getParameterSpec());
+            assertNotNull(((SLHDSAPublicKey)keyPair.getPublic()).getParameterSpec());
             assertEquals(oids[i], SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
             assertTrue(oids[i].toString(), Arrays.areEqual(((SLHDSAPublicKey)keyPair.getPublic()).getPublicData(), ((SLHDSAPrivateKey)keyPair.getPrivate()).getPublicKey().getPublicData()));
         }
