@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.openpgp.KeyIdentifier;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -39,5 +40,10 @@ public class IntendedRecipientFingerprint
     public byte[] getFingerprint()
     {
         return Arrays.copyOfRange(data, 1, data.length);
+    }
+
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getFingerprint());
     }
 }
