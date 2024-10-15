@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -56,10 +57,7 @@ public class PGPSignatureSubpacketGenerator
     {
         if (sigSubV != null)
         {
-            for (int i = 0; i != sigSubV.packets.length; i++)
-            {
-                packets.add(sigSubV.packets[i]);
-            }
+            packets.addAll(Arrays.asList(sigSubV.packets));
         }
     }
 
@@ -651,9 +649,9 @@ public class PGPSignatureSubpacketGenerator
     public boolean hasSubpacket(
         int type)
     {
-        for (int i = 0; i != packets.size(); i++)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
                 return true;
             }
@@ -672,30 +670,30 @@ public class PGPSignatureSubpacketGenerator
     public SignatureSubpacket[] getSubpackets(
         int type)
     {
-        List list = new ArrayList();
+        List<SignatureSubpacket> list = new ArrayList<>();
 
-        for (int i = 0; i != packets.size(); i++)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
-                list.add(packets.get(i));
+                list.add(packet);
             }
         }
 
-        return (SignatureSubpacket[])list.toArray(new SignatureSubpacket[]{});
+        return list.toArray(new SignatureSubpacket[0]);
     }
 
     public PGPSignatureSubpacketVector generate()
     {
         return new PGPSignatureSubpacketVector(
-            (SignatureSubpacket[])packets.toArray(new SignatureSubpacket[packets.size()]));
+            packets.toArray(new SignatureSubpacket[0]));
     }
 
     private boolean contains(int type)
     {
-        for (int i = 0; i < packets.size(); ++i)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
                 return true;
             }
