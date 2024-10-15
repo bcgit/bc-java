@@ -3,6 +3,7 @@ package org.bouncycastle.bcpg.sig;
 import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.openpgp.KeyIdentifier;
 
 /**
  * Signature Subpacket containing the key-id of the issuers signing (sub-) key.
@@ -43,5 +44,10 @@ public class IssuerKeyID
     public long getKeyID()
     {
         return FingerprintUtil.readKeyID(data);
+    }
+
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getKeyID());
     }
 }
