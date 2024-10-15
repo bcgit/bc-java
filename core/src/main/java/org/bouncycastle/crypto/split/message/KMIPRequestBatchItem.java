@@ -11,7 +11,7 @@ public class KMIPRequestBatchItem
     //same Unique Batch Item ID.
     private byte[] uniqueBatchItemId; // Optional unique ID for the batch item
     private KMIPRequestPayload requestPayload; // Required request payload
-    private String[] messageExtensions; // Optional message extensions
+    private KMIPMessageExtension[] messageExtensions; // Optional message extensions
 
     // Constructor for mandatory fields
     public KMIPRequestBatchItem(KMIPOperation operation, KMIPRequestPayload requestPayload)
@@ -19,7 +19,7 @@ public class KMIPRequestBatchItem
         this.operation = operation;
         this.requestPayload = requestPayload;
         this.ephemeral = false; // Default to false
-        this.messageExtensions = new String[0]; // Initialize list for message extensions
+        this.messageExtensions = new KMIPMessageExtension[0]; // Initialize list for message extensions
     }
 
     public KMIPOperation getOperation()
@@ -62,14 +62,13 @@ public class KMIPRequestBatchItem
         this.requestPayload = requestPayload;
     }
 
-    public String[] getMessageExtensions()
+    public KMIPMessageExtension[] getMessageExtensions()
     {
         return messageExtensions;
     }
 
-    public void setMessageExtension(String[] extensions)
+    public void setMessageExtension(KMIPMessageExtension[] extensions)
     {
         this.messageExtensions = extensions; // Add extension to the list
     }
-
 }

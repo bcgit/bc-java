@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.split;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+
 /**
  * Class representing the Cryptographic Parameters attribute structure.
  */

@@ -1,9 +1,10 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * The CryptographicAlgorithm enum represents various cryptographic algorithms and their corresponding values.
  */
 public enum KMIPCryptographicAlgorithm
+    implements KMIPEnumeration
 {
     DES(0x01),                         // DES
     TRIPLE_DES(0x02),                   // 3DES

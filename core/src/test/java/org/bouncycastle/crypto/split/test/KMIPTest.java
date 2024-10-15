@@ -15,6 +15,7 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+import org.bouncycastle.crypto.split.KMIPInputStream;
 import org.bouncycastle.test.TestResourceFinder;
 
 
@@ -24,27 +25,48 @@ public class KMIPTest
 
     public static void main(String[] args)
     {
+        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-1-21.xml"))
+        {
+            KMIPInputStream stream = new KMIPInputStream(inputStream);
+            stream.parse();
+        }
+        catch (FileNotFoundException e)
+        {
+            System.err.println("File not found: " + e.getMessage());
+        }
+        catch ( IOException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error parsing XML: " + e.getMessage());
+        }
+
         XMLInputFactory factory = XMLInputFactory.newInstance();
         KMIPTest test = new KMIPTest();
-        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/","TC-SJ-1-21.xml"))
+        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-1-21.xml"))
         {
 
             XMLEventReader eventReader = factory.createXMLEventReader(inputStream);
 
-            while (eventReader.hasNext()) {
+            while (eventReader.hasNext())
+            {
                 XMLEvent event = eventReader.nextEvent();
 
                 // Process the start elements
-                if (event.isStartElement()) {
+                if (event.isStartElement())
+                {
                     StartElement startElement = event.asStartElement();
                     printIndent(); // Print indentation based on the current level
                     System.out.print("Start Element: " + startElement.getName().getLocalPart());
 
                     // Print attributes if there are any
-                    if (startElement.getAttributes() != null) {
+                    if (startElement.getAttributes() != null)
+                    {
                         for (Iterator it = startElement.getAttributes(); it.hasNext(); )
                         {
-                            Attribute attribute = (Attribute) it.next();
+                            Attribute attribute = (Attribute)it.next();
                             System.out.print(" [Attribute: " + attribute.getName() + " = " + attribute.getValue() + "]");
                         }
                     }
@@ -63,7 +85,8 @@ public class KMIPTest
 //                }
 
                 // Process end elements
-                if (event.isEndElement()) {
+                if (event.isEndElement())
+                {
                     indentLevel--; // Decrease the indent level
                     printIndent(); // Print indentation for end element
                     EndElement endElement = event.asEndElement();
@@ -82,8 +105,10 @@ public class KMIPTest
     }
 
     // Method to print indentation based on current level
-    private static void printIndent() {
-        for (int i = 0; i < indentLevel; i++) {
+    private static void printIndent()
+    {
+        for (int i = 0; i < indentLevel; i++)
+        {
             System.out.print("    "); // Adjust the number of spaces for indentation
         }
     }

@@ -15,9 +15,19 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+import org.bouncycastle.crypto.split.attribute.KMIPName;
+import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
+import org.bouncycastle.crypto.split.enumeration.KMIPNameType;
+import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
+import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
 import org.bouncycastle.crypto.split.message.KMIPMessage;
 import org.bouncycastle.crypto.split.message.KMIPProtocolVersion;
+import org.bouncycastle.crypto.split.message.KMIPRequestBatchItem;
 import org.bouncycastle.crypto.split.message.KMIPRequestHeader;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayload;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreate;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreateSplitKey;
 
 public class KMIPInputStream
 {
@@ -49,6 +59,7 @@ public class KMIPInputStream
                     if (name.equals("RequestMessage") || name.equals("ResponseMessage"))
                     {
                         KMIPMessage message = parseMessage();
+                        messages.add(message);
                     }
                 }
             }
@@ -141,17 +152,171 @@ public class KMIPInputStream
         return null;
     }
 
-    private void assertException(Attribute attribute, String name, String value, String errorMessage)
+
+    private KMIPRequestBatchItem parseRequestBatchItem()
         throws KMIPInputException
     {
-        if (!attribute.getName().equals(name) || !attribute.getValue().equals(value))
+        KMIPOperation operation = null;
+        KMIPRequestPayload requestPayload = null;
+
+        try
+        {
+            while (eventReader.hasNext())
+            {
+                XMLEvent event = eventReader.nextEvent();
+                if (event.isStartElement())
+                {
+                    StartElement startElement = event.asStartElement();
+                    String name = startElement.getName().getLocalPart();
+                    if (name.equals("Operation"))
+                    {
+                        operation = parseEnum(startElement, KMIPOperation.class, "Error in parsing Operation: ");
+                    }
+                    else if (name.equals("RequestPayload"))
+                    {
+                        requestPayload = parseRequestPayload(operation);
+                    }
+                    else
+                    {
+                        throw new KMIPInputException("Add more code to support parseRequestBatchItem");
+                    }
+                }
+            }
+            if (operation == null || requestPayload == null)
+            {
+                throw new KMIPInputException("Request Header should contain Protocol Version and Batch Count");
+            }
+            KMIPRequestBatchItem batchItem = new KMIPRequestBatchItem(operation, requestPayload);
+
+            return batchItem;
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private KMIPRequestPayload parseRequestPayload(KMIPOperation operation)
+        throws KMIPInputException
+    {
+        KMIPObjectType objectType = null;
+        Map<String, Object> attributes = null;
+        try
+        {
+            while (eventReader.hasNext())
+            {
+                XMLEvent event = eventReader.nextEvent();
+                if (event.isStartElement())
+                {
+                    StartElement startElement = event.asStartElement();
+                    String name = startElement.getName().getLocalPart();
+                    if (name.equals("ObjectType"))
+                    {
+                        objectType = parseEnum(startElement, KMIPObjectType.class, "Error in parsing Request Payload: ");
+                    }
+                    else if (name.equals("Attributes"))
+                    {
+                        attributes = parseAttributes();
+                    }
+                    else
+                    {
+                        throw new KMIPInputException("Add more code to support parseRequestBatchItem");
+                    }
+                }
+            }
+            switch (operation)
+            {
+            case CREATE:
+                return new KMIPRequestPayloadCreate(objectType, attributes);
+
+            }
+
+            return null;
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Map<String, Object> parseAttributes()
+        throws KMIPInputException
+    {
+        Map<String, Object> attributes = new HashMap<String, Object>();
+        try
+        {
+            while (eventReader.hasNext())
+            {
+                XMLEvent event = eventReader.nextEvent();
+                if (event.isStartElement())
+                {
+                    StartElement startElement = event.asStartElement();
+                    String name = startElement.getName().getLocalPart();
+                    if (name.equals("CryptographicAlgorithm"))
+                    {
+                        KMIPEnumeration cryptographicAlgorithm = parseEnum(startElement, KMIPCryptographicAlgorithm.class, "Error in parsing Cryptographic Algorithm: ");
+                        attributes.put("CryptographicAlgorithm", cryptographicAlgorithm);
+                    }
+                    else if (name.equals("CryptographicLength"))
+                    {
+                        int cryptographicLength = parseInteger(startElement, "Error in parsing Cryptographic Length: ");
+                        attributes.put("CryptographicLength", cryptographicLength);
+                    }
+                    else if (name.equals("CryptographicUsageMask"))
+                    {
+                        int cryptographicUsageMask = parseInteger(startElement, "Error in parsing Cryptographic Usage Mask: ");
+                        attributes.put("CryptographicUsageMask", cryptographicUsageMask);
+                    }
+                    else if (name.equals("Name"))
+                    {
+                        event = eventReader.nextEvent();
+                        startElement = assertStartElement(event, "NameValue", "Error in processing NameValue: ");
+                        String nameValue = parseTextString(startElement, "Error in parsing NameValue: ");
+                        event = eventReader.nextEvent();
+                        assertEndElement(event, "NameValue", "Error in processing Name Value: ");
+                        event = eventReader.nextEvent();
+                        startElement = assertStartElement(event, "NameType", "Error in processing NameType: ");
+                        KMIPNameType nameType = parseEnum(startElement, KMIPNameType.class, "Error in parsing Name Type: ");
+                        event = eventReader.nextEvent();
+                        assertEndElement(event, "NameType", "Error in processing Name Value: ");
+                        event = eventReader.nextEvent();
+                        assertEndElement(event, "Name", "Error in processing Name: ");
+                        KMIPName kmipName = new KMIPName(nameValue, nameType);
+                        attributes.put("Name", kmipName);
+                    }
+                    else
+                    {
+                        throw new KMIPInputException("Add more code to support parseRequestBatchItem");
+                    }
+                }
+
+                if (event.isEndElement())
+                {
+                    assertEndElement(event, "Name", "Error in processing Name: ");
+                }
+            }
+            return attributes;
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private static void assertException(Attribute attribute, String name, String value, String errorMessage)
+        throws KMIPInputException
+    {
+        if (!attribute.getName().getLocalPart().equals(name) || !attribute.getValue().equals(value))
         {
             //parse error
             throw new KMIPInputException(errorMessage);
         }
     }
 
-    private void assertException(boolean condition, String errorMessage)
+    private static void assertException(boolean condition, String errorMessage)
         throws KMIPInputException
     {
         if (condition)
@@ -161,33 +326,41 @@ public class KMIPInputStream
     }
 
     private StartElement assertStartElement(XMLEvent event, String name, String errorMessage)
-        throws KMIPInputException
+        throws KMIPInputException, XMLStreamException
     {
-        if (!event.isStartElement())
+        while (eventReader.hasNext())
         {
-            throw new KMIPInputException(errorMessage + "Expected Start Element for " + name);
+            event = eventReader.nextEvent();
+            if (event.isStartElement())
+            {
+                StartElement startElement = event.asStartElement();
+                if (!startElement.getName().getLocalPart().equals(name))
+                {
+                    throw new KMIPInputException(errorMessage + "Expected " + name + "but got" + startElement.getName());
+                }
+                return startElement;
+            }
         }
-        StartElement startElement = event.asStartElement();
-        if (!startElement.getName().getLocalPart().equals(name))
-        {
-            throw new KMIPInputException(errorMessage + "Expected " + name + "but got" + startElement.getName());
-        }
-        return startElement;
+        throw new KMIPInputException(errorMessage + "Expected Start Element for " + name);
     }
 
     private EndElement assertEndElement(XMLEvent event, String name, String errorMessage)
-        throws KMIPInputException
+        throws KMIPInputException, XMLStreamException
     {
-        if (!event.isEndElement())
+        while (eventReader.hasNext())
         {
-            throw new KMIPInputException(errorMessage + "Expected End Element for " + name);
+            event = eventReader.nextEvent();
+            if (event.isEndElement())
+            {
+                EndElement endElement = event.asEndElement();
+                if (!endElement.getName().getLocalPart().equals(name))
+                {
+                    throw new KMIPInputException(errorMessage + "Expected " + name + "but got" + endElement.getName());
+                }
+                return endElement;
+            }
         }
-        EndElement endElement = event.asEndElement();
-        if (!endElement.getName().getLocalPart().equals(name))
-        {
-            throw new KMIPInputException(errorMessage + "Expected " + name + "but got" + endElement.getName());
-        }
-        return endElement;
+        throw new KMIPInputException(errorMessage + "Expected End Element for " + name);
     }
 
     private int parseInteger(StartElement startElement, String errorMessage)
@@ -218,7 +391,7 @@ public class KMIPInputStream
         {
             Iterator it = startElement.getAttributes();
             Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "TextString", errorMessage + " type should be integer");
+            assertException(attribute, "type", "TextString", errorMessage + " type should be text string");
             attribute = (Attribute)it.next();
             value = attribute.getValue();
             assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
@@ -228,6 +401,35 @@ public class KMIPInputStream
             throw new KMIPInputException(errorMessage + " there should be 2 attributes");
         }
         return value;
+    }
+
+    public static <T extends Enum<T> & KMIPEnumeration> T parseEnum(StartElement startElement, Class<T> enumClass, String errorMessage)
+        throws KMIPInputException
+    {
+        String value;
+        if (startElement.getAttributes() != null)
+        {
+            Iterator it = startElement.getAttributes();
+            Attribute attribute = (Attribute)it.next();
+            assertException(attribute, "type", "Enumeration", errorMessage + " type should be enumeration");
+            attribute = (Attribute)it.next();
+            value = attribute.getValue();
+            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
+        }
+        else
+        {
+            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
+        }
+        // Convert value string to corresponding enum constant
+        try
+        {
+            T enumConstant = Enum.valueOf(enumClass, value);
+            return enumConstant;
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new KMIPInputException(errorMessage + " Invalid value for enum: " + value);
+        }
     }
 
     public KMIPProtocolVersion parseProtocolVersion()

@@ -1,8 +1,9 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 /**
  * Enumeration of Object Types.
  */
 public enum KMIPObjectType
+    implements KMIPEnumeration
 {
     CERTIFICATE(0x01),
     SYMMETRIC_KEY(0x02),
