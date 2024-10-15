@@ -11,7 +11,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
-import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -25,6 +24,7 @@ import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.util.Strings;
 
@@ -138,13 +138,13 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         algorithms.put("ED25519", EdECObjectIdentifiers.id_Ed25519);
         algorithms.put("ED448", EdECObjectIdentifiers.id_Ed448);
 
-        // RFC 8702
-        algorithms.put("SHAKE128WITHRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
-        algorithms.put("SHAKE256WITHRSAPSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
-        algorithms.put("SHAKE128WITHRSASSA-PSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
-        algorithms.put("SHAKE256WITHRSASSA-PSS", CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
-        algorithms.put("SHAKE128WITHECDSA", CMSObjectIdentifiers.id_ecdsa_with_shake128);
-        algorithms.put("SHAKE256WITHECDSA", CMSObjectIdentifiers.id_ecdsa_with_shake256);
+        // RFC 8692
+        algorithms.put("SHAKE128WITHRSAPSS", X509ObjectIdentifiers.id_rsassa_pss_shake128);
+        algorithms.put("SHAKE256WITHRSAPSS", X509ObjectIdentifiers.id_rsassa_pss_shake256);
+        algorithms.put("SHAKE128WITHRSASSA-PSS", X509ObjectIdentifiers.id_rsassa_pss_shake128);
+        algorithms.put("SHAKE256WITHRSASSA-PSS", X509ObjectIdentifiers.id_rsassa_pss_shake256);
+        algorithms.put("SHAKE128WITHECDSA", X509ObjectIdentifiers.id_ecdsa_with_shake128);
+        algorithms.put("SHAKE256WITHECDSA", X509ObjectIdentifiers.id_ecdsa_with_shake256);
 
 //        algorithms.put("RIPEMD160WITHSM2", GMObjectIdentifiers.sm2sign_with_rmd160);
 //        algorithms.put("SHA1WITHSM2", GMObjectIdentifiers.sm2sign_with_sha1);
@@ -468,11 +468,11 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(EdECObjectIdentifiers.id_Ed25519);
         noParams.add(EdECObjectIdentifiers.id_Ed448);
 
-        // RFC 8702
-        noParams.add(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128);
-        noParams.add(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256);
-        noParams.add(CMSObjectIdentifiers.id_ecdsa_with_shake128);
-        noParams.add(CMSObjectIdentifiers.id_ecdsa_with_shake256);
+        // RFC 8692
+        noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake128);
+        noParams.add(X509ObjectIdentifiers.id_rsassa_pss_shake256);
+        noParams.add(X509ObjectIdentifiers.id_ecdsa_with_shake128);
+        noParams.add(X509ObjectIdentifiers.id_ecdsa_with_shake256);
 
         //
         // Composite - Draft 13
@@ -627,10 +627,10 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 //        digestOids.put(GMObjectIdentifiers.sm2sign_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(GMObjectIdentifiers.sm2sign_with_sm3, GMObjectIdentifiers.sm3);
 
-        digestOids.put(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE128, NISTObjectIdentifiers.id_shake128);
-        digestOids.put(CMSObjectIdentifiers.id_RSASSA_PSS_SHAKE256, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(CMSObjectIdentifiers.id_ecdsa_with_shake128, NISTObjectIdentifiers.id_shake128);
-        digestOids.put(CMSObjectIdentifiers.id_ecdsa_with_shake256, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(X509ObjectIdentifiers.id_rsassa_pss_shake128, NISTObjectIdentifiers.id_shake128);
+        digestOids.put(X509ObjectIdentifiers.id_rsassa_pss_shake256, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(X509ObjectIdentifiers.id_ecdsa_with_shake128, NISTObjectIdentifiers.id_shake128);
+        digestOids.put(X509ObjectIdentifiers.id_ecdsa_with_shake256, NISTObjectIdentifiers.id_shake256);
     }
 
     private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
