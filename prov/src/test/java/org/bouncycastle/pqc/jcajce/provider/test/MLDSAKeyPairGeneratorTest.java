@@ -19,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  * KeyFactory/KeyPairGenerator tests for MLDSA with BC provider.
  */
 public class MLDSAKeyPairGeneratorTest
-        extends KeyPairGeneratorTest
+        extends MainProvKeyPairGeneratorTest
 {
     protected void setUp()
     {
@@ -105,6 +105,10 @@ public class MLDSAKeyPairGeneratorTest
             kpg.initialize(params[i], new SecureRandom());
             KeyPair keyPair = kpg.generateKeyPair();
             performKeyPairEncodingTest(keyPair);
+            performKeyPairEncodingTest(params[i].getName(), keyPair);
+            performKeyPairEncodingTest(oids[i].getId(), keyPair);
+            assertNotNull(((MLDSAPrivateKey)keyPair.getPrivate()).getParameterSpec());
+            assertNotNull(((MLDSAPublicKey)keyPair.getPublic()).getParameterSpec());
             assertEquals(oids[i], SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
             assertTrue(oids[i].toString(), Arrays.areEqual(((MLDSAPublicKey)keyPair.getPublic()).getPublicData(), ((MLDSAPrivateKey)keyPair.getPrivate()).getPublicKey().getPublicData()));
         }
