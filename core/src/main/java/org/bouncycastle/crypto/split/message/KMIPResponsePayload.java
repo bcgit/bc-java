@@ -1,5 +1,5 @@
 package org.bouncycastle.crypto.split.message;
 
-public abstract class KMIPBatchItem
+public abstract class KMIPResponsePayload
 {
 }

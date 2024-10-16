@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.split.message;
 
 public class KMIPRequestMessage
+    extends KMIPMessage
 {
     private KMIPRequestHeader requestHeader; // Header of the request
     private KMIPBatchItem[] batchItems;  // List of batch items

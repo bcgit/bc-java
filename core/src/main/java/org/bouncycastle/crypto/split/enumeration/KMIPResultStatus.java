@@ -3,12 +3,13 @@ package org.bouncycastle.crypto.split.enumeration;
 /**
  * Enumeration representing the possible result statuses for an operation.
  */
-public enum KMIPResultStatus {
-
-    SUCCESS(0),              // Operation was successful
-    OPERATION_FAILED(1),     // Operation failed
-    OPERATION_PENDING(2),    // Operation is pending
-    OPERATION_UNDONE(3);     // Operation was undone
+public enum KMIPResultStatus
+    implements KMIPEnumeration
+{
+    Success(0x00000000),             // Success
+    OperationFailed(0x00000001),     // Operation Failed
+    OperationPending(0x00000002),    // Operation Pending
+    OperationUndone(0x00000003);     // Operation Undone
 
     private final int value;
 
@@ -17,7 +18,8 @@ public enum KMIPResultStatus {
      *
      * @param value The integer value representing the status code.
      */
-    KMIPResultStatus(int value) {
+    KMIPResultStatus(int value)
+    {
         this.value = value;
     }
 
@@ -26,7 +28,8 @@ public enum KMIPResultStatus {
      *
      * @return The integer value of the result status.
      */
-    public int getValue() {
+    public int getValue()
+    {
         return value;
     }
 
@@ -37,9 +40,12 @@ public enum KMIPResultStatus {
      * @return The corresponding ResultStatus enum.
      * @throws IllegalArgumentException if the value does not match any result status.
      */
-    public static KMIPResultStatus fromValue(int value) {
-        for (KMIPResultStatus status : KMIPResultStatus.values()) {
-            if (status.getValue() == value) {
+    public static KMIPResultStatus fromValue(int value)
+    {
+        for (KMIPResultStatus status : KMIPResultStatus.values())
+        {
+            if (status.getValue() == value)
+            {
                 return status;
             }
         }
@@ -47,7 +53,8 @@ public enum KMIPResultStatus {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return name() + "(0x" + Integer.toHexString(value) + ")";
     }
 }

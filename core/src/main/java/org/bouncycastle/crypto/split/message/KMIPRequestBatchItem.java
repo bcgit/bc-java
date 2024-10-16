@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.split.message;
 import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
 
 public class KMIPRequestBatchItem
+    extends KMIPBatchItem
 {
     private KMIPOperation operation;  // Required operation for the batch item
     private boolean ephemeral;     // Indicates if the data output should not be returned
