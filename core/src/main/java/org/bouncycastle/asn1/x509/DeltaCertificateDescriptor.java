@@ -76,7 +76,7 @@ public class DeltaCertificateDescriptor
         this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(0));
 
         int idx = 1;
-        ASN1Encodable next = seq.getObjectAt(idx);
+        ASN1Encodable next = seq.getObjectAt(idx++);
         while (next instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);

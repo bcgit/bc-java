@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -29,7 +30,6 @@ import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 /**
  * general class to handle a PGP public key object.
@@ -47,9 +47,8 @@ public class PGPPublicKey
     List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>();
 
     List<PGPSignature> subSigs = null;
-
-    private long keyID;
-    private byte[] fingerprint;
+    
+    private KeyIdentifier keyIdentifier;
     private int keyStrength;
 
     private void init(KeyFingerPrintCalculator fingerPrintCalculator)
@@ -57,26 +56,19 @@ public class PGPPublicKey
     {
         BCPGKey key = publicPk.getKey();
 
-        this.fingerprint = fingerPrintCalculator.calculateFingerprint(publicPk);
+        byte[] fingerprint = fingerPrintCalculator.calculateFingerprint(publicPk);
+        long keyID = PublicKeyPacket.getKeyID(publicPk, fingerprint);
 
+        this.keyIdentifier = new KeyIdentifier(fingerprint, keyID);
+
+        // key strength
         if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
-            this.keyID = rK.getModulus().longValue();
             this.keyStrength = rK.getModulus().bitLength();
         }
-        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
-        {
-            this.keyID = Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
-        }
-        else if (publicPk.getVersion() == PublicKeyPacket.LIBREPGP_5 || publicPk.getVersion() ==  PublicKeyPacket.VERSION_6)
-        {
-            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
-        }
-
-        // key strength
-        if (publicPk.getVersion() >= PublicKeyPacket.VERSION_4)
+        else if (publicPk.getVersion() >= PublicKeyPacket.VERSION_4)
         {
             if (key instanceof RSAPublicBCPGKey)
             {
@@ -158,10 +150,9 @@ public class PGPPublicKey
         this.publicPk = key.publicPk;
         this.trustPk = trust;
         this.subSigs = subSigs;
-
-        this.fingerprint = key.fingerprint;
-        this.keyID = key.keyID;
+        
         this.keyStrength = key.keyStrength;
+        this.keyIdentifier = key.keyIdentifier;
     }
 
     /**
@@ -189,9 +180,8 @@ public class PGPPublicKey
             this.subSigs.addAll(pubKey.subSigs);
         }
 
-        this.fingerprint = pubKey.fingerprint;
-        this.keyID = pubKey.keyID;
         this.keyStrength = pubKey.keyStrength;
+        this.keyIdentifier = pubKey.keyIdentifier;
     }
 
     PGPPublicKey(
@@ -224,9 +214,8 @@ public class PGPPublicKey
         throws PGPException
     {
         this.publicPk = original.publicPk;
-        this.fingerprint = original.fingerprint;
         this.keyStrength = original.keyStrength;
-        this.keyID = original.keyID;
+        this.keyIdentifier = original.keyIdentifier;
 
         this.trustPk = trustPk;
         this.keySigs = keySigs;
@@ -392,7 +381,7 @@ public class PGPPublicKey
      */
     public long getKeyID()
     {
-        return keyID;
+        return keyIdentifier.getKeyId();
     }
 
     /**
@@ -402,7 +391,7 @@ public class PGPPublicKey
      */
     public KeyIdentifier getKeyIdentifier()
     {
-        return new KeyIdentifier(this);
+        return keyIdentifier;
     }
 
     /**
@@ -412,12 +401,12 @@ public class PGPPublicKey
      */
     public byte[] getFingerprint()
     {
-        return Arrays.clone(fingerprint);
+        return keyIdentifier.getFingerprint();
     }
 
     public boolean hasFingerprint(byte[] fingerprint)
     {
-        return Arrays.areEqual(this.fingerprint, fingerprint);
+        return keyIdentifier.hasFingerprint(fingerprint);
     }
 
     /**
@@ -584,7 +573,7 @@ public class PGPPublicKey
         for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
         {
             PGPSignature sig = it.next();
-            if (identifier.matches(sig))
+            if (identifier.isPresentIn(sig.getKeyIdentifiers()))
             {
                 sigs.add(sig);
             }
