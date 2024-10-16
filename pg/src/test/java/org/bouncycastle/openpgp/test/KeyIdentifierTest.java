@@ -126,6 +126,9 @@ public class KeyIdentifierTest
         isTrue(primaryIdentifier.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
         isTrue(!subkeyIdentifier.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
 
+        KeyIdentifier noFingerPrintId = new KeyIdentifier(primaryKey.getKeyID());
+        isTrue(primaryKey.getKeyIdentifier().matches(noFingerPrintId));
+
         KeyIdentifier wildcard = KeyIdentifier.wildcard();
         isTrue(wildcard.matches(primaryKey.getKeyIdentifier()));
         isTrue(wildcard.matches(subkey.getKeyIdentifier()));
@@ -171,6 +174,9 @@ public class KeyIdentifierTest
         isTrue(privateKeyIdentifier.matches(primaryKey.getKeyIdentifier()));
         isTrue(primaryIdentifier.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
         isTrue(!subkeyIdentifier.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
+
+        KeyIdentifier noFingerPrintId = new KeyIdentifier(primaryKey.getKeyID());
+        isTrue(primaryKey.getKeyIdentifier().matches(noFingerPrintId));
 
         KeyIdentifier wildcard = KeyIdentifier.wildcard();
         isTrue(wildcard.matches(primaryKey.getKeyIdentifier()));
