@@ -146,7 +146,7 @@ public class KeyIdentifier
             return true;
         }
 
-        if (fingerprint != null)
+        if (fingerprint != null && other.fingerprint != null)
         {
             return Arrays.constantTimeAreEqual(fingerprint, other.fingerprint);
         }
