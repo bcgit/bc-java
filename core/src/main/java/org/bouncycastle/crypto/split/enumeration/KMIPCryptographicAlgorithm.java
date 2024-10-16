@@ -21,8 +21,8 @@ public enum KMIPCryptographicAlgorithm
     DH(0x0D),                           // DH (Diffie-Hellman)
     ECDH(0x0E),                         // ECDH (Elliptic Curve Diffie-Hellman)
     ECMQV(0x0F),                        // ECMQV
-    BLOWFISH(0x10),                     // Blowfish
-    CAMELLIA(0x11),                     // Camellia
+    Blowfish(0x10),                     // Blowfish
+    Camellia(0x11),                     // Camellia
     CAST5(0x12),                        // CAST5
     IDEA(0x13),                         // IDEA
     MARS(0x14),                         // MARS
@@ -30,12 +30,12 @@ public enum KMIPCryptographicAlgorithm
     RC4(0x16),                          // RC4
     RC5(0x17),                          // RC5
     SKIPJACK(0x18),                     // SKIPJACK
-    TWOFISH(0x19),                      // Twofish
+    Twofish(0x19),                      // Twofish
     EC(0x1A),                           // EC (Elliptic Curve)
-    ONE_TIME_PAD(0x1B),                 // One Time Pad
-    CHACHA20(0x1C),                     // ChaCha20
-    POLY1305(0x1D),                     // Poly1305
-    CHACHA20_POLY1305(0x1E),            // ChaCha20Poly1305
+    OneTimePad(0x1B),                 // One Time Pad
+    ChaCha20(0x1C),                     // ChaCha20
+    Poly1305(0x1D),                     // Poly1305
+    ChaCha20Poly1305(0x1E),            // ChaCha20Poly1305
     SHA3_224(0x1F),                     // SHA3-224
     SHA3_256(0x20),                     // SHA3-256
     SHA3_384(0x21),                     // SHA3-384
@@ -57,9 +57,9 @@ public enum KMIPCryptographicAlgorithm
     GOST_28147_89(0x31),                // GOST 28147-89
     XMSS(0x32),                         // XMSS
     SPHINCS_256(0x33),                  // SPHINCS-256
-    MCELIECE(0x34),                     // McEliece
-    MCELIECE_6960119(0x35),             // McEliece-6960119
-    MCELIECE_8192128(0x36),             // McEliece-8192128
+    McEliece(0x34),                     // McEliece
+    McEliece_6960119(0x35),             // McEliece-6960119
+    McEliece_8192128(0x36),             // McEliece-8192128
     ED25519(0x37),                      // Ed25519
     ED448(0x38);                        // Ed448
     //EXTENSIONS("8XXXXXXX");                   // Extensions for future use

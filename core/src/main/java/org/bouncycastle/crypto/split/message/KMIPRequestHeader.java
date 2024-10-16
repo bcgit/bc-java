@@ -1,7 +1,8 @@
 package org.bouncycastle.crypto.split.message;
 
 import java.util.Date;
-import java.util.List;
+
+import org.bouncycastle.crypto.split.enumeration.KMIPAttestationType;
 
 /**
  * This class represents the Request Header for a protocol message.
@@ -18,7 +19,7 @@ public class KMIPRequestHeader
     private String serverCorrelationValue;  // Optional
     private boolean asynchronousIndicator;  // Optional
     private boolean attestationCapableIndicator;  // Optional
-    private List<String> attestationType;  // Optional, repeated
+    private KMIPAttestationType[] attestationType;  // Optional, repeated
     private String authentication;  // Optional
     private String batchErrorContinuationOption;  // Optional, default "Stop"
     private boolean batchOrderOption;  // Optional, default "True"
@@ -100,12 +101,12 @@ public class KMIPRequestHeader
         this.attestationCapableIndicator = attestationCapableIndicator;
     }
 
-    public List<String> getAttestationType()
+    public KMIPAttestationType[] getAttestationType()
     {
         return attestationType;
     }
 
-    public void setAttestationType(List<String> attestationType)
+    public void setAttestationType(KMIPAttestationType[] attestationType)
     {
         this.attestationType = attestationType;
     }
@@ -148,24 +149,5 @@ public class KMIPRequestHeader
     public void setTimeStamp(Date timeStamp)
     {
         this.timeStamp = timeStamp;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "RequestHeader{" +
-            "protocolVersion=" + protocolVersion +
-            ", batchCount=" + batchCount +
-            ", maximumResponseSize=" + maximumResponseSize +
-            ", clientCorrelationValue='" + clientCorrelationValue + '\'' +
-            ", serverCorrelationValue='" + serverCorrelationValue + '\'' +
-            ", asynchronousIndicator=" + asynchronousIndicator +
-            ", attestationCapableIndicator=" + attestationCapableIndicator +
-            ", attestationType=" + attestationType +
-            ", authentication='" + authentication + '\'' +
-            ", batchErrorContinuationOption='" + batchErrorContinuationOption + '\'' +
-            ", batchOrderOption=" + batchOrderOption +
-            ", timeStamp=" + timeStamp +
-            '}';
     }
 }

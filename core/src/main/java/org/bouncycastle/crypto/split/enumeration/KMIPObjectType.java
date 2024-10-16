@@ -5,16 +5,16 @@ package org.bouncycastle.crypto.split.enumeration;
 public enum KMIPObjectType
     implements KMIPEnumeration
 {
-    CERTIFICATE(0x01),
-    SYMMETRIC_KEY(0x02),
-    PUBLIC_KEY(0x03),
-    PRIVATE_KEY(0x04),
-    SPLIT_KEY(0x05),
-    RESERVED(0x06),
-    SECRET_DATA(0x07),
-    OPAQUE_OBJECT(0x08),
-    PGP_KEY(0x09),
-    CERTIFICATE_REQUEST(0x0A);
+    Certificate(0x01),
+    SymmetricKey(0x02),
+    PublicKey(0x03),
+    PrivateKey(0x04),
+    SplitKey(0x05),
+    Reserved(0x06),
+    SecretData(0x07),
+    OpaqueObject(0x08),
+    PgpKey(0x09),
+    CertificateRequest(0x0A);
 
     private final int value;
 

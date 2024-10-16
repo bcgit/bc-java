@@ -6,7 +6,7 @@ package org.bouncycastle.crypto.split.enumeration;
 public enum KMIPNameType
     implements KMIPEnumeration
 {
-    UNINTERPRETED_TEXT_STRING(0x00000001),  // Human-readable text not interpreted by the system
+    UninterpretedTextString(0x00000001),  // Human-readable text not interpreted by the system
     URI(0x00000002);                        // Uniform Resource Identifier
 
     private final int value;
