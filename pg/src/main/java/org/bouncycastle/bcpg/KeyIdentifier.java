@@ -184,7 +184,7 @@ public class KeyIdentifier
             return "*";
         }
 
-        if (getFingerprint() == null)
+        if (fingerprint == null)
         {
             return "" + keyId;
         }
