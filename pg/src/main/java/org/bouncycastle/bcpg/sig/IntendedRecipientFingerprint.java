@@ -1,8 +1,8 @@
 package org.bouncycastle.bcpg.sig;
 
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
-import org.bouncycastle.openpgp.KeyIdentifier;
 import org.bouncycastle.util.Arrays;
 
 /**
