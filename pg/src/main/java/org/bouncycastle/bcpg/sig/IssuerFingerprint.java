@@ -1,6 +1,7 @@
 package org.bouncycastle.bcpg.sig;
 
 import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -58,5 +59,10 @@ public class IssuerFingerprint
             return FingerprintUtil.keyIdFromV6Fingerprint(getFingerprint());
         }
         return 0;
+    }
+
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getFingerprint());
     }
 }

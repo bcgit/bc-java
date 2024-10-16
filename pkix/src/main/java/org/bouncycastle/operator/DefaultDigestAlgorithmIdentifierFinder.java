@@ -161,12 +161,12 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, NISTObjectIdentifiers.id_shake256);
         digestOids.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, NISTObjectIdentifiers.id_shake256);
 
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_shake256);
-        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_44, NISTObjectIdentifiers.id_shake128);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_65, NISTObjectIdentifiers.id_shake256);
+        digestOids.put(NISTObjectIdentifiers.id_ml_dsa_87, NISTObjectIdentifiers.id_shake256);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_sha512);
-        digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_sha512);
-        digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, NISTObjectIdentifiers.id_sha512);
+        digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, NISTObjectIdentifiers.id_sha512);
 
         digestOids.put(BCObjectIdentifiers.falcon, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.falcon_512, NISTObjectIdentifiers.id_shake256);
@@ -272,9 +272,9 @@ public class DefaultDigestAlgorithmIdentifierFinder
 
         shake256oids.add(EdECObjectIdentifiers.id_Ed448);
 
-        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_44);
-        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_65);
-        shake256oids.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        shake256oids.add(BCObjectIdentifiers.dilithium2);
+        shake256oids.add(BCObjectIdentifiers.dilithium3);
+        shake256oids.add(BCObjectIdentifiers.dilithium5);
         shake256oids.add(BCObjectIdentifiers.dilithium2_aes);
         shake256oids.add(BCObjectIdentifiers.dilithium3_aes);
         shake256oids.add(BCObjectIdentifiers.dilithium5_aes);
