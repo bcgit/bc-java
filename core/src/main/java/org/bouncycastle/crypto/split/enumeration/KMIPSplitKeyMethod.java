@@ -1,14 +1,12 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
-/**
- * Enumeration for Split Key Methods.
- */
 public enum KMIPSplitKeyMethod
+    implements KMIPEnumeration
 {
     XOR(0x00000001),                       // XOR method
-    POLYNOMIAL_GF_65536(0x00000002),        // Polynomial Sharing GF (2^16)
-    POLYNOMIAL_PRIME_FIELD(0x00000003),   // Polynomial Sharing Prime Field
-    POLYNOMIAL_GF_256(0x00000004);         // Polynomial Sharing GF (2^8)
+    PolynomialSharingGF2_16(0x00000002),        // Polynomial Sharing GF (2^16)
+    PolynomialSharingPrimeField(0x00000003),   // Polynomial Sharing Prime Field
+    PolynomialSharingGF2_8(0x00000004);         // Polynomial Sharing GF (2^8)
 
     private final int value;
 
@@ -47,9 +45,10 @@ public enum KMIPSplitKeyMethod
      * @return true if the SplitKeyMethod is either POLYNOMIAL_GF_216,
      * POLYNOMIAL_PRIME_FIELD, or POLYNOMIAL_GF_28; otherwise false.
      */
-    public boolean isPolynomial() {
-        return this == POLYNOMIAL_GF_65536 ||
-            this == POLYNOMIAL_PRIME_FIELD ||
-            this == POLYNOMIAL_GF_256;
+    public boolean isPolynomial()
+    {
+        return this == PolynomialSharingGF2_16 ||
+            this == PolynomialSharingPrimeField ||
+            this == PolynomialSharingGF2_8;
     }
 }

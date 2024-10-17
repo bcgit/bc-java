@@ -25,7 +25,7 @@ public class KMIPTest
 
     public static void main(String[] args)
     {
-        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-1-21.xml"))
+        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-2-21.xml"))
         {
             KMIPInputStream stream = new KMIPInputStream(inputStream);
             stream.parse();
@@ -43,65 +43,65 @@ public class KMIPTest
             System.err.println("Error parsing XML: " + e.getMessage());
         }
 
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        KMIPTest test = new KMIPTest();
-        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-1-21.xml"))
-        {
-
-            XMLEventReader eventReader = factory.createXMLEventReader(inputStream);
-
-            while (eventReader.hasNext())
-            {
-                XMLEvent event = eventReader.nextEvent();
-
-                // Process the start elements
-                if (event.isStartElement())
-                {
-                    StartElement startElement = event.asStartElement();
-                    printIndent(); // Print indentation based on the current level
-                    System.out.print("Start Element: " + startElement.getName().getLocalPart());
-
-                    // Print attributes if there are any
-                    if (startElement.getAttributes() != null)
-                    {
-                        for (Iterator it = startElement.getAttributes(); it.hasNext(); )
-                        {
-                            Attribute attribute = (Attribute)it.next();
-                            System.out.print(" [Attribute: " + attribute.getName() + " = " + attribute.getValue() + "]");
-                        }
-                    }
-                    System.out.println(); // Move to the next line
-                    indentLevel++; // Increase the indent level for child elements
-                }
-
-//                // Process character data
-//                if (event.isCharacters()) {
-//                    Characters characters = event.asCharacters();
-//                    String text = characters.getData().trim();
-//                    if (!text.isEmpty()) {
-//                        printIndent(); // Print indentation
-//                        System.out.println("Text: " + text); // Print text content
+//        XMLInputFactory factory = XMLInputFactory.newInstance();
+//        KMIPTest test = new KMIPTest();
+//        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-2-21.xml"))
+//        {
+//
+//            XMLEventReader eventReader = factory.createXMLEventReader(inputStream);
+//
+//            while (eventReader.hasNext())
+//            {
+//                XMLEvent event = eventReader.nextEvent();
+//
+//                // Process the start elements
+//                if (event.isStartElement())
+//                {
+//                    StartElement startElement = event.asStartElement();
+//                    printIndent(); // Print indentation based on the current level
+//                    System.out.print("Start Element: " + startElement.getName().getLocalPart());
+//
+//                    // Print attributes if there are any
+//                    if (startElement.getAttributes() != null)
+//                    {
+//                        for (Iterator it = startElement.getAttributes(); it.hasNext(); )
+//                        {
+//                            Attribute attribute = (Attribute)it.next();
+//                            System.out.print(" [Attribute: " + attribute.getName() + " = " + attribute.getValue() + "]");
+//                        }
 //                    }
+//                    System.out.println(); // Move to the next line
+//                    indentLevel++; // Increase the indent level for child elements
 //                }
-
-                // Process end elements
-                if (event.isEndElement())
-                {
-                    indentLevel--; // Decrease the indent level
-                    printIndent(); // Print indentation for end element
-                    EndElement endElement = event.asEndElement();
-                    System.out.println("End Element: " + endElement.getName().getLocalPart());
-                }
-            }
-        }
-        catch (FileNotFoundException e)
-        {
-            System.err.println("File not found: " + e.getMessage());
-        }
-        catch (XMLStreamException | IOException e)
-        {
-            System.err.println("Error processing XML: " + e.getMessage());
-        }
+//
+////                // Process character data
+////                if (event.isCharacters()) {
+////                    Characters characters = event.asCharacters();
+////                    String text = characters.getData().trim();
+////                    if (!text.isEmpty()) {
+////                        printIndent(); // Print indentation
+////                        System.out.println("Text: " + text); // Print text content
+////                    }
+////                }
+//
+//                // Process end elements
+//                if (event.isEndElement())
+//                {
+//                    indentLevel--; // Decrease the indent level
+//                    printIndent(); // Print indentation for end element
+//                    EndElement endElement = event.asEndElement();
+//                    System.out.println("End Element: " + endElement.getName().getLocalPart());
+//                }
+//            }
+//        }
+//        catch (FileNotFoundException e)
+//        {
+//            System.err.println("File not found: " + e.getMessage());
+//        }
+//        catch (XMLStreamException | IOException e)
+//        {
+//            System.err.println("Error processing XML: " + e.getMessage());
+//        }
     }
 
     // Method to print indentation based on current level

@@ -16,14 +16,17 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.crypto.split.attribute.KMIPName;
+import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicUsageMask;
 import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
 import org.bouncycastle.crypto.split.enumeration.KMIPNameType;
 import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
 import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
+import org.bouncycastle.crypto.split.enumeration.KMIPResultReason;
+import org.bouncycastle.crypto.split.enumeration.KMIPResultStatus;
+import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
 import org.bouncycastle.crypto.split.message.KMIPBatchItem;
 import org.bouncycastle.crypto.split.message.KMIPMessage;
 import org.bouncycastle.crypto.split.message.KMIPProtocolVersion;
@@ -33,9 +36,15 @@ import org.bouncycastle.crypto.split.message.KMIPRequestMessage;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayload;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreate;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreateSplitKey;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadDefault;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadJoinSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPResponseBatchItem;
 import org.bouncycastle.crypto.split.message.KMIPResponseHeader;
 import org.bouncycastle.crypto.split.message.KMIPResponseMessage;
+import org.bouncycastle.crypto.split.message.KMIPResponsePayload;
+import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreate;
+import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreateSplitKey;
+import org.bouncycastle.crypto.split.message.KMIPResponsePayloadDefault;
 
 public class KMIPInputStream
 {
@@ -126,7 +135,8 @@ public class KMIPInputStream
 
                 if (event.isEndElement())
                 {
-                    assertEndElement(event, "RequestMessage", "Error in processing RequestMessage: ");
+                    assertEndElement(event, isRequest ? "RequestMessage" : "ResponseMessage",
+                        "Error in processing the end of Message: ");
                     break;
                 }
 
@@ -249,7 +259,7 @@ public class KMIPInputStream
 
             if (protocolVersion == null || batchCount == -1)
             {
-                throw new KMIPInputException("Request Header should contain Protocol Version and Batch Count");
+                throw new KMIPInputException("Response Header should contain Protocol Version and Batch Count");
             }
             KMIPResponseHeader header = new KMIPResponseHeader(protocolVersion, timestamp, batchCount);
             return header;
@@ -318,8 +328,10 @@ public class KMIPInputStream
         throws KMIPInputException
     {
         KMIPOperation operation = null;
-        KMIPRequestPayload requestPayload = null;
-
+        KMIPResultStatus resultStatus = null;
+        KMIPResponsePayload requestPayload = null;
+        KMIPResultReason resultReason = null;
+        String resultMessage = null;
         try
         {
             while (eventReader.hasNext())
@@ -334,9 +346,24 @@ public class KMIPInputStream
                         operation = parseEnum(startElement, KMIPOperation.class, "Error in parsing Operation: ");
                         assertEndElement(event, "Operation", "Error in parsing Operation: ");
                     }
-                    else if (name.equals("RequestPayload"))
+                    else if (name.equals("ResultStatus"))
                     {
-                        requestPayload = parseRequestPayload(operation);
+                        resultStatus = parseEnum(startElement, KMIPResultStatus.class, "Error in parsing ResultStatus: ");
+                        assertEndElement(event, "ResultStatus", "Error in parsing ResultStatus: ");
+                    }
+                    else if (name.equals("ResponsePayload"))
+                    {
+                        requestPayload = parseResponsePayload(operation);
+                    }
+                    else if (name.equals("ResultReason"))
+                    {
+                        resultReason = parseEnum(startElement, KMIPResultReason.class, "Error in parsing ResultReason: ");
+                        assertEndElement(event, "ResultReason", "Error in parsing ResultReason: ");
+                    }
+                    else if (name.equals("ResultMessage"))
+                    {
+                        resultMessage = parseTextString(startElement, "Error in parsing ResultMessage: ");
+                        assertEndElement(event, "ResultMessage", "Error in parsing ResultMessage: ");
                     }
                     else
                     {
@@ -349,13 +376,27 @@ public class KMIPInputStream
                     break;
                 }
             }
-            if (operation == null || requestPayload == null)
+            if (operation == null || (requestPayload == null && resultStatus != KMIPResultStatus.OperationFailed))
             {
                 throw new KMIPInputException("Request Header should contain Protocol Version and Batch Count");
             }
-//            KMIPResponseBatchItem batchItem = new KMIPResponseBatchItem(operation, requestPayload);
-//
-//            return batchItem;
+            KMIPResponseBatchItem batchItem = new KMIPResponseBatchItem(operation, resultStatus, requestPayload);
+            if (resultReason == null)
+            {
+                if (resultStatus == KMIPResultStatus.OperationFailed)
+                {
+                    throw new KMIPInputException("Result Reason is REQUIRED if Result Status is Failure");
+                }
+            }
+            else
+            {
+                batchItem.setResultReason(resultReason);
+            }
+            if (resultMessage != null)
+            {
+                batchItem.setResultMessage(resultMessage);
+            }
+            return batchItem;
         }
         catch (XMLStreamException e)
         {
@@ -370,6 +411,10 @@ public class KMIPInputStream
         KMIPObjectType objectType = null;
         Map<String, Object> attributes = null;
         XMLEvent event = null;
+        KMIPUniqueIdentifier uniqueIdentifier = null;
+        ArrayList<KMIPUniqueIdentifier> uniqueIdentifiers = new ArrayList<KMIPUniqueIdentifier>();
+        int splitKeyParts = 0, splitKeyThreshold = 0;
+        KMIPSplitKeyMethod splitKeyMethod = null;
         try
         {
             while (eventReader.hasNext())
@@ -387,23 +432,133 @@ public class KMIPInputStream
                     else if (name.equals("Attributes"))
                     {
                         attributes = parseAttributes();
-                        break;
+                    }
+                    else if (name.equals("UniqueIdentifier"))
+                    {
+                        uniqueIdentifier = parseUniqueIdentifier(startElement, "Error in parsing Unique Identifier");
+                        uniqueIdentifiers.add(uniqueIdentifier);
+                    }
+                    else if (name.equals("SplitKeyParts"))
+                    {
+                        splitKeyParts = parseInteger(startElement, "Error in parsing SplitKeyParts: ");
+                        assertEndElement(event, "SplitKeyParts", "Error in parsing SplitKeyParts: ");
+                    }
+                    else if (name.equals("SplitKeyThreshold"))
+                    {
+                        splitKeyThreshold = parseInteger(startElement, "Error in parsing SplitKeyThreshold: ");
+                        assertEndElement(event, "SplitKeyThreshold", "Error in parsing SplitKeyThreshold: ");
+                    }
+                    else if (name.equals("SplitKeyMethod"))
+                    {
+                        splitKeyMethod = parseEnum(startElement, KMIPSplitKeyMethod.class, "Error in parsing SplitKeyThreshold: ");
+                        assertEndElement(event, "SplitKeyMethod", "Error in parsing SplitKeyThreshold: ");
                     }
                     else
                     {
-                        throw new KMIPInputException("Add more code to support parseRequestBatchItem");
+                        throw new KMIPInputException("Add more code to support parseRequestPayload");
                     }
                 }
+
+                if (event.isEndElement())
+                {
+                    assertEndElement(event, "RequestPayload", "Error in parsing RequestPayload: ");
+                    break;
+                }
             }
-            assertEndElement(event, "RequestPayload", "Error in parsing ObjectType: ");
+
             switch (operation)
             {
             case Create:
                 return new KMIPRequestPayloadCreate(objectType, attributes);
+            case CreateSplitKey:
+                KMIPRequestPayloadCreateSplitKey splitkey = new KMIPRequestPayloadCreateSplitKey(objectType, splitKeyParts,
+                    splitKeyThreshold, splitKeyMethod, attributes);
+                if (uniqueIdentifier != null)
+                {
+                    splitkey.setUniqueIdentifier(uniqueIdentifier);
+                }
+                return splitkey;
+            case JoinSplitKey:
+                KMIPUniqueIdentifier[] kmipUniqueIdentifiers = new KMIPUniqueIdentifier[uniqueIdentifiers.size()];
+                uniqueIdentifiers.toArray(kmipUniqueIdentifiers);
+                KMIPRequestPayloadJoinSplitKey joinSplitKey = new KMIPRequestPayloadJoinSplitKey(objectType, kmipUniqueIdentifiers);
+                if (attributes != null)
+                {
+                    joinSplitKey.setAttributes(attributes);
+                }
+                return joinSplitKey;
+            case Destroy:
+                KMIPRequestPayloadDefault destroy = new KMIPRequestPayloadDefault();
+                if (uniqueIdentifier != null)
+                {
+                    destroy.setUniqueIdentifier(uniqueIdentifier);
+                }
+                return destroy;
+            default:
+                throw new KMIPInputException("add more support for parseRequestPayload");
+            }
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        return null;
+    }
 
+    private KMIPResponsePayload parseResponsePayload(KMIPOperation operation)
+        throws KMIPInputException
+    {
+        KMIPObjectType objectType = null;
+        KMIPUniqueIdentifier uniqueIdentifier = null;
+        ArrayList<KMIPUniqueIdentifier> uniqueIdentifiers = new ArrayList<KMIPUniqueIdentifier>();
+        XMLEvent event = null;
+        try
+        {
+            while (eventReader.hasNext())
+            {
+                event = eventReader.nextEvent();
+                if (event.isStartElement())
+                {
+                    StartElement startElement = event.asStartElement();
+                    String name = startElement.getName().getLocalPart();
+                    if (name.equals("ObjectType"))
+                    {
+                        objectType = parseEnum(startElement, KMIPObjectType.class, "Error in parsing Request Payload: ");
+                        assertEndElement(event, "ObjectType", "Error in parsing ObjectType: ");
+                    }
+                    else if (name.equals("UniqueIdentifier"))
+                    {
+                        uniqueIdentifier = parseUniqueIdentifier(startElement, "Error in parsing Unique Identifier: ");
+                        uniqueIdentifiers.add(uniqueIdentifier);
+                    }
+                    else
+                    {
+                        throw new KMIPInputException("Add more code to support parseRespondePayload");
+                    }
+                }
+
+                if (event.isEndElement())
+                {
+                    assertEndElement(event, "ResponsePayload", "Error in parsing ResponsePayload: ");
+                    break;
+                }
             }
 
-            return null;
+
+            switch (operation)
+            {
+            case Create:
+                return new KMIPResponsePayloadCreate(objectType, uniqueIdentifier);
+            case CreateSplitKey:
+                KMIPUniqueIdentifier[] kmipUniqueIdentifiers = new KMIPUniqueIdentifier[uniqueIdentifiers.size()];
+                uniqueIdentifiers.toArray(kmipUniqueIdentifiers);
+                return new KMIPResponsePayloadCreateSplitKey(kmipUniqueIdentifiers);
+            case JoinSplitKey:
+            case Destroy:
+                return new KMIPResponsePayloadDefault(uniqueIdentifier);
+            default:
+                throw new KMIPInputException("add more support for parseResponsePayload");
+            }
         }
         catch (XMLStreamException e)
         {
@@ -459,7 +614,7 @@ public class KMIPInputStream
                     }
                     else
                     {
-                        throw new KMIPInputException("Add more code to support parseRequestBatchItem");
+                        throw new KMIPInputException("Add more code to support parseAttributes");
                     }
                 }
 
@@ -573,6 +728,28 @@ public class KMIPInputStream
             throw new KMIPInputException(errorMessage + " there should be 2 attributes");
         }
         return value;
+    }
+
+    private KMIPUniqueIdentifier parseUniqueIdentifier(StartElement startElement, String errorMessage)
+        throws KMIPInputException, XMLStreamException
+    {
+        //TODO: parse integer, enumeration
+        String value;
+        if (startElement.getAttributes() != null)
+        {
+            Iterator it = startElement.getAttributes();
+            Attribute attribute = (Attribute)it.next();
+            assertException(attribute, "type", "TextString", errorMessage + " type should be text string");
+            attribute = (Attribute)it.next();
+            value = attribute.getValue();
+            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
+        }
+        else
+        {
+            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
+        }
+        assertEndElement(eventReader.nextEvent(), "UniqueIdentifier", errorMessage);
+        return new KMIPUniqueIdentifier(value);
     }
 
     private Date parseDateTime(StartElement startElement, String errorMessage)
