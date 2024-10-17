@@ -1,6 +1,7 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.object;
 
 public class KMIPSymmetricKey
+    extends KMIPObject
 {
     private KMIPKeyBlock keyBlock; // The KeyBlock that holds the actual key
 

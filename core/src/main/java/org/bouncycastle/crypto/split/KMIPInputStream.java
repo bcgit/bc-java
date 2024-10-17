@@ -18,6 +18,7 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.bouncycastle.crypto.split.attribute.KMIPName;
 import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.split.attribute.KMIPVendorAttribute;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicUsageMask;
 import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
@@ -38,6 +39,7 @@ import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreate;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreateSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadDefault;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadJoinSplitKey;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadRegister;
 import org.bouncycastle.crypto.split.message.KMIPResponseBatchItem;
 import org.bouncycastle.crypto.split.message.KMIPResponseHeader;
 import org.bouncycastle.crypto.split.message.KMIPResponseMessage;
@@ -45,6 +47,10 @@ import org.bouncycastle.crypto.split.message.KMIPResponsePayload;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreate;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreateSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadDefault;
+import org.bouncycastle.crypto.split.object.KMIPKeyBlock;
+import org.bouncycastle.crypto.split.object.KMIPObject;
+import org.bouncycastle.crypto.split.object.KMIPSymmetricKey;
+import org.bouncycastle.util.encoders.Hex;
 
 public class KMIPInputStream
 {
@@ -415,6 +421,7 @@ public class KMIPInputStream
         ArrayList<KMIPUniqueIdentifier> uniqueIdentifiers = new ArrayList<KMIPUniqueIdentifier>();
         int splitKeyParts = 0, splitKeyThreshold = 0;
         KMIPSplitKeyMethod splitKeyMethod = null;
+        KMIPObject object = null;
         try
         {
             while (eventReader.hasNext())
@@ -452,6 +459,14 @@ public class KMIPInputStream
                     {
                         splitKeyMethod = parseEnum(startElement, KMIPSplitKeyMethod.class, "Error in parsing SplitKeyThreshold: ");
                         assertEndElement(event, "SplitKeyMethod", "Error in parsing SplitKeyThreshold: ");
+                    }
+                    else if (name.equals("SymmetricKey"))
+                    {
+                        assertStartElement(event, "KeyBlock", "Error in parsing KeyBlock: ");
+                        KMIPKeyBlock keyBlock = parseKeyBlock();
+
+                        object = new KMIPSymmetricKey(keyBlock);
+                        assertEndElement(event, "SymmetricKey", "Error in parsing SymmetricKey: ");
                     }
                     else
                     {
@@ -494,6 +509,9 @@ public class KMIPInputStream
                     destroy.setUniqueIdentifier(uniqueIdentifier);
                 }
                 return destroy;
+            case Register:
+                KMIPRequestPayloadRegister register = new KMIPRequestPayloadRegister(objectType, attributes, object);
+                return register;
             default:
                 throw new KMIPInputException("add more support for parseRequestPayload");
             }
@@ -555,6 +573,7 @@ public class KMIPInputStream
                 return new KMIPResponsePayloadCreateSplitKey(kmipUniqueIdentifiers);
             case JoinSplitKey:
             case Destroy:
+            case Register:
                 return new KMIPResponsePayloadDefault(uniqueIdentifier);
             default:
                 throw new KMIPInputException("add more support for parseResponsePayload");
@@ -612,6 +631,21 @@ public class KMIPInputStream
                         KMIPName kmipName = new KMIPName(nameValue, nameType);
                         attributes.put("Name", kmipName);
                     }
+                    else if (name.equals("Attribute"))
+                    {
+                        startElement = assertStartElement(event, "VendorIdentification", "Error in processing VendorIdentification: ");
+                        String vendorIdentification = parseTextString(startElement, "Error in parsing VendorIdentification: ");
+                        assertEndElement(event, "VendorIdentification", "Error in processing VendorIdentification: ");
+                        startElement = assertStartElement(event, "AttributeName", "Error in processing AttributeName: ");
+                        String attributeName = parseTextString(startElement, "Error in parsing Name AttributeName: ");
+                        assertEndElement(event, "AttributeName", "Error in processing AttributeName: ");
+                        startElement = assertStartElement(event, "AttributeValue", "Error in processing AttributeValue: ");
+                        String attributeValue = parseTextString(startElement, "Error in parsing Name AttributeValue: ");
+                        assertEndElement(event, "AttributeValue", "Error in processing AttributeValue: ");
+                        assertEndElement(event, "Attribute", "Error in processing Attribute: ");
+                        KMIPVendorAttribute vendorAttribute = new KMIPVendorAttribute(vendorIdentification, attributeName, attributeValue);
+                        attributes.put("VendorAttribute", vendorAttribute);
+                    }
                     else
                     {
                         throw new KMIPInputException("Add more code to support parseAttributes");
@@ -622,6 +656,64 @@ public class KMIPInputStream
                 {
                     assertEndElement(event, "Attributes", "Error in processing Name: ");
                     return attributes;
+                }
+            }
+        }
+        catch (XMLStreamException e)
+        {
+            System.err.println("Error processing XML: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private KMIPKeyBlock parseKeyBlock()
+        throws KMIPInputException
+    {
+        KMIPKeyFormatType keyFormatType = null;
+        byte[] keyValue = null;
+        KMIPCryptographicAlgorithm cryptographicAlgorithm = null;
+        int cryptographicLength = 0;
+        try
+        {
+            while (eventReader.hasNext())
+            {
+                XMLEvent event = eventReader.nextEvent();
+                if (event.isStartElement())
+                {
+                    StartElement startElement = event.asStartElement();
+                    String name = startElement.getName().getLocalPart();
+                    if (name.equals("KeyFormatType"))
+                    {
+                        keyFormatType = parseEnum(startElement, KMIPKeyFormatType.class, "Error in parsing KeyFormatType: ");
+                        assertEndElement(event, "KeyFormatType", "Error in parsing KeyFormatType: ");
+                    }
+                    else if (name.equals("KeyValue"))
+                    {
+                        startElement = assertStartElement(eventReader.nextEvent(), "KeyMaterial", "Error in parsing KeyValue: ");
+                        keyValue = parseByteString(startElement, "Error in parsing KeyMaterial: ");
+                        assertEndElement(event, "KeyMaterial", "Error in parsing KeyMaterial: ");
+                        assertEndElement(event, "KeyValue", "Error in parsing KeyValue: ");
+                    }
+                    else if (name.equals("CryptographicAlgorithm"))
+                    {
+                        cryptographicAlgorithm = parseEnum(startElement, KMIPCryptographicAlgorithm.class, "Error in parsing Cryptographic Algorithm: ");
+                        assertEndElement(event, "CryptographicAlgorithm", "Error in parsing CryptographicAlgorithm: ");
+                    }
+                    else if (name.equals("CryptographicLength"))
+                    {
+                        cryptographicLength = parseInteger(startElement, "Error in parsing Cryptographic Length: ");
+                        assertEndElement(event, "CryptographicLength", "Error in parsing CryptographicLength: ");
+                    }
+                    else
+                    {
+                        throw new KMIPInputException("Add more code to support parseKeyBlock");
+                    }
+                }
+
+                if (event.isEndElement())
+                {
+                    assertEndElement(event, "KeyBlock", "Error in processing Name: ");
+                    return new KMIPKeyBlock(keyFormatType, keyValue, cryptographicAlgorithm, cryptographicLength);
                 }
             }
         }
@@ -729,6 +821,27 @@ public class KMIPInputStream
         }
         return value;
     }
+
+    private byte[] parseByteString(StartElement startElement, String errorMessage)
+        throws KMIPInputException
+    {
+        String value;
+        if (startElement.getAttributes() != null)
+        {
+            Iterator it = startElement.getAttributes();
+            Attribute attribute = (Attribute)it.next();
+            assertException(attribute, "type", "ByteString", errorMessage + " type should be text string");
+            attribute = (Attribute)it.next();
+            value = attribute.getValue();
+            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
+        }
+        else
+        {
+            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
+        }
+        return Hex.decode(value);
+    }
+
 
     private KMIPUniqueIdentifier parseUniqueIdentifier(StartElement startElement, String errorMessage)
         throws KMIPInputException, XMLStreamException
