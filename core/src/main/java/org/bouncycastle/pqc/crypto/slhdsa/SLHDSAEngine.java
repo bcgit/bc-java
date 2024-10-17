@@ -96,13 +96,13 @@ abstract class SLHDSAEngine
 
     abstract byte[] H(byte[] pkSeed, ADRS adrs, byte[] m1, byte[] m2);
 
-    abstract IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] message);
+    abstract IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg);
 
     abstract byte[] T_l(byte[] pkSeed, ADRS adrs, byte[] m);
 
     abstract byte[] PRF(byte[] pkSeed, byte[] skSeed, ADRS adrs);
 
-    abstract byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message);
+    abstract byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] msgPrefix, byte[] msg);
 
     static class Sha2Engine
         extends SLHDSAEngine
@@ -187,7 +187,7 @@ abstract class SLHDSAEngine
             return Arrays.copyOfRange(msgDigestBuf, 0, N);
         }
 
-        IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] message)
+        IndexedDigest H_msg(byte[] prf, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg)
         {
             int forsMsgBytes = ((A * K) + 7) / 8;
             int leafBits = H / D;
@@ -201,7 +201,11 @@ abstract class SLHDSAEngine
             msgDigest.update(prf, 0, prf.length);
             msgDigest.update(pkSeed, 0, pkSeed.length);
             msgDigest.update(pkRoot, 0, pkRoot.length);
-            msgDigest.update(message, 0, message.length);
+            if (msgPrefix != null)
+            {
+                msgDigest.update(msgPrefix, 0, msgPrefix.length);
+            }
+            msgDigest.update(msg, 0, msg.length);
             msgDigest.doFinal(dig, 0);
 
             out = bitmask(Arrays.concatenate(prf, pkSeed, dig), out);
@@ -250,11 +254,15 @@ abstract class SLHDSAEngine
             return Arrays.copyOfRange(sha256Buf, 0, n);
         }
 
-        public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message)
+        public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] msgPrefix, byte[] msg)
         {
             treeHMac.init(new KeyParameter(prf));
             treeHMac.update(randomiser, 0, randomiser.length);
-            treeHMac.update(message, 0, message.length);
+            if (msgPrefix != null)
+            {
+                treeHMac.update(msgPrefix, 0, msgPrefix.length);
+            }
+            treeHMac.update(msg, 0, msg.length);
             treeHMac.doFinal(hmacBuf, 0);
 
             return Arrays.copyOfRange(hmacBuf, 0, N);
@@ -349,7 +357,7 @@ abstract class SLHDSAEngine
             return rv;
         }
 
-        IndexedDigest H_msg(byte[] R, byte[] pkSeed, byte[] pkRoot, byte[] message)
+        IndexedDigest H_msg(byte[] R, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg)
         {
             int forsMsgBytes = ((A * K) + 7) / 8;
             int leafBits = H / D;
@@ -362,8 +370,11 @@ abstract class SLHDSAEngine
             treeDigest.update(R, 0, R.length);
             treeDigest.update(pkSeed, 0, pkSeed.length);
             treeDigest.update(pkRoot, 0, pkRoot.length);
-            treeDigest.update(message, 0, message.length);
-
+            if (msgPrefix != null)
+            {
+                treeDigest.update(msgPrefix, 0, msgPrefix.length);
+            }
+            treeDigest.update(msg, 0, msg.length);
             treeDigest.doFinal(out, 0, out.length);
 
             // tree index
@@ -407,11 +418,16 @@ abstract class SLHDSAEngine
             return prf;
         }
 
-        public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] message)
+        public byte[] PRF_msg(byte[] prf, byte[] randomiser, byte[] msgPrefix, byte[] msg)
         {
             treeDigest.update(prf, 0, prf.length);
             treeDigest.update(randomiser, 0, randomiser.length);
-            treeDigest.update(message, 0, message.length);
+            if (msgPrefix != null)
+            {
+                treeDigest.update(msgPrefix, 0, msgPrefix.length);
+            }
+            treeDigest.update(msg, 0, msg.length);
+
             byte[] out = new byte[N];
             treeDigest.doFinal(out, 0, out.length);
             return out;
