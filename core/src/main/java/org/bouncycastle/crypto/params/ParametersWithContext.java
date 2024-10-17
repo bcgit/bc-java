@@ -25,7 +25,9 @@ public class ParametersWithContext
     public void copyContextTo(byte[] buf, int off, int len)
     {
         if (context.length != len)
+        {
             throw new IllegalArgumentException("len");
+        }
 
         System.arraycopy(context, 0, buf, off, len);
     }
