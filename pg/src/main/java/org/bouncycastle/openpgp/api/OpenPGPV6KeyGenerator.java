@@ -159,18 +159,46 @@ public class OpenPGPV6KeyGenerator
                 .addEncryptionSubkey()
                 .build(passphrase);
     }
+
     /**
-     * Generate a sign-only OpenPGP key.
-     * The key consists of a single, user-id-less Ed25519 key, which is capable of signing and certifying.
-     * It carries a single direct-key signature with signing-related preferences.
+     * Generate an OpenPGP key consisting of an Ed25519 certify-only primary key,
+     * a dedicated Ed25519 sign-only subkey and dedicated X25519 encryption-only subkey.
+     * The key will carry the provided user-id and be protected using the provided passphrase.
      *
-     * @return sign-only (+certify) OpenPGP key
+     * @param userId user id
+     * @param passphrase nullable passphrase
+     * @return OpenPGP key
      * @throws PGPException if the key cannot be generated
      */
-    public PGPSecretKeyRing signOnlyKey()
+    public PGPSecretKeyRing ed25519x25519Key(String userId, char[] passphrase)
             throws PGPException
     {
-        return signOnlyKey(null);
+        return withPrimaryKey(PGPKeyPairGenerator::generateEd25519KeyPair)
+                .addSigningSubkey(PGPKeyPairGenerator::generateEd25519KeyPair)
+                .addEncryptionSubkey(PGPKeyPairGenerator::generateX25519KeyPair)
+                .addUserId(userId)
+                .build(passphrase);
+    }
+
+
+    /**
+     * Generate an OpenPGP key consisting of an Ed448 certify-only primary key,
+     * a dedicated Ed448 sign-only subkey and dedicated X448 encryption-only subkey.
+     * The key will carry the provided user-id and be protected using the provided passphrase.
+     *
+     * @param userId user id
+     * @param passphrase nullable passphrase
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated
+     */
+    public PGPSecretKeyRing ed448x448Key(String userId, char[] passphrase)
+            throws PGPException
+    {
+        return withPrimaryKey(PGPKeyPairGenerator::generateEd448KeyPair)
+                .addSigningSubkey(PGPKeyPairGenerator::generateEd448KeyPair)
+                .addEncryptionSubkey(PGPKeyPairGenerator::generateX448KeyPair)
+                .addUserId(userId)
+                .build(passphrase);
     }
 
     /**
@@ -257,7 +285,14 @@ public class OpenPGPV6KeyGenerator
     public WithPrimaryKey withPrimaryKey()
             throws PGPException
     {
-        return withPrimaryKey(null);
+        return withPrimaryKey((SignatureSubpacketsFunction) null);
+    }
+
+    public WithPrimaryKey withPrimaryKey(
+            KeyPairGeneratorCallback keyGenCallback)
+            throws PGPException
+    {
+        return withPrimaryKey(keyGenCallback, null);
     }
 
     /**
