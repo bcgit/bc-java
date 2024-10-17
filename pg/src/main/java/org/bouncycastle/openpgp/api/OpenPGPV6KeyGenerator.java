@@ -5,6 +5,7 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
@@ -196,7 +197,7 @@ public class OpenPGPV6KeyGenerator
             SignatureSubpacketsFunction userSubpackets)
             throws PGPException
     {
-        PGPKeyPair primaryKey = impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime)
+        PGPKeyPair primaryKey = impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime)
                 .generatePrimaryKey();
         PBESecretKeyEncryptor encryptor = impl.keyEncryptorBuilderProvider
                 .build(passphrase, primaryKey.getPublicKey().getPublicKeyPacket());
@@ -334,7 +335,7 @@ public class OpenPGPV6KeyGenerator
             throws PGPException
     {
         PGPKeyPair pkPair = keyGenCallback.generateFrom(
-                impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+                impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
         PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider
                 .build(passphrase, pkPair.getPublicKey().getPublicKeyPacket());
         return withPrimaryKey(pkPair, directKeySubpackets, keyEncryptor);
@@ -372,7 +373,7 @@ public class OpenPGPV6KeyGenerator
                 subpackets ->
                 {
                     subpackets.setIssuerFingerprint(true, keyPair.getPublicKey());
-                    subpackets.setSignatureCreationTime(conf.creationTime);
+                    subpackets.setSignatureCreationTime(conf.keyCreationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
                     subpackets = DIRECT_KEY_SIGNATURE_SUBPACKETS.apply(subpackets);
                     subpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
@@ -525,7 +526,7 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            subpackets.setSignatureCreationTime(conf.creationTime);
+            subpackets.setSignatureCreationTime(conf.keyCreationTime);
 
             if (userIdSubpackets != null)
             {
@@ -585,7 +586,7 @@ public class OpenPGPV6KeyGenerator
         {
             PGPKeyPairGenerator generator = impl.kpGenProvider.get(
                     primaryKey.pair.getPublicKey().getVersion(),
-                    conf.creationTime
+                    conf.keyCreationTime
             );
             PGPKeyPair subkey = generatorCallback.generateFrom(generator);
 
@@ -653,7 +654,7 @@ public class OpenPGPV6KeyGenerator
                                                char[] passphrase)
                 throws PGPException
         {
-            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
             PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
             return addEncryptionSubkey(subkey, bindingSignatureCallback, keyEncryptor);
         }
@@ -686,7 +687,7 @@ public class OpenPGPV6KeyGenerator
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
             subpackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            subpackets.setSignatureCreationTime(conf.creationTime);
+            subpackets.setSignatureCreationTime(conf.keyCreationTime);
 
             // allow subpacket customization
             if (bindingSubpacketsCallback != null)
@@ -795,7 +796,7 @@ public class OpenPGPV6KeyGenerator
                                                char[] passphrase)
                 throws PGPException
         {
-            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.creationTime));
+            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
             PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
             return addSigningSubkey(subkey, bindingSignatureCallback, backSignatureCallback, keyEncryptor);
         }
@@ -830,7 +831,7 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignatureSubpacketGenerator backSigSubpackets = new PGPSignatureSubpacketGenerator();
             backSigSubpackets.setIssuerFingerprint(true, signingKey.getPublicKey());
-            backSigSubpackets.setSignatureCreationTime(conf.creationTime);
+            backSigSubpackets.setSignatureCreationTime(conf.keyCreationTime);
             if (backSignatureCallback != null)
             {
                 backSigSubpackets = backSignatureCallback.apply(backSigSubpackets);
@@ -838,7 +839,7 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignatureSubpacketGenerator bindingSigSubpackets = new PGPSignatureSubpacketGenerator();
             bindingSigSubpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
-            bindingSigSubpackets.setSignatureCreationTime(conf.creationTime);
+            bindingSigSubpackets.setSignatureCreationTime(conf.keyCreationTime);
 
             bindingSigSubpackets = SIGNING_SUBKEY_SUBPACKETS.apply(bindingSigSubpackets);
 
@@ -925,6 +926,7 @@ public class OpenPGPV6KeyGenerator
         {
             PBESecretKeyEncryptor primaryKeyEncryptor = impl.keyEncryptorBuilderProvider
                     .build(passphrase, primaryKey.pair.getPublicKey().getPublicKeyPacket());
+            sanitizeKeyEncryptor(primaryKeyEncryptor);
             PGPSecretKey primarySecretKey = new PGPSecretKey(
                     primaryKey.pair.getPrivateKey(),
                     primaryKey.pair.getPublicKey(),
@@ -938,6 +940,7 @@ public class OpenPGPV6KeyGenerator
             {
                 PBESecretKeyEncryptor subkeyEncryptor = impl.keyEncryptorBuilderProvider
                         .build(passphrase, key.pair.getPublicKey().getPublicKeyPacket());
+                sanitizeKeyEncryptor(subkeyEncryptor);
                 PGPSecretKey subkey = new PGPSecretKey(
                         key.pair.getPrivateKey(),
                         key.pair.getPublicKey(),
@@ -954,6 +957,28 @@ public class OpenPGPV6KeyGenerator
             }
 
             return new PGPSecretKeyRing(keys);
+        }
+
+        protected void sanitizeKeyEncryptor(PBESecretKeyEncryptor keyEncryptor)
+        {
+            if (keyEncryptor == null)
+            {
+                // Unprotected is okay
+                return;
+            }
+
+            S2K s2k = keyEncryptor.getS2K();
+            if (s2k.getType() == S2K.SIMPLE || s2k.getType() == S2K.SALTED)
+            {
+                throw new IllegalArgumentException("S2K specifiers SIMPLE and SALTED are not allowed for secret key encryption.");
+            }
+            else if (s2k.getType() == S2K.ARGON_2)
+            {
+                if (keyEncryptor.getAeadAlgorithm() == 0)
+                {
+                    throw new IllegalArgumentException("Argon2 MUST be used with AEAD.");
+                }
+            }
         }
     }
 
@@ -984,11 +1009,11 @@ public class OpenPGPV6KeyGenerator
      */
     private static class Configuration
     {
-        final Date creationTime;
+        final Date keyCreationTime;
 
-        public Configuration(Date creationTime)
+        public Configuration(Date keyCreationTime)
         {
-            this.creationTime = creationTime;
+            this.keyCreationTime = keyCreationTime;
         }
     }
 
