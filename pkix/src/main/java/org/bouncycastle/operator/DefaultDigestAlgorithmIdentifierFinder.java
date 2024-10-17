@@ -190,6 +190,10 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(X509ObjectIdentifiers.id_ecdsa_with_shake128, NISTObjectIdentifiers.id_shake128);
         digestOids.put(X509ObjectIdentifiers.id_ecdsa_with_shake256, NISTObjectIdentifiers.id_shake256);
 
+        digestOids.put(EdECObjectIdentifiers.id_Ed25519, NISTObjectIdentifiers.id_sha512);
+
+        digestOids.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, NISTObjectIdentifiers.id_sha256);
+
         digestNameToOids.put("SHA-1", OIWObjectIdentifiers.idSHA1);
         digestNameToOids.put("SHA-224", NISTObjectIdentifiers.id_sha224);
         digestNameToOids.put("SHA-256", NISTObjectIdentifiers.id_sha256);
@@ -245,8 +249,6 @@ public class DefaultDigestAlgorithmIdentifierFinder
         addDigestAlgId(NISTObjectIdentifiers.id_sha3_256, false);
         addDigestAlgId(NISTObjectIdentifiers.id_sha3_384, false);
         addDigestAlgId(NISTObjectIdentifiers.id_sha3_512, false);
-
-        // RFC 8702
         addDigestAlgId(NISTObjectIdentifiers.id_shake128, false);
         addDigestAlgId(NISTObjectIdentifiers.id_shake256, false);
 
@@ -316,14 +318,6 @@ public class DefaultDigestAlgorithmIdentifierFinder
         if (sigAlgOid.equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
         {
             digAlgOid = RSASSAPSSparams.getInstance(sigAlgId.getParameters()).getHashAlgorithm().getAlgorithm();
-        }
-        else if (sigAlgOid.equals(EdECObjectIdentifiers.id_Ed25519))
-        {
-            digAlgOid = NISTObjectIdentifiers.id_sha512;
-        }
-        else if (sigAlgOid.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
-        {
-            digAlgOid = NISTObjectIdentifiers.id_sha256;
         }
         else
         {
