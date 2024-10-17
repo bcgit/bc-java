@@ -97,6 +97,13 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    public static SignatureSubpacketsFunction ENCRYPTION_SUBKEY_SUBPACKETS = subpackets ->
+    {
+        subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+        subpackets.setKeyFlags(true, KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
+        return subpackets;
+    };
+
     public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = subpackets ->
     {
         subpackets = DEFAULT_FEATURES.apply(subpackets);
@@ -685,9 +692,9 @@ public class OpenPGPV6KeyGenerator
             }
             // generate binding signature
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
-            subpackets.setKeyFlags(false, KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
             subpackets.setSignatureCreationTime(conf.keyCreationTime);
+            subpackets = ENCRYPTION_SUBKEY_SUBPACKETS.apply(subpackets);
 
             // allow subpacket customization
             if (bindingSubpacketsCallback != null)
