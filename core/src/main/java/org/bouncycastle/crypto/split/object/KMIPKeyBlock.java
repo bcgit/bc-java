@@ -1,5 +1,8 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.object;
 
+import org.bouncycastle.crypto.split.KMIPKeyCompressionType;
+import org.bouncycastle.crypto.split.KMIPKeyFormatType;
+import org.bouncycastle.crypto.split.KMIPKeyWrappingData;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 
 /**
@@ -15,6 +18,7 @@ import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
  * - Key Wrapping Data: Data structure that is present if the key is wrapped.
  */
 public class KMIPKeyBlock
+    extends KMIPObject
 {
 
     /**
@@ -30,7 +34,8 @@ public class KMIPKeyBlock
     /**
      * The key value, which can be a wrapped key (byte array) or plaintext (object structure).
      */
-    private Object keyValue;  // Could be byte[] for wrapped keys or a specific structure for plaintext keys.
+    //TODO: create a class for KeyValue
+    private byte[] keyValue;  // Could be byte[] for wrapped keys or a specific structure for plaintext keys.
 
     /**
      * The cryptographic algorithm used for the key (e.g., RSA, AES).
@@ -40,33 +45,28 @@ public class KMIPKeyBlock
     /**
      * The length of the cryptographic key in bits.
      */
-    private Integer cryptographicLength;
+    private int cryptographicLength;
 
     /**
      * Data structure containing key wrapping information, if the key is wrapped.
      */
-    private KMIPKeyWrappingData KMIPKeyWrappingData;
+    private org.bouncycastle.crypto.split.KMIPKeyWrappingData KMIPKeyWrappingData;
 
     /**
      * Constructs a new KeyBlock with the specified parameters.
      *
      * @param keyFormatType      The format type of the key.
-     * @param keyCompressionType     The compression type of the key (optional).
      * @param keyValue               The key value (wrapped or plaintext).
      * @param cryptographicAlgorithm The cryptographic algorithm used for the key.
-     * @param cryptographicLength    The length of the cryptographic key in bits (optional).
-     * @param KMIPKeyWrappingData    The key wrapping data, if the key is wrapped (optional).
+     * @param cryptographicLength    The length of the cryptographic key in bits.
      */
-    public KMIPKeyBlock(KMIPKeyFormatType keyFormatType, KMIPKeyCompressionType keyCompressionType,
-                        Object keyValue, KMIPCryptographicAlgorithm cryptographicAlgorithm,
-                        Integer cryptographicLength, KMIPKeyWrappingData KMIPKeyWrappingData)
+    public KMIPKeyBlock(KMIPKeyFormatType keyFormatType, byte[] keyValue, KMIPCryptographicAlgorithm cryptographicAlgorithm,
+                        int cryptographicLength)
     {
         this.keyFormatType = keyFormatType;
-        this.keyCompressionType = keyCompressionType;
         this.keyValue = keyValue;
         this.cryptographicAlgorithm = cryptographicAlgorithm;
         this.cryptographicLength = cryptographicLength;
-        this.KMIPKeyWrappingData = KMIPKeyWrappingData;
     }
 
     // Getters and Setters
@@ -91,12 +91,12 @@ public class KMIPKeyBlock
         this.keyCompressionType = keyCompressionType;
     }
 
-    public Object getKeyValue()
+    public byte[] getKeyValue()
     {
         return keyValue;
     }
 
-    public void setKeyValue(Object keyValue)
+    public void setKeyValue(byte[] keyValue)
     {
         this.keyValue = keyValue;
     }
@@ -111,12 +111,12 @@ public class KMIPKeyBlock
         this.cryptographicAlgorithm = KMIPCryptographicAlgorithm;
     }
 
-    public Integer getCryptographicLength()
+    public int getCryptographicLength()
     {
         return cryptographicLength;
     }
 
-    public void setCryptographicLength(Integer cryptographicLength)
+    public void setCryptographicLength(int cryptographicLength)
     {
         this.cryptographicLength = cryptographicLength;
     }

@@ -1,31 +1,28 @@
 package org.bouncycastle.crypto.split;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
+
 /**
  * Enumeration representing the key format types for cryptographic keys.
  */
 public enum KMIPKeyFormatType
+    implements KMIPEnumeration
 {
-    RAW(0x01),
-    OPAQUE(0x02),
+    Raw(0x01),
+    Opaque(0x02),
     PKCS1(0x03),
     PKCS8(0x04),
     X509(0x05),
-    EC_PRIVATE_KEY(0x06),
-    TRANSPARENT_SYMMETRIC_KEY(0x07),
-    TRANSPARENT_DSA_PRIVATE_KEY(0x08),
-    TRANSPARENT_DSA_PUBLIC_KEY(0x09),
-    TRANSPARENT_RSA_PRIVATE_KEY(0x0A),
-    TRANSPARENT_RSA_PUBLIC_KEY(0x0B),
-    TRANSPARENT_DH_PRIVATE_KEY(0x0C),
-    TRANSPARENT_DH_PUBLIC_KEY(0x0D),
-    RESERVED_1(0x0E),
-    RESERVED_2(0x0F),
-    RESERVED_3(0x10),
-    RESERVED_4(0x11),
-    RESERVED_5(0x12),
-    RESERVED_6(0x13),
-    TRANSPARENT_EC_PRIVATE_KEY(0x14),
-    TRANSPARENT_EC_PUBLIC_KEY(0x15),
+    ECPrivateKey(0x06),
+    TransparentSymmetricKey(0x07),
+    TransparentDSAPrivateKey(0x08),
+    TransparentDSAPublicKey(0x09),
+    TransparentRSAPrivateKey(0x0A),
+    TransparentRSAPublicKey(0x0B),
+    TransparentDHPrivateKey(0x0C),
+    TransparentDHPublicKey(0x0D),
+    TransparentECPrivateKey(0x14),
+    TransparentECPublicKey(0x15),
     PKCS12(0x16),
     PKCS10(0x17);
     //EXTENSIONS("8XXXXXXX");

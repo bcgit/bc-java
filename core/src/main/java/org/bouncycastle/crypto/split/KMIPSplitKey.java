@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.split;
 import java.math.BigInteger;
 
 import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
+import org.bouncycastle.crypto.split.object.KMIPKeyBlock;
 
 /**
  * A Managed Cryptographic Object that is a Split Key. A split key is a secret, usually a symmetric key or a private key
@@ -22,7 +23,7 @@ public class KMIPSplitKey
     private final BigInteger primeFieldSize;  // Required only if Split Key Method is Polynomial Sharing
 
     // Key Block Object Data (can be defined separately as needed)
-    private final KMIPKeyBlock KMIPKeyBlock;
+    private final org.bouncycastle.crypto.split.object.KMIPKeyBlock KMIPKeyBlock;
 
     /**
      * Constructs a SplitKey object.
