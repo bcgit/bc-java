@@ -12,10 +12,10 @@ Except where otherwise stated, this software is distributed under a license base
 
 ## Building overview
 
-This project can now be built and tested with JDK21.
+This project can now be built and tested with JDK21. 
 
 If the build script detects BC_JDK8, BC_JDK11, BC_JDK17 it will add to the usual test task a dependency on test tasks 
-that specifically use the JVMs addressed by those environmental variables. 
+that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 21 if it is use.
 
 We support testing on specific JVMs as it is the only way to be certain the library is compatible.
 
