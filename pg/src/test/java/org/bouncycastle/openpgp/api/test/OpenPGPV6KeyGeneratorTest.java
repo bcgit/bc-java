@@ -17,6 +17,7 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.test.AbstractPgpKeyPairTest;
@@ -82,7 +83,7 @@ public class OpenPGPV6KeyGeneratorTest
             throws PGPException
     {
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator();
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey();
+        PGPSecretKeyRing secretKeys = generator.signOnlyKey(null);
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = it.next();
@@ -255,7 +256,7 @@ public class OpenPGPV6KeyGeneratorTest
                         "primary-key-passphrase".toCharArray())
                 .addUserId("Alice <alice@example.com>", PGPSignature.DEFAULT_CERTIFICATION, null)
                 .addSigningSubkey(
-                        keyGen -> keyGen.generateEd448KeyPair(),
+                        PGPKeyPairGenerator::generateEd448KeyPair,
                         bindingSubpackets ->
                         {
                             bindingSubpackets.addNotationData(false, true,
@@ -264,7 +265,7 @@ public class OpenPGPV6KeyGeneratorTest
                         },
                         null,
                         "signing-key-passphrase".toCharArray())
-                .addEncryptionSubkey(keyGenCallback -> keyGenCallback.generateX448KeyPair(),
+                .addEncryptionSubkey(PGPKeyPairGenerator::generateX448KeyPair,
                         "encryption-key-passphrase".toCharArray())
                 .build();
     }
