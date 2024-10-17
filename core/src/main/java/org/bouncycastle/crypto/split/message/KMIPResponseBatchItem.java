@@ -1,35 +1,36 @@
 package org.bouncycastle.crypto.split.message;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
+import org.bouncycastle.crypto.split.enumeration.KMIPResultReason;
 import org.bouncycastle.crypto.split.enumeration.KMIPResultStatus;
 
 public class KMIPResponseBatchItem
     extends KMIPBatchItem
 {
-    private String operation;           // Operation, if specified in the Request Batch Item
+    private KMIPOperation operation;           // Operation, if specified in the Request Batch Item
     private String uniqueBatchItemID;   // Unique Batch Item ID, optional
     private KMIPResultStatus resultStatus;  // Result Status
-    private String resultReason;        // Result Reason, required if Result Status is Failure
+    private KMIPResultReason resultReason;        // Result Reason, required if Result Status is Failure
     private String resultMessage;       // Optional, unless Result Status is Pending or Success
     private String asyncCorrelationValue; // Required if Result Status is Pending
     private KMIPResponsePayload responsePayload; // Structure, contents depend on the Operation
     private KMIPMessageExtension messageExtension; // Optional Message Extension
 
     // Constructor
-    public KMIPResponseBatchItem(String operation, KMIPResultStatus resultStatus,
-                                 String resultReason, KMIPResponsePayload responsePayload)
+    public KMIPResponseBatchItem(KMIPOperation operation, KMIPResultStatus resultStatus,
+                                 KMIPResponsePayload responsePayload)
     {
         this.operation = operation;
         this.resultStatus = resultStatus;
-        this.resultReason = resultReason;
         this.responsePayload = responsePayload;
     }
 
-    public String getOperation()
+    public KMIPOperation getOperation()
     {
         return operation;
     }
 
-    public void setOperation(String operation)
+    public void setOperation(KMIPOperation operation)
     {
         this.operation = operation;
     }
@@ -54,12 +55,12 @@ public class KMIPResponseBatchItem
         this.resultStatus = resultStatus;
     }
 
-    public String getResultReason()
+    public KMIPResultReason getResultReason()
     {
         return resultReason;
     }
 
-    public void setResultReason(String resultReason)
+    public void setResultReason(KMIPResultReason resultReason)
     {
         this.resultReason = resultReason;
     }

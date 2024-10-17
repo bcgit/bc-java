@@ -4,6 +4,7 @@ import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
 import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
 
 public class KMIPResponsePayloadCreate
+    extends KMIPResponsePayload
 {
     private KMIPObjectType objectType;        // Type of object created (e.g., symmetric key, secret data)
     private KMIPUniqueIdentifier uniqueIdentifier;  // The Unique Identifier of the newly created object

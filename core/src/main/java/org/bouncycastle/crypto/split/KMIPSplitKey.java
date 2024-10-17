@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.split;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
+
 /**
  * A Managed Cryptographic Object that is a Split Key. A split key is a secret, usually a symmetric key or a private key
  * that has been split into a number of parts, each of which MAY then be distributed to several key holders, for
@@ -16,7 +18,7 @@ public class KMIPSplitKey
     private final int splitKeyParts;         // Total number of parts
     private final int keyPartIdentifier;      // Identifier for the key part
     private final int splitKeyThreshold;      // Minimum number of parts needed to reconstruct the key
-    private final KMIPSplitKeyMethod KMIPSplitKeyMethod; // Method used for splitting the key
+    private final org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod KMIPSplitKeyMethod; // Method used for splitting the key
     private final BigInteger primeFieldSize;  // Required only if Split Key Method is Polynomial Sharing
 
     // Key Block Object Data (can be defined separately as needed)

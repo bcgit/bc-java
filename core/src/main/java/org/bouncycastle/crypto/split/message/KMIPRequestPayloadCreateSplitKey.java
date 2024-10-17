@@ -1,6 +1,10 @@
 package org.bouncycastle.crypto.split.message;
 
-import org.bouncycastle.crypto.split.KMIPSplitKeyMethod;
+import java.util.Map;
+
+import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
+import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
 
 /**
  * RequestPayload represents the payload of a request for creating or splitting a key.
@@ -9,26 +13,27 @@ public class KMIPRequestPayloadCreateSplitKey
     extends KMIPRequestPayload
 {
     // Required fields
-    private String objectType;
-    private String uniqueIdentifier; // Optional
+    private KMIPObjectType objectType;
+    private KMIPUniqueIdentifier uniqueIdentifier; // Optional
     private int splitKeyParts;
     private int splitKeyThreshold;
     private KMIPSplitKeyMethod splitKeyMethod;
     private int primeFieldSize; // Optional
-    private Object attributes; // Use an appropriate type for attributes
-    private Object protectionStorageMasks; // Optional, adjust type as needed
+    private Map<String, Object> attributes; // Use an appropriate type for attributes
+    private int protectionStorageMasks; // Optional, adjust type as needed
 
     /**
      * Constructor for RequestPayload with required fields.
      *
-     * @param objectType           Determines the type of object to be created.
-     * @param splitKeyParts        The total number of parts in the split key.
-     * @param splitKeyThreshold    The minimum number of parts needed to reconstruct the key.
-     * @param splitKeyMethod       The method used for splitting the key.
-     * @param attributes           Specifies desired object attributes.
+     * @param objectType        Determines the type of object to be created.
+     * @param splitKeyParts     The total number of parts in the split key.
+     * @param splitKeyThreshold The minimum number of parts needed to reconstruct the key.
+     * @param splitKeyMethod    The method used for splitting the key.
+     * @param attributes        Specifies desired object attributes.
      */
-    public KMIPRequestPayloadCreateSplitKey(String objectType, int splitKeyParts, int splitKeyThreshold,
-                          KMIPSplitKeyMethod splitKeyMethod, Object attributes) {
+    public KMIPRequestPayloadCreateSplitKey(KMIPObjectType objectType, int splitKeyParts, int splitKeyThreshold,
+                                            KMIPSplitKeyMethod splitKeyMethod, Map<String, Object> attributes)
+    {
         this.objectType = objectType;
         this.splitKeyParts = splitKeyParts;
         this.splitKeyThreshold = splitKeyThreshold;
@@ -36,69 +41,83 @@ public class KMIPRequestPayloadCreateSplitKey
         this.attributes = attributes;
     }
 
-    // Getters and setters
-
-    public String getObjectType() {
+    public KMIPObjectType getObjectType()
+    {
         return objectType;
     }
 
-    public void setObjectType(String objectType) {
+    public void setObjectType(KMIPObjectType objectType)
+    {
         this.objectType = objectType;
     }
 
-    public String getUniqueIdentifier() {
+    public KMIPUniqueIdentifier getUniqueIdentifier()
+    {
         return uniqueIdentifier;
     }
 
-    public void setUniqueIdentifier(String uniqueIdentifier) {
+    public void setUniqueIdentifier(KMIPUniqueIdentifier uniqueIdentifier)
+    {
         this.uniqueIdentifier = uniqueIdentifier;
     }
 
-    public int getSplitKeyParts() {
+    public int getSplitKeyParts()
+    {
         return splitKeyParts;
     }
 
-    public void setSplitKeyParts(int splitKeyParts) {
+    public void setSplitKeyParts(int splitKeyParts)
+    {
         this.splitKeyParts = splitKeyParts;
     }
 
-    public int getSplitKeyThreshold() {
+    public int getSplitKeyThreshold()
+    {
         return splitKeyThreshold;
     }
 
-    public void setSplitKeyThreshold(int splitKeyThreshold) {
+    public void setSplitKeyThreshold(int splitKeyThreshold)
+    {
         this.splitKeyThreshold = splitKeyThreshold;
     }
 
-    public KMIPSplitKeyMethod getSplitKeyMethod() {
+    public KMIPSplitKeyMethod getSplitKeyMethod()
+    {
         return splitKeyMethod;
     }
 
-    public void setSplitKeyMethod(KMIPSplitKeyMethod splitKeyMethod) {
+    public void setSplitKeyMethod(KMIPSplitKeyMethod splitKeyMethod)
+    {
         this.splitKeyMethod = splitKeyMethod;
     }
 
-    public int getPrimeFieldSize() {
+    public int getPrimeFieldSize()
+    {
         return primeFieldSize;
     }
 
-    public void setPrimeFieldSize(int primeFieldSize) {
+    public void setPrimeFieldSize(int primeFieldSize)
+    {
         this.primeFieldSize = primeFieldSize;
     }
 
-    public Object getAttributes() {
+    public Map<String, Object> getAttributes()
+    {
         return attributes;
     }
 
-    public void setAttributes(Object attributes) {
+    public void setAttributes(Map<String, Object> attributes)
+    {
         this.attributes = attributes;
     }
 
-    public Object getProtectionStorageMasks() {
+    public int getProtectionStorageMasks()
+    {
         return protectionStorageMasks;
     }
 
-    public void setProtectionStorageMasks(Object protectionStorageMasks) {
+    public void setProtectionStorageMasks(int protectionStorageMasks)
+    {
         this.protectionStorageMasks = protectionStorageMasks;
     }
 }
