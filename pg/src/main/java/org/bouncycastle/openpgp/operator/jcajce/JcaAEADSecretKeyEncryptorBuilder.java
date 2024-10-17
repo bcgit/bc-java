@@ -13,6 +13,7 @@ import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.AEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.util.Arrays;
 
@@ -28,6 +29,7 @@ import java.security.Provider;
 import java.security.SecureRandom;
 
 public class JcaAEADSecretKeyEncryptorBuilder
+        implements AEADSecretKeyEncryptorBuilder
 {
     private int aeadAlgorithm;
     private int symmetricAlgorithm;
