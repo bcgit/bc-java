@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.crystals.dilithium;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
@@ -10,7 +9,6 @@ class DilithiumEngine
 {
     private final SecureRandom random;
 
-    private final SHAKEDigest shake128Digest = new SHAKEDigest(128);
     private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
@@ -150,11 +148,6 @@ class DilithiumEngine
     SHAKEDigest getShake256Digest()
     {
         return this.shake256Digest;
-    }
-
-    SHAKEDigest getShake128Digest()
-    {
-        return this.shake128Digest;
     }
 
     DilithiumEngine(int mode, SecureRandom random, boolean usingAes)

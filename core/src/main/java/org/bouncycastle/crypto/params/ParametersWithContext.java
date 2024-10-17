@@ -13,13 +13,31 @@ public class ParametersWithContext
         CipherParameters parameters,
         byte[] context)
     {
+        if (context == null)
+        {
+            throw new NullPointerException("'context' cannot be null");
+        }
+
         this.parameters = parameters;
         this.context = Arrays.clone(context);
+    }
+
+    public void copyContextTo(byte[] buf, int off, int len)
+    {
+        if (context.length != len)
+            throw new IllegalArgumentException("len");
+
+        System.arraycopy(context, 0, buf, off, len);
     }
 
     public byte[] getContext()
     {
         return Arrays.clone(context);
+    }
+
+    public int getContextLength()
+    {
+        return context.length;
     }
 
     public CipherParameters getParameters()

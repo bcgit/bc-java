@@ -52,11 +52,6 @@ public class SLHDSATest
 
     public void testKeyGenSingleFile() throws IOException
     {
-
-
-
-        TestSampler sampler = new TestSampler();
-
         String name ="SLH-DSA-keyGen.txt";
         // System.out.println("testing: " + name);
         InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/", name);
@@ -161,7 +156,7 @@ public class SLHDSATest
                         }
 
                         // sign
-                        SLHDSASigner signer = new SLHDSASigner();
+                        InternalSLHDSASigner signer = new InternalSLHDSASigner();
 
                         signer.init(true, privParams);
                         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
@@ -224,7 +219,7 @@ public class SLHDSATest
 
 
 
-                        SLHDSASigner verifier = new SLHDSASigner();
+                        InternalSLHDSASigner verifier = new InternalSLHDSASigner();
                         verifier.init(false, pubParams);
                         boolean ver = verifier.internalVerifySignature(message, signature);
                         assertEquals("expected " + testPassed + " " + reason, ver, testPassed);
@@ -263,7 +258,6 @@ public class SLHDSATest
                 SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -344,7 +338,6 @@ public class SLHDSATest
                 SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -390,7 +383,7 @@ public class SLHDSATest
                         }
 
                         // sign
-                        SLHDSASigner signer = new SLHDSASigner();
+                        InternalSLHDSASigner signer = new InternalSLHDSASigner();
 
                         signer.init(true, privParams);
                         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
@@ -429,7 +422,6 @@ public class SLHDSATest
                 SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -472,7 +464,7 @@ public class SLHDSATest
                         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
 
-                        SLHDSASigner verifier = new SLHDSASigner();
+                        InternalSLHDSASigner verifier = new InternalSLHDSASigner();
                         verifier.init(false, pubParams);
                         boolean ver = verifier.internalVerifySignature(message, signature);
                         assertEquals("expected " + testPassed + " " + reason, ver, testPassed);
@@ -709,31 +701,45 @@ public class SLHDSATest
         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
         // sign
-        SLHDSASigner signer = new SLHDSASigner();
+        InternalSLHDSASigner signer = new InternalSLHDSASigner();
 
         signer.init(true, privParams);
         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
         assertTrue(Arrays.areEqual(sigGenerated, signature));
     }
 
-    private static String[] splitOn(String input, char c)
+//    private static String[] splitOn(String input, char c)
+//    {
+//        String s = input.trim();
+//        List l = new ArrayList();
+//
+//        int idx = s.indexOf(c);
+//        while (idx > 0)
+//        {
+//            l.add(s.substring(0, idx));
+//            s = s.substring(idx + 1).trim();
+//            idx = s.indexOf(c);
+//        }
+//
+//        if (s.length() > 0)
+//        {
+//            l.add(s);
+//        }
+//
+//        return (String[]) l.toArray(new String[0]);
+//    }
+
+    private class InternalSLHDSASigner
+        extends SLHDSASigner
     {
-        String s = input.trim();
-        List l = new ArrayList();
-
-        int idx = s.indexOf(c);
-        while (idx > 0)
+        public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
         {
-            l.add(s.substring(0, idx));
-            s = s.substring(idx + 1).trim();
-            idx = s.indexOf(c);
+            return super.internalGenerateSignature(message, optRand);
         }
 
-        if (s.length() > 0)
+        public boolean internalVerifySignature(byte[] message, byte[] signature)
         {
-            l.add(s);
+            return super.internalVerifySignature(message, signature);
         }
-
-        return (String[]) l.toArray(new String[0]);
     }
 }
