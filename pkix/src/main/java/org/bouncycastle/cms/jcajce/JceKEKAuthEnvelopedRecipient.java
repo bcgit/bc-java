@@ -1,25 +1,24 @@
 package org.bouncycastle.cms.jcajce;
 
-import java.security.Key;
-import java.security.PrivateKey;
-
-import javax.crypto.Cipher;
-
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSInputAEADDecryptor;
 import org.bouncycastle.cms.RecipientOperator;
 
-public class JceKeyTransAuthEnvelopedRecipient
-    extends JceKeyTransRecipient
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import java.security.Key;
+
+public class JceKEKAuthEnvelopedRecipient
+        extends JceKEKRecipient
 {
-    public JceKeyTransAuthEnvelopedRecipient(PrivateKey recipientKey)
+    public JceKEKAuthEnvelopedRecipient(SecretKey recipientKey)
     {
         super(recipientKey);
     }
 
     public RecipientOperator getRecipientOperator(AlgorithmIdentifier keyEncryptionAlgorithm, final AlgorithmIdentifier contentEncryptionAlgorithm, byte[] encryptedContentEncryptionKey)
-        throws CMSException
+            throws CMSException
     {
         Key secretKey = extractSecretKey(keyEncryptionAlgorithm, contentEncryptionAlgorithm, encryptedContentEncryptionKey);
 
