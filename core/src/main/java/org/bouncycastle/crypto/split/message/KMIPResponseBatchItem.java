@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.split.enumeration.KMIPResultStatus;
 public class KMIPResponseBatchItem
     extends KMIPBatchItem
 {
-    private KMIPOperation operation;           // Operation, if specified in the Request Batch Item
+
     private String uniqueBatchItemID;   // Unique Batch Item ID, optional
     private KMIPResultStatus resultStatus;  // Result Status
     private KMIPResultReason resultReason;        // Result Reason, required if Result Status is Failure
@@ -20,19 +20,9 @@ public class KMIPResponseBatchItem
     public KMIPResponseBatchItem(KMIPOperation operation, KMIPResultStatus resultStatus,
                                  KMIPResponsePayload responsePayload)
     {
-        this.operation = operation;
+        super(operation);
         this.resultStatus = resultStatus;
         this.responsePayload = responsePayload;
-    }
-
-    public KMIPOperation getOperation()
-    {
-        return operation;
-    }
-
-    public void setOperation(KMIPOperation operation)
-    {
-        this.operation = operation;
     }
 
     public String getUniqueBatchItemID()
