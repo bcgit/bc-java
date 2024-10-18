@@ -29,30 +29,30 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 public class MLKEMTest
-    extends TestCase
+        extends TestCase
 {
-    public void testKeyGen() throws IOException
-    {
-        MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.ml_kem_512,
-                MLKEMParameters.ml_kem_768,
-                MLKEMParameters.ml_kem_1024,
-        };
 
+    public void testKeyGenSingleFile() throws IOException {
+        HashMap<String, MLKEMParameters> params = new HashMap<String, MLKEMParameters>()
+        {
+            {
+                put("ML-KEM-512", MLKEMParameters.ml_kem_512);
+                put("ML-KEM-768", MLKEMParameters.ml_kem_768);
+                put("ML-KEM-1024", MLKEMParameters.ml_kem_1024);
+            }
+        };
         String[] files = new String[]{
-                "keyGen_ML-KEM-512.txt",
-                "keyGen_ML-KEM-768.txt",
-                "keyGen_ML-KEM-1024.txt",
+                "ML-KEM-keyGen.txt",
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
             // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber/acvp", name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/mlkem", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
@@ -69,12 +69,12 @@ public class MLKEMTest
                 {
                     if (buf.size() > 0)
                     {
-                        byte[] z = Hex.decode((String)buf.get("z"));
-                        byte[] d = Hex.decode((String)buf.get("d"));
-                        byte[] ek = Hex.decode((String)buf.get("ek"));
-                        byte[] dk = Hex.decode((String)buf.get("dk"));
+                        byte[] z = Hex.decode((String) buf.get("z"));
+                        byte[] d = Hex.decode((String) buf.get("d"));
+                        byte[] ek = Hex.decode((String) buf.get("ek"));
+                        byte[] dk = Hex.decode((String) buf.get("dk"));
 
-                        MLKEMParameters parameters = params[fileIndex];
+                        MLKEMParameters parameters = params.get(buf.get("parameterSet"));
 
 
                         MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
@@ -85,10 +85,10 @@ public class MLKEMTest
                         kpGen.init(genParam);
                         AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(d, z);
 
-                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)kp.getPublic()));
-                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)kp.getPrivate()));
+                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters) PublicKeyFactory.createKey(
+                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters) kp.getPublic()));
+                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters) PrivateKeyFactory.createKey(
+                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters) kp.getPrivate()));
 
                         assertTrue(name + ": public key", Arrays.areEqual(ek, pubParams.getEncoded()));
                         assertTrue(name + ": secret key", Arrays.areEqual(dk, privParams.getEncoded()));
@@ -105,29 +105,30 @@ public class MLKEMTest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            // System.out.println("testing successful!");
+
         }
+
     }
-    public void testEncapDecap_encapsulation() throws IOException
+
+    public void testSingleFileEncapDecap() throws IOException
     {
-        MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.ml_kem_512,
-                MLKEMParameters.ml_kem_768,
-                MLKEMParameters.ml_kem_1024,
-        };
 
+        HashMap<String, MLKEMParameters> params = new HashMap<String, MLKEMParameters>()
+        {
+            {
+                put("ML-KEM-512", MLKEMParameters.ml_kem_512);
+                put("ML-KEM-768", MLKEMParameters.ml_kem_768);
+                put("ML-KEM-1024", MLKEMParameters.ml_kem_1024);
+            }
+        };
         String[] files = new String[]{
-                "encapDecap_encapsulation_ML-KEM-512.txt",
-                "encapDecap_encapsulation_ML-KEM-768.txt",
-                "encapDecap_encapsulation_ML-KEM-1024.txt",
+                "ML-KEM-encapDecap.txt",
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber/acvp", name);
+            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/mlkem", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
@@ -144,110 +145,42 @@ public class MLKEMTest
                 {
                     if (buf.size() > 0)
                     {
-                        byte[] m = Hex.decode((String)buf.get("m"));
-                        byte[] c = Hex.decode((String)buf.get("c"));
-                        byte[] k = Hex.decode((String)buf.get("k"));
-                        String reason = buf.get("reason");
-                        byte[] ek = Hex.decode((String)buf.get("ek"));
-                        byte[] dk = Hex.decode((String)buf.get("dk"));
+                        boolean encap = "encapsulation".equals(buf.get("function"));
 
-                        MLKEMParameters parameters = params[fileIndex];
-
-                        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(parameters, ek);
-                        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(parameters,  dk);
+                        byte[] c = Hex.decode((String) buf.get("c"));
+                        byte[] k = Hex.decode((String) buf.get("k"));
 
 
+                        MLKEMParameters parameters = params.get(buf.get("parameterSet"));
 
-                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)pubKey));
-                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)privKey));
+                        if (encap)
+                        {
+                            byte[] m = Hex.decode(buf.get("m"));
+                            byte[] ek = Hex.decode((String) buf.get("ek"));
 
-                        // KEM Enc
-                        MLKEMGenerator KyberEncCipher = new MLKEMGenerator(new SecureRandom());
-                        SecretWithEncapsulation secWenc = KyberEncCipher.internalGenerateEncapsulated(pubParams, m);
-                        byte[] generated_cipher_text = secWenc.getEncapsulation();
+                            MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(parameters, ek);
+                            MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters) PublicKeyFactory.createKey(
+                                    SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters) pubKey));
+                            MLKEMGenerator gen = new MLKEMGenerator(new FixedSecureRandom(m));
 
-                        //assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
-                        byte[] secret = secWenc.getSecret();
-                        assertTrue(name  + ": c", Arrays.areEqual(c,  generated_cipher_text));
-                        assertTrue(name  + ": k", Arrays.areEqual(k, 0, secret.length, secret, 0, secret.length));
+                            SecretWithEncapsulation sen = gen.generateEncapsulated(pubParams);
 
-                    }
-                    buf.clear();
+                            String s1 = Hex.toHexString(sen.getEncapsulation());
+                            String s2 = Hex.toHexString(sen.getSecret());
 
-                    continue;
-                }
-
-                int a = line.indexOf("=");
-                if (a > -1)
-                {
-                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-                }
-            }
-            // System.out.println("testing successful!");
-        }
-    }
-    public void testEncapDecap_decapsulation() throws IOException
-    {
-        MLKEMParameters[] params = new MLKEMParameters[]{
-                MLKEMParameters.ml_kem_512,
-                MLKEMParameters.ml_kem_768,
-                MLKEMParameters.ml_kem_1024,
-        };
-
-        String[] files = new String[]{
-                "encapDecap_decapsulation_ML-KEM-512.txt",
-                "encapDecap_decapsulation_ML-KEM-768.txt",
-                "encapDecap_decapsulation_ML-KEM-1024.txt",
-        };
-
-        TestSampler sampler = new TestSampler();
-        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
-        {
-            String name = files[fileIndex];
-            // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber/acvp", name);
-            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-
-            String line = null;
-            HashMap<String, String> buf = new HashMap<String, String>();
-            while ((line = bin.readLine()) != null)
-            {
-                line = line.trim();
-
-                if (line.startsWith("#"))
-                {
-                    continue;
-                }
-                if (line.length() == 0)
-                {
-                    if (buf.size() > 0)
-                    {
-                        byte[] c = Hex.decode((String)buf.get("c"));
-                        byte[] k = Hex.decode((String)buf.get("k"));
-                        String reason = buf.get("reason");
-                        byte[] ek = Hex.decode((String)buf.get("ek"));
-                        byte[] dk = Hex.decode((String)buf.get("dk"));
-
-                        MLKEMParameters parameters = params[fileIndex];
-
-                        MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(parameters, ek);
-                        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(parameters,  dk);
-
-
-
-                        MLKEMPublicKeyParameters pubParams = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((MLKEMPublicKeyParameters)pubKey));
-                        MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters)privKey));
-
-
-                        MLKEMExtractor KyberDecCipher = new MLKEMExtractor(privParams);
-
-                        byte[] dec_key = KyberDecCipher.extractSecret(c);
-
-                        assertTrue(name  + ": dk", Arrays.areEqual(dec_key,  k));
+                            assertTrue("encapsulation ", Arrays.areEqual(sen.getEncapsulation(), c));
+                            assertTrue("secret ", Arrays.areEqual(sen.getSecret(), k));
+                        }
+                        else
+                        {
+                            byte[] dk = Hex.decode((String) buf.get("dk"));
+                            MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(parameters, dk);
+                            MLKEMPrivateKeyParameters privParams = (MLKEMPrivateKeyParameters) PrivateKeyFactory.createKey(
+                                    PrivateKeyInfoFactory.createPrivateKeyInfo((MLKEMPrivateKeyParameters) privKey));
+                            MLKEMExtractor kyberDecCipher = new MLKEMExtractor(privParams);
+                            byte[] secret = kyberDecCipher.extractSecret(c);
+                            assertTrue("secret ", Arrays.areEqual(secret, k));
+                        }
 
                     }
                     buf.clear();
@@ -264,6 +197,7 @@ public class MLKEMTest
             // System.out.println("testing successful!");
         }
     }
+
     public void testModulus() throws IOException
     {
         MLKEMParameters[] params = new MLKEMParameters[]{
@@ -314,7 +248,7 @@ public class MLKEMTest
     }
 
     public void testPrivInfoGeneration()
-        throws IOException
+            throws IOException
     {
         SecureRandom random = new SecureRandom();
         PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(MLKEMParameters.ml_kem_512, new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), random);
@@ -331,8 +265,8 @@ public class MLKEMTest
 
         Assert.assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
     }
-    
-    public void testKyber()
+
+    public void testMLKEM()
     {
         byte[] z = Hex.decode("99E3246884181F8E1DD44E0C7629093330221FD67D9B7D6E1510B2DBAD8762F7");
         byte[] d = Hex.decode("49AC8B99BB1E6A8EA818261F8BE68BDEAA52897E7EC6C40B530BC760AB77DCE3");
@@ -345,9 +279,9 @@ public class MLKEMTest
         keyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_1024));
 
         AsymmetricCipherKeyPair keyPair = keyGen.internalGenerateKeyPair(d, z);
-        assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((MLKEMPublicKeyParameters)keyPair.getPublic()).getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode(expectedPubKey), ((MLKEMPublicKeyParameters) keyPair.getPublic()).getEncoded()));
 
-        assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((MLKEMPrivateKeyParameters)keyPair.getPrivate()).getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode(expectedPrivKey), ((MLKEMPrivateKeyParameters) keyPair.getPrivate()).getEncoded()));
 
         MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
@@ -363,7 +297,7 @@ public class MLKEMTest
 
         assertTrue(Arrays.areEqual(Hex.decode(expectedCipherText), secretEncap.getEncapsulation()));
 
-        MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters)keyPair.getPrivate());
+        MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters) keyPair.getPrivate());
 
         byte[] decryptedSharedSecret = kemExtract.extractSecret(secretEncap.getEncapsulation());
 
@@ -385,126 +319,15 @@ public class MLKEMTest
     }
 
     public void testParameters()
-        throws Exception
+            throws Exception
     {
         assertEquals(256, MLKEMParameters.ml_kem_512.getSessionKeySize());
         assertEquals(256, MLKEMParameters.ml_kem_768.getSessionKeySize());
         assertEquals(256, MLKEMParameters.ml_kem_1024.getSessionKeySize());
     }
 
-    public void testVectors()
-        throws Exception
-    {
-        //Disabled OLD KATs
-//        KyberParameters[] params = new KyberParameters[]{
-//            KyberParameters.kyber512,
-//            KyberParameters.kyber768,
-//            KyberParameters.kyber1024,
-//        };
-//
-//        String[] files = new String[]{
-//            "kyber512.rsp",
-//            "kyber768.rsp",
-//            "kyber1024.rsp",
-//        };
-//
-//        TestSampler sampler = new TestSampler();
-//        for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
-//        {
-//            String name = files[fileIndex];
-//            // System.out.println("testing: " + name);
-//            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/kyber", name);
-//            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-//
-//            String line = null;
-//            HashMap<String, String> buf = new HashMap<String, String>();
-//            while ((line = bin.readLine()) != null)
-//            {
-//                line = line.trim();
-//
-//                if (line.startsWith("#"))
-//                {
-//                    continue;
-//                }
-//                if (line.length() == 0)
-//                {
-//                    if (buf.size() > 0)
-//                    {
-//                        String count = (String)buf.get("count");
-//                        if (sampler.skipTest(count))
-//                        {
-//                            continue;
-//                        }
-//                        // System.out.println("test case: " + count);
-//
-//                        byte[] seed = Hex.decode((String)buf.get("seed")); // seed for Kyber secure random
-//                        byte[] pk = Hex.decode((String)buf.get("pk"));     // public key
-//                        byte[] sk = Hex.decode((String)buf.get("sk"));     // private key
-//                        byte[] ct = Hex.decode((String)buf.get("ct"));     // ciphertext
-//                        byte[] ss = Hex.decode((String)buf.get("ss"));     // session key
-//
-//                        NISTSecureRandom random = new NISTSecureRandom(seed, null);
-//                        KyberParameters parameters = params[fileIndex];
-//
-//                        byte[] coins = new byte[64];
-//                        random.nextBytes(coins);
-//                        KyberKeyPairGenerator kpGen = new KyberKeyPairGenerator();
-//                        KyberKeyGenerationParameters genParam = new KyberKeyGenerationParameters(new FixedSecureRandom(coins), parameters);
-//                        //
-//                        // Generate keys and test.
-//                        //
-//                        kpGen.init(genParam);
-//                        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-//
-//                        KyberPublicKeyParameters pubParams = (KyberPublicKeyParameters)PublicKeyFactory.createKey(
-//                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((KyberPublicKeyParameters)kp.getPublic()));
-//                        KyberPrivateKeyParameters privParams = (KyberPrivateKeyParameters)PrivateKeyFactory.createKey(
-//                            PrivateKeyInfoFactory.createPrivateKeyInfo((KyberPrivateKeyParameters)kp.getPrivate()));
-//
-//                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-//                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-//
-//                        // KEM Enc
-//                        KyberKEMGenerator KyberEncCipher = new KyberKEMGenerator(random);
-//                        SecretWithEncapsulation secWenc = KyberEncCipher.generateEncapsulated(pubParams);
-//                        byte[] generated_cipher_text = secWenc.getEncapsulation();
-//
-//                        //assertTrue(name + " " + count + ": kem_enc cipher text", Arrays.areEqual(ct, generated_cipher_text));
-//                        byte[] secret = secWenc.getSecret();
-//                        assertTrue(name + " " + count + ": kem_enc key", Arrays.areEqual(ss, 0, secret.length, secret, 0, secret.length));
-//
-//                        // KEM Dec
-//                        KyberKEMExtractor KyberDecCipher = new KyberKEMExtractor(privParams);
-//
-//                        byte[] dec_key = KyberDecCipher.extractSecret(generated_cipher_text);
-//
-//                        assertTrue(name + " " + count + ": kem_dec ss", Arrays.areEqual(ss, 0, dec_key.length, dec_key, 0, dec_key.length));
-//                        assertTrue(name + " " + count + ": kem_dec key", Arrays.areEqual(dec_key, secret));
-//                        // }
-//                        // catch (AssertionError e) {
-//                        //     // System.out.println("Failed assertion error.");
-//                        //     // System.out.println();
-//
-//                        //     // System.out.println();
-//                        //     continue;
-//                        // }
-//                    }
-//                    buf.clear();
-//
-//                    continue;
-//                }
-//
-//                int a = line.indexOf("=");
-//                if (a > -1)
-//                {
-//                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-//                }
-//            }
-//            // System.out.println("testing successful!");
-//        }
-    }
 
-    public void testKyberRandom()
+    public void testMLKEMRandom()
     {
         SecureRandom random = new SecureRandom();
         MLKEMKeyPairGenerator keyGen = new MLKEMKeyPairGenerator();
@@ -519,7 +342,7 @@ public class MLKEMTest
 
             SecretWithEncapsulation secretEncap = kemGen.generateEncapsulated(keyPair.getPublic());
 
-            MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters)keyPair.getPrivate());
+            MLKEMExtractor kemExtract = new MLKEMExtractor((MLKEMPrivateKeyParameters) keyPair.getPrivate());
 
             byte[] decryptedSharedSecret = kemExtract.extractSecret(secretEncap.getEncapsulation());
 
