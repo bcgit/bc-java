@@ -1991,7 +1991,7 @@ public class CertPathValidatorTest
         }
     }
 
-    public class DodgyExtensions
+    public static class DodgyExtensions
         extends ASN1Object
     {
         private Hashtable extensions = new Hashtable();
