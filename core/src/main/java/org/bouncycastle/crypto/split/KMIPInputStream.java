@@ -38,6 +38,7 @@ import org.bouncycastle.crypto.split.message.KMIPRequestPayload;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreate;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadCreateSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadDefault;
+import org.bouncycastle.crypto.split.message.KMIPRequestPayloadGet;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadJoinSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPRequestPayloadRegister;
 import org.bouncycastle.crypto.split.message.KMIPResponseBatchItem;
@@ -47,8 +48,10 @@ import org.bouncycastle.crypto.split.message.KMIPResponsePayload;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreate;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadCreateSplitKey;
 import org.bouncycastle.crypto.split.message.KMIPResponsePayloadDefault;
+import org.bouncycastle.crypto.split.message.KMIPResponsePayloadGet;
 import org.bouncycastle.crypto.split.object.KMIPKeyBlock;
 import org.bouncycastle.crypto.split.object.KMIPObject;
+import org.bouncycastle.crypto.split.object.KMIPSplitKey;
 import org.bouncycastle.crypto.split.object.KMIPSymmetricKey;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -512,6 +515,13 @@ public class KMIPInputStream
             case Register:
                 KMIPRequestPayloadRegister register = new KMIPRequestPayloadRegister(objectType, attributes, object);
                 return register;
+            case Get:
+                KMIPRequestPayloadGet get = new KMIPRequestPayloadGet();
+                if (uniqueIdentifier != null)
+                {
+                    get.setUniqueIdentifier(uniqueIdentifier);
+                }
+                return get;
             default:
                 throw new KMIPInputException("add more support for parseRequestPayload");
             }
@@ -530,6 +540,9 @@ public class KMIPInputStream
         KMIPUniqueIdentifier uniqueIdentifier = null;
         ArrayList<KMIPUniqueIdentifier> uniqueIdentifiers = new ArrayList<KMIPUniqueIdentifier>();
         XMLEvent event = null;
+        int splitKeyParts = 0, splitKeyThreshold = 0;
+        KMIPSplitKeyMethod splitKeyMethod = null;
+        KMIPObject object = null;
         try
         {
             while (eventReader.hasNext())
@@ -548,6 +561,33 @@ public class KMIPInputStream
                     {
                         uniqueIdentifier = parseUniqueIdentifier(startElement, "Error in parsing Unique Identifier: ");
                         uniqueIdentifiers.add(uniqueIdentifier);
+                    }
+                    else if (name.equals("SplitKey"))
+                    {
+                        startElement = assertStartElement(event, "SplitKeyParts", "Error in parsing SplitKeyParts: ");
+                        splitKeyParts = parseInteger(startElement, "Error in parsing SplitKeyParts: ");
+                        assertEndElement(event, "SplitKeyParts", "Error in parsing SplitKeyParts: ");
+                        startElement = assertStartElement(event, "KeyPartIdentifier", "Error in parsing KeyPartIdentifier: ");
+                        int keyPartIdentifier = parseInteger(startElement, "Error in parsing KeyPartIdentifier: ");
+                        assertEndElement(event, "KeyPartIdentifier", "Error in parsing KeyPartIdentifier: ");
+                        startElement = assertStartElement(event, "SplitKeyThreshold", "Error in parsing SplitKeyThreshold: ");
+                        splitKeyThreshold = parseInteger(startElement, "Error in parsing SplitKeyThreshold: ");
+                        assertEndElement(event, "SplitKeyThreshold", "Error in parsing SplitKeyThreshold: ");
+                        startElement = assertStartElement(event, "SplitKeyMethod", "Error in parsing SplitKeyMethod: ");
+                        splitKeyMethod = parseEnum(startElement, KMIPSplitKeyMethod.class, "Error in parsing SplitKeyMethod: ");
+                        assertEndElement(event, "SplitKeyMethod", "Error in parsing SplitKeyMethod: ");
+                        assertStartElement(event, "KeyBlock", "Error in parsing KeyBlock: ");
+                        KMIPKeyBlock keyBlock = parseKeyBlock();
+                        assertEndElement(event, "SplitKey", "Error in parsing SplitKey: ");
+                        object = new KMIPSplitKey(splitKeyParts, keyPartIdentifier, splitKeyThreshold, splitKeyMethod, null, keyBlock);
+                    }
+                    else if (name.equals("SymmetricKey"))
+                    {
+                        assertStartElement(event, "KeyBlock", "Error in parsing KeyBlock: ");
+                        KMIPKeyBlock keyBlock = parseKeyBlock();
+
+                        object = new KMIPSymmetricKey(keyBlock);
+                        assertEndElement(event, "SymmetricKey", "Error in parsing SymmetricKey: ");
                     }
                     else
                     {
@@ -575,6 +615,8 @@ public class KMIPInputStream
             case Destroy:
             case Register:
                 return new KMIPResponsePayloadDefault(uniqueIdentifier);
+            case Get:
+                return new KMIPResponsePayloadGet(objectType, uniqueIdentifier, object);
             default:
                 throw new KMIPInputException("add more support for parseResponsePayload");
             }

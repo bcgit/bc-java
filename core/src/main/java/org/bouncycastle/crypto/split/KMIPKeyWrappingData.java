@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.split;
 
+import org.bouncycastle.crypto.split.object.KMIPKeyInformation;
+
 /**
  * Represents the Key Wrapping Data structure, which contains optional information
  * about the cryptographic key wrapping mechanism used to wrap the Key Value.

@@ -16,6 +16,7 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import org.bouncycastle.crypto.split.KMIPInputStream;
+import org.bouncycastle.crypto.split.message.KMIPMessage;
 import org.bouncycastle.test.TestResourceFinder;
 
 
@@ -28,7 +29,8 @@ public class KMIPTest
         try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-2-21.xml"))
         {
             KMIPInputStream stream = new KMIPInputStream(inputStream);
-            stream.parse();
+            KMIPMessage[] messages = stream.parse();
+            System.out.println(messages.length);
         }
         catch (FileNotFoundException e)
         {

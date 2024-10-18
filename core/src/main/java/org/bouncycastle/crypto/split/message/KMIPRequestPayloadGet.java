@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.split.enumeration.KMIPKeyWrapType;
  * The client specifies the Unique Identifier and various key formats if necessary.
  */
 public class KMIPRequestPayloadGet
+    extends KMIPRequestPayload
 {
 
     /**
