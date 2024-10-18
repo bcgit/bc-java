@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * Enumeration representing the mask generators used in cryptographic operations.

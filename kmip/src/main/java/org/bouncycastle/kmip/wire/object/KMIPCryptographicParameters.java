@@ -1,5 +1,11 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.object;
 
+import org.bouncycastle.crypto.split.enumeration.KMIPDigitalSignatureAlgorithm;
+import org.bouncycastle.crypto.split.enumeration.KMIPHashingAlgorithm;
+import org.bouncycastle.crypto.split.enumeration.KMIPKeyRoleType;
+import org.bouncycastle.crypto.split.enumeration.KMIPMaskGenerator;
+import org.bouncycastle.crypto.split.enumeration.KMIPPaddingMethod;
+import org.bouncycastle.crypto.split.enumeration.KMIPBlockCipherMode;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 
 /**
@@ -7,11 +13,8 @@ import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
  */
 public class KMIPCryptographicParameters
 {
-
-    // Other Enums can be defined similarly: PaddingMethod, HashingAlgorithm, etc.
-
     private KMIPBlockCipherMode blockCipherMode; // Block Cipher Mode
-    private KMIPPaddingMethod KMIPPaddingMethod; // Padding Method
+    private org.bouncycastle.crypto.split.enumeration.KMIPPaddingMethod KMIPPaddingMethod; // Padding Method
     private KMIPHashingAlgorithm hashingAlgorithm; // Hashing Algorithm
     private KMIPKeyRoleType keyRoleType; // Key Role Type
     private KMIPDigitalSignatureAlgorithm digitalSignatureAlgorithm; // Digital Signature Algorithm

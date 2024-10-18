@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.split.message;
 
-import org.bouncycastle.crypto.split.KMIPKeyCompressionType;
-import org.bouncycastle.crypto.split.KMIPKeyFormatType;
+import org.bouncycastle.crypto.split.enumeration.KMIPKeyCompressionType;
+import org.bouncycastle.crypto.split.enumeration.KMIPKeyFormatType;
 import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
 import org.bouncycastle.crypto.split.enumeration.KMIPKeyWrapType;
 

@@ -27,6 +27,7 @@ public abstract class Polynomial
 
     protected Polynomial(int l, int m, int n)
     {
+        //TODO: check m <= n <= 255
         this.l = l;
         this.m = m;
         this.n = n;

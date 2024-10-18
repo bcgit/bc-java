@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.split.operation;
 
-import org.bouncycastle.crypto.split.KMIPEncodingOption;
-import org.bouncycastle.crypto.split.KMIPWrappingMethod;
+import org.bouncycastle.crypto.split.enumeration.KMIPEncodingOption;
+import org.bouncycastle.crypto.split.enumeration.KMIPWrappingMethod;
 import org.bouncycastle.crypto.split.object.KMIPKeyInformation;
 
 /**

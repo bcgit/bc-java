@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.split.message.KMIPMessage;
 import org.bouncycastle.test.TestResourceFinder;
 
 
-public class KMIPTest
+public class KMIPSplitKeyTest
 {
     private static int indentLevel = 0; // Variable to track indentation level
 

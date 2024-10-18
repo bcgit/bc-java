@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * Enum representing the Wrapping Method Enumeration.
