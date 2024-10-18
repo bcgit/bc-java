@@ -2,8 +2,8 @@ package org.bouncycastle.crypto.split;
 
 public abstract class Polynomial
 {
-    public static final int AES = 0;
-    public static final int RSA = 1;
+    public static final byte AES = 0;
+    public static final byte RSA = 1;
     /**
      * <summary>
      * Length of the secret
@@ -23,7 +23,7 @@ public abstract class Polynomial
      * </summary>
      */
     protected int n;
-    protected int[][] p;
+    protected byte[][] p;
 
     protected Polynomial(int l, int m, int n)
     {
@@ -35,19 +35,19 @@ public abstract class Polynomial
 
     protected void init()
     {
-        p = new int[n][m];
+        p = new byte[n][m];
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < m; j++)
             {
-                p[i][j] = gfPow(i + 1, j);
+                p[i][j] = gfPow((byte)(i + 1), (byte)j);
             }
         }
     }
 
-    public int[][] createShares(int[][] sr)
+    public byte[][] createShares(byte[][] sr)
     {
-        int[][] result = new int[p.length][sr[0].length];
+        byte[][] result = new byte[p.length][sr[0].length];
         for (int i = 0; i < p.length; i++)
         {
             result[i] = gfVecMul(p[i], sr);
@@ -55,12 +55,12 @@ public abstract class Polynomial
         return result;
     }
 
-    public int[] recombine(int[] rr, int[][] splits)
+    public byte[] recombine(byte[] rr, byte[][] splits)
     {
         int n = rr.length;
-        int[] r = new int[n];
-        int tmp;
-        int[] products = new int[n - 1];
+        byte[] r = new byte[n];
+        byte tmp;
+        byte[] products = new byte[n - 1];
         for (int i = 0; i < n; i++)
         {
             tmp = 0;
@@ -68,14 +68,14 @@ public abstract class Polynomial
             {
                 if (j != i)
                 {
-                    products[tmp++] = gfDiv(rr[j], rr[i] ^ rr[j]);
+                    products[tmp++] = gfDiv(rr[j] & 0xff, (rr[i] ^ rr[j]) & 0xff);
                 }
             }
 
             tmp = 1;
-            for (int p : products)
+            for (byte p : products)
             {
-                tmp = gfMul(tmp, p);
+                tmp = (byte)gfMul(tmp & 0xff, p & 0xff);
             }
             r[i] = tmp;
         }
@@ -85,34 +85,34 @@ public abstract class Polynomial
 
     protected abstract int gfMul(int x, int y);
 
-    protected abstract int gfDiv(int x, int y);
+    protected abstract byte gfDiv(int x, int y);
 
-    protected int gfPow(int n, int k)
+    protected byte gfPow(int n, byte k)
     {
         int result = 1;
         for (int i = 0; i < 8; i++)
         {
             if ((k & (1 << i)) != 0)
             {
-                result = gfMul(result, n);
+                result = (byte) gfMul(result & 0xff, n & 0xff);
             }
-            n = gfMul(n, n);
+            n = gfMul(n & 0xff, n & 0xff);
         }
-        return result;
+        return (byte) result;
     }
 
-    private int[] gfVecMul(int[] xs, int[][] yss)
+    private byte[] gfVecMul(byte[] xs, byte[][] yss)
     {
-        int[] result = new int[yss[0].length];
+        byte[] result = new byte[yss[0].length];
         int sum;
         for (int j = 0; j < yss[0].length; j++)
         {
             sum = 0;
             for (int k = 0; k < xs.length; k++)
             {
-                sum = sum ^ gfMul(xs[k], yss[k][j]);
+                sum ^= gfMul(xs[k] & 0xff, yss[k][j] & 0xff);
             }
-            result[j] = sum;
+            result[j] = (byte) sum;
         }
         return result;
     }

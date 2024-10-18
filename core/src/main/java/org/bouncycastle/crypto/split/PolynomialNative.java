@@ -51,8 +51,8 @@ public class PolynomialNative
         return result & 0xFF;
     }
 
-    protected int gfDiv(int x, int y)
+    protected byte gfDiv(int x, int y)
     {
-        return gfMul(x, gfPow(y, 254));
+        return (byte)gfMul(x, gfPow((byte)y, (byte)254) & 0xff);
     }
 }
