@@ -118,11 +118,11 @@ public class KMIPInputStream
                     {
                     case "RequestHeader":
                         isRequest = true;
-                        header = parseHeader(isRequest);
+                        header = parseHeader(true);
                         break;
                     case "ResponseHeader":
                         isRequest = false;
-                        header = parseHeader(isRequest);
+                        header = parseHeader(false);
                         break;
                     case "BatchItem":
                         KMIPBatchItem batchItem = parseBatchItem(isRequest);
@@ -176,7 +176,13 @@ public class KMIPInputStream
                     switch (name)
                     {
                     case "ProtocolVersion":
-                        protocolVersion = parseProtocolVersion();
+                        int marjorVersion, minorVersion;
+                        startElement = assertStartElement("ProtocolVersionMajor");
+                        marjorVersion = parseInteger(startElement, "ProtocolVersionMajor");
+                        startElement = assertStartElement("ProtocolVersionMinor");
+                        minorVersion = parseInteger(startElement, "ProtocolVersionMinor");
+                        assertEndElement(eventReader.nextEvent(), "ProtocolVersion");
+                        protocolVersion = new KMIPProtocolVersion(marjorVersion, minorVersion);
                         break;
                     case "ClientCorrelationValue":
                         clientCorrelationValue = parseTextString(startElement, "ClientCorrelationValue");
@@ -339,7 +345,7 @@ public class KMIPInputStream
                         attributes = parseAttributes();
                         break;
                     case "UniqueIdentifier":
-                        uniqueIdentifier = parseUniqueIdentifier(startElement, "Error in parsing Unique Identifier");
+                        uniqueIdentifier = parseUniqueIdentifier(startElement, "UniqueIdentifier");
                         uniqueIdentifiers.add(uniqueIdentifier);
                         break;
                     case "SplitKeyParts":
@@ -486,9 +492,8 @@ public class KMIPInputStream
                         attributes.put("CryptographicLength", cryptographicLength);
                         break;
                     case "CryptographicUsageMask":
-                        int cryptographicUsageMask = parseInteger(startElement, KMIPCryptographicUsageMask.class, "Error in parsing CryptographicUsageMask: ");
+                        int cryptographicUsageMask = parseInteger(startElement, KMIPCryptographicUsageMask.class, "CryptographicUsageMask");
                         attributes.put("CryptographicUsageMask", cryptographicUsageMask);
-                        assertEndElement(event, "CryptographicUsageMask");
                         break;
                     case "Name":
                         startElement = assertStartElement("NameValue");
@@ -553,8 +558,7 @@ public class KMIPInputStream
                         break;
                     case "KeyValue":
                         startElement = assertStartElement("KeyMaterial");
-                        keyValue = parseByteString(startElement, "Error in parsing KeyMaterial: ");
-                        assertEndElement(event, "KeyMaterial");
+                        keyValue = parseByteString(startElement, "KeyMaterial");
                         assertEndElement(event, "KeyValue");
                         break;
                     case "CryptographicAlgorithm":
@@ -582,10 +586,10 @@ public class KMIPInputStream
         return null;
     }
 
-    private static void assertException(Attribute attribute, String name, String value, String errorMessage)
+    private static void assertException(Attribute attribute, String value, String errorMessage)
         throws KMIPInputException
     {
-        if (!attribute.getName().getLocalPart().equals(name) || !attribute.getValue().equals(value))
+        if (!attribute.getName().getLocalPart().equals("type") || !attribute.getValue().equals(value))
         {
             //parse error
             throw new KMIPInputException(errorMessage);
@@ -640,17 +644,17 @@ public class KMIPInputStream
         throw new KMIPInputException("Error in parsing" + name + ": Expected End Element for " + name);
     }
 
-    private int parseInteger(StartElement startElement, String className)
+    private String parseElementAttribute(StartElement startElement, String className, String type)
         throws KMIPInputException, XMLStreamException
     {
-        int value;
+        String value;
         if (startElement.getAttributes() != null)
         {
             Iterator it = startElement.getAttributes();
             Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "Integer", "Error in parsing " + className + ": type should be integer");
+            assertException(attribute, type, "Error in parsing " + className + ": type should be " + type);
             attribute = (Attribute)it.next();
-            value = Integer.parseInt(attribute.getValue());
+            value = attribute.getValue();
             assertException(it.hasNext(), "Error in parsing " + className + ": There should be 2 attributes");
             assertEndElement(eventReader.nextEvent(), className);
         }
@@ -658,91 +662,39 @@ public class KMIPInputStream
         {
             throw new KMIPInputException("Error in parsing " + className + ": there should be 2 attributes");
         }
-
         return value;
+    }
+
+    private int parseInteger(StartElement startElement, String className)
+        throws KMIPInputException, XMLStreamException
+    {
+        return Integer.parseInt(parseElementAttribute(startElement, className, "Integer"));
     }
 
     private String parseTextString(StartElement startElement, String className)
         throws KMIPInputException, XMLStreamException
     {
-        String value;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "TextString", "Error in parsing " + className + ": type should be text string");
-            attribute = (Attribute)it.next();
-            value = attribute.getValue();
-            assertException(it.hasNext(), "Error in parsing " + className + ": There should be 2 attributes");
-            assertEndElement(eventReader.nextEvent(), className);
-        }
-        else
-        {
-            throw new KMIPInputException("Error in parsing " + className + ": there should be 2 attributes");
-        }
-        return value;
+        return parseElementAttribute(startElement, className, "TextString");
     }
 
-    private byte[] parseByteString(StartElement startElement, String errorMessage)
-        throws KMIPInputException
+    private byte[] parseByteString(StartElement startElement, String className)
+        throws KMIPInputException, XMLStreamException
     {
-        String value;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "ByteString", errorMessage + " type should be text string");
-            attribute = (Attribute)it.next();
-            value = attribute.getValue();
-            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
-        }
-        else
-        {
-            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
-        }
-        return Hex.decode(value);
+        return Hex.decode(parseElementAttribute(startElement, className, "ByteString"));
     }
 
-    private KMIPUniqueIdentifier parseUniqueIdentifier(StartElement startElement, String errorMessage)
+    private KMIPUniqueIdentifier parseUniqueIdentifier(StartElement startElement, String className)
         throws KMIPInputException, XMLStreamException
     {
         //TODO: parse integer, enumeration
-        String value;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "TextString", errorMessage + " type should be text string");
-            attribute = (Attribute)it.next();
-            value = attribute.getValue();
-            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
-        }
-        else
-        {
-            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
-        }
-        assertEndElement(eventReader.nextEvent(), "UniqueIdentifier");
+        String value = parseElementAttribute(startElement, className, "TextString");
         return new KMIPUniqueIdentifier(value);
     }
 
     private Date parseDateTime(StartElement startElement, String className)
         throws KMIPInputException, XMLStreamException
     {
-        String value;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "DateTime", "Error in parsing " + className + ": type should be DateTime");
-            attribute = (Attribute)it.next();
-            value = attribute.getValue();
-            assertException(it.hasNext(), "Error in parsing " + className + ":There should be 2 attributes");
-            assertEndElement(eventReader.nextEvent(), className);
-        }
-        else
-        {
-            throw new KMIPInputException("Error in parsing " + className + ": there should be 2 attributes");
-        }
+        String value = parseElementAttribute(startElement, className, "DateTime");
         if (value.equals("$NOW"))
         {
             return new Date();
@@ -753,21 +705,7 @@ public class KMIPInputStream
     public <T extends Enum<T> & KMIPEnumeration> T parseEnum(StartElement startElement, Class<T> enumClass, String className)
         throws KMIPInputException, XMLStreamException
     {
-        String value;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "Enumeration", "Error in parsing " + className + ": type should be enumeration");
-            attribute = (Attribute)it.next();
-            value = attribute.getValue();
-            assertException(it.hasNext(), "Error in parsing " + className + ":There should be 2 attributes");
-            assertEndElement(eventReader.nextEvent(), className);
-        }
-        else
-        {
-            throw new KMIPInputException("Error in parsing " + className + ": there should be 2 attributes");
-        }
+        String value = parseElementAttribute(startElement, className, "Enumeration");
         // Convert value string to corresponding enum constant
         try
         {
@@ -779,57 +717,23 @@ public class KMIPInputStream
         }
     }
 
-    private static <T extends Enum<T> & KMIPEnumeration> int parseInteger(StartElement startElement, Class<T> enumClass, String errorMessage)
-        throws KMIPInputException
+    private <T extends Enum<T> & KMIPEnumeration> int parseInteger(StartElement startElement, Class<T> enumClass, String className)
+        throws KMIPInputException, XMLStreamException
     {
         int result = 0;
-        if (startElement.getAttributes() != null)
-        {
-            Iterator it = startElement.getAttributes();
-            Attribute attribute = (Attribute)it.next();
-            assertException(attribute, "type", "Integer", errorMessage + " type should be Integer");
-            attribute = (Attribute)it.next();
-            String[] values = attribute.getValue().split(" ");
-            try
-            {
-                for (String value : values)
-                {
-                    T enumConstant = Enum.valueOf(enumClass, value.replace("-", "_"));
-                    result |= enumConstant.getValue();
-                }
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new KMIPInputException(errorMessage + " Invalid value for enum: " + attribute.getValue());
-            }
-            assertException(it.hasNext(), errorMessage + "There should be 2 attributes");
-        }
-        else
-        {
-            throw new KMIPInputException(errorMessage + " there should be 2 attributes");
-        }
-        return result;
-    }
-
-    public KMIPProtocolVersion parseProtocolVersion()
-        throws KMIPInputException
-    {
-        int marjorVersion, minorVersion;
+        String value = parseElementAttribute(startElement, className, "Integer");
         try
         {
-            XMLEvent event = eventReader.nextEvent();
-            StartElement startElement = assertStartElement("ProtocolVersionMajor");
-            marjorVersion = parseInteger(startElement, "ProtocolVersionMajor");
-
-            startElement = assertStartElement("ProtocolVersionMinor");
-            minorVersion = parseInteger(startElement, "ProtocolVersionMinor");
-
-            assertEndElement(event, "ProtocolVersion");
-            return new KMIPProtocolVersion(marjorVersion, minorVersion);
+            for (String v : value.split(" "))
+            {
+                T enumConstant = Enum.valueOf(enumClass, v.replace("-", "_"));
+                result |= enumConstant.getValue();
+            }
         }
-        catch (XMLStreamException e)
+        catch (IllegalArgumentException e)
         {
-            throw new KMIPInputException("Error processing XML: " + e.getMessage());
+            throw new KMIPInputException(" Invalid value for enum: " + value);
         }
+        return result;
     }
 }
