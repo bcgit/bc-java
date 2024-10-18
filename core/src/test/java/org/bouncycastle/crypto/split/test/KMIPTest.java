@@ -26,7 +26,7 @@ public class KMIPTest
 
     public static void main(String[] args)
     {
-        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-2-21.xml"))
+        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-4-21.xml"))
         {
             KMIPInputStream stream = new KMIPInputStream(inputStream);
             KMIPMessage[] messages = stream.parse();

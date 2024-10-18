@@ -471,6 +471,25 @@ public class KMIPInputStream
                         object = new KMIPSymmetricKey(keyBlock);
                         assertEndElement(event, "SymmetricKey", "Error in parsing SymmetricKey: ");
                     }
+                    else if (name.equals("SplitKey"))
+                    {
+                        startElement = assertStartElement(event, "SplitKeyParts", "Error in parsing SplitKeyParts: ");
+                        splitKeyParts = parseInteger(startElement, "Error in parsing SplitKeyParts: ");
+                        assertEndElement(event, "SplitKeyParts", "Error in parsing SplitKeyParts: ");
+                        startElement = assertStartElement(event, "KeyPartIdentifier", "Error in parsing KeyPartIdentifier: ");
+                        int keyPartIdentifier = parseInteger(startElement, "Error in parsing KeyPartIdentifier: ");
+                        assertEndElement(event, "KeyPartIdentifier", "Error in parsing KeyPartIdentifier: ");
+                        startElement = assertStartElement(event, "SplitKeyThreshold", "Error in parsing SplitKeyThreshold: ");
+                        splitKeyThreshold = parseInteger(startElement, "Error in parsing SplitKeyThreshold: ");
+                        assertEndElement(event, "SplitKeyThreshold", "Error in parsing SplitKeyThreshold: ");
+                        startElement = assertStartElement(event, "SplitKeyMethod", "Error in parsing SplitKeyMethod: ");
+                        splitKeyMethod = parseEnum(startElement, KMIPSplitKeyMethod.class, "Error in parsing SplitKeyMethod: ");
+                        assertEndElement(event, "SplitKeyMethod", "Error in parsing SplitKeyMethod: ");
+                        assertStartElement(event, "KeyBlock", "Error in parsing KeyBlock: ");
+                        KMIPKeyBlock keyBlock = parseKeyBlock();
+                        assertEndElement(event, "SplitKey", "Error in parsing SplitKey: ");
+                        object = new KMIPSplitKey(splitKeyParts, keyPartIdentifier, splitKeyThreshold, splitKeyMethod, null, keyBlock);
+                    }
                     else
                     {
                         throw new KMIPInputException("Add more code to support parseRequestPayload");
