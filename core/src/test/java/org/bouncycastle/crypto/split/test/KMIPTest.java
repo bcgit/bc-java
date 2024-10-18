@@ -24,9 +24,9 @@ public class KMIPTest
 {
     private static int indentLevel = 0; // Variable to track indentation level
 
-    public static void main(String[] args)
+    private static void parse(String filename)
     {
-        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", "TC-SJ-4-21.xml"))
+        try (InputStream inputStream = TestResourceFinder.findTestResource("crypto/split/", filename))
         {
             KMIPInputStream stream = new KMIPInputStream(inputStream);
             KMIPMessage[] messages = stream.parse();
@@ -36,7 +36,7 @@ public class KMIPTest
         {
             System.err.println("File not found: " + e.getMessage());
         }
-        catch ( IOException e)
+        catch (IOException e)
         {
             System.err.println("Error processing XML: " + e.getMessage());
         }
@@ -44,6 +44,15 @@ public class KMIPTest
         {
             System.err.println("Error parsing XML: " + e.getMessage());
         }
+    }
+
+    public static void main(String[] args)
+    {
+        parse("TC-SJ-1-21.xml");
+        parse("TC-SJ-2-21.xml");
+        parse("TC-SJ-3-21.xml");
+        parse("TC-SJ-4-21.xml");
+
 
 //        XMLInputFactory factory = XMLInputFactory.newInstance();
 //        KMIPTest test = new KMIPTest();

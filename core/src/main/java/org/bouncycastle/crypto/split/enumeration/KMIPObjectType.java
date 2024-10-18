@@ -1,4 +1,5 @@
 package org.bouncycastle.crypto.split.enumeration;
+
 /**
  * Enumeration of Object Types.
  */
@@ -18,11 +19,13 @@ public enum KMIPObjectType
 
     private final int value;
 
-    KMIPObjectType(int value) {
+    KMIPObjectType(int value)
+    {
         this.value = value;
     }
 
-    public int getValue() {
+    public int getValue()
+    {
         return value;
     }
 
@@ -33,9 +36,12 @@ public enum KMIPObjectType
      * @return the corresponding ObjectType
      * @throws IllegalArgumentException if the value does not correspond to any ObjectType
      */
-    public static KMIPObjectType fromValue(int value) {
-        for (KMIPObjectType type : KMIPObjectType.values()) {
-            if (type.getValue() == value) {
+    public static KMIPObjectType fromValue(int value)
+    {
+        for (KMIPObjectType type : KMIPObjectType.values())
+        {
+            if (type.getValue() == value)
+            {
                 return type;
             }
         }
