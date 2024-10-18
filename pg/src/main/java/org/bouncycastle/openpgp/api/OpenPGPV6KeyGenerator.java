@@ -19,12 +19,14 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
@@ -131,9 +133,10 @@ public class OpenPGPV6KeyGenerator
             PGPContentSignerBuilderProvider contentSignerBuilderProvider,
             PGPDigestCalculatorProvider digestCalculatorProvider,
             PBESecretKeyEncryptorFactory keyEncryptionBuilderProvider,
+            KeyFingerPrintCalculator keyFingerPrintCalculator,
             Date creationTime)
     {
-        this.impl = new Implementation(kpGenProvider, contentSignerBuilderProvider, digestCalculatorProvider, keyEncryptionBuilderProvider);
+        this.impl = new Implementation(kpGenProvider, contentSignerBuilderProvider, digestCalculatorProvider, keyEncryptionBuilderProvider, keyFingerPrintCalculator);
         this.conf = new Configuration(new Date((creationTime.getTime() / 1000) * 1000));
     }
 
@@ -696,7 +699,9 @@ public class OpenPGPV6KeyGenerator
                                                char[] passphrase)
                 throws PGPException
         {
-            PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
+            PGPKeyPair subkey = keyGenCallback.generateFrom(
+                    impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
+            subkey = subkey.asSubkey(impl.keyFingerprintCalculator);
             PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
             return addEncryptionSubkey(subkey, bindingSignatureCallback, keyEncryptor);
         }
@@ -839,6 +844,7 @@ public class OpenPGPV6KeyGenerator
                 throws PGPException
         {
             PGPKeyPair subkey = keyGenCallback.generateFrom(impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
+            subkey = subkey.asSubkey(impl.keyFingerprintCalculator);
             PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider.build(passphrase, subkey.getPublicKey().getPublicKeyPacket());
             return addSigningSubkey(subkey, bindingSignatureCallback, backSignatureCallback, keyEncryptor);
         }
@@ -1033,16 +1039,19 @@ public class OpenPGPV6KeyGenerator
         final PGPContentSignerBuilderProvider contentSignerBuilderProvider;
         final PGPDigestCalculatorProvider digestCalculatorProvider;
         final PBESecretKeyEncryptorFactory keyEncryptorBuilderProvider;
+        final KeyFingerPrintCalculator keyFingerprintCalculator;
 
         public Implementation(PGPKeyPairGeneratorProvider keyPairGeneratorProvider,
                               PGPContentSignerBuilderProvider contentSignerBuilderProvider,
                               PGPDigestCalculatorProvider digestCalculatorProvider,
-                              PBESecretKeyEncryptorFactory keyEncryptorBuilderProvider)
+                              PBESecretKeyEncryptorFactory keyEncryptorBuilderProvider,
+                              KeyFingerPrintCalculator keyFingerPrintCalculator)
         {
             this.kpGenProvider = keyPairGeneratorProvider;
             this.contentSignerBuilderProvider = contentSignerBuilderProvider;
             this.digestCalculatorProvider = digestCalculatorProvider;
             this.keyEncryptorBuilderProvider = keyEncryptorBuilderProvider;
+            this.keyFingerprintCalculator = keyFingerPrintCalculator;
         }
     }
 

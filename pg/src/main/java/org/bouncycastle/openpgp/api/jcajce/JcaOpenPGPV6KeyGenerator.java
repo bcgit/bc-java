@@ -5,6 +5,7 @@ import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcaCFBSecretKeyEncryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPairGeneratorProvider;
@@ -52,6 +53,7 @@ public class JcaOpenPGPV6KeyGenerator
                         .setProvider(provider)
                         .build(),
                 keyEncryptorFactory(provider, aeadProtection),
+                new JcaKeyFingerprintCalculator(),
                 creationTime);
     }
 

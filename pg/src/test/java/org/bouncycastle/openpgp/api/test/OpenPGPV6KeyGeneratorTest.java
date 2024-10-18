@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.api.test;
 
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SecretKeyPacket;
@@ -69,6 +70,8 @@ public class OpenPGPV6KeyGeneratorTest
     private void performTests(APIProvider apiProvider)
             throws PGPException, IOException
     {
+        testGenerateCustomKey(apiProvider);
+
         testGenerateSignOnlyKeyBaseCase(apiProvider);
         testGenerateAEADProtectedSignOnlyKey(apiProvider);
         testGenerateCFBProtectedSignOnlyKey(apiProvider);
@@ -76,7 +79,6 @@ public class OpenPGPV6KeyGeneratorTest
         testGenerateClassicKeyBaseCase(apiProvider);
         testGenerateProtectedTypicalKey(apiProvider);
 
-        testGenerateCustomKey(apiProvider);
     }
 
     private void testGenerateSignOnlyKeyBaseCase(APIProvider apiProvider)
@@ -268,6 +270,68 @@ public class OpenPGPV6KeyGeneratorTest
                 .addEncryptionSubkey(PGPKeyPairGenerator::generateX448KeyPair,
                         "encryption-key-passphrase".toCharArray())
                 .build();
+
+        Iterator<PGPSecretKey> keyIt = secretKey.getSecretKeys();
+        PGPSecretKey primaryKey = keyIt.next();
+        isEquals("Primary key MUST be RSA_GENERAL",
+                PublicKeyAlgorithmTags.RSA_GENERAL, primaryKey.getPublicKey().getAlgorithm());
+        isEquals("Primary key MUST be 4096 bits", 4096, primaryKey.getPublicKey().getBitStrength());
+        isEquals("Primary key creation time mismatch",
+                creationTime, primaryKey.getPublicKey().getCreationTime());
+        PGPSignature directKeySig = primaryKey.getPublicKey().getKeySignatures().next();
+        PGPSignatureSubpacketVector hashedSubpackets = directKeySig.getHashedSubPackets();
+        isEquals("Primary key key flags mismatch",
+                KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
+        isEquals("Primary key features mismatch",
+                Features.FEATURE_SEIPD_V2, hashedSubpackets.getFeatures().getFeatures());
+        isEquals("Primary key sig notation data mismatch",
+                "CYBER",
+                hashedSubpackets.getNotationDataOccurrences("notation@example.com")[0].getNotationValue());
+
+        Iterator<String> uids = primaryKey.getUserIDs();
+        String uid = uids.next();
+        isFalse("Unexpected additional UID", uids.hasNext());
+        PGPSignature uidSig = primaryKey.getPublicKey().getSignaturesForID(uid).next();
+        isEquals("UID binding sig type mismatch",
+                PGPSignature.DEFAULT_CERTIFICATION, uidSig.getSignatureType());
+
+        PGPSecretKey signingSubkey = keyIt.next();
+        isEquals("Subkey MUST be Ed448",
+                PublicKeyAlgorithmTags.Ed448, signingSubkey.getPublicKey().getAlgorithm());
+        isEquals("Subkey creation time mismatch",
+                creationTime, signingSubkey.getPublicKey().getCreationTime());
+        PGPSignature sigSubBinding = signingSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignatureSubpacketVector sigSubBindHashPkts = sigSubBinding.getHashedSubPackets();
+        isEquals("Encryption subkey key flags mismatch",
+                KeyFlags.SIGN_DATA, sigSubBindHashPkts.getKeyFlags());
+        isEquals("Subkey notation data mismatch",
+                "ZAUBER",
+                sigSubBindHashPkts.getNotationDataOccurrences("notation@example.com")[0].getNotationValue());
+        isFalse("Missing embedded primary key binding signature",
+                sigSubBindHashPkts.getEmbeddedSignatures().isEmpty());
+
+        PGPSecretKey encryptionSubkey = keyIt.next();
+        isFalse("Unexpected additional subkey", keyIt.hasNext());
+        isEquals("Subkey MUST be X448",
+                PublicKeyAlgorithmTags.X448, encryptionSubkey.getPublicKey().getAlgorithm());
+        isEquals("Subkey creation time mismatch",
+                creationTime, encryptionSubkey.getPublicKey().getCreationTime());
+        PGPSignature encryptionBinding = encryptionSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignatureSubpacketVector encBindHashPkts = encryptionBinding.getHashedSubPackets();
+        isEquals("Encryption subkey key flags mismatch",
+                KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, encBindHashPkts.getKeyFlags());
+        isTrue("Unexpected embedded primary key binding signature in encryption subkey binding",
+                encBindHashPkts.getEmbeddedSignatures().isEmpty());
+
+        BcPBESecretKeyDecryptorBuilder keyDecryptorBuilder = new BcPBESecretKeyDecryptorBuilder(
+                new BcPGPDigestCalculatorProvider());
+
+        isNotNull("Could not decrypt primary key using correct passphrase",
+                primaryKey.extractPrivateKey(keyDecryptorBuilder.build("primary-key-passphrase".toCharArray())));
+        isNotNull("Could not decrypt signing subkey using correct passphrase",
+                signingSubkey.extractPrivateKey(keyDecryptorBuilder.build("signing-key-passphrase".toCharArray())));
+        isNotNull("Could not decrypt encryption subkey using correct passphrase",
+                encryptionSubkey.extractPrivateKey(keyDecryptorBuilder.build("encryption-key-passphrase".toCharArray())));
     }
 
     private abstract static class APIProvider

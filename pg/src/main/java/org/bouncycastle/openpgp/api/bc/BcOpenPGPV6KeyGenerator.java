@@ -4,6 +4,7 @@ import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcCFBSecretKeyEncryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
@@ -60,6 +61,7 @@ public class BcOpenPGPV6KeyGenerator
                 new BcPGPContentSignerBuilderProvider(signatureHashAlgorithm),
                 new BcPGPDigestCalculatorProvider(),
                 keyEncryptorFactory(aeadProtection),
+                new BcKeyFingerprintCalculator(),
                 creationTime);
     }
 
