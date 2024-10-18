@@ -1,12 +1,16 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.object;
+
+import org.bouncycastle.crypto.split.KMIPCryptographicParameters;
+import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
 
 public class KMIPKeyInformation
+    extends KMIPObject
 {
 
     /**
      * Unique identifier of the encryption key.
      */
-    private String uniqueIdentifier;
+    private KMIPUniqueIdentifier uniqueIdentifier;
 
     /**
      * Optional cryptographic parameters associated with the encryption key.
@@ -19,7 +23,7 @@ public class KMIPKeyInformation
      * @param uniqueIdentifier        The unique identifier of the encryption key.
      * @param cryptographicParameters Optional cryptographic parameters.
      */
-    public KMIPKeyInformation(String uniqueIdentifier,
+    public KMIPKeyInformation(KMIPUniqueIdentifier uniqueIdentifier,
                               KMIPCryptographicParameters cryptographicParameters)
     {
         this.uniqueIdentifier = uniqueIdentifier;
@@ -28,12 +32,12 @@ public class KMIPKeyInformation
 
     // Getters and Setters
 
-    public String getUniqueIdentifier()
+    public KMIPUniqueIdentifier getUniqueIdentifier()
     {
         return uniqueIdentifier;
     }
 
-    public void setUniqueIdentifier(String uniqueIdentifier)
+    public void setUniqueIdentifier(KMIPUniqueIdentifier uniqueIdentifier)
     {
         this.uniqueIdentifier = uniqueIdentifier;
     }
