@@ -5,7 +5,6 @@ import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
 public class KMIPRequestBatchItem
     extends KMIPBatchItem
 {
-    private KMIPOperation operation;  // Required operation for the batch item
     private boolean ephemeral;     // Indicates if the data output should not be returned
     // 9.21 This is an OPTIONAL field contained in a request, and is used for correlation between requests and
     //responses. If a request has a Unique Batch Item ID, then responses to that request SHALL have the
@@ -17,20 +16,10 @@ public class KMIPRequestBatchItem
     // Constructor for mandatory fields
     public KMIPRequestBatchItem(KMIPOperation operation, KMIPRequestPayload requestPayload)
     {
-        this.operation = operation;
+        super(operation);
         this.requestPayload = requestPayload;
         this.ephemeral = false; // Default to false
         this.messageExtensions = new KMIPMessageExtension[0]; // Initialize list for message extensions
-    }
-
-    public KMIPOperation getOperation()
-    {
-        return operation;
-    }
-
-    public void setOperation(KMIPOperation operation)
-    {
-        this.operation = operation;
     }
 
     public boolean getEphemeral()
