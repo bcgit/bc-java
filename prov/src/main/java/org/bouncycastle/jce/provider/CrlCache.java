@@ -4,8 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
-import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URLConnection;
 import java.security.cert.CRL;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateFactory;
@@ -54,7 +54,7 @@ class CrlCache
         if (crlStore != null)
         {
             boolean isExpired = false;
-            for (Iterator it = crlStore.getMatches(null).iterator(); it.hasNext();)
+            for (Iterator it = crlStore.getMatches(null).iterator(); it.hasNext(); )
             {
                 X509CRL crl = (X509CRL)it.next();
 
@@ -125,11 +125,12 @@ class CrlCache
     private static Collection getCrls(CertificateFactory certFact, URI distributionPoint)
         throws IOException, CRLException
     {
-        HttpURLConnection crlCon = (HttpURLConnection)distributionPoint.toURL().openConnection();
-        crlCon.setConnectTimeout(DEFAULT_TIMEOUT);
-        crlCon.setReadTimeout(DEFAULT_TIMEOUT);
+        URLConnection urlConnection = distributionPoint.toURL().openConnection();
 
-        InputStream crlIn = crlCon.getInputStream();
+        urlConnection.setConnectTimeout(DEFAULT_TIMEOUT);
+        urlConnection.setReadTimeout(DEFAULT_TIMEOUT);
+
+        InputStream crlIn = urlConnection.getInputStream();
 
         Collection crls = certFact.generateCRLs(crlIn);
 
