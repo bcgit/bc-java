@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * The BlockCipherMode enum represents various block cipher modes that can be used

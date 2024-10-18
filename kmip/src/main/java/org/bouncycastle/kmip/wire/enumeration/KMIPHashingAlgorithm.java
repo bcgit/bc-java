@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * The HashingAlgorithm enum represents various hashing algorithms

@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * The DigitalSignatureAlgorithm enum represents various algorithms used for digital signatures.

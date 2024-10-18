@@ -1,6 +1,4 @@
-package org.bouncycastle.crypto.split;
-
-import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * Enumeration representing the key format types for cryptographic keys.

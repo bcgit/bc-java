@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.split.object;
 
-import org.bouncycastle.crypto.split.KMIPCryptographicParameters;
 import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
 
 public class KMIPKeyInformation

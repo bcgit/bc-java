@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.split.enumeration;
 
 /**
  * The KeyRoleType enum represents various roles a cryptographic key can take in cryptographic operations.

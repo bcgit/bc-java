@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.split.attribute.KMIPVendorAttribute;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicUsageMask;
 import org.bouncycastle.crypto.split.enumeration.KMIPEnumeration;
+import org.bouncycastle.crypto.split.enumeration.KMIPKeyFormatType;
 import org.bouncycastle.crypto.split.enumeration.KMIPNameType;
 import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
 import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
