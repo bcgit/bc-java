@@ -396,20 +396,10 @@ public class ERSEvidenceRecord
     public TimeStampRequest generateHashRenewalRequest(DigestCalculator digCalc, ERSData data, TimeStampRequestGenerator tspReqGen, BigInteger nonce)
         throws ERSException, TSPException, IOException
     {
-        ERSData copy;
-        if (data instanceof ERSInputStreamData) 
-        {
-            copy = ((ERSInputStreamData) data).toByteData();
-            
-        } 
-        else 
-        {
-            copy = data;
-        }
         // check old data present
         try
         {
-            firstArchiveTimeStamp.validatePresent(copy, new Date());
+            firstArchiveTimeStamp.validatePresent(data, new Date());
         }
         catch (Exception e)
         {
@@ -418,7 +408,7 @@ public class ERSEvidenceRecord
         
         ERSArchiveTimeStampGenerator atsGen = new ERSArchiveTimeStampGenerator(digCalc);
 
-        atsGen.addData(copy);
+        atsGen.addData(data);
         
         atsGen.addPreviousChains(evidenceRecord.getArchiveTimeStampSequence());
         

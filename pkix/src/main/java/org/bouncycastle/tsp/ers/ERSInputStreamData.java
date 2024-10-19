@@ -1,11 +1,10 @@
 package org.bouncycastle.tsp.ers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.util.io.Streams;
@@ -16,7 +15,8 @@ import org.bouncycastle.util.io.Streams;
 public class ERSInputStreamData
     extends ERSCachingData
 {
-    private final InputStream content;
+    private final File contentFile;
+    private final byte[] contentBytes;
 
     public ERSInputStreamData(File content)
         throws FileNotFoundException
@@ -25,25 +25,47 @@ public class ERSInputStreamData
         {
             throw new IllegalArgumentException("directory not allowed");
         }
-        this.content = new FileInputStream(content);
+        if (!content.exists())
+        {
+            throw new FileNotFoundException(content + " not found");
+        }
+        this.contentBytes = null;
+        this.contentFile = content;
     }
 
     public ERSInputStreamData(InputStream content)
     {
-        this.content = content;
-    }
-
-    protected ERSByteData toByteData()
-        throws IOException
-    {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Streams.pipeAll(this.content, baos);
-        return new ERSByteData(baos.toByteArray());
+        try
+        {
+            this.contentBytes = Streams.readAll(content);
+        }
+        catch (IOException e)
+        {
+            throw ExpUtil.createIllegalState("unable to open content: " + e.getMessage(), e);
+        }
+        this.contentFile = null;
     }
     
     protected byte[] calculateHash(DigestCalculator digestCalculator, byte[] previousChainHash)
     {
-        byte[] hash = ERSUtil.calculateDigest(digestCalculator, content);
+        byte[] hash;
+        if (contentBytes != null)
+        {
+            hash = ERSUtil.calculateDigest(digestCalculator, contentBytes);
+        }
+        else
+        {
+            try
+            {
+                InputStream content = new FileInputStream(contentFile);
+                hash = ERSUtil.calculateDigest(digestCalculator, content);
+                content.close();
+            }
+            catch (IOException e)
+            {
+                throw ExpUtil.createIllegalState("unable to open content: " + e.getMessage(), e);
+            }
+        }
 
         if (previousChainHash != null)
         {
