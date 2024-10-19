@@ -131,6 +131,45 @@ public class DeltaCertTest
         }
     }
 
+    public void testSameName()
+        throws Exception
+    {
+        KeyPairGenerator rsaKeyGen = KeyPairGenerator.getInstance("RSA", "BC");
+        rsaKeyGen.initialize(2048, new java.security.SecureRandom());
+        java.security.KeyPair deltaKeyPair = rsaKeyGen.generateKeyPair();
+        java.security.KeyPair baseKeyPair = rsaKeyGen.generateKeyPair();
+
+        // Generate a self-signed Delta Certificate
+        X509v3CertificateBuilder deltaCertBuilder = new X509v3CertificateBuilder(
+            new X500Name("CN=Issuer"),
+            java.math.BigInteger.valueOf(1L),
+            new java.util.Date(System.currentTimeMillis()),
+            new java.util.Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000),
+            new X500Name("CN=Subject"),
+            SubjectPublicKeyInfo.getInstance(deltaKeyPair.getPublic().getEncoded())
+        );
+        ContentSigner deltaRootSigner = new JcaContentSignerBuilder("SHA256withRSA").build(deltaKeyPair.getPrivate());
+        X509CertificateHolder deltaCert = deltaCertBuilder.build(deltaRootSigner);
+
+        // Generate a self-signed Base Certificate
+        X509v3CertificateBuilder baseCertBuilder = new X509v3CertificateBuilder(
+            new X500Name("CN=Issuer"), // Same as Delta Certificate
+            java.math.BigInteger.valueOf(2L),
+            new java.util.Date(System.currentTimeMillis()),
+            new java.util.Date(System.currentTimeMillis() + 365L * 24 * 60 * 60 * 1000),
+            new X500Name("CN=Subject"), // Same as Delta Certificate
+            SubjectPublicKeyInfo.getInstance(baseKeyPair.getPublic().getEncoded())
+        );
+
+        // Create Delta Extension
+        Extension deltaCertExtension = DeltaCertificateTool.makeDeltaCertificateExtension(false, deltaCert);
+        // Add Delta Extension to Base Certificate
+        baseCertBuilder.addExtension(deltaCertExtension);
+        // Build Base Certificate
+        ContentSigner baseRootSigner = new JcaContentSignerBuilder("SHA256withRSA").build(baseKeyPair.getPrivate());
+        X509CertificateHolder baseCert = baseCertBuilder.build(baseRootSigner); // <= Exception thrown here
+    }
+    
     // TODO: add new request data (change to explicit tags)
 //    public void testDeltaCertRequest()
 //        throws Exception
@@ -229,13 +268,13 @@ public class DeltaCertTest
         ContentSigner signerB = new JcaContentSignerBuilder("SHA256withECDSA").build(kpB.getPrivate());
 
         X509v3CertificateBuilder deltaBldr = new X509v3CertificateBuilder(
-                    new X500Name("CN=Chameleon CA 2"),
-                    BigInteger.valueOf(System.currentTimeMillis()),
-                    notBefore,
-                    notAfter,
-                    subject,
-                    SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
-        
+            new X500Name("CN=Chameleon CA 2"),
+            BigInteger.valueOf(System.currentTimeMillis()),
+            notBefore,
+            notAfter,
+            subject,
+            SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
+
         deltaBldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
 
         X509CertificateHolder deltaCert = deltaBldr.build(signerB);
@@ -256,7 +295,7 @@ public class DeltaCertTest
         assertNotNull(deltaCertDesc.getIssuer());
 
         X509CertificateHolder exDeltaCert = DeltaCertificateTool.extractDeltaCertificate(chameleonCert);
-      
+
         assertTrue(exDeltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
     }
 
@@ -316,16 +355,16 @@ public class DeltaCertTest
         ContentSigner signerB = new JcaContentSignerBuilder("SHA256withECDSA").build(kpB.getPrivate());
 
         X509v3CertificateBuilder deltaBldr = new X509v3CertificateBuilder(
-                    new X500Name("CN=Chameleon CA 2"),
-                    BigInteger.valueOf(System.currentTimeMillis()),
-                    notBefore,
-                    notAfter,
-                    subject,
-                    SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
+            new X500Name("CN=Chameleon CA 2"),
+            BigInteger.valueOf(System.currentTimeMillis()),
+            notBefore,
+            notAfter,
+            subject,
+            SubjectPublicKeyInfo.getInstance(kpB.getPublic().getEncoded()));
 
         deltaBldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
-                 .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
-        
+            .addExtension(Extension.subjectAltPublicKeyInfo, false, SubjectAltPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+
         X509CertificateHolder deltaCert = deltaBldr.build(signerB, false, altSigGen);
 
         assertTrue(deltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(kpB.getPublic())));
@@ -351,7 +390,7 @@ public class DeltaCertTest
 
         X509CertificateHolder certHolder = new JcaX509CertificateHolder(cert);
 
-       // assertTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(pubKey)));
+        // assertTrue("alt sig value wrong", certHolder.isAlternativeSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BCPQC").build(pubKey)));
 
         X509CertificateHolder exDeltaCert = DeltaCertificateTool.extractDeltaCertificate(new X509CertificateHolder(cert.getEncoded()));
 
@@ -390,7 +429,7 @@ public class DeltaCertTest
         X509CertificateHolder deltaCert = DeltaCertificateTool.extractDeltaCertificate(baseCert);
 
         assertTrue(deltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(rootCert.getSubjectPublicKeyInfo())));
-        
+
         X509CertificateHolder extCert = readCert("ml_dsa_ee.pem");
 
         assertTrue(extCert.equals(deltaCert));
@@ -409,7 +448,7 @@ public class DeltaCertTest
         X509CertificateHolder extCert = readCert("ec_dsa_dual_sig_ee.pem");
 
         assertTrue(extCert.equals(deltaCert));
-        
+
         assertTrue(deltaCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider("BC").build(ecRootCert.getSubjectPublicKeyInfo())));
     }
 
