@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSequence;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
@@ -617,8 +618,17 @@ public class CMSSignedData
             vec.add(signer.toASN1Structure());
         }
 
-        ASN1Set digestSet = CMSUtils.convertToDlSet(digestAlgs);
+        // keep ourselves compatible with what was there before - issue with
+        // NULL appearing and disappearing in AlgorithmIdentifier parameters.
+        Set<AlgorithmIdentifier> oldDigestAlgs = signedData.getDigestAlgorithmIDs();
+        AlgorithmIdentifier[] oldDigestAlgIds = (AlgorithmIdentifier[])oldDigestAlgs.toArray(new AlgorithmIdentifier[oldDigestAlgs.size()]);
+        AlgorithmIdentifier[] newDigestAlgIds = (AlgorithmIdentifier[])digestAlgs.toArray(new AlgorithmIdentifier[digestAlgs.size()]);
+
+        compareAndReplaceAlgIds(oldDigestAlgIds, newDigestAlgIds);
+
+        ASN1Set digestSet = new DLSet(newDigestAlgIds);
         ASN1Set signerSet = new DLSet(vec);
+
         ASN1Sequence sD = (ASN1Sequence)signedData.signedData.toASN1Primitive();
 
         //
@@ -643,6 +653,27 @@ public class CMSSignedData
         cms.contentInfo = new ContentInfo(cms.contentInfo.getContentType(), cms.signedData);
 
         return cms;
+    }
+
+    private static void compareAndReplaceAlgIds(AlgorithmIdentifier[] oldDigestAlgIds, AlgorithmIdentifier[] newDigestAlgIds)
+    {
+        for (int i = 0; i != newDigestAlgIds.length; i++)
+        {
+            AlgorithmIdentifier newId = newDigestAlgIds[i];
+
+            for (int j = 0; j != oldDigestAlgIds.length; j++)
+            {
+                AlgorithmIdentifier oldId = oldDigestAlgIds[j];
+                if (newId.getAlgorithm().equals(oldId.getAlgorithm()))
+                {
+                    if (newId.getParameters() == null || DERNull.INSTANCE.equals(newId.getParameters()))
+                    {
+                        newDigestAlgIds[i] = oldId;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**
