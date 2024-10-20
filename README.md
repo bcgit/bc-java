@@ -10,6 +10,22 @@ Except where otherwise stated, this software is distributed under a license base
 
 **Note**: this source tree is not the FIPS version of the APIs - if you are interested in our FIPS version please contact us directly at  [office@bouncycastle.org](mailto:office@bouncycastle.org).
 
+## Maven Public Key
+
+The file [bc_maven_public_key.asc](bc_maven_public_key.asc) contains the public key used to sign our artifacts on Maven Central. You will need to use 
+
+```
+gpg -o bc_maven_public_key.gpg --dearmor bc_maven_public_key.asc
+```
+
+to dearmor the key before use. Once that is done, a file can be verified by using:
+
+```
+gpg --no-default-keyring --keyring ./bc_maven_public_key.gpg --verify  file_name.jar.asc file_name.jar
+```
+
+Note: the ./ is required in front of the key file name to tell gpg to look locally.
+
 ## Building overview
 
 This project can now be built and tested with JDK21. 
