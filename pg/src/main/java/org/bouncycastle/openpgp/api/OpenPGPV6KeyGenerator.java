@@ -38,13 +38,21 @@ import java.util.List;
  */
 public class OpenPGPV6KeyGenerator
 {
+    /**
+     * Hash algorithm for key signatures if no other one is provided during construction.
+     */
     public static final int DEFAULT_SIGNATURE_HASH_ALGORITHM = HashAlgorithmTags.SHA3_512;
 
+    // SECONDS
     private static final long SECONDS_PER_MINUTE = 60;
     private static final long SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
     private static final long SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
     private static final long SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY;
 
+    /**
+     * Standard AEAD encryption preferences (SEIPDv2).
+     * By default, only announce support for OCB + AES.
+     */
     public static SignatureSubpacketsFunction DEFAULT_AEAD_ALGORITHM_PREFERENCES = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
@@ -55,6 +63,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard symmetric-key encryption preferences (SEIPDv1).
+     * By default, announce support for AES.
+     */
     public static SignatureSubpacketsFunction DEFAULT_SYMMETRIC_KEY_PREFERENCES = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
@@ -64,6 +76,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard signature hash algorithm preferences.
+     * By default, only announce SHA3 and SHA2 algorithms.
+     */
     public static SignatureSubpacketsFunction DEFAULT_HASH_ALGORITHM_PREFERENCES = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_HASH_ALGS);
@@ -74,6 +90,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard compression algorithm preferences.
+     * By default, announce support for all known algorithms.
+     */
     public static SignatureSubpacketsFunction DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
@@ -84,6 +104,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard features to announce.
+     * By default, announce SEIPDv1 (modification detection) and SEIPDv2.
+     */
     public static SignatureSubpacketsFunction DEFAULT_FEATURES = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
@@ -91,6 +115,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard signature subpackets for signing subkey's binding signatures.
+     * Sets the keyflag subpacket to SIGN_DATA.
+     */
     public static SignatureSubpacketsFunction SIGNING_SUBKEY_SUBPACKETS = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
@@ -98,6 +126,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard signature subpackets for encryption subkey's binding signatures.
+     * Sets the keyflag subpacket to ENCRYPT_STORAGE|ENCRYPT_COMMS.
+     */
     public static SignatureSubpacketsFunction ENCRYPTION_SUBKEY_SUBPACKETS = subpackets ->
     {
         subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
@@ -105,6 +137,10 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
+    /**
+     * Standard signature subpackets for the direct-key signature.
+     * Sets default features, hash-, compression-, symmetric-key-, and AEAD algorithm preferences.
+     */
     public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = subpackets ->
     {
         subpackets = DEFAULT_FEATURES.apply(subpackets);
@@ -115,7 +151,7 @@ public class OpenPGPV6KeyGenerator
         return subpackets;
     };
 
-    private final Implementation impl;
+    private final Implementation impl; // contains BC or JCA/JCE implementations
     private final Configuration conf;
 
     /**
@@ -125,6 +161,7 @@ public class OpenPGPV6KeyGenerator
      * @param contentSignerBuilderProvider content signer builder provider
      * @param digestCalculatorProvider digest calculator provider
      * @param keyEncryptionBuilderProvider secret key encryption builder provider (AEAD)
+     * @param keyFingerPrintCalculator calculator for key fingerprints
      * @param creationTime key creation time
      */
     public OpenPGPV6KeyGenerator(
@@ -234,11 +271,11 @@ public class OpenPGPV6KeyGenerator
             SignatureSubpacketsFunction userSubpackets)
             throws PGPException
     {
-        PGPKeyPair primaryKey = impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime)
+        PGPKeyPair primaryKeyPair = impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime)
                 .generatePrimaryKey();
         PBESecretKeyEncryptor encryptor = impl.keyEncryptorBuilderProvider
-                .build(passphrase, primaryKey.getPublicKey().getPublicKeyPacket());
-        return signOnlyKey(primaryKey, encryptor, userSubpackets);
+                .build(passphrase, primaryKeyPair.getPublicKey().getPublicKeyPacket());
+        return signOnlyKey(primaryKeyPair, encryptor, userSubpackets);
     }
 
     /**
@@ -247,19 +284,24 @@ public class OpenPGPV6KeyGenerator
      * It carries a single direct-key signature with signing-related preferences whose subpackets can be
      * modified by providing a {@link SignatureSubpacketsFunction}.
      *
-     * @param primaryKey signing-capable primary key
+     * @param primaryKeyPair signing-capable primary key
      * @param keyEncryptor nullable encryptor to protect the primary key with
      * @param userSubpackets callback to modify the direct-key signature subpackets with
      * @return sign-only (+certify) OpenPGP key
      * @throws PGPException if the key cannot be generated
      */
     public PGPSecretKeyRing signOnlyKey(
-            PGPKeyPair primaryKey,
+            PGPKeyPair primaryKeyPair,
             PBESecretKeyEncryptor keyEncryptor,
             SignatureSubpacketsFunction userSubpackets)
             throws PGPException
     {
-        return primaryKeyWithDirectKeySig(primaryKey,
+        if (!primaryKeyPair.getPublicKey().isMasterKey())
+        {
+            throw new IllegalArgumentException("Primary key MUST NOT consist of subkey packet.");
+        }
+
+        return primaryKeyWithDirectKeySig(primaryKeyPair,
                 baseSubpackets ->
                 {
                     // remove unrelated subpackets not needed for sign-only keys
@@ -267,7 +309,7 @@ public class OpenPGPV6KeyGenerator
                     baseSubpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
                     baseSubpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
 
-                    // replace key flags to add SIGN_DATA
+                    // replace key flags -> CERTIFY_OTHER|SIGN_DATA
                     baseSubpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
                     baseSubpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
                     return baseSubpackets;
@@ -340,18 +382,18 @@ public class OpenPGPV6KeyGenerator
      * The key will carry a direct-key signature, whose subpackets can be modified by overriding the
      * given {@link SignatureSubpacketsFunction}.
      *
-     * @param keyPair primary key
+     * @param primaryKeyPair primary key
      * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
      * @return builder
      * @throws PGPException if the key cannot be generated
      */
     public WithPrimaryKey withPrimaryKey(
-            PGPKeyPair keyPair,
+            PGPKeyPair primaryKeyPair,
             SignatureSubpacketsFunction directKeySubpackets)
             throws PGPException
     {
         return withPrimaryKey(
-                keyPair,
+                primaryKeyPair,
                 directKeySubpackets,
                 null);
     }
@@ -378,11 +420,11 @@ public class OpenPGPV6KeyGenerator
             char[] passphrase)
             throws PGPException
     {
-        PGPKeyPair pkPair = keyGenCallback.generateFrom(
+        PGPKeyPair primaryKeyPair = keyGenCallback.generateFrom(
                 impl.kpGenProvider.get(PublicKeyPacket.VERSION_6, conf.keyCreationTime));
         PBESecretKeyEncryptor keyEncryptor = impl.keyEncryptorBuilderProvider
-                .build(passphrase, pkPair.getPublicKey().getPublicKeyPacket());
-        return withPrimaryKey(pkPair, directKeySubpackets, keyEncryptor);
+                .build(passphrase, primaryKeyPair.getPublicKey().getPublicKeyPacket());
+        return withPrimaryKey(primaryKeyPair, directKeySubpackets, keyEncryptor);
     }
 
     /**
@@ -395,28 +437,33 @@ public class OpenPGPV6KeyGenerator
      * If instead {@link WithPrimaryKey#build(char[])} is used, the key-specific encryptor is overwritten with
      * an encryptor built from the argument passed into {@link WithPrimaryKey#build(char[])}.
      *
-     * @param keyPair primary key
+     * @param primaryKeyPair primary key
      * @param directKeySubpackets nullable callback to modify the direct-key signatures subpackets
      * @param keyEncryptor nullable encryptor to protect the primary key with
      * @return builder
      * @throws PGPException if the key cannot be generated
      */
     public WithPrimaryKey withPrimaryKey(
-            PGPKeyPair keyPair,
+            PGPKeyPair primaryKeyPair,
             SignatureSubpacketsFunction directKeySubpackets,
             PBESecretKeyEncryptor keyEncryptor)
             throws PGPException
     {
-        if (!PublicKeyUtils.isSigningAlgorithm(keyPair.getPublicKey().getAlgorithm()))
+        if (!primaryKeyPair.getPublicKey().isMasterKey())
+        {
+            throw new IllegalArgumentException("Primary key MUST NOT consist of subkey packet.");
+        }
+
+        if (!PublicKeyUtils.isSigningAlgorithm(primaryKeyPair.getPublicKey().getAlgorithm()))
         {
             throw new PGPException("Primary key MUST use signing-capable algorithm.");
         }
 
         return primaryKeyWithDirectKeySig(
-                keyPair,
+                primaryKeyPair,
                 subpackets ->
                 {
-                    subpackets.setIssuerFingerprint(true, keyPair.getPublicKey());
+                    subpackets.setIssuerFingerprint(true, primaryKeyPair.getPublicKey());
                     subpackets.setSignatureCreationTime(conf.keyCreationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
                     subpackets = DIRECT_KEY_SIGNATURE_SUBPACKETS.apply(subpackets);
@@ -436,7 +483,7 @@ public class OpenPGPV6KeyGenerator
      * @param primaryKeyPair primary key pair
      * @param baseSubpackets base signature subpackets callback
      * @param customSubpackets user-provided signature subpackets callback
-     * @param encryptor key encryptor
+     * @param keyEncryptor key encryptor
      * @return builder
      * @throws PGPException if the key cannot be generated
      */
@@ -444,7 +491,7 @@ public class OpenPGPV6KeyGenerator
             PGPKeyPair primaryKeyPair,
             SignatureSubpacketsFunction baseSubpackets,
             SignatureSubpacketsFunction customSubpackets,
-            PBESecretKeyEncryptor encryptor)
+            PBESecretKeyEncryptor keyEncryptor)
             throws PGPException
     {
         if (baseSubpackets != null || customSubpackets != null)
@@ -476,7 +523,7 @@ public class OpenPGPV6KeyGenerator
                     primaryKeyPair.getPrivateKey());
         }
 
-        Key primaryKey = new Key(primaryKeyPair, encryptor);
+        Key primaryKey = new Key(primaryKeyPair, keyEncryptor);
 
         return new WithPrimaryKey(impl, conf, primaryKey);
     }
@@ -595,7 +642,6 @@ public class OpenPGPV6KeyGenerator
         public WithPrimaryKey addEncryptionSubkey()
                 throws PGPException
         {
-
             return addEncryptionSubkey(PGPKeyPairGenerator::generateEncryptionSubkey);
         }
 
@@ -671,7 +717,7 @@ public class OpenPGPV6KeyGenerator
          * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
-                                               char[] passphrase)
+                                                  char[] passphrase)
                 throws PGPException
         {
             return addEncryptionSubkey(keyGenCallback, null, passphrase);
@@ -694,8 +740,8 @@ public class OpenPGPV6KeyGenerator
          * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(KeyPairGeneratorCallback keyGenCallback,
-                                               SignatureSubpacketsFunction bindingSignatureCallback,
-                                               char[] passphrase)
+                                                  SignatureSubpacketsFunction bindingSignatureCallback,
+                                                  char[] passphrase)
                 throws PGPException
         {
             PGPKeyPair subkey = keyGenCallback.generateFrom(
@@ -715,16 +761,21 @@ public class OpenPGPV6KeyGenerator
          *
          * @param encryptionSubkey encryption subkey
          * @param bindingSubpacketsCallback nullable callback to modify the subkey binding signature subpackets
-         * @param encryptor nullable encryptor to encrypt the encryption subkey
+         * @param keyEncryptor nullable encryptor to encrypt the encryption subkey
          * @return builder
          * @throws PGPException if the key cannot be generated
          */
         public WithPrimaryKey addEncryptionSubkey(
                 PGPKeyPair encryptionSubkey,
                 SignatureSubpacketsFunction bindingSubpacketsCallback,
-                PBESecretKeyEncryptor encryptor)
+                PBESecretKeyEncryptor keyEncryptor)
                 throws PGPException
         {
+            if (encryptionSubkey.getPublicKey().isMasterKey())
+            {
+                throw new IllegalArgumentException("Encryption subkey MUST NOT consist of a primary key packet.");
+            }
+
             if (!PublicKeyUtils.isEncryptionAlgorithm(encryptionSubkey.getPublicKey().getAlgorithm()))
             {
                 throw new PGPException("Encryption key MUST use encryption-capable algorithm.");
@@ -749,7 +800,7 @@ public class OpenPGPV6KeyGenerator
 
             PGPSignature bindingSig = bindingSigGen.generateCertification(primaryKey.pair.getPublicKey(), encryptionSubkey.getPublicKey());
             PGPPublicKey publicSubkey = PGPPublicKey.addCertification(encryptionSubkey.getPublicKey(), bindingSig);
-            Key subkey = new Key(new PGPKeyPair(publicSubkey, encryptionSubkey.getPrivateKey()), encryptor);
+            Key subkey = new Key(new PGPKeyPair(publicSubkey, encryptionSubkey.getPrivateKey()), keyEncryptor);
             subkeys.add(subkey);
             return this;
         }
@@ -771,14 +822,14 @@ public class OpenPGPV6KeyGenerator
          * Add a signing-capable subkey to the OpenPGP key.
          * The key type can be specified by overriding {@link KeyPairGeneratorCallback}.
          *
-         * @param generatorCallback callback to specify the signing-subkey type
+         * @param keyGenCallback callback to specify the signing-subkey type
          * @return builder
          * @throws PGPException if the key cannot be generated
          */
-        public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback generatorCallback)
+        public WithPrimaryKey addSigningSubkey(KeyPairGeneratorCallback keyGenCallback)
                 throws PGPException
         {
-            return addSigningSubkey(generatorCallback, null);
+            return addSigningSubkey(keyGenCallback, null);
         }
 
         /**
@@ -858,26 +909,31 @@ public class OpenPGPV6KeyGenerator
          * If instead {@link #build(char[])} is used, the key-specific encryptor is overwritten with an encryptor
          * built from the argument passed into {@link #build(char[])}.
          *
-         * @param signingKey signing subkey
+         * @param signingSubkey signing subkey
          * @param bindingSignatureCallback callback to modify the contents of the signing subkey binding signature
          * @param backSignatureCallback callback to modify the contents of the embedded primary key binding signature
          * @param keyEncryptor nullable encryptor to protect the signing subkey
          * @return builder
          * @throws PGPException if the key cannot be generated
          */
-        public WithPrimaryKey addSigningSubkey(PGPKeyPair signingKey,
+        public WithPrimaryKey addSigningSubkey(PGPKeyPair signingSubkey,
                                                SignatureSubpacketsFunction bindingSignatureCallback,
                                                SignatureSubpacketsFunction backSignatureCallback,
                                                PBESecretKeyEncryptor keyEncryptor)
                 throws PGPException
         {
-            if (!PublicKeyUtils.isSigningAlgorithm(signingKey.getPublicKey().getAlgorithm()))
+            if (signingSubkey.getPublicKey().isMasterKey())
+            {
+                throw new IllegalArgumentException("Signing subkey MUST NOT consist of primary key packet.");
+            }
+
+            if (!PublicKeyUtils.isSigningAlgorithm(signingSubkey.getPublicKey().getAlgorithm()))
             {
                 throw new PGPException("Signing key MUST use signing-capable algorithm.");
             }
 
             PGPSignatureSubpacketGenerator backSigSubpackets = new PGPSignatureSubpacketGenerator();
-            backSigSubpackets.setIssuerFingerprint(true, signingKey.getPublicKey());
+            backSigSubpackets.setIssuerFingerprint(true, signingSubkey.getPublicKey());
             backSigSubpackets.setSignatureCreationTime(conf.keyCreationTime);
             if (backSignatureCallback != null)
             {
@@ -891,12 +947,12 @@ public class OpenPGPV6KeyGenerator
             bindingSigSubpackets = SIGNING_SUBKEY_SUBPACKETS.apply(bindingSigSubpackets);
 
             PGPSignatureGenerator backSigGen = new PGPSignatureGenerator(
-                    impl.contentSignerBuilderProvider.get(signingKey.getPublicKey()),
-                    signingKey.getPublicKey());
-            backSigGen.init(PGPSignature.PRIMARYKEY_BINDING, signingKey.getPrivateKey());
+                    impl.contentSignerBuilderProvider.get(signingSubkey.getPublicKey()),
+                    signingSubkey.getPublicKey());
+            backSigGen.init(PGPSignature.PRIMARYKEY_BINDING, signingSubkey.getPrivateKey());
             backSigGen.setHashedSubpackets(backSigSubpackets.generate());
             PGPSignature backSig = backSigGen.generateCertification(
-                    primaryKey.pair.getPublicKey(), signingKey.getPublicKey());
+                    primaryKey.pair.getPublicKey(), signingSubkey.getPublicKey());
 
             try
             {
@@ -919,11 +975,11 @@ public class OpenPGPV6KeyGenerator
             bindingSigGen.setHashedSubpackets(bindingSigSubpackets.generate());
 
             PGPSignature bindingSig = bindingSigGen.generateCertification(
-                    primaryKey.pair.getPublicKey(), signingKey.getPublicKey());
+                    primaryKey.pair.getPublicKey(), signingSubkey.getPublicKey());
 
-            PGPPublicKey signingPubKey = PGPPublicKey.addCertification(signingKey.getPublicKey(), bindingSig);
-            signingKey = new PGPKeyPair(signingPubKey, signingKey.getPrivateKey());
-            subkeys.add(new Key(signingKey, keyEncryptor));
+            PGPPublicKey signingPubKey = PGPPublicKey.addCertification(signingSubkey.getPublicKey(), bindingSig);
+            signingSubkey = new PGPKeyPair(signingPubKey, signingSubkey.getPrivateKey());
+            subkeys.add(new Key(signingSubkey, keyEncryptor));
 
             return this;
         }
@@ -1000,7 +1056,6 @@ public class OpenPGPV6KeyGenerator
             if (passphrase != null)
             {
                 Arrays.fill(passphrase, (char) 0);
-                passphrase = null;
             }
 
             return new PGPSecretKeyRing(keys);
