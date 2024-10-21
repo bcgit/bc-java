@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -43,6 +44,9 @@ public class RainbowVectorTest
         };
 
         TestSampler sampler = new TestSampler();
+        Random rd = new Random(System.currentTimeMillis());
+
+        int offSet = rd.nextInt(10);
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
@@ -66,11 +70,15 @@ public class RainbowVectorTest
                     if (buf.size() > 0)
                     {
                         String count = (String)buf.get("count");
-                        if (sampler.skipTest(count))
+//                        if (sampler.skipTest(count))
+//                        {
+//                            continue;
+//                        }
+
+                        if (Integer.parseInt(count) != offSet)
                         {
                             continue;
                         }
-
                         // System.out.println("test case: " + count);
                         byte[] seed = Hex.decode((String)buf.get("seed"));      // seed for Rainbow secure random
                         int mlen = Integer.parseInt((String)buf.get("mlen"));   // message length

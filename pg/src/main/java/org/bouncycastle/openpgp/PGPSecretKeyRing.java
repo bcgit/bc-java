@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -261,7 +262,7 @@ public class PGPSecretKeyRing
     {
         for (PGPSecretKey k : keys)
         {
-            if (k.getPublicKey() != null && identifier.matches(k))
+            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
             {
                 return k.getPublicKey();
             }
@@ -269,7 +270,7 @@ public class PGPSecretKeyRing
 
         for (PGPPublicKey k : extraPubKeys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -283,7 +284,7 @@ public class PGPSecretKeyRing
         List<PGPPublicKey> matches = new ArrayList<>();
         for (PGPSecretKey k : keys)
         {
-            if (k.getPublicKey() != null && identifier.matches(k))
+            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
             {
                 matches.add(k.getPublicKey());
             }
@@ -291,7 +292,7 @@ public class PGPSecretKeyRing
 
         for (PGPPublicKey k : extraPubKeys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
@@ -303,7 +304,7 @@ public class PGPSecretKeyRing
     {
         for (PGPSecretKey k : keys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -316,7 +317,7 @@ public class PGPSecretKeyRing
         List<PGPSecretKey> matches = new ArrayList<>();
         for (PGPSecretKey k : keys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }

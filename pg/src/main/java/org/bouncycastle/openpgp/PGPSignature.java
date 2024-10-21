@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashUtils;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;

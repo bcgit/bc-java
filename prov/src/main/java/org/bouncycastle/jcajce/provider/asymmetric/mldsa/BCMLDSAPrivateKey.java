@@ -13,6 +13,9 @@ import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLDSAPrivateKey
     implements MLDSAPrivateKey
@@ -28,7 +31,7 @@ public class BCMLDSAPrivateKey
             MLDSAPrivateKeyParameters params)
     {
         this.params = params;
-        algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
     }
 
     public BCMLDSAPrivateKey(PrivateKeyInfo keyInfo)
@@ -79,7 +82,7 @@ public class BCMLDSAPrivateKey
     }
 
     /**
-     * @return name of the algorithm - "ML-DSA"
+     * @return name of the algorithm
      */
     public final String getAlgorithm()
     {
@@ -109,6 +112,26 @@ public class BCMLDSAPrivateKey
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
+        byte[] keyBytes = params.getPublicKey();
+
+        // -DM Hex.toHexString
+        buf.append(getAlgorithm())
+            .append(" ")
+            .append("Private Key").append(" [")
+            .append(new Fingerprint(keyBytes).toString())
+            .append("]")
+            .append(nl)
+            .append("    public data: ")
+            .append(Hex.toHexString(keyBytes))
+            .append(nl);
+
+        return buf.toString();
     }
 
     MLDSAPrivateKeyParameters getKeyParams()

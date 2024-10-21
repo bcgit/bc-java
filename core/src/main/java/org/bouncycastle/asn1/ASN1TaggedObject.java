@@ -358,7 +358,7 @@ public abstract class ASN1TaggedObject
         {
             if (!isExplicit())
             {
-                throw new IllegalStateException("object explicit - implicit expected.");
+                throw new IllegalStateException("object implicit - explicit expected.");
             }
 
             return universalType.checkedCast(obj.toASN1Primitive());

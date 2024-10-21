@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -35,6 +36,10 @@ public class GeMSSTest
             "cyangemss256.rsp bluegemss256.rsp  whitegemss256.rsp redgemss256.rsp magentagemss256.rsp gemss256.rsp";
 
         TestSampler sampler = new TestSampler();
+
+        Random rd = new Random(System.currentTimeMillis());
+
+        int offSet = rd.nextInt(10);
 
         String[] fileList = splitOn(files, ' ');
         for (int i = 0; i < fileList.length; i++)
@@ -65,10 +70,14 @@ public class GeMSSTest
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));
                         byte[] seed = Hex.decode((String)buf.get("seed"));
 
-                        if (sampler.skipTest(count))
+                        if (Integer.parseInt(count) != offSet)
                         {
                             continue;
                         }
+//                        if (sampler.skipTest(count))
+//                        {
+//                            continue;
+//                        }
 
                         GeMSSKeyPairGenerator kpGen = new GeMSSKeyPairGenerator();
                         SecureRandom random = new NISTSecureRandom(seed, null);

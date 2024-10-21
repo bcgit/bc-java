@@ -30,7 +30,7 @@ public class MLKEMKeyPairGenerator
         byte[][] keyPair = engine.generateKemKeyPair();
 
         MLKEMPublicKeyParameters pubKey = new MLKEMPublicKeyParameters(mlkemParams, keyPair[0], keyPair[1]);
-        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(mlkemParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1]);
+        MLKEMPrivateKeyParameters privKey = new MLKEMPrivateKeyParameters(mlkemParams,  keyPair[2], keyPair[3], keyPair[4], keyPair[0], keyPair[1], keyPair[5]);
         
         return new AsymmetricCipherKeyPair(pubKey, privKey);
     }

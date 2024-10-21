@@ -5,14 +5,14 @@ import org.bouncycastle.util.Pack;
 
 class ADRS
 {
-    public static final int WOTS_HASH = 0;
-    public static final int WOTS_PK = 1;
-    public static final int TREE = 2;
-    public static final int FORS_TREE = 3;
-    public static final int FORS_PK = 4;
-    public static final int WOTS_PRF = 5;
-    public static final int FORS_PRF = 6;
-    
+    static final int WOTS_HASH = 0;
+    static final int WOTS_PK = 1;
+    static final int TREE = 2;
+    static final int FORS_TREE = 3;
+    static final int FORS_PK = 4;
+    static final int WOTS_PRF = 5;
+    static final int FORS_PRF = 6;
+
     static final int OFFSET_LAYER = 0;
     static final int OFFSET_TREE = 4;
     static final int OFFSET_TREE_HGT = 24;
@@ -21,7 +21,7 @@ class ADRS
     static final int OFFSET_KP_ADDR = 20;
     static final int OFFSET_CHAIN_ADDR = 24;
     static final int OFFSET_HASH_ADDR = 28;
-    
+
     final byte[] value = new byte[32];
 
     ADRS()
@@ -59,11 +59,6 @@ class ADRS
         Pack.intToBigEndian(height, value, OFFSET_TREE_HGT);
     }
 
-    public int getTreeHeight()
-    {
-        return Pack.bigEndianToInt(value, OFFSET_TREE_HGT);
-    }
-
     public void setTreeIndex(int index)
     {
         Pack.intToBigEndian(index, value, OFFSET_TREE_INDEX);
@@ -75,7 +70,7 @@ class ADRS
     }
 
     // resets part of value to zero in line with 2.7.3
-    public void setType(int type)
+    public void setTypeAndClear(int type)
     {
         Pack.intToBigEndian(type, value, OFFSET_TYPE);
 
@@ -85,11 +80,6 @@ class ADRS
     public void changeType(int type)
     {
         Pack.intToBigEndian(type, value, OFFSET_TYPE);
-    }
-
-    public int getType()
-    {
-        return Pack.bigEndianToInt(value, OFFSET_TYPE);
     }
 
     public void setKeyPairAddress(int keyPairAddr)

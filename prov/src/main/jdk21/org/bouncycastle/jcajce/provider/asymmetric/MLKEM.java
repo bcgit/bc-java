@@ -53,10 +53,10 @@ public class MLKEM
             provider.addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_768, keyFact);
             provider.addKeyInfoConverter(NISTObjectIdentifiers.id_alg_ml_kem_1024, keyFact);
 
-            provider.addAlgorithm("Kem.ML-KEM", PREFIX + "MLKEMSpi");
-            provider.addAlgorithm("Alg.Alias.Kem." + NISTObjectIdentifiers.id_alg_ml_kem_512, "ML-KEM");
-            provider.addAlgorithm("Alg.Alias.Kem." + NISTObjectIdentifiers.id_alg_ml_kem_768, "ML-KEM");
-            provider.addAlgorithm("Alg.Alias.Kem." + NISTObjectIdentifiers.id_alg_ml_kem_1024, "ML-KEM");
+            provider.addAlgorithm("KEM.ML-KEM", PREFIX + "MLKEMSpi");
+            provider.addAlgorithm("Alg.Alias.KEM." + NISTObjectIdentifiers.id_alg_ml_kem_512, "ML-KEM");
+            provider.addAlgorithm("Alg.Alias.KEM." + NISTObjectIdentifiers.id_alg_ml_kem_768, "ML-KEM");
+            provider.addAlgorithm("Alg.Alias.KEM." + NISTObjectIdentifiers.id_alg_ml_kem_1024, "ML-KEM");
         }
     }
 }

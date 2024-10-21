@@ -329,7 +329,7 @@ public class PrivateKeyFactory
                     MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
                     return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
                 }
-                return new MLDSAPrivateKeyParameters(spParams, data, null);
+                return new MLDSAPrivateKeyParameters(spParams, data);
             }
             else
             {

@@ -76,20 +76,20 @@ public class DeltaCertificateDescriptor
         this.serialNumber = ASN1Integer.getInstance(seq.getObjectAt(0));
 
         int idx = 1;
-        ASN1Encodable next = seq.getObjectAt(idx);
+        ASN1Encodable next = seq.getObjectAt(idx++);
         while (next instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
             switch (tagged.getTagNo())
             {
             case 0:
-                signature = AlgorithmIdentifier.getInstance(tagged, false);
+                signature = AlgorithmIdentifier.getInstance(tagged, true);
                 break;
             case 1:
                 issuer = X500Name.getInstance(tagged, true);   // issuer
                 break;
             case 2:
-                validity = ASN1Sequence.getInstance(tagged, false);
+                validity = ASN1Sequence.getInstance(tagged, true);
                 break;
             case 3:
                 subject = X500Name.getInstance(tagged, true);   // subject
@@ -107,7 +107,7 @@ public class DeltaCertificateDescriptor
             switch (tagged.getTagNo())
             {
             case 4:
-                extensions = Extensions.getInstance(tagged, false); 
+                extensions = Extensions.getInstance(tagged, true);
                 break;
             }
             next = seq.getObjectAt(idx++);
@@ -178,7 +178,7 @@ public class DeltaCertificateDescriptor
             switch (tagged.getTagNo())
             {
             case 0:
-                AlgorithmIdentifier sig = AlgorithmIdentifier.getInstance(tagged, false);
+                AlgorithmIdentifier sig = AlgorithmIdentifier.getInstance(tagged, true);
                 if (!sig.equals(signature))
                 {
                     v.add(next);
@@ -192,7 +192,7 @@ public class DeltaCertificateDescriptor
                 }
                 break;
             case 2:
-                ASN1Sequence val = ASN1Sequence.getInstance(tagged, false);
+                ASN1Sequence val = ASN1Sequence.getInstance(tagged, true);
                 if (!val.equals(validity))
                 {
                     v.add(next);
@@ -218,7 +218,7 @@ public class DeltaCertificateDescriptor
             switch (tagged.getTagNo())
             {
             case 4:
-                Extensions deltaExts = Extensions.getInstance(tagged, false);
+                Extensions deltaExts = Extensions.getInstance(tagged, true);
                 ExtensionsGenerator deltaExtGen = new ExtensionsGenerator();
                 for (Enumeration extEn = deltaExts.oids(); extEn.hasMoreElements(); )
                 {
@@ -237,7 +237,7 @@ public class DeltaCertificateDescriptor
                 DeltaCertificateDescriptor trimmedDeltaCertDesc;
                 if (!deltaExtGen.isEmpty())
                 {
-                    v.add(new DERTaggedObject(false, 4, deltaExtGen.generate()));
+                    v.add(new DERTaggedObject(true, 4, deltaExtGen.generate()));
                 }
             }
             next = (ASN1Encodable)en.nextElement();
@@ -261,12 +261,12 @@ public class DeltaCertificateDescriptor
         ASN1EncodableVector v = new ASN1EncodableVector(7);
 
         v.add(serialNumber);
-        addOptional(v, 0, false, signature);
+        addOptional(v, 0, true, signature);
         addOptional(v, 1, true, issuer); // CHOICE
-        addOptional(v, 2, false, validity);
+        addOptional(v, 2, true, validity);
         addOptional(v, 3, true, subject);  // CHOICE
         v.add(subjectPublicKeyInfo);
-        addOptional(v, 4, false, extensions);
+        addOptional(v, 4, true, extensions);
         v.add(signatureValue);
 
         return new DERSequence(v);

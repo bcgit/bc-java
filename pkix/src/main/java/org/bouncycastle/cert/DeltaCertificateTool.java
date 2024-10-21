@@ -28,19 +28,19 @@ public class DeltaCertificateTool
         ASN1EncodableVector deltaV = new ASN1EncodableVector();
 
         deltaV.add(new ASN1Integer(deltaCert.getSerialNumber()));
-        deltaV.add(new DERTaggedObject(false, 0, deltaCert.getSignatureAlgorithm()));
-        deltaV.add(new DERTaggedObject(false, 1, deltaCert.getIssuer()));
+        deltaV.add(new DERTaggedObject(true, 0, deltaCert.getSignatureAlgorithm()));
+        deltaV.add(new DERTaggedObject(true, 1, deltaCert.getIssuer()));
 
         ASN1EncodableVector validity = new ASN1EncodableVector(2);
         validity.add(deltaCert.toASN1Structure().getStartDate());
         validity.add(deltaCert.toASN1Structure().getEndDate());
 
-        deltaV.add(new DERTaggedObject(false, 2, new DERSequence(validity)));
-        deltaV.add(new DERTaggedObject(false, 3, deltaCert.getSubject()));
+        deltaV.add(new DERTaggedObject(true, 2, new DERSequence(validity)));
+        deltaV.add(new DERTaggedObject(true, 3, deltaCert.getSubject()));
         deltaV.add(deltaCert.getSubjectPublicKeyInfo());
         if (deltaCert.getExtensions() != null)
         {
-            deltaV.add(new DERTaggedObject(false, 4, deltaCert.getExtensions()));
+            deltaV.add(new DERTaggedObject(true, 4, deltaCert.getExtensions()));
         }
         deltaV.add(new DERBitString(deltaCert.getSignature()));
 
@@ -51,6 +51,10 @@ public class DeltaCertificateTool
     {
         ASN1ObjectIdentifier deltaExtOid = Extension.deltaCertificateDescriptor;
         Extension deltaExt = originCert.getExtension(deltaExtOid);
+        if (deltaExt == null)
+        {
+            throw new IllegalStateException("no deltaCertificateDescriptor present");
+        }
 
         ASN1Sequence seq = ASN1Sequence.getInstance(deltaExt.getParsedValue());
 //        *      version          [ 0 ]  Version DEFAULT v1(0),
@@ -77,13 +81,13 @@ public class DeltaCertificateTool
             switch (tagged.getTagNo())
             {
             case 0:
-                extracted[2] = ASN1Sequence.getInstance(tagged, false);
+                extracted[2] = ASN1Sequence.getInstance(tagged, true);
                 break;
             case 1:
                 extracted[3] = ASN1Sequence.getInstance(tagged, true);   // issuer
                 break;
             case 2:
-                extracted[4] = ASN1Sequence.getInstance(tagged, false);
+                extracted[4] = ASN1Sequence.getInstance(tagged, true);
                 break;
             case 3:
                 extracted[5] = ASN1Sequence.getInstance((ASN1TaggedObject)next, true);   // subject
@@ -125,7 +129,7 @@ public class DeltaCertificateTool
                 throw new IllegalArgumentException("malformed delta extension");
             }
 
-            ASN1Sequence deltaExts = ASN1Sequence.getInstance(tagged, false);
+            ASN1Sequence deltaExts = ASN1Sequence.getInstance(tagged, true);
 
             for (int i = 0; i != deltaExts.size(); i++)
             {
