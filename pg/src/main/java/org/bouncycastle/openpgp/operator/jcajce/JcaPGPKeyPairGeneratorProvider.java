@@ -80,7 +80,7 @@ public class JcaPGPKeyPairGeneratorProvider
 
         public JcaPGPKeyPairGenerator(int version, Date creationTime, OperatorHelper helper, SecureRandom random)
         {
-            super(version, creationTime, random);
+            super(version, creationTime, random, new JcaKeyFingerprintCalculator());
             this.helper = helper;
         }
 

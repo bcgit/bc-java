@@ -46,7 +46,7 @@ public class BcPGPKeyPairGeneratorProvider
 
         public BcPGPKeyPairGenerator(int version, Date creationTime, SecureRandom random)
         {
-            super(version, creationTime, random);
+            super(version, creationTime, random, new BcKeyFingerprintCalculator());
         }
 
         @Override

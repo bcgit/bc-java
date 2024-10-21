@@ -69,6 +69,11 @@ public class PGPKeyPair
     public PGPKeyPair asSubkey(KeyFingerPrintCalculator fingerPrintCalculator)
             throws PGPException
     {
+        if (pub.getPublicKeyPacket() instanceof PublicSubkeyPacket)
+        {
+            return this; // is already subkey
+        }
+
         PublicSubkeyPacket pubSubPkt = new PublicSubkeyPacket(
                 pub.getVersion(),
                 pub.getAlgorithm(),

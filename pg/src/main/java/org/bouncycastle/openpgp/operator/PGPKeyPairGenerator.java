@@ -14,6 +14,7 @@ public abstract class PGPKeyPairGenerator
     protected final Date creationTime;
     protected final int version;
     protected SecureRandom random;
+    protected final KeyFingerPrintCalculator fingerPrintCalculator;
 
     /**
      * Create an instance of the key pair generator.
@@ -23,11 +24,15 @@ public abstract class PGPKeyPairGenerator
      * @param creationTime key creation time
      * @param random secure random number generator
      */
-    public PGPKeyPairGenerator(int version, Date creationTime, SecureRandom random)
+    public PGPKeyPairGenerator(int version,
+                               Date creationTime,
+                               SecureRandom random,
+                               KeyFingerPrintCalculator fingerPrintCalculator)
     {
         this.creationTime = new Date((creationTime.getTime() / 1000) * 1000);
         this.version = version;
         this.random = random;
+        this.fingerPrintCalculator = fingerPrintCalculator;
     }
 
     /**
@@ -53,7 +58,7 @@ public abstract class PGPKeyPairGenerator
     public PGPKeyPair generateEncryptionSubkey()
             throws PGPException
     {
-        return generateX25519KeyPair();
+        return generateX25519KeyPair().asSubkey(fingerPrintCalculator);
     }
 
     /**
@@ -66,7 +71,7 @@ public abstract class PGPKeyPairGenerator
     public PGPKeyPair generateSigningSubkey()
             throws PGPException
     {
-        return generateEd25519KeyPair();
+        return generateEd25519KeyPair().asSubkey(fingerPrintCalculator);
     }
 
     /**
