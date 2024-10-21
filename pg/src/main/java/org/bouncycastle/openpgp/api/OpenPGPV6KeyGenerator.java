@@ -26,7 +26,6 @@ import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
