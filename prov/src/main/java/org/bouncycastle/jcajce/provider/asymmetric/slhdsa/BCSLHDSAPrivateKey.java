@@ -14,7 +14,9 @@ import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCSLHDSAPrivateKey
     implements SLHDSAPrivateKey
@@ -72,7 +74,7 @@ public class BCSLHDSAPrivateKey
     }
 
     /**
-     * @return name of the algorithm - "SLH-DSA"
+     * @return name of the algorithm - "SLH-DSA..."
      */
     public final String getAlgorithm()
     {
@@ -107,6 +109,26 @@ public class BCSLHDSAPrivateKey
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
+        byte[] keyBytes = params.getPublicKey();
+
+        // -DM Hex.toHexString
+        buf.append(getAlgorithm())
+            .append(" ")
+            .append("Private Key").append(" [")
+            .append(new Fingerprint(keyBytes).toString())
+            .append("]")
+            .append(nl)
+            .append("    public data: ")
+            .append(Hex.toHexString(keyBytes))
+            .append(nl);
+
+        return buf.toString();
     }
 
     SLHDSAPrivateKeyParameters getKeyParams()

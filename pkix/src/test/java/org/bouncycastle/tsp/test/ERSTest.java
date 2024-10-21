@@ -1,11 +1,15 @@
 package org.bouncycastle.tsp.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.Security;
@@ -19,6 +23,7 @@ import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -31,6 +36,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.tsp.TSPAlgorithms;
@@ -1570,5 +1576,80 @@ public class ERSTest
 
         }
 
+    }
+
+    public void testCompareStreamAndByteData () throws TSPException, ERSException, OperatorCreationException, IOException,
+        NoSuchAlgorithmException
+    {
+        // ER for the String "foo" using SHA-256 and a dummy cert/key.
+        String evidenceRecordBase64 = "MIIDCgIBATANMAsGCWCGSAFlAwQCATCCAvQwggLwMIIC7DCCAugGCSqGSI"
+            + "b3DQEHAqCCAtkwggLVAgEDMQ0wCwYJYIZIAWUDBAIDMG0GCyqGSIb3DQEJEAEEoF4EXDBaAgEBBgYEA"
+            + "I9nAQEwLzALBglghkgBZQMEAgEEICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueuAgEBGA8y"
+            + "MDI0MTAwMjIzMDAzNloCCFO56J9TFmGGMYICUDCCAkwCAQEwBTAAAgEAMAsGCWCGSAFlAwQCA6CCAR4"
+            + "wGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEPFw0yNDEwMDIyMzAwMzZaMC"
+            + "sGCSqGSIb3DQEJNDEeMBwwCwYJYIZIAWUDBAIDoQ0GCSqGSIb3DQEBDQUAME8GCSqGSIb3DQEJBDFCB"
+            + "EDPPkk9PN5EGrAvZyjv9wJR77tQCIwoA3xWwqESBGICShZxNjt6YU3LZor99ARJ4As+yiIjW/hTg5v3"
+            + "vqbTrfSIMGQGCyqGSIb3DQEJEAIvMVUwUzBRME8wCwYJYIZIAWUDBAIDBEAPvi2mNblzqqI91nWRM9s"
+            + "ocS7TJfpyQsx4ZcBVeGK1XjCW6BQ5KmrPFCc+IefB5FB/ZQsPwdyYv6umJzCYK0SzMA0GCSqGSIb3DQ"
+            + "EBDQUABIIBALWgWcjxzY5QEOlK92GNf9kjBflbO65dYkAKxrrgcwQ6Dz+ablUwsG01ILDUUnSL9wTQC"
+            + "OkYKb1oEFNrd9lbHWBOqlu5/lMjhZcWnYzbK3rzQRuoPwXYD/GWgiO0wLmF3FQ9xaum1Oui+Y075OS4"
+            + "7fXfLlSe2wMPlnoDb/IFAgHGBK/3zJ7w7n9OCa1U6qwTYCpw9MTXsOI/PbNw2h3cHTVgbY+HCTB4oJC"
+            + "GpY9bbEMuJboe4DkQx2Eqpq1pVaMKRxsjhrnbH8QlkUGtuGztqnZa5AoCth79x70Ch7WhdDcxG3wiFi"
+            + "29pw69obUCh3c61Q2WKl+MKW/tqq7EGYu5+jE=";
+        DigestCalculatorProvider digestProvider = new BcDigestCalculatorProvider();
+        ERSEvidenceRecord ersEvidenceRecord = new ERSEvidenceRecord(
+            Base64.decode(evidenceRecordBase64), digestProvider);
+
+        // Sanity check, make sure root hash of ER is what we expect.
+        byte[] sourceData = "foo".getBytes(StandardCharsets.UTF_8);
+        byte[] sourceSha256 = MessageDigest.getInstance("SHA-256").digest(sourceData);
+        assert Arrays.areEqual(sourceSha256, ersEvidenceRecord.getPrimaryRootHash());
+
+
+        // Generate hash renewal request using ERSInputStreamData.
+        ERSData ersStreamData = new ERSInputStreamData(new ByteArrayInputStream(sourceData));
+        TimeStampRequest streamDataReq = ersEvidenceRecord.generateHashRenewalRequest(
+            digestProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512)),
+            ersStreamData,
+            new TimeStampRequestGenerator(),
+            BigInteger.ZERO);
+
+
+        // Generate hash renewal request using ERSByteData to compare against.
+        ERSData ersByteData = new ERSByteData(sourceData);
+        TimeStampRequest byteDataReq = ersEvidenceRecord.generateHashRenewalRequest(
+            digestProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512)),
+            ersByteData,
+            new TimeStampRequestGenerator(),
+            BigInteger.ZERO);
+
+
+        // check ERSByteData and ERSInputStreamData produce same output
+        assert Arrays.areEqual(byteDataReq.getMessageImprintDigest(),
+            streamDataReq.getMessageImprintDigest());
+
+
+        // Generate the digest we expect to see in the requests and compare.
+        byte[] expectedDigest = generateExpectedRequestDigest(sourceData, ersEvidenceRecord,
+            MessageDigest.getInstance("SHA-512"));
+        assert Arrays.areEqual(byteDataReq.getMessageImprintDigest(), expectedDigest);
+        assert Arrays.areEqual(streamDataReq.getMessageImprintDigest(), expectedDigest);
+    }
+
+    /** Based on RFC 4998 section 5.2. */
+    private static byte[] generateExpectedRequestDigest (byte[] sourceData,
+                                                         ERSEvidenceRecord evidenceRecord, MessageDigest digest) throws IOException
+    {
+        byte[] atsci = evidenceRecord.toASN1Structure().getArchiveTimeStampSequence().getEncoded(ASN1Encoding.DER);
+        byte[] hi = digest.digest(sourceData);
+        byte[] hai = digest.digest(atsci);
+        byte[] hihai;
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            outputStream.write(hi);
+            outputStream.write(hai);
+            hihai = outputStream.toByteArray();
+        }
+        byte[] hiprime = digest.digest(hihai);
+        return hiprime;
     }
 }

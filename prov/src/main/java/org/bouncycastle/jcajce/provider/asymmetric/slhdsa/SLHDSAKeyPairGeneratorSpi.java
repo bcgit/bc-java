@@ -109,11 +109,11 @@ public class SLHDSAKeyPairGeneratorSpi
         {
             if (this.getAlgorithm().startsWith("HASH"))
             {
-                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s_with_sha512);
+                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_128f_with_sha256);
             }
             else
             {
-                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_256s);
+                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_128f);
             }
 
             engine.init(param);

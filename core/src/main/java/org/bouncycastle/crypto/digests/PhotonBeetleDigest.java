@@ -137,6 +137,7 @@ public class PhotonBeetleDigest
         System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
         PHOTON_Permutation();
         System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, TAG_INBYTES - SQUEEZE_RATE_INBYTES);
+        reset();
         return TAG_INBYTES;
     }
 

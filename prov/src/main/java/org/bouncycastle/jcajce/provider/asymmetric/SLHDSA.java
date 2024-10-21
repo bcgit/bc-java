@@ -83,10 +83,52 @@ public class SLHDSA
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-256S-WITH-SHAKE256", PREFIX + "SLHDSAKeyPairGeneratorSpi$HashShake_256s", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256);
             addKeyPairGeneratorAlgorithm(provider, "SLH-DSA-SHAKE-256F-WITH-SHAKE256", PREFIX + "SLHDSAKeyPairGeneratorSpi$HashShake_256f", NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256);
 
+            String[] algNames = new String[]
+                {
+                    "SLH-DSA-SHA2-128S",
+                    "SLH-DSA-SHA2-128F",
+                    "SLH-DSA-SHA2-192S",
+                    "SLH-DSA-SHA2-192F",
+                    "SLH-DSA-SHA2-256S",
+                    "SLH-DSA-SHA2-256F",
+                    "SLH-DSA-SHAKE-128S",
+                    "SLH-DSA-SHAKE-128F",
+                    "SLH-DSA-SHAKE-192S",
+                    "SLH-DSA-SHAKE-192F",
+                    "SLH-DSA-SHAKE-256S",
+                    "SLH-DSA-SHAKE-256F"
+                };
+
+            String[] hashAlgNames = new String[]
+                {
+                    "SLH-DSA-SHA2-128S-WITH-SHA256",
+                    "SLH-DSA-SHA2-128F-WITH-SHA256",
+                    "SLH-DSA-SHA2-192S-WITH-SHA512",
+                    "SLH-DSA-SHA2-192F-WITH-SHA512",
+                    "SLH-DSA-SHA2-256S-WITH-SHA512",
+                    "SLH-DSA-SHA2-256F-WITH-SHA512",
+                    "SLH-DSA-SHAKE-128S-WITH-SHAKE128",
+                    "SLH-DSA-SHAKE-128F-WITH-SHAKE128",
+                    "SLH-DSA-SHAKE-192S-WITH-SHAKE256",
+                    "SLH-DSA-SHAKE-192F-WITH-SHAKE256",
+                    "SLH-DSA-SHAKE-256S-WITH-SHAKE256",
+                    "SLH-DSA-SHAKE-256F-WITH-SHAKE256"
+                };
+
             addSignatureAlgorithm(provider, "SLH-DSA", PREFIX + "SignatureSpi$Direct", (ASN1ObjectIdentifier)null);
             provider.addAlgorithm("Alg.Alias.Signature.SLHDSA", "SLH-DSA");
             addSignatureAlgorithm(provider, "HASH-SLH-DSA", PREFIX + "HashSignatureSpi$Direct", (ASN1ObjectIdentifier)null);
             provider.addAlgorithm("Alg.Alias.Signature.HASHWITHSLHDSA", "HASH-SLH-DSA");
+
+            for (int i = 0; i != algNames.length; i++)
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + algNames[i], "SLH-DSA");
+            }
+
+            for (int i = 0; i != hashAlgNames.length; i++)
+            {
+                provider.addAlgorithm("Alg.Alias.Signature." + hashAlgNames[i], "HASH-SLH-DSA");
+            }
 
             ASN1ObjectIdentifier[] nistOids = new ASN1ObjectIdentifier[]
                 {

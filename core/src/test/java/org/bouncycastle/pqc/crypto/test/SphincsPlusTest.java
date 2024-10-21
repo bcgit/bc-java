@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -46,6 +47,10 @@ public class SphincsPlusTest
 
         TestSampler sampler = new TestSampler();
 
+        Random rd = new Random(System.currentTimeMillis());
+
+        int offSet = rd.nextInt(10);
+
         String[] fileList = splitOn(files, ' ');
         //long startTime = System.currentTimeMillis();
         for (int i = 0; i != fileList.length; i++)
@@ -75,10 +80,14 @@ public class SphincsPlusTest
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));
                         byte[] oprR = Hex.decode((String)buf.get("optrand"));
 
-                        if (sampler.skipTest(count))
+                        if (Integer.parseInt(count) != offSet)
                         {
                             continue;
                         }
+//                        if (sampler.skipTest(count))
+//                        {
+//                            continue;
+//                        }
 
                         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
                         SecureRandom random = new FixedSecureRandom(sk);

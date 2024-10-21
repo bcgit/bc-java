@@ -9,7 +9,6 @@ class MLDSAEngine
 {
     private final SecureRandom random;
 
-    private final SHAKEDigest shake128Digest = new SHAKEDigest(128);
     private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
@@ -50,7 +49,6 @@ class MLDSAEngine
     private final int PolyUniformGamma1NBlocks;
 
     private final Symmetric symmetric;
-    ;
 
     protected Symmetric GetSymmetric()
     {
@@ -228,7 +226,7 @@ class MLDSAEngine
     }
 
     //Internal functions are deterministic. No randomness is sampled inside them
-    private byte[][] generateKeyPairInternal(byte[] seed)
+    byte[][] generateKeyPairInternal(byte[] seed)
     {
         byte[] buf = new byte[2 * SeedBytes + CrhBytes];
         byte[] tr = new byte[TrBytes];
@@ -302,7 +300,7 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
+        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
     }
 
     SHAKEDigest getShake256Digest()
@@ -312,12 +310,12 @@ class MLDSAEngine
 
     void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
     {
-        this.shake256Digest.update(tr, 0, TrBytes);
+        shake256Digest.update(tr, 0, TrBytes);
         if (ctx != null)
         {
-            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
-            this.shake256Digest.update((byte)ctx.length);
-            this.shake256Digest.update(ctx, 0, ctx.length);
+            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
+            shake256Digest.update((byte)ctx.length);
+            shake256Digest.update(ctx, 0, ctx.length);
         }
     }
 
@@ -328,16 +326,13 @@ class MLDSAEngine
         shake256Digest.update(rho, 0, rho.length);
         shake256Digest.update(encT1, 0, encT1.length);
         shake256Digest.doFinal(mu, 0, TrBytes);
-        // System.out.println("mu before = ");
-        // Helper.printByteArray(mu);
 
         shake256Digest.update(mu, 0, TrBytes);
-
         if (ctx != null)
         {
-            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
-            this.shake256Digest.update((byte)ctx.length);
-            this.shake256Digest.update(ctx, 0, ctx.length);
+            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
+            shake256Digest.update((byte)ctx.length);
+            shake256Digest.update(ctx, 0, ctx.length);
         }
     }
 

@@ -12,7 +12,9 @@ import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Fingerprint;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCSLHDSAPublicKey
     implements SLHDSAPublicKey
@@ -75,6 +77,11 @@ public class BCSLHDSAPublicKey
         return "SLH-DSA" + "-" + Strings.toUpperCase(params.getParameters().getName());
     }
 
+    public byte[] getPublicData()
+    {
+        return params.getEncoded();
+    }
+
     public byte[] getEncoded()
     {
         try
@@ -99,6 +106,26 @@ public class BCSLHDSAPublicKey
         return SLHDSAParameterSpec.fromName(params.getParameters().getName());
     }
 
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
+        byte[] keyBytes = params.getEncoded();
+
+        // -DM Hex.toHexString
+        buf.append(getAlgorithm())
+            .append(" ")
+            .append("Public Key").append(" [")
+            .append(new Fingerprint(keyBytes).toString())
+            .append("]")
+            .append(nl)
+            .append("    public data: ")
+            .append(Hex.toHexString(keyBytes))
+            .append(nl);
+
+        return buf.toString();
+    }
+    
     CipherParameters getKeyParams()
     {
         return params;

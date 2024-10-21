@@ -15,51 +15,49 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
-import org.bouncycastle.util.Arrays;
 
 public class HashMLDSASigner
     implements Signer
 {
     private static final byte[] EMPTY_CONTEXT = new byte[0];
-    
-    private MLDSAPrivateKeyParameters privKey;
+
     private MLDSAPublicKeyParameters pubKey;
+    private MLDSAPrivateKeyParameters privKey;
+    private SecureRandom random;
 
     private MLDSAEngine engine;
-    private SecureRandom random;
     private Digest digest;
-    private byte[] digestOidEncoding;
+    private byte[] digestOIDEncoding;
 
     public HashMLDSASigner()
     {
-        this.digest = new SHA512Digest();
     }
 
     public void init(boolean forSigning, CipherParameters param)
     {
-        byte[] ctx;
-
+        byte[] ctx = EMPTY_CONTEXT;
         if (param instanceof ParametersWithContext)
         {
-            ctx = ((ParametersWithContext)param).getContext();
-            param = ((ParametersWithContext)param).getParameters();
+            ParametersWithContext withContext = (ParametersWithContext)param;
+            ctx = withContext.getContext();
+            param = withContext.getParameters();
 
             if (ctx.length > 255)
             {
                 throw new IllegalArgumentException("context too long");
             }
         }
-        else
-        {
-            ctx = EMPTY_CONTEXT;
-        }
 
+        MLDSAParameters parameters;
         if (forSigning)
         {
+            pubKey = null;
+
             if (param instanceof ParametersWithRandom)
             {
-                privKey = (MLDSAPrivateKeyParameters)((ParametersWithRandom)param).getParameters();
-                random = ((ParametersWithRandom)param).getRandom();
+                ParametersWithRandom withRandom = (ParametersWithRandom)param;
+                privKey = (MLDSAPrivateKeyParameters)withRandom.getParameters();
+                random = withRandom.getRandom();
             }
             else
             {
@@ -67,37 +65,34 @@ public class HashMLDSASigner
                 random = null;
             }
 
-            engine = privKey.getParameters().getEngine(this.random);
+            parameters = privKey.getParameters();
+            engine = parameters.getEngine(random);
 
             engine.initSign(privKey.tr, true, ctx);
-
-            initDigest(privKey);
         }
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
+            privKey = null;
+            random = null;
 
-            engine = pubKey.getParameters().getEngine(this.random);
-            
+            parameters = pubKey.getParameters();
+            engine = parameters.getEngine(null);
+
             engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
-
-            initDigest(pubKey);
         }
 
-        reset();
+        initDigest(parameters);
     }
 
-    private void initDigest(MLDSAKeyParameters key)
+    private void initDigest(MLDSAParameters parameters)
     {
-        if (key.getParameters().isPreHash())
-        {
-            digest = key.getParameters().createDigest();
-        }
+        digest = createDigest(parameters);
 
         ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
         try
         {
-            digestOidEncoding = oid.getEncoded(ASN1Encoding.DER);
+            digestOIDEncoding = oid.getEncoded(ASN1Encoding.DER);
         }
         catch (IOException e)
         {
@@ -110,16 +105,14 @@ public class HashMLDSASigner
         digest.update(b);
     }
 
-    @Override
     public void update(byte[] in, int off, int len)
     {
         digest.update(in, off, len);
     }
 
-    @Override
     public byte[] generateSignature() throws CryptoException, DataLengthException
     {
-        SHAKEDigest msgDigest = engine.getShake256Digest();
+        SHAKEDigest msgDigest = finishPreHash();
 
         byte[] rnd = new byte[MLDSAEngine.RndBytes];
         if (random != null)
@@ -127,27 +120,12 @@ public class HashMLDSASigner
             random.nextBytes(rnd);
         }
 
-        byte[] hash = new byte[digest.getDigestSize()];
-        digest.doFinal(hash, 0);
-
-        byte[] ds_message = Arrays.concatenate(digestOidEncoding, hash);
-
-        msgDigest.update(ds_message, 0, ds_message.length);
-
         return engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
 
-    @Override
     public boolean verifySignature(byte[] signature)
     {
-        SHAKEDigest msgDigest = engine.getShake256Digest();
-        byte[] hash = new byte[digest.getDigestSize()];
-
-        digest.doFinal(hash, 0);
-
-        byte[] ds_message = Arrays.concatenate(digestOidEncoding, hash);
-
-        msgDigest.update(ds_message, 0, ds_message.length);
+        SHAKEDigest msgDigest = finishPreHash();
 
         return engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
     }
@@ -155,24 +133,47 @@ public class HashMLDSASigner
     /**
      * reset the internal state
      */
-    @Override
     public void reset()
     {
         digest.reset();
     }
 
+    private SHAKEDigest finishPreHash()
+    {
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+
+        SHAKEDigest msgDigest = engine.getShake256Digest();
+        // TODO It should be possible to include digestOIDEncoding in the memo'ed digest
+        msgDigest.update(digestOIDEncoding, 0, digestOIDEncoding.length);
+        msgDigest.update(hash, 0, hash.length);
+        return msgDigest;
+    }
+
 //    TODO: these are probably no longer correct and also need to be marked as protected
-//    public byte[] internalGenerateSignature(byte[] message, byte[] random)
+//    protected byte[] internalGenerateSignature(byte[] message, byte[] random)
 //    {
-//        MLDSAEngine engine = privKey.getParameters().getEngine(this.random);
+//        MLDSAEngine engine = privKey.getParameters().getEngine(random);
 //
 //        return engine.signInternal(message, message.length, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, random);
 //    }
 //
-//    public boolean internalVerifySignature(byte[] message, byte[] signature)
+//    protected boolean internalVerifySignature(byte[] message, byte[] signature)
 //    {
 //        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
 //
 //        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
 //    }
+
+    private static Digest createDigest(MLDSAParameters parameters)
+    {
+        switch (parameters.getType())
+        {
+        case MLDSAParameters.TYPE_PURE:
+        case MLDSAParameters.TYPE_SHA2_512:
+            return new SHA512Digest();
+        default:
+            throw new IllegalArgumentException("unknown parameters type");
+        }
+    }
 }

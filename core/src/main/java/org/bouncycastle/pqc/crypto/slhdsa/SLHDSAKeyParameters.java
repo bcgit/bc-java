@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 public class SLHDSAKeyParameters
     extends AsymmetricKeyParameter
 {
-    final SLHDSAParameters parameters;
+    private final SLHDSAParameters parameters;
 
     protected SLHDSAKeyParameters(boolean isPrivate, SLHDSAParameters parameters)
     {

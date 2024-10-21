@@ -21,11 +21,11 @@ import org.bouncycastle.util.Arrays;
 public class SLHDSASigner
     implements MessageSigner
 {
-    private static final byte[] EMPTY_CONTEXT = new byte[0];
+    private static final byte[] DEFAULT_PREFIX = new byte[]{ 0, 0 };
 
-    private SLHDSAPrivateKeyParameters privKey;
+    private byte[] msgPrefix;
     private SLHDSAPublicKeyParameters pubKey;
-    private byte[] ctx;
+    private SLHDSAPrivateKeyParameters privKey;
     private SecureRandom random;
 
     /**
@@ -37,45 +37,56 @@ public class SLHDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
-        boolean isPreHash;
-
         if (param instanceof ParametersWithContext)
         {
-            ctx = ((ParametersWithContext)param).getContext();
-            param = ((ParametersWithContext)param).getParameters();
+            ParametersWithContext withContext = (ParametersWithContext)param;
+            param = withContext.getParameters();
 
-            if (ctx.length > 255)
+            int ctxLength = withContext.getContextLength();
+            if (ctxLength > 255)
             {
                 throw new IllegalArgumentException("context too long");
             }
+
+            msgPrefix = new byte[2 + ctxLength];
+            msgPrefix[0] = 0;
+            msgPrefix[1] = (byte)ctxLength;
+            withContext.copyContextTo(msgPrefix, 2, ctxLength);
         }
         else
         {
-            ctx = EMPTY_CONTEXT;
+            msgPrefix = DEFAULT_PREFIX;
         }
 
+        SLHDSAParameters parameters;
         if (forSigning)
         {
+            pubKey = null;
+
             if (param instanceof ParametersWithRandom)
             {
-                privKey = ((SLHDSAPrivateKeyParameters)((ParametersWithRandom)param).getParameters());
-                this.random = ((ParametersWithRandom)param).getRandom();
+                ParametersWithRandom withRandom = (ParametersWithRandom)param;
+                privKey = (SLHDSAPrivateKeyParameters)withRandom.getParameters();
+                random = withRandom.getRandom();
             }
             else
             {
                 privKey = (SLHDSAPrivateKeyParameters)param;
+                random = null;
             }
 
-            isPreHash = privKey.parameters.isPreHash();
+            parameters = privKey.getParameters();
         }
         else
         {
             pubKey = (SLHDSAPublicKeyParameters)param;
+            privKey = null;
+            random = null;
 
-            isPreHash = pubKey.parameters.isPreHash();
+            parameters = pubKey.getParameters();
         }
 
-        if (isPreHash)
+        if (parameters.isPreHash())
         {
             throw new IllegalArgumentException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
@@ -83,35 +94,41 @@ public class SLHDSASigner
 
     public byte[] generateSignature(byte[] message)
     {
+        // TODO Redundant with the engine created in internalGenerateSignature
         SLHDSAEngine engine = privKey.getParameters().getEngine();
 
         engine.init(privKey.pk.seed);
 
-        byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
-        ds_message[0] = 0;
-        ds_message[1] = (byte)ctx.length;
-        System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(message, 0, ds_message, 2 + ctx.length, message.length);
-
         // generate randomizer
         byte[] optRand = new byte[engine.N];
-        return internalGenerateSignature(ds_message, optRand);
+        if (random != null)
+        {
+            random.nextBytes(optRand);
+        }
+        else
+        {
+            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
+        }
+
+        return internalGenerateSignature(privKey, msgPrefix, message, optRand);
     }
 
     // Equivalent to slh_verify_internal from specs
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        byte[] ds_message = new byte[1 + 1 + ctx.length + message.length];
-        ds_message[0] = 0;
-        ds_message[1] = (byte)ctx.length;
-        System.arraycopy(ctx, 0, ds_message, 2, ctx.length);
-        System.arraycopy(message, 0, ds_message, 2 + ctx.length, message.length);
-
-        return internalVerifySignature(ds_message, signature);
+        return internalVerifySignature(pubKey, msgPrefix, message, signature);
     }
 
-    public boolean internalVerifySignature(byte[] message, byte[] signature)
+    protected boolean internalVerifySignature(byte[] message, byte[] signature)
     {
+        return internalVerifySignature(pubKey, null, message, signature);
+    }
+
+    private static boolean internalVerifySignature(SLHDSAPublicKeyParameters pubKey, byte[] msgPrefix, byte[] msg,
+        byte[] signature)
+    {
+        // TODO Check init via pubKey != null
+        
         //# Input: Message M, signature SIG, public key PK
         //# Output: Boolean
 
@@ -134,19 +151,19 @@ public class SLHDSASigner
         SIG_XMSS[] SIG_HT = sig.getSIG_HT();
 
         // compute message digest and index
-        IndexedDigest idxDigest = engine.H_msg(R, pubKey.getSeed(), pubKey.getRoot(), message);
+        IndexedDigest idxDigest = engine.H_msg(R, pubKey.getSeed(), pubKey.getRoot(), msgPrefix, msg);
         byte[] mHash = idxDigest.digest;
         long idx_tree = idxDigest.idx_tree;
         int idx_leaf = idxDigest.idx_leaf;
 
         // compute FORS public key
-        adrs.setType(ADRS.FORS_TREE);
+        adrs.setTypeAndClear(ADRS.FORS_TREE);
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
         byte[] PK_FORS = new Fors(engine).pkFromSig(sig_fors, mHash, pubKey.getSeed(), adrs);
         // verify HT signature
-        adrs.setType(ADRS.TREE);
+        adrs.setTypeAndClear(ADRS.TREE);
         adrs.setLayerAddress(0);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
@@ -154,40 +171,42 @@ public class SLHDSASigner
         return ht.verify(PK_FORS, SIG_HT, pubKey.getSeed(), idx_tree, idx_leaf, pubKey.getRoot());
     }
 
-    public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
+    protected byte[] internalGenerateSignature(byte[] message, byte[] optRand)
     {
+        return internalGenerateSignature(privKey, null, message, optRand);
+    }
+
+    private static byte[] internalGenerateSignature(SLHDSAPrivateKeyParameters privKey, byte[] msgPrefix, byte[] msg,
+        byte[] optRand)
+    {
+        // TODO Check init via privKey != null
+        
         SLHDSAEngine engine = privKey.getParameters().getEngine();
         engine.init(privKey.pk.seed);
 
-        if (optRand == null)
-        {
-            optRand = new byte[engine.N];
-            System.arraycopy(privKey.pk.seed, 0, optRand, 0, optRand.length);
-        }
-
         Fors fors = new Fors(engine);
-        byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, message);
+        byte[] R = engine.PRF_msg(privKey.sk.prf, optRand, msgPrefix, msg);
 
-        IndexedDigest idxDigest = engine.H_msg(R, privKey.pk.seed, privKey.pk.root, message);
+        IndexedDigest idxDigest = engine.H_msg(R, privKey.pk.seed, privKey.pk.root, msgPrefix, msg);
         byte[] mHash = idxDigest.digest;
         long idx_tree = idxDigest.idx_tree;
         int idx_leaf = idxDigest.idx_leaf;
         // FORS sign
         ADRS adrs = new ADRS();
-        adrs.setType(ADRS.FORS_TREE);
+        adrs.setTypeAndClear(ADRS.FORS_TREE);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
         SIG_FORS[] sig_fors = fors.sign(mHash, privKey.sk.seed, privKey.pk.seed, adrs);
         // get FORS public key - spec shows M?
         adrs = new ADRS();
-        adrs.setType(ADRS.FORS_TREE);
+        adrs.setTypeAndClear(ADRS.FORS_TREE);
         adrs.setTreeAddress(idx_tree);
         adrs.setKeyPairAddress(idx_leaf);
         byte[] PK_FORS = fors.pkFromSig(sig_fors, mHash, privKey.pk.seed, adrs);
 
         // sign FORS public key with HT
         ADRS treeAdrs = new ADRS();
-        treeAdrs.setType(ADRS.TREE);
+        treeAdrs.setTypeAndClear(ADRS.TREE);
 
         HT ht = new HT(engine, privKey.getSeed(), privKey.getPublicSeed());
         byte[] SIG_HT = ht.sign(PK_FORS, idx_tree, idx_leaf);
@@ -204,4 +223,3 @@ public class SLHDSASigner
         return Arrays.concatenate(sigComponents);
     }
 }
-

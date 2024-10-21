@@ -19,6 +19,7 @@ import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -483,7 +484,7 @@ public class PGPSecretKey
      */
     public KeyIdentifier getKeyIdentifier()
     {
-        return new KeyIdentifier(this);
+        return this.getPublicKey().getKeyIdentifier();
     }
 
     /**

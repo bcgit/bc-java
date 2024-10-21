@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
@@ -199,7 +200,7 @@ public class PGPPublicKeyRing
     {
         for (PGPPublicKey k : keys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -213,7 +214,7 @@ public class PGPPublicKeyRing
         List<PGPPublicKey> matches = new ArrayList<>();
         for (PGPPublicKey k : keys)
         {
-            if (identifier.matches(k))
+            if (identifier.matches(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
