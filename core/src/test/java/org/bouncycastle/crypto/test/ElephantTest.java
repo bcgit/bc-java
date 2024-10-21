@@ -379,7 +379,7 @@ public class ElephantTest
             //expected;
         }
 
-        byte[] m7 = new byte[blocksize * 2];
+        byte[] m7 = new byte[blocksize * 3];
         for (int i = 0; i < m7.length; ++i)
         {
             m7[i] = (byte)rand.nextInt();
@@ -397,16 +397,21 @@ public class ElephantTest
         offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
         offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
         aeadBlockCipher.doFinal(c8, offset);
-        aeadBlockCipher.init(true, params);
-        int split = rand.nextInt(blocksize * 2);
-        aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
-        offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
-        offset += aeadBlockCipher.processBytes(m7, split, m7.length - split, c9, offset);
-        aeadBlockCipher.doFinal(c9, offset);
-        if (!areEqual(c7, c8) || !areEqual(c7, c9))
+
+        // random split for several times
+        for (int split = 0; split < blocksize * 3; ++split)
         {
-            fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
+            aeadBlockCipher.init(true, params);
+            aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
+            offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
+            offset += aeadBlockCipher.processBytes(m7, split, m7.length - split, c9, offset);
+            aeadBlockCipher.doFinal(c9, offset);
+            if (!areEqual(c7, c8) || !areEqual(c7, c9))
+            {
+                fail(aeadBlockCipher.getAlgorithmName() + ": Splitting input of plaintext should output the same ciphertext");
+            }
         }
+
         // System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
