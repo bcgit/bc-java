@@ -15,12 +15,15 @@ import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
+import org.bouncycastle.openpgp.api.KeyPairGeneratorCallback;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
 import org.bouncycastle.openpgp.test.AbstractPgpKeyPairTest;
 
 import java.io.IOException;
@@ -79,6 +82,7 @@ public class OpenPGPV6KeyGeneratorTest
         testGenerateClassicKeyBaseCase(apiProvider);
         testGenerateProtectedTypicalKey(apiProvider);
 
+        testEnforcesPrimaryOrSubkeyType(apiProvider);
     }
 
     private void testGenerateSignOnlyKeyBaseCase(APIProvider apiProvider)
@@ -332,6 +336,39 @@ public class OpenPGPV6KeyGeneratorTest
                 signingSubkey.extractPrivateKey(keyDecryptorBuilder.build("signing-key-passphrase".toCharArray())));
         isNotNull("Could not decrypt encryption subkey using correct passphrase",
                 encryptionSubkey.extractPrivateKey(keyDecryptorBuilder.build("encryption-key-passphrase".toCharArray())));
+    }
+
+    private void testEnforcesPrimaryOrSubkeyType(APIProvider apiProvider)
+            throws PGPException
+    {
+        isNotNull(testException(
+                "Primary key MUST NOT consist of subkey packet.",
+                "IllegalArgumentException",
+                () ->
+                        apiProvider.getKeyGenerator().withPrimaryKey((KeyPairGeneratorCallback) keyGenCallback ->
+                                keyGenCallback.generateSigningSubkey()
+                                        .asSubkey(new BcKeyFingerprintCalculator())) // subkey as primary key is illegal
+        ));
+
+        isNotNull(testException(
+                "Encryption subkey MUST NOT consist of a primary key packet.",
+                "IllegalArgumentException",
+                () ->
+                        apiProvider.getKeyGenerator().withPrimaryKey()
+                                .addEncryptionSubkey(new BcPGPKeyPairGeneratorProvider()
+                                        .get(6, new Date())
+                                        .generateX25519KeyPair(), null, null) // primary key as subkey is illegal
+        ));
+
+        isNotNull(testException(
+                "Signing subkey MUST NOT consist of primary key packet.",
+                "IllegalArgumentException",
+                () ->
+                        apiProvider.getKeyGenerator().withPrimaryKey()
+                                .addSigningSubkey(new BcPGPKeyPairGeneratorProvider()
+                                        .get(6, new Date())
+                                        .generateEd25519KeyPair(), null, null, null) // primary key as subkey is illegal
+        ));
     }
 
     private abstract static class APIProvider

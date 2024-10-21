@@ -5,6 +5,7 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
+import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -296,7 +297,7 @@ public class OpenPGPV6KeyGenerator
             SignatureSubpacketsFunction userSubpackets)
             throws PGPException
     {
-        if (!primaryKeyPair.getPublicKey().isMasterKey())
+        if (primaryKeyPair.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket)
         {
             throw new IllegalArgumentException("Primary key MUST NOT consist of subkey packet.");
         }
@@ -449,7 +450,7 @@ public class OpenPGPV6KeyGenerator
             PBESecretKeyEncryptor keyEncryptor)
             throws PGPException
     {
-        if (!primaryKeyPair.getPublicKey().isMasterKey())
+        if (primaryKeyPair.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket)
         {
             throw new IllegalArgumentException("Primary key MUST NOT consist of subkey packet.");
         }
@@ -771,7 +772,7 @@ public class OpenPGPV6KeyGenerator
                 PBESecretKeyEncryptor keyEncryptor)
                 throws PGPException
         {
-            if (encryptionSubkey.getPublicKey().isMasterKey())
+            if (!(encryptionSubkey.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket))
             {
                 throw new IllegalArgumentException("Encryption subkey MUST NOT consist of a primary key packet.");
             }
@@ -922,7 +923,7 @@ public class OpenPGPV6KeyGenerator
                                                PBESecretKeyEncryptor keyEncryptor)
                 throws PGPException
         {
-            if (signingSubkey.getPublicKey().isMasterKey())
+            if (!(signingSubkey.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket))
             {
                 throw new IllegalArgumentException("Signing subkey MUST NOT consist of primary key packet.");
             }
