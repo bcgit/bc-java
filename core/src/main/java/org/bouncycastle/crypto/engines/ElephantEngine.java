@@ -65,6 +65,7 @@ public class ElephantEngine
     private byte[] current_mask;
     private byte[] next_mask;
     private final byte[] buffer;
+    private final byte[] previous_outputMessage;
     private State m_state = State.Uninitialized;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private int inputOff;
@@ -135,6 +136,7 @@ public class ElephantEngine
         current_mask = new byte[BLOCK_SIZE];
         next_mask = new byte[BLOCK_SIZE];
         buffer = new byte[BLOCK_SIZE];
+        previous_outputMessage = new byte[BLOCK_SIZE];
         initialised = false;
         reset(false);
     }
@@ -285,35 +287,6 @@ public class ElephantEngine
         }
     }
 
-    // Return the ith ciphertext block.
-    // clen is the length of the ciphertext in bytes
-    private void get_c_block(byte[] output, byte[] c, int cOff, int clen, int i)
-    {
-        int block_offset = i * BLOCK_SIZE;
-        // If clen is divisible by BLOCK_SIZE, add an additional padding block
-        if (block_offset == clen)
-        {
-            Arrays.fill(output, 0, BLOCK_SIZE, (byte)0);
-            output[0] = 0x01;
-            return;
-        }
-        int r_clen = clen - block_offset;
-        // Fill with ciphertext if available
-        if (BLOCK_SIZE <= r_clen)
-        { // enough ciphertext
-            System.arraycopy(c, cOff + block_offset, output, 0, BLOCK_SIZE);
-        }
-        else
-        { // not enough ciphertext, need to pad
-            if (r_clen > 0) // c might be nullptr
-            {
-                System.arraycopy(c, cOff + block_offset, output, 0, r_clen);
-                Arrays.fill(output, r_clen, BLOCK_SIZE, (byte)0);
-                output[r_clen] = 0x01;
-            }
-        }
-    }
-
     @Override
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
@@ -400,11 +373,11 @@ public class ElephantEngine
             byte[] tempInput = new byte[Math.max(nblocks_c, 1) * BLOCK_SIZE];
             System.arraycopy(inputMessage, 0, tempInput, 0, inputOff);
             System.arraycopy(input, inOff, tempInput, inputOff, Math.min(len, tempInput.length));
-            int rv = processBytes(tempInput, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad);
+            int rv = processBytes(tempInput, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, false);
             int copyLen = rv - inputOff;
             inputOff = inputOff + len - rv;
             System.arraycopy(input, inOff + copyLen, inputMessage, 0, inputOff);
-            nb_its += nblocks_c + 1;
+
             messageLen += rv;
             return rv;
         }
@@ -436,7 +409,7 @@ public class ElephantEngine
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
         int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
-        outOff += processBytes(inputMessage, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad);
+        outOff += processBytes(inputMessage, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, true);
         tag = new byte[CRYPTO_ABYTES];
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         permutation(tag_buffer);
@@ -531,6 +504,7 @@ public class ElephantEngine
         }
         aadData.reset();
         Arrays.fill(tag_buffer, (byte)0);
+        Arrays.fill(previous_outputMessage, (byte)0);
         inputOff = 0;
         nb_its = 0;
         adOff = -1;
@@ -639,12 +613,18 @@ public class ElephantEngine
     }
 
     private int processBytes(byte[] m, byte[] output, int outOff, int nb_it, int nblocks_m, int nblocks_c, int mlen,
-                             int nblocks_ad)
+                             int nblocks_ad, boolean isDofinal)
     {
         int rv = 0;
-        int original_outOff = outOff;
-        for (int i = nb_its; i < nb_it; ++i)
+        byte[] outputMessage = new byte[BLOCK_SIZE];
+        int i;
+        for (i = nb_its; i < nb_it; ++i)
         {
+            int r_size = (i == nblocks_m - 1) ? mlen - i * BLOCK_SIZE : BLOCK_SIZE;
+            if (!isDofinal && (r_size % BLOCK_SIZE != 0 || mlen <= i * BLOCK_SIZE))
+            {
+                break;
+            }
             // Compute mask for the next message
             lfsr_step(next_mask, current_mask);
             if (i < nblocks_m)
@@ -657,23 +637,50 @@ public class ElephantEngine
                 permutation(buffer);
                 xor_block(buffer, current_mask, 0, BLOCK_SIZE);
                 xor_block(buffer, next_mask, 0, BLOCK_SIZE);
-                int r_size = (i == nblocks_m - 1) ? mlen - i * BLOCK_SIZE : BLOCK_SIZE;
+
                 xor_block(buffer, m, rv, r_size);
                 System.arraycopy(buffer, 0, output, outOff, r_size);
+                if (forEncryption)
+                {
+                    System.arraycopy(buffer, 0, outputMessage, 0, r_size);
+                }
+                else
+                {
+                    System.arraycopy(m, rv, outputMessage, 0, r_size);
+                }
+
                 outOff += r_size;
                 rv += r_size;
             }
             if (i > 0 && i <= nblocks_c)
             {
-                // Compute tag for ciphertext block
-                if (forEncryption)
+                //get_c_block: Compute tag for ciphertext block
+                int block_offset = (i - 1) * BLOCK_SIZE;
+                // If clen is divisible by BLOCK_SIZE, add an additional padding block
+                if (block_offset == mlen)
                 {
-                    get_c_block(buffer, output, original_outOff, mlen, i - 1);
+                    Arrays.fill(buffer, 0, BLOCK_SIZE, (byte)0);
+                    buffer[0] = 0x01;
                 }
                 else
                 {
-                    get_c_block(buffer, m, 0, mlen, i - 1);
+                    int r_clen = mlen - block_offset;
+                    // Fill with ciphertext if available
+                    if (BLOCK_SIZE <= r_clen)
+                    { // enough ciphertext
+                        System.arraycopy(previous_outputMessage, 0, buffer, 0, BLOCK_SIZE);
+                    }
+                    else
+                    { // not enough ciphertext, need to pad
+                        if (r_clen > 0) // c might be nullptr
+                        {
+                            System.arraycopy(previous_outputMessage, 0, buffer, 0, r_clen);
+                            Arrays.fill(buffer, r_clen, BLOCK_SIZE, (byte)0);
+                            buffer[r_clen] = 0x01;
+                        }
+                    }
                 }
+
                 xor_block(buffer, previous_mask, 0, BLOCK_SIZE);
                 xor_block(buffer, next_mask, 0, BLOCK_SIZE);
                 permutation(buffer);
@@ -696,7 +703,9 @@ public class ElephantEngine
             previous_mask = current_mask;
             current_mask = next_mask;
             next_mask = temp;
+            System.arraycopy(outputMessage, 0, previous_outputMessage, 0, BLOCK_SIZE);
         }
+        nb_its = i;
         return rv;
     }
 }
