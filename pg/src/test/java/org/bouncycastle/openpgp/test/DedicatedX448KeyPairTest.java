@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
+import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
@@ -49,6 +50,19 @@ public class DedicatedX448KeyPairTest
         testConversionOfBcKeyPair();
         testV4MessageEncryptionDecryptionWithJcaKey();
         testV4MessageEncryptionDecryptionWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("XDH", new BouncyCastleProvider());
+        gen.initialize(new XDHParameterSpec("X448"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.X448, kp, date);
+        isEquals("X448 key size mismatch", 448, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
