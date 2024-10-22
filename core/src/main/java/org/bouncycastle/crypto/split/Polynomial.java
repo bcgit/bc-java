@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.split;
 
+import java.security.SecureRandom;
+
 public abstract class Polynomial
+    implements SecretSharing
 {
     public static final byte AES = 0;
     public static final byte RSA = 1;
@@ -27,7 +30,18 @@ public abstract class Polynomial
 
     protected Polynomial(int l, int m, int n)
     {
-        //TODO: check m <= n <= 255
+        if (l < 0 || l > 65534)
+        {
+            throw new IllegalArgumentException("Invalid input: l ranges from 0 to 65534 (2^16-2) bytes.");
+        }
+        if (m < 1 || m > 255)
+        {
+            throw new IllegalArgumentException("Invalid input: m must be less than 256 and positive.");
+        }
+        if (n < m || n > 255)
+        {
+            throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to n.");
+        }
         this.l = l;
         this.m = m;
         this.n = n;
@@ -45,17 +59,23 @@ public abstract class Polynomial
         }
     }
 
-    public byte[][] createShares(byte[][] sr)
+    public byte[][] createShares(SecureRandom random)
     {
-        byte[][] result = new byte[p.length][sr[0].length];
-        for (int i = 0; i < p.length; i++)
+        byte[][] sr = new byte[m][l];
+        byte[][] result = new byte[p.length][l];
+        int i;
+        for (i = 0; i < m; ++i)
+        {
+            random.nextBytes(sr[i]);
+        }
+        for (i = 0; i < p.length; i++)
         {
             result[i] = gfVecMul(p[i], sr);
         }
         return result;
     }
 
-    public byte[] recombine(byte[] rr, byte[][] splits)
+    public byte[] recombineShares(int[] rr, byte[]... splits)
     {
         int n = rr.length;
         byte[] r = new byte[n];
@@ -68,7 +88,7 @@ public abstract class Polynomial
             {
                 if (j != i)
                 {
-                    products[tmp++] = gfDiv(rr[j] & 0xff, (rr[i] ^ rr[j]) & 0xff);
+                    products[tmp++] = gfDiv(rr[j], rr[i] ^ rr[j]);
                 }
             }
 
@@ -94,11 +114,11 @@ public abstract class Polynomial
         {
             if ((k & (1 << i)) != 0)
             {
-                result = (byte) gfMul(result & 0xff, n & 0xff);
+                result = (byte)gfMul(result & 0xff, n & 0xff);
             }
             n = gfMul(n & 0xff, n & 0xff);
         }
-        return (byte) result;
+        return (byte)result;
     }
 
     private byte[] gfVecMul(byte[] xs, byte[][] yss)
@@ -112,7 +132,7 @@ public abstract class Polynomial
             {
                 sum ^= gfMul(xs[k] & 0xff, yss[k][j] & 0xff);
             }
-            result[j] = (byte) sum;
+            result[j] = (byte)sum;
         }
         return result;
     }
