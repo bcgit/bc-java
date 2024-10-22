@@ -785,7 +785,18 @@ public class PolynomialTest
         Polynomial newInstance(int l, int m, int n);
     }
 
+    @Override
+    public String getName()
+    {
+        return "Polynomial Test";
+    }
+
     public void performTest()
+    {
+        testPolynomial();;
+    }
+
+    public void testPolynomial()
     {
         testPolynoimial1(new PolynomialFactory()
         {
