@@ -47,7 +47,7 @@ public class PGPPublicKey
     List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>();
 
     List<PGPSignature> subSigs = null;
-    
+
     private KeyIdentifier keyIdentifier;
     private int keyStrength;
 
@@ -150,7 +150,7 @@ public class PGPPublicKey
         this.publicPk = key.publicPk;
         this.trustPk = trust;
         this.subSigs = subSigs;
-        
+
         this.keyStrength = key.keyStrength;
         this.keyIdentifier = key.keyIdentifier;
     }
@@ -1217,7 +1217,7 @@ public class PGPPublicKey
             {
                 PGPSignature existingSubSig = (PGPSignature)rlt.get(i);
                 if (existingSubSig.getVersion() == copySubSig.getVersion() &&
-                        PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                    PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                 {
                     found = true;
                     // join existing sig with copy to apply modifications in unhashed subpackets
