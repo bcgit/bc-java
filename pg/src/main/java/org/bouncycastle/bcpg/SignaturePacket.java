@@ -26,7 +26,7 @@ public class SignaturePacket
 
     private int                    version;
     private int                    signatureType;
-    private long                   creationTime;
+    private long                   creationTime; // millis
     private long                   keyID;
     private int                    keyAlgorithm;
     private int                    hashAlgorithm;
@@ -647,10 +647,8 @@ public class SignaturePacket
         {
             pOut.write(5); // the length of the next block
 
-            long    time = creationTime / 1000;
-
             pOut.write(signatureType);
-            StreamUtil.writeTime(pOut, time);
+            StreamUtil.writeTime(pOut, creationTime);
 
             StreamUtil.writeKeyID(pOut, keyID);
 
