@@ -169,9 +169,9 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         simpleAlgs.put(MiscObjectIdentifiers.id_alg_composite, "COMPOSITE");
         simpleAlgs.put(BCObjectIdentifiers.falcon_512, "Falcon-512");
         simpleAlgs.put(BCObjectIdentifiers.falcon_1024, "Falcon-1024");
-        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_44, "Dilithium2");
-        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_65, "Dilithium3");
-        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_87, "Dilithium5");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium2, "Dilithium2");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium3, "Dilithium3");
+        simpleAlgs.put(BCObjectIdentifiers.dilithium5, "Dilithium5");
         simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, "SPHINCS+-SHA2-128s");
         simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, "SPHINCS+-SHA2-128f");
         simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_sha2_192s, "SPHINCS+-SHA2-192s");
@@ -185,12 +185,23 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
         simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_256s, "SPHINCS+-SHAKE-256s");
         simpleAlgs.put(BCObjectIdentifiers.sphincsPlus_shake_256f, "SPHINCS+-SHAKE-256f");
 
+        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44");
+        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65");
+        simpleAlgs.put(NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87");
+
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA-SHA2-128S");
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA-SHA2-128F");
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA-SHA2-192S");
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SLH-DSA-SHA2-192F");
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SLH-DSA-SHA2-256S");
         simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SLH-DSA-SHA2-256F");
+
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SLH-DSA-SHAKE-128S");
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SLH-DSA-SHAKE-128F");
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SLH-DSA-SHAKE-192S");
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SLH-DSA-SHAKE-192F");
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SLH-DSA-SHAKE-256S");
+        simpleAlgs.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SLH-DSA-SHAKE-256F");
 
         simpleAlgs.put(BCObjectIdentifiers.picnic_signature, "Picnic");
     }
