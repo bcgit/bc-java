@@ -1,5 +1,8 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.io.IOException;
+import java.security.SecureRandom;
+
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -16,9 +19,6 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.util.Arrays;
 
-import java.io.IOException;
-import java.security.SecureRandom;
-
 public class BcAEADSecretKeyEncryptorBuilder
 {
 
@@ -33,7 +33,7 @@ public class BcAEADSecretKeyEncryptorBuilder
         this.argon2Params = argon2Params;
     }
 
-    public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKey)
+    public PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey)
     {
         return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, new SecureRandom(), passphrase)
         {
@@ -83,7 +83,11 @@ public class BcAEADSecretKeyEncryptorBuilder
                     cipher.doFinal(encKey, dataLen);
                     return encKey;
                 }
-                catch (IOException | InvalidCipherTextException e)
+                catch (IOException e)
+                {
+                      throw new PGPException("Exception AEAD protecting private key material", e);
+                }
+                catch (InvalidCipherTextException e)
                 {
                     throw new PGPException("Exception AEAD protecting private key material", e);
                 }

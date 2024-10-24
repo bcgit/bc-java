@@ -1,15 +1,20 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class SignaturePacketTest
         extends AbstractPacketTest
@@ -137,7 +142,7 @@ public class SignaturePacketTest
         // Hex-encoded signature with version 0x99
         byte[] encSigPacket = Hex.decode("885e990016080006050255f95f95000a09108cfde12197965a9af62200ff56f90cca98e2102637bd983fdb16c131dfd27ed82bf4dde5606e0d756aed33660100d09c4fa11527f038e0f57f2201d82f2ea2c9033265fa6ceb489e854bae61b404");
         ByteArrayInputStream bIn = new ByteArrayInputStream(encSigPacket);
-        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        final BCPGInputStream pIn = new BCPGInputStream(bIn);
         Exception ex = testException("unsupported version: 153",
                 "UnsupportedPacketVersionException",
                 new TestExceptionOperation()

@@ -281,7 +281,7 @@ public class PGPSecretKeyRing
     @Override
     public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> matches = new ArrayList<>();
+        List<PGPPublicKey> matches = new ArrayList<PGPPublicKey>();
         for (PGPSecretKey k : keys)
         {
             if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
@@ -314,7 +314,7 @@ public class PGPSecretKeyRing
 
     public Iterator<PGPSecretKey> getSecretKeys(KeyIdentifier identifier)
     {
-        List<PGPSecretKey> matches = new ArrayList<>();
+        List<PGPSecretKey> matches = new ArrayList<PGPSecretKey>();
         for (PGPSecretKey k : keys)
         {
             if (identifier.matches(k.getKeyIdentifier()))
@@ -353,7 +353,7 @@ public class PGPSecretKeyRing
     @Override
     public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
     {
-        List<PGPPublicKey> keysWithSigs = new ArrayList<>();
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
         for (PGPSecretKey k : keys)
         {
             if (k.getPublicKey() == null)
