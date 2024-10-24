@@ -10,7 +10,6 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
@@ -30,7 +29,7 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 public class MLDSATest
     extends TestCase
 {
-    private static final Map<String, MLDSAParameters> parametersMap = new HashMap<String, MLDSAParameters>()
+    private static final Map<String, MLDSAParameters> PARAMETERS_MAP = new HashMap<String, MLDSAParameters>()
     {
         {
             put("ML-DSA-44", MLDSAParameters.ml_dsa_44);
@@ -39,6 +38,58 @@ public class MLDSATest
         }
     };
 
+    private static final MLDSAParameters[] PARAMETER_SETS = new MLDSAParameters[]
+    {
+        MLDSAParameters.ml_dsa_44,
+        MLDSAParameters.ml_dsa_65,
+        MLDSAParameters.ml_dsa_87,
+    };
+
+    public void testConsistency() throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+
+        MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
+
+        for (MLDSAParameters parameters : PARAMETER_SETS)
+        {
+            kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
+
+            int msgSize = 0;
+            do
+            {
+                byte[] msg = new byte[msgSize];
+
+                for (int i = 0; i < 2; ++i)
+                {
+                    AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+                    MLDSASigner signer = new MLDSASigner();
+
+                    for (int j = 0; j < 2; ++j)
+                    {
+                        random.nextBytes(msg);
+
+                        // sign
+                        signer.init(true, new ParametersWithRandom(kp.getPrivate(), random));
+                        signer.update(msg, 0, msg.length);
+                        byte[] signature = signer.generateSignature();
+
+                        // verify
+                        signer.init(false, kp.getPublic());
+                        signer.update(msg, 0, msg.length);
+                        boolean shouldVerify = signer.verifySignature(signature);
+
+                        assertTrue("count = " + i, shouldVerify);
+                    }
+                }
+
+                msgSize += msgSize < 128 ? 1 : 17;
+            }
+            while (msgSize <= 2048);
+        }
+    }
+
     public void testKeyGen()
         throws IOException
     {
@@ -46,12 +97,6 @@ public class MLDSATest
             "keyGen_ML-DSA-44.txt",
             "keyGen_ML-DSA-65.txt",
             "keyGen_ML-DSA-87.txt",
-        };
-
-        MLDSAParameters[] params = new MLDSAParameters[]{
-            MLDSAParameters.ml_dsa_44,
-            MLDSAParameters.ml_dsa_65,
-            MLDSAParameters.ml_dsa_87,
         };
 
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
@@ -79,7 +124,7 @@ public class MLDSATest
                         byte[] sk = Hex.decode((String)buf.get("sk"));
 
                         FixedSecureRandom random = new FixedSecureRandom(seed);
-                        MLDSAParameters parameters = params[fileIndex];
+                        MLDSAParameters parameters = PARAMETER_SETS[fileIndex];
 
                         MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
                         kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
@@ -119,12 +164,6 @@ public class MLDSATest
             "sigGen_ML-DSA-87.txt",
         };
 
-        MLDSAParameters[] params = new MLDSAParameters[]{
-            MLDSAParameters.ml_dsa_44,
-            MLDSAParameters.ml_dsa_65,
-            MLDSAParameters.ml_dsa_87,
-        };
-
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -155,7 +194,7 @@ public class MLDSATest
                             rnd = Hex.decode((String)buf.get("rnd"));
                         }
 
-                        MLDSAParameters parameters = params[fileIndex];
+                        MLDSAParameters parameters = PARAMETER_SETS[fileIndex];
 
                         MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
@@ -191,12 +230,6 @@ public class MLDSATest
             "sigVer_ML-DSA-87.txt",
         };
 
-        MLDSAParameters[] params = new MLDSAParameters[]{
-            MLDSAParameters.ml_dsa_44,
-            MLDSAParameters.ml_dsa_65,
-            MLDSAParameters.ml_dsa_87,
-        };
-
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
@@ -223,7 +256,7 @@ public class MLDSATest
                         byte[] message = Hex.decode((String)buf.get("message"));
                         byte[] signature = Hex.decode((String)buf.get("signature"));
 
-                        MLDSAParameters parameters = params[fileIndex];
+                        MLDSAParameters parameters = PARAMETER_SETS[fileIndex];
 
                         MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
 
@@ -263,66 +296,6 @@ public class MLDSATest
         assertTrue(Arrays.areEqual(randBytes, testBytes));
     }
 
-
-    public void testMLDSARandom()
-    {
-        MLDSAKeyPairGenerator keyGen = new MLDSAKeyPairGenerator();
-
-        SecureRandom random = new SecureRandom();
-
-        for (MLDSAParameters param : new MLDSAParameters[]{
-            MLDSAParameters.ml_dsa_44, MLDSAParameters.ml_dsa_65, MLDSAParameters.ml_dsa_87})
-        {
-            keyGen.init(new MLDSAKeyGenerationParameters(random, param));
-            for (int msgSize = 0; msgSize < 2049; )
-            {
-                byte[] msg = new byte[msgSize];
-                if (msgSize < 128)
-                {
-                    msgSize += 1;
-                }
-                else
-                {
-                    msgSize += 12;
-                }
-                for (int i = 0; i != 100; i++)
-                {
-                    random.nextBytes(msg);
-                    AsymmetricCipherKeyPair keyPair = keyGen.generateKeyPair();
-
-                    // sign
-                    MLDSASigner signer = new MLDSASigner();
-                    MLDSAPrivateKeyParameters skparam = (MLDSAPrivateKeyParameters)keyPair.getPrivate();
-                    ParametersWithRandom skwrand = new ParametersWithRandom(skparam, random);
-                    signer.init(true, skwrand);
-
-                    signer.update(msg, 0, msg.length);
-
-                    byte[] sigGenerated;
-                    try
-                    {
-                        sigGenerated = signer.generateSignature();
-                    }
-                    catch (CryptoException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-
-                    // verify
-                    MLDSASigner verifier = new MLDSASigner();
-                    MLDSAPublicKeyParameters pkparam = (MLDSAPublicKeyParameters)keyPair.getPublic();
-                    verifier.init(false, pkparam);
-
-                    verifier.update(msg, 0, msg.length);
-
-                    boolean ok = verifier.verifySignature(sigGenerated);
-
-                    assertTrue("count = " + i, ok);
-                }
-            }
-        }
-    }
-
     public void testKeyGenCombinedVectorSet()
         throws IOException
     {
@@ -348,7 +321,7 @@ public class MLDSATest
                     byte[] sk = Hex.decode((String)buf.get("sk"));
 
                     FixedSecureRandom random = new FixedSecureRandom(seed);
-                    MLDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
                     kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
@@ -413,7 +386,7 @@ public class MLDSATest
                         rnd = new byte[32];
                     }
 
-                    MLDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
@@ -466,7 +439,7 @@ public class MLDSATest
                     byte[] message = Hex.decode((String)buf.get("message"));
                     byte[] signature = Hex.decode((String)buf.get("signature"));
 
-                    MLDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
 
