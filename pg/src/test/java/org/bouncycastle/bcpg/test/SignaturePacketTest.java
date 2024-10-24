@@ -147,7 +147,6 @@ public class SignaturePacketTest
                 "UnsupportedPacketVersionException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {

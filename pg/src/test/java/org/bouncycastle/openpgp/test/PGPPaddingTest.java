@@ -73,7 +73,6 @@ public class PGPPaddingTest
     {
         testException(null, "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -86,7 +85,6 @@ public class PGPPaddingTest
     {
         testException(null, "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
