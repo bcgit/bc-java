@@ -1,5 +1,10 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Iterator;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -12,14 +17,9 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 
 public class PGPv5KeyTest
     extends AbstractPgpKeyPairTest
@@ -73,7 +73,7 @@ public class PGPv5KeyTest
     private void parseAndEncodeKey()
         throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         Streams.pipeAll(aIn, bOut);
@@ -104,7 +104,7 @@ public class PGPv5KeyTest
     private void parseCertificateAndVerifyKeySigs()
         throws IOException, PGPException 
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(CERT.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(CERT));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         Streams.pipeAll(aIn, bOut);

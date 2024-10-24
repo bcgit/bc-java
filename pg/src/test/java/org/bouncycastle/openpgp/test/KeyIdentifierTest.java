@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -18,6 +17,7 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -220,7 +220,7 @@ public class KeyIdentifierTest
                 "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
                 "k0mXubZvyl4GBg==\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -256,7 +256,7 @@ public class KeyIdentifierTest
                 "Pnn+We1aTBhaGa86AQ==\n" +
                 "=n8OM\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
