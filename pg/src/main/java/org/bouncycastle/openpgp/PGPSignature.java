@@ -665,8 +665,9 @@ public class PGPSignature
     private List<KeyIdentifier> extractKeyIdentifiers(SignatureSubpacket[] subpackets)
     {
         List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
-        for (SignatureSubpacket s : subpackets)
+        for (int idx = 0; idx != subpackets.length; idx++)
         {
+            SignatureSubpacket s = subpackets[idx];
             if (s instanceof IssuerFingerprint)
             {
                 IssuerFingerprint issuer = (IssuerFingerprint) s;

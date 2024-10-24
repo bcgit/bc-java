@@ -141,7 +141,7 @@ public class AllTests
             }
             else
             {
-                System.clearProperty(PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME);
+                System.setProperty(PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, "");
             }
         }
 

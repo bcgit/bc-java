@@ -69,8 +69,9 @@ public class SLHDSATest
 
         SLHDSAKeyPairGenerator kpg = new SLHDSAKeyPairGenerator();
 
-        for (SLHDSAParameters parameters : PARAMETER_SETS)
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
         {
+            SLHDSAParameters parameters = PARAMETER_SETS[idx];
             kpg.init(new SLHDSAKeyGenerationParameters(random, parameters));
 
             {
@@ -234,7 +235,7 @@ public class SLHDSATest
             {
                 if (buf.size() > 0)
                 {
-                    boolean testPassed = AllTests.parseBoolean((String)buf.get("testPassed"));
+                    boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
 //                    boolean deterministic = !buf.containsKey("additionalRandomness");
                     String reason = (String)buf.get("reason");
 
@@ -461,7 +462,7 @@ public class SLHDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = AllTests.parseBoolean((String)buf.get("testPassed"));
+                        boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
 //                        boolean deterministic = !buf.containsKey("additionalRandomness");
                         String reason = (String)buf.get("reason");
 

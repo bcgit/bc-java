@@ -51,8 +51,9 @@ public class MLDSATest
 
         MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
 
-        for (MLDSAParameters parameters : PARAMETER_SETS)
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
         {
+            MLDSAParameters parameters = PARAMETER_SETS[idx];
             kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
 
             int msgSize = 0;
@@ -250,7 +251,7 @@ public class MLDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = AllTests.parseBoolean((String)buf.get("testPassed"));
+                        boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
                         String reason = (String)buf.get("reason");
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] message = Hex.decode((String)buf.get("message"));
@@ -321,7 +322,7 @@ public class MLDSATest
                     byte[] sk = Hex.decode((String)buf.get("sk"));
 
                     FixedSecureRandom random = new FixedSecureRandom(seed);
-                    MLDSAParameters parameters = (MLSDAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = (MLDSAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
                     kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
@@ -372,7 +373,7 @@ public class MLDSATest
             {
                 if (buf.size() > 0)
                 {
-                    boolean deterministic = Boolean.valueOf((String)buf.get("deterministic"));
+                    boolean deterministic = TestUtils.parseBoolean((String)buf.get("deterministic"));
                     byte[] sk = Hex.decode((String)buf.get("sk"));
                     byte[] message = Hex.decode((String)buf.get("message"));
                     byte[] signature = Hex.decode((String)buf.get("signature"));
@@ -386,8 +387,7 @@ public class MLDSATest
                         rnd = new byte[32];
                     }
 
-                    MLDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
-
+                    MLDSAParameters parameters = (MLDSAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
                     MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
                     // sign
@@ -433,7 +433,7 @@ public class MLDSATest
             {
                 if (!buf.isEmpty())
                 {
-                    boolean expectedResult = AllTests.parseBoolean((String)buf.get("testPassed"));
+                    boolean expectedResult = TestUtils.parseBoolean((String)buf.get("testPassed"));
 
                     byte[] pk = Hex.decode((String)buf.get("pk"));
                     byte[] message = Hex.decode((String)buf.get("message"));
