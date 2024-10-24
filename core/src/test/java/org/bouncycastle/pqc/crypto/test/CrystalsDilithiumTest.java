@@ -216,7 +216,7 @@ public class CrystalsDilithiumTest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = Boolean.parseBoolean((String)buf.get("testPassed"));
+                        boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
                         String reason = (String)buf.get("reason");
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] sk = Hex.decode((String)buf.get("sk"));
