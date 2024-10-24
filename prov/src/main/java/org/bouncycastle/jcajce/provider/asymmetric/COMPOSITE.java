@@ -8,7 +8,9 @@ import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
@@ -89,10 +91,28 @@ public class COMPOSITE
 
             for (int i = 0; i != keySeq.size(); i++)
             {
-                PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(keySeq.getObjectAt(i));
+                ASN1Sequence kSeq = ASN1Sequence.getInstance(keySeq.getObjectAt(i));
 
-                privKeys[i] = provider.getKeyInfoConverter(
-                    privInfo.getPrivateKeyAlgorithm().getAlgorithm()).generatePrivate(privInfo);
+                if (kSeq.size() == 2)
+                {
+                    ASN1EncodableVector v = new ASN1EncodableVector(2);
+
+                    v.add(keyInfo.getVersion());
+                    v.add(kSeq.getObjectAt(0));
+                    v.add(kSeq.getObjectAt(1));
+
+                    PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(new DERSequence(v));
+
+                    privKeys[i] = provider.getKeyInfoConverter(
+                                               privInfo.getPrivateKeyAlgorithm().getAlgorithm()).generatePrivate(privInfo);
+                }
+                else
+                {
+                    PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kSeq);
+
+                    privKeys[i] = provider.getKeyInfoConverter(
+                            privInfo.getPrivateKeyAlgorithm().getAlgorithm()).generatePrivate(privInfo);
+                }
             }
 
             return new CompositePrivateKey(privKeys);

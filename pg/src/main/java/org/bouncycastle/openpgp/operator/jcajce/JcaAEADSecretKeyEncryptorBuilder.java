@@ -1,5 +1,12 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.security.Provider;
+import java.security.SecureRandom;
+
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -15,17 +22,6 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.util.Arrays;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.io.IOException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Provider;
-import java.security.SecureRandom;
 
 public class JcaAEADSecretKeyEncryptorBuilder
 {
@@ -59,7 +55,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
         return this;
     }
 
-    public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKey)
+    public PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey)
     {
         return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, new SecureRandom(), passphrase)
         {
@@ -102,8 +98,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
                     byte[] data = c.doFinal(keyData, keyOff, keyLen);
                     return data;
                 }
-                catch (IOException | InvalidAlgorithmParameterException | InvalidKeyException |
-                       IllegalBlockSizeException | BadPaddingException e)
+                catch (Exception e)
                 {
                     throw new PGPException("Exception AEAD protecting private key material", e);
                 }
