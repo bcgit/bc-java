@@ -7,10 +7,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -1445,19 +1444,16 @@ public class ERSTest
             private final ASN1ObjectIdentifier algorithm = NISTObjectIdentifiers.id_sha512;
             private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-            @Override
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
                 return new AlgorithmIdentifier(algorithm);
             }
 
-            @Override
             public OutputStream getOutputStream()
             {
                 return bOut;
             }
-
-            @Override
+            
             public byte[] getDigest()
             {
                 final byte[] bytes = bOut.toByteArray();
@@ -1536,7 +1532,6 @@ public class ERSTest
 
         final DigestCalculatorProvider digestCalculatorProvider = new DigestCalculatorProvider()
         {
-            @Override
             public DigestCalculator get(AlgorithmIdentifier digestAlgorithmIdentifier)
                 throws OperatorCreationException
             {
@@ -1601,7 +1596,7 @@ public class ERSTest
             Base64.decode(evidenceRecordBase64), digestProvider);
 
         // Sanity check, make sure root hash of ER is what we expect.
-        byte[] sourceData = "foo".getBytes(StandardCharsets.UTF_8);
+        byte[] sourceData = Strings.toUTF8ByteArray("foo");
         byte[] sourceSha256 = MessageDigest.getInstance("SHA-256").digest(sourceData);
         assert Arrays.areEqual(sourceSha256, ersEvidenceRecord.getPrimaryRootHash());
 
@@ -1644,11 +1639,11 @@ public class ERSTest
         byte[] hi = digest.digest(sourceData);
         byte[] hai = digest.digest(atsci);
         byte[] hihai;
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             outputStream.write(hi);
             outputStream.write(hai);
             hihai = outputStream.toByteArray();
-        }
+
         byte[] hiprime = digest.digest(hihai);
         return hiprime;
     }

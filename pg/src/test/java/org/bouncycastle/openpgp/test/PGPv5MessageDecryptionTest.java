@@ -1,5 +1,9 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
@@ -27,13 +31,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilde
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JceSessionKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 public class PGPv5MessageDecryptionTest
     extends AbstractPacketTest
@@ -112,7 +112,7 @@ public class PGPv5MessageDecryptionTest
         objFac = new BcPGPObjectFactory(decIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Plaintext mismatch", plaintext, "Hello, world!\n".getBytes(StandardCharsets.UTF_8));
+        isEncodingEqual("Plaintext mismatch", plaintext, Strings.toUTF8ByteArray("Hello, world!\n"));
     }
 
     private void decryptSKESK5OCBED1_jce()
@@ -132,13 +132,13 @@ public class PGPv5MessageDecryptionTest
         objFac = new JcaPGPObjectFactory(decIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Plaintext mismatch", plaintext, "Hello, world!\n".getBytes(StandardCharsets.UTF_8));
+        isEncodingEqual("Plaintext mismatch", plaintext, Strings.toUTF8ByteArray("Hello, world!\n"));
     }
 
     private void decryptOCBED1viaSessionKey_bc()
         throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5OEDMessage));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -154,13 +154,13 @@ public class PGPv5MessageDecryptionTest
         objFac = new BcPGPObjectFactory(comIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Hello World :)".getBytes(StandardCharsets.UTF_8), plaintext);
+        isEncodingEqual(Strings.toUTF8ByteArray("Hello World :)"), plaintext);
     }
 
     private void decryptOCBED1viaSessionKey_jca()
         throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5OEDMessage));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new JcaPGPObjectFactory(pIn);
@@ -177,19 +177,19 @@ public class PGPv5MessageDecryptionTest
         objFac = new JcaPGPObjectFactory(comIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Hello World :)".getBytes(StandardCharsets.UTF_8), plaintext);
+        isEncodingEqual(Strings.toUTF8ByteArray("Hello World :)"), plaintext);
     }
 
     private void decryptPKESK3OCBED1_bc()
         throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V5KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
         PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
 
-        bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5OEDMessage));
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
         objFac = new BcPGPObjectFactory(pIn);
@@ -205,19 +205,19 @@ public class PGPv5MessageDecryptionTest
         objFac = new BcPGPObjectFactory(comIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Plaintext mismatch", plaintext, "Hello World :)".getBytes(StandardCharsets.UTF_8));
+        isEncodingEqual("Plaintext mismatch", plaintext, Strings.toUTF8ByteArray("Hello World :)"));
     }
 
     private void decryptPKESK3OCBED1_jce()
         throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V5KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new JcaPGPObjectFactory(pIn);
         PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
 
-        bIn = new ByteArrayInputStream(V5OEDMessage.getBytes(StandardCharsets.UTF_8));
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V5OEDMessage));
         aIn = new ArmoredInputStream(bIn);
         pIn = new BCPGInputStream(aIn);
         objFac = new JcaPGPObjectFactory(pIn);
@@ -235,7 +235,7 @@ public class PGPv5MessageDecryptionTest
         objFac = new JcaPGPObjectFactory(comIn);
         PGPLiteralData lit = (PGPLiteralData) objFac.nextObject();
         byte[] plaintext = Streams.readAll(lit.getDataStream());
-        isEncodingEqual("Plaintext mismatch", plaintext, "Hello World :)".getBytes(StandardCharsets.UTF_8));
+        isEncodingEqual("Plaintext mismatch", plaintext, Strings.toUTF8ByteArray("Hello World :)"));
     }
 
     public static void main(String[] args)

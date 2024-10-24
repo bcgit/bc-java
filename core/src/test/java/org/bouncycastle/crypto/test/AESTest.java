@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Random;
 
@@ -18,6 +17,7 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -563,7 +563,7 @@ public class AESTest
 
     private void verify(String inStr) {
         SICBlockCipher cipher = newCipher();
-        byte[] bytes = inStr.getBytes(StandardCharsets.UTF_8);
+        byte[] bytes = Strings.toUTF8ByteArray(inStr);
 
         appendFile(bytes, cipher);
         appendFile(bytes, cipher);
@@ -571,7 +571,7 @@ public class AESTest
 
         byte[] out = new byte[fileBytes.length];
         newCipher().processBytes(fileBytes, 0, fileBytes.length, out, 0);
-        String outStr = new String(out, StandardCharsets.UTF_8);
+        String outStr = Strings.fromUTF8ByteArray(out);
 
         if (!outStr.equals(inStr + inStr + inStr)) {
             throw new RuntimeException("fail");
