@@ -76,6 +76,11 @@ public class AllTests
         }
     }
 
+    static boolean parseBoolean(String value)
+    {
+        return "true".equalsIgnoreCase(value);
+    }
+
     static class BCTestSetup
         extends TestSetup
     {

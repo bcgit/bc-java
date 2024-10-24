@@ -250,7 +250,7 @@ public class MLDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = Boolean.parseBoolean((String)buf.get("testPassed"));
+                        boolean testPassed = AllTests.parseBoolean((String)buf.get("testPassed"));
                         String reason = (String)buf.get("reason");
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] message = Hex.decode((String)buf.get("message"));
@@ -321,7 +321,7 @@ public class MLDSATest
                     byte[] sk = Hex.decode((String)buf.get("sk"));
 
                     FixedSecureRandom random = new FixedSecureRandom(seed);
-                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = (MLSDAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
                     kpGen.init(new MLDSAKeyGenerationParameters(random, parameters));
@@ -386,7 +386,7 @@ public class MLDSATest
                         rnd = new byte[32];
                     }
 
-                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
 
                     MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, sk, null);
 
@@ -433,13 +433,13 @@ public class MLDSATest
             {
                 if (!buf.isEmpty())
                 {
-                    boolean expectedResult = Boolean.parseBoolean((String)buf.get("testPassed"));
+                    boolean expectedResult = AllTests.parseBoolean((String)buf.get("testPassed"));
 
                     byte[] pk = Hex.decode((String)buf.get("pk"));
                     byte[] message = Hex.decode((String)buf.get("message"));
                     byte[] signature = Hex.decode((String)buf.get("signature"));
 
-                    MLDSAParameters parameters = PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+                    MLDSAParameters parameters = (MLDSAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
 
                     MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, pk);
 
