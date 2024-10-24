@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.test;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
@@ -11,6 +10,7 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
 public abstract class CipherTest
@@ -175,7 +175,7 @@ public abstract class CipherTest
             final byte[] myResult = Arrays.copyOf(myDecrypted, msgLen);
 
             /* Check that we have the same result */
-            if (!Arrays.equals(myData, myResult))
+            if (!Arrays.areEqual(myData, myResult))
             {
                 System.out.println("Cipher " + pCipher.getAlgorithmName() + " failed");
             }

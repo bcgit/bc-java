@@ -1,5 +1,11 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -23,12 +29,6 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
 
 public class PGPPaddingTest
     extends SimpleTest
@@ -71,12 +71,28 @@ public class PGPPaddingTest
 
     private void negativePaddingLengthThrows()
     {
-        testException(null, "IllegalArgumentException", () -> new PGPPadding(-1));
+        testException(null, "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPPadding(-1);
+            }
+        });
     }
 
     private void zeroPaddingLengthThrows()
     {
-        testException(null, "IllegalArgumentException", () -> new PGPPadding(0));
+        testException(null, "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                new PGPPadding(0);
+            }
+        });
     }
 
     private void parsePaddedCertificate()
