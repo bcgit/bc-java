@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
@@ -46,6 +47,56 @@ public class SLHDSATest
             put("SLH-DSA-SHAKE-256f", SLHDSAParameters.shake_256f);
         }
     };
+
+    SLHDSAParameters[] PARAMETER_SETS = new SLHDSAParameters[]
+    {
+        SLHDSAParameters.sha2_128f,
+        SLHDSAParameters.sha2_128s,
+        SLHDSAParameters.sha2_192f,
+        SLHDSAParameters.sha2_192s,
+        SLHDSAParameters.sha2_256f,
+        SLHDSAParameters.sha2_256s,
+        SLHDSAParameters.shake_128f,
+        SLHDSAParameters.shake_128s,
+        SLHDSAParameters.shake_192f,
+        SLHDSAParameters.shake_192s,
+        SLHDSAParameters.shake_256f,
+        SLHDSAParameters.shake_256s,
+    };
+
+    public void testConsistency()
+    {
+        SecureRandom random = new SecureRandom();
+
+        SLHDSAKeyPairGenerator kpg = new SLHDSAKeyPairGenerator();
+
+        for (SLHDSAParameters parameters : PARAMETER_SETS)
+        {
+            kpg.init(new SLHDSAKeyGenerationParameters(random, parameters));
+
+            {
+                AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+                SLHDSASigner signer = new SLHDSASigner();
+
+                {
+                    int msgLen = random.nextInt(257);
+                    byte[] msg = new byte[msgLen];
+                    random.nextBytes(msg);
+    
+                    // sign
+                    signer.init(true, new ParametersWithRandom(kp.getPrivate(), random));
+                    byte[] signature = signer.generateSignature(msg);
+    
+                    // verify
+                    signer.init(false, kp.getPublic());
+                    boolean shouldVerify = signer.verifySignature(msg, signature);
+    
+                    assertTrue(shouldVerify);
+                }
+            }
+        }
+    }
 
     public void testKeyGenSingleFile() throws IOException
     {
