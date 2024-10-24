@@ -17,7 +17,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -25,8 +25,8 @@ import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -100,13 +100,12 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 final ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 String keyEncryptionOID = RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId();
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
-                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (JcaJcePGPUtil.isX25519(ecKey.getCurveOID()))
                 {
                     return getEncryptSessionInfo(pubKeyPacket, "X25519", cryptoPublicKey, keyEncryptionOID,
                         ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
                         new KeyPairGeneratorOperation()
                         {
-                            @Override
                             public void initialize(KeyPairGenerator kpGen)
                                 throws GeneralSecurityException, IOException
                             {
@@ -115,7 +114,26 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                         },
                         new EphPubEncoding()
                         {
-                            @Override
+                            public byte[] getEphPubEncoding(byte[] ephPubEncoding)
+                            {
+                                return Arrays.prepend(ephPubEncoding, X_HDR);
+                            }
+                        });
+                }
+                else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    return getEncryptSessionInfo(pubKeyPacket, "X448", cryptoPublicKey, keyEncryptionOID,
+                        ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
+                        new KeyPairGeneratorOperation()
+                        {
+                            public void initialize(KeyPairGenerator kpGen)
+                                throws GeneralSecurityException, IOException
+                            {
+                                kpGen.initialize(448, random);
+                            }
+                        },
+                        new EphPubEncoding()
+                        {
                             public byte[] getEphPubEncoding(byte[] ephPubEncoding)
                             {
                                 return Arrays.prepend(ephPubEncoding, X_HDR);
@@ -128,7 +146,6 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                         ecKey.getSymmetricKeyAlgorithm(), sessionInfo, RFC6637Utils.getAgreementAlgorithm(pubKeyPacket),
                         new KeyPairGeneratorOperation()
                         {
-                            @Override
                             public void initialize(KeyPairGenerator kpGen)
                                 throws GeneralSecurityException, IOException
                             {
@@ -139,7 +156,6 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                         },
                         new EphPubEncoding()
                         {
-                            @Override
                             public byte[] getEphPubEncoding(byte[] ephPubEncoding)
                             {
                                 if (null == ephPubEncoding || ephPubEncoding.length < 1 || ephPubEncoding[0] != 0x04)

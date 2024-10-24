@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -42,6 +41,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class AEADProtectedPGPSecretKeyTest
@@ -94,7 +94,7 @@ public class AEADProtectedPGPSecretKeyTest
         byte[] plainPrimaryKey = Hex.decode("1972817b12be707e8d5f586ce61361201d344eb266a2c82fde6835762b65b0b7");
         byte[] plainSubkey = Hex.decode("4d600a4f794d44775c57a26e0feefed558e9afffd6ad0d582d57fb2ba2dcedb8");
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armoredVector.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armoredVector));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFact = new BcPGPObjectFactory(pIn);
