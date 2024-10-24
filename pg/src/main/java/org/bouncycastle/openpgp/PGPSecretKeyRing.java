@@ -375,7 +375,7 @@ public class PGPSecretKeyRing
         }
         for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
-            PGPPublicKey k = (PGPPublicKey)it.next;
+            PGPPublicKey k = (PGPPublicKey)it.next();
             Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
             if (sigIt.hasNext())
             {

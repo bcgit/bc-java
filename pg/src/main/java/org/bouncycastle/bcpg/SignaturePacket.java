@@ -171,7 +171,7 @@ public class SignaturePacket
 
         for (int i = 0; i != hashedData.length; i++)
         {
-            SignatureSubpacket p = vec.elementAt(i);
+            SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
@@ -189,7 +189,7 @@ public class SignaturePacket
 
         for (int i = 0; i != unhashedData.length; i++)
         {
-            SignatureSubpacket p = vec.elementAt(i);
+            SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
