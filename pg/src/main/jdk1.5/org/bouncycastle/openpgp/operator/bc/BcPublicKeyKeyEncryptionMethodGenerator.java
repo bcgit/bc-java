@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -13,7 +13,6 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Wrapper;
@@ -85,7 +84,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             {
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
                 byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket, new BcKeyFingerprintCalculator());
-                if (ecPubKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecPubKey.getCurveOID()))
                 {
                     AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random));
 
@@ -94,6 +93,17 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
                     ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
+                    return encryptSessionInfo(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
+                }
+                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X448KeyPairGenerator(), new X448KeyGenerationParameters(random));
+
+                    byte[] secret = BcUtil.getSecret(new X448Agreement(), ephKp.getPrivate(), cryptoPublicKey);
+
+                    byte[] ephPubEncoding = new byte[1 + X448PublicKeyParameters.KEY_SIZE];
+                    ephPubEncoding[0] = X_HDR;
+                    ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
                     return encryptSessionInfo(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
                 else
@@ -115,7 +125,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             {
                 return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
                     new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random), new X25519Agreement(), cryptoPublicKey, X25519PublicKeyParameters.KEY_SIZE,
-                    new ephPubEncodingOperation()
+                    new EphPubEncodingOperation()
                     {
                         @Override
                         public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
@@ -128,7 +138,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             {
                 return encryptSessionInfo(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
                     new X448KeyPairGenerator(), new X448KeyGenerationParameters(random), new X448Agreement(), cryptoPublicKey, X448PublicKeyParameters.KEY_SIZE,
-                    new ephPubEncodingOperation()
+                    new EphPubEncodingOperation()
                     {
                         @Override
                         public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
@@ -153,7 +163,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     }
 
     @FunctionalInterface
-    private interface ephPubEncodingOperation
+    private interface EphPubEncodingOperation
     {
         void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding);
     }
@@ -173,7 +183,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
     private byte[] encryptSessionInfo(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
                                       AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
-                                      int keySize, ephPubEncodingOperation ephPubEncodingOperation)
+                                      int keySize, EphPubEncodingOperation ephPubEncodingOperation)
         throws PGPException, IOException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);

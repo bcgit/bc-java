@@ -1,11 +1,11 @@
 package org.bouncycastle.bcpg.sig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Signature Subpacket containing the AEAD cipher suites (AEAD algorithm, Symmetric Key Algorithm pairs)
@@ -169,7 +169,7 @@ public class PreferredAEADCiphersuites
     public static final class Builder
     {
 
-        private final List<Combination> combinations = new ArrayList<>();
+        private final List<Combination> combinations = new ArrayList<Combination>();
         private final boolean isCritical;
 
         private Builder(boolean isCritical)

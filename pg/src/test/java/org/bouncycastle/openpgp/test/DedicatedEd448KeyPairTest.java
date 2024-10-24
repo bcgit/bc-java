@@ -1,5 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -22,11 +30,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
+import org.bouncycastle.util.Strings;
 
 public class DedicatedEd448KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -150,7 +154,7 @@ public class DedicatedEd448KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),
@@ -177,7 +181,7 @@ public class DedicatedEd448KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),
