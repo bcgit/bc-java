@@ -25,6 +25,7 @@ import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -35,6 +36,12 @@ import org.bouncycastle.util.encoders.Hex;
 public class MLKEMTest
     extends TestCase
 {
+    static private final String[] names = new String[]{
+        "ML-KEM-512",
+        "ML-KEM-768",
+        "ML-KEM-1024"
+    };
+    
     public void setUp()
     {
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
@@ -44,6 +51,27 @@ public class MLKEMTest
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    public void testParametersAndParamSpecs()
+        throws Exception
+    {
+        MLKEMParameters mldsaParameters[] = new MLKEMParameters[]
+            {
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024
+            };
+
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], MLKEMParameterSpec.fromName(mldsaParameters[i].getName()).getName());
+        }
+
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], MLKEMParameterSpec.fromName(names[i]).getName());
+        }
+    }
+    
     public void testKeyFactory()
         throws Exception
     {

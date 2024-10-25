@@ -26,6 +26,7 @@ import org.bouncycastle.jcajce.interfaces.MLDSAKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -39,6 +40,15 @@ public class MLDSATest
 {
     byte[] msg = Strings.toByteArray("Hello World!");
 
+    static private final String[] names = new String[]{
+        "ML-DSA-44",
+        "ML-DSA-65",
+        "ML-DSA-87",
+        "ML-DSA-44-WITH-SHA512",
+        "ML-DSA-65-WITH-SHA512",
+        "ML-DSA-87-WITH-SHA512"
+    };
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
@@ -46,6 +56,30 @@ public class MLDSATest
             Security.addProvider(new BouncyCastlePQCProvider());
         }
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    public void testParametersAndParamSpecs()
+        throws Exception
+    {
+        MLDSAParameters mldsaParameters[] = new MLDSAParameters[]
+            {
+                MLDSAParameters.ml_dsa_44,
+                MLDSAParameters.ml_dsa_65,
+                MLDSAParameters.ml_dsa_87,
+                MLDSAParameters.ml_dsa_44_with_sha512,
+                MLDSAParameters.ml_dsa_65_with_sha512,
+                MLDSAParameters.ml_dsa_87_with_sha512
+            };
+
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], MLDSAParameterSpec.fromName(mldsaParameters[i].getName()).getName());
+        }
+
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], MLDSAParameterSpec.fromName(names[i]).getName());
+        }
     }
 
     public void testKeyFactory()
