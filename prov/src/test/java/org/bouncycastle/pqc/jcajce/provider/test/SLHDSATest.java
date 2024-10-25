@@ -21,6 +21,7 @@ import org.bouncycastle.jcajce.interfaces.SLHDSAKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -34,7 +35,34 @@ public class SLHDSATest
     extends TestCase
 {
     // test vector courtesy the "Yawning Angel" GO implementation and the SUPERCOP reference implementation.
-    byte[] msg = Strings.toByteArray("Cthulhu Fthagn --What a wonderful phrase!Cthulhu Fthagn --Say it and you're crazed!");
+    static private final byte[] msg = Strings.toByteArray("Cthulhu Fthagn --What a wonderful phrase!Cthulhu Fthagn --Say it and you're crazed!");
+
+    static private final String[] names = new String[] {
+        "SLH-DSA-SHA2-128F",
+        "SLH-DSA-SHA2-128S",
+        "SLH-DSA-SHA2-192F",
+        "SLH-DSA-SHA2-192S",
+        "SLH-DSA-SHA2-256F",
+        "SLH-DSA-SHA2-256S",
+        "SLH-DSA-SHAKE-128F",
+        "SLH-DSA-SHAKE-128S",
+        "SLH-DSA-SHAKE-192F",
+        "SLH-DSA-SHAKE-192S",
+        "SLH-DSA-SHAKE-256F",
+        "SLH-DSA-SHAKE-256S",
+        "SLH-DSA-SHA2-128F-WITH-SHA256",
+        "SLH-DSA-SHA2-128S-WITH-SHA256",
+        "SLH-DSA-SHA2-192F-WITH-SHA512",
+        "SLH-DSA-SHA2-192S-WITH-SHA512",
+        "SLH-DSA-SHA2-256F-WITH-SHA512",
+        "SLH-DSA-SHA2-256S-WITH-SHA512",
+        "SLH-DSA-SHAKE-128F-WITH-SHAKE128",
+        "SLH-DSA-SHAKE-128S-WITH-SHAKE128",
+        "SLH-DSA-SHAKE-192F-WITH-SHAKE256",
+        "SLH-DSA-SHAKE-192S-WITH-SHAKE256",
+        "SLH-DSA-SHAKE-256F-WITH-SHAKE256",
+        "SLH-DSA-SHAKE-256S-WITH-SHAKE256",
+    };
 
     public void setUp()
     {
@@ -45,6 +73,48 @@ public class SLHDSATest
         Security.addProvider(new BouncyCastleProvider());
     }
 
+    public void testParametersAndParamSpecs()
+        throws Exception
+    {
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], SLHDSAParameterSpec.fromName(names[i]).getName());
+        }
+
+        SLHDSAParameters slhdsaParameters[] = new SLHDSAParameters[]
+            {
+                SLHDSAParameters.sha2_128f,
+                SLHDSAParameters.sha2_128s,
+                SLHDSAParameters.sha2_192f,
+                SLHDSAParameters.sha2_192s,
+                SLHDSAParameters.sha2_256f,
+                SLHDSAParameters.sha2_256s,
+                SLHDSAParameters.shake_128f,
+                SLHDSAParameters.shake_128s,
+                SLHDSAParameters.shake_192f,
+                SLHDSAParameters.shake_192s,
+                SLHDSAParameters.shake_256f,
+                SLHDSAParameters.shake_256s,
+                SLHDSAParameters.sha2_128f_with_sha256,
+                SLHDSAParameters.sha2_128s_with_sha256,
+                SLHDSAParameters.sha2_192f_with_sha512,
+                SLHDSAParameters.sha2_192s_with_sha512,
+                SLHDSAParameters.sha2_256f_with_sha512,
+                SLHDSAParameters.sha2_256s_with_sha512,
+                SLHDSAParameters.shake_128f_with_shake128,
+                SLHDSAParameters.shake_128s_with_shake128,
+                SLHDSAParameters.shake_192f_with_shake256,
+                SLHDSAParameters.shake_192s_with_shake256,
+                SLHDSAParameters.shake_256f_with_shake256,
+                SLHDSAParameters.shake_256s_with_shake256
+            };
+
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], SLHDSAParameterSpec.fromName(slhdsaParameters[i].getName()).getName());
+        }
+    }
+
     public void testKeyFactory()
         throws Exception
     {
@@ -52,38 +122,6 @@ public class SLHDSATest
         KeyPair kp44 = kpGen44.generateKeyPair();
 
         KeyFactory kFact = KeyFactory.getInstance("HASH-SLH-DSA", "BC");
-
-        String[] names = new String[] {
-            "SLH-DSA-SHA2-128F",
-            "SLH-DSA-SHA2-128S",
-            "SLH-DSA-SHA2-192F",
-            "SLH-DSA-SHA2-192S",
-            "SLH-DSA-SHA2-256F",
-            "SLH-DSA-SHA2-256S",
-            "SLH-DSA-SHAKE-128F",
-            "SLH-DSA-SHAKE-128S",
-            "SLH-DSA-SHAKE-192F",
-            "SLH-DSA-SHAKE-192S",
-            "SLH-DSA-SHAKE-256F",
-            "SLH-DSA-SHAKE-256S",
-            "SLH-DSA-SHA2-128F-WITH-SHA256",
-            "SLH-DSA-SHA2-128S-WITH-SHA256",
-            "SLH-DSA-SHA2-192F-WITH-SHA512",
-            "SLH-DSA-SHA2-192S-WITH-SHA512",
-            "SLH-DSA-SHA2-256F-WITH-SHA512",
-            "SLH-DSA-SHA2-256S-WITH-SHA512",
-            "SLH-DSA-SHAKE-128F-WITH-SHAKE128",
-            "SLH-DSA-SHAKE-128S-WITH-SHAKE128",
-            "SLH-DSA-SHAKE-192F-WITH-SHAKE256",
-            "SLH-DSA-SHAKE-192S-WITH-SHAKE256",
-            "SLH-DSA-SHAKE-256F-WITH-SHAKE256",
-            "SLH-DSA-SHAKE-256S-WITH-SHAKE256",
-        };
-
-        for (int i = 0; i != names.length; i++)
-        {
-            assertEquals(names[i], SLHDSAParameterSpec.fromName(names[i]).getName());
-        }
 
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[] {
             NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
