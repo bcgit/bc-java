@@ -71,12 +71,12 @@ public class SLHDSAParameterSpec
         parameters.put("sha2-256f", SLHDSAParameterSpec.slh_dsa_sha2_256f);
         parameters.put("sha2-256s", SLHDSAParameterSpec.slh_dsa_sha2_256s);
 
-        parameters.put("slh-dsa-sha2-128f", SLHDSAParameterSpec.slh_dsa_shake_128f);
-        parameters.put("slh-dsa-sha2-128s", SLHDSAParameterSpec.slh_dsa_shake_128s);
-        parameters.put("slh-dsa-sha2-192f", SLHDSAParameterSpec.slh_dsa_shake_192f);
-        parameters.put("slh-dsa-sha2-192s", SLHDSAParameterSpec.slh_dsa_shake_192s);
-        parameters.put("slh-dsa-sha2-256f", SLHDSAParameterSpec.slh_dsa_shake_256f);
-        parameters.put("slh-dsa-sha2-256s", SLHDSAParameterSpec.slh_dsa_shake_256s);
+        parameters.put("slh-dsa-shake-128f", SLHDSAParameterSpec.slh_dsa_shake_128f);
+        parameters.put("slh-dsa-shake-128s", SLHDSAParameterSpec.slh_dsa_shake_128s);
+        parameters.put("slh-dsa-shake-192f", SLHDSAParameterSpec.slh_dsa_shake_192f);
+        parameters.put("slh-dsa-shake-192s", SLHDSAParameterSpec.slh_dsa_shake_192s);
+        parameters.put("slh-dsa-shake-256f", SLHDSAParameterSpec.slh_dsa_shake_256f);
+        parameters.put("slh-dsa-shake-256s", SLHDSAParameterSpec.slh_dsa_shake_256s);
 
         parameters.put("shake-128f", SLHDSAParameterSpec.slh_dsa_shake_128f);
         parameters.put("shake-128s", SLHDSAParameterSpec.slh_dsa_shake_128s);
@@ -99,12 +99,12 @@ public class SLHDSAParameterSpec
         parameters.put("sha2-256f-with-sha512", SLHDSAParameterSpec.slh_dsa_sha2_256f_with_sha512);
         parameters.put("sha2-256s-with-sha512", SLHDSAParameterSpec.slh_dsa_sha2_256s_with_sha512);
 
-        parameters.put("slh-dsashake-128f-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128);
-        parameters.put("slh-dsashake-128s-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128);
-        parameters.put("slh-dsashake-192f-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256);
-        parameters.put("slh-dsashake-192s-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256);
-        parameters.put("slh-dsashake-256f-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256);
-        parameters.put("slh-dsashake-256s-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256);
+        parameters.put("slh-dsa-shake-128f-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128);
+        parameters.put("slh-dsa-shake-128s-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128);
+        parameters.put("slh-dsa-shake-192f-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256);
+        parameters.put("slh-dsa-shake-192s-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256);
+        parameters.put("slh-dsa-shake-256f-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256);
+        parameters.put("slh-dsa-shake-256s-with-shake256", SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256);
 
         parameters.put("shake-128f-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128);
         parameters.put("shake-128s-with-shake128", SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128);
