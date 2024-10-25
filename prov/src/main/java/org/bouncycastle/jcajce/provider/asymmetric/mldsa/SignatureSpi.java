@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
+import org.bouncycastle.util.Strings;
 
 public class SignatureSpi
     extends java.security.Signature
@@ -48,7 +49,7 @@ public class SignatureSpi
             if (parameters != null)
             {
                 String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
-                if (!canonicalAlg.equals(key.getAlgorithm()))
+                if (!canonicalAlg.equals(Strings.toLowerCase(key.getAlgorithm())))
                 {
                     throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
@@ -81,7 +82,7 @@ public class SignatureSpi
             if (parameters != null)
             {
                 String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
-                if (!canonicalAlg.equals(key.getAlgorithm()))
+                if (!canonicalAlg.equals(Strings.toLowerCase(key.getAlgorithm())))
                 {
                     throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }

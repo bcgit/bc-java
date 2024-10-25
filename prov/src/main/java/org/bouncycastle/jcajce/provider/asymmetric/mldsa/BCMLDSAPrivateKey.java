@@ -31,7 +31,7 @@ public class BCMLDSAPrivateKey
             MLDSAPrivateKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     public BCMLDSAPrivateKey(PrivateKeyInfo keyInfo)
