@@ -29,7 +29,6 @@ sourceSets {
 }
 
 dependencies {
-    implementation project(':core')
     implementation project(':util')
     implementation project(':pkix')
     implementation project(':prov')
@@ -190,3 +189,19 @@ artifacts {
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcmls-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+
+    }
+}

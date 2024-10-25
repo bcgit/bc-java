@@ -7,11 +7,13 @@ buildscript {
 
 }
 
+
 plugins {
     id "io.spring.nohttp" version "0.0.11"
     id "checkstyle"
     id "jacoco"
     id "net.ltgt.errorprone" version "3.1.0"
+    id 'maven-publish'
 }
 
 println("Environment setup:")
@@ -160,6 +162,7 @@ allprojects {
         }
     }
 
+
 }
 
 task printProperties {
@@ -183,6 +186,7 @@ ext {
 
 subprojects {
     apply plugin: 'eclipse'
+    apply plugin: 'maven-publish'
 
 
     JavaVersion current = JavaVersion.current();
@@ -276,6 +280,30 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(21)
         }
     }
+
+    publishing {
+        repositories {
+            maven {
+                name "cwmaven"
+                url System.getenv("CW_MAVEN_S3_URL")
+                credentials(AwsCredentials) {
+                    accessKey System.getenv("AWS_KEY")
+                    secretKey System.getenv("AWS_SECRET")
+                }
+            }
+        }
+    }
+
+
+    jar.doLast {
+        if (System.getenv("SIGNJAR_CMD") != null) {
+            exec {
+                commandLine(System.getenv("SIGNJAR_CMD"), archiveFile.get())
+            }
+        }
+    }
+
+
 }
 
 

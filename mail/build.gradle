@@ -18,7 +18,6 @@ dependencies {
     implementation project(':pkix')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
-    implementation project(path: ':core')
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -93,3 +92,19 @@ test {
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcmail-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+
+    }
+}
