@@ -1,13 +1,19 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.OnePassSignaturePacket;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.util.encoders.Hex;
 
 public class OnePassSignaturePacketTest
         extends AbstractPacketTest
@@ -78,8 +84,10 @@ public class OnePassSignaturePacketTest
         isNull("OPS v3 MUST NOT have salt",
                 before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -146,8 +154,10 @@ public class OnePassSignaturePacketTest
         isTrue("non-nested OPS is expected to be containing",
                 before.isContaining());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -198,8 +208,10 @@ public class OnePassSignaturePacketTest
         isEncodingEqual("Salt mismatch",
                 salt, before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+            
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);

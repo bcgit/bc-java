@@ -197,7 +197,7 @@ public class PreferredAEADCiphersuites
          */
         public PreferredAEADCiphersuites build()
         {
-            return new PreferredAEADCiphersuites(isCritical, combinations.toArray(new Combination[0]));
+            return new PreferredAEADCiphersuites(isCritical, (Combination[])combinations.toArray(new Combination[0]));
         }
     }
 
