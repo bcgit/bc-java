@@ -80,6 +80,11 @@ public class SLHDSATest
             "SLH-DSA-SHAKE-256S-WITH-SHAKE256",
         };
 
+        for (int i = 0; i != names.length; i++)
+        {
+            assertEquals(names[i], SLHDSAParameterSpec.fromName(names[i]).getName());
+        }
+
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[] {
             NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
             NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
