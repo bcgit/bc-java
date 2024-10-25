@@ -15,3 +15,14 @@ test {
     maxParallelForks = 8;
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bccore-$vmrange"
+
+            from components.java
+
+        }
+    }
+}

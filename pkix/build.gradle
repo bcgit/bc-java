@@ -15,7 +15,7 @@ evaluationDependsOn(":prov")
 evaluationDependsOn(":util")
 
 dependencies {
-    implementation project(':core')
+
     implementation project(':prov')
     implementation project(':util')
 
@@ -100,3 +100,17 @@ test {
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcpkix-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}
