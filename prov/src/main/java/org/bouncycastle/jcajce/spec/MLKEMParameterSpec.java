@@ -12,17 +12,17 @@ import org.bouncycastle.util.Strings;
 public class MLKEMParameterSpec
     implements AlgorithmParameterSpec
 {
-    public static final MLKEMParameterSpec ml_kem_512 = new MLKEMParameterSpec("ml-kem-512");
-    public static final MLKEMParameterSpec ml_kem_768 = new MLKEMParameterSpec("ml-kem-768");
-    public static final MLKEMParameterSpec ml_kem_1024 = new MLKEMParameterSpec("ml-kem-1024");
+    public static final MLKEMParameterSpec ml_kem_512 = new MLKEMParameterSpec("ML-KEM-512");
+    public static final MLKEMParameterSpec ml_kem_768 = new MLKEMParameterSpec("ML-KEM-768");
+    public static final MLKEMParameterSpec ml_kem_1024 = new MLKEMParameterSpec("ML-KEM-1024");
 
     private static Map parameters = new HashMap();
 
     static
     {
-        parameters.put(ml_kem_512.name, MLKEMParameterSpec.ml_kem_512);
-        parameters.put(ml_kem_768.name, MLKEMParameterSpec.ml_kem_768);
-        parameters.put(ml_kem_1024.name, MLKEMParameterSpec.ml_kem_1024);
+        parameters.put("ml-kem-512", MLKEMParameterSpec.ml_kem_512);
+        parameters.put("ml-kem-768", MLKEMParameterSpec.ml_kem_768);
+        parameters.put("ml-kem-1024", MLKEMParameterSpec.ml_kem_1024);
 
         parameters.put("kyber512", MLKEMParameterSpec.ml_kem_512);
         parameters.put("kyber768", MLKEMParameterSpec.ml_kem_768);
