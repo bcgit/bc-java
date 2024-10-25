@@ -86,13 +86,13 @@ public class PGPv5KeyTest
         PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
         Iterator<PGPPublicKey> it = secretKeys.getPublicKeys();
         isEncodingEqual("Fingerprint mismatch for the primary key.",
-            Hex.decode("19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54"), it.next().getFingerprint());
+            Hex.decode("19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54"), ((PGPPublicKey)it.next()).getFingerprint());
         isEncodingEqual("Fingerprint mismatch for the subkey.",
-            Hex.decode("E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965"), it.next().getFingerprint());
+            Hex.decode("E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965"), ((PGPPublicKey)it.next()).getFingerprint());
 
         it = secretKeys.getPublicKeys();
-        isEquals( "Primary key ID mismatch", 1816212655223104514L, it.next().getKeyID());
-        isEquals("Subkey ID mismatch", -1993550735865823413L, it.next().getKeyID());
+        isEquals( "Primary key ID mismatch", 1816212655223104514L, ((PGPPublicKey)it.next()).getKeyID());
+        isEquals("Subkey ID mismatch", -1993550735865823413L, ((PGPPublicKey)it.next()).getKeyID());
 
         bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.LEGACY);
@@ -117,9 +117,9 @@ public class PGPv5KeyTest
 
         Iterator<PGPPublicKey> it = cert.getPublicKeys();
         isEncodingEqual("Fingerprint mismatch for the primary key.",
-            Hex.decode("19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54"), it.next().getFingerprint());
+            Hex.decode("19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54"), ((PGPPublicKey)it.next()).getFingerprint());
         isEncodingEqual("Fingerprint mismatch for the subkey.",
-            Hex.decode("E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965"), it.next().getFingerprint());
+            Hex.decode("E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965"), ((PGPPublicKey)it.next()).getFingerprint());
 
         bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.LEGACY);
@@ -130,18 +130,18 @@ public class PGPv5KeyTest
             hex, bOut.toByteArray());
 
         it = cert.getPublicKeys();
-        PGPPublicKey primaryKey = it.next();
-        PGPPublicKey subKey = it.next();
+        PGPPublicKey primaryKey = (PGPPublicKey)it.next();
+        PGPPublicKey subKey = (PGPPublicKey)it.next();
 
-        String uid = primaryKey.getUserIDs().next();
+        String uid = (String)primaryKey.getUserIDs().next();
         isEquals("UserID mismatch", "emma.goldman@example.net", uid);
 
-        PGPSignature uidBinding = primaryKey.getSignaturesForID(uid).next();
+        PGPSignature uidBinding = (PGPSignature)primaryKey.getSignaturesForID(uid).next();
         uidBinding.init(new BcPGPContentVerifierBuilderProvider(), primaryKey);
         isTrue("User-ID binding signature MUST verify",
             uidBinding.verifyCertification(uid, primaryKey));
 
-        PGPSignature subkeyBinding = subKey.getSignatures().next();
+        PGPSignature subkeyBinding = (PGPSignature)subKey.getSignatures().next();
         subkeyBinding.init(new BcPGPContentVerifierBuilderProvider(), primaryKey);
         isTrue("Subkey binding signature MUST verify",
             subkeyBinding.verifyCertification(primaryKey, subKey));
