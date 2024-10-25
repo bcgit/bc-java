@@ -59,8 +59,9 @@ public class DedicatedEd448KeyPairTest
         gen.initialize(new EdDSAParameterSpec("Ed448"));
         KeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed448, kp, date);
             byte[] pubEnc = j1.getPublicKey().getEncoded();
             byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -106,8 +107,9 @@ public class DedicatedEd448KeyPairTest
         gen.init(new Ed448KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed448, kp, date);
             byte[] pubEnc = b1.getPublicKey().getEncoded();
             byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
