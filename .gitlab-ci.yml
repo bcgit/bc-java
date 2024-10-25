@@ -2,6 +2,7 @@ stages:
   - check
   - build
   - test
+  - publish
   - sync
 
 check-code:
@@ -52,6 +53,13 @@ test-code:
         - "mls/build/test-results/**/*.xml"
 
 
+publish:
+  stage: publish
+  script:
+    - "apply_overlay bc-java-pub ./"
+    - "ecr_login"
+    - "ecr_pull vm_base_intel latest"
+    - "ci_docker_run \"vm_base_intel:latest\" \"bc-java\" \"/workspace/bc-java/ci/pub.sh\""
 
 spongycastle:
   stage: "sync"
