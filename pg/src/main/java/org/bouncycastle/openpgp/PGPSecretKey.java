@@ -999,7 +999,15 @@ public class PGPSecretKey
 
         SecretKeyPacket secret;
 
-        secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+        if (newKeyEncryptor.getAeadAlgorithm() > 0)
+        {
+            s2kUsage = SecretKeyPacket.USAGE_AEAD;
+            secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, keyData);
+        }
+        else
+        {
+            secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+        }
 
         return new PGPSecretKey(secret, key.pub);
     }
