@@ -529,6 +529,12 @@ public class MLDSATest
         sig.update(msg, 0, msg.length);
 
         assertTrue(sig.verify(genS));
+
+        AlgorithmParameters algP = sig.getParameters();
+
+        ContextParameterSpec cSpec = algP.getParameterSpec(ContextParameterSpec.class);
+
+        assertTrue(Arrays.areEqual(new byte[0], cSpec.getContext()));
     }
 
     public void testHashMLDSAKATSigWithContext()
