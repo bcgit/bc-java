@@ -34,14 +34,14 @@ public abstract class BaseDeterministicOrRandomSignature
     protected BaseDeterministicOrRandomSignature(String name)
     {
         super(name);
-        this.originalSpec = null;
+        this.originalSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
     }
 
     final protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
         verifyInit(publicKey);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -53,7 +53,7 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, null);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -64,7 +64,7 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, random);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
