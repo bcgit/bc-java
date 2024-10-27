@@ -8,8 +8,6 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithContext;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
@@ -23,6 +21,8 @@ public class SignatureSpi
 
     protected SignatureSpi(SLHDSASigner signer)
     {
+        super("SLH-DSA");
+
         this.signer = signer;
     }
 
@@ -79,20 +79,8 @@ public class SignatureSpi
             throw new SignatureException("engine initialized for verification");
         }
 
-        if (appRandom != null)
-        {
-            param = new ParametersWithRandom(param, appRandom);
-        }
-
-        if (paramSpec != null)
-        {
-            param = new ParametersWithContext(param, paramSpec.getContext());
-        }
-
         try
         {
-            signer.init(true, param);
-
             byte[] sig = signer.generateSignature(bOut.toByteArray());
 
             return sig;
@@ -118,15 +106,8 @@ public class SignatureSpi
             throw new SignatureException("engine initialized for signing");
         }
 
-        if (paramSpec != null)
-        {
-            param = new ParametersWithContext(param, paramSpec.getContext());
-        }
-
         try
         {
-            signer.init(false, param);
-
             return signer.verifySignature(bOut.toByteArray(), sigBytes);
         }
         finally
@@ -136,8 +117,10 @@ public class SignatureSpi
         }
     }
 
-    protected void reInit()
+    protected void reInitialize(boolean forSigning, CipherParameters params)
     {
+        signer.init(forSigning, params);
+
         bOut.reset();
     }
     

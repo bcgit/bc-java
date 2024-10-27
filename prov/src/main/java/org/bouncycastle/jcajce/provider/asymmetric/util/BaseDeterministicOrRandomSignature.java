@@ -7,17 +7,20 @@ import java.security.PrivateKey;
 import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.SignatureException;
-import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithContext;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public abstract class BaseDeterministicOrRandomSignature
-    extends SignatureSpi
+    extends Signature
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
     private final AlgorithmParameterSpec originalSpec;
@@ -28,12 +31,13 @@ public abstract class BaseDeterministicOrRandomSignature
     protected AsymmetricKeyParameter keyParams;
     protected boolean isInitState = true;
 
-    protected BaseDeterministicOrRandomSignature()
+    protected BaseDeterministicOrRandomSignature(String name)
     {
+        super(name);
         this.originalSpec = null;
     }
 
-    protected void engineInitVerify(PublicKey publicKey)
+    final protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
         verifyInit(publicKey);
@@ -44,7 +48,7 @@ public abstract class BaseDeterministicOrRandomSignature
 
     protected abstract void verifyInit(PublicKey publicKey) throws InvalidKeyException;
 
-    protected void engineInitSign(
+    final protected void engineInitSign(
         PrivateKey privateKey)
         throws InvalidKeyException
     {
@@ -54,7 +58,7 @@ public abstract class BaseDeterministicOrRandomSignature
         reInit();
     }
 
-    protected void engineInitSign(
+    final protected void engineInitSign(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException
@@ -68,7 +72,7 @@ public abstract class BaseDeterministicOrRandomSignature
     protected abstract void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException;
 
-    protected void engineUpdate(
+    final protected void engineUpdate(
         byte b)
         throws SignatureException
     {
@@ -78,7 +82,7 @@ public abstract class BaseDeterministicOrRandomSignature
 
     protected abstract void updateEngine(byte b) throws SignatureException;
 
-    protected void engineUpdate(
+    final protected void engineUpdate(
         byte[] b,
         int off,
         int len)
@@ -122,9 +126,38 @@ public abstract class BaseDeterministicOrRandomSignature
         }
     }
 
-    abstract protected void reInit();
+    private void reInit()
+    {
+        CipherParameters param = keyParams;
 
-    protected AlgorithmParameters engineGetParameters()
+        if (keyParams.isPrivate())
+        {
+            if (appRandom != null)
+            {
+                param = new ParametersWithRandom(param, appRandom);
+            }
+
+            if (paramSpec != null)
+            {
+                param = new ParametersWithContext(param, paramSpec.getContext());
+            }
+
+            reInitialize(true, param);
+        }
+        else
+        {
+            if (paramSpec != null)
+            {
+                param = new ParametersWithContext(param, paramSpec.getContext());
+            }
+
+            reInitialize(false, param);
+        }
+    }
+
+    protected abstract void reInitialize(boolean forSigning, CipherParameters params);
+
+    protected final AlgorithmParameters engineGetParameters()
     {
         if (engineParams == null)
         {
@@ -148,7 +181,7 @@ public abstract class BaseDeterministicOrRandomSignature
     /**
      * @deprecated replaced with <a href = "#engineSetParameter(java.security.spec.AlgorithmParameterSpec)">engineSetParameter(java.security.spec.AlgorithmParameterSpec)</a>
      */
-    protected void engineSetParameter(
+    protected final void engineSetParameter(
         String param,
         Object value)
     {
@@ -158,7 +191,7 @@ public abstract class BaseDeterministicOrRandomSignature
     /**
      * @deprecated replaced with <a href = "#engineGetParameters()">engineGetParameters()</a>
      */
-    protected Object engineGetParameter(
+    protected final Object engineGetParameter(
         String param)
     {
         throw new UnsupportedOperationException("GetParameter unsupported");

@@ -1,6 +1,5 @@
 package org.bouncycastle.jcajce.provider.asymmetric.slhdsa;
 
-import java.io.ByteArrayOutputStream;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -8,8 +7,6 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithContext;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
@@ -18,11 +15,12 @@ import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 public class HashSignatureSpi
     extends BaseDeterministicOrRandomSignature
  {
-     private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
      private final HashSLHDSASigner signer;
 
      protected HashSignatureSpi(HashSLHDSASigner signer)
      {
+         super("HASH-SLH-DSA");
+         
          this.signer = signer;
      }
 
@@ -79,16 +77,6 @@ public class HashSignatureSpi
              throw new SignatureException("engine initialized for verification");
          }
 
-         if (appRandom != null)
-         {
-             param = new ParametersWithRandom(param, appRandom);
-         }
-
-         if (paramSpec != null)
-         {
-             param = new ParametersWithContext(param, paramSpec.getContext());
-         }
-
          try
          {
              byte[] sig = signer.generateSignature();
@@ -122,39 +110,12 @@ public class HashSignatureSpi
          finally
          {
              this.isInitState = true;
-             bOut.reset();
          }
      }
 
-     protected void reInit()
+     protected void reInitialize(boolean forSigning, CipherParameters params)
      {
-         CipherParameters param = keyParams;
-         
-         if (keyParams instanceof SLHDSAPublicKeyParameters)
-         {
-             if (paramSpec != null)
-             {
-                 param = new ParametersWithContext(param, paramSpec.getContext());
-             }
-
-             signer.init(false, param);
-         }
-         else
-         {
-             if (appRandom != null)
-             {
-                 param = new ParametersWithRandom(param, appRandom);
-             }
-
-             if (paramSpec != null)
-             {
-                 param = new ParametersWithContext(param, paramSpec.getContext());
-             }
-
-             signer.init(true, param);
-         }
-
-         bOut.reset();
+         signer.init(forSigning, params);
      }
 
      static public class Direct
