@@ -132,16 +132,21 @@ public class CompositePrivateKey implements PrivateKey
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (int i = 0; i < keys.size(); i++)
+        if (algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
         {
-            ASN1EncodableVector kV = new ASN1EncodableVector();
-
-            PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-
-            kV.add(info.getPrivateKeyAlgorithm());
-            kV.add(info.getPrivateKey());
-
-            v.add(new DERSequence(kV));
+            for (int i = 0; i < keys.size(); i++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                v.add(info);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < keys.size(); i++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                v.add(info.getPrivateKey());
+            }
         }
 
         try

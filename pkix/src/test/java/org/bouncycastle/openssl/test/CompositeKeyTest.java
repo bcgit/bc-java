@@ -2,6 +2,7 @@ package org.bouncycastle.openssl.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -473,21 +474,21 @@ public class CompositeKeyTest
         PrivateKey mldsaPriv = mldsaKp.getPrivate();
         PublicKey mldsaPub = mldsaKp.getPublic();
 
-        CompositePrivateKey mlecPriv = new CompositePrivateKey(mldsaPriv, ecPriv);
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaPriv, ecPriv);
 
-//        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_priv.pem"));
-//
-//        pWrt.writeObject(mlecPriv);
-//
-//        pWrt.close();
-//
-//        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
-//
-//        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_pub.pem"));
-//
-//        pWrt.writeObject(mlecPub);
-//
-//        pWrt.close();
+        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_priv.pem"));
+
+        pWrt.writeObject(mlecPriv);
+
+        pWrt.close();
+
+        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
+
+        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_pub.pem"));
+
+        pWrt.writeObject(mlecPub);
+
+        pWrt.close();
     }
 
     public void testMLDSA87andEd448()
@@ -510,21 +511,21 @@ public class CompositeKeyTest
         PrivateKey mldsaPriv = mldsaKp.getPrivate();
         PublicKey mldsaPub = mldsaKp.getPublic();
 
-        CompositePrivateKey mlecPriv = new CompositePrivateKey(mldsaPriv, ecPriv);
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, mldsaPriv, ecPriv);
 
-//        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_priv.pem"));
-//
-//        pWrt.writeObject(mlecPriv);
-//
-//        pWrt.close();
-//
-//        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
-//
-//        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_pub.pem"));
-//
-//        pWrt.writeObject(mlecPub);
-//
-//        pWrt.close();
+        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_priv.pem"));
+
+        pWrt.writeObject(mlecPriv);
+
+        pWrt.close();
+
+        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
+
+        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_pub.pem"));
+
+        pWrt.writeObject(mlecPub);
+
+        pWrt.close();
     }
 
     private static void doOutput(String fileName, String contents)

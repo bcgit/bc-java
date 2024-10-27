@@ -11,6 +11,8 @@ import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPublicKey;
+import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
+import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Strings;
 
@@ -164,6 +166,33 @@ public class CompositeSignaturesTest
         }
     }
 
+    public void testCompositeParameterSpec()
+        throws Exception
+    {
+        String oid = "2.16.840.1.114027.80.8.1.4"; // MLDSA44withECDSA_P256_SHA256
+
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(oid, "BC");
+        KeyPair keyPair = keyPairGenerator.generateKeyPair();
+        Signature signature = Signature.getInstance(oid, "BC");
+        signature.initSign(keyPair.getPrivate());
+
+        signature.setParameter(new CompositeAlgorithmSpec.Builder()
+            .add("ML-DSA-44", new ContextParameterSpec(Strings.toByteArray("Hello, world!")))
+            .build());
+
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        byte[] signatureValue = signature.sign();
+
+        signature.initVerify(keyPair.getPublic());
+        
+        signature.setParameter(new CompositeAlgorithmSpec.Builder()
+            .add("ML-DSA-44", new ContextParameterSpec(Strings.toByteArray("Hello, world!")))
+            .build());
+
+        signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
+        TestCase.assertTrue(signature.verify(signatureValue));
+    }
+    
     /*
     //TODO: samples now out of date
     public void testDecodingAndVerificationExternal()
