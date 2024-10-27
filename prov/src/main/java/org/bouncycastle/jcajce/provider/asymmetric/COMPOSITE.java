@@ -106,7 +106,6 @@ public class COMPOSITE
 
             if (firstKey instanceof ASN1OctetString)
             {
-                System.err.println(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
                 CompositeSignaturesConstants.CompositeName name = CompositeSignaturesConstants.ASN1IdentifierCompositeNameMap.get(keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
                 switch (name)
                 {
