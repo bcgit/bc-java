@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Exceptions;
 
 public abstract class BaseDeterministicOrRandomSignature
     extends Signature
@@ -34,14 +35,14 @@ public abstract class BaseDeterministicOrRandomSignature
     protected BaseDeterministicOrRandomSignature(String name)
     {
         super(name);
-        this.originalSpec = null;
+        this.originalSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
     }
 
     final protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
         verifyInit(publicKey);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -53,7 +54,7 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, null);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -64,7 +65,7 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, random);
-        paramSpec = null;
+        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -170,7 +171,7 @@ public abstract class BaseDeterministicOrRandomSignature
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalStateException(e.toString(), e);
+                    throw Exceptions.illegalStateException(e.toString(), e);
                 }
             }
         }
