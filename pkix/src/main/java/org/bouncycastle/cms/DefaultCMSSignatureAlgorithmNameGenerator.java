@@ -29,11 +29,6 @@ public class DefaultCMSSignatureAlgorithmNameGenerator
 
     private void addEntries(ASN1ObjectIdentifier alias, String digest, String encryption)
     {
-        if (digestAlgs.containsKey(alias))
-        {
-            throw new IllegalStateException("object identifier already present in addEntries");
-        }
-        
         addDigestAlg(alias, digest);
         addEncryptionAlg(alias, encryption);
     }
