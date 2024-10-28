@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Exceptions;
 
 public abstract class BaseDeterministicOrRandomSignature
     extends Signature
@@ -170,7 +171,7 @@ public abstract class BaseDeterministicOrRandomSignature
                 }
                 catch (Exception e)
                 {
-                    throw new IllegalStateException(e.toString(), e);
+                    throw Exceptions.illegalStateException(e.toString(), e);
                 }
             }
         }
