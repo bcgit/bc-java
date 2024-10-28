@@ -13,14 +13,14 @@ public class ThreadedSeedGenerator
     {
         private volatile int counter = 0;
         private volatile boolean stop = false;
+        private final Object lock = new Object();
 
-        public void run()
-        {
-            while (!this.stop)
-            {
-                this.counter++;
+        public void run() {
+            while (!this.stop) {
+                synchronized (lock) {
+                    this.counter++;
+                }
             }
-
         }
 
         public byte[] generateSeed(
@@ -29,44 +29,42 @@ public class ThreadedSeedGenerator
         {
             Thread t = new Thread(this);
             byte[] result = new byte[numbytes];
-            this.counter = 0;
+            synchronized (lock) {
+                this.counter = 0;
+            }
             this.stop = false;
             int last = 0;
             int end;
 
             t.start();
-            if(fast)
-            {
+            if (fast) {
                 end = numbytes;
-            }
-            else
-            {
+            } else {
                 end = numbytes * 8;
             }
-            for (int i = 0; i < end; i++)
-            {
-                while (this.counter == last)
-                {
-                    try
-                    {
-                        Thread.sleep(1);
+
+            for (int i = 0; i < end; i++) {
+                int current;
+                while (true) {
+                    synchronized (lock) {
+                        current = this.counter;
+                        if (current != last) {
+                            break;
+                        }
                     }
-                    catch (InterruptedException e)
-                    {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
                         // ignore
                     }
                 }
-                last = this.counter;
-                if (fast)
-                {
+                last = current;
+                if (fast) {
                     result[i] = (byte) (last & 0xff);
-                }
-                else
-                {
+                } else {
                     int bytepos = i/8;
                     result[bytepos] = (byte) ((result[bytepos] << 1) | (last & 1));
                 }
-
             }
             stop = true;
             return result;
@@ -89,7 +87,6 @@ public class ThreadedSeedGenerator
         boolean fast)
     {
         SeedGenerator gen = new SeedGenerator();
-
         return gen.generateSeed(numBytes, fast);
     }
 }
