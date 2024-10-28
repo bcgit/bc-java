@@ -1012,7 +1012,7 @@
         <property name="test.target.src.dir" value="${test.target.dir}/src" />
 
         <mkdir dir="${basedir}/${build.dir}/${target.prefix}" />
-        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed" printsummary="${junit.printsummary}">
+        <junit fork="yes" dir="${basedir}/${build.dir}/${target.prefix}" failureProperty="test.failed" printsummary="${junit.printsummary}" maxmemory="1536m">
             <classpath>
                 <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">
