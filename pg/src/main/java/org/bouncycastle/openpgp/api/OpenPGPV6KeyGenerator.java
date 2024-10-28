@@ -808,6 +808,7 @@ public class OpenPGPV6KeyGenerator
 
         /**
          * Add a signing-capable subkey to the OpenPGP key.
+         * The binding signature will contain a primary-key back-signature.
          * See {@link PGPKeyPairGenerator#generateSigningSubkey()} for the key type.
          *
          * @return builder
@@ -821,6 +822,7 @@ public class OpenPGPV6KeyGenerator
 
         /**
          * Add a signing-capable subkey to the OpenPGP key.
+         * The binding signature will contain a primary-key back-signature.
          * The key type can be specified by overriding {@link KeyPairGeneratorCallback}.
          *
          * @param keyGenCallback callback to specify the signing-subkey type
@@ -836,6 +838,7 @@ public class OpenPGPV6KeyGenerator
         /**
          * Add a signing-capable subkey to the OpenPGP key.
          * See {@link PGPKeyPairGenerator#generateSigningSubkey()} for the key type.
+         * The binding signature will contain a primary-key back-signature.
          * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
          * using {@link #build()}.
          * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
@@ -854,6 +857,7 @@ public class OpenPGPV6KeyGenerator
         /**
          * Add a signing-capable subkey to the OpenPGP key.
          * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * The binding signature will contain a primary-key back-signature.
          * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
          * using {@link #build()}.
          * If instead {@link #build(char[])} is used, the key-specific passphrase is overwritten with the argument
@@ -874,6 +878,7 @@ public class OpenPGPV6KeyGenerator
         /**
          * Add a signing-capable subkey to the OpenPGP key.
          * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * The binding signature will contain a primary-key back-signature.
          * The contents of the binding signature(s) can be modified by overriding the respective
          * {@link SignatureSubpacketsFunction} instances.
          * IMPORTANT: The custom subkey passphrase will only be used, if in the final step the key is retrieved
@@ -903,6 +908,7 @@ public class OpenPGPV6KeyGenerator
         /**
          * Add a signing-capable subkey to the OpenPGP key.
          * The signing-key type can be specified by overriding the {@link KeyPairGeneratorCallback}.
+         * The binding signature will contain a primary-key back-signature.
          * The contents of the binding signature(s) can be modified by overriding the respective
          * {@link SignatureSubpacketsFunction} instances.
          * IMPORTANT: The custom key encryptor will only be used, if in the final step the key is retrieved
