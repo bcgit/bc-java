@@ -104,7 +104,7 @@ publishing {
     publications {
         maven(MavenPublication) {
             groupId = 'org.bouncycastle'
-            artifactId = "butil-$vmrange"
+            artifactId = "bcutil-$vmrange"
             from components.java
 
             artifact(javadocJar)
