@@ -138,6 +138,12 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA"},
             new Object[]{BCObjectIdentifiers.falcon_512, "FALCON"},
             new Object[]{BCObjectIdentifiers.falcon_1024, "FALCON"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, "ML-DSA-44-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, "ML-DSA-65-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, "ML-DSA-87-WITH-SHA512"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA-SHA2-128S"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA-SHA2-128F"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA-SHA2-192S"},
@@ -150,6 +156,18 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SLH-DSA-SHAKE-192F"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SLH-DSA-SHAKE-256S"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SLH-DSA-SHAKE-256F"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256, "SLH-DSA-SHA2-128S-WITH-SHA256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256, "SLH-DSA-SHA2-128F-WITH-SHA256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, "SLH-DSA-SHA2-192S-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, "SLH-DSA-SHA2-192F-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512, "SLH-DSA-SHA2-256S-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512, "SLH-DSA-SHA2-256F-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128, "SLH-DSA-SHAKE-128S-WITH-SHAKE128"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128, "SLH-DSA-SHAKE-128F-WITH-SHAKE128"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, "SLH-DSA-SHAKE-192S-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, "SLH-DSA-SHAKE-192F-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, "SLH-DSA-SHAKE-256S-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, "SLH-DSA-SHAKE-256F-WITH-SHAKE256"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCS+"},
@@ -243,7 +261,7 @@ public class AllTests
             //
             DefaultAlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
             assertEquals("default name finder has same number of entries as test case",
-                nameFinder.getOIDSet().size(), values.length);
+                values.length, nameFinder.getOIDSet().size());
 
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)((Object[])value)[0];
             String name = ((Object[])value)[1].toString();
