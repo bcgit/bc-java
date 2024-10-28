@@ -281,30 +281,11 @@ subprojects {
         }
     }
 
-    publishing {
-        repositories {
-            maven {
-                name "cwmaven"
-                url System.getenv("CW_MAVEN_S3_URL")
-                credentials(AwsCredentials) {
-                    accessKey System.getenv("AWS_KEY")
-                    secretKey System.getenv("AWS_SECRET")
-                }
-            }
-        }
-    }
-
-
-    jar.doLast {
-        if (System.getenv("SIGNJAR_CMD") != null) {
-            exec {
-                commandLine(System.getenv("SIGNJAR_CMD"), archiveFile.get())
-            }
-        }
-    }
-
-
 }
 
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+
+
+
