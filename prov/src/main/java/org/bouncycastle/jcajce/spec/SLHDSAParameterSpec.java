@@ -128,6 +128,18 @@ public class SLHDSAParameterSpec
 
     public static SLHDSAParameterSpec fromName(String name)
     {
-        return (SLHDSAParameterSpec)parameters.get(Strings.toLowerCase(name));
+        if (name == null)
+        {
+            throw new NullPointerException("name cannot be null");
+        }
+
+        SLHDSAParameterSpec parameterSpec = (SLHDSAParameterSpec)parameters.get(Strings.toLowerCase(name));
+
+        if (parameterSpec == null)
+        {
+            throw new IllegalArgumentException("unknown parameter name: " + name);
+        }
+
+        return parameterSpec;
     }
 }
