@@ -5,25 +5,19 @@ import java.security.SecureRandom;
 public abstract class Polynomial
     implements SecretSharing
 {
-    public static final byte AES = 0;
-    public static final byte RSA = 1;
+    public static final int AES = 0;
+    public static final int RSA = 1;
     /**
-     * <summary>
      * Length of the secret
-     * </summary>
      */
     protected int l;
     /**
-     * <summary>
      * A threshold number of shares
-     * </summary>
      */
     protected int m;
     /**
-     * <summary>
      * Total number of shares
      * m <= n <= 255
-     * </summary>
      */
     protected int n;
     protected byte[][] p;
