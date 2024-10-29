@@ -3,15 +3,19 @@ package org.bouncycastle.jcajce.provider.asymmetric.compositesignatures;
 import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -20,10 +24,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -32,6 +38,22 @@ import org.bouncycastle.util.Exceptions;
 public class SignatureSpi
     extends java.security.SignatureSpi
 {
+    private static final Map<String, String> canonicalNames = new HashMap<String, String>();
+
+    private static final String ML_DSA_44 = "ML-DSA-44";
+    private static final String ML_DSA_65 = "ML-DSA-65";
+    private static final String ML_DSA_87 = "ML-DSA-87";
+
+    static
+    {
+        canonicalNames.put("MLDSA44", ML_DSA_44);
+        canonicalNames.put("MLDSA65", ML_DSA_65);
+        canonicalNames.put("MLDSA87", ML_DSA_87);
+        canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_44.getId(), ML_DSA_44);
+        canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_65.getId(), ML_DSA_65);
+        canonicalNames.put(NISTObjectIdentifiers.id_ml_dsa_87.getId(), ML_DSA_87);
+    }
+
     //Enum value of the selected composite signature algorithm.
     private final CompositeSignaturesConstants.CompositeName algorithmIdentifier;
     //ASN1 OI value of the selected composite signature algorithm.
@@ -56,55 +78,55 @@ public class SignatureSpi
             switch (this.algorithmIdentifier)
             {
             case MLDSA44_Ed25519_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_44, "BC"));
                 componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA65_Ed25519_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_65, "BC"));
                 componentSignatures.add(Signature.getInstance("Ed25519", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA87_Ed448_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-87", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_87, "BC"));
                 componentSignatures.add(Signature.getInstance("Ed448", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_RSA2048_PSS_SHA256:
-                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_44, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withRSA/PSS", "BC")); //PSS with SHA-256 as digest algo and MGF.
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_RSA3072_PSS_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_65, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withRSA/PSS", "BC")); //PSS with SHA-512 as digest algo and MGF.
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_RSA2048_PKCS15_SHA256:
-                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_44, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withRSA", "BC")); //PKCS15
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_RSA3072_PKCS15_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_65, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withRSA", "BC")); //PKCS15
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA44_ECDSA_P256_SHA256:
             case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
-                componentSignatures.add(Signature.getInstance("ML-DSA-44", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_44, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA256withECDSA", "BC"));
                 this.digest = DigestFactory.createSHA256();
                 break;
             case MLDSA65_ECDSA_P256_SHA512:
             case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-65", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_65, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
             case MLDSA87_ECDSA_P384_SHA512:
             case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
-                componentSignatures.add(Signature.getInstance("ML-DSA-87", "BC"));
+                componentSignatures.add(Signature.getInstance(ML_DSA_87, "BC"));
                 componentSignatures.add(Signature.getInstance("SHA512withECDSA", "BC"));
                 this.digest = DigestFactory.createSHA512();
                 break;
@@ -170,7 +192,7 @@ public class SignatureSpi
         }
 
         CompositePrivateKey compositePrivateKey = (CompositePrivateKey)privateKey;
-        
+
         if (!compositePrivateKey.getAlgorithmIdentifier().equals(this.algorithmIdentifierASN1))
         {
             throw new InvalidKeyException("Provided composite private key cannot be used with the composite signature algorithm.");
@@ -270,6 +292,87 @@ public class SignatureSpi
         }
 
         return !fail;
+    }
+
+    protected void engineSetParameter(AlgorithmParameterSpec algorithmParameterSpec)
+        throws InvalidAlgorithmParameterException
+    {
+        if (algorithmParameterSpec instanceof CompositeAlgorithmSpec)
+        {
+            CompositeAlgorithmSpec compAlgSpec = (CompositeAlgorithmSpec)algorithmParameterSpec;
+
+            List<AlgorithmParameterSpec> specs = compAlgSpec.getParameterSpecs();
+            List<String> names = compAlgSpec.getAlgorithmNames();
+
+            switch (this.algorithmIdentifier)
+            {
+            case MLDSA44_Ed25519_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_44, names, specs);
+                break;
+            case MLDSA65_Ed25519_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_65, names, specs);
+                break;
+            case MLDSA87_Ed448_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_87, names, specs);
+                break;
+            case MLDSA44_RSA2048_PSS_SHA256:
+                setSigParameter(componentSignatures.get(0), ML_DSA_44, names, specs);
+                break;
+            case MLDSA65_RSA3072_PSS_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_65, names, specs);
+                break;
+            case MLDSA44_RSA2048_PKCS15_SHA256:
+                setSigParameter(componentSignatures.get(0), ML_DSA_44, names, specs);
+                break;
+            case MLDSA65_RSA3072_PKCS15_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_65, names, specs);
+                break;
+            case MLDSA44_ECDSA_P256_SHA256:
+            case MLDSA44_ECDSA_brainpoolP256r1_SHA256:
+                setSigParameter(componentSignatures.get(0), ML_DSA_44, names, specs);
+                break;
+            case MLDSA65_ECDSA_P256_SHA512:
+            case MLDSA65_ECDSA_brainpoolP256r1_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_65, names, specs);
+                break;
+            case MLDSA87_ECDSA_P384_SHA512:
+            case MLDSA87_ECDSA_brainpoolP384r1_SHA512:
+                setSigParameter(componentSignatures.get(0), ML_DSA_87, names, specs);
+                break;
+            default:
+                throw new InvalidAlgorithmParameterException("unknown composite algorithm");
+            }
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
+        }
+    }
+
+    private void setSigParameter(Signature targetSig, String targetSigName, List<String> names, List<AlgorithmParameterSpec> specs)
+        throws InvalidAlgorithmParameterException
+    {
+        for (int i = 0; i != names.size(); i++)
+        {
+            String canonicalName = getCanonicalName(names.get(i));
+
+            if (names.get(i).equals(targetSigName))
+            {
+                targetSig.setParameter(specs.get(i));
+            }
+        }
+    }
+
+    private String getCanonicalName(String baseName)
+    {
+        String name = canonicalNames.get(baseName);
+
+        if (name != null)
+        {
+            return name;
+        }
+
+        return baseName;
     }
 
     protected void engineSetParameter(String s, Object o)

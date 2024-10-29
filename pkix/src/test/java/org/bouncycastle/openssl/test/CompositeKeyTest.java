@@ -2,6 +2,7 @@ package org.bouncycastle.openssl.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -449,6 +450,82 @@ public class CompositeKeyTest
         assertTrue(sigInf.verify(new JcaSimpleSignerInfoVerifierBuilder().build((X509CertificateHolder)certStore.getMatches(null).iterator().next())));
 
         //doOutput("/tmp/comp_cms_1.pem", sWrt.toString());
+    }
+
+    public void testMLDSA44andP256()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator rmldsaKpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+
+        KeyPair mldsaKp = rmldsaKpg.generateKeyPair();
+
+        PrivateKey mldsaPriv = mldsaKp.getPrivate();
+        PublicKey mldsaPub = mldsaKp.getPublic();
+
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaPriv, ecPriv);
+
+        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_priv.pem"));
+
+        pWrt.writeObject(mlecPriv);
+
+        pWrt.close();
+
+        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
+
+        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_pub.pem"));
+
+        pWrt.writeObject(mlecPub);
+
+        pWrt.close();
+    }
+
+    public void testMLDSA87andEd448()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("ED448", "BC");
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator rmldsaKpg = KeyPairGenerator.getInstance("ML-DSA-87", "BC");
+
+        KeyPair mldsaKp = rmldsaKpg.generateKeyPair();
+
+        PrivateKey mldsaPriv = mldsaKp.getPrivate();
+        PublicKey mldsaPub = mldsaKp.getPublic();
+
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, mldsaPriv, ecPriv);
+
+        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_priv.pem"));
+
+        pWrt.writeObject(mlecPriv);
+
+        pWrt.close();
+
+        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
+
+        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_pub.pem"));
+
+        pWrt.writeObject(mlecPub);
+
+        pWrt.close();
     }
 
     private static void doOutput(String fileName, String contents)

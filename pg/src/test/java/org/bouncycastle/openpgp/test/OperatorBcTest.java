@@ -215,7 +215,6 @@ public class OperatorBcTest
     {
         testException("null cipher specified", "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -225,7 +224,6 @@ public class OperatorBcTest
 
         testException("AEAD algorithms can only be used with AES", "IllegalStateException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -235,7 +233,6 @@ public class OperatorBcTest
 
         testException("minimum chunkSize is 6", "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -245,7 +242,6 @@ public class OperatorBcTest
 
         testException("invalid parameters:", "PGPException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -295,7 +291,6 @@ public class OperatorBcTest
     {
         testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
@@ -308,7 +303,6 @@ public class OperatorBcTest
     {
         testCreateKeyPair(algorithm1, algorithm2, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
@@ -321,7 +315,6 @@ public class OperatorBcTest
     {
         testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
@@ -427,13 +420,13 @@ public class OperatorBcTest
 
         edKp.initialize(new ECNamedCurveGenParameterSpec(ed_str));
 
-        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(ed_num, edKp.generateKeyPair(), new Date());
+        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, ed_num, edKp.generateKeyPair(), new Date());
 
         KeyPairGenerator dhKp = KeyPairGenerator.getInstance(algorithmName2, "BC");
 
         dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
 
-        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
+        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
 
         encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
         encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());

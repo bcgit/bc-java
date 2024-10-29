@@ -536,7 +536,7 @@ public class CertPathValidatorTest
             isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
     }
 
     public void performTest()
@@ -664,7 +664,7 @@ public class CertPathValidatorTest
             }
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
 
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();

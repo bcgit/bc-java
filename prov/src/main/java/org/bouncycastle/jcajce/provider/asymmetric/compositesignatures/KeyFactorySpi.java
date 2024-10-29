@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
@@ -100,10 +101,28 @@ public class KeyFactorySpi
             PrivateKey[] privateKeys = new PrivateKey[seq.size()];
             for (int i = 0; i < seq.size(); i++)
             {
-                // We assume each component is of type OneAsymmetricKey (PrivateKeyInfo) as defined by the draft RFC
-                // and use the component key factory to decode the component key from PrivateKeyInfo.
-                PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(PrivateKeyInfo.getInstance(seq.getObjectAt(i)).getEncoded());
-                privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                ASN1Sequence keySeq = ASN1Sequence.getInstance(seq.getObjectAt(i));
+
+                // new format
+                if (keySeq.size() == 2)
+                {
+                    ASN1EncodableVector v = new ASN1EncodableVector(2);
+
+                    v.add(keyInfo.getVersion());
+                    v.add(keySeq.getObjectAt(0));
+                    v.add(keySeq.getObjectAt(1));
+
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(
+                        PrivateKeyInfo.getInstance(new DERSequence(v)).getEncoded());
+                    privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                }
+                else // old format
+                {
+                    // We assume each component is of type OneAsymmetricKey (PrivateKeyInfo) as defined by the draft RFC
+                    // and use the component key factory to decode the component key from PrivateKeyInfo.
+                    PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(PrivateKeyInfo.getInstance(keySeq).getEncoded());
+                    privateKeys[i] = factories.get(i).generatePrivate(keySpec);
+                }
             }
             return new CompositePrivateKey(keyIdentifier, privateKeys);
         }

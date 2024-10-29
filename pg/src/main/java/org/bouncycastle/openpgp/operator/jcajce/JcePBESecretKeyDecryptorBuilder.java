@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Provider;
@@ -131,8 +132,7 @@ public class JcePBESecretKeyDecryptorBuilder
                     byte[] data = c.doFinal(keyData);
                     return data;
                 }
-                catch (InvalidAlgorithmParameterException | InvalidKeyException |
-                       IllegalBlockSizeException | BadPaddingException e)
+                catch (GeneralSecurityException e)
                 {
                     throw new PGPException("Cannot extract AEAD protected secret key material", e);
                 }

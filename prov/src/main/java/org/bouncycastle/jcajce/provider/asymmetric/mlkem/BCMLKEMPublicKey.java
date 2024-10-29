@@ -40,13 +40,13 @@ public class BCMLKEMPublicKey
         throws IOException
     {
         this.params = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     private void init(MLKEMPublicKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
     /**
      * Compare this ML-KEM public key with another object.

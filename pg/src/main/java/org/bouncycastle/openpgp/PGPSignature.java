@@ -632,7 +632,7 @@ public class PGPSignature
      */
     public List<KeyIdentifier> getKeyIdentifiers()
     {
-        List<KeyIdentifier> identifiers = new ArrayList<>();
+        List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
         identifiers.addAll(getHashedKeyIdentifiers());
         identifiers.addAll(getUnhashedKeyIdentifiers());
         return identifiers;
@@ -664,9 +664,10 @@ public class PGPSignature
 
     private List<KeyIdentifier> extractKeyIdentifiers(SignatureSubpacket[] subpackets)
     {
-        List<KeyIdentifier> identifiers = new ArrayList<>();
-        for (SignatureSubpacket s : subpackets)
+        List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
+        for (int idx = 0; idx != subpackets.length; idx++)
         {
+            SignatureSubpacket s = subpackets[idx];
             if (s instanceof IssuerFingerprint)
             {
                 IssuerFingerprint issuer = (IssuerFingerprint) s;

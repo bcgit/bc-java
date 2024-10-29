@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -42,6 +41,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBu
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class AEADProtectedPGPSecretKeyTest
@@ -94,15 +94,15 @@ public class AEADProtectedPGPSecretKeyTest
         byte[] plainPrimaryKey = Hex.decode("1972817b12be707e8d5f586ce61361201d344eb266a2c82fde6835762b65b0b7");
         byte[] plainSubkey = Hex.decode("4d600a4f794d44775c57a26e0feefed558e9afffd6ad0d582d57fb2ba2dcedb8");
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armoredVector.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armoredVector));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFact = new BcPGPObjectFactory(pIn);
         PGPSecretKeyRing keys = (PGPSecretKeyRing) objFact.nextObject();
 
         Iterator<PGPSecretKey> it = keys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         // Test Bouncy Castle KeyDecryptor implementation
         BcPBESecretKeyDecryptorBuilder bcDecryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider());
@@ -203,8 +203,9 @@ public class AEADProtectedPGPSecretKeyTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         Date creationTime = currentTimeRounded();
         
-        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPKeyPair keyPair = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
             BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
@@ -245,8 +246,9 @@ public class AEADProtectedPGPSecretKeyTest
         KeyPair kp = eddsaGen.generateKeyPair();
         Date creationTime = currentTimeRounded();
 
-        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPKeyPair keyPair = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
             
             JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(

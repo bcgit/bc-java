@@ -3,14 +3,18 @@ plugins {
 }
 
 dependencies {
-    implementation project(':core')
     testImplementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
 }
+
+evaluationDependsOn(":core")
 
 sourceSets {
     main {
         java {
             srcDirs "${project(":core").projectDir}/src/main/java"
+        }
+        resources {
+            srcDirs "${project(":core").projectDir}/src/main/resources"
         }
     }
 
@@ -211,6 +215,21 @@ compileTest21Java {
     options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcprov-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}
+
+
 test {
     jvmArgs = ['-Dtest.java.version.prefix=1.8']
     dependsOn("test21")
@@ -359,4 +378,6 @@ task test21(type: Test) {
         }
     }
 }
+
+
 

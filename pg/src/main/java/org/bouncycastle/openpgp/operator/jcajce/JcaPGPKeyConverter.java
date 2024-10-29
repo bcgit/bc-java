@@ -244,15 +244,31 @@ public class JcaPGPKeyConverter
                 if (JcaJcePGPUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     // 'reverse' because the native format for X25519 private keys is little-endian
-                    return implGeneratePrivate("XDH", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
-                        Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX()))));
+                    return implGeneratePrivate("XDH", new Operation()
+                    {
+                        @Override
+                        public PrivateKeyInfo getPrivateKeyInfos()
+                            throws IOException
+                        {
+                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
+                                                    Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
+                        }
+                    });
                 }
                 // Legacy X448 (1.3.101.111)
                 else if (EdECObjectIdentifiers.id_X448.equals(ecdhPub.getCurveOID()))
                 {
                     // 'reverse' because the native format for X448 private keys is little-endian (?)
-                    return implGeneratePrivate("XDH", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
-                            Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX()))));
+                    return implGeneratePrivate("XDH", new Operation()
+                    {
+                        @Override
+                        public PrivateKeyInfo getPrivateKeyInfos()
+                            throws IOException
+                        {
+                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
+                                                        Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
+                        }
+                    });
                 }
                 // Brainpool, NIST etc.
                 else
@@ -263,14 +279,30 @@ public class JcaPGPKeyConverter
             // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
             case PublicKeyAlgorithmTags.X25519:
             {
-                return implGeneratePrivate("XDH", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
-                    X25519SecretBCPGKey.LENGTH, privPk.getEncoded()));
+                return implGeneratePrivate("XDH", new Operation()
+                {
+                    @Override
+                    public PrivateKeyInfo getPrivateKeyInfos()
+                        throws IOException
+                    {
+                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
+                                            X25519SecretBCPGKey.LENGTH, privPk.getEncoded());
+                    }
+                });
             }
             // Modern X448 (1.3.101.111)
             case PublicKeyAlgorithmTags.X448:
             {
-                return implGeneratePrivate("XDH", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
-                    X448SecretBCPGKey.LENGTH, privPk.getEncoded()));
+                return implGeneratePrivate("XDH", new Operation()
+                {
+                    @Override
+                    public PrivateKeyInfo getPrivateKeyInfos()
+                        throws IOException
+                    {
+                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
+                                            X448SecretBCPGKey.LENGTH, privPk.getEncoded());
+                    }
+                });
             }
             case PublicKeyAlgorithmTags.ECDSA:
             {
@@ -283,25 +315,57 @@ public class JcaPGPKeyConverter
                 // Legacy Ed448 (1.3.101.113)
                 if (EdECObjectIdentifiers.id_Ed448.equals(eddsaPub.getCurveOID()))
                 {
-                    return implGeneratePrivate("EdDSA", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
-                            BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX())));
+                    return implGeneratePrivate("EdDSA", new Operation()
+                    {
+                        @Override
+                        public PrivateKeyInfo getPrivateKeyInfos()
+                            throws IOException
+                        {
+                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
+                                                        BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
+                        }
+                    });
                 }
                 // Legacy Ed25519
                 // 1.3.6.1.4.1.11591.15.1 & 1.3.101.112
-                return implGeneratePrivate("EdDSA", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
-                    BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX())));
+                return implGeneratePrivate("EdDSA", new Operation()
+                {
+                    @Override
+                    public PrivateKeyInfo getPrivateKeyInfos()
+                        throws IOException
+                    {
+                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
+                                            BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
+                    }
+                });
             }
             // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
             case PublicKeyAlgorithmTags.Ed25519:
             {
-                return implGeneratePrivate("EdDSA", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
-                    Ed25519SecretBCPGKey.LENGTH, privPk.getEncoded()));
+                return implGeneratePrivate("EdDSA", new Operation()
+                {
+                    @Override
+                    public PrivateKeyInfo getPrivateKeyInfos()
+                        throws IOException
+                    {
+                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
+                                            Ed25519SecretBCPGKey.LENGTH, privPk.getEncoded());
+                    }
+                });
             }
             // Modern Ed448 (1.3.101.113)
             case PublicKeyAlgorithmTags.Ed448:
             {
-                return implGeneratePrivate("EdDSA", () -> getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
-                    Ed448SecretBCPGKey.LENGTH, privPk.getEncoded()));
+                return implGeneratePrivate("EdDSA", new Operation()
+                {
+                    @Override
+                    public PrivateKeyInfo getPrivateKeyInfos()
+                        throws IOException
+                    {
+                        return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
+                                            Ed448SecretBCPGKey.LENGTH, privPk.getEncoded());
+                    }
+                });
             }
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
             case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
@@ -773,14 +837,14 @@ public class JcaPGPKeyConverter
     @FunctionalInterface
     private interface Operation
     {
-        PrivateKeyInfo getPrivateKeyInfo()
+        PrivateKeyInfo getPrivateKeyInfos()
             throws IOException;
     }
 
     private PrivateKey implGeneratePrivate(String keyAlgorithm, Operation operation)
         throws GeneralSecurityException, PGPException, IOException
     {
-        PKCS8EncodedKeySpec pkcs8Spec = new PKCS8EncodedKeySpec(operation.getPrivateKeyInfo().getEncoded());
+        PKCS8EncodedKeySpec pkcs8Spec = new PKCS8EncodedKeySpec(operation.getPrivateKeyInfos().getEncoded());
         KeyFactory keyFactory = helper.createKeyFactory(keyAlgorithm);
         return keyFactory.generatePrivate(pkcs8Spec);
     }
