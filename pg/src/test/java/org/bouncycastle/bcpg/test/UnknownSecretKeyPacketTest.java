@@ -1,5 +1,10 @@
 package org.bouncycastle.bcpg.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -10,11 +15,6 @@ import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.UnknownBCPGKey;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Date;
 
 public class UnknownSecretKeyPacketTest
     extends AbstractPacketTest
@@ -35,8 +35,9 @@ public class UnknownSecretKeyPacketTest
     private void parseUnknownUnencryptedSecretKey()
         throws IOException
     {
-        for (int version : new int[]{PublicKeyPacket.LIBREPGP_5, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.LIBREPGP_5 : PublicKeyPacket.VERSION_6;
             Date creationTime = new Date((new Date().getTime() / 1000) * 1000);
             SecretKeyPacket sk = new SecretKeyPacket(
                 new PublicKeyPacket(

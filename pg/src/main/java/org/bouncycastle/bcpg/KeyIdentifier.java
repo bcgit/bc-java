@@ -1,5 +1,6 @@
 package org.bouncycastle.bcpg;
 
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.util.Arrays;
@@ -166,9 +167,9 @@ public class KeyIdentifier
      */
     public boolean isPresentIn(List<KeyIdentifier> others)
     {
-        for (KeyIdentifier other: others)
+        for (Iterator it = others.iterator(); it.hasNext();)
         {
-            if (this.matches(other))
+            if (this.matches((KeyIdentifier)it.next()))
             {
                 return true;
             }

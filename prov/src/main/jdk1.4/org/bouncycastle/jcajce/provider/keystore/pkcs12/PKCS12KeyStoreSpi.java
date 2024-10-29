@@ -64,7 +64,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.CertBag;
 import org.bouncycastle.asn1.pkcs.ContentInfo;

@@ -171,7 +171,7 @@ public class SignaturePacket
 
         for (int i = 0; i != hashedData.length; i++)
         {
-            SignatureSubpacket p = vec.elementAt(i);
+            SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
@@ -189,7 +189,7 @@ public class SignaturePacket
 
         for (int i = 0; i != unhashedData.length; i++)
         {
-            SignatureSubpacket p = vec.elementAt(i);
+            SignatureSubpacket p = (SignatureSubpacket)vec.elementAt(i);
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID)p).getKeyID();
@@ -745,8 +745,9 @@ public class SignaturePacket
             return;
         }
 
-        for (SignatureSubpacket p : hashedData)
+        for (int idx = 0; idx != hashedData.length; idx++)
         {
+            SignatureSubpacket p  = hashedData[idx];
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID) p).getKeyID();
@@ -759,8 +760,9 @@ public class SignaturePacket
             }
         }
 
-        for (SignatureSubpacket p : unhashedData)
+        for (int idx = 0; idx != unhashedData.length; idx++)
         {
+            SignatureSubpacket p = unhashedData[idx];
             if (p instanceof IssuerKeyID)
             {
                 keyID = ((IssuerKeyID) p).getKeyID();

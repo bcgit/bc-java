@@ -5,8 +5,6 @@ import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -14,22 +12,20 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
-import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPrivateKeySpec;
 import java.security.spec.ECPublicKeySpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
+import java.util.Enumeration;
 
 import javax.crypto.interfaces.DHPrivateKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -37,6 +33,7 @@ import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPrivateKeySpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -47,9 +44,11 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
 import org.bouncycastle.asn1.x9.X9ECPoint;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
@@ -73,13 +72,16 @@ import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.bcpg.X448SecretBCPGKey;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-
 import org.bouncycastle.math.ec.rfc7748.X25519;
+import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.PGPAlgorithmParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKdfParameters;
@@ -127,7 +129,7 @@ public class JcaPGPKeyConverter
     }
 
     /**
-     * Create a PGPPublicKey from the passed in JCA one.
+     * Create a version 4 PGPPublicKey from the passed in JCA one.
      * <p>
      * Note: the time passed in affects the value of the key's keyID, so you probably only want
      * to do this once for a JCA key, or make sure you keep track of the time you used.
@@ -138,13 +140,13 @@ public class JcaPGPKeyConverter
      * @param pubKey              actual public key to associate.
      * @param time                date of creation.
      * @throws PGPException on key creation problem.
+     * @deprecated use versioned {@link #getPGPPublicKey(int, int, PGPAlgorithmParameters, PublicKey, Date)} instead.
      */
+    @Deprecated
     public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date time)
         throws PGPException
     {
-        BCPGKey bcpgKey = getPublicBCPGKey(algorithm, algorithmParameters, pubKey);
-
-        return new PGPPublicKey(new PublicKeyPacket(algorithm, time, bcpgKey), fingerPrintCalculator);
+        return getPGPPublicKey(PublicKeyPacket.VERSION_4, algorithm, algorithmParameters, pubKey, time);
     }
 
     /**
@@ -154,15 +156,58 @@ public class JcaPGPKeyConverter
      * to do this once for a JCA key, or make sure you keep track of the time you used.
      * </p>
      *
+     * @param version             key version.
+     * @param algorithm           asymmetric algorithm type representing the public key.
+     * @param algorithmParameters additional parameters to be stored against the public key.
+     * @param pubKey              actual public key to associate.
+     * @param time                date of creation.
+     * @throws PGPException on key creation problem.
+     */
+    public PGPPublicKey getPGPPublicKey(int version, int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey, Date time)
+        throws PGPException
+    {
+        BCPGKey bcpgKey = getPublicBCPGKey(algorithm, algorithmParameters, pubKey);
+
+        return new PGPPublicKey(new PublicKeyPacket(version, algorithm, time, bcpgKey), fingerPrintCalculator);
+    }
+
+    /**
+     * Create a version 4 PGPPublicKey from the passed in JCA one.
+     * <p>
+     * Note: the time passed in affects the value of the key's keyID, so you probably only want
+     * to do this once for a JCA key, or make sure you keep track of the time you used.
+     * </p>
+     *
+     * @param algorithm asymmetric algorithm type representing the public key.
+     * @param pubKey    actual public key to associate.
+     * @param time      date of creation.
+     * @throws PGPException on key creation problem.
+     * @deprecated use versioned {@link #getPGPPublicKey(int, int, PublicKey, Date)} instead.
+     */
+    @Deprecated
+    public PGPPublicKey getPGPPublicKey(int algorithm, PublicKey pubKey, Date time)
+        throws PGPException
+    {
+        return getPGPPublicKey(algorithm, null, pubKey, time);
+    }
+
+    /**
+     * Create a PGPPublicKey from the passed in JCA one.
+     * <p>
+     * Note: the time passed in affects the value of the key's keyID, so you probably only want
+     * to do this once for a JCA key, or make sure you keep track of the time you used.
+     * </p>
+     *
+     * @param version   key version.
      * @param algorithm asymmetric algorithm type representing the public key.
      * @param pubKey    actual public key to associate.
      * @param time      date of creation.
      * @throws PGPException on key creation problem.
      */
-    public PGPPublicKey getPGPPublicKey(int algorithm, PublicKey pubKey, Date time)
+    public PGPPublicKey getPGPPublicKey(int version, int algorithm, PublicKey pubKey, Date time)
         throws PGPException
     {
-        return getPGPPublicKey(algorithm, null, pubKey, time);
+        return getPGPPublicKey(version, algorithm, null, pubKey, time);
     }
 
     public PrivateKey getPrivateKey(PGPPrivateKey privKey)
@@ -173,7 +218,7 @@ public class JcaPGPKeyConverter
             return ((JcaPGPPrivateKey)privKey).getPrivateKey();
         }
 
-        PublicKeyPacket pubPk = privKey.getPublicKeyPacket();
+        final PublicKeyPacket pubPk = privKey.getPublicKeyPacket();
         final BCPGKey privPk = privKey.getPrivateKeyDataPacket();
 
         try
@@ -194,91 +239,126 @@ public class JcaPGPKeyConverter
                 ECDHPublicBCPGKey ecdhPub = (ECDHPublicBCPGKey)pubPk.getKey();
                 ECSecretBCPGKey ecdhK = (ECSecretBCPGKey)privPk;
 
-                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
+                // Legacy XDH on Curve25519 (legacy X25519)
+                // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
+                if (JcaJcePGPUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     // 'reverse' because the native format for X25519 private keys is little-endian
                     return implGeneratePrivate("XDH", new Operation()
                     {
-                        @Override
                         public PrivateKeyInfo getPrivateKeyInfos()
                             throws IOException
                         {
                             return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
-                                Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
+                                                    Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
                         }
                     });
                 }
+                // Legacy X448 (1.3.101.111)
+                else if (EdECObjectIdentifiers.id_X448.equals(ecdhPub.getCurveOID()))
+                {
+                    // 'reverse' because the native format for X448 private keys is little-endian (?)
+                    return implGeneratePrivate("XDH", new Operation()
+                    {
+                        public PrivateKeyInfo getPrivateKeyInfos()
+                            throws IOException
+                        {
+                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
+                                                        Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX())));
+
+                        }
+                    });
+                }
+                // Brainpool, NIST etc.
                 else
                 {
                     return implGetPrivateKeyEC("ECDH", ecdhPub, ecdhK);
                 }
             }
+            // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
             case PublicKeyAlgorithmTags.X25519:
             {
                 return implGeneratePrivate("XDH", new Operation()
                 {
-                    @Override
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
                         return getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
-                            X25519SecretBCPGKey.LENGTH, Arrays.reverseInPlace(privPk.getEncoded()));
+                                            X25519SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
             }
+            // Modern X448 (1.3.101.111)
             case PublicKeyAlgorithmTags.X448:
             {
                 return implGeneratePrivate("XDH", new Operation()
                 {
-                    @Override
+                    @java.lang.Override
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
                         return getPrivateKeyInfo(EdECObjectIdentifiers.id_X448,
-                            X448SecretBCPGKey.LENGTH, Arrays.reverseInPlace(privPk.getEncoded()));
+                                            X448SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
             }
             case PublicKeyAlgorithmTags.ECDSA:
             {
-                return implGetPrivateKeyEC("ECDSA", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
+                return implGetPrivateKeyEC("EC", (ECDSAPublicBCPGKey)pubPk.getKey(), (ECSecretBCPGKey)privPk);
             }
+            // Legacy EdDSA (legacy Ed448, legacy Ed25519)
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
+                EdDSAPublicBCPGKey eddsaPub = (EdDSAPublicBCPGKey) pubPk.getKey();
+                // Legacy Ed448 (1.3.101.113)
+                if (EdECObjectIdentifiers.id_Ed448.equals(eddsaPub.getCurveOID()))
+                {
+                    return implGeneratePrivate("EdDSA", new Operation()
+                    {
+                        public PrivateKeyInfo getPrivateKeyInfos()
+                            throws IOException
+                        {
+                            return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
+                                                    BigIntegers.asUnsignedByteArray(Ed448.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
+                        }
+                    });
+                }
+                // Legacy Ed25519
+                // 1.3.6.1.4.1.11591.15.1 & 1.3.101.112
                 return implGeneratePrivate("EdDSA", new Operation()
                 {
-                    @Override
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
                         return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
-                            BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
+                                            BigIntegers.asUnsignedByteArray(Ed25519.SECRET_KEY_SIZE, ((EdSecretBCPGKey)privPk).getX()));
                     }
                 });
             }
+            // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
             case PublicKeyAlgorithmTags.Ed25519:
             {
                 return implGeneratePrivate("EdDSA", new Operation()
                 {
-                    @Override
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
                         return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed25519,
-                            Ed25519SecretBCPGKey.LENGTH, privPk.getEncoded());
+                                            Ed25519SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
             }
+            // Modern Ed448 (1.3.101.113)
             case PublicKeyAlgorithmTags.Ed448:
             {
                 return implGeneratePrivate("EdDSA", new Operation()
                 {
-                    @Override
+                    @java.lang.Override
                     public PrivateKeyInfo getPrivateKeyInfos()
                         throws IOException
                     {
                         return getPrivateKeyInfo(EdECObjectIdentifiers.id_Ed448,
-                            Ed448SecretBCPGKey.LENGTH, privPk.getEncoded());
+                                            Ed448SecretBCPGKey.LENGTH, privPk.getEncoded());
                     }
                 });
             }
@@ -337,47 +417,63 @@ public class JcaPGPKeyConverter
             {
                 ECDHPublicBCPGKey ecdhK = (ECDHPublicBCPGKey)publicPk.getKey();
 
-                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                // Legacy XDH on Curve25519 (legacy X25519)
+                // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
+                if (JcaJcePGPUtil.isX25519(ecdhK.getCurveOID()))
                 {
                     return get25519PublicKey(ecdhK.getEncodedPoint(), EdECObjectIdentifiers.id_X25519, "XDH", "Curve");
                 }
+                // Legacy X448 (1.3.101.111)
+                else if (ecdhK.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
+                {
+                    return get448PublicKey(ecdhK.getEncodedPoint(), EdECObjectIdentifiers.id_X448, "XDH", "Curve");
+                }
+                // Brainpool, NIST etc.
                 else
                 {
                     return implGetPublicKeyEC("ECDH", ecdhK);
                 }
             }
+            // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
             case PublicKeyAlgorithmTags.X25519:
             {
                 return implGetPublicKeyX509(publicPk.getKey().getEncoded(), 0, EdECObjectIdentifiers.id_X25519, "XDH");
             }
+            // Modern X448 (1.3.101.111)
             case PublicKeyAlgorithmTags.X448:
             {
                 return implGetPublicKeyX509(publicPk.getKey().getEncoded(), 0, EdECObjectIdentifiers.id_X448, "XDH");
             }
             case PublicKeyAlgorithmTags.ECDSA:
-                return implGetPublicKeyEC("ECDSA", (ECDSAPublicBCPGKey)publicPk.getKey());
-
+            {
+                return implGetPublicKeyEC("EC", (ECDSAPublicBCPGKey) publicPk.getKey());
+            }
+            // Legacy EdDSA (legacy Ed448, legacy Ed25519)
             case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             {
-                return get25519PublicKey(((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint(), EdECObjectIdentifiers.id_Ed25519, "EdDSA", "Ed");
-            }
-            case PublicKeyAlgorithmTags.Ed25519:
-            {
-                BCPGKey key = publicPk.getKey();
-                if (key instanceof Ed25519PublicBCPGKey)
+                EdDSAPublicBCPGKey eddsaKey = (EdDSAPublicBCPGKey) publicPk.getKey();
+                // Legacy Ed448 (1.3.101.113)
+                if (EdECObjectIdentifiers.id_Ed448.equals(eddsaKey.getCurveOID()))
                 {
-                    return implGetPublicKeyX509(BigIntegers.asUnsignedByteArray(new BigInteger(1, publicPk.getKey().getEncoded())),
-                        0, EdECObjectIdentifiers.id_Ed25519, "EdDSA");
+                    return get448PublicKey(eddsaKey.getEncodedPoint(), EdECObjectIdentifiers.id_Ed448, "EdDSA", "Ed");
                 }
+                // Legacy Ed25519
+                // 1.3.6.1.4.1.11591.15.1 & 1.3.101.112
                 else
                 {
-                    return implGetPublicKeyX509(BigIntegers.asUnsignedByteArray(((EdDSAPublicBCPGKey)publicPk.getKey()).getEncodedPoint()),
-                        0, EdECObjectIdentifiers.id_Ed25519, "EdDSA");
+                    return get25519PublicKey(eddsaKey.getEncodedPoint(), EdECObjectIdentifiers.id_Ed25519, "EdDSA", "Ed");
                 }
             }
+            // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
+            case PublicKeyAlgorithmTags.Ed25519:
+            {
+                return implGetPublicKeyX509(publicPk.getKey().getEncoded(),
+                        0, EdECObjectIdentifiers.id_Ed25519, "EdDSA");
+            }
+            // Modern Ed448 (1.3.101.113)
             case PublicKeyAlgorithmTags.Ed448:
             {
-                return implGetPublicKeyX509(BigIntegers.asUnsignedByteArray(new BigInteger(1, publicPk.getKey().getEncoded())),
+                return implGetPublicKeyX509(publicPk.getKey().getEncoded(),
                     0, EdECObjectIdentifiers.id_Ed448, "EdDSA");
             }
             case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
@@ -411,12 +507,12 @@ public class JcaPGPKeyConverter
         }
     }
 
-    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid, X9ECParameters x9Params)
-        throws InvalidParameterSpecException, NoSuchProviderException, NoSuchAlgorithmException
+    private ECParameterSpec getECParameterSpec(ASN1ObjectIdentifier curveOid)
+        throws IOException, GeneralSecurityException
     {
         AlgorithmParameters params = helper.createAlgorithmParameters("EC");
 
-        params.init(new ECGenParameterSpec(ECNamedCurveTable.getName(curveOid)));
+        params.init(new X962Parameters(curveOid).getEncoded());
 
         return params.getParameterSpec(ECParameterSpec.class);
     }
@@ -428,7 +524,6 @@ public class JcaPGPKeyConverter
 
         try
         {
-            // 'reverse' because the native format for X25519 private keys is little-endian
             return operation.getBCPGKey(ASN1OctetString.getInstance(pInfo.parsePrivateKey()).getOctets());
         }
         catch (IOException e)
@@ -457,38 +552,35 @@ public class JcaPGPKeyConverter
             }
             else
             {
-                // 'reverse' because the native format for X25519 private keys is little-endian
+                // 'reverse' because the native format for X25519,X448 private keys is little-endian
                 return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
                 {
-                    @Override
-                    public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                    public BCPGKey getBCPGKey(byte[] key)
                     {
-                        return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverse(pInfoEncoded)));
+                        return new ECSecretBCPGKey(new BigInteger(1, Arrays.reverse(key)));
                     }
                 });
             }
         }
+        // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
         case PublicKeyAlgorithmTags.X25519:
         {
-            // 'reverse' because the native format for X25519 private keys is little-endian
             return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                public BCPGKey getBCPGKey(byte[] key)
                 {
-                    return new X25519SecretBCPGKey(Arrays.reverse(pInfoEncoded));
+                    return new X25519SecretBCPGKey(key);
                 }
             });
         }
+        // Modern X448 (1.3.101.111)
         case PublicKeyAlgorithmTags.X448:
         {
-            // 'reverse' because the native format for X448 private keys is little-endian
             return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                public BCPGKey getBCPGKey(byte[] key)
                 {
-                    return new X448SecretBCPGKey(Arrays.reverse(pInfoEncoded));
+                    return new X448SecretBCPGKey(key);
                 }
             });
         }
@@ -496,36 +588,36 @@ public class JcaPGPKeyConverter
         {
             return new ECSecretBCPGKey(((ECPrivateKey)privKey).getS());
         }
+        // Legacy EdDSA (legacy Ed448, legacy Ed25519)
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
         {
             return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                public BCPGKey getBCPGKey(byte[] key)
                 {
-                    return new EdSecretBCPGKey(new BigInteger(1, pInfoEncoded));
+                    return new EdSecretBCPGKey(new BigInteger(1, key));
                 }
             });
         }
+        // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
         case PublicKeyAlgorithmTags.Ed25519:
         {
             return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                public BCPGKey getBCPGKey(byte[] key)
                 {
-                    return new Ed25519SecretBCPGKey(pInfoEncoded);
+                    return new Ed25519SecretBCPGKey(key);
                 }
             });
         }
+        // Modern Ed448 (1.3.101.113)
         case PublicKeyAlgorithmTags.Ed448:
         {
             return getPrivateBCPGKey(privKey, new BCPGKeyOperation()
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] pInfoEncoded)
+                public BCPGKey getBCPGKey(byte[] key)
                 {
-                    return new Ed448SecretBCPGKey(pInfoEncoded);
+                    return new Ed448SecretBCPGKey(key);
                 }
             });
         }
@@ -543,117 +635,232 @@ public class JcaPGPKeyConverter
             return new RSASecretBCPGKey(rsK.getPrivateExponent(), rsK.getPrimeP(), rsK.getPrimeQ());
         }
         default:
-            throw new PGPException("unknown key class");
+            throw new PGPException("unknown public key algorithm encountered: " + pub.getAlgorithm());
         }
     }
 
     private BCPGKey getPublicBCPGKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey)
         throws PGPException
     {
-        if (pubKey instanceof RSAPublicKey)
+        switch (algorithm)
         {
-            RSAPublicKey rK = (RSAPublicKey)pubKey;
-            return new RSAPublicBCPGKey(rK.getModulus(), rK.getPublicExponent());
-        }
-        else if (pubKey instanceof DSAPublicKey)
-        {
-            DSAPublicKey dK = (DSAPublicKey)pubKey;
-            DSAParams dP = dK.getParams();
-            return new DSAPublicBCPGKey(dP.getP(), dP.getQ(), dP.getG(), dK.getY());
-        }
-        else if (pubKey instanceof DHPublicKey)
-        {
-            DHPublicKey eK = (DHPublicKey)pubKey;
-            DHParameterSpec eS = eK.getParams();
-            return new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
-        }
-        else if (pubKey instanceof ECPublicKey)
-        {
-            SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
-
-            // TODO: should probably match curve by comparison as well
-            ASN1ObjectIdentifier curveOid = ASN1ObjectIdentifier.getInstance(keyInfo.getAlgorithm().getParameters());
-
-            X9ECParametersHolder params = ECNamedCurveTable.getByOIDLazy(curveOid);
-
-            ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
-            X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
-
-            if (algorithm == PGPPublicKey.ECDH)
+            case PublicKeyAlgorithmTags.RSA_GENERAL:
+            case PublicKeyAlgorithmTags.RSA_ENCRYPT:
+            case PublicKeyAlgorithmTags.RSA_SIGN:
             {
-                PGPKdfParameters kdfParams = implGetKdfParameters(curveOid, algorithmParameters);
-
-                return new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(),
-                    kdfParams.getSymmetricWrapAlgorithm());
+                RSAPublicKey rK = (RSAPublicKey) pubKey;
+                return new RSAPublicBCPGKey(rK.getModulus(), rK.getPublicExponent());
             }
-            else if (algorithm == PGPPublicKey.ECDSA)
+            case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
+            case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
             {
-                return new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
+                DHPublicKey egK = (DHPublicKey) pubKey;
+                return new ElGamalPublicBCPGKey(egK.getParams().getP(), egK.getParams().getG(), egK.getY());
             }
-            else
+            case PublicKeyAlgorithmTags.DSA:
             {
-                throw new PGPException("unknown EC algorithm");
+                DSAPublicKey dK = (DSAPublicKey) pubKey;
+                DSAParams dP = dK.getParams();
+                return new DSAPublicBCPGKey(dP.getP(), dP.getQ(), dP.getG(), dK.getY());
             }
-        }
-        else if (algorithm == PGPPublicKey.Ed25519)
-        {
-            return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
-            {
-                @Override
-                public BCPGKey getBCPGKey(byte[] key)
-                {
-                    return new Ed25519PublicBCPGKey(key);
-                }
-            });
-        }
-        else if (pubKey.getAlgorithm().regionMatches(true, 0, "ED2", 0, 3))
-        {
-            return new EdDSAPublicBCPGKey(GNUObjectIdentifiers.Ed25519, new BigInteger(1, getPointEncUncompressed(pubKey, Ed25519.PUBLIC_KEY_SIZE)));
-        }
-        else if (algorithm == PGPPublicKey.X25519)
-        {
-            return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
-            {
-                @Override
-                public BCPGKey getBCPGKey(byte[] key)
-                {
-                    return new X25519PublicBCPGKey(key);
-                }
-            });
-        }
-        else if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
-        {
-            PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
 
-            return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
-                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
-        }
-        else if (algorithm == PGPPublicKey.Ed448)
-        {
-            return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            case PublicKeyAlgorithmTags.DIFFIE_HELLMAN:
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] key)
-                {
-                    return new Ed448PublicBCPGKey(key);
-                }
-            });
-        }
-        else if (algorithm == PGPPublicKey.X448)
-        {
-            return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+                DHPublicKey eK = (DHPublicKey) pubKey;
+                DHParameterSpec eS = eK.getParams();
+                return new ElGamalPublicBCPGKey(eS.getP(), eS.getG(), eK.getY());
+            }
+
+            case PublicKeyAlgorithmTags.ECDH:
+            case PublicKeyAlgorithmTags.ECDSA:
             {
-                @Override
-                public BCPGKey getBCPGKey(byte[] key)
+                SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+
+                // TODO: should probably match curve by comparison as well
+                ASN1Encodable enc = keyInfo.getAlgorithm().getAlgorithm();
+                ASN1ObjectIdentifier curveOid;
+                curveOid = ASN1ObjectIdentifier.getInstance(enc);
+
+                // BCECPublicKey uses explicit parameter encoding, so we need to find the named curve manually
+                if (X9ObjectIdentifiers.id_ecPublicKey.equals(curveOid))
                 {
-                    return new X448PublicBCPGKey(key);
+                    enc = getNamedCurveOID(X962Parameters.getInstance(keyInfo.getAlgorithm().getParameters()));
+                    ASN1ObjectIdentifier nCurveOid = ASN1ObjectIdentifier.getInstance(enc);
+                    if (nCurveOid != null)
+                    {
+                        curveOid = nCurveOid;
+                    }
                 }
-            });
+
+                // Legacy XDH on Curve25519 (legacy X25519)
+                // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "X2", 0, 2))
+                {
+                    PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
+
+                    return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
+                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                }
+                // Legacy X448 (1.3.101.111)
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "X4", 0, 2))
+                {
+
+                    PGPKdfParameters kdfParams = implGetKdfParameters(EdECObjectIdentifiers.id_X448, algorithmParameters);
+
+                    return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEncUncompressed(pubKey, X448.SCALAR_SIZE)),
+                                kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                }
+                // sun.security.ec.XDHPublicKeyImpl returns "XDH" for getAlgorithm()
+                // In this case we need to determine the curve by looking at the length of the encoding :/
+                else if (pubKey.getAlgorithm().regionMatches(true, 0, "XDH", 0, 3))
+                {
+                    // Legacy X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
+                    if (X25519.SCALAR_SIZE + 12 == pubKey.getEncoded().length) // + 12 for some reason
+                    {
+                        PGPKdfParameters kdfParams = implGetKdfParameters(CryptlibObjectIdentifiers.curvey25519, algorithmParameters);
+
+                        return new ECDHPublicBCPGKey(CryptlibObjectIdentifiers.curvey25519, new BigInteger(1, getPointEncUncompressed(pubKey, X25519.SCALAR_SIZE)),
+                                    kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                    }
+                    // Legacy X448 (1.3.101.111)
+                    else
+                    {
+                        PGPKdfParameters kdfParams = implGetKdfParameters(EdECObjectIdentifiers.id_X448, algorithmParameters);
+
+                        return new ECDHPublicBCPGKey(EdECObjectIdentifiers.id_X448, new BigInteger(1, getPointEncUncompressed(pubKey, X448.SCALAR_SIZE)),
+                                    kdfParams.getHashAlgorithm(), kdfParams.getSymmetricWrapAlgorithm());
+                    }
+                }
+
+                X9ECParametersHolder params = ECNamedCurveTable.getByOIDLazy(curveOid);
+
+                ASN1OctetString key = new DEROctetString(keyInfo.getPublicKeyData().getBytes());
+                X9ECPoint derQ = new X9ECPoint(params.getCurve(), key);
+
+                if (algorithm == PGPPublicKey.ECDH)
+                {
+
+                    PGPKdfParameters kdfParams = implGetKdfParameters(curveOid, algorithmParameters);
+
+                    return new ECDHPublicBCPGKey(curveOid, derQ.getPoint(), kdfParams.getHashAlgorithm(),
+                            kdfParams.getSymmetricWrapAlgorithm());
+                }
+                else
+                {
+                    return new ECDSAPublicBCPGKey(curveOid, derQ.getPoint());
+                }
+            }
+
+            case PublicKeyAlgorithmTags.EDDSA_LEGACY:
+            {
+                // Legacy Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "ED2", 0, 3))
+                {
+                    return new EdDSAPublicBCPGKey(GNUObjectIdentifiers.Ed25519, new BigInteger(1, getPointEncUncompressed(pubKey, Ed25519.PUBLIC_KEY_SIZE)));
+                }
+                // Legacy Ed448 (1.3.101.113)
+                if (pubKey.getAlgorithm().regionMatches(true, 0, "ED4", 0, 3))
+                {
+                    return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEncUncompressed(pubKey, Ed448.PUBLIC_KEY_SIZE)));
+                }
+                // Manual matching on curve encoding length
+                else
+                {
+                    // sun.security.ec.ed.EdDSAPublicKeyImpl returns "EdDSA" for getAlgorithm()
+                    // if algorithm is just EdDSA, we need to detect the curve based on encoding length :/
+                    if (pubKey.getEncoded().length == 12 + Ed25519.PUBLIC_KEY_SIZE) // +12 for some reason
+                    {
+                        // Legacy Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
+                        return new EdDSAPublicBCPGKey(GNUObjectIdentifiers.Ed25519, new BigInteger(1, getPointEncUncompressed(pubKey, Ed25519.PUBLIC_KEY_SIZE)));
+                    }
+                    else
+                    {
+                        // Legacy Ed448 (1.3.101.113)
+                        return new EdDSAPublicBCPGKey(EdECObjectIdentifiers.id_Ed448, new BigInteger(1, getPointEncUncompressed(pubKey, Ed448.PUBLIC_KEY_SIZE)));
+                    }
+                }
+            }
+
+            // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
+            case PublicKeyAlgorithmTags.Ed25519:
+            {
+                return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+                {
+                    public BCPGKey getBCPGKey(byte[] key)
+                    {
+                        return new Ed25519PublicBCPGKey(key);
+                    }
+                });
+            }
+
+            // Modern Ed448 (1.3.101.113)
+            case PublicKeyAlgorithmTags.Ed448:
+            {
+                return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+                {
+                    public BCPGKey getBCPGKey(byte[] key)
+                    {
+                        return new Ed448PublicBCPGKey(key);
+                    }
+                });
+            }
+
+            // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
+            case PublicKeyAlgorithmTags.X25519:
+            {
+                return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+                {
+                    public BCPGKey getBCPGKey(byte[] key)
+                    {
+                        return new X25519PublicBCPGKey(key);
+                    }
+                });
+            }
+            // Modern X448 (1.3.101.111)
+            case PublicKeyAlgorithmTags.X448:
+            {
+                return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+                {
+                    public BCPGKey getBCPGKey(byte[] key)
+                    {
+                        return new X448PublicBCPGKey(key);
+                    }
+                });
+            }
+
+            default:
+                throw new PGPException("unknown public key algorithm encountered: " + algorithm);
+        }
+    }
+
+    private ASN1Encodable getNamedCurveOID(X962Parameters ecParams)
+    {
+        ECCurve curve = null;
+        if (ecParams.isNamedCurve())
+        {
+            return ASN1ObjectIdentifier.getInstance(ecParams.getParameters());
+        }
+        else if (ecParams.isImplicitlyCA())
+        {
+            curve = ((X9ECParameters)CryptoServicesRegistrar.getProperty(CryptoServicesRegistrar.Property.EC_IMPLICITLY_CA)).getCurve();
         }
         else
         {
-            throw new PGPException("unknown key class");
+            curve = X9ECParameters.getInstance(ecParams.getParameters()).getCurve();
         }
+
+        // Iterate through all registered curves to find applicable OID
+        Enumeration names = ECNamedCurveTable.getNames();
+        while (names.hasMoreElements())
+        {
+            String name = (String)names.nextElement();
+            X9ECParameters parms = ECNamedCurveTable.getByName(name);
+            if (curve.equals(parms.getCurve()))
+            {
+                return ECNamedCurveTable.getOID(name);
+            }
+        }
+        return null;
     }
 
     @FunctionalInterface
@@ -664,20 +871,21 @@ public class JcaPGPKeyConverter
 
     private BCPGKey getPublicBCPGKey(PublicKey pubKey, int keySize, BCPGKeyOperation operation)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[keySize];
-
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 0, pointEnc.length);
+        // refer to getPointEncUncompressed
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return operation.getBCPGKey(pointEnc);
     }
 
     private byte[] getPointEncUncompressed(PublicKey pubKey, int publicKeySize)
     {
-        SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded());
+        byte[] pubInfo = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
         byte[] pointEnc = new byte[1 + publicKeySize];
 
         pointEnc[0] = 0x40;
-        System.arraycopy(pubInfo.getPublicKeyData().getBytes(), 0, pointEnc, 1, pointEnc.length - 1);
+        //offset with pointEnc.length - pubInfo.length to avoid leading zero issue
+        System.arraycopy(pubInfo, 0, pointEnc, pointEnc.length - pubInfo.length , pubInfo.length);
         return pointEnc;
     }
 
@@ -718,10 +926,10 @@ public class JcaPGPKeyConverter
     }
 
     private PrivateKey implGetPrivateKeyEC(String keyAlgorithm, ECPublicBCPGKey ecPub, ECSecretBCPGKey ecPriv)
-        throws GeneralSecurityException, PGPException
+        throws GeneralSecurityException, PGPException, IOException
     {
         ASN1ObjectIdentifier curveOid = ecPub.getCurveOID();
-        ECPrivateKeySpec ecPrivSpec = new ECPrivateKeySpec(ecPriv.getX(), getECParameterSpec(curveOid, JcaJcePGPUtil.getX9Parameters(curveOid)));
+        ECPrivateKeySpec ecPrivSpec = new ECPrivateKeySpec(ecPriv.getX(), getECParameterSpec(curveOid));
         return implGeneratePrivate(keyAlgorithm, ecPrivSpec);
     }
 
@@ -735,7 +943,7 @@ public class JcaPGPKeyConverter
             new java.security.spec.ECPoint(
                 ecPubPoint.getAffineXCoord().toBigInteger(),
                 ecPubPoint.getAffineYCoord().toBigInteger()),
-            getECParameterSpec(curveOID, x9Params));
+            getECParameterSpec(curveOID));
         return implGeneratePublic(keyAlgorithm, ecPubSpec);
     }
 
@@ -748,6 +956,19 @@ public class JcaPGPKeyConverter
         if (pEnc.length < 1 || 0x40 != pEnc[0])
         {
             throw new IllegalArgumentException("Invalid " + name + "25519 public key");
+        }
+        return implGetPublicKeyX509(pEnc, 1, algorithm, keyAlgorithm);
+    }
+
+    private PublicKey get448PublicKey(BigInteger x, ASN1ObjectIdentifier algorithm, String keyAlgorithm, String name)
+            throws PGPException, GeneralSecurityException, IOException
+    {
+        byte[] pEnc = BigIntegers.asUnsignedByteArray(x);
+
+        // skip the 0x40 header byte.
+        if (pEnc.length < 1 || 0x40 != pEnc[0])
+        {
+            throw new IllegalArgumentException("Invalid " + name + "448 public key");
         }
         return implGetPublicKeyX509(pEnc, 1, algorithm, keyAlgorithm);
     }

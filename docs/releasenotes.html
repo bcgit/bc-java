@@ -20,15 +20,41 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv79"><h3>2.1.1 Version</h3></a>
 Release: 1.79<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>Leading zeroes were sometimes dropped from Ed25519 signatures leading to verification errors in the PGP API. This has been fixed.</li>
+<li>Default version string for Armored Output is now set correctly in 18on build.</li>
+<li>The Elephant cipher would fail on large messages. This has been fixed.</li>
+<li>CMSSignedData.replaceSigners() would re-encode the digest algorithms block, occassionally dropping ones where NULL had been previously added as an algorithm parameter. The method now attempts to only use the original digest algorithm identifiers.</li>
+<li>ERSInputStreamData would fail to generate the correct hash if called a second time with a different hash algorithm. This has been fixed.</li>
+<li>A downcast in the CrlCache which would cause FTP based CRLs to fail to load has been removed.</li>
+<li>ECUtil.getNamedCurveOid() now trims curve names of excess space before look up.</li>
+<li>The PhotonBeetle and Xoodyak did not reset properly after a doFinal() call. This has been fixed.</li>
+<li>Malformed AlgorithmIdentifiers in CertIDs could cause caching issues in the OCSP cache. This has been fixed.</li>
+<li>With Java 21 a provider service class will now be returned with a null class name where previously a null would have been returned for a service. This can cause a NullPointerException to be thrown by the BC provider if a non-existant service is requested. This issue has now been worked around.</li>
+<li>CMS: OtherKeyAttribute.keyAttr now treated as optional.</li>
+<li>CMS: EnvelopedData and AuthEnvelopedData could calculate the wrong versions. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
+<li>Object Identifiers have been added for ML-KEM, ML-DSA, and SLH-DSA.</li>
+<li>The PQC algorithms, ML-KEM, ML-DSA (including pre-hash), and SLH-DSA (including pre-hash) have been added to the BC provider and the lightweight API.</li>
+<li>A new spec, ContextParameterSpec, has been added to support signature contexts for ML-DSA and SLH-DSA.</li>
 <li>BCJSSE: Added support for security property "jdk.tls.server.defaultDHEParameters" (disabled in FIPS mode).</li>
-<li>BCJSSE: Added support for security property "org.bouncycastle.jsse.fips.allowGCMCiphersIn12" (false by default).</li>
+<li>BCJSSE: Added support for signature_algorithms_cert configuration via "org.bouncycastle.jsse.client.SignatureSchemesCert" and "org.bouncycastle.jsse.server.SignatureSchemesCert" system properties or BCSSLParameters property "SignatureSchemesCert".</li>
+<li>BCJSSE: Added support for boolean system property "org.bouncycastle.jsse.fips.allowGCMCiphersIn12" (false by default).</li>
+<li>(D)TLS: Remove redundant verification of self-generated RSA signatures.</li>
+<li>CompositePrivateKeys now support the latest revision of the composite signature draft.</li>
+<li>Delta Certificates now support the latest revision of the delta certificate extension draft.</li>
+<li>A general KeyIdentifier class, encapsulating both PGP KeyID and the PGP key fingerprint has been added to the PGP API.</li>
+<li>Support for the LibrePGP PreferredEncryptionModes signature subpacket has been added to the PGP API.</li>
+<li>Support Version 6 signatures, including salts, has been added to the PGP API.</li>
+<li>Support for the PreferredKeyServer signature supacket has been added to the PGP API.</li>
+<li>Support for RFC 9269, "Using KEMs in Cryptographic Message Syntax (CMS)", has been added to the CMS API.</li>
+<li>Support for the Argon2 S2K has been added to the PGP API.</li>
+<li>The system property "org.bouncycastle.pemreader.lax" has been introduced for situations where the BC PEM parsing is now too strict.</li>
+<li>The system property "org.bouncycastle.ec.disable_f2m" has been introduced to allow F2m EC support to be disabled.</li>
 </ul>
 
 <a id="r1rv78d1"><h3>2.2.1 Version</h3></a>

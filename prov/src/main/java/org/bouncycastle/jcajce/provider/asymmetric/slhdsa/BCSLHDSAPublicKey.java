@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
@@ -126,7 +125,7 @@ public class BCSLHDSAPublicKey
         return buf.toString();
     }
     
-    CipherParameters getKeyParams()
+    SLHDSAPublicKeyParameters getKeyParams()
     {
         return params;
     }

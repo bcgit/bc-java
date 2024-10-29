@@ -569,10 +569,10 @@ public class PGPPublicKey
 
     public Iterator<PGPSignature> getSignaturesForKey(KeyIdentifier identifier)
     {
-        List<PGPSignature> sigs = new ArrayList<>();
+        List<PGPSignature> sigs = new ArrayList<PGPSignature>();
         for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
         {
-            PGPSignature sig = it.next();
+            PGPSignature sig = (PGPSignature)it.next();
             if (identifier.isPresentIn(sig.getKeyIdentifiers()))
             {
                 sigs.add(sig);
