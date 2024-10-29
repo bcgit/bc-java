@@ -10,6 +10,7 @@
     <property name="src.dir" value="${build.dir}/${jdk.name}" />
     <property name="target.prefix" value="jdk18on" />
     <property name="javadoc.args" value="-breakiterator -Xdoclint:none -quiet" />
+    <property name="junit.maxmemory" value="4096m" />
 
     <target name="clean">
         <delete dir="${build.dir}" />
