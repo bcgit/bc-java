@@ -45,7 +45,13 @@ public class BcTlsECDomain implements TlsECDomain
 
     public static ECDomainParameters getDomainParameters(TlsECConfig ecConfig)
     {
-        return getDomainParameters(ecConfig.getNamedGroup());
+        ECDomainParameters parameters = getDomainParameters(ecConfig.getNamedGroup());
+        if (parameters == null)
+        {
+            throw new IllegalArgumentException("No EC configuration provided");
+        }
+
+        return parameters;
     }
 
     public static ECDomainParameters getDomainParameters(int namedGroup)
