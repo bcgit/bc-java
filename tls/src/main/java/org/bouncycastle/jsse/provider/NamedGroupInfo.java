@@ -79,8 +79,9 @@ class NamedGroupInfo
         OQS_mlkem512(NamedGroup.OQS_mlkem512, "ML-KEM"),
         OQS_mlkem768(NamedGroup.OQS_mlkem768, "ML-KEM"),
         OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
-        DRAFT_mlkem768(NamedGroup.DRAFT_mlkem768, "ML-KEM"),
-        DRAFT_mlkem1024(NamedGroup.DRAFT_mlkem1024, "ML-KEM");
+        MLKEM512(NamedGroup.MLKEM512, "ML-KEM"),
+        MLKEM768(NamedGroup.MLKEM768, "ML-KEM"),
+        MLKEM1024(NamedGroup.MLKEM1024, "ML-KEM");
 
         private final int namedGroup;
         private final String name;

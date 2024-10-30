@@ -453,8 +453,9 @@ public class JcaTlsCrypto
             case NamedGroup.OQS_mlkem512:
             case NamedGroup.OQS_mlkem768:
             case NamedGroup.OQS_mlkem1024:
-            case NamedGroup.DRAFT_mlkem768:
-            case NamedGroup.DRAFT_mlkem1024:
+            case NamedGroup.MLKEM512:
+            case NamedGroup.MLKEM768:
+            case NamedGroup.MLKEM1024:
                 return null;
             }
         }
