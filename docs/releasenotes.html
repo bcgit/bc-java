@@ -30,7 +30,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <li>ERSInputStreamData would fail to generate the correct hash if called a second time with a different hash algorithm. This has been fixed.</li>
 <li>A downcast in the CrlCache which would cause FTP based CRLs to fail to load has been removed.</li>
 <li>ECUtil.getNamedCurveOid() now trims curve names of excess space before look up.</li>
-<li>The PhotonBeetle and Xoodyak did not reset properly after a doFinal() call. This has been fixed.</li>
+<li>The PhotonBeetle and Xoodyak digests did not reset properly after a doFinal() call. This has been fixed.</li>
 <li>Malformed AlgorithmIdentifiers in CertIDs could cause caching issues in the OCSP cache. This has been fixed.</li>
 <li>With Java 21 a provider service class will now be returned with a null class name where previously a null would have been returned for a service. This can cause a NullPointerException to be thrown by the BC provider if a non-existant service is requested. This issue has now been worked around.</li>
 <li>CMS: OtherKeyAttribute.keyAttr now treated as optional.</li>
@@ -49,7 +49,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <li>Delta Certificates now support the latest revision of the delta certificate extension draft.</li>
 <li>A general KeyIdentifier class, encapsulating both PGP KeyID and the PGP key fingerprint has been added to the PGP API.</li>
 <li>Support for the LibrePGP PreferredEncryptionModes signature subpacket has been added to the PGP API.</li>
-<li>Support Version 6 signatures, including salts, has been added to the PGP API.</li>
+<li>Support for Version 6 signatures, including salts, has been added to the PGP API.</li>
 <li>Support for the PreferredKeyServer signature supacket has been added to the PGP API.</li>
 <li>Support for RFC 9269, "Using KEMs in Cryptographic Message Syntax (CMS)", has been added to the CMS API.</li>
 <li>Support for the Argon2 S2K has been added to the PGP API.</li>
