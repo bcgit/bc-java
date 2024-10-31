@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.kyber;
+package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -24,36 +24,36 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.WrapUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Strings;
 
-class KyberCipherSpi
-        extends CipherSpi
+class MLKEMCipherSpi
+    extends CipherSpi
 {
     private final String algorithmName;
     private MLKEMGenerator kemGen;
     private KTSParameterSpec kemParameterSpec;
-    private BCKyberPublicKey wrapKey;
-    private BCKyberPrivateKey unwrapKey;
+    private BCMLKEMPublicKey wrapKey;
+    private BCMLKEMPrivateKey unwrapKey;
 
     private AlgorithmParameters engineParams;
-    private MLKEMParameters kyberParameters;
+    private MLKEMParameters mlkemParamters;
 
-    KyberCipherSpi(String algorithmName)
+    MLKEMCipherSpi(String algorithmName)
     {
         this.algorithmName = algorithmName;
-        this.kyberParameters = null;
+        this.mlkemParamters = null;
     }
 
-    KyberCipherSpi(MLKEMParameters kyberParameters)
+    MLKEMCipherSpi(MLKEMParameters kyberParameters)
     {
-        this.kyberParameters = kyberParameters;
-        this.algorithmName = Strings.toUpperCase(kyberParameters.getName());
+        this.mlkemParamters = kyberParameters;
+        this.algorithmName = kyberParameters.getName();
     }
 
     @Override
@@ -150,9 +150,9 @@ class KyberCipherSpi
 
         if (opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof BCKyberPublicKey)
+            if (key instanceof BCMLKEMPublicKey)
             {
-                wrapKey = (BCKyberPublicKey)key;
+                wrapKey = (BCMLKEMPublicKey)key;
                 kemGen = new MLKEMGenerator(CryptoServicesRegistrar.getSecureRandom(random));
             }
             else
@@ -162,9 +162,9 @@ class KyberCipherSpi
         }
         else if (opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof BCKyberPrivateKey)
+            if (key instanceof BCMLKEMPrivateKey)
             {
-                unwrapKey = (BCKyberPrivateKey)key;
+                unwrapKey = (BCMLKEMPrivateKey)key;
             }
             else
             {
@@ -176,9 +176,9 @@ class KyberCipherSpi
             throw new InvalidParameterException("Cipher only valid for wrapping/unwrapping");
         }
 
-        if (kyberParameters != null)
+        if (mlkemParamters != null)
         {
-            String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+            String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParamters.getName()).getName();
             if (!canonicalAlgName.equals(key.getAlgorithm()))
             {
                 throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
@@ -325,37 +325,37 @@ class KyberCipherSpi
     }
 
     public static class Base
-            extends KyberCipherSpi
+            extends MLKEMCipherSpi
     {
         public Base()
                 throws NoSuchAlgorithmException
         {
-            super("KYBER");
+            super("MLKEM");
         }
     }
 
-    public static class Kyber512
-        extends KyberCipherSpi
+    public static class MLKEM512
+        extends MLKEMCipherSpi
     {
-        public Kyber512()
+        public MLKEM512()
         {
             super(MLKEMParameters.ml_kem_512);
         }
     }
 
-    public static class Kyber768
-        extends KyberCipherSpi
+    public static class MLKEM768
+        extends MLKEMCipherSpi
     {
-        public Kyber768()
+        public MLKEM768()
         {
             super(MLKEMParameters.ml_kem_768);
         }
     }
 
-    public static class Kyber1024
-        extends KyberCipherSpi
+    public static class MLKEM1024
+        extends MLKEMCipherSpi
     {
-        public Kyber1024()
+        public MLKEM1024()
         {
             super(MLKEMParameters.ml_kem_1024);
         }
