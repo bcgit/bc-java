@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.kyber;
+package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.SecureRandom;
@@ -12,13 +12,14 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
-public class KyberKeyGeneratorSpi
+public class MLKEMKeyGeneratorSpi
         extends KeyGeneratorSpi
 {
     private KEMGenerateSpec genSpec;
@@ -26,12 +27,12 @@ public class KyberKeyGeneratorSpi
     private KEMExtractSpec extSpec;
     private MLKEMParameters kyberParameters;
 
-    public KyberKeyGeneratorSpi()
+    public MLKEMKeyGeneratorSpi()
     {
         this(null);
     }
 
-    protected KyberKeyGeneratorSpi(MLKEMParameters kyberParameters)
+    protected MLKEMKeyGeneratorSpi(MLKEMParameters kyberParameters)
     {
         this.kyberParameters = kyberParameters;
     }
@@ -51,7 +52,7 @@ public class KyberKeyGeneratorSpi
             this.extSpec = null;
             if (kyberParameters != null)
             {
-                String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+                String canonicalAlgName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
                 if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -64,7 +65,7 @@ public class KyberKeyGeneratorSpi
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
             if (kyberParameters != null)
             {
-                String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+                String canonicalAlgName = MLKEMParameterSpec.fromName(kyberParameters.getName()).getName();
                 if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
@@ -86,13 +87,14 @@ public class KyberKeyGeneratorSpi
     {
         if (genSpec != null)
         {
-            BCKyberPublicKey pubKey = (BCKyberPublicKey)genSpec.getPublicKey();
+            BCMLKEMPublicKey pubKey = (BCMLKEMPublicKey)genSpec.getPublicKey();
             MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
             byte[] sharedSecret = secEnc.getSecret();
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            byte[] secret = KdfUtil.makeKeyBytes(genSpec, sharedSecret);
 
             Arrays.clear(sharedSecret);
 
@@ -111,12 +113,12 @@ public class KyberKeyGeneratorSpi
         }
         else
         {
-            BCKyberPrivateKey privKey = (BCKyberPrivateKey)extSpec.getPrivateKey();
+            BCMLKEMPrivateKey privKey = (BCMLKEMPrivateKey)extSpec.getPrivateKey();
             MLKEMExtractor kemExt = new MLKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] sharedSecret = kemExt.extractSecret(encapsulation);
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+            byte[] secret = KdfUtil.makeKeyBytes(extSpec, sharedSecret);
 
             Arrays.clear(sharedSecret);
 
@@ -128,28 +130,28 @@ public class KyberKeyGeneratorSpi
         }
     }
 
-    public static class Kyber512
-        extends KyberKeyGeneratorSpi
+    public static class MLKEM512
+        extends MLKEMKeyGeneratorSpi
     {
-        public Kyber512()
+        public MLKEM512()
         {
             super(MLKEMParameters.ml_kem_512);
         }
     }
 
-    public static class Kyber768
-        extends KyberKeyGeneratorSpi
+    public static class MLKEM768
+        extends MLKEMKeyGeneratorSpi
     {
-        public Kyber768()
+        public MLKEM768()
         {
             super(MLKEMParameters.ml_kem_768);
         }
     }
 
-    public static class Kyber1024
-        extends KyberKeyGeneratorSpi
+    public static class MLKEM1024
+        extends MLKEMKeyGeneratorSpi
     {
-        public Kyber1024()
+        public MLKEM1024()
         {
             super(MLKEMParameters.ml_kem_1024);
         }
