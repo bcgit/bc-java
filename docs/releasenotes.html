@@ -35,6 +35,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <li>With Java 21 a provider service class will now be returned with a null class name where previously a null would have been returned for a service. This can cause a NullPointerException to be thrown by the BC provider if a non-existant service is requested. This issue has now been worked around.</li>
 <li>CMS: OtherKeyAttribute.keyAttr now treated as optional.</li>
 <li>CMS: EnvelopedData and AuthEnvelopedData could calculate the wrong versions. This has been fixed.</li>
+<li>The default version header for PGP armored output did not carry the correct version string. This has been fixed.</li>
 </ul>
 <h3>2.1.3 Additional Features and Functionality</h3>
 <ul>
