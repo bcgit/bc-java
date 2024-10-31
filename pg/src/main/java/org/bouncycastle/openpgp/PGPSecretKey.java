@@ -991,7 +991,7 @@ public class PGPSecretKey
 
         SecretKeyPacket secret;
 
-        if (newKeyEncryptor.getAeadAlgorithm() > 0)
+        if (newKeyEncryptor != null && newKeyEncryptor.getAeadAlgorithm() > 0)
         {
             s2kUsage = SecretKeyPacket.USAGE_AEAD;
             secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, keyData);
