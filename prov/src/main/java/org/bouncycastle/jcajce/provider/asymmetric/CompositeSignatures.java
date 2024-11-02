@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
@@ -33,17 +33,19 @@ public class CompositeSignatures
 
         public void configure(ConfigurableProvider provider)
         {
-            for (ASN1ObjectIdentifier oid : CompositeSignaturesConstants.supportedIdentifiers)
+            for (ASN1ObjectIdentifier oid : CompositeIndex.getSupportedIdentifiers())
             {
-                CompositeSignaturesConstants.CompositeName algName = CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(oid);
-                provider.addAlgorithm("KeyFactory." + algName.getId(), PREFIX + "KeyFactorySpi"); //Key factory is the same for all composite signatures.
-                provider.addAlgorithm("Alg.Alias.KeyFactory", oid, algName.getId());
+                String algorithmName = CompositeIndex.getAlgorithmName(oid);
+                String className = algorithmName.replace('-', '_');
 
-                provider.addAlgorithm("KeyPairGenerator." + algName.getId(), PREFIX + "KeyPairGeneratorSpi$" + algName);
-                provider.addAlgorithm("Alg.Alias.KeyPairGenerator", oid, algName.getId());
+                provider.addAlgorithm("Alg.Alias.KeyFactory", oid, "COMPOSITE");
+                provider.addAlgorithm("Alg.Alias.KeyFactory." + algorithmName, "COMPOSITE");
+                
+                provider.addAlgorithm("KeyPairGenerator." + algorithmName, PREFIX + "KeyPairGeneratorSpi$" + className);
+                provider.addAlgorithm("Alg.Alias.KeyPairGenerator", oid, algorithmName);
 
-                provider.addAlgorithm("Signature." + algName.getId(), PREFIX + "SignatureSpi$" + algName);
-                provider.addAlgorithm("Alg.Alias.Signature", oid, algName.getId());
+                provider.addAlgorithm("Signature." + algorithmName, PREFIX + "SignatureSpi$" + className);
+                provider.addAlgorithm("Alg.Alias.Signature", oid, algorithmName);
 
                 provider.addKeyInfoConverter(oid, new KeyFactorySpi());
             }

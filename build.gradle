@@ -266,7 +266,7 @@ subprojects {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = false;
+        options.debug = true;
     }
 
     tasks.withType(Test).configureEach {
