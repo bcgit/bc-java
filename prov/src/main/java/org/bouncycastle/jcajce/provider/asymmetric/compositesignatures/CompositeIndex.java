@@ -14,7 +14,7 @@ public class CompositeIndex
 {
     private static Map<ASN1ObjectIdentifier, String[]> pairings = new HashMap<ASN1ObjectIdentifier, String[]>();
     private static Map<ASN1ObjectIdentifier, AlgorithmParameterSpec[]> kpgInitSpecs = new HashMap<ASN1ObjectIdentifier, AlgorithmParameterSpec[]>();
-    private static Map<ASN1ObjectIdentifier, String> classNames = new HashMap<ASN1ObjectIdentifier, String>();
+    private static Map<ASN1ObjectIdentifier, String> algorithmNames = new HashMap<ASN1ObjectIdentifier, String>();
       
     static
     {
@@ -78,35 +78,35 @@ public class CompositeIndex
         kpgInitSpecs.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, new AlgorithmParameterSpec[] { null, new ECNamedCurveGenParameterSpec("brainpoolP384r1")});
         kpgInitSpecs.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, new AlgorithmParameterSpec[] { null, null});
         
-        classNames.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, "MLDSA44_RSA2048_PSS_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, "MLDSA44_RSA2048_PKCS15_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, "MLDSA44_Ed25519_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, "MLDSA44_ECDSA_P256_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, "MLDSA65_RSA3072_PSS_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, "MLDSA65_RSA3072_PKCS15_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384, "MLDSA65_RSA4096_PSS_SHA384");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384, "MLDSA65_RSA4096_PKCS15_SHA384");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384, "MLDSA65_ECDSA_P384_SHA384");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, "MLDSA65_ECDSA_brainpoolP256r1_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, "MLDSA65_Ed25519_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384, "MLDSA87_ECDSA_P384_SHA384");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384, "MLDSA87_ECDSA_brainpoolP384r1_SHA384");
-        classNames.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, "MLDSA87_Ed448_SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, "MLDSA44-RSA2048-PSS-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, "MLDSA44-RSA2048-PKCS15-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, "MLDSA44-Ed25519-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, "MLDSA44-ECDSA-P256-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, "MLDSA65-RSA3072-PSS-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, "MLDSA65-RSA3072-PKCS15-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384, "MLDSA65-RSA4096-PSS-SHA384");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384, "MLDSA65-RSA4096-PKCS15-SHA384");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384, "MLDSA65-ECDSA-P384-SHA384");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, "MLDSA65-ECDSA-brainpoolP256r1-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, "MLDSA65-Ed25519-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384, "MLDSA87-ECDSA-P384-SHA384");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384, "MLDSA87-ECDSA-brainpoolP384r1-SHA384");
+        algorithmNames.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, "MLDSA87-Ed448-SHA512");
     
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256, "HashMLDSA44_RSA2048_PSS_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256, "HashMLDSA44_RSA2048_PKCS15_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512, "HashMLDSA44_Ed25519_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256, "HashMLDSA44_ECDSA_P256_SHA256");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512, "HashMLDSA65_RSA3072_PSS_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512, "HashMLDSA65_RSA3072_PKCS15_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512, "HashMLDSA65_RSA4096_PSS_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512, "HashMLDSA65_RSA4096_PKCS15_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512, "HashMLDSA65_ECDSA_P384_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512, "HashMLDSA65_ECDSA_brainpoolP256r1_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512, "HashMLDSA65_Ed25519_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512, "HashMLDSA87_ECDSA_P384_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, "HashMLDSA87_ECDSA_brainpoolP384r1_SHA512");
-        classNames.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, "HashMLDSA87_Ed448_SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256, "HashMLDSA44-RSA2048-PSS-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256, "HashMLDSA44-RSA2048-PKCS15-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512, "HashMLDSA44-Ed25519-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256, "HashMLDSA44-ECDSA-P256-SHA256");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512, "HashMLDSA65-RSA3072-PSS-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512, "HashMLDSA65-RSA3072-PKCS15-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512, "HashMLDSA65-RSA4096-PSS-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512, "HashMLDSA65-RSA4096-PKCS15-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512, "HashMLDSA65-ECDSA-P384-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512, "HashMLDSA65-ECDSA-brainpoolP256r1-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512, "HashMLDSA65-Ed25519-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512, "HashMLDSA87-ECDSA-P384-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, "HashMLDSA87-ECDSA-brainpoolP384r1-SHA512");
+        algorithmNames.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, "HashMLDSA87-Ed448-SHA512");
     }
 
     public static boolean isAlgorithmSupported(ASN1ObjectIdentifier algorithm)
@@ -121,7 +121,7 @@ public class CompositeIndex
 
     public static String getAlgorithmName(ASN1ObjectIdentifier algorithm)
     {
-        return classNames.get(algorithm).replace('_', '-');
+        return algorithmNames.get(algorithm);
     }
 
     static String[] getPairing(ASN1ObjectIdentifier algorithm)
