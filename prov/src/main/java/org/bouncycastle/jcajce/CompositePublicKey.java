@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce;
 import java.io.IOException;
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,7 +13,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 
@@ -75,7 +74,7 @@ public class CompositePublicKey implements PublicKey
         try
         {
             //Check if the public key algorithm specified in SubjectPublicKeyInfo is one of the supported composite signatures.
-            if (!Arrays.asList(CompositeSignaturesConstants.supportedIdentifiers).contains(keyInfoIdentifier))
+            if (!CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
             {
                 throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
@@ -108,7 +107,7 @@ public class CompositePublicKey implements PublicKey
 
     public String getAlgorithm()
     {
-        return CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(this.algorithmIdentifier).getId();
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
     }
 
     public ASN1ObjectIdentifier getAlgorithmIdentifier()
