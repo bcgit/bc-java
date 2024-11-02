@@ -148,7 +148,7 @@ public class CompositeSignaturesTest
         }
     }
 
-    public void testCompositeParameterSpec()
+    public void testContextParameterSpec()
         throws Exception
     {
         String oid = "2.16.840.1.114027.80.8.1.24"; // MLDSA44withECDSA_P256_SHA256
@@ -162,6 +162,8 @@ public class CompositeSignaturesTest
 
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
         byte[] signatureValue = signature.sign();
+
+        signature = Signature.getInstance(oid, "BC");
 
         signature.initVerify(keyPair.getPublic());
         
