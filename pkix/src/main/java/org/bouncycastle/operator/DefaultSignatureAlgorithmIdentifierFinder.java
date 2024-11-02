@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.util.Strings;
 
 public class DefaultSignatureAlgorithmIdentifierFinder
-        implements SignatureAlgorithmIdentifierFinder
+    implements SignatureAlgorithmIdentifierFinder
 {
     private static Map algorithms = new HashMap();
     private static Set noParams = new HashSet();
@@ -43,7 +43,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         {
             throw new IllegalStateException("algorithmName already present in addAlgorithm");
         }
-        
+
         algorithms.put(algorithmName, algOid);
     }
 
@@ -302,7 +302,20 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA384", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384);
         addAlgorithm("MLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
 
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+        addAlgorithm("HASHMLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256);
+        addAlgorithm("HASHMLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256);
+        addAlgorithm("HASHMLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512);
+        addAlgorithm("HASHMLDSA44-ECDSA-P256-SHA256", MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256);
+        addAlgorithm("HASHMLDSA65-RSA3072-PSS-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512);
+        addAlgorithm("HASHMLDSA65-RSA3072-PKCS15-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512);
+        addAlgorithm("HASHMLDSA65-RSA4096-PSS-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512);
+        addAlgorithm("HASHMLDSA65-RSA4096-PKCS15-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512);
+        addAlgorithm("HASHMLDSA65-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512);
+        addAlgorithm("HASHMLDSA65-ECDSA-BRAINPOOLP256R1-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        addAlgorithm("HASHMLDSA65-ED25519-SHA512", MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512);
+        addAlgorithm("HASHMLDSA87-ECDSA-P384-SHA512", MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512);
+        addAlgorithm("HASHMLDSA87-ECDSA-BRAINPOOLP384R1-SHA512", MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        addAlgorithm("HASHMLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512);
 
         //
         // According to RFC 3279, the ASN.1 encoding SHALL (id-dsa-with-sha1) or MUST (ecdsa-with-SHA*) omit the parameters field.
@@ -498,7 +511,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // Composite - Draft 13
         //
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
         noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
         noParams.add(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
         noParams.add(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
@@ -513,6 +525,21 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384);
         noParams.add(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384);
         noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512);
+        noParams.add(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512);
 
         //
         // PKCS 1.5 encrypted  algorithms
@@ -688,16 +715,16 @@ public class DefaultSignatureAlgorithmIdentifierFinder
     private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
     {
         return new RSASSAPSSparams(
-                hashAlgId,
-                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-                new ASN1Integer(saltSize),
-                new ASN1Integer(1));
+            hashAlgId,
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
+            new ASN1Integer(saltSize),
+            new ASN1Integer(1));
     }
 
     public AlgorithmIdentifier find(String sigAlgName)
     {
         String algorithmName = Strings.toUpperCase(sigAlgName);
-        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier) algorithms.get(algorithmName);
+        ASN1ObjectIdentifier sigOID = (ASN1ObjectIdentifier)algorithms.get(algorithmName);
         if (sigOID == null)
         {
             throw new IllegalArgumentException("Unknown signature type requested: " + sigAlgName);
@@ -710,7 +737,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         }
         else if (params.containsKey(algorithmName))
         {
-            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable) params.get(algorithmName));
+            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable)params.get(algorithmName));
         }
         else
         {
