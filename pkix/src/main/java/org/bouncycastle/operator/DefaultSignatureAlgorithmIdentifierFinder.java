@@ -286,8 +286,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("SHA512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha512);
         addAlgorithm("SHA3-512WITHPICNIC", BCObjectIdentifiers.picnic_with_sha3_512);
         addAlgorithm("SHAKE256WITHPICNIC", BCObjectIdentifiers.picnic_with_shake256);
-        
-        noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+
         addAlgorithm("MLDSA44-RSA2048-PSS-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256);
         addAlgorithm("MLDSA44-RSA2048-PKCS15-SHA256", MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256);
         addAlgorithm("MLDSA44-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512);
@@ -301,6 +300,8 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("MLDSA65-ED25519-SHA512", MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512);
         addAlgorithm("MLDSA87-ECDSA-P384-SHA384", MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384);
         addAlgorithm("MLDSA87-ECDSA-BRAINPOOLP384R1-SHA384", MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384);
+        addAlgorithm("MLDSA87-ED448-SHA512", MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
+
         noParams.add(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512);
 
         //
