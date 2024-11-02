@@ -18,12 +18,12 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.KEMKeyWrapper;
+import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
 import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
-import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -182,9 +182,9 @@ class JceCMSKEMKeyWrapper
 
     static
     {
-        encLengths.put(KyberParameterSpec.kyber512.getName(), Integers.valueOf(768));
-        encLengths.put(KyberParameterSpec.kyber768.getName(), Integers.valueOf(1088));
-        encLengths.put(KyberParameterSpec.kyber1024.getName(), Integers.valueOf(1568));
+        encLengths.put(MLKEMParameterSpec.ml_kem_512.getName(), Integers.valueOf(768));
+        encLengths.put(MLKEMParameterSpec.ml_kem_768.getName(), Integers.valueOf(1088));
+        encLengths.put(MLKEMParameterSpec.ml_kem_1024.getName(), Integers.valueOf(1568));
 
         encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), Integers.valueOf(699));
         encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), Integers.valueOf(930));
@@ -194,14 +194,14 @@ class JceCMSKEMKeyWrapper
 
     private int getKemEncLength(PublicKey publicKey)
     {
-        if (publicKey instanceof KyberPublicKey)
+        if (publicKey instanceof MLKEMPublicKey)
         {
-            return ((Integer)encLengths.get(((KyberPublicKey)publicKey).getParameterSpec().getName())).intValue();
+            return ((Integer)encLengths.get(((MLKEMPublicKey)publicKey).getParameterSpec().getName())).intValue();
         }
         if (publicKey instanceof NTRUKey)
         {
             return ((Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName())).intValue();
         }
-        return 0;
+        throw new IllegalStateException("unknown public key KEM instance");
     }
 }
