@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.jcajce.provider.util;
 import java.security.InvalidKeyException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -24,6 +25,7 @@ import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
+import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -176,6 +178,38 @@ public class WrapUtil
             {
                 throw new IllegalStateException("HDKF parameter support not added");
             }
+        }
+        else if (NISTObjectIdentifiers.id_Kmac128.equals(kdfAlgorithm.getAlgorithm()))
+        {
+            byte[] customStr = new byte[0];
+            if (kdfAlgorithm.getParameters() != null)
+            {
+                customStr = ASN1OctetString.getInstance(kdfAlgorithm.getParameters()).getOctets();
+            }
+
+            KMAC mac = new KMAC(128, customStr);
+
+            mac.init(new KeyParameter(secret, 0, secret.length));
+
+            mac.update(otherInfo, 0, otherInfo.length);
+
+            mac.doFinal(keyBytes, 0, keyBytes.length);
+        }
+        else if (NISTObjectIdentifiers.id_Kmac256.equals(kdfAlgorithm.getAlgorithm()))
+        {
+            byte[] customStr = new byte[0];
+            if (kdfAlgorithm.getParameters() != null)
+            {
+                customStr = ASN1OctetString.getInstance(kdfAlgorithm.getParameters()).getOctets();
+            }
+
+            KMAC mac = new KMAC(256, customStr);
+
+            mac.init(new KeyParameter(secret, 0, secret.length));
+
+            mac.update(otherInfo, 0, otherInfo.length);
+
+            mac.doFinal(keyBytes, 0, keyBytes.length);
         }
         else if (NISTObjectIdentifiers.id_shake256.equals(kdfAlgorithm.getAlgorithm()))
         {
