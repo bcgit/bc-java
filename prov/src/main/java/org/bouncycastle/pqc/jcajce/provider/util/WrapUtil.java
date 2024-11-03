@@ -4,6 +4,7 @@ import java.security.InvalidKeyException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.DerivationFunction;
@@ -12,6 +13,7 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
@@ -20,7 +22,9 @@ import org.bouncycastle.crypto.engines.CamelliaEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
 import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.engines.SEEDEngine;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
@@ -127,6 +131,51 @@ public class WrapUtil
             kdf.init(new KDFParameters(secret, otherInfo));
 
             kdf.generateBytes(keyBytes, 0, keyBytes.length);
+        }
+        else if (PKCSObjectIdentifiers.id_alg_hkdf_with_sha256.equals(kdfAlgorithm.getAlgorithm()))
+        {
+            if (kdfAlgorithm.getParameters() == null)
+            {
+                DerivationFunction kdf = new HKDFBytesGenerator(new SHA256Digest());
+
+                kdf.init(new HKDFParameters(secret, null, otherInfo));
+
+                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+            }
+            else
+            {
+                throw new IllegalStateException("HDKF parameter support not added");
+            }
+        }
+        else if (PKCSObjectIdentifiers.id_alg_hkdf_with_sha384.equals(kdfAlgorithm.getAlgorithm()))
+        {
+            if (kdfAlgorithm.getParameters() == null)
+            {
+                DerivationFunction kdf = new HKDFBytesGenerator(new SHA384Digest());
+
+                kdf.init(new HKDFParameters(secret, null, otherInfo));
+
+                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+            }
+            else
+            {
+                throw new IllegalStateException("HDKF parameter support not added");
+            }
+        }
+        else if (PKCSObjectIdentifiers.id_alg_hkdf_with_sha512.equals(kdfAlgorithm.getAlgorithm()))
+        {
+            if (kdfAlgorithm.getParameters() == null)
+            {
+                DerivationFunction kdf = new HKDFBytesGenerator(new SHA512Digest());
+
+                kdf.init(new HKDFParameters(secret, null, otherInfo));
+
+                kdf.generateBytes(keyBytes, 0, keyBytes.length);
+            }
+            else
+            {
+                throw new IllegalStateException("HDKF parameter support not added");
+            }
         }
         else if (NISTObjectIdentifiers.id_shake256.equals(kdfAlgorithm.getAlgorithm()))
         {
