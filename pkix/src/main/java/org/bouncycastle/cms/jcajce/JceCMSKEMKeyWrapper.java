@@ -21,7 +21,9 @@ import org.bouncycastle.cms.KEMKeyWrapper;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
@@ -31,6 +33,7 @@ import org.bouncycastle.util.Integers;
 class JceCMSKEMKeyWrapper
     extends KEMKeyWrapper
 {
+    private final KemEncapsulationLengthProvider kemEncLenProvider = new DefaultKemEncapsulationLengthProvider();
     private final AlgorithmIdentifier symWrapAlgorithm;
     private final int kekLength;
 
@@ -178,30 +181,8 @@ class JceCMSKEMKeyWrapper
         }
     }
 
-    private static Map encLengths = new HashMap();
-
-    static
+    private int getKemEncLength(PublicKey key)
     {
-        encLengths.put(MLKEMParameterSpec.ml_kem_512.getName(), Integers.valueOf(768));
-        encLengths.put(MLKEMParameterSpec.ml_kem_768.getName(), Integers.valueOf(1088));
-        encLengths.put(MLKEMParameterSpec.ml_kem_1024.getName(), Integers.valueOf(1568));
-
-        encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), Integers.valueOf(699));
-        encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), Integers.valueOf(930));
-        encLengths.put(NTRUParameterSpec.ntruhps4096821.getName(), Integers.valueOf(1230));
-        encLengths.put(NTRUParameterSpec.ntruhrss701.getName(), Integers.valueOf(1138));
-    }
-
-    private int getKemEncLength(PublicKey publicKey)
-    {
-        if (publicKey instanceof MLKEMPublicKey)
-        {
-            return ((Integer)encLengths.get(((MLKEMPublicKey)publicKey).getParameterSpec().getName())).intValue();
-        }
-        if (publicKey instanceof NTRUKey)
-        {
-            return ((Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName())).intValue();
-        }
-        throw new IllegalStateException("unknown public key KEM instance");
+        return kemEncLenProvider.getEncapsulationLength(SubjectPublicKeyInfo.getInstance(key.getEncoded()).getAlgorithm());
     }
 }
