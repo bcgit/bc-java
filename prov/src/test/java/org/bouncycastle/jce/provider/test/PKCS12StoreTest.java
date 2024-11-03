@@ -2153,7 +2153,7 @@ public class PKCS12StoreTest
 
         inStore.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        FileOutputStream fOut = new FileOutputStream("/tmp/" + storeType + ".p12");
+        FileOutputStream fOut = new FileOutputStream(System.getProperty("java.io.tmpdir") + storeType + ".p12");
         fOut.write(bOut.toByteArray());
         fOut.close();
         Key k = inStore.getKey("key", null);
