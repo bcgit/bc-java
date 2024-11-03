@@ -48,6 +48,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2024, 30th October.
 <li>CMS: OtherKeyAttribute.keyAttr now treated as optional.</li>
 <li>CMS: EnvelopedData and AuthEnvelopedData could calculate the wrong versions. This has been fixed.</li>
 <li>The default version header for PGP armored output did not carry the correct version string. This has been fixed.</li>
+<li>In some situations the algorithm lookup for creating PGPDigestCalculators would fail due to truncation of the algorithm name. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
