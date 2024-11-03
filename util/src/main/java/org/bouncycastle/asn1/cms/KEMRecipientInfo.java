@@ -139,14 +139,14 @@ public class KEMRecipientInfo
     }
 
     public byte[] getUkm()
-     {
-         if (ukm == null)
-         {
-             return null;
-         }
+    {
+        if (ukm == null)
+        {
+            return null;
+        }
 
-         return ukm.getOctets();
-     }
+        return ukm.getOctets();
+    }
 
     public ASN1OctetString getEncryptedKey()
     {
