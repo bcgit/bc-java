@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -17,7 +18,9 @@ import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 
 /**
@@ -157,6 +160,29 @@ public class SLHDSAKeyPairGeneratorTest
             assertNotNull(((SLHDSAPublicKey)keyPair.getPublic()).getParameterSpec());
             assertEquals(oids[i], SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
             assertTrue(oids[i].toString(), Arrays.areEqual(((SLHDSAPublicKey)keyPair.getPublic()).getPublicData(), ((SLHDSAPrivateKey)keyPair.getPrivate()).getPublicKey().getPublicData()));
+        }
+
+        //
+        // a bit of a cheat as we just look for "getName()" on the parameter spec.
+        //
+        for (int i = 0; i != params.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(params[i].getName(), "BC");
+            kpg.initialize(new ECNamedCurveGenParameterSpec(Strings.toLowerCase(params[i].getName())));
+            kpg.initialize(new ECNamedCurveGenParameterSpec(Strings.toUpperCase(params[i].getName())));
+            kpg.initialize(new ECNamedCurveGenParameterSpec(Strings.toLowerCase(params[i].getName())), new SecureRandom());
+            kpg.initialize(new ECNamedCurveGenParameterSpec(Strings.toUpperCase(params[i].getName())), new SecureRandom());
+        }
+
+        try
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(params[0].getName(), "BC");
+            kpg.initialize(new ECNamedCurveGenParameterSpec(Strings.toLowerCase("Not Valid")));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("unknown parameter set name: NOT VALID", e.getMessage());
         }
     }
 
