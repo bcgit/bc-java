@@ -124,7 +124,7 @@ public class MLDSAKeyPairGeneratorSpi
         if (paramSpec instanceof MLDSAParameterSpec)
         {
             MLDSAParameterSpec params = (MLDSAParameterSpec)paramSpec;
-            return params.getName();
+            return Strings.toLowerCase(params.getName());
         }
         else
         {
