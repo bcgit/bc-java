@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
@@ -35,7 +37,7 @@ public class MLKEMKeyPairGeneratorSpi
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
-    private MLKEMParameters kyberParameters;
+    private MLKEMParameters mlkemParameters;
 
     public MLKEMKeyPairGeneratorSpi()
     {
@@ -45,11 +47,11 @@ public class MLKEMKeyPairGeneratorSpi
     protected MLKEMKeyPairGeneratorSpi(MLKEMParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.kyberParameters = (MLKEMParameters) parameters.get(paramSpec.getName());
+        this.mlkemParameters = (MLKEMParameters) parameters.get(paramSpec.getName());
 
         if (param == null)
         {
-            param = new MLKEMKeyGenerationParameters(random, kyberParameters);
+            param = new MLKEMKeyGenerationParameters(random, mlkemParameters);
         }
 
         engine.init(param);
@@ -64,23 +66,42 @@ public class MLKEMKeyPairGeneratorSpi
     }
 
     public void initialize(
+        AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        try
+        {
+            initialize(params, new BCJcaJceHelper().createSecureRandom("DEFAULT"));
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("unable to find DEFAULT DRBG");
+        }
+    }
+
+    public void initialize(
         AlgorithmParameterSpec params,
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
-
         String name = getNameFromParams(params);
 
         MLKEMParameters kyberParams = (MLKEMParameters)parameters.get(name);
 
         if (name != null)
         {
-            param = new MLKEMKeyGenerationParameters(random, (MLKEMParameters) parameters.get(name));
+            MLKEMParameters mlkemParams = (MLKEMParameters)parameters.get(name);
+            if (mlkemParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
 
-            if (kyberParameters != null && !kyberParams.getName().equals(kyberParameters.getName()))
+            if (mlkemParameters != null && !mlkemParams.getName().equals(mlkemParameters.getName()))
             {
                 throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
             }
+
+            param = new MLKEMKeyGenerationParameters(random, (MLKEMParameters)mlkemParams);
 
             engine.init(param);
             initialised = true;
@@ -113,11 +134,11 @@ public class MLKEMKeyPairGeneratorSpi
         if (paramSpec instanceof MLKEMParameterSpec)
         {
             MLKEMParameterSpec params = (MLKEMParameterSpec)paramSpec;
-            return Strings.toLowerCase(params.getName());
+            return params.getName();
         }
         else
         {
-            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
+            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

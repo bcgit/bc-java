@@ -92,7 +92,12 @@ public class SLHDSAKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new SLHDSAKeyGenerationParameters(random, (SLHDSAParameters)parameters.get(name));
+            SLHDSAParameters parameters = (SLHDSAParameters)SLHDSAKeyPairGeneratorSpi.parameters.get(name);
+            if (parameters == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+            param = new SLHDSAKeyGenerationParameters(random, parameters);
 
             engine.init(param);
             initialised = true;
@@ -132,11 +137,11 @@ public class SLHDSAKeyPairGeneratorSpi
         if (paramSpec instanceof SLHDSAParameterSpec)
         {
             SLHDSAParameterSpec params = (SLHDSAParameterSpec)paramSpec;
-            return Strings.toLowerCase(params.getName());
+            return params.getName();
         }
         else
         {
-            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
+            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

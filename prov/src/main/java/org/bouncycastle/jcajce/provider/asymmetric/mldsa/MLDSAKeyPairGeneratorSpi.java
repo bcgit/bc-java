@@ -11,6 +11,7 @@ import java.util.Map;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
@@ -69,17 +70,34 @@ public class MLDSAKeyPairGeneratorSpi
     }
 
     public void initialize(
+        AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        try
+        {
+            initialize(params, new BCJcaJceHelper().createSecureRandom("DEFAULT"));
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("unable to find DEFAULT DRBG");
+        }
+    }
+
+    public void initialize(
         AlgorithmParameterSpec params,
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
         String name = getNameFromParams(params);
 
-        if (name != null && parameters.containsKey(name))
+        if (name != null)
         {
             MLDSAParameters mldsaParams = (MLDSAParameters)parameters.get(name);
-
-            param = new MLDSAKeyGenerationParameters(random, (MLDSAParameters)parameters.get(name));
+            if (mldsaParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+            param = new MLDSAKeyGenerationParameters(random, mldsaParams);
 
             if (mldsaParameters != null && !mldsaParams.getName().equals(mldsaParameters.getName()))
             {
@@ -124,11 +142,11 @@ public class MLDSAKeyPairGeneratorSpi
         if (paramSpec instanceof MLDSAParameterSpec)
         {
             MLDSAParameterSpec params = (MLDSAParameterSpec)paramSpec;
-            return Strings.toLowerCase(params.getName());
+            return params.getName();
         }
         else
         {
-            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
+            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 
