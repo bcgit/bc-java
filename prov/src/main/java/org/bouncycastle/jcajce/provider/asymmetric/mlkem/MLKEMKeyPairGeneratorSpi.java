@@ -113,7 +113,7 @@ public class MLKEMKeyPairGeneratorSpi
         if (paramSpec instanceof MLKEMParameterSpec)
         {
             MLKEMParameterSpec params = (MLKEMParameterSpec)paramSpec;
-            return params.getName();
+            return Strings.toLowerCase(params.getName());
         }
         else
         {

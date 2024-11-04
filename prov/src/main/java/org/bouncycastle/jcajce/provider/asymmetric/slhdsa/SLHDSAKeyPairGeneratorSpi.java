@@ -132,7 +132,7 @@ public class SLHDSAKeyPairGeneratorSpi
         if (paramSpec instanceof SLHDSAParameterSpec)
         {
             SLHDSAParameterSpec params = (SLHDSAParameterSpec)paramSpec;
-            return params.getName();
+            return Strings.toLowerCase(params.getName());
         }
         else
         {
