@@ -15,19 +15,9 @@ public class MLDSAPrivateKeyParameters
     private final byte[] t1;
     private final byte[] seed;
 
-    public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] seed)
+    public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] encoding)
     {
-        super(true, params);
-        byte[][] keyDetails = params.getEngine(null).generateKeyPairInternal(seed);
-
-        this.rho = keyDetails[0];
-        this.k = keyDetails[1];
-        this.tr = keyDetails[2];
-        this.s1 = keyDetails[3];
-        this.s2 = keyDetails[4];
-        this.t0 = keyDetails[5];
-        this.t1 = keyDetails[6];
-        this.seed = keyDetails[7];
+        this(params, encoding, null);
     }
 
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1)
@@ -53,32 +43,48 @@ public class MLDSAPrivateKeyParameters
         super(true, params);
 
         MLDSAEngine eng = params.getEngine(null);
-        int index = 0;
-        this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes);
-        index += MLDSAEngine.SeedBytes;
-        this.k = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.SeedBytes);
-        index += MLDSAEngine.SeedBytes;
-        this.tr = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.TrBytes);
-        index += MLDSAEngine.TrBytes;
-        int delta = eng.getDilithiumL() * eng.getDilithiumPolyEtaPackedBytes();
-        this.s1 = Arrays.copyOfRange(encoding, index, index + delta);
-        index += delta;
-        delta = eng.getDilithiumK() * eng.getDilithiumPolyEtaPackedBytes();
-        this.s2 = Arrays.copyOfRange(encoding, index, index + delta);
-        index += delta;
-        delta = eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
-        this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
-        index += delta;
-
-        if (pubKey != null)
+        if (encoding.length == MLDSAEngine.SeedBytes)
         {
-            this.t1 = pubKey.getT1();
+            byte[][] keyDetails = eng.generateKeyPairInternal(encoding);
+
+            this.rho = keyDetails[0];
+            this.k = keyDetails[1];
+            this.tr = keyDetails[2];
+            this.s1 = keyDetails[3];
+            this.s2 = keyDetails[4];
+            this.t0 = keyDetails[5];
+            this.t1 = keyDetails[6];
+            this.seed = keyDetails[7];
         }
         else
         {
-            this.t1 = null;
+            int index = 0;
+            this.rho = Arrays.copyOfRange(encoding, 0, MLDSAEngine.SeedBytes);
+            index += MLDSAEngine.SeedBytes;
+            this.k = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.SeedBytes);
+            index += MLDSAEngine.SeedBytes;
+            this.tr = Arrays.copyOfRange(encoding, index, index + MLDSAEngine.TrBytes);
+            index += MLDSAEngine.TrBytes;
+            int delta = eng.getDilithiumL() * eng.getDilithiumPolyEtaPackedBytes();
+            this.s1 = Arrays.copyOfRange(encoding, index, index + delta);
+            index += delta;
+            delta = eng.getDilithiumK() * eng.getDilithiumPolyEtaPackedBytes();
+            this.s2 = Arrays.copyOfRange(encoding, index, index + delta);
+            index += delta;
+            delta = eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
+            this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
+            index += delta;
+
+            if (pubKey != null)
+            {
+                this.t1 = pubKey.getT1();
+            }
+            else
+            {
+                this.t1 = null;
+            }
+            this.seed = null;
         }
-        this.seed = null;
     }
 
     public byte[] getEncoded()

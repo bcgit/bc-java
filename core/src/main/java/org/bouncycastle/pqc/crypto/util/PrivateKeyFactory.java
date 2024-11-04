@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -11,6 +12,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -197,11 +200,10 @@ public class PrivateKeyFactory
         }
         else if (Utils.shldsaParams.containsKey(algOID))
         {
+            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey());
             SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
 
-            ASN1Encodable obj = keyInfo.parsePrivateKey();
-            return new SLHDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
-
+            return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))
         {
@@ -242,10 +244,10 @@ public class PrivateKeyFactory
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
-            ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-            MLKEMParameters kyberParams = Utils.mlkemParamsLookup(algOID);
+            ASN1OctetString mlkemKey = parseOctetString(keyInfo.getPrivateKey());
+            MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
 
-            return new MLKEMPrivateKeyParameters(kyberParams, kyberKey.getOctets());
+            return new MLKEMPrivateKeyParameters(mlkemParams, mlkemKey.getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
@@ -274,45 +276,10 @@ public class PrivateKeyFactory
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {
-            ASN1Encodable keyObj = keyInfo.parsePrivateKey();
+            ASN1Encodable keyObj = parseOctetString(keyInfo.getPrivateKey());
             MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
 
-            if (keyObj instanceof ASN1Sequence)
-            {
-                ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyObj);
-
-                int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
-                if (version != 0)
-                {
-                    throw new IOException("unknown private key version: " + version);
-                }
-
-                if (keyInfo.getPublicKeyData() != null)
-                {
-                    MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
-
-                    return new MLDSAPrivateKeyParameters(spParams,
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                            pubParams.getT1()); // encT1
-                }
-                else
-                {
-                    return new MLDSAPrivateKeyParameters(spParams,
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
-                            ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
-                            null);
-                }
-            }
-            else if (keyObj instanceof DEROctetString)
+            if (keyObj instanceof DEROctetString)
             {
                 byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
                 if (keyInfo.getPublicKeyData() != null)
@@ -494,6 +461,56 @@ public class PrivateKeyFactory
         {
             throw new RuntimeException("algorithm identifier in private key not recognised");
         }
+    }
+
+    /**
+     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
+     */
+    private static ASN1OctetString parseOctetString(ASN1OctetString octStr)
+    {
+        ByteArrayInputStream bIn = new ByteArrayInputStream(octStr.getOctets());
+
+        int tag = bIn.read();
+        int len = readLen(bIn);
+        if (tag == BERTags.OCTET_STRING)
+        {
+            if (len == bIn.available())
+            {
+                return ASN1OctetString.getInstance(octStr.getOctets());
+            }
+        }
+        if (tag == BERTags.CONTEXT_SPECIFIC)
+        {
+            if (len == bIn.available())
+            {
+                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(octStr.getOctets()), false);
+            }
+        }
+        if (tag == (BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED))
+        {
+            if (len == bIn.available())
+            {
+                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(octStr.getOctets()), true);
+            }
+        }
+
+        return octStr;
+    }
+
+    private static int readLen(ByteArrayInputStream bIn)
+    {
+        int length = bIn.read();
+        if (length != (length & 0x7f))
+        {
+            int count = length;
+            length = 0;
+            while (count-- != 0)
+            {
+                length = length << 8 + bIn.read();
+            }
+        }
+
+        return length;
     }
 
     private static short[] convert(byte[] octets)
