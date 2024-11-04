@@ -502,11 +502,11 @@ public class PrivateKeyFactory
         int length = bIn.read();
         if (length != (length & 0x7f))
         {
-            int count = length;
+            int count = length & 0x7f;
             length = 0;
             while (count-- != 0)
             {
-                length = length << 8 + bIn.read();
+                length = (length << 8) + bIn.read();
             }
         }
 
