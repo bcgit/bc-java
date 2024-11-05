@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.DERBitString;
@@ -190,13 +189,7 @@ public class V3TBSCertificateGenerator
         //
         // before and after dates
         //
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(startDate);
-            validity.add(endDate);
-
-            v.add(new DERSequence(validity));
-        }
+        v.add(new DERSequence(startDate, endDate));
 
         if (subject != null)
         {

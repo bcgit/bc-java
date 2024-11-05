@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.x9;
 
 import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -74,9 +73,6 @@ public class DHValidationParms extends ASN1Object
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-        v.add(this.seed);
-        v.add(this.pgenCounter);
-        return new DERSequence(v);
+        return new DERSequence(seed, pgenCounter);
     }
 }

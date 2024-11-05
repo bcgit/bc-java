@@ -128,13 +128,7 @@ public class V1TBSCertificateGenerator
         //
         // before and after dates
         //
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(startDate);
-            validity.add(endDate);
-
-            seq.add(new DERSequence(validity));
-        }
+        seq.add(new DERSequence(startDate, endDate));
 
         seq.add(subject);
 

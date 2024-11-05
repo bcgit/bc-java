@@ -232,7 +232,7 @@ public class TBSCertificate
             return seq;
         }
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(10);
 
         // DEFAULT Zero
         if (!version.hasValue(0))
@@ -247,13 +247,7 @@ public class TBSCertificate
         //
         // before and after dates
         //
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(startDate);
-            validity.add(endDate);
-
-            v.add(new DERSequence(validity));
-        }
+        v.add(new DERSequence(startDate, endDate));
 
         if (subject != null)
         {

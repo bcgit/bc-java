@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cms;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -99,11 +98,6 @@ public class OtherRecipientInfo
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(oriType);
-        v.add(oriValue);
-
-        return new DERSequence(v);
+        return new DERSequence(oriType, oriValue);
     }
 }
