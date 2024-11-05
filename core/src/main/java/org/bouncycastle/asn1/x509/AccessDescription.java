@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.x509;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -83,12 +82,7 @@ public class AccessDescription
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector accessDescription  = new ASN1EncodableVector(2);
-        
-        accessDescription.add(accessMethod);
-        accessDescription.add(accessLocation);
-
-        return new DERSequence(accessDescription);
+        return new DERSequence(accessMethod, accessLocation);
     }
 
     public String toString()
