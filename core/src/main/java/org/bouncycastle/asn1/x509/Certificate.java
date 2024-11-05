@@ -94,6 +94,11 @@ public class Certificate
         return tbsCert.getIssuer();
     }
 
+    public Validity getValidity()
+    {
+        return tbsCert.getValidity();
+    }
+
     public Time getStartDate()
     {
         return tbsCert.getStartDate();
