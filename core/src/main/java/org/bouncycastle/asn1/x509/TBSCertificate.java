@@ -41,7 +41,7 @@ public class TBSCertificate
     ASN1Integer             serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
-    Time                    startDate, endDate;
+    Validity                validity;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
     ASN1BitString           issuerUniqueId;
@@ -110,20 +110,8 @@ public class TBSCertificate
 
         signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqStart + 2));
         issuer = X500Name.getInstance(seq.getObjectAt(seqStart + 3));
-
-        //
-        // before and after dates
-        //
-        ASN1Sequence  dates = (ASN1Sequence)seq.getObjectAt(seqStart + 4);
-
-        startDate = Time.getInstance(dates.getObjectAt(0));
-        endDate = Time.getInstance(dates.getObjectAt(1));
-
+        validity = Validity.getInstance(seq.getObjectAt(seqStart + 4));
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
-
-        //
-        // public key info.
-        //
         subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
 
         int extras = seq.size() - (seqStart + 6) - 1;
@@ -183,14 +171,19 @@ public class TBSCertificate
         return issuer;
     }
 
+    public Validity getValidity()
+    {
+        return validity;
+    }
+
     public Time getStartDate()
     {
-        return startDate;
+        return validity.getNotBefore();
     }
 
     public Time getEndDate()
     {
-        return endDate;
+        return validity.getNotAfter();
     }
 
     public X500Name getSubject()
@@ -243,21 +236,8 @@ public class TBSCertificate
         v.add(serialNumber);
         v.add(signature);
         v.add(issuer);
-
-        //
-        // before and after dates
-        //
-        v.add(new DERSequence(startDate, endDate));
-
-        if (subject != null)
-        {
-            v.add(subject);
-        }
-        else
-        {
-            v.add(new DERSequence());
-        }
-
+        v.add(validity);
+        v.add(subject);
         v.add(subjectPublicKeyInfo);
 
         // Note: implicit tag

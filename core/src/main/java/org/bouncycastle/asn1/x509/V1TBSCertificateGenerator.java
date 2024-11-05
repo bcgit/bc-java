@@ -29,6 +29,7 @@ public class V1TBSCertificateGenerator
     ASN1Integer              serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
+    Validity                validity;
     Time                    startDate, endDate;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
@@ -64,28 +65,33 @@ public class V1TBSCertificateGenerator
         this.issuer = issuer;
     }
 
-    public void setStartDate(
-        Time startDate)
+    public void setValidity(Validity validity)
     {
+        this.validity = validity;
+        this.startDate = null;
+        this.endDate = null;
+    }
+
+    public void setStartDate(Time startDate)
+    {
+        this.validity = null;
         this.startDate = startDate;
     }
 
-    public void setStartDate(
-        ASN1UTCTime startDate)
+    public void setStartDate(ASN1UTCTime startDate)
     {
-        this.startDate = new Time(startDate);
+        setStartDate(new Time(startDate));
     }
 
-    public void setEndDate(
-        Time endDate)
+    public void setEndDate(Time endDate)
     {
+        this.validity = null;
         this.endDate = endDate;
     }
 
-    public void setEndDate(
-        ASN1UTCTime endDate)
+    public void setEndDate(ASN1UTCTime endDate)
     {
-        this.endDate = new Time(endDate);
+        setEndDate(new Time(endDate));
     }
 
     /**
@@ -111,9 +117,9 @@ public class V1TBSCertificateGenerator
 
     public TBSCertificate generateTBSCertificate()
     {
-        if ((serialNumber == null) || (signature == null)
-            || (issuer == null) || (startDate == null) || (endDate == null)
-            || (subject == null) || (subjectPublicKeyInfo == null))
+        if ((serialNumber == null) || (signature == null) || (issuer == null) ||
+            (validity == null && (startDate == null || endDate == null)) ||
+            (subject == null) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
         }
@@ -124,14 +130,8 @@ public class V1TBSCertificateGenerator
         seq.add(serialNumber);
         seq.add(signature);
         seq.add(issuer);
-
-        //
-        // before and after dates
-        //
-        seq.add(new DERSequence(startDate, endDate));
-
+        seq.add(validity != null ? validity : new Validity(startDate, endDate));
         seq.add(subject);
-
         seq.add(subjectPublicKeyInfo);
 
         return TBSCertificate.getInstance(new DERSequence(seq));

@@ -34,6 +34,7 @@ public class V3TBSCertificateGenerator
     ASN1Integer              serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
+    Validity                validity;
     Time                    startDate, endDate;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
@@ -73,29 +74,34 @@ public class V3TBSCertificateGenerator
     {
         this.issuer = issuer;
     }
-    
-    public void setStartDate(
-        ASN1UTCTime startDate)
+
+    public void setValidity(Validity validity)
     {
-        this.startDate = new Time(startDate);
+        this.validity = validity;
+        this.startDate = null;
+        this.endDate = null;
     }
 
-    public void setStartDate(
-        Time startDate)
+    public void setStartDate(Time startDate)
     {
+        this.validity = null;
         this.startDate = startDate;
     }
 
-    public void setEndDate(
-        ASN1UTCTime endDate)
+    public void setStartDate(ASN1UTCTime startDate)
     {
-        this.endDate = new Time(endDate);
+        setStartDate(new Time(startDate));
     }
 
-    public void setEndDate(
-        Time endDate)
+    public void setEndDate(Time endDate)
     {
+        this.validity = null;
         this.endDate = endDate;
+    }
+
+    public void setEndDate(ASN1UTCTime endDate)
+    {
+        setEndDate(new Time(endDate));
     }
 
         /**
@@ -162,9 +168,9 @@ public class V3TBSCertificateGenerator
         {
             throw new IllegalStateException("signature field should not be set in PreTBSCertificate");
         }
-        if ((serialNumber == null)
-            || (issuer == null) || (startDate == null) || (endDate == null)
-            || (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
+        if ((serialNumber == null) || (issuer == null) ||
+            (validity == null && (startDate == null || endDate == null)) ||
+            (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
@@ -185,21 +191,8 @@ public class V3TBSCertificateGenerator
         }
         
         v.add(issuer);
-
-        //
-        // before and after dates
-        //
-        v.add(new DERSequence(startDate, endDate));
-
-        if (subject != null)
-        {
-            v.add(subject);
-        }
-        else
-        {
-            v.add(new DERSequence());
-        }
-
+        v.add(validity != null ? validity : new Validity(startDate, endDate));
+        v.add(subject != null ? subject : X500Name.getInstance(new DERSequence()));
         v.add(subjectPublicKeyInfo);
 
         if (issuerUniqueID != null)
@@ -222,9 +215,9 @@ public class V3TBSCertificateGenerator
 
     public TBSCertificate generateTBSCertificate()
     {
-        if ((serialNumber == null) || (signature == null)
-            || (issuer == null) || (startDate == null) || (endDate == null)
-            || (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
+        if ((serialNumber == null) || (signature == null) || (issuer == null) ||
+            (validity == null && (startDate == null || endDate == null)) ||
+            (subject == null && !altNamePresentAndCritical) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
