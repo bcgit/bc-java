@@ -203,7 +203,7 @@ public class ExtensionsGenerator
      * Return if the extension indicated by OID is present.
      *
      * @param oid the OID for the extension of interest.
-     * @return the Extension, or null if it is not present.
+     * @return true if a matching extension is present, false otherwise.
      */
     public boolean hasExtension(ASN1ObjectIdentifier oid)
     {
@@ -214,7 +214,7 @@ public class ExtensionsGenerator
      * Return the current value of the extension for OID.
      *
      * @param oid the OID for the extension we want to fetch.
-     * @return true if a matching extension is present, false otherwise.
+     * @return the Extension, or null if it is not present.
      */
     public Extension getExtension(ASN1ObjectIdentifier oid)
     {
