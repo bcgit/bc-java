@@ -1,9 +1,7 @@
 package org.bouncycastle.asn1.x509;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1UTCTime;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
 
@@ -124,16 +122,8 @@ public class V1TBSCertificateGenerator
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
         }
 
-        ASN1EncodableVector seq = new ASN1EncodableVector(6);
-
-        // seq.add(version); - not required as default value.
-        seq.add(serialNumber);
-        seq.add(signature);
-        seq.add(issuer);
-        seq.add(validity != null ? validity : new Validity(startDate, endDate));
-        seq.add(subject);
-        seq.add(subjectPublicKeyInfo);
-
-        return TBSCertificate.getInstance(new DERSequence(seq));
+        return new TBSCertificate(new ASN1Integer(0), serialNumber, signature, issuer,
+            validity != null ? validity : new Validity(startDate, endDate), subject, subjectPublicKeyInfo, null,
+            null, null);
     }
 }
