@@ -29,9 +29,9 @@ import org.bouncycastle.asn1.x500.X500Name;
  */
 public class V3TBSCertificateGenerator
 {
-    DERTaggedObject         version = new DERTaggedObject(true, 0, new ASN1Integer(2));
+    private static final DERTaggedObject VERSION = new DERTaggedObject(true, 0, new ASN1Integer(2));
 
-    ASN1Integer              serialNumber;
+    ASN1Integer             serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
     Validity                validity;
@@ -175,21 +175,11 @@ public class V3TBSCertificateGenerator
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
 
-        return generateTBSStructure();
-    }
+        ASN1EncodableVector v = new ASN1EncodableVector(9);
 
-    private ASN1Sequence generateTBSStructure()
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector(10);
-
-        v.add(version);
+        v.add(VERSION);
         v.add(serialNumber);
-
-        if (signature != null)
-        {
-            v.add(signature);
-        }
-        
+        // No signature
         v.add(issuer);
         v.add(validity != null ? validity : new Validity(startDate, endDate));
         v.add(subject != null ? subject : X500Name.getInstance(new DERSequence()));
@@ -222,6 +212,9 @@ public class V3TBSCertificateGenerator
             throw new IllegalStateException("not all mandatory fields set in V3 TBScertificate generator");
         }
 
-        return TBSCertificate.getInstance(generateTBSStructure());
+        return new TBSCertificate(new ASN1Integer(2), serialNumber, signature, issuer,
+            validity != null ? validity : new Validity(startDate, endDate),
+            subject != null ? subject : X500Name.getInstance(new DERSequence()), subjectPublicKeyInfo,
+            issuerUniqueID, subjectUniqueID, extensions);
     }
 }

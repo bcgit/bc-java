@@ -146,6 +146,49 @@ public class TBSCertificate
         }
     }
 
+    public TBSCertificate(ASN1Integer version, ASN1Integer serialNumber, AlgorithmIdentifier signature,
+        X500Name issuer, Validity validity, X500Name subject, SubjectPublicKeyInfo subjectPublicKeyInfo,
+        ASN1BitString issuerUniqueId, ASN1BitString subjectUniqueId, Extensions extensions)
+    {
+        if (serialNumber == null)
+        {
+            throw new NullPointerException("'serialNumber' cannot be null");
+        }
+        if (signature == null)
+        {
+            throw new NullPointerException("'signature' cannot be null");
+        }
+        if (issuer == null)
+        {
+            throw new NullPointerException("'issuer' cannot be null");
+        }
+        if (validity == null)
+        {
+            throw new NullPointerException("'validity' cannot be null");
+        }
+        if (subject == null)
+        {
+            throw new NullPointerException("'subject' cannot be null");
+        }
+        if (subjectPublicKeyInfo == null)
+        {
+            throw new NullPointerException("'subjectPublicKeyInfo' cannot be null");
+        }
+
+        this.version = version != null ? version : new ASN1Integer(0);
+        this.serialNumber = serialNumber;
+        this.signature = signature;
+        this.issuer = issuer;
+        this.validity = validity;
+        this.subject = subject;
+        this.subjectPublicKeyInfo = subjectPublicKeyInfo;
+        this.issuerUniqueId = issuerUniqueId;
+        this.subjectUniqueId = subjectUniqueId;
+        this.extensions = extensions;
+
+        this.seq = null;
+    }
+
     public int getVersionNumber()
     {
         return version.intValueExact() + 1;
@@ -213,16 +256,19 @@ public class TBSCertificate
 
     public ASN1Primitive toASN1Primitive()
     {
-        if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)
+        if (seq != null)
         {
-            if (Properties.isOverrideSet("org.bouncycastle.x509.allow_non-der_tbscert"))
+            if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)
+            {
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_non-der_tbscert"))
+                {
+                    return seq;
+                }
+            }
+            else
             {
                 return seq;
             }
-        }
-        else
-        {
-            return seq;
         }
 
         ASN1EncodableVector v = new ASN1EncodableVector(10);
