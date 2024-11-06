@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -274,7 +275,8 @@ public class X509v3CertificateBuilder
     {
         try
         {
-            extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
+            extGenerator = CertUtils.doReplaceExtension(extGenerator,
+                new Extension(oid, isCritical, new DEROctetString(value)));
         }
         catch (IOException e)
         {
@@ -452,7 +454,7 @@ public class X509v3CertificateBuilder
                 // the altSignatureValue is not present yet, but it must be in the deltaCertificate and
                 // it must be different (by definition!). We add a dummy one to trigger inclusion.
                 ExtensionsGenerator tmpExtGen = new ExtensionsGenerator();
-                tmpExtGen.addExtension(extGenerator.generate());
+                tmpExtGen.addExtensions(extGenerator.generate());
                 tmpExtGen.addExtension(Extension.altSignatureValue, false, DERNull.INSTANCE);
 
                 DeltaCertificateDescriptor descriptor = DeltaCertificateTool.trimDeltaCertificateDescriptor(
