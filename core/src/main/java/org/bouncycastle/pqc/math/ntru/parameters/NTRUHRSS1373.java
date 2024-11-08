@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.math.ntru.parameters;
 
 
 /**
- * NTRU-HRSS parameter set with n = 701.
+ * NTRU-HRSS parameter set with n = 1373.
  *
  * @see NTRUHRSSParameterSet
  */
