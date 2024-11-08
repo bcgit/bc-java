@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -200,8 +199,8 @@ public class PrivateKeyFactory
         }
         else if (Utils.shldsaParams.containsKey(algOID))
         {
-            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey());
             SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
+            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
         }
@@ -244,7 +243,7 @@ public class PrivateKeyFactory
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
-            ASN1OctetString mlkemKey = parseOctetString(keyInfo.getPrivateKey());
+            ASN1OctetString mlkemKey = parseOctetString(keyInfo.getPrivateKey(), 64);
             MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
 
             return new MLKEMPrivateKeyParameters(mlkemParams, mlkemKey.getOctets());
@@ -276,7 +275,7 @@ public class PrivateKeyFactory
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {
-            ASN1Encodable keyObj = parseOctetString(keyInfo.getPrivateKey());
+            ASN1Encodable keyObj = parseOctetString(keyInfo.getPrivateKey(), 32);
             MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
 
             if (keyObj instanceof DEROctetString)
@@ -466,9 +465,20 @@ public class PrivateKeyFactory
     /**
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
      */
-    private static ASN1OctetString parseOctetString(ASN1OctetString octStr)
+    private static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(octStr.getOctets());
+        byte[] data = octStr.getOctets();
+        //
+        // it's the right length for a RAW encoding, just return it.
+        //
+        if (data.length == expectedLength)
+        {
+            return octStr;
+        }
+
+        //
+        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
+        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
 
         int tag = bIn.read();
         int len = readLen(bIn);
@@ -476,21 +486,7 @@ public class PrivateKeyFactory
         {
             if (len == bIn.available())
             {
-                return ASN1OctetString.getInstance(octStr.getOctets());
-            }
-        }
-        if (tag == BERTags.CONTEXT_SPECIFIC)
-        {
-            if (len == bIn.available())
-            {
-                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(octStr.getOctets()), false);
-            }
-        }
-        if (tag == (BERTags.CONTEXT_SPECIFIC | BERTags.CONSTRUCTED))
-        {
-            if (len == bIn.available())
-            {
-                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(octStr.getOctets()), true);
+                return ASN1OctetString.getInstance(data);
             }
         }
 
