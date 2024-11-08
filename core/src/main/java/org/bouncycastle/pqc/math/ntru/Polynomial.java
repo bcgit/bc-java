@@ -12,7 +12,7 @@ public abstract class Polynomial
      */
     // TODO: maybe the maths library needs to move.
     public short[] coeffs;
-    
+
     protected NTRUParameterSet params;
 
     public Polynomial(NTRUParameterSet params)
@@ -141,6 +141,12 @@ public abstract class Polynomial
     public byte[] s3ToBytes(int messageSize)
     {
         byte[] msg = new byte[messageSize];
+        s3ToBytes(msg, 0);
+        return msg;
+    }
+
+    public void s3ToBytes(byte[] msg, int msgOff)
+    {
         byte c;
 
         for (int i = 0; i < params.packDegree() / 5; i++)
@@ -150,7 +156,7 @@ public abstract class Polynomial
             c = (byte)(3 * c + this.coeffs[5 * i + 2] & 255);
             c = (byte)(3 * c + this.coeffs[5 * i + 1] & 255);
             c = (byte)(3 * c + this.coeffs[5 * i + 0] & 255);
-            msg[i] = c;
+            msg[i + msgOff] = c;
         }
 
         // if 5 does not divide NTRU_N-1
@@ -162,9 +168,8 @@ public abstract class Polynomial
             {
                 c = (byte)(3 * c + this.coeffs[5 * i + j] & 255);
             }
-            msg[i] = c;
+            msg[i + msgOff] = c;
         }
-        return msg;
     }
 
     /**
@@ -388,7 +393,7 @@ public abstract class Polynomial
         c.coeffs[0] += 2;
         this.rqMul(c, s);
     }
-    
+
     void s3Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
         int n = this.coeffs.length;
