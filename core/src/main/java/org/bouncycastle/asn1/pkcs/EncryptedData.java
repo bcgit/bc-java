@@ -102,11 +102,6 @@ public class EncryptedData
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(new ASN1Integer(0));
-        v.add(data);
-
-        return new BERSequence(v);
+        return new BERSequence(new ASN1Integer(0), data);
     }
 }

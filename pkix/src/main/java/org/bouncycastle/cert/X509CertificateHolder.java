@@ -227,6 +227,11 @@ public class X509CertificateHolder
         return x509Certificate.getSubjectPublicKeyInfo();
     }
 
+    public TBSCertificate getTBSCertificate()
+    {
+        return x509Certificate.getTBSCertificate();
+    }
+
     /**
      * Return the underlying ASN.1 structure for the certificate in this holder.
      *
