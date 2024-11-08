@@ -52,10 +52,8 @@ class NTRUOWCPA
         g = pair.g();
 
         invfMod3.s3Inv(f);
-        byte[] fs3ToBytes = f.s3ToBytes(params.owcpaMsgBytes());
-        System.arraycopy(fs3ToBytes, 0, privateKey, 0, fs3ToBytes.length);
-        byte[] s3Res = invfMod3.s3ToBytes(privateKey.length - this.params.packTrinaryBytes());
-        System.arraycopy(s3Res, 0, privateKey, this.params.packTrinaryBytes(), s3Res.length);
+        f.s3ToBytes(privateKey, 0);
+        invfMod3.s3ToBytes(privateKey, params.packTrinaryBytes());
 
         f.z3ToZq();
         g.z3ToZq();
@@ -152,7 +150,7 @@ class NTRUOWCPA
 
         finv3.s3FromBytes(Arrays.copyOfRange(sk, params.packTrinaryBytes(), sk.length));
         m.s3Mul(mf, finv3);
-        byte[] arr1 = m.s3ToBytes(rm.length - params.packTrinaryBytes());
+        m.s3ToBytes(rm, params.packTrinaryBytes());
 
         fail = 0;
 
@@ -193,9 +191,7 @@ class NTRUOWCPA
         fail |= checkR(r);
 
         r.trinaryZqToZ3();
-        byte[] arr2 = r.s3ToBytes(params.owcpaMsgBytes());
-        System.arraycopy(arr2, 0, rm, 0, arr2.length);
-        System.arraycopy(arr1, 0, rm, params.packTrinaryBytes(), arr1.length);
+        r.s3ToBytes(rm, 0);
 
         return new OWCPADecryptResult(rm, fail);
     }
