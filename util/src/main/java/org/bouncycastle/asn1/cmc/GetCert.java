@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.cmc;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -67,11 +66,6 @@ public class GetCert extends ASN1Object
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(issuerName);
-        v.add(new ASN1Integer(serialNumber));
-
-        return new DERSequence(v);
+        return new DERSequence(issuerName, new ASN1Integer(serialNumber));
     }
 }

@@ -63,6 +63,22 @@ public class ESSCertID
         this.issuerSerial = issuerSerial;
     }
 
+    public ESSCertID(ASN1OctetString certHash, IssuerSerial issuerSerial)
+    {
+        if (certHash == null)
+        {
+            throw new NullPointerException("'certHash' cannot be null");
+        }
+
+        this.certHash = certHash;
+        this.issuerSerial = issuerSerial;
+    }
+
+    public ASN1OctetString getCertHashObject()
+    {
+        return certHash;
+    }
+
     public byte[] getCertHash()
     {
         return certHash.getOctets();

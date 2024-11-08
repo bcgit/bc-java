@@ -412,7 +412,7 @@ public class GenerationTest
         //
 
         ExtensionsGenerator genX = new ExtensionsGenerator();
-        genX.addExtension(ext);
+        genX.addExtensions(ext);
 
         ext = Extensions.getInstance(ASN1Sequence.getInstance(genX.generate().getEncoded()));
         returnedExtension = ext.getExtension(Extension.subjectAlternativeName);

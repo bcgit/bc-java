@@ -193,7 +193,7 @@ public class KeyFactorySpi
             {
                 if (seq.getObjectAt(i) instanceof ASN1OctetString)
                 {
-                    ASN1EncodableVector v = new ASN1EncodableVector(2);
+                    ASN1EncodableVector v = new ASN1EncodableVector(3);
 
                     v.add(keyInfo.getVersion());
                     v.add(algIds[i]);

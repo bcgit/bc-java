@@ -3,7 +3,6 @@ package org.bouncycastle.asn1.pkcs;
 import java.math.BigInteger;
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -85,11 +84,6 @@ public class RSAPublicKey
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(new ASN1Integer(getModulus()));
-        v.add(new ASN1Integer(getPublicExponent()));
-
-        return new DERSequence(v);
+        return new DERSequence(new ASN1Integer(getModulus()), new ASN1Integer(getPublicExponent()));
     }
 }

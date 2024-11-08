@@ -37,12 +37,7 @@ public class ECPrivateKeyStructure
     {
         byte[] bytes = BigIntegers.asUnsignedByteArray(key);
 
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(new ASN1Integer(1));
-        v.add(new DEROctetString(bytes));
-
-        seq = new DERSequence(v);
+        seq = new DERSequence(new ASN1Integer(1), new DEROctetString(bytes));
     }
 
     public ECPrivateKeyStructure(

@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.CertID;
@@ -39,6 +40,7 @@ import org.bouncycastle.asn1.ocsp.TBSRequest;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 class OcspCache
@@ -108,15 +110,16 @@ class OcspCache
         for (int i = 0; i != exts.size(); i++)
         {
             Extension ext = (Extension)exts.get(i);
-            byte[] value = ext.getValue();
 
-            if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId().equals(ext.getId()))
+            ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(ext.getId());
+            ASN1OctetString value = new DEROctetString(ext.getValue());
+
+            if (OCSPObjectIdentifiers.id_pkix_ocsp_nonce.equals(oid))
             {
-                nonce = value;
+                nonce = Arrays.clone(value.getOctets());
             }
 
-            requestExtensions.add(new org.bouncycastle.asn1.x509.Extension(
-                new ASN1ObjectIdentifier(ext.getId()), ext.isCritical(), value));
+            requestExtensions.add(new org.bouncycastle.asn1.x509.Extension(oid, ext.isCritical(), value));
         }
 
         // TODO: configure originator

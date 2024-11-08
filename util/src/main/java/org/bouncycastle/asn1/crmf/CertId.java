@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.crmf;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -74,11 +73,6 @@ public class CertId
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(issuer);
-        v.add(serialNumber);
-        
-        return new DERSequence(v);
+        return new DERSequence(issuer, serialNumber);
     }
 }
