@@ -43,6 +43,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -157,12 +158,13 @@ public class KeyFactorySpi
             helper = new BCJcaJceHelper();
         }
 
-        ASN1Sequence seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
 
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
+            ASN1Sequence seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
+
             PrivateKey[] privKeys = new PrivateKey[seq.size()];
 
             for (int i = 0; i != seq.size(); i++)
@@ -186,6 +188,24 @@ public class KeyFactorySpi
         }
         try
         {
+            ASN1Sequence seq;
+            // TODO: backwards compatibility code - should be deleted after 1.84.
+            try
+            {
+                seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
+            }
+            catch (Exception e)
+            {
+                // new raw encoding - we capitalise on the fact initial key is first 32 bytes.
+                ASN1EncodableVector v = new ASN1EncodableVector();
+                byte[] data = keyInfo.getPrivateKey().getOctets();
+
+                v.add(new DEROctetString(Arrays.copyOfRange(data, 0, 32)));
+                v.add(new DEROctetString(Arrays.copyOfRange(data, 32, data.length)));
+
+                seq = new DERSequence(v);
+            }
+
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier); //Get key factories for each component algorithm.
             PrivateKey[] privateKeys = new PrivateKey[seq.size()];
             AlgorithmIdentifier[] algIds = pairings.get(keyIdentifier);

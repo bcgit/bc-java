@@ -2,7 +2,6 @@ package org.bouncycastle.openssl.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -49,6 +48,7 @@ import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
@@ -476,7 +476,8 @@ public class CompositeKeyTest
 
         CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, mldsaPriv, ecPriv);
 
-        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_priv.pem"));
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
 
         pWrt.writeObject(mlecPriv);
 
@@ -484,11 +485,18 @@ public class CompositeKeyTest
 
         CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
 
-        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa44_ec_p256_pub.pem"));
+        pWrt = new JcaPEMWriter(sWrt);
 
         pWrt.writeObject(mlecPub);
 
         pWrt.close();
+
+        PEMParser pPrs = new PEMParser(new StringReader(sWrt.toString()));
+
+        JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider("BC");
+        CompositePrivateKey prKey = (CompositePrivateKey)keyConverter.getPrivateKey((PrivateKeyInfo)pPrs.readObject());
+
+        CompositePublicKey puKey = (CompositePublicKey)keyConverter.getPublicKey((SubjectPublicKeyInfo)pPrs.readObject());
     }
 
     public void testMLDSA87andEd448()
@@ -513,7 +521,8 @@ public class CompositeKeyTest
 
         CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, mldsaPriv, ecPriv);
 
-        JcaPEMWriter pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_priv.pem"));
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
 
         pWrt.writeObject(mlecPriv);
 
@@ -521,11 +530,18 @@ public class CompositeKeyTest
 
         CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
 
-        pWrt = new JcaPEMWriter(new FileWriter("/tmp/mldsa87_ed448_pub.pem"));
+        pWrt = new JcaPEMWriter(sWrt);
 
         pWrt.writeObject(mlecPub);
 
         pWrt.close();
+
+        PEMParser pPrs = new PEMParser(new StringReader(sWrt.toString()));
+
+        JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider("BC");
+        CompositePrivateKey prKey = (CompositePrivateKey)keyConverter.getPrivateKey((PrivateKeyInfo)pPrs.readObject());
+
+        CompositePublicKey puKey = (CompositePublicKey)keyConverter.getPublicKey((SubjectPublicKeyInfo)pPrs.readObject());
     }
 
     private static void doOutput(String fileName, String contents)

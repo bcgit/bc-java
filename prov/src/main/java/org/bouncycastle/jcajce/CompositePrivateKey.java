@@ -16,6 +16,7 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -138,23 +139,33 @@ public class CompositePrivateKey implements PrivateKey
                 PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
                 v.add(info);
             }
+
+            try
+            {
+                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            }
         }
         else
         {
+            byte[] keyEncoding = null;
             for (int i = 0; i < keys.size(); i++)
             {
                 PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
-                v.add(info.getPrivateKey());
+                keyEncoding = Arrays.concatenate(keyEncoding, info.getPrivateKey().getOctets());
             }
-        }
 
-        try
-        {
-            return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            try
+            {
+                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), keyEncoding).getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            }
         }
     }
 
