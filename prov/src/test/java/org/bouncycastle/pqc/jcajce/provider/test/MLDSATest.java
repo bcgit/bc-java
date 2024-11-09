@@ -342,7 +342,7 @@ public class MLDSATest
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
-        ASN1OctetString seq = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
+        ASN1OctetString seq = privInfo.getPrivateKey();
 
         assertTrue(Arrays.areEqual(seq.getOctets(), seed));
 
@@ -406,7 +406,7 @@ public class MLDSATest
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
-        ASN1OctetString seq = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
+        ASN1OctetString seq = privInfo.getPrivateKey();
 
         assertTrue(Arrays.areEqual(seq.getOctets(), seed));
 
@@ -490,7 +490,7 @@ public class MLDSATest
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
-        ASN1OctetString seq = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
+        ASN1OctetString seq = privInfo.getPrivateKey();
 
         assertTrue(Arrays.areEqual(seq.getOctets(), seed));
 
@@ -587,7 +587,7 @@ public class MLDSATest
         assertTrue(Arrays.areEqual(pubSeq.getOctets(), pubK));
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
-        ASN1OctetString seq = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
+        ASN1OctetString seq = privInfo.getPrivateKey();
 
         assertTrue(Arrays.areEqual(seq.getOctets(), seed));
 
