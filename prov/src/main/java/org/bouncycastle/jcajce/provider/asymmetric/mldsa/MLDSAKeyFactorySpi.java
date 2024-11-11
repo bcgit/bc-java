@@ -16,6 +16,11 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.spec.MLDSAPrivateKeySpec;
+import org.bouncycastle.jcajce.spec.MLDSAPublicKeySpec;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
 public class MLDSAKeyFactorySpi
@@ -57,12 +62,32 @@ public class MLDSAKeyFactorySpi
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
+            if (MLDSAPrivateKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPrivateKey mldsaKey = (BCMLDSAPrivateKey)key;
+                byte[] seed = mldsaKey.getSeed();
+                if (seed != null)
+                {
+                    return new MLDSAPrivateKeySpec(mldsaKey.getParameterSpec(), seed);
+                }
+                return new MLDSAPrivateKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPrivateData(), mldsaKey.getPublicKey().getPublicData());
+            }
+            if (MLDSAPublicKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPrivateKey mldsaKey = (BCMLDSAPrivateKey)key;
+                return new MLDSAPublicKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPublicKey().getPublicData());
+            }
         }
         else if (key instanceof BCMLDSAPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new X509EncodedKeySpec(key.getEncoded());
+            }
+            if (MLDSAPublicKeySpec.class.isAssignableFrom(keySpec))
+            {
+                BCMLDSAPublicKey mldsaKey = (BCMLDSAPublicKey)key;
+                return new MLDSAPublicKeySpec(mldsaKey.getParameterSpec(), mldsaKey.getPublicData());
             }
         }
         else
@@ -84,6 +109,57 @@ public class MLDSAKeyFactorySpi
         }
 
         throw new InvalidKeyException("Unsupported key type");
+    }
+
+    public PrivateKey engineGeneratePrivate(
+        KeySpec keySpec)
+        throws InvalidKeySpecException
+    {
+        if (keySpec instanceof MLDSAPrivateKeySpec)
+        {
+            MLDSAPrivateKeySpec spec = (MLDSAPrivateKeySpec)keySpec;
+            MLDSAPrivateKeyParameters params;
+            MLDSAParameters mldsaParameters = Utils.getParameters(spec.getParameterSpec().getName());
+            if (spec.isSeed())
+            {
+                params = new MLDSAPrivateKeyParameters(
+                    mldsaParameters, spec.getSeed());
+            }
+            else
+            {
+                byte[] publicData = spec.getPublicData();
+                if (publicData != null)
+                {
+                    params = new MLDSAPrivateKeyParameters(
+                        mldsaParameters, spec.getPrivateData(), new MLDSAPublicKeyParameters(mldsaParameters, publicData));
+                }
+                else
+                {
+                    params = new MLDSAPrivateKeyParameters(
+                        mldsaParameters, spec.getPrivateData(), null);
+                }
+            }
+
+            return new BCMLDSAPrivateKey(params);
+        }
+
+        return super.engineGeneratePrivate(keySpec);
+    }
+
+    public PublicKey engineGeneratePublic(
+        KeySpec keySpec)
+        throws InvalidKeySpecException
+    {
+        if (keySpec instanceof MLDSAPublicKeySpec)
+        {
+            MLDSAPublicKeySpec spec = (MLDSAPublicKeySpec)keySpec;
+
+            return new BCMLDSAPublicKey(new MLDSAPublicKeyParameters(
+                Utils.getParameters(spec.getParameterSpec().getName()),
+                spec.getPublicData()));
+        }
+
+        return super.engineGeneratePublic(keySpec);
     }
 
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)

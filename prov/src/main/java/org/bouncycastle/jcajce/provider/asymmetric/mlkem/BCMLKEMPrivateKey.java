@@ -102,6 +102,18 @@ public class BCMLKEMPrivateKey
         return new BCMLKEMPublicKey(params.getPublicKeyParameters());
     }
 
+    @Override
+    public byte[] getPrivateData()
+    {
+        return params.getEncoded();
+    }
+
+    @Override
+    public byte[] getSeed()
+    {
+        return params.getSeed();
+    }
+
     public MLKEMParameterSpec getParameterSpec()
     {
         return MLKEMParameterSpec.fromName(params.getParameters().getName());
