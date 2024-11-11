@@ -22,7 +22,7 @@ public class MLDSAPublicKeySpec
     public MLDSAPublicKeySpec(MLDSAParameterSpec params, byte[] publicData)
     {
         this.params = params;
-        this.publicData = publicData;
+        this.publicData = Arrays.clone(publicData);
     }
 
     public MLDSAParameterSpec getParameterSpec()
