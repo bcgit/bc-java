@@ -14,24 +14,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
-/**
- * ASCON AEAD v1.2, https://ascon.iaik.tugraz.at/
- * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
- * <p>
- * ASCON AEAD v1.2 with reference to C Reference Impl from: https://github.com/ascon/ascon-c
- *
- * @deprecated Now superseded - please use AsconAead128Engine
- * </p>
- */
-public class AsconEngine
+public class AsconAEAD128Engine
     implements AEADCipher
 {
-    public enum AsconParameters
-    {
-        ascon80pq,
-        ascon128a,
-        ascon128
-    }
 
     private enum State
     {
@@ -46,7 +31,6 @@ public class AsconEngine
         DecFinal,
     }
 
-    private final AsconParameters asconParameters;
     private State m_state = State.Uninitialized;
     private byte[] mac;
     private byte[] initialAssociatedText;
@@ -57,7 +41,6 @@ public class AsconEngine
     private final int nr;
     private long K0;
     private long K1;
-    private long K2;
     private long N0;
     private long N1;
     private final long ASCON_IV;
@@ -70,43 +53,21 @@ public class AsconEngine
     private final byte[] m_buf;
     private int m_bufPos = 0;
 
-    public AsconEngine(AsconParameters asconParameters)
+    public AsconAEAD128Engine()
     {
-        this.asconParameters = asconParameters;
-        switch (asconParameters)
-        {
-        case ascon80pq:
-            CRYPTO_KEYBYTES = 20;
-            CRYPTO_ABYTES = 16;
-            ASCON_AEAD_RATE = 8;
-            ASCON_IV = 0xa0400c0600000000L;
-            algorithmName = "Ascon-80pq AEAD";
-            break;
-        case ascon128a:
-            CRYPTO_KEYBYTES = 16;
-            CRYPTO_ABYTES = 16;
-            ASCON_AEAD_RATE = 16;
-            ASCON_IV = 0x80800c0800000000L;
-            algorithmName = "Ascon-128a AEAD";
-            break;
-        case ascon128:
-            CRYPTO_KEYBYTES = 16;
-            CRYPTO_ABYTES = 16;
-            ASCON_AEAD_RATE = 8;
-            ASCON_IV = 0x80400c0600000000L;
-            algorithmName = "Ascon-128 AEAD";
-            break;
-        default:
-            throw new IllegalArgumentException("invalid parameter setting for ASCON AEAD");
-        }
-        nr = (ASCON_AEAD_RATE == 8) ? 6 : 8;
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_ABYTES = 16;
+        ASCON_AEAD_RATE = 16;
+        ASCON_IV = 0x00001000808c0001L;
+        algorithmName = "Ascon-AEAD-128";
+        nr = 8;
         m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
         m_buf = new byte[m_bufferSizeDecrypt];
     }
 
     private long PAD(int i)
     {
-        return 0x80L << (56 - (i << 3));
+        return 0x01L << (i << 3);
     }
 
     private void ROUND(long C)
@@ -125,18 +86,15 @@ public class AsconEngine
 
     private void P(int nr)
     {
-        if (nr >= 8)
+        if (nr == 12)
         {
-            if (nr == 12)
-            {
-                ROUND(0xf0L);
-                ROUND(0xe1L);
-                ROUND(0xd2L);
-                ROUND(0xc3L);
-            }
-            ROUND(0xb4L);
-            ROUND(0xa5L);
+            ROUND(0xf0L);
+            ROUND(0xe1L);
+            ROUND(0xd2L);
+            ROUND(0xc3L);
         }
+        ROUND(0xb4L);
+        ROUND(0xa5L);
         ROUND(0x96L);
         ROUND(0x87L);
         ROUND(0x78L);
@@ -149,21 +107,13 @@ public class AsconEngine
     {
         /* initialize */
         x0 = ASCON_IV;
-        if (CRYPTO_KEYBYTES == 20)
-        {
-            x0 ^= K0;
-        }
-        x1 = K1;
-        x2 = K2;
+        x1 = K0;
+        x2 = K1;
         x3 = N0;
         x4 = N1;
         P(12);
-        if (CRYPTO_KEYBYTES == 20)
-        {
-            x2 ^= K0;
-        }
-        x3 ^= K1;
-        x4 ^= K2;
+        x3 ^= K0;
+        x4 ^= K1;
     }
 
     private void checkAAD()
@@ -211,10 +161,10 @@ public class AsconEngine
 
     private void processBufferAAD(byte[] buffer, int inOff)
     {
-        x0 ^= Pack.bigEndianToLong(buffer, inOff);
+        x0 ^= Pack.littleEndianToLong(buffer, inOff);
         if (ASCON_AEAD_RATE == 16)
         {
-            x1 ^= Pack.bigEndianToLong(buffer, 8 + inOff);
+            x1 ^= Pack.littleEndianToLong(buffer, 8 + inOff);
         }
         P(nr);
     }
@@ -226,15 +176,15 @@ public class AsconEngine
         {
         case DecAad:
         case EncAad:
-            m_buf[m_bufPos] = (byte)0x80;
+            //m_buf[m_bufPos] = (byte)0x80;
             if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
             {
-                x0 ^= Pack.bigEndianToLong(m_buf, 0);
-                x1 ^= Pack.bigEndianToLong(m_buf, 8) & (-1L << (56 - ((m_bufPos - 8) << 3)));
+                x0 ^= Pack.littleEndianToLong(m_buf, 0);
+                x1 ^= Pack.littleEndianToLong(m_buf, 8) ^ PAD(m_bufPos);
             }
             else
             {
-                x0 ^= Pack.bigEndianToLong(m_buf, 0) & (-1L << (56 - (m_bufPos << 3)));
+                x0 ^= Pack.littleEndianToLong(m_buf, 0) ^ PAD(m_bufPos);
             }
             P(nr);
             break;
@@ -242,7 +192,7 @@ public class AsconEngine
             break;
         }
         // domain separation
-        x4 ^= 1L;
+        x4 ^= -9223372036854775808L; //0x80L << 56
         m_bufPos = 0;
         m_state = nextState;
     }
@@ -253,14 +203,14 @@ public class AsconEngine
         {
             throw new OutputLengthException("output buffer too short");
         }
-        long t0 = Pack.bigEndianToLong(buffer, bufOff);
-        Pack.longToBigEndian(x0 ^ t0, output, outOff);
+        long t0 = Pack.littleEndianToLong(buffer, bufOff);
+        Pack.longToLittleEndian(x0 ^ t0, output, outOff);
         x0 = t0;
 
         if (ASCON_AEAD_RATE == 16)
         {
-            long t1 = Pack.bigEndianToLong(buffer, bufOff + 8);
-            Pack.longToBigEndian(x1 ^ t1, output, outOff + 8);
+            long t1 = Pack.littleEndianToLong(buffer, bufOff + 8);
+            Pack.longToLittleEndian(x1 ^ t1, output, outOff + 8);
             x1 = t1;
         }
         P(nr);
@@ -272,13 +222,13 @@ public class AsconEngine
         {
             throw new OutputLengthException("output buffer too short");
         }
-        x0 ^= Pack.bigEndianToLong(buffer, bufOff);
-        Pack.longToBigEndian(x0, output, outOff);
+        x0 ^= Pack.littleEndianToLong(buffer, bufOff);
+        Pack.longToLittleEndian(x0, output, outOff);
 
         if (ASCON_AEAD_RATE == 16)
         {
-            x1 ^= Pack.bigEndianToLong(buffer, bufOff + 8);
-            Pack.longToBigEndian(x1, output, outOff + 8);
+            x1 ^= Pack.littleEndianToLong(buffer, bufOff + 8);
+            Pack.longToLittleEndian(x1, output, outOff + 8);
         }
 
         P(nr);
@@ -288,9 +238,9 @@ public class AsconEngine
     {
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            long c0 = Pack.bigEndianToLong(input, inOff);
+            long c0 = Pack.littleEndianToLong(input, inOff);
             x0 ^= c0;
-            Pack.longToBigEndian(x0, output, outOff);
+            Pack.longToLittleEndian(x0, output, outOff);
             x0 = c0;
             inOff += 8;
             outOff += 8;
@@ -325,8 +275,8 @@ public class AsconEngine
     {
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.bigEndianToLong(input, inOff);
-            Pack.longToBigEndian(x0, output, outOff);
+            x0 ^= Pack.littleEndianToLong(input, inOff);
+            Pack.longToLittleEndian(x0, output, outOff);
             inOff += 8;
             outOff += 8;
             inLen -= 8;
@@ -351,28 +301,11 @@ public class AsconEngine
 
     private void finishData(State nextState)
     {
-        switch (asconParameters)
-        {
-        case ascon128:
-            x1 ^= K1;
-            x2 ^= K2;
-            break;
-        case ascon128a:
-            x2 ^= K1;
-            x3 ^= K2;
-            break;
-        case ascon80pq:
-            x1 ^= (K0 << 32 | K1 >> 32);
-            x2 ^= (K1 << 32 | K2 >> 32);
-            x3 ^= K2 << 32;
-            break;
-        default:
-            throw new IllegalStateException();
-        }
-        P(12);
+        x2 ^= K0;
         x3 ^= K1;
-        x4 ^= K2;
-
+        P(12);
+        x3 ^= K0;
+        x4 ^= K1;
         m_state = nextState;
     }
 
@@ -412,34 +345,21 @@ public class AsconEngine
         }
         if (npub == null || npub.length != CRYPTO_ABYTES)
         {
-            throw new IllegalArgumentException(asconParameters + " requires exactly " + CRYPTO_ABYTES + " bytes of IV");
+            throw new IllegalArgumentException("Ascon-AEAD-128 requires exactly " + CRYPTO_ABYTES + " bytes of IV");
         }
 
         byte[] k = key.getKey();
         if (k.length != CRYPTO_KEYBYTES)
         {
-            throw new IllegalArgumentException(asconParameters + " key must be " + CRYPTO_KEYBYTES + " bytes long");
+            throw new IllegalArgumentException("Ascon-AEAD-128 key must be " + CRYPTO_KEYBYTES + " bytes long");
         }
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        N0 = Pack.bigEndianToLong(npub, 0);
-        N1 = Pack.bigEndianToLong(npub, 8);
-        if (CRYPTO_KEYBYTES == 16)
-        {
-            K1 = Pack.bigEndianToLong(k, 0);
-            K2 = Pack.bigEndianToLong(k, 8);
-        }
-        else if (CRYPTO_KEYBYTES == 20)
-        {
-            K0 = Pack.bigEndianToInt(k, 0);
-            K1 = Pack.bigEndianToLong(k, 4);
-            K2 = Pack.bigEndianToLong(k, 12);
-        }
-        else
-        {
-            throw new IllegalStateException();
-        }
+        K0 = Pack.littleEndianToLong(k, 0);
+        K1 = Pack.littleEndianToLong(k, 8);
+        N0 = Pack.littleEndianToLong(npub, 0);
+        N1 = Pack.littleEndianToLong(npub, 8);
 
         m_state = forEncryption ? State.EncInit : State.DecInit;
 
@@ -453,7 +373,7 @@ public class AsconEngine
 
     public String getAlgorithmVersion()
     {
-        return "v1.2";
+        return "v1.3";
     }
 
     public void processAADByte(byte in)
@@ -612,8 +532,8 @@ public class AsconEngine
             }
             processFinalEncrypt(m_buf, 0, m_bufPos, outBytes, outOff);
             mac = new byte[CRYPTO_ABYTES];
-            Pack.longToBigEndian(x3, mac, 0);
-            Pack.longToBigEndian(x4, mac, 8);
+            Pack.longToLittleEndian(x3, mac, 0);
+            Pack.longToLittleEndian(x4, mac, 8);
             System.arraycopy(mac, 0, outBytes, outOff + m_bufPos, CRYPTO_ABYTES);
             reset(false);
         }
@@ -630,8 +550,8 @@ public class AsconEngine
                 throw new OutputLengthException("output buffer too short");
             }
             processFinalDecrypt(m_buf, 0, m_bufPos, outBytes, outOff);
-            x3 ^= Pack.bigEndianToLong(m_buf, m_bufPos);
-            x4 ^= Pack.bigEndianToLong(m_buf, m_bufPos + 8);
+            x3 ^= Pack.littleEndianToLong(m_buf, m_bufPos);
+            x4 ^= Pack.littleEndianToLong(m_buf, m_bufPos + 8);
             if ((x3 | x4) != 0L)
             {
                 throw new InvalidCipherTextException("mac check in " + getAlgorithmName() + " failed");
@@ -738,3 +658,4 @@ public class AsconEngine
         return CRYPTO_ABYTES;
     }
 }
+
