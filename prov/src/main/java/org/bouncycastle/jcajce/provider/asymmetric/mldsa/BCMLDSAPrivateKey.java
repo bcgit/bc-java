@@ -104,6 +104,18 @@ public class BCMLDSAPrivateKey
         return new BCMLDSAPublicKey(params.getPublicKeyParameters());
     }
 
+    @Override
+    public byte[] getPrivateData()
+    {
+        return params.getEncoded();
+    }
+
+    @Override
+    public byte[] getSeed()
+    {
+        return params.getSeed();
+    }
+
     public MLDSAParameterSpec getParameterSpec()
     {
         return MLDSAParameterSpec.fromName(params.getParameters().getName());
