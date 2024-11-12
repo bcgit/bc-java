@@ -133,7 +133,7 @@ public class MLDSAKeyFactorySpi
                 byte[] publicData = spec.getPublicData();
                 if (publicData != null)
                 {
-                    if (!Arrays.areEqual(publicData, params.getPublicKey()))
+                    if (!Arrays.constantTimeAreEqual(publicData, params.getPublicKey()))
                     {
                         throw new InvalidKeySpecException("public key data does not match private key data");
                     }

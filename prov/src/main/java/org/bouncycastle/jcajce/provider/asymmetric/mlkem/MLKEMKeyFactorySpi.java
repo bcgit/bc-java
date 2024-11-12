@@ -125,7 +125,7 @@ public class MLKEMKeyFactorySpi
                 byte[] publicKeyData = spec.getPublicData();
                 if (publicKeyData != null)
                 {
-                    if (!Arrays.areEqual(publicKeyData, params.getPublicKey()))
+                    if (!Arrays.constantTimeAreEqual(publicKeyData, params.getPublicKey()))
                     {
                         throw new InvalidKeySpecException("public key data does not match private key data");
                     }
