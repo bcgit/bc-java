@@ -300,7 +300,53 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{ sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
+        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
+    }
+
+    byte[] deriveT1(byte[] rho, byte[] key, byte[] tr, byte[] s1Enc, byte[] s2Enc, byte[] t0Enc)
+    {
+        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+
+        PolyVecL s1 = new PolyVecL(this), s1hat;
+        PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
+
+        Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
+
+        // System.out.print("rho = ");
+        // Helper.printByteArray(rho);
+
+        // System.out.println("key = ");
+        // Helper.printByteArray(key);
+
+        aMatrix.expandMatrix(rho);
+        // System.out.print(aMatrix.toString("aMatrix"));
+
+        s1hat = new PolyVecL(this);
+
+        s1.copyPolyVecL(s1hat);
+        s1hat.polyVecNtt();
+
+        // System.out.println(s1hat.toString("s1hat"));
+
+        aMatrix.pointwiseMontgomery(t1, s1hat);
+        // System.out.println(t1.toString("t1"));
+
+        t1.reduce();
+        t1.invNttToMont();
+
+        t1.addPolyVecK(s2);
+        // System.out.println(s2.toString("s2"));
+        // System.out.println(t1.toString("t1"));
+        t1.conditionalAddQ();
+        t1.power2Round(t0);
+
+        // System.out.println(t1.toString("t1"));
+        // System.out.println(t0.toString("t0"));
+
+        byte[] encT1 = Packing.packPublicKey(t1, this);
+        // System.out.println("enc t1 = ");
+        // Helper.printByteArray(encT1);
+        return encT1;
     }
 
     SHAKEDigest getShake256Digest()

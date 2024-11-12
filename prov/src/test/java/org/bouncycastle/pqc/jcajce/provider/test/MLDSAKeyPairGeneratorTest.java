@@ -186,5 +186,11 @@ public class MLDSAKeyPairGeneratorTest
         pubKey = kFact.generatePublic(pubSpec);
 
         assertEquals(kp.getPublic(), pubKey);
+
+        privSpec = new MLDSAPrivateKeySpec(privKey.getParameterSpec(), privKey.getPrivateData(), null);
+
+        privKey = (MLDSAPrivateKey)kFact.generatePrivate(privSpec);
+
+        assertNotNull(privKey.getPublicKey());
     }
 }

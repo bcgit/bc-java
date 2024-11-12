@@ -22,9 +22,10 @@ import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
+import org.bouncycastle.util.Arrays;
 
 public class MLDSAKeyFactorySpi
-        extends BaseKeyFactorySpi
+    extends BaseKeyFactorySpi
 {
     private static final Set<ASN1ObjectIdentifier> pureKeyOids = new HashSet<ASN1ObjectIdentifier>();
     private static final Set<ASN1ObjectIdentifier> hashKeyOids = new HashSet<ASN1ObjectIdentifier>();
@@ -54,7 +55,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
-            throws InvalidKeySpecException
+        throws InvalidKeySpecException
     {
         if (key instanceof BCMLDSAPrivateKey)
         {
@@ -93,15 +94,15 @@ public class MLDSAKeyFactorySpi
         else
         {
             throw new InvalidKeySpecException("Unsupported key type: "
-                    + key.getClass() + ".");
+                + key.getClass() + ".");
         }
 
         throw new InvalidKeySpecException("Unknown key specification: "
-                + keySpec + ".");
+            + keySpec + ".");
     }
 
     public final Key engineTranslateKey(Key key)
-            throws InvalidKeyException
+        throws InvalidKeyException
     {
         if (key instanceof BCMLDSAPrivateKey || key instanceof BCMLDSAPublicKey)
         {
@@ -127,16 +128,15 @@ public class MLDSAKeyFactorySpi
             }
             else
             {
+                params = new MLDSAPrivateKeyParameters(
+                    mldsaParameters, spec.getPrivateData(), null);
                 byte[] publicData = spec.getPublicData();
                 if (publicData != null)
                 {
-                    params = new MLDSAPrivateKeyParameters(
-                        mldsaParameters, spec.getPrivateData(), new MLDSAPublicKeyParameters(mldsaParameters, publicData));
-                }
-                else
-                {
-                    params = new MLDSAPrivateKeyParameters(
-                        mldsaParameters, spec.getPrivateData(), null);
+                    if (!Arrays.areEqual(publicData, params.getPublicKey()))
+                    {
+                        throw new InvalidKeySpecException("public key data does not match private key data");
+                    }
                 }
             }
 
@@ -163,19 +163,19 @@ public class MLDSAKeyFactorySpi
     }
 
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
         return new BCMLDSAPrivateKey(keyInfo);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
         return new BCMLDSAPublicKey(keyInfo);
     }
 
     public static class Pure
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public Pure()
         {
@@ -184,7 +184,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA44
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA44()
         {
@@ -193,7 +193,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA65
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA65()
         {
@@ -202,7 +202,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class MLDSA87
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public MLDSA87()
         {
@@ -211,7 +211,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class Hash
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public Hash()
         {
@@ -220,7 +220,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA44
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA44()
         {
@@ -229,7 +229,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA65
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA65()
         {
@@ -238,7 +238,7 @@ public class MLDSAKeyFactorySpi
     }
 
     public static class HashMLDSA87
-            extends MLDSAKeyFactorySpi
+        extends MLDSAKeyFactorySpi
     {
         public HashMLDSA87()
         {
