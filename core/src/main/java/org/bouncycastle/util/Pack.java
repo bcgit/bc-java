@@ -104,6 +104,16 @@ public abstract class Pack
         }
     }
 
+    public static long bigEndianToLong(byte[] bs, int off, int len)
+    {
+        long x = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            x |= (bs[i + off] & 0xFFL) << ((7 - i) << 3);
+        }
+        return x;
+    }
+
     public static byte[] longToBigEndian(long n)
     {
         byte[] bs = new byte[8];
