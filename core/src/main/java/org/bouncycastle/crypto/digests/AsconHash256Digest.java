@@ -5,45 +5,25 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Pack;
 
-/** ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
+/**
+ * ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
  * <p>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
  * <p>
  * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
- * @deprecated use Ascon Hash 256 Digest
+ *
  */
-public class AsconDigest
+public class AsconHash256Digest
     implements ExtendedDigest
 {
-    public enum AsconParameters
+    public AsconHash256Digest()
     {
-        AsconHash,
-        AsconHashA,
-    }
-
-    AsconParameters asconParameters;
-
-    public AsconDigest(AsconParameters parameters)
-    {
-        this.asconParameters = parameters;
-        switch (parameters)
-        {
-        case AsconHash:
-            ASCON_PB_ROUNDS = 12;
-            algorithmName = "Ascon-Hash";
-            break;
-        case AsconHashA:
-            ASCON_PB_ROUNDS = 8;
-            algorithmName = "Ascon-HashA";
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid parameter settings for Ascon Hash");
-        }
         reset();
     }
 
-    private final String algorithmName;
+    private final String algorithmName = "Ascon Hash 256";
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private long x0;
     private long x1;
@@ -51,7 +31,7 @@ public class AsconDigest
     private long x3;
     private long x4;
     private final int CRYPTO_BYTES = 32;
-    private final int ASCON_PB_ROUNDS;
+    private final int ASCON_PB_ROUNDS = 12;
 
     private long ROR(long x, int n)
     {
@@ -96,25 +76,7 @@ public class AsconDigest
 
     private long PAD(int i)
     {
-        return 0x80L << (56 - (i << 3));
-    }
-
-    private long LOADBYTES(final byte[] bytes, int inOff, int n)
-    {
-        long x = 0;
-        for (int i = 0; i < n; ++i)
-        {
-            x |= (bytes[i + inOff] & 0xFFL) << ((7 - i) << 3);
-        }
-        return x;
-    }
-
-    private void STOREBYTES(byte[] bytes, int inOff, long w, int n)
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            bytes[i + inOff] = (byte)(w >>> ((7 - i) << 3));
-        }
+        return 0x01L << (i << 3);
     }
 
     @Override
@@ -165,27 +127,26 @@ public class AsconDigest
         int ASCON_HASH_RATE = 8;
         while (len >= ASCON_HASH_RATE)
         {
-            x0 ^= LOADBYTES(input, inOff, 8);
+            x0 ^= Pack.littleEndianToLong(input, inOff, 8);
             P(ASCON_PB_ROUNDS);
             inOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
         }
         /* absorb final plaintext block */
-        x0 ^= LOADBYTES(input, inOff, len);
+        x0 ^= Pack.littleEndianToLong(input, inOff, len);
         x0 ^= PAD(len);
-        int ASCON_PA_ROUNDS = 12;
-        P(ASCON_PA_ROUNDS);
+        P(12);
         /* squeeze full output blocks */
         len = CRYPTO_BYTES;
         while (len > ASCON_HASH_RATE)
         {
-            STOREBYTES(output, outOff, x0, 8);
+            Pack.longToLittleEndian(x0, output, outOff, 8);
             P(ASCON_PB_ROUNDS);
             outOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
         }
         /* squeeze final output block */
-        STOREBYTES(output, outOff, x0, len);
+        Pack.longToLittleEndian(x0, output, outOff, len);
         reset();
         return CRYPTO_BYTES;
     }
@@ -195,22 +156,10 @@ public class AsconDigest
     {
         buffer.reset();
         /* initialize */
-        switch (asconParameters)
-        {
-        case AsconHashA:
-            x0 = 92044056785660070L;
-            x1 = 8326807761760157607L;
-            x2 = 3371194088139667532L;
-            x3 = -2956994353054992515L;
-            x4 = -6828509670848688761L;
-            break;
-        case AsconHash:
-            x0 = -1255492011513352131L;
-            x1 = -8380609354527731710L;
-            x2 = -5437372128236807582L;
-            x3 = 4834782570098516968L;
-            x4 = 3787428097924915520L;
-            break;
-        }
+        x0 = -7269279749984954751L;
+        x1 = 5459383224871899602L;
+        x2 = -5880230600644446182L;
+        x3 = 4359436768738168243L;
+        x4 = 1899470422303676269L;
     }
 }
