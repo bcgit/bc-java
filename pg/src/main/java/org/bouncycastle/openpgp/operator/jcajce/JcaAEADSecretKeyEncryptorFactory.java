@@ -15,7 +15,7 @@ public class JcaAEADSecretKeyEncryptorFactory
     private JcaAEADSecretKeyEncryptorBuilder builder = new JcaAEADSecretKeyEncryptorBuilder(
             AEADAlgorithmTags.OCB,
             SymmetricKeyAlgorithmTags.AES_256,
-            S2K.Argon2Params.universallyRecommendedParameters());
+            S2K.Argon2Params.memoryConstrainedParameters());
 
     public JcaAEADSecretKeyEncryptorFactory setProvider(Provider provider)
     {

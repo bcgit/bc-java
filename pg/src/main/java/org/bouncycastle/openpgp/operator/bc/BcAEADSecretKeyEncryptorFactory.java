@@ -12,8 +12,8 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
  * a key-encryption-key using {@link org.bouncycastle.bcpg.S2K#ARGON_2} S2K and apply
  * that key using {@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_AEAD}.
  * <p>
- * This particular factory uses OCB + AES256 for secret key protection and requires 2GiB of RAM
- * for the Argon2 key derivation (see {@link S2K.Argon2Params#universallyRecommendedParameters()}).
+ * This particular factory uses OCB + AES256 for secret key protection and requires 64MiB of RAM
+ * for the Argon2 key derivation (see {@link S2K.Argon2Params#memoryConstrainedParameters()}).
  */
 public class BcAEADSecretKeyEncryptorFactory
         extends PBESecretKeyEncryptorFactory
@@ -28,7 +28,7 @@ public class BcAEADSecretKeyEncryptorFactory
         return new BcAEADSecretKeyEncryptorBuilder(
                 AEADAlgorithmTags.OCB,
                 SymmetricKeyAlgorithmTags.AES_256,
-                S2K.Argon2Params.universallyRecommendedParameters())
+                S2K.Argon2Params.memoryConstrainedParameters())
                 .build(passphrase, pubKeyPacket);
     }
 }
