@@ -90,7 +90,7 @@ public class MLKEMKeyFactorySpi
                 + key.getClass() + ".");
         }
 
-        throw new InvalidKeySpecException("Unknown key specification: "
+        throw new InvalidKeySpecException("unknown key specification: "
             + keySpec + ".");
     }
 
@@ -102,7 +102,7 @@ public class MLKEMKeyFactorySpi
             return key;
         }
 
-        throw new InvalidKeyException("Unsupported key type");
+        throw new InvalidKeyException("unsupported key type");
     }
 
     public PrivateKey engineGeneratePrivate(

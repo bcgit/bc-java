@@ -93,11 +93,11 @@ public class MLDSAKeyFactorySpi
         }
         else
         {
-            throw new InvalidKeySpecException("Unsupported key type: "
+            throw new InvalidKeySpecException("unsupported key type: "
                 + key.getClass() + ".");
         }
 
-        throw new InvalidKeySpecException("Unknown key specification: "
+        throw new InvalidKeySpecException("unknown key specification: "
             + keySpec + ".");
     }
 
@@ -109,7 +109,7 @@ public class MLDSAKeyFactorySpi
             return key;
         }
 
-        throw new InvalidKeyException("Unsupported key type");
+        throw new InvalidKeyException("unsupported key type");
     }
 
     public PrivateKey engineGeneratePrivate(
