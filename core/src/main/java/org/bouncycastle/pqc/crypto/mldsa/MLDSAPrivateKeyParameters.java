@@ -81,7 +81,7 @@ public class MLDSAPrivateKeyParameters
             }
             else
             {
-                this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);;
+                this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);
             }
             this.seed = null;
         }
