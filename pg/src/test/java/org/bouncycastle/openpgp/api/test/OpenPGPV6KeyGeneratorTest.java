@@ -82,6 +82,9 @@ public class OpenPGPV6KeyGeneratorTest
         testGenerateClassicKeyBaseCase(apiProvider);
         testGenerateProtectedTypicalKey(apiProvider);
 
+        testGenerateEd25519x25519Key(apiProvider);
+        testGenerateEd448x448Key(apiProvider);
+
         testEnforcesPrimaryOrSubkeyType(apiProvider);
     }
 
@@ -234,6 +237,100 @@ public class OpenPGPV6KeyGeneratorTest
         {
             isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, key.getS2KUsage());
         }
+    }
+
+    private void testGenerateEd25519x25519Key(APIProvider apiProvider)
+            throws PGPException
+    {
+        Date currentTime = currentTimeRounded();
+        String userId = "Foo <bar@baz>";
+        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
+
+        PGPSecretKeyRing secretKey = generator.ed25519x25519Key(userId, null);
+
+        Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
+        PGPSecretKey primaryKey = iterator.next();
+        PGPSecretKey signingSubkey = iterator.next();
+        PGPSecretKey encryptionSubkey = iterator.next();
+        isFalse("Unexpected key", iterator.hasNext());
+
+        isEquals(PublicKeyAlgorithmTags.Ed25519, primaryKey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> keySignatures = primaryKey.getPublicKey().getKeySignatures();
+        PGPSignature directKeySignature = keySignatures.next();
+        isFalse(keySignatures.hasNext());
+        PGPSignatureSubpacketVector hashedSubpackets = directKeySignature.getHashedSubPackets();
+        isEquals(KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
+
+        Iterator<String> userIds = primaryKey.getUserIDs();
+        isEquals(userId, userIds.next());
+        isFalse(userIds.hasNext());
+        Iterator<PGPSignature> userIdSignatures = primaryKey.getPublicKey().getSignaturesForID(userId);
+        PGPSignature userIdSig = userIdSignatures.next();
+        isFalse(userIdSignatures.hasNext());
+        isEquals(PGPSignature.POSITIVE_CERTIFICATION, userIdSig.getSignatureType());
+
+        isEquals(PublicKeyAlgorithmTags.Ed25519, signingSubkey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> signingSubkeySigs = signingSubkey.getPublicKey().getKeySignatures();
+        PGPSignature signingSubkeySig = signingSubkeySigs.next();
+        isFalse(signingSubkeySigs.hasNext());
+        isEquals(PGPSignature.SUBKEY_BINDING, signingSubkeySig.getSignatureType());
+        hashedSubpackets = signingSubkeySig.getHashedSubPackets();
+        isEquals(KeyFlags.SIGN_DATA, hashedSubpackets.getKeyFlags());
+
+        isEquals(PublicKeyAlgorithmTags.X25519, encryptionSubkey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> encryptionSubkeySigs = encryptionSubkey.getPublicKey().getKeySignatures();
+        PGPSignature encryptionSubkeySig = encryptionSubkeySigs.next();
+        isFalse(encryptionSubkeySigs.hasNext());
+        isEquals(PGPSignature.SUBKEY_BINDING, encryptionSubkeySig.getSignatureType());
+        hashedSubpackets = encryptionSubkeySig.getHashedSubPackets();
+        isEquals(KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, hashedSubpackets.getKeyFlags());
+    }
+
+    private void testGenerateEd448x448Key(APIProvider apiProvider)
+            throws PGPException
+    {
+        Date currentTime = currentTimeRounded();
+        String userId = "Foo <bar@baz>";
+        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
+
+        PGPSecretKeyRing secretKey = generator.ed448x448Key(userId, null);
+
+        Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
+        PGPSecretKey primaryKey = iterator.next();
+        PGPSecretKey signingSubkey = iterator.next();
+        PGPSecretKey encryptionSubkey = iterator.next();
+        isFalse("Unexpected key", iterator.hasNext());
+
+        isEquals(PublicKeyAlgorithmTags.Ed448, primaryKey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> keySignatures = primaryKey.getPublicKey().getKeySignatures();
+        PGPSignature directKeySignature = keySignatures.next();
+        isFalse(keySignatures.hasNext());
+        PGPSignatureSubpacketVector hashedSubpackets = directKeySignature.getHashedSubPackets();
+        isEquals(KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
+
+        Iterator<String> userIds = primaryKey.getUserIDs();
+        isEquals(userId, userIds.next());
+        isFalse(userIds.hasNext());
+        Iterator<PGPSignature> userIdSignatures = primaryKey.getPublicKey().getSignaturesForID(userId);
+        PGPSignature userIdSig = userIdSignatures.next();
+        isFalse(userIdSignatures.hasNext());
+        isEquals(PGPSignature.POSITIVE_CERTIFICATION, userIdSig.getSignatureType());
+
+        isEquals(PublicKeyAlgorithmTags.Ed448, signingSubkey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> signingSubkeySigs = signingSubkey.getPublicKey().getKeySignatures();
+        PGPSignature signingSubkeySig = signingSubkeySigs.next();
+        isFalse(signingSubkeySigs.hasNext());
+        isEquals(PGPSignature.SUBKEY_BINDING, signingSubkeySig.getSignatureType());
+        hashedSubpackets = signingSubkeySig.getHashedSubPackets();
+        isEquals(KeyFlags.SIGN_DATA, hashedSubpackets.getKeyFlags());
+
+        isEquals(PublicKeyAlgorithmTags.X448, encryptionSubkey.getPublicKey().getAlgorithm());
+        Iterator<PGPSignature> encryptionSubkeySigs = encryptionSubkey.getPublicKey().getKeySignatures();
+        PGPSignature encryptionSubkeySig = encryptionSubkeySigs.next();
+        isFalse(encryptionSubkeySigs.hasNext());
+        isEquals(PGPSignature.SUBKEY_BINDING, encryptionSubkeySig.getSignatureType());
+        hashedSubpackets = encryptionSubkeySig.getHashedSubPackets();
+        isEquals(KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, hashedSubpackets.getKeyFlags());
     }
 
     private void testGenerateCustomKey(APIProvider apiProvider)
