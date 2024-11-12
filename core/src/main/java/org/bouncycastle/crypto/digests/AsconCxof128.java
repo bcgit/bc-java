@@ -3,55 +3,37 @@ package org.bouncycastle.crypto.digests;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.util.Pack;
 
-/** ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
+/**
+ * ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
  * <p>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
  * <p>
- * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
- * @deprecated use Ascon Hash 256 Digest
+ * ASCON v1.2 XOF with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
-public class AsconDigest
-    implements ExtendedDigest
+public class AsconCxof128
+    implements Xof
 {
-    public enum AsconParameters
+    public AsconCxof128()
     {
-        AsconHash,
-        AsconHashA,
-    }
-
-    AsconParameters asconParameters;
-
-    public AsconDigest(AsconParameters parameters)
-    {
-        this.asconParameters = parameters;
-        switch (parameters)
-        {
-        case AsconHash:
-            ASCON_PB_ROUNDS = 12;
-            algorithmName = "Ascon-Hash";
-            break;
-        case AsconHashA:
-            ASCON_PB_ROUNDS = 8;
-            algorithmName = "Ascon-HashA";
-            break;
-        default:
-            throw new IllegalArgumentException("Invalid parameter settings for Ascon Hash");
-        }
         reset();
     }
 
-    private final String algorithmName;
+    private final String algorithmName = "Ascon-XOF-128";
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+    private final ByteArrayOutputStream customizedString = new ByteArrayOutputStream();
     private long x0;
     private long x1;
     private long x2;
     private long x3;
     private long x4;
     private final int CRYPTO_BYTES = 32;
-    private final int ASCON_PB_ROUNDS;
+    private final int ASCON_PB_ROUNDS = 12;
+    private final int ASCON_HASH_RATE = 8;
 
     private long ROR(long x, int n)
     {
@@ -96,25 +78,7 @@ public class AsconDigest
 
     private long PAD(int i)
     {
-        return 0x80L << (56 - (i << 3));
-    }
-
-    private long LOADBYTES(final byte[] bytes, int inOff, int n)
-    {
-        long x = 0;
-        for (int i = 0; i < n; ++i)
-        {
-            x |= (bytes[i + inOff] & 0xFFL) << ((7 - i) << 3);
-        }
-        return x;
-    }
-
-    private void STOREBYTES(byte[] bytes, int inOff, long w, int n)
-    {
-        for (int i = 0; i < n; ++i)
-        {
-            bytes[i + inOff] = (byte)(w >>> ((7 - i) << 3));
-        }
+        return 0x01L << (i << 3);
     }
 
     @Override
@@ -129,10 +93,18 @@ public class AsconDigest
         return CRYPTO_BYTES;
     }
 
-    @Override
-    public int getByteLength()
+    public void updateCustomizedString(byte in)
     {
-        return 8;
+        customizedString.write(in);
+    }
+
+    public void updateCustomizedString(byte[] input, int inOff, int len)
+    {
+        if ((inOff + len) > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+        customizedString.write(input, inOff, len);
     }
 
     @Override
@@ -152,42 +124,67 @@ public class AsconDigest
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
+    public int doOutput(byte[] output, int outOff, int outLen)
     {
         if (CRYPTO_BYTES + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        byte[] input = buffer.toByteArray();
-        int len = buffer.size();
-        int inOff = 0;
-        /* absorb full plaintext blocks */
-        int ASCON_HASH_RATE = 8;
-        while (len >= ASCON_HASH_RATE)
+        int customizedStringLen = customizedString.size();
+        if (customizedStringLen > 2048)
         {
-            x0 ^= LOADBYTES(input, inOff, 8);
-            P(ASCON_PB_ROUNDS);
-            inOff += ASCON_HASH_RATE;
-            len -= ASCON_HASH_RATE;
+            throw new DataLengthException("customized string is too long");
         }
-        /* absorb final plaintext block */
-        x0 ^= LOADBYTES(input, inOff, len);
-        x0 ^= PAD(len);
-        int ASCON_PA_ROUNDS = 12;
-        P(ASCON_PA_ROUNDS);
+        absorb(customizedString.toByteArray(), customizedStringLen);
+        absorb(buffer.toByteArray(), buffer.size());
         /* squeeze full output blocks */
-        len = CRYPTO_BYTES;
+        int len = CRYPTO_BYTES;
         while (len > ASCON_HASH_RATE)
         {
-            STOREBYTES(output, outOff, x0, 8);
+            Pack.longToLittleEndian(x0, output, outOff, 8);
             P(ASCON_PB_ROUNDS);
             outOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
         }
         /* squeeze final output block */
-        STOREBYTES(output, outOff, x0, len);
+        Pack.longToLittleEndian(x0, output, outOff, len);
         reset();
         return CRYPTO_BYTES;
+    }
+
+    private void absorb(byte[] input, int len)
+    {
+        int inOff = 0;
+        /* absorb full plaintext blocks */
+        while (len >= ASCON_HASH_RATE)
+        {
+            x0 ^= Pack.littleEndianToLong(input, inOff, 8);
+            P(ASCON_PB_ROUNDS);
+            inOff += ASCON_HASH_RATE;
+            len -= ASCON_HASH_RATE;
+        }
+        /* absorb final plaintext block */
+        x0 ^= Pack.littleEndianToLong(input, inOff, len);
+        x0 ^= PAD(len);
+        P(12);
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff)
+    {
+        return doOutput(output, outOff, getDigestSize());
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff, int outLen)
+    {
+        return doOutput(output, outOff, outLen);
+    }
+
+    @Override
+    public int getByteLength()
+    {
+        return 8;
     }
 
     @Override
@@ -195,22 +192,11 @@ public class AsconDigest
     {
         buffer.reset();
         /* initialize */
-        switch (asconParameters)
-        {
-        case AsconHashA:
-            x0 = 92044056785660070L;
-            x1 = 8326807761760157607L;
-            x2 = 3371194088139667532L;
-            x3 = -2956994353054992515L;
-            x4 = -6828509670848688761L;
-            break;
-        case AsconHash:
-            x0 = -1255492011513352131L;
-            x1 = -8380609354527731710L;
-            x2 = -5437372128236807582L;
-            x3 = 4834782570098516968L;
-            x4 = 3787428097924915520L;
-            break;
-        }
+        x0 = 7445901275803737603L;
+        x1 = 4886737088792722364L;
+        x2 = -1616759365661982283L;
+        x3 = 3076320316797452470L;
+        x4 = -8124743304765850554L;
     }
 }
+

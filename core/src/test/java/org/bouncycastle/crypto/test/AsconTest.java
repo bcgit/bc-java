@@ -8,10 +8,12 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.AsconDigest;
+import org.bouncycastle.crypto.digests.AsconHash256Digest;
 import org.bouncycastle.crypto.digests.AsconXof;
 import org.bouncycastle.crypto.digests.AsconXof128;
 import org.bouncycastle.crypto.engines.AsconAEAD128Engine;
@@ -41,6 +43,7 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testVectorsXof_AsconHash256();
         testVectorsXof_AsconXof128();
         testVectorsEngine_asconaead128();
 
@@ -184,13 +187,13 @@ public class AsconTest
     public void testVectorsDigest_AsconHash()
         throws Exception
     {
-        implTestVectorsDigest(AsconDigest.AsconParameters.AsconHash, "asconhash");
+        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHash), "crypto/ascon","asconhash_LWC_HASH_KAT_256");
     }
 
     public void testVectorsDigest_AsconHashA()
         throws Exception
     {
-        implTestVectorsDigest(AsconDigest.AsconParameters.AsconHashA, "asconhasha");
+        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHashA), "crypto/ascon","asconhasha_LWC_HASH_KAT_256");
     }
 
     public void testVectorsEngine_ascon128()
@@ -215,6 +218,12 @@ public class AsconTest
         throws Exception
     {
         implTestVectorsEngine(new AsconAEAD128Engine(), "crypto/ascon/asconaead128", "128_128");
+    }
+
+    public void testVectorsXof_AsconHash256()
+        throws Exception
+    {
+        implTestVectorsDigest(new AsconHash256Digest(), "crypto/ascon/asconhash256", "LWC_HASH_KAT_256");
     }
 
     public void testVectorsXof_AsconXof128()
@@ -728,12 +737,11 @@ public class AsconTest
         }
     }
 
-    private void implTestVectorsDigest(AsconDigest.AsconParameters asconParameters, String filename)
+    private void implTestVectorsDigest(ExtendedDigest ascon, String path, String filename)
         throws Exception
     {
         Random random = new Random();
-        AsconDigest ascon = createDigest(asconParameters);
-        InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
+        InputStream src = TestResourceFinder.findTestResource(path, filename + ".txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> map = new HashMap<String, String>();
