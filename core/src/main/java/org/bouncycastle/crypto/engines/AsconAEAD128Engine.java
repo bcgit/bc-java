@@ -93,8 +93,11 @@ public class AsconAEAD128Engine
             ROUND(0xd2L);
             ROUND(0xc3L);
         }
-        ROUND(0xb4L);
-        ROUND(0xa5L);
+        if (nr >= 8)
+        {
+            ROUND(0xb4L);
+            ROUND(0xa5L);
+        }
         ROUND(0x96L);
         ROUND(0x87L);
         ROUND(0x78L);
@@ -197,40 +200,33 @@ public class AsconAEAD128Engine
         m_state = nextState;
     }
 
-    private void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
+    private void processBufferDecrypt(byte[] buffer, int bufOff, int bufLen, byte[] output, int outOff)
     {
         if (outOff + ASCON_AEAD_RATE > output.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
-        long t0 = Pack.littleEndianToLong(buffer, bufOff);
-        Pack.longToLittleEndian(x0 ^ t0, output, outOff);
-        x0 = t0;
+        long c0 = Pack.littleEndianToLong(buffer, bufOff);
+        long c1 = Pack.littleEndianToLong(buffer, bufOff + 8, 8);
 
-        if (ASCON_AEAD_RATE == 16)
-        {
-            long t1 = Pack.littleEndianToLong(buffer, bufOff + 8);
-            Pack.longToLittleEndian(x1 ^ t1, output, outOff + 8);
-            x1 = t1;
-        }
+        Pack.longToLittleEndian(x0 ^ c0, output, outOff);
+        Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, 8);
+        x0 = c0;
+        x1 = c1;
+
         P(nr);
     }
 
-    private void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
+    private void processBufferEncrypt(byte[] buffer, int bufOff, int bufLen, byte[] output, int outOff)
     {
         if (outOff + ASCON_AEAD_RATE > output.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
-        x0 ^= Pack.littleEndianToLong(buffer, bufOff);
+        x0 ^= Pack.littleEndianToLong(buffer, bufOff, 8);
+        x1 ^= Pack.littleEndianToLong(buffer, bufOff + 8, 8);
         Pack.longToLittleEndian(x0, output, outOff);
-
-        if (ASCON_AEAD_RATE == 16)
-        {
-            x1 ^= Pack.littleEndianToLong(buffer, bufOff + 8);
-            Pack.longToLittleEndian(x1, output, outOff + 8);
-        }
-
+        Pack.longToLittleEndian(x1, output, outOff + 8);
         P(nr);
     }
 
@@ -239,33 +235,27 @@ public class AsconAEAD128Engine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             long c0 = Pack.littleEndianToLong(input, inOff);
-            x0 ^= c0;
-            Pack.longToLittleEndian(x0, output, outOff);
+            long c1 = Pack.littleEndianToLong(input, inOff + 8, inLen - 8);
+
+            Pack.longToLittleEndian(x0 ^ c0, output, outOff);
+            Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen - 8);
+
             x0 = c0;
-            inOff += 8;
-            outOff += 8;
             inLen -= 8;
+            x1 &= -(1L << (inLen << 3));
+            x1 |= c1;
             x1 ^= PAD(inLen);
-            if (inLen != 0)
-            {
-                long c1 = Pack.littleEndianToLong_High(input, inOff, inLen);
-                x1 ^= c1;
-                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
-                x1 &= -1L >>> (inLen << 3);
-                x1 ^= c1;
-            }
         }
         else
         {
-            x0 ^= PAD(inLen);
             if (inLen != 0)
             {
-                long c0 = Pack.littleEndianToLong_High(input, inOff, inLen);
-                x0 ^= c0;
-                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
-                x0 &= -1L >>> (inLen << 3);
-                x0 ^= c0;
+                long c0 = Pack.littleEndianToLong(input, inOff, inLen);
+                Pack.longToLittleEndian(x0 ^ c0, output, outOff, inLen);
+                x0 &= -(1L << (inLen << 3));
+                x0 |= c0;
             }
+            x0 ^= PAD(inLen);
         }
 
         finishData(State.DecFinal);
@@ -276,26 +266,23 @@ public class AsconAEAD128Engine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             x0 ^= Pack.littleEndianToLong(input, inOff);
+            x1 ^= Pack.littleEndianToLong(input, inOff + 8, inLen - 8);
             Pack.longToLittleEndian(x0, output, outOff);
-            inOff += 8;
-            outOff += 8;
+            Pack.longToLittleEndian(x1, output, outOff + 8);
             inLen -= 8;
             x1 ^= PAD(inLen);
-            if (inLen != 0)
-            {
-                x1 ^= Pack.littleEndianToLong_High(input, inOff, inLen);
-                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
-            }
         }
         else
         {
-            x0 ^= PAD(inLen);
             if (inLen != 0)
             {
-                x0 ^= Pack.littleEndianToLong_High(input, inOff, inLen);
-                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
+                x0 ^=  Pack.littleEndianToLong(input, inOff, inLen);
+                Pack.longToLittleEndian(x0, output, outOff, inLen);
             }
+            x0 ^= PAD(inLen);
         }
+
+
         finishData(State.EncFinal);
     }
 
@@ -455,14 +442,14 @@ public class AsconAEAD128Engine
                 inOff += available;
                 len -= available;
 
-                processBufferEncrypt(m_buf, 0, outBytes, outOff);
+                processBufferEncrypt(m_buf, 0, m_bufPos, outBytes, outOff);
                 resultLength = ASCON_AEAD_RATE;
                 //m_bufPos = 0;
             }
 
             while (len >= ASCON_AEAD_RATE)
             {
-                processBufferEncrypt(inBytes, inOff, outBytes, outOff + resultLength);
+                processBufferEncrypt(inBytes, inOff, ASCON_AEAD_RATE, outBytes, outOff + resultLength);
                 inOff += ASCON_AEAD_RATE;
                 len -= ASCON_AEAD_RATE;
                 resultLength += ASCON_AEAD_RATE;
@@ -481,7 +468,7 @@ public class AsconAEAD128Engine
             // NOTE: Need 'while' here because ASCON_AEAD_RATE < CRYPTO_ABYTES in some parameter sets
             while (m_bufPos >= ASCON_AEAD_RATE)
             {
-                processBufferDecrypt(m_buf, 0, outBytes, outOff + resultLength);
+                processBufferDecrypt(m_buf, 0, m_bufPos, outBytes, outOff + resultLength);
                 m_bufPos -= ASCON_AEAD_RATE;
                 System.arraycopy(m_buf, ASCON_AEAD_RATE, m_buf, 0, m_bufPos);
                 resultLength += ASCON_AEAD_RATE;
@@ -499,13 +486,13 @@ public class AsconAEAD128Engine
             System.arraycopy(inBytes, inOff, m_buf, m_bufPos, available);
             inOff += available;
             len -= available;
-            processBufferDecrypt(m_buf, 0, outBytes, outOff + resultLength);
+            processBufferDecrypt(m_buf, 0, m_bufPos, outBytes, outOff + resultLength);
             resultLength += ASCON_AEAD_RATE;
             //m_bufPos = 0;
 
             while (len >= m_bufferSizeDecrypt)
             {
-                processBufferDecrypt(inBytes, inOff, outBytes, outOff + resultLength);
+                processBufferDecrypt(inBytes, inOff, ASCON_AEAD_RATE, outBytes, outOff + resultLength);
                 inOff += ASCON_AEAD_RATE;
                 len -= ASCON_AEAD_RATE;
                 resultLength += ASCON_AEAD_RATE;

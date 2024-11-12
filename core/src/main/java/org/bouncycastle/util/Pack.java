@@ -306,6 +306,16 @@ public abstract class Pack
         }
     }
 
+    public static long littleEndianToLong(byte[] input, int off, int len)
+    {
+        long result = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            result |= (input[off + i] & 0xFFL) << (i << 3);
+        }
+        return result;
+    }
+
     public static void littleEndianToLong(byte[] bs, int bsOff, long[] ns, int nsOff, int nsLen)
     {
         for (int i = 0; i < nsLen; ++i)
@@ -327,10 +337,18 @@ public abstract class Pack
         }
     }
 
-//    public static void longToLittleEndian_Low(long n, byte[] bs, int off, int len)
-//    {
-//        longToLittleEndian_High(n << ((8 - len) << 3), bs, off, len);
-//    }
+    public static void longToLittleEndian(long n, byte[] bs, int off, int len)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            bs[off + i] = (byte)(n >>> (i << 3));
+        }
+    }
+
+    public static void longToLittleEndian_Low(long n, byte[] bs, int off, int len)
+    {
+        longToLittleEndian_High(n << ((8 - len) << 3), bs, off, len);
+    }
 
     public static long littleEndianToLong_High(byte[] bs, int off, int len)
     {
@@ -386,4 +404,6 @@ public abstract class Pack
             bsOff += 8;
         }
     }
+
+
 }

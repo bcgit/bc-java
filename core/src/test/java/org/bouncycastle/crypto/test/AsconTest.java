@@ -10,8 +10,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.AsconDigest;
 import org.bouncycastle.crypto.digests.AsconXof;
+import org.bouncycastle.crypto.digests.AsconXof128;
 import org.bouncycastle.crypto.engines.AsconAEAD128Engine;
 import org.bouncycastle.crypto.engines.AsconEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
@@ -39,8 +41,8 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
-        implTestVectorsEngine();
-        //testVectorsEngine_asconaead128();
+        testVectorsXof_AsconXof128();
+        testVectorsEngine_asconaead128();
 
         testBufferingEngine_ascon128();
         testBufferingEngine_ascon128a();
@@ -209,22 +211,28 @@ public class AsconTest
         implTestVectorsEngine(createEngine(AsconEngine.AsconParameters.ascon80pq), "crypto/ascon", "160_128");
     }
 
-//    public void testVectorsEngine_asconaead128()
-//        throws Exception
-//    {
-//        implTestVectorsEngine(new AsconAEAD128Engine(), "crypto/ascon/asconaead128", "128_128");
-//    }
+    public void testVectorsEngine_asconaead128()
+        throws Exception
+    {
+        implTestVectorsEngine(new AsconAEAD128Engine(), "crypto/ascon/asconaead128", "128_128");
+    }
+
+    public void testVectorsXof_AsconXof128()
+        throws Exception
+    {
+        implTestVectorsXof(new AsconXof128(), "crypto/ascon/asconxof128", "LWC_HASH_KAT_256.txt");
+    }
 
     public void testVectorsXof_AsconXof()
         throws Exception
     {
-        implTestVectorsXof(AsconXof.AsconParameters.AsconXof, "asconxof");
+        implTestVectorsXof(createXof(AsconXof.AsconParameters.AsconXof), "crypto/ascon", "asconxof_LWC_HASH_KAT_256.txt");
     }
 
     public void testVectorsXof_AsconXofA()
         throws Exception
     {
-        implTestVectorsXof(AsconXof.AsconParameters.AsconXofA, "asconxofa");
+        implTestVectorsXof(createXof(AsconXof.AsconParameters.AsconXofA), "crypto/ascon", "asconxofa_LWC_HASH_KAT_256.txt");
     }
 
     private static AsconDigest createDigest(AsconDigest.AsconParameters asconParameters)
@@ -780,76 +788,11 @@ public class AsconTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-                byte[] key = Hex.decode((String)map.get("Key"));
-                byte[] nonce = Hex.decode((String)map.get("Nonce"));
-                byte[] ad = Hex.decode((String)map.get("AD"));
-                byte[] pt = Hex.decode((String)map.get("PT"));
-                byte[] ct = Hex.decode((String)map.get("CT"));
-
-                CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
-
-                // Encrypt
-                {
-                    ascon.init(true, parameters);
-
-                    byte[] rv = new byte[ascon.getOutputSize(pt.length)];
-                    random.nextBytes(rv); // should overwrite any existing data
-
-                    ascon.processAADBytes(ad, 0, ad.length);
-                    int len = ascon.processBytes(pt, 0, pt.length, rv, 0);
-                    len += ascon.doFinal(rv, len);
-
-                    if (!areEqual(rv, 0, len, ct, 0, ct.length))
-                    {
-                        mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
-                    }
-                }
-
-                // Decrypt
-                {
-                    ascon.init(false, parameters);
-
-                    byte[] rv = new byte[ascon.getOutputSize(ct.length)];
-                    random.nextBytes(rv); // should overwrite any existing data
-
-                    ascon.processAADBytes(ad, 0, ad.length);
-                    int len = ascon.processBytes(ct, 0, ct.length, rv, 0);
-                    len += ascon.doFinal(rv, len);
-
-                    if (!areEqual(rv, 0, len, pt, 0, pt.length))
-                    {
-                        mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv);
-                    }
-                }
-
-                map.clear();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
-    }
-
-    private void implTestVectorsEngine()
-        throws Exception
-    {
-        Random random = new Random();
-        AsconAEAD128Engine ascon = new AsconAEAD128Engine();
-        InputStream src = TestResourceFinder.findTestResource("crypto/ascon/asconaead128", "LWC_AEAD_KAT_128_128.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
                 int count = Integer.parseInt(map.get("Count"));
-                if (count != 9)
-                {
-                    continue;
-                }
+//                if (count != 529)
+//                {
+//                    continue;
+//                }
                 byte[] key = Hex.decode((String)map.get("Key"));
                 byte[] nonce = Hex.decode((String)map.get("Nonce"));
                 byte[] ad = Hex.decode((String)map.get("AD"));
@@ -891,7 +834,7 @@ public class AsconTest
                         mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv);
                     }
                 }
-
+                //System.out.println("pass "+ count);
                 map.clear();
             }
             else
@@ -901,12 +844,12 @@ public class AsconTest
         }
     }
 
-    private void implTestVectorsXof(AsconXof.AsconParameters asconParameters, String filename)
+    private void implTestVectorsXof(Xof ascon, String path, String filename)
         throws Exception
     {
         Random random = new Random();
-        AsconXof ascon = createXof(asconParameters);
-        InputStream src = TestResourceFinder.findTestResource("crypto/ascon", filename + "_LWC_HASH_KAT_256.txt");
+
+        InputStream src = TestResourceFinder.findTestResource(path, filename );
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> map = new HashMap<String, String>();
