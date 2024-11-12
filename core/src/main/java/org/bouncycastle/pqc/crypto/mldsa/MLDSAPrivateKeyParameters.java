@@ -81,7 +81,7 @@ public class MLDSAPrivateKeyParameters
             }
             else
             {
-                this.t1 = null;
+                this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);;
             }
             this.seed = null;
         }
@@ -117,6 +117,11 @@ public class MLDSAPrivateKeyParameters
 
     public MLDSAPublicKeyParameters getPublicKeyParameters()
     {
+        if (this.t1 == null)
+        {
+            return null;
+        }
+        
         return new MLDSAPublicKeyParameters(getParameters(), rho, t1);
     }
 
