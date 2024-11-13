@@ -41,6 +41,12 @@ public class AsconCxof128
         this.s = Arrays.copyOfRange(s, off, off + len);
         reset();
     }
+
+    public AsconCxof128()
+    {
+        reset();
+    }
+
     @Override
     public String getAlgorithmName()
     {
@@ -55,7 +61,10 @@ public class AsconCxof128
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        absorb(s, s.length);
+        if (s != null)
+        {
+            absorb(s, s.length);
+        }
         absorb(buffer.toByteArray(), buffer.size());
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);

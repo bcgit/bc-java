@@ -12,6 +12,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.crypto.digests.AsconCxof128;
 import org.bouncycastle.crypto.digests.AsconDigest;
 import org.bouncycastle.crypto.digests.AsconHash256Digest;
 import org.bouncycastle.crypto.digests.AsconXof;
@@ -43,31 +44,40 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
-        testVectorsXof_AsconHash256();
+        testVectorsDigest_AsconHash256();
         testVectorsXof_AsconXof128();
         testVectorsEngine_asconaead128();
 
+        testBufferingEngine_asconaead128();
         testBufferingEngine_ascon128();
         testBufferingEngine_ascon128a();
         testBufferingEngine_ascon80();
 
+        testExceptionsDigest_AsconHash256();
         testExceptionsDigest_AsconHash();
         testExceptionsDigest_AsconHashA();
 
+        testExceptionsEngine_asconaead128();
         testExceptionsEngine_ascon128();
         testExceptionsEngine_ascon128a();
         testExceptionsEngine_ascon80pq();
 
+        testExceptionsXof_AsconXof128();
+        testExceptionsXof_AsconCxof128();
         testExceptionsXof_AsconXof();
         testExceptionsXof_AsconXofA();
 
+        testParametersDigest_AsconHash256();
         testParametersDigest_AsconHash();
         testParametersDigest_AsconHashA();
 
+        testParametersEngine_asconaead128();
         testParametersEngine_ascon128();
         testParametersEngine_ascon128a();
         testParametersEngine_ascon80pq();
 
+        testParametersXof_AsconXof128();
+        testParametersXof_AsconCxof128();
         testParametersXof_AsconXof();
         testParametersXof_AsconXofA();
 
@@ -85,91 +95,287 @@ public class AsconTest
     public void testBufferingEngine_ascon128()
         throws Exception
     {
-        implTestBufferingEngine(AsconEngine.AsconParameters.ascon128);
+        implTestBufferingEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128);
+            }
+        });
     }
 
     public void testBufferingEngine_ascon128a()
         throws Exception
     {
-        implTestBufferingEngine(AsconEngine.AsconParameters.ascon128a);
+        implTestBufferingEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128a);
+            }
+        });
     }
 
     public void testBufferingEngine_ascon80()
         throws Exception
     {
-        implTestBufferingEngine(AsconEngine.AsconParameters.ascon80pq);
+        implTestBufferingEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
+            }
+        });
+    }
+
+    public void testBufferingEngine_asconaead128()
+        throws Exception
+    {
+        implTestBufferingEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconAEAD128Engine();
+            }
+        });
     }
 
     public void testExceptionsDigest_AsconHash()
         throws Exception
     {
-        implTestExceptionsDigest(AsconDigest.AsconParameters.AsconHash);
+        implTestExceptionsDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconDigest(AsconDigest.AsconParameters.AsconHash);
+            }
+        });
     }
 
     public void testExceptionsDigest_AsconHashA()
         throws Exception
     {
-        implTestExceptionsDigest(AsconDigest.AsconParameters.AsconHashA);
+        implTestExceptionsDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconDigest(AsconDigest.AsconParameters.AsconHashA);
+            }
+        });
+    }
+
+    public void testExceptionsDigest_AsconHash256()
+        throws Exception
+    {
+        implTestExceptionsDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconHash256Digest();
+            }
+        });
     }
 
     public void testExceptionsEngine_ascon128()
         throws Exception
     {
-        implTestExceptionsEngine(AsconEngine.AsconParameters.ascon128);
+        implTestExceptionsEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128);
+            }
+        });
     }
 
     public void testExceptionsEngine_ascon128a()
         throws Exception
     {
-        implTestExceptionsEngine(AsconEngine.AsconParameters.ascon128a);
+        implTestExceptionsEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128a);
+            }
+        });
     }
 
     public void testExceptionsEngine_ascon80pq()
         throws Exception
     {
-        implTestExceptionsEngine(AsconEngine.AsconParameters.ascon80pq);
+        implTestExceptionsEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
+            }
+        });
+    }
+
+    public void testExceptionsEngine_asconaead128()
+        throws Exception
+    {
+        implTestExceptionsEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconAEAD128Engine();
+            }
+        });
     }
 
     public void testExceptionsXof_AsconXof()
         throws Exception
     {
-        implTestExceptionsXof(AsconXof.AsconParameters.AsconXof);
+        implTestExceptionsXof(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconXof(AsconXof.AsconParameters.AsconXof);
+            }
+        });
     }
 
     public void testExceptionsXof_AsconXofA()
         throws Exception
     {
-        implTestExceptionsXof(AsconXof.AsconParameters.AsconXofA);
+        implTestExceptionsXof(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconXof(AsconXof.AsconParameters.AsconXofA);
+            }
+        });
+    }
+
+    public void testExceptionsXof_AsconXof128()
+        throws Exception
+    {
+        implTestExceptionsXof(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconXof128();
+            }
+        });
+    }
+
+    public void testExceptionsXof_AsconCxof128()
+        throws Exception
+    {
+        implTestExceptionsXof(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconCxof128();
+            }
+        });
     }
 
     public void testParametersDigest_AsconHash()
         throws Exception
     {
-        implTestParametersDigest(AsconDigest.AsconParameters.AsconHash, 32);
+        implTestParametersDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconDigest(AsconDigest.AsconParameters.AsconHash);
+            }
+        }, 32);
     }
 
     public void testParametersDigest_AsconHashA()
         throws Exception
     {
-        implTestParametersDigest(AsconDigest.AsconParameters.AsconHashA, 32);
+        implTestParametersDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconDigest(AsconDigest.AsconParameters.AsconHashA);
+            }
+        }, 32);
+    }
+
+    public void testParametersDigest_AsconHash256()
+        throws Exception
+    {
+        implTestParametersDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconHash256Digest();
+            }
+        }, 32);
     }
 
     public void testParametersEngine_ascon128()
         throws Exception
     {
-        implTestParametersEngine(AsconEngine.AsconParameters.ascon128, 16, 16, 16);
+        implTestParametersEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128);
+            }
+        }, 16, 16, 16);
     }
 
     public void testParametersEngine_ascon128a()
         throws Exception
     {
-        implTestParametersEngine(AsconEngine.AsconParameters.ascon128a, 16, 16, 16);
+        implTestParametersEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128a);
+            }
+        }, 16, 16, 16);
     }
 
     public void testParametersEngine_ascon80pq()
         throws Exception
     {
-        implTestParametersEngine(AsconEngine.AsconParameters.ascon80pq, 20, 16, 16);
+        implTestParametersEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
+            }
+        }, 20, 16, 16);
+    }
+
+    public void testParametersEngine_asconaead128()
+        throws Exception
+    {
+        implTestParametersEngine(new CreateEngine()
+        {
+            @Override
+            public AEADCipher createEngine()
+            {
+                return new AsconAEAD128Engine();
+            }
+        }, 16, 16, 16);
     }
 
     public void testParametersXof_AsconXof()
@@ -184,16 +390,42 @@ public class AsconTest
         implTestParametersXof(AsconXof.AsconParameters.AsconXofA, 32);
     }
 
+    public void testParametersXof_AsconXof128()
+        throws Exception
+    {
+        implTestParametersDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconXof128();
+            }
+        }, 32);
+    }
+
+    public void testParametersXof_AsconCxof128()
+        throws Exception
+    {
+        implTestParametersDigest(new CreateDigest()
+        {
+            @Override
+            public ExtendedDigest createDigest()
+            {
+                return new AsconCxof128();
+            }
+        }, 32);
+    }
+
     public void testVectorsDigest_AsconHash()
         throws Exception
     {
-        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHash), "crypto/ascon","asconhash_LWC_HASH_KAT_256");
+        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHash), "crypto/ascon", "asconhash_LWC_HASH_KAT_256");
     }
 
     public void testVectorsDigest_AsconHashA()
         throws Exception
     {
-        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHashA), "crypto/ascon","asconhasha_LWC_HASH_KAT_256");
+        implTestVectorsDigest(createDigest(AsconDigest.AsconParameters.AsconHashA), "crypto/ascon", "asconhasha_LWC_HASH_KAT_256");
     }
 
     public void testVectorsEngine_ascon128()
@@ -220,7 +452,7 @@ public class AsconTest
         implTestVectorsEngine(new AsconAEAD128Engine(), "crypto/ascon/asconaead128", "128_128");
     }
 
-    public void testVectorsXof_AsconHash256()
+    public void testVectorsDigest_AsconHash256()
         throws Exception
     {
         implTestVectorsDigest(new AsconHash256Digest(), "crypto/ascon/asconhash256", "LWC_HASH_KAT_256");
@@ -249,6 +481,16 @@ public class AsconTest
         return new AsconDigest(asconParameters);
     }
 
+    private interface CreateDigest
+    {
+        ExtendedDigest createDigest();
+    }
+
+    private interface CreateEngine
+    {
+        AEADCipher createEngine();
+    }
+
     private static AEADCipher createEngine(AsconEngine.AsconParameters asconParameters)
     {
         return new AsconEngine(asconParameters);
@@ -259,7 +501,7 @@ public class AsconTest
         return new AsconXof(asconParameters);
     }
 
-    private void implTestBufferingEngine(AsconEngine.AsconParameters asconParameters)
+    private void implTestBufferingEngine(CreateEngine operator)
         throws Exception
     {
         Random random = new Random();
@@ -268,8 +510,8 @@ public class AsconTest
         byte[] plaintext = new byte[plaintextLength];
         random.nextBytes(plaintext);
 
-        AEADCipher ascon0 = createEngine(asconParameters);
-        initEngine((AsconEngine)ascon0, true);
+        AEADCipher ascon0 = operator.createEngine();
+        initEngine(ascon0, true);
 
         byte[] ciphertext = new byte[ascon0.getOutputSize(plaintextLength)];
         random.nextBytes(ciphertext);
@@ -282,8 +524,8 @@ public class AsconTest
         // Encryption
         for (int split = 1; split < plaintextLength; ++split)
         {
-            AEADCipher ascon = createEngine(asconParameters);
-            initEngine((AsconEngine)ascon, true);
+            AEADCipher ascon = operator.createEngine();
+            initEngine(ascon, true);
 
             random.nextBytes(output);
 
@@ -306,8 +548,8 @@ public class AsconTest
         // Decryption
         for (int split = 1; split < ciphertextLength; ++split)
         {
-            AEADCipher ascon = createEngine(asconParameters);
-            initEngine((AsconEngine)ascon, false);
+            AEADCipher ascon = operator.createEngine();
+            initEngine(ascon, false);
 
             random.nextBytes(output);
 
@@ -328,9 +570,9 @@ public class AsconTest
         }
     }
 
-    private void implTestExceptionsDigest(AsconDigest.AsconParameters asconParameters)
+    private void implTestExceptionsDigest(CreateDigest operator)
     {
-        AsconDigest ascon = createDigest(asconParameters);
+        ExtendedDigest ascon = operator.createDigest();
 
         try
         {
@@ -353,11 +595,23 @@ public class AsconTest
         }
     }
 
-    private void implTestExceptionsEngine(AsconEngine.AsconParameters asconParameters)
+    private void implTestExceptionsEngine(CreateEngine operator)
         throws Exception
     {
-        AsconEngine ascon = (AsconEngine)createEngine(asconParameters);
-        int keySize = ascon.getKeyBytesSize(), ivSize = ascon.getIVBytesSize();
+        AEADCipher ascon = operator.createEngine();
+
+        int keySize, ivSize;
+        if (ascon instanceof AsconEngine)
+        {
+            keySize = ((AsconEngine)ascon).getKeyBytesSize();
+            ivSize = ((AsconEngine)ascon).getIVBytesSize();
+        }
+        else
+        {
+            keySize = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
+            ivSize = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+        }
+
         int offset;
         byte[] k = new byte[keySize];
         byte[] iv = new byte[ivSize];
@@ -629,7 +883,7 @@ public class AsconTest
         }
     }
 
-    private void implTestExceptionsGetUpdateOutputSize(AsconEngine ascon, boolean forEncryption,
+    private void implTestExceptionsGetUpdateOutputSize(AEADCipher ascon, boolean forEncryption,
                                                        CipherParameters parameters, int maxInputSize)
     {
         ascon.init(forEncryption, parameters);
@@ -663,9 +917,9 @@ public class AsconTest
         }
     }
 
-    private void implTestExceptionsXof(AsconXof.AsconParameters asconParameters)
+    private void implTestExceptionsXof(CreateDigest operator)
     {
-        AsconXof ascon = createXof(asconParameters);
+        ExtendedDigest ascon = operator.createDigest();
 
         try
         {
@@ -688,9 +942,9 @@ public class AsconTest
         }
     }
 
-    private void implTestParametersDigest(AsconDigest.AsconParameters asconParameters, int digestSize)
+    private void implTestParametersDigest(CreateDigest operator, int digestSize)
     {
-        AsconDigest ascon = createDigest(asconParameters);
+        ExtendedDigest ascon = operator.createDigest();
 
         if (ascon.getDigestSize() != digestSize)
         {
@@ -698,16 +952,26 @@ public class AsconTest
         }
     }
 
-    private void implTestParametersEngine(AsconEngine.AsconParameters asconParameters, int keySize, int ivSize,
+    private void implTestParametersEngine(CreateEngine operator, int keySize, int ivSize,
                                           int macSize)
     {
-        AsconEngine ascon = (AsconEngine)createEngine(asconParameters);
-
-        if (ascon.getKeyBytesSize() != keySize)
+        AEADCipher ascon = operator.createEngine();
+        int keySize2, ivSize2;
+        if (ascon instanceof AsconEngine)
+        {
+            keySize2 = ((AsconEngine)ascon).getKeyBytesSize();
+            ivSize2 = ((AsconEngine)ascon).getIVBytesSize();
+        }
+        else
+        {
+            keySize2 = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
+            ivSize2 = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+        }
+        if (keySize2 != keySize)
         {
             fail("key bytes of " + ascon.getAlgorithmName() + " is not correct");
         }
-        if (ascon.getIVBytesSize() != ivSize)
+        if (ivSize2 != ivSize)
         {
             fail("iv bytes of " + ascon.getAlgorithmName() + " is not correct");
         }
@@ -857,7 +1121,7 @@ public class AsconTest
     {
         Random random = new Random();
 
-        InputStream src = TestResourceFinder.findTestResource(path, filename );
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
         HashMap<String, String> map = new HashMap<String, String>();
@@ -902,10 +1166,19 @@ public class AsconTest
         fail("mismatch on " + name, expected, new String(Hex.encode(found)));
     }
 
-    private static void initEngine(AsconEngine ascon, boolean forEncryption)
+    private static void initEngine(AEADCipher ascon, boolean forEncryption)
     {
-        int keySize = ascon.getKeyBytesSize();
-        int ivSize = ascon.getIVBytesSize();
+        int keySize, ivSize;
+        if (ascon instanceof AsconEngine)
+        {
+            keySize = ((AsconEngine)ascon).getKeyBytesSize();
+            ivSize = ((AsconEngine)ascon).getIVBytesSize();
+        }
+        else
+        {
+            keySize = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
+            ivSize = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+        }
         int macSize = ivSize * 8;
 
         AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize, new byte[ivSize], null);

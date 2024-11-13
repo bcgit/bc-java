@@ -2,14 +2,10 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -72,7 +68,7 @@ public class AsconEngine
         dsep = 1L;
     }
 
-    protected long PAD(int i)
+    protected long pad(int i)
     {
         return 0x80L << (56 - (i << 3));
     }
@@ -100,7 +96,7 @@ public class AsconEngine
         x2 = K2;
         x3 = N0;
         x4 = N1;
-        P(12);
+        p(12);
         if (CRYPTO_KEYBYTES == 20)
         {
             x2 ^= K0;
@@ -109,7 +105,7 @@ public class AsconEngine
         x4 ^= K2;
     }
 
-    protected void processFianlAADBlock()
+    protected void processFinalADBBlock()
     {
         m_buf[m_bufPos] = (byte)0x80;
         if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
@@ -134,7 +130,7 @@ public class AsconEngine
 
             outOff += 8;
             inLen -= 8;
-            x1 ^= PAD(inLen);
+            x1 ^= pad(inLen);
             if (inLen != 0)
             {
                 long c1 = Pack.littleEndianToLong_High(input, 8, inLen);
@@ -146,7 +142,7 @@ public class AsconEngine
         }
         else
         {
-            x0 ^= PAD(inLen);
+            x0 ^= pad(inLen);
             if (inLen != 0)
             {
                 long c0 = Pack.littleEndianToLong_High(input, 0, inLen);
@@ -168,7 +164,7 @@ public class AsconEngine
             Pack.longToBigEndian(x0, output, outOff);
             outOff += 8;
             inLen -= 8;
-            x1 ^= PAD(inLen);
+            x1 ^= pad(inLen);
             if (inLen != 0)
             {
                 x1 ^= Pack.littleEndianToLong_High(input, 8, inLen);
@@ -177,7 +173,7 @@ public class AsconEngine
         }
         else
         {
-            x0 ^= PAD(inLen);
+            x0 ^= pad(inLen);
             if (inLen != 0)
             {
                 x0 ^= Pack.littleEndianToLong_High(input, 0, inLen);
@@ -207,7 +203,7 @@ public class AsconEngine
         default:
             throw new IllegalStateException();
         }
-        P(12);
+        p(12);
         x3 ^= K1;
         x4 ^= K2;
 
