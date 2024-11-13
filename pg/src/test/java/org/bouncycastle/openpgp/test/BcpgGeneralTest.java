@@ -2,8 +2,11 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -31,6 +34,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -54,11 +58,44 @@ public class BcpgGeneralTest
     public void performTest()
         throws Exception
     {
+        testReadTime();
         //testS2K();
         testExceptions();
         testECDHPublicBCPGKey();
         // Tests for PreferredAEADCiphersuites
         testPreferredAEADCiphersuites();
+    }
+
+    // StreamUtil.readTime
+    static long readTime(BCPGInputStream in)
+        throws IOException
+    {
+        return (((long) in.read() << 24 | in.read() << 16 | in.read() << 8 | in.read()) & 0xFFFFFFFFL) * 1000L;
+    }
+
+    public void testReadTime()
+        throws IOException
+    {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(2074, Calendar.JANUARY, 1, 0, 0, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date tmp = calendar.getTime();
+        long time = tmp.getTime() / 1000L * 1000L;
+        byte[] date = Pack.intToBigEndian((int)(time / 1000L));
+
+        ByteArrayInputStream bs = new ByteArrayInputStream(date);
+        BCPGInputStream stream = new BCPGInputStream(bs);
+        long rlt = readTime(stream);
+        isTrue(rlt == time);
+
+        time = Long.MAX_VALUE / 1000L * 1000L;
+        date = Pack.intToBigEndian((int)(time / 1000L));
+        bs = new ByteArrayInputStream(date);
+        stream = new BCPGInputStream(bs);
+        rlt = readTime(stream);
+        byte[] date2 = Pack.intToBigEndian((int)(rlt / 1000L));
+        isTrue(Arrays.areEqual(date, date2));
     }
 
     public void testPreferredAEADCiphersuites()
