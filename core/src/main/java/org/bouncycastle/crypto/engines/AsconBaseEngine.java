@@ -6,7 +6,6 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
-import org.bouncycastle.util.Pack;
 
 abstract class AsconBaseEngine
     implements AEADCipher
@@ -48,13 +47,13 @@ abstract class AsconBaseEngine
     protected int m_bufPos = 0;
     protected long dsep; //domain separation
 
-    protected abstract long PAD(int i);
+    protected abstract long pad(int i);
 
     protected abstract long loadBytes(byte[] in, int inOff);
 
     protected abstract void setBytes(long n, byte[] bs, int off);
 
-    protected void ROUND(long C)
+    protected void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
         long t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
@@ -68,26 +67,26 @@ abstract class AsconBaseEngine
         x4 = t4 ^ Longs.rotateRight(t4, 7) ^ Longs.rotateRight(t4, 41);
     }
 
-    protected void P(int nr)
+    protected void p(int nr)
     {
         if (nr == 12)
         {
-            ROUND(0xf0L);
-            ROUND(0xe1L);
-            ROUND(0xd2L);
-            ROUND(0xc3L);
+            round(0xf0L);
+            round(0xe1L);
+            round(0xd2L);
+            round(0xc3L);
         }
         if (nr >= 8)
         {
-            ROUND(0xb4L);
-            ROUND(0xa5L);
+            round(0xb4L);
+            round(0xa5L);
         }
-        ROUND(0x96L);
-        ROUND(0x87L);
-        ROUND(0x78L);
-        ROUND(0x69L);
-        ROUND(0x5aL);
-        ROUND(0x4bL);
+        round(0x96L);
+        round(0x87L);
+        round(0x78L);
+        round(0x69L);
+        round(0x5aL);
+        round(0x4bL);
     }
 
     protected abstract void ascon_aeadinit();
@@ -142,8 +141,8 @@ abstract class AsconBaseEngine
         {
         case DecAad:
         case EncAad:
-            processFianlAADBlock();
-            P(nr);
+            processFinalADBBlock();
+            p(nr);
             break;
         default:
             break;
@@ -154,7 +153,7 @@ abstract class AsconBaseEngine
         m_state = nextState;
     }
 
-    protected abstract void processFianlAADBlock();
+    protected abstract void processFinalADBBlock();
 
     protected abstract void processFinalDecrypt(byte[] input, int inLen, byte[] output, int outOff);
 
@@ -167,7 +166,7 @@ abstract class AsconBaseEngine
         {
             x1 ^= loadBytes(buffer, 8 + inOff);
         }
-        P(nr);
+        p(nr);
     }
 
 
@@ -187,8 +186,9 @@ abstract class AsconBaseEngine
             setBytes(x1 ^ t1, output, outOff + 8);
             x1 = t1;
         }
-        P(nr);
+        p(nr);
     }
+
     protected void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
         if (outOff + ASCON_AEAD_RATE > output.length)
@@ -203,8 +203,7 @@ abstract class AsconBaseEngine
             x1 ^= loadBytes(buffer, bufOff + 8);
             setBytes(x1, output, outOff + 8);
         }
-
-        P(nr);
+        p(nr);
     }
 
     public void processAADByte(byte in)

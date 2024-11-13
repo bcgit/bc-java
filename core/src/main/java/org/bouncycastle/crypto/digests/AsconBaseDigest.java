@@ -21,58 +21,58 @@ abstract class AsconBaseDigest
 
     protected final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
-    protected long ROR(long x, int n)
+    protected long ror(long x, int n)
     {
         return x >>> n | x << (64 - n);
     }
 
-    protected void ROUND(long C)
+    protected void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
         long t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
         long t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
         long t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
         long t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
-        x0 = t0 ^ ROR(t0, 19) ^ ROR(t0, 28);
-        x1 = t1 ^ ROR(t1, 39) ^ ROR(t1, 61);
-        x2 = ~(t2 ^ ROR(t2, 1) ^ ROR(t2, 6));
-        x3 = t3 ^ ROR(t3, 10) ^ ROR(t3, 17);
-        x4 = t4 ^ ROR(t4, 7) ^ ROR(t4, 41);
+        x0 = t0 ^ ror(t0, 19) ^ ror(t0, 28);
+        x1 = t1 ^ ror(t1, 39) ^ ror(t1, 61);
+        x2 = ~(t2 ^ ror(t2, 1) ^ ror(t2, 6));
+        x3 = t3 ^ ror(t3, 10) ^ ror(t3, 17);
+        x4 = t4 ^ ror(t4, 7) ^ ror(t4, 41);
     }
 
-    protected void P(int nr)
+    protected void p(int nr)
     {
         if (nr == 12)
         {
-            ROUND(0xf0L);
-            ROUND(0xe1L);
-            ROUND(0xd2L);
-            ROUND(0xc3L);
+            round(0xf0L);
+            round(0xe1L);
+            round(0xd2L);
+            round(0xc3L);
         }
         if (nr >= 8)
         {
-            ROUND(0xb4L);
-            ROUND(0xa5L);
+            round(0xb4L);
+            round(0xa5L);
         }
-        ROUND(0x96L);
-        ROUND(0x87L);
-        ROUND(0x78L);
-        ROUND(0x69L);
-        ROUND(0x5aL);
-        ROUND(0x4bL);
+        round(0x96L);
+        round(0x87L);
+        round(0x78L);
+        round(0x69L);
+        round(0x5aL);
+        round(0x4bL);
     }
 
-    protected long PAD(int i)
+    protected long pad(int i)
     {
         return 0x01L << (i << 3);
     }
 
-    protected long LOADBYTES(final byte[] bytes, int inOff, int n)
+    protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
         return Pack.littleEndianToLong(bytes, inOff, n);
     }
 
-    protected void STOREBYTES(long w, byte[] bytes, int inOff, int n)
+    protected void setBytes(long w, byte[] bytes, int inOff, int n)
     {
         Pack.longToLittleEndian(w, bytes, inOff, n);
     }
@@ -111,15 +111,15 @@ abstract class AsconBaseDigest
         /* absorb full plaintext blocks */
         while (len >= ASCON_HASH_RATE)
         {
-            x0 ^= LOADBYTES(input, inOff, 8);
-            P(ASCON_PB_ROUNDS);
+            x0 ^= loadBytes(input, inOff, 8);
+            p(ASCON_PB_ROUNDS);
             inOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
         }
         /* absorb final plaintext block */
-        x0 ^= LOADBYTES(input, inOff, len);
-        x0 ^= PAD(len);
-        P(12);
+        x0 ^= loadBytes(input, inOff, len);
+        x0 ^= pad(len);
+        p(12);
     }
 
     protected void squeeze(byte[] output, int outOff, int len)
@@ -127,13 +127,13 @@ abstract class AsconBaseDigest
         /* squeeze full output blocks */
         while (len > ASCON_HASH_RATE)
         {
-            STOREBYTES(x0, output, outOff, 8);
-            P(ASCON_PB_ROUNDS);
+            setBytes(x0, output, outOff, 8);
+            p(ASCON_PB_ROUNDS);
             outOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
         }
         /* squeeze final output block */
-        STOREBYTES(x0, output, outOff, len);
+        setBytes(x0, output, outOff, len);
         reset();
     }
 

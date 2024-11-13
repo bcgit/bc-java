@@ -44,17 +44,17 @@ public class AsconXof
     private final String algorithmName;
 
 
-    protected long PAD(int i)
+    protected long pad(int i)
     {
         return 0x80L << (56 - (i << 3));
     }
 
-    protected long LOADBYTES(final byte[] bytes, int inOff, int n)
+    protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
         return Pack.bigEndianToLong(bytes, inOff, n);
     }
 
-    protected void STOREBYTES( long w, byte[] bytes, int inOff,int n)
+    protected void setBytes(long w, byte[] bytes, int inOff, int n)
     {
         Pack.longToBigEndian(w, bytes, inOff, n);
     }

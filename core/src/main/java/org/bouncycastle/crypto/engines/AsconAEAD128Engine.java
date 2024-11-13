@@ -24,7 +24,7 @@ public class AsconAEAD128Engine
         dsep = -9223372036854775808L; //0x80L << 56
     }
 
-    protected long PAD(int i)
+    protected long pad(int i)
     {
         return 0x01L << (i << 3);
     }
@@ -50,21 +50,21 @@ public class AsconAEAD128Engine
         x2 = K1;
         x3 = N0;
         x4 = N1;
-        P(12);
+        p(12);
         x3 ^= K0;
         x4 ^= K1;
     }
 
-    protected void processFianlAADBlock()
+    protected void processFinalADBBlock()
     {
         if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             x0 ^= Pack.littleEndianToLong(m_buf, 0);
-            x1 ^= Pack.littleEndianToLong(m_buf, 8) ^ PAD(m_bufPos);
+            x1 ^= Pack.littleEndianToLong(m_buf, 8) ^ pad(m_bufPos);
         }
         else
         {
-            x0 ^= Pack.littleEndianToLong(m_buf, 0) ^ PAD(m_bufPos);
+            x0 ^= Pack.littleEndianToLong(m_buf, 0) ^ pad(m_bufPos);
         }
     }
 
@@ -73,7 +73,7 @@ public class AsconAEAD128Engine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             long c0 = Pack.littleEndianToLong(input, 0);
-            long c1 = Pack.littleEndianToLong(input, 0 + 8, inLen - 8);
+            long c1 = Pack.littleEndianToLong(input, 8, inLen - 8);
 
             Pack.longToLittleEndian(x0 ^ c0, output, outOff);
             Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen - 8);
@@ -82,7 +82,7 @@ public class AsconAEAD128Engine
             inLen -= 8;
             x1 &= -(1L << (inLen << 3));
             x1 |= c1;
-            x1 ^= PAD(inLen);
+            x1 ^= pad(inLen);
         }
         else
         {
@@ -93,9 +93,8 @@ public class AsconAEAD128Engine
                 x0 &= -(1L << (inLen << 3));
                 x0 |= c0;
             }
-            x0 ^= PAD(inLen);
+            x0 ^= pad(inLen);
         }
-
         finishData(State.DecFinal);
     }
 
@@ -108,7 +107,7 @@ public class AsconAEAD128Engine
             Pack.longToLittleEndian(x0, output, outOff);
             Pack.longToLittleEndian(x1, output, outOff + 8);
             inLen -= 8;
-            x1 ^= PAD(inLen);
+            x1 ^= pad(inLen);
         }
         else
         {
@@ -117,10 +116,8 @@ public class AsconAEAD128Engine
                 x0 ^= Pack.littleEndianToLong(input, 0, inLen);
                 Pack.longToLittleEndian(x0, output, outOff, inLen);
             }
-            x0 ^= PAD(inLen);
+            x0 ^= pad(inLen);
         }
-
-
         finishData(State.EncFinal);
     }
 
@@ -128,7 +125,7 @@ public class AsconAEAD128Engine
     {
         x2 ^= K0;
         x3 ^= K1;
-        P(12);
+        p(12);
         x3 ^= K0;
         x4 ^= K1;
         m_state = nextState;
