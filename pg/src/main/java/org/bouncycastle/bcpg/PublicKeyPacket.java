@@ -136,7 +136,7 @@ public class PublicKeyPacket
             throw new UnsupportedPacketVersionException("Unsupported Public Key Packet version encountered: " + version);
         }
 
-        time = StreamUtil.read4OctetLength(in);
+        time = StreamUtil.read4OctetLength(in) & 0xFFFFFFFFL;
 
         if (version == 2 || version == VERSION_3)
         {
