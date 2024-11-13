@@ -90,6 +90,51 @@ public class AsconTest
 
         testVectorsXof_AsconXof();
         testVectorsXof_AsconXofA();
+
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
+        {
+            @Override
+            public AEADCipher CreateInstace()
+            {
+                return new AsconAEAD128Engine();
+            }
+        });
+
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
+        {
+            @Override
+            public AEADCipher CreateInstace()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128);
+            }
+        });
+
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
+        {
+            @Override
+            public AEADCipher CreateInstace()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon128a);
+            }
+        });
+
+        CipherTest.checkCipher(32, 16, 100, 160, new CipherTest.Instace()
+        {
+            @Override
+            public AEADCipher CreateInstace()
+            {
+                return new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
+            }
+        });
+
+        DigestTest.checkDigestReset(this, new AsconHash256Digest());
+        DigestTest.checkDigestReset(this, new AsconXof128());
+        DigestTest.checkDigestReset(this, new AsconCxof128());
+        DigestTest.checkDigestReset(this, new AsconCxof128());
+        DigestTest.checkDigestReset(this, new AsconXof(AsconXof.AsconParameters.AsconXof));
+        DigestTest.checkDigestReset(this, new AsconXof(AsconXof.AsconParameters.AsconXofA));
+        DigestTest.checkDigestReset(this, new AsconDigest(AsconDigest.AsconParameters.AsconHash));
+        DigestTest.checkDigestReset(this, new AsconDigest(AsconDigest.AsconParameters.AsconHashA));
     }
 
     public void testBufferingEngine_ascon128()
