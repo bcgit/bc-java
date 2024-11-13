@@ -8,6 +8,19 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
 
+/**
+ * Ascon-AEAD128 was introduced as part of the NIST Lightweight Cryptography
+ * competition and described in the NIST Special Publication SP 800-232 (Initial
+ * Public Draft).
+ * For additional details, see:
+ * <ul>
+ *     <li><a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a></li>
+ *     <li><a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
+ *     ASM implementations of Ascon (NIST SP 800-232)</a></li>
+ * </ul>
+ *
+ * @version 1.3
+ */
 public class AsconAEAD128Engine
     extends AsconBaseEngine
 {
@@ -17,7 +30,7 @@ public class AsconAEAD128Engine
         CRYPTO_ABYTES = 16;
         ASCON_AEAD_RATE = 16;
         ASCON_IV = 0x00001000808c0001L;
-        algorithmName = "Ascon-AEAD-128";
+        algorithmName = "Ascon-AEAD128";
         nr = 8;
         m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
         m_buf = new byte[m_bufferSizeDecrypt];
