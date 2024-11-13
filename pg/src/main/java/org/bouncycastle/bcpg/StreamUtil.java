@@ -117,7 +117,7 @@ class StreamUtil
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (long)read4OctetLength(in) * 1000L;
+        return ((long)read4OctetLength(in) & 0xFFFFFFFFL) * 1000L;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)
@@ -134,7 +134,7 @@ class StreamUtil
     }
 
     static void write4OctetLength(OutputStream pOut, int len)
-            throws IOException
+        throws IOException
     {
         pOut.write(len >> 24);
         pOut.write(len >> 16);
@@ -151,6 +151,7 @@ class StreamUtil
     static int flag_eof = 0;
     static int flag_isLongLength = 1;
     static int flag_partial = 2;
+
     /**
      * Note: flags is an array of three boolean values:
      * flags[0] indicates l is negative, flag for eof
@@ -191,27 +192,27 @@ class StreamUtil
     static void write8OctetLength(OutputStream pOut, long len)
         throws IOException
     {
-        pOut.write((int) (len >> 56));
-        pOut.write((int) (len >> 48));
-        pOut.write((int) (len >> 40));
-        pOut.write((int) (len >> 32));
-        pOut.write((int) (len >> 24));
-        pOut.write((int) (len >> 16));
-        pOut.write((int) (len >> 8));
-        pOut.write((int) len);
+        pOut.write((int)(len >> 56));
+        pOut.write((int)(len >> 48));
+        pOut.write((int)(len >> 40));
+        pOut.write((int)(len >> 32));
+        pOut.write((int)(len >> 24));
+        pOut.write((int)(len >> 16));
+        pOut.write((int)(len >> 8));
+        pOut.write((int)len);
     }
 
     static long read8OctetLength(InputStream in)
         throws IOException
     {
-        return ((long) in.read() << 56) |
-            ((long) in.read() << 48) |
-            ((long) in.read() << 40) |
-            ((long) in.read() << 32) |
-            ((long) in.read() << 24) |
-            ((long) in.read() << 16) |
-            ((long) in.read() << 8) |
-            ((long) in.read());
+        return ((long)in.read() << 56) |
+            ((long)in.read() << 48) |
+            ((long)in.read() << 40) |
+            ((long)in.read() << 32) |
+            ((long)in.read() << 24) |
+            ((long)in.read() << 16) |
+            ((long)in.read() << 8) |
+            ((long)in.read());
     }
 
 }
