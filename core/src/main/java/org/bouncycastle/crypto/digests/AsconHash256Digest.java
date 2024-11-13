@@ -8,7 +8,7 @@ package org.bouncycastle.crypto.digests;
  * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
 public class AsconHash256Digest
-    extends AsconDefaultDigest
+    extends AsconBaseDigest
 {
     public AsconHash256Digest()
     {

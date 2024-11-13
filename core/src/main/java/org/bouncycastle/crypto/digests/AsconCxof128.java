@@ -1,10 +1,9 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
+import org.bouncycastle.util.Arrays;
 
 /**
  * ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
@@ -14,51 +13,49 @@ import org.bouncycastle.crypto.Xof;
  * ASCON v1.2 XOF with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
 public class AsconCxof128
-    extends AsconDefaultDigest
+    extends AsconBaseDigest
     implements Xof
 {
-    public AsconCxof128()
+    private byte[] s;
+
+    public AsconCxof128(byte[] s)
     {
+        if (s.length > 2048)
+        {
+            throw new DataLengthException("customized string is too long");
+        }
+        this.s = Arrays.clone(s);
         reset();
     }
 
-    private final ByteArrayOutputStream customizedString = new ByteArrayOutputStream();
-
-
+    public AsconCxof128(byte[] s, int off, int len)
+    {
+        if ((off + len) > s.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+        if (len > 2048)
+        {
+            throw new DataLengthException("customized string is too long");
+        }
+        this.s = Arrays.copyOfRange(s, off, off + len);
+        reset();
+    }
     @Override
     public String getAlgorithmName()
     {
         return "Ascon-XOF-128";
     }
 
-
-    public void updateCustomizedString(byte in)
-    {
-        customizedString.write(in);
-    }
-
-    public void updateCustomizedString(byte[] input, int inOff, int len)
-    {
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-        customizedString.write(input, inOff, len);
-    }
-
     @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
+
         if (CRYPTO_BYTES + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        int customizedStringLen = customizedString.size();
-        if (customizedStringLen > 2048)
-        {
-            throw new DataLengthException("customized string is too long");
-        }
-        absorb(customizedString.toByteArray(), customizedStringLen);
+        absorb(s, s.length);
         absorb(buffer.toByteArray(), buffer.size());
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
@@ -80,7 +77,6 @@ public class AsconCxof128
     @Override
     public void reset()
     {
-        customizedString.reset();
         buffer.reset();
         /* initialize */
         x0 = 7445901275803737603L;

@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Pack;
 
 /** ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
@@ -11,7 +10,7 @@ import org.bouncycastle.util.Pack;
  * @deprecated use Ascon Hash 256 Digest
  */
 public class AsconDigest
-    extends AsconDefaultDigest
+    extends AsconBaseDigest
 {
     public enum AsconParameters
     {
