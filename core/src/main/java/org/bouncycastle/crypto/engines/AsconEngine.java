@@ -9,14 +9,22 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
 
 /**
- * ASCON AEAD v1.2, https://ascon.iaik.tugraz.at/
- * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
+ * The {@code AsconEngine} class provides an implementation of ASCON AEAD version 1.2,
+ * based on the official specification available at:
+ * <a href="https://ascon.iaik.tugraz.at/">https://ascon.iaik.tugraz.at/</a> and the
+ * updated specification document from the NIST competition:
+ * <a href="https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf">
+ * ASCON Specification (Finalist Round)
+ * </a>.
  * <p>
- * ASCON AEAD v1.2 with reference to C Reference Impl from: https://github.com/ascon/ascon-c
- *
- * @deprecated Now superseded - please use AsconAead128Engine
+ * This version references the C reference implementation provided by NIST, available at:
+ * <a href="https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-submissions/ascon.zip">
+ * ASCON C Reference Implementation (NIST Round 2)
+ * </a>.
  * </p>
+ * @deprecated Now superseded. Please refer to {@code AsconAEAD128Engine} for future implementations.
  */
+
 public class AsconEngine
     extends AsconBaseEngine
 {
@@ -28,8 +36,6 @@ public class AsconEngine
     }
 
     private final AsconParameters asconParameters;
-
-    private final String algorithmName;
 
     private long K2;
 

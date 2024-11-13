@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseDigest
     implements ExtendedDigest
@@ -20,24 +20,18 @@ abstract class AsconBaseDigest
     protected int ASCON_PB_ROUNDS = 12;
 
     protected final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-
-    protected long ror(long x, int n)
-    {
-        return x >>> n | x << (64 - n);
-    }
-
-    protected void round(long C)
+    private void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
         long t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
         long t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
         long t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
         long t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
-        x0 = t0 ^ ror(t0, 19) ^ ror(t0, 28);
-        x1 = t1 ^ ror(t1, 39) ^ ror(t1, 61);
-        x2 = ~(t2 ^ ror(t2, 1) ^ ror(t2, 6));
-        x3 = t3 ^ ror(t3, 10) ^ ror(t3, 17);
-        x4 = t4 ^ ror(t4, 7) ^ ror(t4, 41);
+        x0 = t0 ^ Longs.rotateRight(t0, 19) ^ Longs.rotateRight(t0, 28);
+        x1 = t1 ^ Longs.rotateRight(t1, 39) ^ Longs.rotateRight(t1, 61);
+        x2 = ~(t2 ^ Longs.rotateRight(t2, 1) ^ Longs.rotateRight(t2, 6));
+        x3 = t3 ^ Longs.rotateRight(t3, 10) ^ Longs.rotateRight(t3, 17);
+        x4 = t4 ^ Longs.rotateRight(t4, 7) ^ Longs.rotateRight(t4, 41);
     }
 
     protected void p(int nr)
@@ -62,20 +56,11 @@ abstract class AsconBaseDigest
         round(0x4bL);
     }
 
-    protected long pad(int i)
-    {
-        return 0x01L << (i << 3);
-    }
+    protected abstract long pad(int i);
 
-    protected long loadBytes(final byte[] bytes, int inOff, int n)
-    {
-        return Pack.littleEndianToLong(bytes, inOff, n);
-    }
+    protected abstract long loadBytes(final byte[] bytes, int inOff, int n);
 
-    protected void setBytes(long w, byte[] bytes, int inOff, int n)
-    {
-        Pack.longToLittleEndian(w, bytes, inOff, n);
-    }
+    protected abstract void setBytes(long w, byte[] bytes, int inOff, int n);
 
     @Override
     public int getDigestSize()

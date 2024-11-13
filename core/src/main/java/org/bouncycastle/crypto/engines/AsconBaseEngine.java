@@ -53,7 +53,7 @@ abstract class AsconBaseEngine
 
     protected abstract void setBytes(long n, byte[] bs, int off);
 
-    protected void round(long C)
+    private void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
         long t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
