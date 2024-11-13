@@ -1,11 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.util.Pack;
 
 /**
  * ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
@@ -16,7 +11,7 @@ import org.bouncycastle.util.Pack;
  *
  */
 public class AsconXof128
-    extends AsconDefaultDigest
+    extends AsconBaseDigest
     implements Xof
 {
     public AsconXof128()

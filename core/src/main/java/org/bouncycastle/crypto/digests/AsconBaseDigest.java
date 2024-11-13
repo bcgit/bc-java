@@ -7,7 +7,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Pack;
 
-abstract class AsconDefaultDigest
+abstract class AsconBaseDigest
     implements ExtendedDigest
 {
     protected long x0;
