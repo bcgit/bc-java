@@ -628,6 +628,16 @@ public class X509CertificateObject
         return attrCarrier.getBagAttributeKeys();
     }
 
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     public String toString()
     {
         StringBuffer    buf = new StringBuffer();
