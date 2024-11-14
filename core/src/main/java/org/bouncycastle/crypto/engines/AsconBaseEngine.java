@@ -141,7 +141,7 @@ abstract class AsconBaseEngine
         {
         case DecAad:
         case EncAad:
-            processFinalADBBlock();
+            processFinalAadBlock();
             p(nr);
             break;
         default:
@@ -153,7 +153,7 @@ abstract class AsconBaseEngine
         m_state = nextState;
     }
 
-    protected abstract void processFinalADBBlock();
+    protected abstract void processFinalAadBlock();
 
     protected abstract void processFinalDecrypt(byte[] input, int inLen, byte[] output, int outOff);
 
