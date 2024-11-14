@@ -6,6 +6,7 @@ import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -95,6 +96,27 @@ public class PrivateKeyInfo
         return versionValue;
     }
 
+    /**
+     * Construct a PrivateKeyInfo around a raw encoding.
+     *
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey byte encoding of the private key, used as a raw encoding.
+     */
+    public PrivateKeyInfo(
+        AlgorithmIdentifier privateKeyAlgorithm,
+        byte[] privateKey)
+        throws IOException
+    {
+        this(privateKeyAlgorithm, privateKey, null, null);
+    }
+
+    /**
+     * Construct a PrivateKeyInfo around an ASN.1 structure/primitive.
+     *
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey the ASN.1 structure/primitive representing the private key.
+     * @throws IOException if encoding the privateKey object into an OCTET STRING fails.
+     */
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
         ASN1Encodable privateKey)
@@ -103,6 +125,14 @@ public class PrivateKeyInfo
         this(privateKeyAlgorithm, privateKey, null, null);
     }
 
+    /**
+     * Construct a PrivateKeyInfo around an ASN.1 structure/primitive with attributes.
+     *
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey the ASN.1 structure/primitive representing the private key.
+     * @param attributes attributes associated with private key.
+     * @throws IOException if encoding the privateKey object into an OCTET STRING fails.
+     */
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
         ASN1Encodable privateKey,
@@ -112,12 +142,55 @@ public class PrivateKeyInfo
         this(privateKeyAlgorithm, privateKey, attributes, null);
     }
 
+    /**
+     * Construct a PrivateKeyInfo around an ASN.1 structure/primitive with attributes.
+     *
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey byte encoding of the private key, used as a raw encoding.
+     * @param attributes attributes associated with private key.
+     * @throws IOException if encoding the privateKey object into an OCTET STRING fails.
+     */
+    public PrivateKeyInfo(
+        AlgorithmIdentifier privateKeyAlgorithm,
+        byte[] privateKey,
+        ASN1Set attributes)
+        throws IOException
+    {
+        this(privateKeyAlgorithm, privateKey, attributes, null);
+    }
+
+    /**
+     * Construct a PrivateKeyInfo around an ASN.1 structure/primitive with attributes and the public key.
+     *
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey the ASN.1 structure/primitive representing the private key.
+     * @param attributes attributes associated with private key.
+     * @param publicKey public key encoding.
+     * @throws IOException if encoding the privateKey object into an OCTET STRING fails.
+     */
     public PrivateKeyInfo(
         AlgorithmIdentifier privateKeyAlgorithm,
         ASN1Encodable privateKey,
         ASN1Set attributes,
         byte[] publicKey)
         throws IOException
+    {
+        this(privateKeyAlgorithm, privateKey.toASN1Primitive().getEncoded(ASN1Encoding.DER), attributes, publicKey);
+    }
+
+    /**
+     * Construct a PrivateKeyInfo around a raw encoding with attributes and the public key.
+     * 
+     * @param privateKeyAlgorithm algorithm identifier for the private key.
+     * @param privateKey byte encoding of the private key, used as a raw encoding.
+     * @param attributes attributes associated with private key.
+     * @param publicKey public key encoding.
+     */
+    public PrivateKeyInfo(
+        AlgorithmIdentifier privateKeyAlgorithm,
+        byte[] privateKey,
+        ASN1Set attributes,
+        byte[] publicKey)
     {
         this.version = new ASN1Integer(publicKey != null ? BigIntegers.ONE : BigIntegers.ZERO);
         this.privateKeyAlgorithm = privateKeyAlgorithm;
@@ -222,7 +295,7 @@ public class PrivateKeyInfo
      *
      * @return the public key as an ASN.1 primitive.
      * @throws IOException - if the bit string doesn't represent a DER
-     * encoded object.
+     *                     encoded object.
      */
     public ASN1Encodable parsePublicKey()
         throws IOException

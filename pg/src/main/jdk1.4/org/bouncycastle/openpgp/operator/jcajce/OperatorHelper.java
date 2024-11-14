@@ -306,7 +306,7 @@ class OperatorHelper
         }
     }
 
-    private Signature createSignature(String cipherName)
+    Signature createSignature(String cipherName)
         throws PGPException
     {
         try

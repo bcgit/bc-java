@@ -6,16 +6,15 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.mldsa.HashMLDSASigner;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 
 public class HashSignatureSpi
-    extends java.security.Signature
+    extends BaseDeterministicOrRandomSignature
 {
     private HashMLDSASigner signer;
     private MLDSAParameters parameters;
@@ -36,14 +35,15 @@ public class HashSignatureSpi
         this.parameters = parameters;
     }
 
-    protected void engineInitVerify(PublicKey publicKey)
+    @Override
+    protected void verifyInit(PublicKey publicKey)
         throws InvalidKeyException
     {
         if (publicKey instanceof BCMLDSAPublicKey)
         {
             BCMLDSAPublicKey key = (BCMLDSAPublicKey)publicKey;
 
-            CipherParameters param = key.getKeyParams();
+            this.keyParams = key.getKeyParams();
 
             if (parameters != null)
             {
@@ -53,8 +53,6 @@ public class HashSignatureSpi
                     throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
             }
-
-            signer.init(false, param);
         }
         else
         {
@@ -62,21 +60,15 @@ public class HashSignatureSpi
         }
     }
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
+    protected void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
         this.appRandom = random;
-        engineInitSign(privateKey);
-    }
-
-    protected void engineInitSign(PrivateKey privateKey)
-        throws InvalidKeyException
-    {
         if (privateKey instanceof BCMLDSAPrivateKey)
         {
             BCMLDSAPrivateKey key = (BCMLDSAPrivateKey)privateKey;
 
-            CipherParameters param = key.getKeyParams();
+            this.keyParams = key.getKeyParams();
 
             if (parameters != null)
             {
@@ -85,15 +77,6 @@ public class HashSignatureSpi
                 {
                     throw new InvalidKeyException("signature configured for " + canonicalAlg);
                 }
-            }
-
-            if (appRandom != null)
-            {
-                signer.init(true, new ParametersWithRandom(param, appRandom));
-            }
-            else
-            {
-                signer.init(true, param);
             }
         }
         else
@@ -102,16 +85,18 @@ public class HashSignatureSpi
         }
     }
 
-    protected void engineUpdate(byte b)
+    @Override
+    protected void updateEngine(byte b)
         throws SignatureException
     {
         signer.update(b);
     }
-
-    protected void engineUpdate(byte[] b, int off, int len)
+    
+    @Override
+    protected void updateEngine(byte[] buf, int off, int len)
         throws SignatureException
     {
-        signer.update(b, off, len);
+        signer.update(buf, off, len);
     }
 
     protected byte[] engineSign()
@@ -133,28 +118,11 @@ public class HashSignatureSpi
         return signer.verifySignature(sigBytes);
     }
 
-    protected void engineSetParameter(AlgorithmParameterSpec params)
+    @Override
+    protected void reInitialize(boolean forSigning, CipherParameters params)
     {
-        // TODO
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
+        signer.init(forSigning, params);
     }
-
-    /**
-     * @deprecated replaced with #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
-     */
-    protected void engineSetParameter(String param, Object value)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
-
-    /**
-     * @deprecated
-     */
-    protected Object engineGetParameter(String param)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
-
 
     public static class MLDSA
             extends HashSignatureSpi

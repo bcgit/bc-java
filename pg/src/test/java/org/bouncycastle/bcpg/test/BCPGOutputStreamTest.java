@@ -78,10 +78,10 @@ public class BCPGOutputStreamTest
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.ROUNDTRIP);
 
         // Write New, Old, Old, New
-        pOut.writePacket(newPackets.get(0));
-        pOut.writePacket(oldPackets.get(0));
-        pOut.writePacket(oldPackets.get(1));
-        pOut.writePacket(newPackets.get(1));
+        pOut.writePacket((UserIDPacket)newPackets.get(0));
+        pOut.writePacket((UserIDPacket)oldPackets.get(0));
+        pOut.writePacket((UserIDPacket)oldPackets.get(1));
+        pOut.writePacket((UserIDPacket)newPackets.get(1));
         pOut.close();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());

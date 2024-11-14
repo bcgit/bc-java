@@ -48,10 +48,8 @@ public class NTRUKEMGenerator
         r = pair.r();
         m = pair.m();
 
-        byte[] rm1 = r.s3ToBytes(parameterSet.owcpaMsgBytes());
-        System.arraycopy(rm1, 0, rm, 0, rm1.length);
-        byte[] rm2 = m.s3ToBytes(rm.length - parameterSet.packTrinaryBytes());
-        System.arraycopy(rm2, 0, rm, parameterSet.packTrinaryBytes(), rm2.length);
+        r.s3ToBytes(rm, 0);
+        m.s3ToBytes(rm, parameterSet.packTrinaryBytes());
 
         SHA3Digest sha3256 = new SHA3Digest(256);
         sha3256.update(rm, 0, rm.length);

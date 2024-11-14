@@ -45,12 +45,11 @@ sourceSets {
 }
 
 dependencies {
-    implementation project(':core')
+
     implementation project(':prov')
     implementation project(':util')
     implementation project(':pkix')
 
-    java9Implementation project(':core')
     java9Implementation project(':prov')
     java9Implementation project(':util')
     java9Implementation project(':pkix')
@@ -63,17 +62,14 @@ dependencies {
     test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
 
 
-    test11Implementation project(':core')
     test11Implementation project(':prov')
     test11Implementation project(':util')
     test11Implementation project(':pkix')
 
-    test15Implementation project(':core')
     test15Implementation project(':prov')
     test15Implementation project(':util')
     test15Implementation project(':pkix')
 
-    test21Implementation project(':core')
     test21Implementation project(':prov')
     test21Implementation project(':util')
     test21Implementation project(':pkix')
@@ -161,6 +157,21 @@ artifacts {
     archives javadocJar
     archives sourcesJar
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bctls-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}
+
 
 test {
     jvmArgs = ['-Dtest.java.version.prefix=1.8']

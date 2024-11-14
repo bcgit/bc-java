@@ -43,6 +43,18 @@ public class MLKEMParameterSpec
     
     public static MLKEMParameterSpec fromName(String name)
     {
-        return (MLKEMParameterSpec)parameters.get(Strings.toLowerCase(name));
+        if (name == null)
+        {
+            throw new NullPointerException("name cannot be null");
+        }
+
+        MLKEMParameterSpec parameterSpec = (MLKEMParameterSpec)parameters.get(Strings.toLowerCase(name));
+
+        if (parameterSpec == null)
+        {
+            throw new IllegalArgumentException("unknown parameter name: " + name);
+        }
+        
+        return parameterSpec;
     }
 }

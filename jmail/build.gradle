@@ -27,7 +27,6 @@ dependencies {
 
     implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
     implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
-    implementation project(path: ':core')
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -114,3 +113,18 @@ test {
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcjmail-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}

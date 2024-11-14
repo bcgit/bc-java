@@ -218,16 +218,18 @@ public class ECDSAKeyPairTest
     private void testConversionOfFreshJcaKeyPair()
             throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException, IOException
     {
-        for (String curve : new String[] {
+        String[] curves  = new String[] {
                 "prime256v1",
                 "secp384r1",
                 "secp521r1",
                 "brainpoolP256r1",
                 "brainpoolP384r1",
                 "brainpoolP512r1"
-        })
+        };
+
+        for (int i = 0; i != curves.length; i++)
         {
-            testConversionOfFreshJcaKeyPair(curve);
+            testConversionOfFreshJcaKeyPair(curves[i]);
         }
     }
 

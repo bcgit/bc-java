@@ -59,6 +59,18 @@ public class DedicatedEd25519KeyPairTest
         testV4SigningVerificationWithBcKey();
 
         testConversionOfTestVectorKey();
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, date);
+        isEquals("Ed25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
@@ -69,8 +81,9 @@ public class DedicatedEd25519KeyPairTest
         gen.initialize(new EdDSAParameterSpec("Ed25519"));
         KeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, date);
             byte[] pubEnc = j1.getPublicKey().getEncoded();
             byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -116,8 +129,9 @@ public class DedicatedEd25519KeyPairTest
         gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, date);
             byte[] pubEnc = b1.getPublicKey().getEncoded();
             byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -215,8 +229,9 @@ public class DedicatedEd25519KeyPairTest
         // ed25519 public key from https://www.rfc-editor.org/rfc/rfc9580.html#name-hashed-data-stream-for-sign
         Date creationTime = new Date(Pack.bigEndianToInt(Hex.decode("63877fe3"), 0) * 1000L);
         byte[] k = Hex.decode("f94da7bb48d60a61e567706a6587d0331999bb9d891a08242ead84543df895a3");
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPPublicKey pgpk = new PGPPublicKey(
                 new PublicKeyPacket(version, PublicKeyAlgorithmTags.Ed25519, creationTime, new Ed25519PublicBCPGKey(k)),
                 new BcKeyFingerprintCalculator()
