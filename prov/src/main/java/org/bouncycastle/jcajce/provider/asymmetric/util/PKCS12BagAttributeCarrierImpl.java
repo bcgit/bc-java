@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OutputStream;
+import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 
 public class PKCS12BagAttributeCarrierImpl
@@ -56,6 +58,19 @@ public class PKCS12BagAttributeCarrierImpl
     {
         return pkcs12Ordering.elements();
     }
+
+    public boolean hasFriendlyName()
+    {
+        ASN1Encodable friendlyNameAttr = getBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName);
+        return friendlyNameAttr != null;
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        ASN1Encodable customFriendlyName = new DERBMPString(friendlyName);
+        this.setBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, customFriendlyName);
+    }
+
 
     int size()
     {
