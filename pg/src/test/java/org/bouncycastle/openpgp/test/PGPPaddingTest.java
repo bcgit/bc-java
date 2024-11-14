@@ -3,8 +3,9 @@ package org.bouncycastle.openpgp.test;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
@@ -22,6 +23,7 @@ import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPadding;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
@@ -73,7 +75,6 @@ public class PGPPaddingTest
     {
         testException(null, "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -86,7 +87,6 @@ public class PGPPaddingTest
     {
         testException(null, "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -115,7 +115,7 @@ public class PGPPaddingTest
         PGPSecretKey secretPrimaryKey = new PGPSecretKey(primaryKeyPair.getPrivateKey(), primaryKeyPair.getPublicKey(), digestCalc, true, null);
         PGPSecretKey secretSubKey = new PGPSecretKey(subKeyPair.getPrivateKey(), subKeyPair.getPublicKey(), digestCalc, false, null);
 
-        PGPPublicKeyRing certificate = new PGPPublicKeyRing(Arrays.asList(secretPrimaryKey.getPublicKey(), secretSubKey.getPublicKey()));
+        PGPPublicKeyRing certificate = new PGPPublicKeyRing(asList(secretPrimaryKey.getPublicKey(), secretSubKey.getPublicKey()));
         PGPPadding padding = new PGPPadding();
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -135,6 +135,16 @@ public class PGPPaddingTest
         isTrue(org.bouncycastle.util.Arrays.areEqual(
             certificate.getEncoded(PacketFormat.CURRENT),
             parsed.getEncoded(PacketFormat.CURRENT)));
+    }
+
+    private List<PGPPublicKey> asList(PGPPublicKey a, PGPPublicKey b)
+    {
+        List<PGPPublicKey> l = new ArrayList<PGPPublicKey>();
+
+        l.add(a);
+        l.add(b);
+
+        return l;
     }
 
     public static void main(String[] args)

@@ -18,12 +18,14 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cms.KEMKeyWrapper;
+import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.GenericKey;
+import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.OperatorException;
-import org.bouncycastle.pqc.jcajce.interfaces.KyberPublicKey;
 import org.bouncycastle.pqc.jcajce.interfaces.NTRUKey;
-import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.NTRUParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
@@ -31,6 +33,7 @@ import org.bouncycastle.util.Integers;
 class JceCMSKEMKeyWrapper
     extends KEMKeyWrapper
 {
+    private final KemEncapsulationLengthProvider kemEncLenProvider = new DefaultKemEncapsulationLengthProvider();
     private final AlgorithmIdentifier symWrapAlgorithm;
     private final int kekLength;
 
@@ -178,30 +181,8 @@ class JceCMSKEMKeyWrapper
         }
     }
 
-    private static Map encLengths = new HashMap();
-
-    static
+    private int getKemEncLength(PublicKey key)
     {
-        encLengths.put(KyberParameterSpec.kyber512.getName(), Integers.valueOf(768));
-        encLengths.put(KyberParameterSpec.kyber768.getName(), Integers.valueOf(1088));
-        encLengths.put(KyberParameterSpec.kyber1024.getName(), Integers.valueOf(1568));
-
-        encLengths.put(NTRUParameterSpec.ntruhps2048509.getName(), Integers.valueOf(699));
-        encLengths.put(NTRUParameterSpec.ntruhps2048677.getName(), Integers.valueOf(930));
-        encLengths.put(NTRUParameterSpec.ntruhps4096821.getName(), Integers.valueOf(1230));
-        encLengths.put(NTRUParameterSpec.ntruhrss701.getName(), Integers.valueOf(1138));
-    }
-
-    private int getKemEncLength(PublicKey publicKey)
-    {
-        if (publicKey instanceof KyberPublicKey)
-        {
-            return ((Integer)encLengths.get(((KyberPublicKey)publicKey).getParameterSpec().getName())).intValue();
-        }
-        if (publicKey instanceof NTRUKey)
-        {
-            return ((Integer)encLengths.get(((NTRUKey)publicKey).getParameterSpec().getName())).intValue();
-        }
-        return 0;
+        return kemEncLenProvider.getEncapsulationLength(SubjectPublicKeyInfo.getInstance(key.getEncoded()).getAlgorithm());
     }
 }

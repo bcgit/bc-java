@@ -161,9 +161,6 @@ public class NoticeReference
     */
    public ASN1Primitive toASN1Primitive()
    {
-      ASN1EncodableVector av = new ASN1EncodableVector(2);
-      av.add (organization);
-      av.add (noticeNumbers);
-      return new DERSequence (av);
+      return new DERSequence(organization, noticeNumbers);
    }
 }

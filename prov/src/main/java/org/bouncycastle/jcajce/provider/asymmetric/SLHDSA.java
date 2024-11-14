@@ -134,14 +134,14 @@ public class SLHDSA
                 {
                     NISTObjectIdentifiers.id_slh_dsa_sha2_128s,
                     NISTObjectIdentifiers.id_slh_dsa_sha2_128f,
-                    NISTObjectIdentifiers.id_slh_dsa_shake_128s,
-                    NISTObjectIdentifiers.id_slh_dsa_shake_128f,
                     NISTObjectIdentifiers.id_slh_dsa_sha2_192s,
                     NISTObjectIdentifiers.id_slh_dsa_sha2_192f,
-                    NISTObjectIdentifiers.id_slh_dsa_shake_192s,
-                    NISTObjectIdentifiers.id_slh_dsa_shake_192f,
                     NISTObjectIdentifiers.id_slh_dsa_sha2_256s,
                     NISTObjectIdentifiers.id_slh_dsa_sha2_256f,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_128s,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_128f,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_192s,
+                    NISTObjectIdentifiers.id_slh_dsa_shake_192f,
                     NISTObjectIdentifiers.id_slh_dsa_shake_256s,
                     NISTObjectIdentifiers.id_slh_dsa_shake_256f
                 };

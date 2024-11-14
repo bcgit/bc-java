@@ -9,7 +9,7 @@
 JDK12PATH=/opt/jdk1.2.2   # JDK 1.2 location
 
 base=$1
-version=`echo $base | sed -e "s/\([0-9]\)\([0-9a-z]*\)/\1.\2/"`
+version=`echo $base | sed -e "s/\([0-9]\).\([0-9a-z]*\)/\1.\2/"`
 
 WINDOWTITLE="Bouncy Castle Cryptography $version API Specification"
 HEADER="<b>Bouncy Castle Cryptography $version</b>"
@@ -50,6 +50,7 @@ mkdir -p $jdk12src
 ((cd pg/src/main/jdk1.5 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/main/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/main/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
+((cd pg/src/main/jdk1.2 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/test/java && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/test/jdk1.4 && tar cf - * ) | (cd $jdk12src && tar xf -))
 ((cd pg/src/test/jdk1.3 && tar cf - * ) | (cd $jdk12src && tar xf -))
@@ -83,6 +84,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm -rf org/bouncycastle/pqc/jcajce/provider/XMSS*
     rm -rf org/bouncycastle/pqc/jcajce/provider/LMS*
     rm -rf org/bouncycastle/pqc/jcajce/provider/lms
+    rm -rf org/bouncycastle/jcajce/provider/asymmetric/COMPOSITE*
     rm -rf org/bouncycastle/pqc/crypto/*/XMSS*
     rm -rf org/bouncycastle/pqc/crypto/*/LMS*
     rm -rf org/bouncycastle/pqc/crypto/*/HSS*
@@ -112,6 +114,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/crypto/*/Blake2sp*.java
     rm org/bouncycastle/crypto/*/Blake2bp*.java
     rm org/bouncycastle/pkix/test/CheckerTest.java
+    rm org/bouncycastle/pkix/test/CheckNameConstraintsTest.java
     rm org/bouncycastle/crypto/test/RadixConverterTest.java
     rm org/bouncycastle/crypto/test/HPKETestVector*.java
     rm org/bouncycastle/pkix/jcajce/Revocation*.java
@@ -207,6 +210,7 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm org/bouncycastle/cert/cmp/test/PQC*.java
     rm org/bouncycastle/cert/cmp/test/Elgamal*.java
     rm org/bouncycastle/cert/cmp/test/InvalidMessagesTest.java
+    rm org/bouncycastle/cert/cmp/test/TestUtils.java
     rm org/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java
     rm org/bouncycastle/cert/ocsp/test/PKIXRevocationTest.java
     rm -r org/bouncycastle/crypto/test/BigSkippingCipherTest.java
@@ -248,6 +252,15 @@ find $jdk12src -name "*.java" -exec scripts/usejcecert.sh \{\} \;
     rm  org/bouncycastle/openpgp/test/BcImplProviderTest.java
     rm  org/bouncycastle/openpgp/test/BcpgGeneralTest.java
     rm  org/bouncycastle/openpgp/test/OpenPGPTest.java
+    rm  org/bouncycastle/openpgp/test/EdDSAKeyC*.java
+    rm  org/bouncycastle/openpgp/test/ECDSAKeyPairTest.java
+    rm  org/bouncycastle/openpgp/test/Legacy*KeyPairTest.java
+    rm  org/bouncycastle/openpgp/test/Dedicated*KeyPairTest.java
+    rm  org/bouncycastle/openpgp/test/AEADProtected*Test.java
+    rm  org/bouncycastle/openpgp/test/*Argon2*.java
+    rm  org/bouncycastle/openpgp/test/Curve*PrivateKeyEncoding*.java
+    rm  org/bouncycastle/openpgp/test/OperatorJcajceTest.java
+    rm  org/bouncycastle/openpgp/test/PGPPaddingTest.java
 
     sh ../../scripts/jdk1.2ed.sh
 

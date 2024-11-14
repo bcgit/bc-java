@@ -101,8 +101,8 @@ public class AEADProtectedPGPSecretKeyTest
         PGPSecretKeyRing keys = (PGPSecretKeyRing) objFact.nextObject();
 
         Iterator<PGPSecretKey> it = keys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         // Test Bouncy Castle KeyDecryptor implementation
         BcPBESecretKeyDecryptorBuilder bcDecryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider());
@@ -203,8 +203,9 @@ public class AEADProtectedPGPSecretKeyTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         Date creationTime = currentTimeRounded();
         
-        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPKeyPair keyPair = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
             BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
@@ -245,8 +246,9 @@ public class AEADProtectedPGPSecretKeyTest
         KeyPair kp = eddsaGen.generateKeyPair();
         Date creationTime = currentTimeRounded();
 
-        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPKeyPair keyPair = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
             
             JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(

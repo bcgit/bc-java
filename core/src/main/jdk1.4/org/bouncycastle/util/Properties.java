@@ -49,6 +49,32 @@ public class Properties
     }
 
     /**
+     * Return whether a particular override has been set to true.
+     *
+     * @param propertyName the property name for the override.
+     * @return true if the property is set to "true", false otherwise.
+     */
+    public static boolean isOverrideSet(String propertyName, boolean defIsTrue)
+    {
+        try
+        {
+            String value = getPropertyValue(propertyName);
+            if (value == null)
+            {
+                return defIsTrue;
+            }
+            else
+            {
+                return "true".equalsIgnoreCase(value);
+            }
+        }
+        catch (AccessControlException e)
+        {
+            return false;
+        }
+    }
+
+    /**
      * Enable the specified override property for the current thread only.
      *
      * @param propertyName the property name for the override.

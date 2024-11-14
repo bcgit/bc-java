@@ -20,7 +20,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -111,7 +110,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+        assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -218,7 +217,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("06836dfdec4b556e05535d5696b0e4add5cee7d765bcba1f4c1613ddb9176813"),
+        assertTrue(Arrays.areEqual(Hex.decode("06836dfdec4b556e05535d5696b0e4add5cee7d765bcba1f4c1613ddb9176813"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -341,7 +340,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
+        assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -519,7 +518,7 @@ public class ERSTest
                 }
             }
         }
-        Assert.assertEquals(atss.size(), count);
+        assertEquals(atss.size(), count);
     }
 
     private void checkAbsent(ERSEvidenceRecord ats, ERSData data)
@@ -630,7 +629,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+        assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
             tspReq.getMessageImprintDigest()));
 
 
@@ -721,15 +720,15 @@ public class ERSTest
 
         Collection<ERSEvidenceRecord> recs = store.getMatches(new ERSEvidenceRecordSelector(h3Docs));
 
-        Assert.assertEquals(1, recs.size());
+        assertEquals(1, recs.size());
         ERSEvidenceRecord r1 = (ERSEvidenceRecord)recs.iterator().next();
 
         recs = store.getMatches(new ERSEvidenceRecordSelector(new ERSByteData(H3A_DATA)));
 
-        Assert.assertEquals(1, recs.size());
+        assertEquals(1, recs.size());
         ERSEvidenceRecord r2 = (ERSEvidenceRecord)recs.iterator().next();
 
-        Assert.assertTrue(r2 == r1);
+        assertTrue(r2 == r1);
     }
 
     private void checkPresent(ERSEvidenceRecord ev, ERSData data)
@@ -1104,7 +1103,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
+        assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
 
         ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
@@ -1124,7 +1123,7 @@ public class ERSTest
 
         tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
+        assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
     }
 
@@ -1172,7 +1171,7 @@ public class ERSTest
 
             TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-            Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+            assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                 tspReq.getMessageImprintDigest()));
 
             deleteDirectory(rootDir);
@@ -1490,7 +1489,7 @@ public class ERSTest
         final TimeStampRequest timeStampRequest = ersArchiveTimeStampGenerator.generateTimeStampRequest(timeStampRequestGenerator);
 
 
-        //Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
+        //assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
         //       tspReq.getMessageImprintDigest()));
 
         final String signDN = "O=Bouncy Castle, C=AU";
@@ -1598,7 +1597,7 @@ public class ERSTest
         // Sanity check, make sure root hash of ER is what we expect.
         byte[] sourceData = Strings.toUTF8ByteArray("foo");
         byte[] sourceSha256 = MessageDigest.getInstance("SHA-256").digest(sourceData);
-        assert Arrays.areEqual(sourceSha256, ersEvidenceRecord.getPrimaryRootHash());
+        assertTrue(Arrays.areEqual(sourceSha256, ersEvidenceRecord.getPrimaryRootHash()));
 
 
         // Generate hash renewal request using ERSInputStreamData.
@@ -1620,15 +1619,15 @@ public class ERSTest
 
 
         // check ERSByteData and ERSInputStreamData produce same output
-        assert Arrays.areEqual(byteDataReq.getMessageImprintDigest(),
-            streamDataReq.getMessageImprintDigest());
+        assertTrue(Arrays.areEqual(byteDataReq.getMessageImprintDigest(),
+            streamDataReq.getMessageImprintDigest()));
 
 
         // Generate the digest we expect to see in the requests and compare.
         byte[] expectedDigest = generateExpectedRequestDigest(sourceData, ersEvidenceRecord,
             MessageDigest.getInstance("SHA-512"));
-        assert Arrays.areEqual(byteDataReq.getMessageImprintDigest(), expectedDigest);
-        assert Arrays.areEqual(streamDataReq.getMessageImprintDigest(), expectedDigest);
+        assertTrue(Arrays.areEqual(byteDataReq.getMessageImprintDigest(), expectedDigest));
+        assertTrue(Arrays.areEqual(streamDataReq.getMessageImprintDigest(), expectedDigest));
     }
 
     /** Based on RFC 4998 section 5.2. */

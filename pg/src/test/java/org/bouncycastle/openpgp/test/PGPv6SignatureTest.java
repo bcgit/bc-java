@@ -118,8 +118,8 @@ public class PGPv6SignatureTest
         PGPPublicKey primaryKey = cert.getPublicKey(Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9"));
         PGPPublicKey subkey = cert.getPublicKey(Hex.decode("12C83F1E706F6308FE151A417743A1F033790E93E9978488D1DB378DA9930885"));
 
-        PGPSignature directKeySig = primaryKey.getKeySignatures().next();
-        PGPSignature subkeyBinding = subkey.getKeySignatures().next();
+        PGPSignature directKeySig = (PGPSignature)primaryKey.getKeySignatures().next();
+        PGPSignature subkeyBinding = (PGPSignature)subkey.getKeySignatures().next();
 
         directKeySig.init(new BcPGPContentVerifierBuilderProvider(), primaryKey);
         isTrue("Direct-Key Signature on the primary key MUST be correct.",
@@ -489,12 +489,12 @@ public class PGPv6SignatureTest
         PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
 
         Iterator<PGPPublicKey> pubKeys = secretKeys.getPublicKeys();
-        PGPPublicKey primaryKey = pubKeys.next();
+        PGPPublicKey primaryKey = (PGPPublicKey)pubKeys.next();
 
         Iterator<PGPSignature> directKeySigs = primaryKey.getSignaturesOfType(PGPSignature.DIRECT_KEY);
         while (directKeySigs.hasNext())
         {
-            PGPSignature dkSig = directKeySigs.next();
+            PGPSignature dkSig = (PGPSignature)directKeySigs.next();
             PGPPublicKey sigKey = getSigningKeyFor(secretKeys, dkSig);
             if (sigKey != null)
             {
@@ -511,11 +511,11 @@ public class PGPv6SignatureTest
         Iterator<String> uids = primaryKey.getUserIDs();
         while (uids.hasNext())
         {
-            String uid = uids.next();
+            String uid = (String)uids.next();
             Iterator<PGPSignature> uidSigs = primaryKey.getSignaturesForID(uid);
             while (uidSigs.hasNext())
             {
-                PGPSignature uidSig = uidSigs.next();
+                PGPSignature uidSig = (PGPSignature)uidSigs.next();
                 PGPPublicKey sigKey = getSigningKeyFor(secretKeys, uidSig);
                 if (sigKey != null)
                 {
@@ -533,11 +533,11 @@ public class PGPv6SignatureTest
 
         while (pubKeys.hasNext())
         {
-            PGPPublicKey subkey = pubKeys.next();
+            PGPPublicKey subkey = (PGPPublicKey)pubKeys.next();
             Iterator<PGPSignature> bindSigs = subkey.getSignaturesOfType(PGPSignature.SUBKEY_BINDING);
             while (bindSigs.hasNext())
             {
-                PGPSignature bindSig = bindSigs.next();
+                PGPSignature bindSig = (PGPSignature)bindSigs.next();
                 PGPPublicKey sigKey = getSigningKeyFor(secretKeys, bindSig);
                 if (sigKey != null)
                 {
@@ -560,14 +560,16 @@ public class PGPv6SignatureTest
         Iterator<PGPPublicKey> pubKeys = keys.getPublicKeys();
         while (pubKeys.hasNext())
         {
-            PGPPublicKey k = pubKeys.next();
+            PGPPublicKey k = (PGPPublicKey)pubKeys.next();
             if (k.getKeyID() == sig.getKeyID())
             {
                 return k;
             }
 
-            for (SignatureSubpacket p : sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+            SignatureSubpacket[] subpackets = sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT);
+            for (int idx = 0; idx != subpackets.length; idx++)
             {
+                SignatureSubpacket p = subpackets[idx];
                 IssuerFingerprint fp = (IssuerFingerprint) p;
                 if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
                 {
@@ -575,8 +577,10 @@ public class PGPv6SignatureTest
                 }
             }
 
-            for (SignatureSubpacket p : sig.getUnhashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT))
+            subpackets = sig.getHashedSubPackets().getSubpackets(SignatureSubpacketTags.ISSUER_FINGERPRINT);
+            for (int idx = 0; idx != subpackets.length; idx++)
             {
+                SignatureSubpacket p = subpackets[idx];
                 IssuerFingerprint fp = (IssuerFingerprint) p;
                 if (Arrays.areEqual(k.getFingerprint(), fp.getFingerprint()))
                 {
@@ -715,7 +719,7 @@ public class PGPv6SignatureTest
                 signingPubKey);
         sigGen.init(PGPSignature.CANONICAL_TEXT_DOCUMENT, signingPrivKey);
 
-        aOut.beginClearText();
+        aOut.beginClearText(HashAlgorithmTags.SHA512);
         BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
 
         sigGen.update(Strings.toUTF8ByteArray(msgS));

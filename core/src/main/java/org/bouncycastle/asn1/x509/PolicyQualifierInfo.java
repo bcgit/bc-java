@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -108,11 +107,7 @@ public class PolicyQualifierInfo
     */
    public ASN1Primitive toASN1Primitive()
    {
-      ASN1EncodableVector dev = new ASN1EncodableVector(2);
-      dev.add(policyQualifierId);
-      dev.add(qualifier);
-
-      return new DERSequence(dev);
+       return new DERSequence(policyQualifierId, qualifier);
    }
 
     public String toString()

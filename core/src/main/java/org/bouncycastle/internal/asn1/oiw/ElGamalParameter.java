@@ -3,7 +3,6 @@ package org.bouncycastle.internal.asn1.oiw;
 import java.math.BigInteger;
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -58,11 +57,6 @@ public class ElGamalParameter
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(p);
-        v.add(g);
-
-        return new DERSequence(v);
+        return new DERSequence(p, g);
     }
 }

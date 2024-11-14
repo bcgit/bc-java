@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
@@ -28,8 +29,6 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class MLKEMTest
     extends TestCase
@@ -140,7 +139,7 @@ public class MLKEMTest
                     byte[] ek = Hex.decode((String)buf.get("ek"));
                     byte[] dk = Hex.decode((String)buf.get("dk"));
 
-                    MLKEMParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    MLKEMParameters parameters = (MLKEMParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
                     MLKEMKeyGenerationParameters genParam = new MLKEMKeyGenerationParameters(new SecureRandom(), parameters);
@@ -339,7 +338,7 @@ public class MLKEMTest
                     byte[] c = Hex.decode((String)buf.get("c"));
                     byte[] k = Hex.decode((String)buf.get("k"));
 
-                    MLKEMParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    MLKEMParameters parameters = (MLKEMParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     String function = (String)buf.get("function");
                     if ("encapsulation".equals(function))

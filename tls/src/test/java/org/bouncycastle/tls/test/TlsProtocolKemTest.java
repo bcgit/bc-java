@@ -28,7 +28,7 @@ public class TlsProtocolKemTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, new int[] {NamedGroup.OQS_mlkem768}, true);
+        ServerThread serverThread = new ServerThread(serverProtocol, new int[]{ NamedGroup.MLKEM768 }, true);
         try
         {
             serverThread.start();
@@ -37,7 +37,7 @@ public class TlsProtocolKemTest
         {
         }
         MockTlsKemClient client = new MockTlsKemClient(null);
-        client.setSupportedGroups(new int[] {NamedGroup.OQS_mlkem512});
+        client.setSupportedGroups(new int[]{ NamedGroup.MLKEM512 });
         try
         {
             clientProtocol.connect(client);

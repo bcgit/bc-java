@@ -10,6 +10,7 @@ import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.jcajce.provider.util.KeyUtil;
 import org.bouncycastle.util.Arrays;
@@ -31,7 +32,7 @@ public class BCMLDSAPrivateKey
             MLDSAPrivateKeyParameters params)
     {
         this.params = params;
-        this.algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     public BCMLDSAPrivateKey(PrivateKeyInfo keyInfo)
@@ -101,7 +102,24 @@ public class BCMLDSAPrivateKey
 
     public MLDSAPublicKey getPublicKey()
     {
-        return new BCMLDSAPublicKey(params.getPublicKeyParameters());
+        MLDSAPublicKeyParameters publicKeyParameters = params.getPublicKeyParameters();
+        if (publicKeyParameters == null)
+        {
+            return null;
+        }
+        return new BCMLDSAPublicKey(publicKeyParameters);
+    }
+
+    @Override
+    public byte[] getPrivateData()
+    {
+        return params.getEncoded();
+    }
+
+    @Override
+    public byte[] getSeed()
+    {
+        return params.getSeed();
     }
 
     public MLDSAParameterSpec getParameterSpec()

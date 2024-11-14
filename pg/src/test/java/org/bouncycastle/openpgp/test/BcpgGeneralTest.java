@@ -2,10 +2,14 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -25,18 +29,35 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class BcpgGeneralTest
     extends SimpleTest
 {
+    /*
+    * Format: Binary data
+    Filename: "hello.txt"
+    Timestamp: 2104-06-26 14:42:55 UTC
+    Content: "Hello, world!\n"
+    * */
+    byte[] message = Strings.toUTF8ByteArray("-----BEGIN PGP MESSAGE-----\n" +
+        "\n" +
+        "yx1iCWhlbGxvLnR4dPz1TW9IZWxsbywgd29ybGQhCg==\n" +
+        "=3swl\n" +
+        "-----END PGP MESSAGE-----");
+
+
+
     public static void main(String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
@@ -54,11 +75,67 @@ public class BcpgGeneralTest
     public void performTest()
         throws Exception
     {
+        testReadTime();
+        testReadTime2();
         //testS2K();
         testExceptions();
         testECDHPublicBCPGKey();
         // Tests for PreferredAEADCiphersuites
         testPreferredAEADCiphersuites();
+    }
+
+    static int read4OctetLength(InputStream in)
+        throws IOException
+    {
+        return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+    }
+
+    // StreamUtil.readTime
+    static long readTime(BCPGInputStream in)
+        throws IOException
+    {
+        return ((long)read4OctetLength(in) & 0xFFFFFFFFL) * 1000L;
+    }
+
+    public void testReadTime()
+        throws IOException
+    {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(2074, Calendar.JANUARY, 1, 0, 0, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date tmp = calendar.getTime();
+        long time = tmp.getTime() / 1000L * 1000L;
+        byte[] date = Pack.intToBigEndian((int)(time / 1000L));
+
+        ByteArrayInputStream bs = new ByteArrayInputStream(date);
+        BCPGInputStream stream = new BCPGInputStream(bs);
+        long rlt = readTime(stream);
+        isTrue(rlt == time);
+
+        time = Long.MAX_VALUE / 1000L * 1000L;
+        date = Pack.intToBigEndian((int)(time / 1000L));
+        bs = new ByteArrayInputStream(date);
+        stream = new BCPGInputStream(bs);
+        rlt = readTime(stream);
+        byte[] date2 = Pack.intToBigEndian((int)(rlt / 1000L));
+        isTrue(Arrays.areEqual(date, date2));
+    }
+
+    public void testReadTime2()
+        throws Exception
+    {
+        PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
+            new ArmoredInputStream(new ByteArrayInputStream(message)), new JcaKeyFingerprintCalculator());
+        PGPLiteralData ld = (PGPLiteralData)pgpObjectFactoryOfTestFile.nextObject();
+        Date date = ld.getModificationTime();
+
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        calendar.set(2104, Calendar.JUNE, 26, 14, 42, 55);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date expected = calendar.getTime();
+
+        isTrue(date.equals(expected));
     }
 
     public void testPreferredAEADCiphersuites()

@@ -5,7 +5,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
@@ -22,11 +21,13 @@ public class BCMLDSAPublicKey
     private static final long serialVersionUID = 1L;
 
     private transient MLDSAPublicKeyParameters params;
+    private transient String algorithm;
 
     public BCMLDSAPublicKey(
         MLDSAPublicKeyParameters params)
     {
         this.params = params;
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     public BCMLDSAPublicKey(SubjectPublicKeyInfo keyInfo)
@@ -39,6 +40,7 @@ public class BCMLDSAPublicKey
         throws IOException
     {
         this.params = (MLDSAPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
     
     /**
@@ -74,7 +76,7 @@ public class BCMLDSAPublicKey
      */
     public final String getAlgorithm()
     {
-        return MLDSAParameterSpec.fromName(params.getParameters().getName()).getName();
+        return algorithm;
     }
 
     public byte[] getPublicData()
@@ -126,7 +128,7 @@ public class BCMLDSAPublicKey
         return buf.toString();
     }
 
-    CipherParameters getKeyParams()
+    MLDSAPublicKeyParameters getKeyParams()
     {
         return params;
     }

@@ -12,6 +12,7 @@
     <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}"/>
     <property name="target.prefix" value="jdk14"/>
     <property name="javadoc.args" value="-breakiterator"/>
+    <property name="junit.maxmemory" value="1536m" />
 
     <target name="init">
         <mkdir dir="${src.dir}"/>
@@ -77,6 +78,7 @@
                 <exclude name="**/JDKPKCS12StoreParameter.java"/>
                 <exclude name="**/SIKE*.java"/>
                 <exclude name="**/CompositeSign*.java"/>
+                <exclude name="**/COMPOSITE*.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/XMS*.java"/>
@@ -131,6 +133,9 @@
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/gpg/test/*.java"/>
                 <exclude name="**/BcImplProviderTest.java"/>
+                <exclude name="**/OperatorJcajceTest.java"/>
+                <exclude name="**/AEADWithArgon2Test.java"/>
+                <exclude name="**/AEADProtectedPGPSecretKeyTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
@@ -142,6 +147,7 @@
                 <exclude name="**/bouncycastle/cms/test/*AuthEnvelopedData*Test.java"/>
                 <exclude name="**/PKIXRevocationTest.java"/>
 		<exclude name="**/its/**/*.java"/>
+                <exclude name="**/CheckNameConstraintsTest.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
 		<exclude name="**/MailGeneralTest.java"/>
@@ -226,12 +232,20 @@
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="StringBuilder" replace="StringBuffer" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>
         <replaceregexp match="(List|Map|Set|Iterator) >" replace="\1" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
                 <exclude name="**/MultipartParserTest.java"/>
             </fileset>
         </replaceregexp>

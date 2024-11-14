@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.tsp;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -105,10 +104,6 @@ public class EncryptionInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-        v.add(encryptionInfoType);
-        v.add(encryptionInfoValue);
-
-        return new DLSequence(v);
+        return new DLSequence(encryptionInfoType, encryptionInfoValue);
     }
 }

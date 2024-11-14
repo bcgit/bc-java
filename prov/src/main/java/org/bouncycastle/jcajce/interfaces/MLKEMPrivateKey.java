@@ -11,4 +11,18 @@ public interface MLKEMPrivateKey
      * @return a ML-KEM Public Key
      */
     MLKEMPublicKey getPublicKey();
+
+    /**
+     * Return the long form private data for the ML-KEM private key.
+     *
+     * @return long form private data for private key.
+     */
+    byte[] getPrivateData();
+
+    /**
+     * Return the seed the private key was generated from (if available).
+     *
+     * @return the seed for the private key, null if not available.
+     */
+    byte[] getSeed();
 }

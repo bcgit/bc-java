@@ -30,7 +30,7 @@ public class BCMLKEMPrivateKey
             MLKEMPrivateKeyParameters params)
     {
         this.params = params;
-        this.algorithm = params.getParameters().getName();
+        this.algorithm = Strings.toUpperCase(params.getParameters().getName());
     }
 
     public BCMLKEMPrivateKey(PrivateKeyInfo keyInfo)
@@ -44,7 +44,7 @@ public class BCMLKEMPrivateKey
     {
         this.attributes = keyInfo.getAttributes();;
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
-        this.algorithm = MLKEMParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     /**
@@ -100,6 +100,18 @@ public class BCMLKEMPrivateKey
     public MLKEMPublicKey getPublicKey()
     {
         return new BCMLKEMPublicKey(params.getPublicKeyParameters());
+    }
+
+    @Override
+    public byte[] getPrivateData()
+    {
+        return params.getEncoded();
+    }
+
+    @Override
+    public byte[] getSeed()
+    {
+        return params.getSeed();
     }
 
     public MLKEMParameterSpec getParameterSpec()

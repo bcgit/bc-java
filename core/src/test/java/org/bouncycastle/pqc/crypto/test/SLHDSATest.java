@@ -8,7 +8,9 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
@@ -22,8 +24,6 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-
-import junit.framework.TestCase;
 
 public class SLHDSATest
     extends TestCase
@@ -46,6 +46,57 @@ public class SLHDSATest
             put("SLH-DSA-SHAKE-256f", SLHDSAParameters.shake_256f);
         }
     };
+
+    SLHDSAParameters[] PARAMETER_SETS = new SLHDSAParameters[]
+    {
+        SLHDSAParameters.sha2_128f,
+        SLHDSAParameters.sha2_128s,
+        SLHDSAParameters.sha2_192f,
+        SLHDSAParameters.sha2_192s,
+        SLHDSAParameters.sha2_256f,
+        SLHDSAParameters.sha2_256s,
+        SLHDSAParameters.shake_128f,
+        SLHDSAParameters.shake_128s,
+        SLHDSAParameters.shake_192f,
+        SLHDSAParameters.shake_192s,
+        SLHDSAParameters.shake_256f,
+        SLHDSAParameters.shake_256s,
+    };
+
+    public void testConsistency()
+    {
+        SecureRandom random = new SecureRandom();
+
+        SLHDSAKeyPairGenerator kpg = new SLHDSAKeyPairGenerator();
+
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
+        {
+            SLHDSAParameters parameters = PARAMETER_SETS[idx];
+            kpg.init(new SLHDSAKeyGenerationParameters(random, parameters));
+
+            {
+                AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+                SLHDSASigner signer = new SLHDSASigner();
+
+                {
+                    int msgLen = random.nextInt(257);
+                    byte[] msg = new byte[msgLen];
+                    random.nextBytes(msg);
+    
+                    // sign
+                    signer.init(true, new ParametersWithRandom(kp.getPrivate(), random));
+                    byte[] signature = signer.generateSignature(msg);
+    
+                    // verify
+                    signer.init(false, kp.getPublic());
+                    boolean shouldVerify = signer.verifySignature(msg, signature);
+    
+                    assertTrue(shouldVerify);
+                }
+            }
+        }
+    }
 
     public void testKeyGenSingleFile() throws IOException
     {
@@ -72,7 +123,7 @@ public class SLHDSATest
                     byte[] pk = Hex.decode((String)buf.get("pk"));
                     byte[] sk = Hex.decode((String)buf.get("sk"));
 
-                    SLHDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     SLHDSAKeyPairGenerator kpGen = new SLHDSAKeyPairGenerator();
                     SLHDSAKeyGenerationParameters genParam = new SLHDSAKeyGenerationParameters(new SecureRandom(), parameters);
@@ -131,7 +182,7 @@ public class SLHDSATest
                     byte[] signature = Hex.decode((String)buf.get("signature"));
                     byte[] rnd = null;
 
-                    SLHDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
@@ -184,7 +235,7 @@ public class SLHDSATest
             {
                 if (buf.size() > 0)
                 {
-                    boolean testPassed = Boolean.parseBoolean((String)buf.get("testPassed"));
+                    boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
 //                    boolean deterministic = !buf.containsKey("additionalRandomness");
                     String reason = (String)buf.get("reason");
 
@@ -198,7 +249,7 @@ public class SLHDSATest
 //                        rnd = Hex.decode((String)buf.get("additionalRandomness"));
 //                    }
 
-                    SLHDSAParameters parameters = parametersMap.get((String)buf.get("parameterSet"));
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     SLHDSAPublicKeyParameters pubParams = new SLHDSAPublicKeyParameters(parameters, pk);
 
@@ -411,7 +462,7 @@ public class SLHDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = Boolean.parseBoolean((String)buf.get("testPassed"));
+                        boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
 //                        boolean deterministic = !buf.containsKey("additionalRandomness");
                         String reason = (String)buf.get("reason");
 

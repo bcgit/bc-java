@@ -7,11 +7,13 @@ buildscript {
 
 }
 
+
 plugins {
     id "io.spring.nohttp" version "0.0.11"
     id "checkstyle"
     id "jacoco"
     id "net.ltgt.errorprone" version "3.1.0"
+    id 'maven-publish'
 }
 
 println("Environment setup:")
@@ -160,6 +162,7 @@ allprojects {
         }
     }
 
+
 }
 
 task printProperties {
@@ -183,6 +186,7 @@ ext {
 
 subprojects {
     apply plugin: 'eclipse'
+    apply plugin: 'maven-publish'
 
 
     JavaVersion current = JavaVersion.current();
@@ -262,7 +266,7 @@ subprojects {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = false;
+        options.debug = true;
     }
 
     tasks.withType(Test).configureEach {
@@ -276,7 +280,12 @@ subprojects {
             languageVersion = JavaLanguageVersion.of(21)
         }
     }
+
 }
 
 
 test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+
+
+
