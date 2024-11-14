@@ -68,7 +68,7 @@ public class AsconAEAD128Engine
         x4 ^= K1;
     }
 
-    protected void processFinalADBBlock()
+    protected void processFinalAadBlock()
     {
         if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
