@@ -9,6 +9,7 @@ import java.security.Security;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.TimeZone;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -28,11 +29,13 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
@@ -41,6 +44,20 @@ import org.bouncycastle.util.test.SimpleTest;
 public class BcpgGeneralTest
     extends SimpleTest
 {
+    /*
+    * Format: Binary data
+    Filename: "hello.txt"
+    Timestamp: 2104-06-26 14:42:55 UTC
+    Content: "Hello, world!\n"
+    * */
+    byte[] message = Strings.toUTF8ByteArray("-----BEGIN PGP MESSAGE-----\n" +
+        "\n" +
+        "yx1iCWhlbGxvLnR4dPz1TW9IZWxsbywgd29ybGQhCg==\n" +
+        "=3swl\n" +
+        "-----END PGP MESSAGE-----");
+
+
+
     public static void main(String[] args)
     {
         Security.addProvider(new BouncyCastleProvider());
@@ -59,6 +76,7 @@ public class BcpgGeneralTest
         throws Exception
     {
         testReadTime();
+        testReadTime2();
         //testS2K();
         testExceptions();
         testECDHPublicBCPGKey();
@@ -66,11 +84,17 @@ public class BcpgGeneralTest
         testPreferredAEADCiphersuites();
     }
 
+    static int read4OctetLength(InputStream in)
+        throws IOException
+    {
+        return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+    }
+
     // StreamUtil.readTime
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (((long) in.read() << 24 | in.read() << 16 | in.read() << 8 | in.read()) & 0xFFFFFFFFL) * 1000L;
+        return ((long)read4OctetLength(in) & 0xFFFFFFFFL) * 1000L;
     }
 
     public void testReadTime()
@@ -96,6 +120,22 @@ public class BcpgGeneralTest
         rlt = readTime(stream);
         byte[] date2 = Pack.intToBigEndian((int)(rlt / 1000L));
         isTrue(Arrays.areEqual(date, date2));
+    }
+
+    public void testReadTime2()
+        throws Exception
+    {
+        PGPObjectFactory pgpObjectFactoryOfTestFile = new PGPObjectFactory(
+            new ArmoredInputStream(new ByteArrayInputStream(message)), new JcaKeyFingerprintCalculator());
+        PGPLiteralData ld = (PGPLiteralData)pgpObjectFactoryOfTestFile.nextObject();
+        Date date = ld.getModificationTime();
+
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+        calendar.set(2104, Calendar.JUNE, 26, 14, 42, 55);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Date expected = calendar.getTime();
+
+        isTrue(date.equals(expected));
     }
 
     public void testPreferredAEADCiphersuites()
