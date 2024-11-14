@@ -15,6 +15,7 @@ import java.util.Date;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
@@ -63,6 +64,19 @@ public class LegacyX25519KeyPairTest
         testConversionOfBcKeyPair();
         testV4MessageEncryptionDecryptionWithJcaKey();
         testV4MessageEncryptionDecryptionWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("XDH", new BouncyCastleProvider());
+        gen.initialize(new XDHParameterSpec("X25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.ECDH, kp, date);
+        isEquals("X25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()

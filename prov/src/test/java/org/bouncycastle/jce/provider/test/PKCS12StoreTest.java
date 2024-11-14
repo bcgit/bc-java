@@ -2,7 +2,6 @@ package org.bouncycastle.jce.provider.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
@@ -2260,9 +2259,6 @@ public class PKCS12StoreTest
 
         inStore.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
 
-        FileOutputStream fOut = new FileOutputStream("/tmp/" + storeType + ".p12");
-        fOut.write(bOut.toByteArray());
-        fOut.close();
         Key k = inStore.getKey("key", null);
 
         Pfx pfx = Pfx.getInstance(bOut.toByteArray());
