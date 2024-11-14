@@ -254,23 +254,14 @@ public class SignaturePacket
                 signature[0] = v;
                 break;
             case DSA:
+            case ELGAMAL_ENCRYPT: // yep, this really does happen sometimes.
+            case ELGAMAL_GENERAL:
                 MPInteger    r = new MPInteger(in);
                 MPInteger    s = new MPInteger(in);
 
                 signature = new MPInteger[2];
                 signature[0] = r;
                 signature[1] = s;
-                break;
-            case ELGAMAL_ENCRYPT: // yep, this really does happen sometimes.
-            case ELGAMAL_GENERAL:
-                MPInteger       p = new MPInteger(in);
-                MPInteger       g = new MPInteger(in);
-                MPInteger       y = new MPInteger(in);
-
-                signature = new MPInteger[3];
-                signature[0] = p;
-                signature[1] = g;
-                signature[2] = y;
                 break;
             case Ed448:
                 signatureEncoding = new byte[org.bouncycastle.math.ec.rfc8032.Ed448.SIGNATURE_SIZE];
