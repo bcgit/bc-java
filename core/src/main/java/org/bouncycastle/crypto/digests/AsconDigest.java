@@ -71,7 +71,7 @@ public class AsconDigest
     @Override
     public void reset()
     {
-        buffer.reset();
+        super.reset();
         /* initialize */
         switch (asconParameters)
         {
