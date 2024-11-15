@@ -31,6 +31,7 @@ public class AsconCxof128
         }
         this.s = Arrays.clone(s);
         reset();
+        update(s, 0, s.length);
     }
 
     public AsconCxof128(byte[] s, int off, int len)
@@ -45,6 +46,7 @@ public class AsconCxof128
         }
         this.s = Arrays.copyOfRange(s, off, off + len);
         reset();
+        update(s, 0, s.length);
     }
 
     public AsconCxof128()
@@ -81,11 +83,7 @@ public class AsconCxof128
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        if (s != null)
-        {
-            absorb(s, s.length);
-        }
-        absorb(buffer.toByteArray(), buffer.size());
+        finishAbsorbing();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
         return outLen;
@@ -106,7 +104,7 @@ public class AsconCxof128
     @Override
     public void reset()
     {
-        buffer.reset();
+        super.reset();
         /* initialize */
         x0 = 7445901275803737603L;
         x1 = 4886737088792722364L;

@@ -51,7 +51,7 @@ public class AsconHash256Digest
     @Override
     public void reset()
     {
-        buffer.reset();
+        super.reset();
         /* initialize */
         x0 = -7269279749984954751L;
         x1 = 5459383224871899602L;

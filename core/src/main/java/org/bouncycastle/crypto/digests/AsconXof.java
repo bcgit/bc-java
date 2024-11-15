@@ -93,7 +93,7 @@ public class AsconXof
     @Override
     public void reset()
     {
-        buffer.reset();
+        super.reset();
         /* initialize */
         switch (asconParameters)
         {

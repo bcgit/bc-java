@@ -1106,7 +1106,7 @@ public class AsconTest
             if (a < 0)
             {
                 int count = Integer.parseInt(map.get("Count"));
-//                if (count != 529)
+//                if (count != 34)
 //                {
 //                    continue;
 //                }

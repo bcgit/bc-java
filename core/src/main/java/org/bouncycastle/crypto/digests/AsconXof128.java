@@ -71,7 +71,7 @@ public class AsconXof128
     @Override
     public void reset()
     {
-        buffer.reset();
+        super.reset();
         /* initialize */
         x0 = -2701369817892108309L;
         x1 = -3711838248891385495L;

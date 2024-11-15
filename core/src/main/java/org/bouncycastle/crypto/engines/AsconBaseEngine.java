@@ -213,6 +213,7 @@ abstract class AsconBaseEngine
         if (++m_bufPos == ASCON_AEAD_RATE)
         {
             processBufferAAD(m_buf, 0);
+            m_bufPos = 0;
         }
     }
 

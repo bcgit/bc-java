@@ -54,7 +54,6 @@ public class AsconAEAD128Engine
         Pack.longToLittleEndian(n, bs, off);
     }
 
-
     protected void ascon_aeadinit()
     {
         /* initialize */
@@ -86,13 +85,11 @@ public class AsconAEAD128Engine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             long c0 = Pack.littleEndianToLong(input, 0);
-            long c1 = Pack.littleEndianToLong(input, 8, inLen - 8);
-
-            Pack.longToLittleEndian(x0 ^ c0, output, outOff);
-            Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen - 8);
-
-            x0 = c0;
             inLen -= 8;
+            long c1 = Pack.littleEndianToLong(input, 8, inLen);
+            Pack.longToLittleEndian(x0 ^ c0, output, outOff);
+            Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen);
+            x0 = c0;
             x1 &= -(1L << (inLen << 3));
             x1 |= c1;
             x1 ^= pad(inLen);
@@ -116,10 +113,10 @@ public class AsconAEAD128Engine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             x0 ^= Pack.littleEndianToLong(input, 0);
-            x1 ^= Pack.littleEndianToLong(input, 8, inLen - 8);
+            inLen -= 8;
+            x1 ^= Pack.littleEndianToLong(input, 8, inLen);
             Pack.longToLittleEndian(x0, output, outOff);
             Pack.longToLittleEndian(x1, output, outOff + 8);
-            inLen -= 8;
             x1 ^= pad(inLen);
         }
         else

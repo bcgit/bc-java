@@ -1,10 +1,9 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseDigest
@@ -18,8 +17,10 @@ abstract class AsconBaseDigest
     protected final int CRYPTO_BYTES = 32;
     protected final int ASCON_HASH_RATE = 8;
     protected int ASCON_PB_ROUNDS = 12;
+    protected final byte[] m_buf = new byte[ASCON_HASH_RATE];
+    protected int m_bufPos = 0;
 
-    protected final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
     private void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
@@ -77,7 +78,13 @@ abstract class AsconBaseDigest
     @Override
     public void update(byte in)
     {
-        buffer.write(in);
+        m_buf[m_bufPos] = in;
+        if (++m_bufPos == ASCON_HASH_RATE)
+        {
+            x0 ^= loadBytes(m_buf, 0, ASCON_HASH_RATE);
+            p(ASCON_PB_ROUNDS);
+            m_bufPos = 0;
+        }
     }
 
     @Override
@@ -87,32 +94,62 @@ abstract class AsconBaseDigest
         {
             throw new DataLengthException("input buffer too short");
         }
-        buffer.write(input, inOff, len);
+        int available = 8 - m_bufPos;
+        if (len < available)
+        {
+            System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+            m_bufPos += len;
+            return;
+        }
+        int inPos = 0;
+        if (m_bufPos > 0)
+        {
+            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+            inPos += available;
+            x0 ^= loadBytes(m_buf, 0, m_buf.length);
+            p(ASCON_PB_ROUNDS);
+        }
+        int remaining;
+        while ((remaining = len - inPos) >= 8)
+        {
+            x0 ^= loadBytes(input, inOff + inPos, m_buf.length);
+            p(ASCON_PB_ROUNDS);
+            inPos += 8;
+        }
+        System.arraycopy(input, inOff + inPos, m_buf, 0, remaining);
+        m_bufPos = remaining;
     }
 
-    protected void absorb(byte[] input, int len)
+    protected void finishAbsorbing()
     {
-        int inOff = 0;
-        /* absorb full plaintext blocks */
-        while (len >= ASCON_HASH_RATE)
-        {
-            x0 ^= loadBytes(input, inOff, 8);
-            p(ASCON_PB_ROUNDS);
-            inOff += ASCON_HASH_RATE;
-            len -= ASCON_HASH_RATE;
-        }
-        /* absorb final plaintext block */
-        x0 ^= loadBytes(input, inOff, len);
-        x0 ^= pad(len);
+        x0 ^= loadBytes(m_buf, 0, m_bufPos);
+        x0 ^= pad(m_bufPos);
         p(12);
     }
+
+//    protected void absorb(byte[] input, int len)
+//    {
+//        int inOff = 0;
+//        /* absorb full plaintext blocks */
+//        while (len >= ASCON_HASH_RATE)
+//        {
+//            x0 ^= loadBytes(input, inOff, 8);
+//            p(ASCON_PB_ROUNDS);
+//            inOff += ASCON_HASH_RATE;
+//            len -= ASCON_HASH_RATE;
+//        }
+//        /* absorb final plaintext block */
+//        x0 ^= loadBytes(input, inOff, len);
+//        x0 ^= pad(len);
+//        p(12);
+//    }
 
     protected void squeeze(byte[] output, int outOff, int len)
     {
         /* squeeze full output blocks */
         while (len > ASCON_HASH_RATE)
         {
-            setBytes(x0, output, outOff, 8);
+            setBytes(x0, output, outOff, ASCON_HASH_RATE);
             p(ASCON_PB_ROUNDS);
             outOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
@@ -128,9 +165,15 @@ abstract class AsconBaseDigest
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        absorb(buffer.toByteArray(), buffer.size());
+        finishAbsorbing();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
         return outLen;
+    }
+
+    public void reset()
+    {
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
     }
 }
