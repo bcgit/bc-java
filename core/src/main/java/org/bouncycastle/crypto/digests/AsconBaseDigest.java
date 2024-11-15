@@ -59,7 +59,11 @@ abstract class AsconBaseDigest
 
     protected abstract long pad(int i);
 
+    protected abstract long loadBytes(final byte[] bytes);
+
     protected abstract long loadBytes(final byte[] bytes, int inOff, int n);
+
+    protected abstract void setBytes(long w, byte[] bytes, int inOff);
 
     protected abstract void setBytes(long w, byte[] bytes, int inOff, int n);
 
@@ -81,7 +85,7 @@ abstract class AsconBaseDigest
         m_buf[m_bufPos] = in;
         if (++m_bufPos == ASCON_HASH_RATE)
         {
-            x0 ^= loadBytes(m_buf, 0, ASCON_HASH_RATE);
+            x0 ^= loadBytes(m_buf);
             p(ASCON_PB_ROUNDS);
             m_bufPos = 0;
         }
@@ -106,7 +110,7 @@ abstract class AsconBaseDigest
         {
             System.arraycopy(input, inOff, m_buf, m_bufPos, available);
             inPos += available;
-            x0 ^= loadBytes(m_buf, 0, m_buf.length);
+            x0 ^= loadBytes(m_buf);
             p(ASCON_PB_ROUNDS);
         }
         int remaining;
@@ -127,29 +131,12 @@ abstract class AsconBaseDigest
         p(12);
     }
 
-//    protected void absorb(byte[] input, int len)
-//    {
-//        int inOff = 0;
-//        /* absorb full plaintext blocks */
-//        while (len >= ASCON_HASH_RATE)
-//        {
-//            x0 ^= loadBytes(input, inOff, 8);
-//            p(ASCON_PB_ROUNDS);
-//            inOff += ASCON_HASH_RATE;
-//            len -= ASCON_HASH_RATE;
-//        }
-//        /* absorb final plaintext block */
-//        x0 ^= loadBytes(input, inOff, len);
-//        x0 ^= pad(len);
-//        p(12);
-//    }
-
     protected void squeeze(byte[] output, int outOff, int len)
     {
         /* squeeze full output blocks */
         while (len > ASCON_HASH_RATE)
         {
-            setBytes(x0, output, outOff, ASCON_HASH_RATE);
+            setBytes(x0, output, outOff);
             p(ASCON_PB_ROUNDS);
             outOff += ASCON_HASH_RATE;
             len -= ASCON_HASH_RATE;
