@@ -4765,7 +4765,8 @@ public class TlsUtils
             {
                 if (!(tlsFeaturesSeq.getObjectAt(i) instanceof ASN1Integer))
                 {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate);
+                    throw new TlsFatalAlert(AlertDescription.bad_certificate,
+                        "Server certificate has invalid TLS Features extension");
                 }
             }
 
@@ -4779,7 +4780,8 @@ public class TlsUtils
                     Integer extensionType = Integers.valueOf(tlsExtension.intValue());
                     if (clientExtensions.containsKey(extensionType) && !serverExtensions.containsKey(extensionType))
                     {
-                        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                        throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                            "Server extensions missing TLS Feature " + extensionType);
                     }
                 }
             }
