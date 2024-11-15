@@ -49,9 +49,19 @@ public class AsconXof
         return 0x80L << (56 - (i << 3));
     }
 
+    protected long loadBytes(final byte[] bytes)
+    {
+        return Pack.bigEndianToLong(bytes, 0);
+    }
+
     protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
         return Pack.bigEndianToLong(bytes, inOff, n);
+    }
+
+    protected void setBytes(long w, byte[] bytes, int inOff)
+    {
+        Pack.longToBigEndian(w, bytes, inOff);
     }
 
     protected void setBytes(long w, byte[] bytes, int inOff, int n)

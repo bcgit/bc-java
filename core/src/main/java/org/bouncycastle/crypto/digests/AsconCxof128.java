@@ -59,9 +59,19 @@ public class AsconCxof128
         return 0x01L << (i << 3);
     }
 
+    protected long loadBytes(final byte[] bytes)
+    {
+        return Pack.littleEndianToLong(bytes, 0);
+    }
+
     protected long loadBytes(final byte[] bytes, int inOff, int n)
     {
         return Pack.littleEndianToLong(bytes, inOff, n);
+    }
+
+    protected void setBytes(long w, byte[] bytes, int inOff)
+    {
+        Pack.longToLittleEndian(w, bytes, inOff);
     }
 
     protected void setBytes(long w, byte[] bytes, int inOff, int n)
