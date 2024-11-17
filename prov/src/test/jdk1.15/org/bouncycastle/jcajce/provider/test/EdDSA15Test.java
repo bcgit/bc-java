@@ -6,23 +6,27 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.interfaces.EdECKey;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.EdECPrivateKeySpec;
+import java.security.spec.EdECPublicKeySpec;
+import java.security.spec.KeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Base64;
-
-import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
-import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
-import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.jcajce.interfaces.EdDSAPrivateKey;
+import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
+import org.bouncycastle.jcajce.spec.RawEncodedKeySpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Strings;
 
 public class EdDSA15Test
     extends TestCase
@@ -149,6 +153,40 @@ public class EdDSA15Test
             implTestInteropCase(kpSunEC, sigSunEC, sigBC);
 //            implTestInteropCase(kpSunEC, sigSunEC, sigSunEC);
         }
+
+        KeyFactory sunKeyFact = KeyFactory.getInstance(algorithm, "SunEC");
+        KeyFactory bcKeyFact = KeyFactory.getInstance(algorithm, bc);
+        KeyPair kpSunEC = kpGenSunEC.generateKeyPair();
+
+        KeySpec pubSpec = sunKeyFact.getKeySpec(kpSunEC.getPublic(), EdECPublicKeySpec.class);
+        PublicKey pubKey = bcKeyFact.generatePublic(pubSpec);
+
+        KeySpec privSpec = sunKeyFact.getKeySpec(kpSunEC.getPrivate(), EdECPrivateKeySpec.class);
+        PrivateKey privKey = bcKeyFact.generatePrivate(privSpec);
+
+        sigBC.initSign(kpSunEC.getPrivate());
+
+        sigBC.update(Strings.toByteArray("Hello, world!"));
+
+        byte[] sig = sigBC.sign();
+
+        sigBC.initVerify(pubKey);
+
+        sigBC.update(Strings.toByteArray("Hello, world!"));
+
+        sigBC.verify(sig);
+
+        sigBC.initSign(privKey);
+
+        sigBC.update(Strings.toByteArray("Hello, world!"));
+
+        sig = sigBC.sign();
+
+        sigBC.initVerify(pubKey);
+
+        sigBC.update(Strings.toByteArray("Hello, world!"));
+
+        sigBC.verify(sig);
     }
 
     private void implTestInteropCase(KeyPair kp, Signature signer, Signature verifier)
