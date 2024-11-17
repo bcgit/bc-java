@@ -53,7 +53,7 @@ ext {
 // this needs to go here, otherwise it can't find config
 apply plugin: 'io.spring.nohttp'
 
-allprojects {
+configure(allprojects.findAll {it.name != 'bom'}) {
     apply plugin: 'java'
     apply plugin: 'idea'
     apply plugin: 'checkstyle'
@@ -183,8 +183,7 @@ ext {
 
 }
 
-
-subprojects {
+configure(subprojects.findAll {it.name != 'bom'}) {
     apply plugin: 'eclipse'
     apply plugin: 'maven-publish'
 
