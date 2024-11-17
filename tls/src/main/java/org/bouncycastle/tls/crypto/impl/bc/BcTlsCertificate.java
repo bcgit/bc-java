@@ -102,7 +102,7 @@ public class BcTlsCertificate
         return certificate.getSignatureAlgorithm().getParameters();
     }
 
-    protected boolean supportsKeyUsage(int keyUsageBits)
+    protected boolean supportsKeyUsage(int keyUsageBit)
     {
         Extensions exts = certificate.getTBSCertificate().getExtensions();
         if (exts != null)
@@ -111,7 +111,7 @@ public class BcTlsCertificate
             if (ku != null)
             {
                 int bits = ku.getBytes()[0] & 0xff;
-                if ((bits & keyUsageBits) != keyUsageBits)
+                if ((bits & keyUsageBit) != keyUsageBit)
                 {
                     return false;
                 }
