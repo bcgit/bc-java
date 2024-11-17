@@ -5,12 +5,15 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.EdECPublicKey;
 import java.security.spec.EdECPrivateKeySpec;
 import java.security.spec.EdECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Optional;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -129,6 +132,28 @@ public class KeyFactorySpi
             if (key instanceof EdDSAPublicKey)
             {
                 return new RawEncodedKeySpec(((EdDSAPublicKey)key).getPointEncoding());
+            }
+        }
+        else if (spec.isAssignableFrom(EdECPrivateKeySpec.class))
+        {
+            if (key instanceof EdECPrivateKey)
+            {
+                Optional<byte[]> bytes = ((EdECPrivateKey)key).getBytes();
+                if (bytes.isPresent())
+                {
+                    return new EdECPrivateKeySpec(((EdECPrivateKey)key).getParams(), bytes.get());
+                }
+                else
+                {
+                    throw new IllegalArgumentException("no byte[] data associated with key");
+                }
+            }
+        }
+        else if (spec.isAssignableFrom(EdECPublicKeySpec.class))
+        {
+            if (key instanceof EdECPublicKey)
+            {
+                return new EdECPublicKeySpec(((EdECPublicKey)key).getParams(), ((EdECPublicKey)key).getPoint());
             }
         }
 
