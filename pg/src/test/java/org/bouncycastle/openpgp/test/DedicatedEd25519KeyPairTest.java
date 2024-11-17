@@ -59,6 +59,18 @@ public class DedicatedEd25519KeyPairTest
         testV4SigningVerificationWithBcKey();
 
         testConversionOfTestVectorKey();
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, date);
+        isEquals("Ed25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
