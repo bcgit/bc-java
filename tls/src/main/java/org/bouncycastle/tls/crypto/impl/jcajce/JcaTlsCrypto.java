@@ -582,11 +582,6 @@ public class JcaTlsCrypto
     {
         return true;
     }
-    
-    public boolean hasKemAgreement()
-    {
-        return true;
-    }
 
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
@@ -634,6 +629,11 @@ public class JcaTlsCrypto
         default:
             return false;
         }
+    }
+
+    public boolean hasKemAgreement()
+    {
+        return true;
     }
 
     public boolean hasMacAlgorithm(int macAlgorithm)
