@@ -5316,7 +5316,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(3);
         Vector clientShares = new Vector(2);
 
-        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         // TODO[tls13-psk] When clientShares empty, consider not adding extension if pre_shared_key in use
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
@@ -5332,7 +5332,7 @@ public class TlsUtils
         Hashtable clientAgreements = new Hashtable(1, 1.0f);
         Vector clientShares = new Vector(1);
 
-        collectKeyShares(clientContext, supportedGroups, keyShareGroups, clientAgreements, clientShares);
+        collectKeyShares(clientContext.getCrypto(), supportedGroups, keyShareGroups, clientAgreements, clientShares);
 
         TlsExtensionsUtils.addKeyShareClientHello(clientExtensions, clientShares);
 
@@ -5345,10 +5345,9 @@ public class TlsUtils
         return clientAgreements;
     }
 
-    private static void collectKeyShares(TlsClientContext clientContext, int[] supportedGroups, Vector keyShareGroups,
+    private static void collectKeyShares(TlsCrypto crypto, int[] supportedGroups, Vector keyShareGroups,
         Hashtable clientAgreements, Vector clientShares) throws IOException
     {
-        TlsCrypto crypto = clientContext.getCrypto();
         if (isNullOrEmpty(supportedGroups))
         {
             return;
@@ -5444,14 +5443,12 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
-                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
+                if ((NamedGroup.refersToAnECDHCurve(group) && crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && crypto.hasKemAgreement()))
                 {
-                    continue;
+                    return clientShare;
                 }
-
-                return clientShare;
             }
         }
         return null;
@@ -5481,14 +5478,12 @@ public class TlsUtils
                     continue;
                 }
 
-                if ((NamedGroup.refersToAnECDHCurve(group) && !crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && !crypto.hasDHAgreement()) ||
-                    (NamedGroup.refersToASpecificKem(group) && !crypto.hasKemAgreement()))
+                if ((NamedGroup.refersToAnECDHCurve(group) && crypto.hasECDHAgreement()) ||
+                    (NamedGroup.refersToASpecificFiniteField(group) && crypto.hasDHAgreement()) ||
+                    (NamedGroup.refersToASpecificKem(group) && crypto.hasKemAgreement()))
                 {
-                    continue;
+                    return group;
                 }
-
-                return group;
             }
         }
         return -1;
