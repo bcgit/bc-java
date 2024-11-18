@@ -23,6 +23,7 @@ import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * LMS is now promoted to the BC provider.
@@ -30,6 +31,9 @@ import org.bouncycastle.util.Strings;
 public class LMSTest
     extends TestCase
 {
+    private static final byte[] nestedPublicKey = Base64.decode("MFAwDQYLKoZIhvcNAQkQAxEDPwAEPAAAAAEAAAAFAAAAARmSUd5GHVvFNVl0JBcv+GJX8+FaUrz1mNrCHGZ1z8c4j9kgSBhaEYlu+//bc2yOhQ==");
+    private static final byte[] nestedPrivateKey = Base64.decode("MIGhAgEBMA0GCyqGSIb3DQEJEAMRBE4ETAAAAAEAAAAAAAAABQAAAAEZklHeRh1bxTVZdCQXL/hiAAAAAAAAACAAAAAgXs4Bdu2gpyoEccTNWwAA81qLeSqn2yW+LWYVAi2hadyBPQAAAAABAAAABQAAAAEZklHeRh1bxTVZdCQXL/hiV/PhWlK89Zjawhxmdc/HOI/ZIEgYWhGJbvv/23NsjoU=");
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
@@ -80,6 +84,29 @@ public class LMSTest
         signer.update(msg);
 
         assertTrue(signer.verify(sig));
+    }
+
+    public void testKeyEncoding()
+        throws Exception
+    {
+
+        KeyFactory kf = KeyFactory.getInstance("LMS", "BC");
+
+        PublicKey oldLmsPub = kf.generatePublic(new X509EncodedKeySpec(nestedPublicKey));
+        PrivateKey oldLmsPriv = kf.generatePrivate(new PKCS8EncodedKeySpec(nestedPrivateKey));
+
+        trySigning(new KeyPair(oldLmsPub, oldLmsPriv));
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BC");
+
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PublicKey newLmsPub = kf.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+        PrivateKey newLmsPriv = kf.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        trySigning(new KeyPair(newLmsPub, newLmsPriv));
     }
 
     public void testKeyFactoryLMSKey()

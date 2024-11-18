@@ -39,6 +39,7 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
@@ -131,7 +132,7 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
-        
+
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
@@ -437,8 +438,20 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+            byte[] data = Utils.readOctetString(keyEnc);
 
+            if (data != null)
+            {
+                return getLmsKeyParameters(data);
+            }
+
+            return getLmsKeyParameters(keyEnc);
+        }
+
+        private LMSKeyParameters getLmsKeyParameters(byte[] keyEnc)
+            throws IOException
+        {
             if (Pack.bigEndianToInt(keyEnc, 0) == 1)
             {
                 return LMSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
@@ -495,7 +508,7 @@ public class PublicKeyFactory
                 return new CMCEPublicKeyParameters(spParams, keyEnc);
             }
             catch (Exception e)
-            {        
+            {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
                 CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
@@ -506,13 +519,13 @@ public class PublicKeyFactory
     }
 
     private static class SABERConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(
-                    ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
+                ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
 
             SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
@@ -533,10 +546,10 @@ public class PublicKeyFactory
     }
 
     private static class FrodoConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -547,10 +560,10 @@ public class PublicKeyFactory
     }
 
     private static class PicnicConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -566,7 +579,19 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+            byte[] data = Utils.readOctetString(keyEnc);
+
+            if (data != null)
+            {
+                return getNtruPublicKeyParameters(keyInfo, data);
+            }
+
+            return getNtruPublicKeyParameters(keyInfo, keyEnc);
+        }
+
+        private NTRUPublicKeyParameters getNtruPublicKeyParameters(SubjectPublicKeyInfo keyInfo, byte[] keyEnc)
+        {
 
             NTRUParameters ntruParams = Utils.ntruParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
@@ -640,7 +665,7 @@ public class PublicKeyFactory
             return new SNTRUPrimePublicKeyParameters(ntruLPRimeParams, keyEnc);
         }
     }
-    
+
     static class DilithiumConverter
         extends SubjectPublicKeyInfoConverter
     {
@@ -720,10 +745,10 @@ public class PublicKeyFactory
     }
 
     private static class BIKEConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             try
             {
@@ -745,10 +770,10 @@ public class PublicKeyFactory
     }
 
     private static class HQCConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             try
             {
