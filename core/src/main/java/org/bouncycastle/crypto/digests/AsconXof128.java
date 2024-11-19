@@ -28,9 +28,9 @@ public class AsconXof128
         return 0x01L << (i << 3);
     }
 
-    protected long loadBytes(final byte[] bytes)
+    protected long loadBytes(final byte[] bytes, int inOff)
     {
-        return Pack.littleEndianToLong(bytes, 0);
+        return Pack.littleEndianToLong(bytes, inOff);
     }
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)

@@ -32,6 +32,7 @@ public class AsconCxof128
         this.s = Arrays.clone(s);
         reset();
         update(s, 0, s.length);
+        finishAbsorbing();
     }
 
     public AsconCxof128(byte[] s, int off, int len)
@@ -47,6 +48,7 @@ public class AsconCxof128
         this.s = Arrays.copyOfRange(s, off, off + len);
         reset();
         update(s, 0, s.length);
+        finishAbsorbing();
     }
 
     public AsconCxof128()
@@ -59,9 +61,9 @@ public class AsconCxof128
         return 0x01L << (i << 3);
     }
 
-    protected long loadBytes(final byte[] bytes)
+    protected long loadBytes(final byte[] bytes, int inOff)
     {
-        return Pack.littleEndianToLong(bytes, 0);
+        return Pack.littleEndianToLong(bytes,  inOff);
     }
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)
@@ -88,7 +90,6 @@ public class AsconCxof128
     @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
-
         if (CRYPTO_BYTES + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");

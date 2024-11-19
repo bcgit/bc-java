@@ -46,9 +46,9 @@ public class AsconDigest
         return 0x80L << (56 - (i << 3));
     }
 
-    protected long loadBytes(final byte[] bytes)
+    protected long loadBytes(final byte[] bytes, int inOff)
     {
-        return Pack.bigEndianToLong(bytes, 0);
+        return Pack.bigEndianToLong(bytes, inOff);
     }
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)
