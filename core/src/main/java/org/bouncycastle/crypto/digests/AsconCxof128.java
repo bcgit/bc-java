@@ -122,6 +122,8 @@ public class AsconCxof128
         x2 = -1616759365661982283L;
         x3 = 3076320316797452470L;
         x4 = -8124743304765850554L;
+        update(s, 0, s.length);
+        finishAbsorbing();
     }
 }
 
