@@ -73,12 +73,6 @@ public class AsconDigest
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
-    {
-        return hash(output, outOff, CRYPTO_BYTES);
-    }
-
-    @Override
     public void reset()
     {
         super.reset();

@@ -14,7 +14,7 @@ import org.bouncycastle.util.Pack;
  * <a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a>.
  * For reference source code and implementation details, please see:
  * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
- *  ASM implementations of Ascon (NIST SP 800-232)</a>.
+ * ASM implementations of Ascon (NIST SP 800-232)</a>.
  * </p>
  */
 public class AsconCxof128
@@ -31,8 +31,6 @@ public class AsconCxof128
         }
         this.s = Arrays.clone(s);
         reset();
-        update(s, 0, s.length);
-        finishAbsorbing();
     }
 
     public AsconCxof128(byte[] s, int off, int len)
@@ -47,8 +45,6 @@ public class AsconCxof128
         }
         this.s = Arrays.copyOfRange(s, off, off + len);
         reset();
-        update(s, 0, s.length);
-        finishAbsorbing();
     }
 
     public AsconCxof128()
@@ -63,7 +59,7 @@ public class AsconCxof128
 
     protected long loadBytes(final byte[] bytes, int inOff)
     {
-        return Pack.littleEndianToLong(bytes,  inOff);
+        return Pack.littleEndianToLong(bytes, inOff);
     }
 
     protected long loadBytes(final byte[] bytes, int inOff, int n)
@@ -100,11 +96,6 @@ public class AsconCxof128
         return outLen;
     }
 
-    @Override
-    public int doFinal(byte[] output, int outOff)
-    {
-        return doOutput(output, outOff, getDigestSize());
-    }
 
     @Override
     public int doFinal(byte[] output, int outOff, int outLen)
@@ -122,8 +113,11 @@ public class AsconCxof128
         x2 = -1616759365661982283L;
         x3 = 3076320316797452470L;
         x4 = -8124743304765850554L;
-        update(s, 0, s.length);
-        finishAbsorbing();
+        if (s != null)
+        {
+            update(s, 0, s.length);
+            finishAbsorbing();
+        }
     }
 }
 
