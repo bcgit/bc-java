@@ -83,12 +83,6 @@ public class AsconXof
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
-    {
-        return doOutput(output, outOff, getDigestSize());
-    }
-
-    @Override
     public int doFinal(byte[] output, int outOff, int outLen)
     {
         return doOutput(output, outOff, outLen);

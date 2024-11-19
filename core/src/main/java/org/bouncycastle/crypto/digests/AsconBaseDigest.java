@@ -124,6 +124,12 @@ abstract class AsconBaseDigest
         m_bufPos = remaining;
     }
 
+    @Override
+    public int doFinal(byte[] output, int outOff)
+    {
+        return hash(output, outOff, CRYPTO_BYTES);
+    }
+
     protected void finishAbsorbing()
     {
         x0 ^= loadBytes(m_buf, 0, m_bufPos);
