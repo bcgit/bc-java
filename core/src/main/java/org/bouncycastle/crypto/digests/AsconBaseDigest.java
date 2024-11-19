@@ -59,7 +59,7 @@ abstract class AsconBaseDigest
 
     protected abstract long pad(int i);
 
-    protected abstract long loadBytes(final byte[] bytes);
+    protected abstract long loadBytes(final byte[] bytes, int inOff);
 
     protected abstract long loadBytes(final byte[] bytes, int inOff, int n);
 
@@ -85,7 +85,7 @@ abstract class AsconBaseDigest
         m_buf[m_bufPos] = in;
         if (++m_bufPos == ASCON_HASH_RATE)
         {
-            x0 ^= loadBytes(m_buf);
+            x0 ^= loadBytes(m_buf, 0);
             p(ASCON_PB_ROUNDS);
             m_bufPos = 0;
         }
@@ -110,13 +110,13 @@ abstract class AsconBaseDigest
         {
             System.arraycopy(input, inOff, m_buf, m_bufPos, available);
             inPos += available;
-            x0 ^= loadBytes(m_buf);
+            x0 ^= loadBytes(m_buf, 0);
             p(ASCON_PB_ROUNDS);
         }
         int remaining;
         while ((remaining = len - inPos) >= 8)
         {
-            x0 ^= loadBytes(input, inOff + inPos, m_buf.length);
+            x0 ^= loadBytes(input, inOff + inPos);
             p(ASCON_PB_ROUNDS);
             inPos += 8;
         }
