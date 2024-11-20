@@ -40,7 +40,6 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
@@ -452,19 +451,11 @@ public class PublicKeyFactory
         private LMSKeyParameters getLmsKeyParameters(byte[] keyEnc)
             throws IOException
         {
-            if (Pack.bigEndianToInt(keyEnc, 0) == 1)
+            if (keyEnc.length == 64)
             {
-                return LMSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+                keyEnc = Arrays.copyOfRange(keyEnc, 4, keyEnc.length);
             }
-            else
-            {
-                // public key with extra tree height
-                if (keyEnc.length == 64)
-                {
-                    keyEnc = Arrays.copyOfRange(keyEnc, 4, keyEnc.length);
-                }
-                return HSSPublicKeyParameters.getInstance(keyEnc);
-            }
+            return HSSPublicKeyParameters.getInstance(keyEnc);
         }
     }
 
