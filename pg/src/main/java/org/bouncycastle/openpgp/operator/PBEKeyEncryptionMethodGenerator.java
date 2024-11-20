@@ -219,7 +219,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
         byte[] sessionKey = getSessionKey(sessionInfo);
-        byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionKey, ikm, iv, info);
+        byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionKey, kek, iv, info);
         byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
         byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
 
