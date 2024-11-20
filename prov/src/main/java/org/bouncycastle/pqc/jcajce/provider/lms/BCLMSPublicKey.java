@@ -26,7 +26,7 @@ public class BCLMSPublicKey
     public BCLMSPublicKey(
         LMSKeyParameters keyParams)
     {
-        this.keyParams = keyParams;
+        this.keyParams = (keyParams instanceof HSSPublicKeyParameters) ? keyParams : new HSSPublicKeyParameters(1, (LMSPublicKeyParameters)keyParams);
     }
 
     public BCLMSPublicKey(SubjectPublicKeyInfo keyInfo)

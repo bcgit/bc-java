@@ -31,8 +31,8 @@ import org.bouncycastle.util.encoders.Base64;
 public class LMSTest
     extends TestCase
 {
-    private static final byte[] nestedPublicKey = Base64.decode("MFAwDQYLKoZIhvcNAQkQAxEDPwAEPAAAAAEAAAAFAAAAARmSUd5GHVvFNVl0JBcv+GJX8+FaUrz1mNrCHGZ1z8c4j9kgSBhaEYlu+//bc2yOhQ==");
-    private static final byte[] nestedPrivateKey = Base64.decode("MIGhAgEBMA0GCyqGSIb3DQEJEAMRBE4ETAAAAAEAAAAAAAAABQAAAAEZklHeRh1bxTVZdCQXL/hiAAAAAAAAACAAAAAgXs4Bdu2gpyoEccTNWwAA81qLeSqn2yW+LWYVAi2hadyBPQAAAAABAAAABQAAAAEZklHeRh1bxTVZdCQXL/hiV/PhWlK89Zjawhxmdc/HOI/ZIEgYWhGJbvv/23NsjoU=");
+    private static final byte[] nestedPublicKey = Base64.decode("MFAwDQYLKoZIhvcNAQkQAxEDPwAEPAAAAAEAAAAFAAAAAa3sRFhG3xQtT/xfuJJswgV80jvx/sFlYxteNrZ0hheITiUL/bJ8wJpphIpoSB/E9g==");
+    private static final byte[] nestedPrivateKey = Base64.decode("MIG6AgEBMA0GCyqGSIb3DQEJEAMRBGcEZQAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAUAAAABrexEWEbfFC1P/F+4kmzCBQAAAAAAAAAgAAAAIO01yI+Hj7eX+P2clcPDW0SzllJ4uzQt1JenbcllHpQngT0AAAAAAQAAAAUAAAABrexEWEbfFC1P/F+4kmzCBXzSO/H+wWVjG142tnSGF4hOJQv9snzAmmmEimhIH8T2");
 
     public void setUp()
     {
@@ -89,7 +89,6 @@ public class LMSTest
     public void testKeyEncoding()
         throws Exception
     {
-
         KeyFactory kf = KeyFactory.getInstance("LMS", "BC");
 
         PublicKey oldLmsPub = kf.generatePublic(new X509EncodedKeySpec(nestedPublicKey));
@@ -124,7 +123,7 @@ public class LMSTest
 
         PublicKey pub1 = kFact.generatePublic(x509KeySpec);
 
-        assertEquals(kp.getPublic(), pub1);
+        assertTrue(Arrays.areEqual(kp.getPublic().getEncoded(), pub1.getEncoded()));
 
         PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded());
 
