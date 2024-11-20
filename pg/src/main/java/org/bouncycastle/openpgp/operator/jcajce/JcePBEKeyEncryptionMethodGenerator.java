@@ -151,12 +151,9 @@ public class JcePBEKeyEncryptionMethodGenerator
          return JceAEADUtil.generateHKDFBytes(ikm, null, info, SymmetricKeyUtils.getKeyLengthInOctets(kekAlgorithm));
      }
 
-     protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo, byte[] key, byte[] iv, byte[] info)
+     protected byte[] getEskAndTag(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey, byte[] key, byte[] iv, byte[] info)
          throws PGPException
      {
-         byte[] sessionKey = new byte[sessionInfo.length - 3];
-         System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
-
          AEADCipher aeadCipher = BcAEADUtil.createAEADCipher(kekAlgorithm, aeadAlgorithm);
          aeadCipher.init(true, new AEADParameters(new KeyParameter(key), 128, iv, info));
          int outLen = aeadCipher.getOutputSize(sessionKey.length);
