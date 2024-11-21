@@ -265,7 +265,7 @@ public class PGPEncryptedDataGenerator
                 // data is encrypted by AEAD Encrypted Data packet (rfc4880bis10), so write v5 SKESK packet
                 if (isV5StyleAEAD)
                 {
-                    writeOpenPGPv5ESKPacket(method, sessionKey);
+                    writeOpenPGPv5ESKPacket(method, sessionInfo);
                 }
                 else // data is encrypted by v2 SEIPD (AEAD), so write v6 SKESK packet
                 {
