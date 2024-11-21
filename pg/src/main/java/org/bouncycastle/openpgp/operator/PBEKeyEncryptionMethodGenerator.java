@@ -179,7 +179,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
 
     // If we use this method, roundtripping v5 AEAD is broken.
     //  TODO: Investigate
-    private ContainedPacket generateV5ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    private ContainedPacket generateV5ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey)
         throws PGPException
     {
         byte[] ikm = getKey(kekAlgorithm);
@@ -194,7 +194,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
         random.nextBytes(iv);
 
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
-        byte[] sessionKey = getSessionKey(sessionInfo);
         byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionKey, ikm, iv, info);
         byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
         byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
@@ -202,7 +201,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         return SymmetricKeyEncSessionPacket.createV5Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
     }
 
-    private ContainedPacket generateV6ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    private ContainedPacket generateV6ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey)
         throws PGPException
     {
         byte[] ikm = getKey(kekAlgorithm);
@@ -218,7 +217,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
         random.nextBytes(iv);
 
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
-        byte[] sessionKey = getSessionKey(sessionInfo);
         byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionKey, kek, iv, info);
         byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
         byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
