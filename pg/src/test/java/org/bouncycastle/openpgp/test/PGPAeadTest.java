@@ -47,9 +47,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.test.DumpUtil;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -198,32 +196,53 @@ public class PGPAeadTest
     private void testBcRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
+        String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, true);
         testBcDecryption(armored, password, plaintext);
+        if (!v5AEAD)
+        {
+            armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, false);
+            testBcDecryption(armored, password, plaintext);
+        }
+
     }
 
     private void testJceRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
+        String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, true);
         testJceDecryption(armored, password, plaintext);
+        if (!v5AEAD)
+        {
+            armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, false);
+            testJceDecryption(armored, password, plaintext);
+        }
     }
 
     private void testBcJceRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
+        String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, true);
         testJceDecryption(armored, password, plaintext);
+        if (!v5AEAD)
+        {
+            armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, false);
+            testJceDecryption(armored, password, plaintext);
+        }
     }
 
     private void testJceBcRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
+        String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, true);
         testBcDecryption(armored, password, plaintext);
+        if (!v5AEAD)
+        {
+            armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password, false);
+            testBcDecryption(armored, password, plaintext);
+        }
     }
 
-    private String testBcEncryption(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+    private String testBcEncryption(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password, boolean setForceSessionKey)
         throws PGPException, IOException
     {
         ByteArrayOutputStream ciphertextOut = new ByteArrayOutputStream();
@@ -240,7 +259,7 @@ public class PGPAeadTest
         encBuilder.setWithAEAD(aeadAlg, 6);
 
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
-        encGen.setForceSessionKey(true);
+        encGen.setForceSessionKey(setForceSessionKey);
         PBEKeyEncryptionMethodGenerator encMethodGen = new BcPBEKeyEncryptionMethodGenerator(password,
             digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
         encGen.addMethod(encMethodGen);
@@ -268,7 +287,7 @@ public class PGPAeadTest
         return armored;
     }
 
-    private String testJceEncryption(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
+    private String testJceEncryption(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password, boolean setForceSessionKey)
         throws PGPException, IOException
     {
         BouncyCastleProvider provider = new BouncyCastleProvider();
@@ -287,7 +306,7 @@ public class PGPAeadTest
         }
         encBuilder.setWithAEAD(aeadAlg, 6);
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
-        encGen.setForceSessionKey(true);
+        encGen.setForceSessionKey(setForceSessionKey);
         PBEKeyEncryptionMethodGenerator encMethodGen = new JcePBEKeyEncryptionMethodGenerator(password,
             digestCalculatorProvider.get(HashAlgorithmTags.SHA256));
         encGen.addMethod(encMethodGen);
@@ -429,7 +448,7 @@ public class PGPAeadTest
     public static void printHex(byte[] bytes)
     {
         // -DM System.out.println
-        System.out.println(DumpUtil.hexdump(bytes));
+        //System.out.println(DumpUtil.hexdump(bytes));
     }
 
     private static String algNames(int aeadAlg, int symAlg)
