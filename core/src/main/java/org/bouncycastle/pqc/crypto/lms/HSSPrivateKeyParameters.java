@@ -121,7 +121,16 @@ public class HSSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in);
+                try
+                {
+                    return getInstance(in);
+                }
+                catch (Exception e)
+                {
+                    // old style single LMS key.
+                    LMSPrivateKeyParameters lmsKey = LMSPrivateKeyParameters.getInstance(src);
+                    return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndex() + lmsKey.getUsagesRemaining());
+                }
             }
             finally
             {
