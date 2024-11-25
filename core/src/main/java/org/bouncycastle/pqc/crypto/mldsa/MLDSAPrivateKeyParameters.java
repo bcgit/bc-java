@@ -74,15 +74,16 @@ public class MLDSAPrivateKeyParameters
             delta = eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
             this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
             index += delta;
+            this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);
 
             if (pubKey != null)
             {
-                this.t1 = pubKey.getT1();
+                if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
+                {
+                    throw new IllegalArgumentException("passed in public key does not match private values");
+                }
             }
-            else
-            {
-                this.t1 = null;
-            }
+
             this.seed = null;
         }
     }
@@ -117,6 +118,11 @@ public class MLDSAPrivateKeyParameters
 
     public MLDSAPublicKeyParameters getPublicKeyParameters()
     {
+        if (this.t1 == null)
+        {
+            return null;
+        }
+        
         return new MLDSAPublicKeyParameters(getParameters(), rho, t1);
     }
 

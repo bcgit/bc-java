@@ -5,8 +5,6 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -23,15 +21,6 @@ import org.bouncycastle.util.Strings;
 public class MLKEMKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
-    private static Map parameters = new HashMap();
-    
-    static
-    {
-        parameters.put(MLKEMParameterSpec.ml_kem_512.getName(), MLKEMParameters.ml_kem_512);
-        parameters.put(MLKEMParameterSpec.ml_kem_768.getName(), MLKEMParameters.ml_kem_768);
-        parameters.put(MLKEMParameterSpec.ml_kem_1024.getName(), MLKEMParameters.ml_kem_1024);
-    }
-
     MLKEMKeyGenerationParameters param;
     MLKEMKeyPairGenerator engine = new MLKEMKeyPairGenerator();
 
@@ -47,7 +36,7 @@ public class MLKEMKeyPairGeneratorSpi
     protected MLKEMKeyPairGeneratorSpi(MLKEMParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.mlkemParameters = (MLKEMParameters) parameters.get(paramSpec.getName());
+        this.mlkemParameters = Utils.getParameters(paramSpec.getName());
 
         if (param == null)
         {
@@ -86,11 +75,11 @@ public class MLKEMKeyPairGeneratorSpi
     {
         String name = getNameFromParams(params);
 
-        MLKEMParameters kyberParams = (MLKEMParameters)parameters.get(name);
+        MLKEMParameters kyberParams = Utils.getParameters(name);
 
         if (name != null)
         {
-            MLKEMParameters mlkemParams = (MLKEMParameters)parameters.get(name);
+            MLKEMParameters mlkemParams = Utils.getParameters(name);
             if (mlkemParams == null)
             {
                 throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);

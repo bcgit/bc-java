@@ -5,8 +5,6 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -23,18 +21,6 @@ import org.bouncycastle.util.Strings;
 public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
-    private static Map parameters = new HashMap();
-
-    static
-    {
-        parameters.put(MLDSAParameterSpec.ml_dsa_44.getName(), MLDSAParameters.ml_dsa_44);
-        parameters.put(MLDSAParameterSpec.ml_dsa_65.getName(), MLDSAParameters.ml_dsa_65);
-        parameters.put(MLDSAParameterSpec.ml_dsa_87.getName(), MLDSAParameters.ml_dsa_87);
-        parameters.put(MLDSAParameterSpec.ml_dsa_44_with_sha512.getName(), MLDSAParameters.ml_dsa_44_with_sha512);
-        parameters.put(MLDSAParameterSpec.ml_dsa_65_with_sha512.getName(), MLDSAParameters.ml_dsa_65_with_sha512);
-        parameters.put(MLDSAParameterSpec.ml_dsa_87_with_sha512.getName(), MLDSAParameters.ml_dsa_87_with_sha512);
-    }
-
     private final MLDSAParameters mldsaParameters;
     MLDSAKeyGenerationParameters param;
     MLDSAKeyPairGenerator engine = new MLDSAKeyPairGenerator();
@@ -51,7 +37,7 @@ public class MLDSAKeyPairGeneratorSpi
     protected MLDSAKeyPairGeneratorSpi(MLDSAParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.mldsaParameters = (MLDSAParameters)parameters.get(paramSpec.getName());
+        this.mldsaParameters = Utils.getParameters(paramSpec.getName());
 
         if (param == null)
         {
@@ -92,7 +78,7 @@ public class MLDSAKeyPairGeneratorSpi
 
         if (name != null)
         {
-            MLDSAParameters mldsaParams = (MLDSAParameters)parameters.get(name);
+            MLDSAParameters mldsaParams = Utils.getParameters(name);
             if (mldsaParams == null)
             {
                 throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
