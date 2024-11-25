@@ -385,6 +385,16 @@ public class BCECPrivateKey
         return attrCarrier.getBagAttributeKeys();
     }
 
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     public void setPointFormat(String style)
     {
         withCompression = !("UNCOMPRESSED".equalsIgnoreCase(style));

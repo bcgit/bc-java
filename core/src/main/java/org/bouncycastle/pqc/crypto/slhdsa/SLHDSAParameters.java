@@ -96,7 +96,7 @@ public class SLHDSAParameters
         return preHashDigest;
     }
 
-    int getN()
+    public int getN()
     {
         return engineProvider.getN();
     }

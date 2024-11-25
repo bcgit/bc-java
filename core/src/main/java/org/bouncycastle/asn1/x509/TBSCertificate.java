@@ -41,7 +41,7 @@ public class TBSCertificate
     ASN1Integer             serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
-    Time                    startDate, endDate;
+    Validity                validity;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
     ASN1BitString           issuerUniqueId;
@@ -110,20 +110,8 @@ public class TBSCertificate
 
         signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqStart + 2));
         issuer = X500Name.getInstance(seq.getObjectAt(seqStart + 3));
-
-        //
-        // before and after dates
-        //
-        ASN1Sequence  dates = (ASN1Sequence)seq.getObjectAt(seqStart + 4);
-
-        startDate = Time.getInstance(dates.getObjectAt(0));
-        endDate = Time.getInstance(dates.getObjectAt(1));
-
+        validity = Validity.getInstance(seq.getObjectAt(seqStart + 4));
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
-
-        //
-        // public key info.
-        //
         subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
 
         int extras = seq.size() - (seqStart + 6) - 1;
@@ -158,6 +146,49 @@ public class TBSCertificate
         }
     }
 
+    public TBSCertificate(ASN1Integer version, ASN1Integer serialNumber, AlgorithmIdentifier signature,
+        X500Name issuer, Validity validity, X500Name subject, SubjectPublicKeyInfo subjectPublicKeyInfo,
+        ASN1BitString issuerUniqueId, ASN1BitString subjectUniqueId, Extensions extensions)
+    {
+        if (serialNumber == null)
+        {
+            throw new NullPointerException("'serialNumber' cannot be null");
+        }
+        if (signature == null)
+        {
+            throw new NullPointerException("'signature' cannot be null");
+        }
+        if (issuer == null)
+        {
+            throw new NullPointerException("'issuer' cannot be null");
+        }
+        if (validity == null)
+        {
+            throw new NullPointerException("'validity' cannot be null");
+        }
+        if (subject == null)
+        {
+            throw new NullPointerException("'subject' cannot be null");
+        }
+        if (subjectPublicKeyInfo == null)
+        {
+            throw new NullPointerException("'subjectPublicKeyInfo' cannot be null");
+        }
+
+        this.version = version != null ? version : new ASN1Integer(0);
+        this.serialNumber = serialNumber;
+        this.signature = signature;
+        this.issuer = issuer;
+        this.validity = validity;
+        this.subject = subject;
+        this.subjectPublicKeyInfo = subjectPublicKeyInfo;
+        this.issuerUniqueId = issuerUniqueId;
+        this.subjectUniqueId = subjectUniqueId;
+        this.extensions = extensions;
+
+        this.seq = null;
+    }
+
     public int getVersionNumber()
     {
         return version.intValueExact() + 1;
@@ -183,14 +214,19 @@ public class TBSCertificate
         return issuer;
     }
 
+    public Validity getValidity()
+    {
+        return validity;
+    }
+
     public Time getStartDate()
     {
-        return startDate;
+        return validity.getNotBefore();
     }
 
     public Time getEndDate()
     {
-        return endDate;
+        return validity.getNotAfter();
     }
 
     public X500Name getSubject()
@@ -220,19 +256,22 @@ public class TBSCertificate
 
     public ASN1Primitive toASN1Primitive()
     {
-        if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)
+        if (seq != null)
         {
-            if (Properties.isOverrideSet("org.bouncycastle.x509.allow_non-der_tbscert"))
+            if (Properties.getPropertyValue("org.bouncycastle.x509.allow_non-der_tbscert") != null)
+            {
+                if (Properties.isOverrideSet("org.bouncycastle.x509.allow_non-der_tbscert"))
+                {
+                    return seq;
+                }
+            }
+            else
             {
                 return seq;
             }
         }
-        else
-        {
-            return seq;
-        }
 
-        ASN1EncodableVector v = new ASN1EncodableVector();
+        ASN1EncodableVector v = new ASN1EncodableVector(10);
 
         // DEFAULT Zero
         if (!version.hasValue(0))
@@ -243,27 +282,8 @@ public class TBSCertificate
         v.add(serialNumber);
         v.add(signature);
         v.add(issuer);
-
-        //
-        // before and after dates
-        //
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(startDate);
-            validity.add(endDate);
-
-            v.add(new DERSequence(validity));
-        }
-
-        if (subject != null)
-        {
-            v.add(subject);
-        }
-        else
-        {
-            v.add(new DERSequence());
-        }
-
+        v.add(validity);
+        v.add(subject);
         v.add(subjectPublicKeyInfo);
 
         // Note: implicit tag

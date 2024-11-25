@@ -3,6 +3,7 @@ package org.bouncycastle.operator.test;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
@@ -36,11 +37,25 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
+import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -451,5 +466,71 @@ public class AllTests
         Assert.assertEquals(new AlgorithmIdentifier(digestOid, DERNull.INSTANCE), oaepParams.getMaskGenAlgorithm().getParameters());
         Assert.assertEquals(PKCSObjectIdentifiers.id_pSpecified, oaepParams.getPSourceAlgorithm().getAlgorithm());
         Assert.assertEquals(new DEROctetString(Hex.decode("beef")), oaepParams.getPSourceAlgorithm().getParameters());
+    }
+
+    public void testDefaultKemEncapsulationLengthProvider()
+    {
+        KemEncapsulationLengthProvider lengthProvider = new DefaultKemEncapsulationLengthProvider();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
+
+        ASN1ObjectIdentifier[] mlKemOids = new ASN1ObjectIdentifier[]
+            {
+                NISTObjectIdentifiers.id_alg_ml_kem_512,
+                NISTObjectIdentifiers.id_alg_ml_kem_768,
+                NISTObjectIdentifiers.id_alg_ml_kem_1024
+            };
+
+        MLKEMParameters[] mlKemParams = new MLKEMParameters[]
+            {
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024
+            };
+
+        for (int i = 0; i != mlKemOids.length; i++)
+        {
+            MLKEMKeyPairGenerator kpg = new MLKEMKeyPairGenerator();
+
+            kpg.init(new MLKEMKeyGenerationParameters(random, mlKemParams[i]));
+
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            MLKEMExtractor ext = new MLKEMExtractor((MLKEMPrivateKeyParameters)kp.getPrivate());
+
+            assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(mlKemOids[i])));
+        }
+
+        ASN1ObjectIdentifier[] ntruOids = new ASN1ObjectIdentifier[]
+            {
+                BCObjectIdentifiers.ntruhps2048509,
+                BCObjectIdentifiers.ntruhps2048677,
+                BCObjectIdentifiers.ntruhps4096821,
+                BCObjectIdentifiers.ntruhps40961229,
+                BCObjectIdentifiers.ntruhrss701,
+                BCObjectIdentifiers.ntruhrss1373,
+            };
+
+        NTRUParameters[] ntruParams = new NTRUParameters[]
+            {
+                NTRUParameters.ntruhps2048509,
+                NTRUParameters.ntruhps2048677,
+                NTRUParameters.ntruhps4096821,
+                NTRUParameters.ntruhps40961229,
+                NTRUParameters.ntruhrss701,
+                NTRUParameters.ntruhrss1373
+            };
+
+        for (int i = 0; i != ntruOids.length; i++)
+        {
+            NTRUKeyPairGenerator kpg = new NTRUKeyPairGenerator();
+
+            kpg.init(new NTRUKeyGenerationParameters(random, ntruParams[i]));
+
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            NTRUKEMExtractor ext = new NTRUKEMExtractor((NTRUPrivateKeyParameters)kp.getPrivate());
+
+            assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(ntruOids[i])));
+        }
     }
 }

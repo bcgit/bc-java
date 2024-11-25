@@ -13,7 +13,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * <pre>
  *  CMSORIforKEMOtherInfo ::= SEQUENCE {
  *     wrap KeyEncryptionAlgorithmIdentifier,
- *     kekLength INTEGER (1..MAX),
+ *     kekLength INTEGER (1..65535),
  *     ukm [0] EXPLICIT UserKeyingMaterial OPTIONAL
  *   }
  *
@@ -34,6 +34,10 @@ public class CMSORIforKEMOtherInfo
 
     public CMSORIforKEMOtherInfo(AlgorithmIdentifier wrap, int kekLength, byte[] ukm)
     {
+        if (kekLength > 65535)
+        {
+            throw new IllegalArgumentException("kekLength must be <= 65535");
+        }
         this.wrap = wrap;
         this.kekLength = kekLength;
         this.ukm = ukm;

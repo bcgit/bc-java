@@ -138,11 +138,6 @@ public class X9FieldID
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(this.id);
-        v.add(this.parameters);
-
-        return new DERSequence(v);
+        return new DERSequence(id, parameters);
     }
 }

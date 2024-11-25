@@ -1951,13 +1951,7 @@ public class CertPathValidatorTest
             //
             // before and after dates
             //
-            {
-                ASN1EncodableVector validity = new ASN1EncodableVector(2);
-                validity.add(startDate);
-                validity.add(endDate);
-
-                v.add(new DERSequence(validity));
-            }
+            v.add(new DERSequence(startDate, endDate));
 
             if (subject != null)
             {
