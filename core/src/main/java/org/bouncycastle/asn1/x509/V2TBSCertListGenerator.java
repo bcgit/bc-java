@@ -264,37 +264,27 @@ public class V2TBSCertListGenerator
 
     private static ASN1Sequence createReasonExtension(int reasonCode)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
         CRLReason crlReason = CRLReason.lookup(reasonCode);
 
         try
         {
-            v.add(Extension.reasonCode);
-            v.add(new DEROctetString(crlReason.getEncoded()));
+            return new DERSequence(Extension.reasonCode, new DEROctetString(crlReason.getEncoded()));
         }
         catch (IOException e)
         {
             throw new IllegalArgumentException("error encoding reason: " + e);
         }
-
-        return new DERSequence(v);
     }
 
     private static ASN1Sequence createInvalidityDateExtension(ASN1GeneralizedTime invalidityDate)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
         try
         {
-            v.add(Extension.invalidityDate);
-            v.add(new DEROctetString(invalidityDate.getEncoded()));
+            return new DERSequence(Extension.invalidityDate, new DEROctetString(invalidityDate.getEncoded()));
         }
         catch (IOException e)
         {
             throw new IllegalArgumentException("error encoding reason: " + e);
         }
-
-        return new DERSequence(v);
     }
 }

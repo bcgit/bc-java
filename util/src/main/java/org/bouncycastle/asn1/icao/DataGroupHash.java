@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.icao;
 
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -88,10 +87,6 @@ public class DataGroupHash
     
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector seq = new ASN1EncodableVector(2);
-        seq.add(dataGroupNumber);
-        seq.add(dataGroupHashValue);  
-
-        return new DERSequence(seq);
+        return new DERSequence(dataGroupNumber, dataGroupHashValue);
     }
 }

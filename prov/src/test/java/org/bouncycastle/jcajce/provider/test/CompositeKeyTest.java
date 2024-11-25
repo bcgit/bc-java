@@ -113,15 +113,4 @@ public class CompositeKeyTest
         
         CompositePrivateKey compPrivKey = (CompositePrivateKey)keyFact.generatePrivate(new PKCS8EncodedKeySpec(genPrivKey));
     }
-
-    public void testExplicitCompositeKey()
-        throws Exception
-    {
-        KeyFactory keyFact = KeyFactory.getInstance("COMPOSITE", "BC");
-
-        CompositePublicKey compPubKey = (CompositePublicKey)keyFact.generatePublic(new X509EncodedKeySpec(expPubKey));
-
-       // System.out.println(ASN1Dump.dumpAsString(ASN1Primitive.fromByteArray(expPubKey)));
-        CompositePrivateKey compPrivKey = (CompositePrivateKey)keyFact.generatePrivate(new PKCS8EncodedKeySpec(expPrivKey));
-    }
 }

@@ -1,7 +1,7 @@
 #
 # JDK 1.2 edits
 
-for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java org/bouncycastle/bcpg/sig/* org/bouncycastle/cms/* org/bouncycastle/pkcs/* org/bouncycastle/gpg/*
+for i in org/bouncycastle/pqc/jcajce/provider/*/*.java  org/bouncycastle/pqc/*/*/*.java org/bouncycastle/pqc/*/*/*/*.java  org/bouncycastle/crypto/digests/*.java org/bouncycastle/cert/cmp/*.java org/bouncycastle/crypto/engines/*.java org/bouncycastle/openpgp/operator/*.java org/bouncycastle/openpgp/operator/jcajce/*.java org/bouncycastle/openpgp/operator/bc/*.java org/bouncycastle/openpgp/*.java org/bouncycastle/bcpg/*.java org/bouncycastle/openpgp/test/*.java org/bouncycastle/bcpg/test/*.java org/bouncycastle/bcpg/sig/* org/bouncycastle/cms/* org/bouncycastle/pkcs/* org/bouncycastle/gpg/* org/bouncycastle/test/*.java org/bouncycastle/jcajce/provider/asymmetric/*.java org/bouncycastle/jcajce/provider/asymmetric/*/*.java
 do
 ed $i <<%%
 g/ .Override/d
@@ -10,6 +10,7 @@ g/ .Deprecated/d
 g/	.Deprecated/d
 g/ .FunctionalInterface/d
 g/	.FunctionalInterface/d
+g/StringBuilder/s//StringBuffer/g
 w
 q
 %%
@@ -47,6 +48,18 @@ q
 
 ed org/bouncycastle/util/test/FixedSecureRandom.java <<%
 g/private static final boolean/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/KEMGenerateSpec.java <<%
+g/private final/s/final//
+w
+q
+%
+
+ed org/bouncycastle/jcajce/spec/KEMExtractSpec.java <<%
+g/private final/s/final//
 w
 q
 %

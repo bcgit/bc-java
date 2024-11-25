@@ -12,6 +12,7 @@ import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
@@ -48,6 +49,19 @@ public class LegacyEd25519KeyPairTest
         testConversionOfBcKeyPair();
         testV4SigningVerificationWithJcaKey();
         testV4SigningVerificationWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
+        isEquals("Ed25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testV4SigningVerificationWithJcaKey()

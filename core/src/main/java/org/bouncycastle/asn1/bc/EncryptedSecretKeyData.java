@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.bc;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -63,11 +62,6 @@ public class EncryptedSecretKeyData
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(keyEncryptionAlgorithm);
-        v.add(encryptedKeyData);
-
-        return new DERSequence(v);
+        return new DERSequence(keyEncryptionAlgorithm, encryptedKeyData);
     }
 }

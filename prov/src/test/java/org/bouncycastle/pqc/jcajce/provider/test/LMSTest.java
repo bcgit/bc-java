@@ -23,6 +23,7 @@ import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * LMS is now promoted to the BC provider.
@@ -30,12 +31,32 @@ import org.bouncycastle.util.Strings;
 public class LMSTest
     extends TestCase
 {
+    private static final byte[] nestedPublicKey = Base64.decode("MFAwDQYLKoZIhvcNAQkQAxEDPwAEPAAAAAEAAAAFAAAAAa3sRFhG3xQtT/xfuJJswgV80jvx/sFlYxteNrZ0hheITiUL/bJ8wJpphIpoSB/E9g==");
+    private static final byte[] nestedPrivateKey = Base64.decode("MIG6AgEBMA0GCyqGSIb3DQEJEAMRBGcEZQAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAAUAAAABrexEWEbfFC1P/F+4kmzCBQAAAAAAAAAgAAAAIO01yI+Hj7eX+P2clcPDW0SzllJ4uzQt1JenbcllHpQngT0AAAAAAQAAAAUAAAABrexEWEbfFC1P/F+4kmzCBXzSO/H+wWVjG142tnSGF4hOJQv9snzAmmmEimhIH8T2");
+
+    private static byte[] lmsPublicEnc = Base64.decode("MFAwDQYLKoZIhvcNAQkQAxEDPwAEPAAAAAEAAAAFAAAAAXjGRFXZMjGgOKA/sHWwYWNl6eTf5nI+RcEvlnIKQHQXpxNDreZCkeFm6x9CBN4YlA==");
+    private static byte[] lmsPrivateEnc = Base64.decode("MIGhAgEBMA0GCyqGSIb3DQEJEAMRBE4ETAAAAAEAAAAAAAAABQAAAAF4xkRV2TIxoDigP7B1sGFjAAAAAAAAACAAAAAghIRA7xa5TChn4+0KIh1LvGLp14alEkmcz3m3v7kTiBeBPQAAAAABAAAABQAAAAF4xkRV2TIxoDigP7B1sGFjZenk3+ZyPkXBL5ZyCkB0F6cTQ63mQpHhZusfQgTeGJQ=");
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastleProvider());
         }
+    }
+
+    public void testLmsOldKeyEncoding()
+        throws Exception
+    {
+        PKCS8EncodedKeySpec lmsPrivateKeySpec = new PKCS8EncodedKeySpec(lmsPrivateEnc);
+        X509EncodedKeySpec lmsPublicKeySpec = new X509EncodedKeySpec(lmsPublicEnc);
+
+        KeyFactory kFact = KeyFactory.getInstance("LMS", "BC");
+
+        PrivateKey lmsPrivateKey = kFact.generatePrivate(lmsPrivateKeySpec);
+        PublicKey lmsPublicKey = kFact.generatePublic(lmsPublicKeySpec);
+
+        trySigning(new KeyPair(lmsPublicKey, lmsPrivateKey));
     }
 
     public void testKeyPairGenerators()
@@ -82,6 +103,28 @@ public class LMSTest
         assertTrue(signer.verify(sig));
     }
 
+    public void testKeyEncoding()
+        throws Exception
+    {
+        KeyFactory kf = KeyFactory.getInstance("LMS", "BC");
+
+        PublicKey oldLmsPub = kf.generatePublic(new X509EncodedKeySpec(nestedPublicKey));
+        PrivateKey oldLmsPriv = kf.generatePrivate(new PKCS8EncodedKeySpec(nestedPrivateKey));
+
+        trySigning(new KeyPair(oldLmsPub, oldLmsPriv));
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BC");
+
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        PublicKey newLmsPub = kf.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded()));
+        PrivateKey newLmsPriv = kf.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded()));
+
+        trySigning(new KeyPair(newLmsPub, newLmsPriv));
+    }
+
     public void testKeyFactoryLMSKey()
         throws Exception
     {
@@ -97,7 +140,7 @@ public class LMSTest
 
         PublicKey pub1 = kFact.generatePublic(x509KeySpec);
 
-        assertEquals(kp.getPublic(), pub1);
+        assertTrue(Arrays.areEqual(kp.getPublic().getEncoded(), pub1.getEncoded()));
 
         PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded());
 

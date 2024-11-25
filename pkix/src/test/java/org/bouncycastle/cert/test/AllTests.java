@@ -13,6 +13,14 @@ import org.bouncycastle.util.test.SimpleTestResult;
 public class AllTests
     extends TestCase
 {
+    public void setUp()
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+    
     public void testSimpleTests()
     {
         org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new CertTest(), new DANETest(), new PKCS10Test(), new AttrCertSelectorTest(), new AttrCertTest(), new X509ExtensionUtilsTest(),

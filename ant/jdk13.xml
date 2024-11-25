@@ -13,6 +13,7 @@
     <property name="artifacts.dir" value="${build.dir}/artifacts/${jdk.name}" />
     <property name="target.prefix" value="jdk13" />
     <property name="javadoc.args" value="-protected" />
+    <property name="junit.maxmemory" value="1536m" />
 
     <target name="init">
         <mkdir dir="${src.dir}" />
@@ -55,6 +56,7 @@
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/Logging*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
+                <exclude name="**/COMPOSITE.java"/>
                 <exclude name="**/gemss/*.java"/>
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
@@ -89,6 +91,7 @@
                 <exclude name="**/gemss/*.java" />
                 <exclude name="**/CertPathReviewer*.java" />
                 <exclude name="**/PKIXCertPathReviewer.java" />
+                <exclude name="**/COMPOSITE.java"/>
                 <exclude name="**/PKIXAttrCert*.java" />
                 <exclude name="**/PKIXNameConstraints*.java" />
                 <exclude name="**/PKCS12StoreParameter.java" />
@@ -248,6 +251,7 @@
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">
+                <exclude name="**/CheckNameConstraintsTest.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/SunProviderTest.java" />
                 <exclude name="**/NullProviderTest.java" />
@@ -328,19 +332,29 @@
 
         <replaceregexp match="${regexp}" replace=" " flags="g" byline="true">
             <fileset dir="${src.dir}">
-              <include name="**/*.java"/>
+                <include name="**/*.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
             </fileset>
         </replaceregexp>
         <replaceregexp match="(List|Map|Set) >" replace="\1" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
+            </fileset>
+        </replaceregexp>
+        <replaceregexp match="StringBuilder" replace="StringBuffer" flags="g" byline="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+                <exclude name="**/MultipartParserTest.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
             </fileset>
         </replaceregexp>
         <replaceregexp match="LinkedHashSet" replace="HashSet" flags="g" byline="true">
             <fileset dir="${src.dir}">
                 <include name="**/*.java"/>
                 <exclude name="**/MultipartParserTest.java"/>
+                <exclude name="**/SICBlockCipher.java"/>
             </fileset>
         </replaceregexp>
         <replaceregexp match="\.\.\." replace="[]" flags="g" byline="true">

@@ -7,10 +7,10 @@ import java.util.Enumeration;
 import java.util.Locale;
 
 import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x509.AttCertIssuer;
 import org.bouncycastle.asn1.x509.Attribute;
@@ -249,7 +249,8 @@ public class X509v2AttributeCertificateBuilder
     {
         try
         {
-            extGenerator = CertUtils.doReplaceExtension(extGenerator, new Extension(oid, isCritical, value.toASN1Primitive().getEncoded(ASN1Encoding.DER)));
+            extGenerator = CertUtils.doReplaceExtension(extGenerator,
+                new Extension(oid, isCritical, new DEROctetString(value)));
         }
         catch (IOException e)
         {
