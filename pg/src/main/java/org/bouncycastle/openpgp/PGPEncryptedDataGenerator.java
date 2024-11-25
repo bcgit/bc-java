@@ -88,7 +88,7 @@ public class PGPEncryptedDataGenerator
     private SecureRandom rand;
     // If true, force generation of a session key, even if we only have a single password-based encryption method
     //  and could therefore use the S2K output as session key directly.
-    private boolean forceSessionKey = false;
+    private boolean forceSessionKey = true;
 
     /**
      * Base constructor.
@@ -121,7 +121,9 @@ public class PGPEncryptedDataGenerator
      * Some versions of PGP always expect a session key, this will force use
      * of a session key even if a single PBE encryptor is provided.
      *
-     * @param forceSessionKey true if a session key should always be used, default is false.
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.1-4">
+     *     RFC9580 - Description of the optional encrypted session key field</a>
+     * @param forceSessionKey true if a session key should always be used, default is true.
      */
     public void setForceSessionKey(boolean forceSessionKey)
     {
@@ -223,7 +225,9 @@ public class PGPEncryptedDataGenerator
 
         boolean directS2K = !forceSessionKey && methods.size() == 1 &&
             methods.get(0) instanceof PBEKeyEncryptionMethodGenerator;
-        if (directS2K)
+        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD();
+        boolean isSEIPv2 = dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD;
+        if (directS2K && !isSEIPv2)
         {
             sessionKey = ((PBEKeyEncryptionMethodGenerator)methods.get(0)).getKey(defAlgorithm);
             sessionInfo = null; // null indicates direct use of S2K output as sessionKey/messageKey
@@ -238,8 +242,7 @@ public class PGPEncryptedDataGenerator
 
         // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
         // Since we cannot inject the IV into the data encryptor, we append it to the message key.
-        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD();
-        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
+        if (isSEIPv2)
         {
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
                 SymmetricEncIntegrityPacket.VERSION_2,
