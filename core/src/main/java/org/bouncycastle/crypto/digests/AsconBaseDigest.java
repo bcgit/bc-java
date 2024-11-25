@@ -130,7 +130,7 @@ abstract class AsconBaseDigest
         return hash(output, outOff, CRYPTO_BYTES);
     }
 
-    protected void finishAbsorbing()
+    protected void padAndAbsorb()
     {
         x0 ^= loadBytes(m_buf, 0, m_bufPos);
         x0 ^= pad(m_bufPos);
@@ -158,7 +158,7 @@ abstract class AsconBaseDigest
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        finishAbsorbing();
+        padAndAbsorb();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
         return outLen;
