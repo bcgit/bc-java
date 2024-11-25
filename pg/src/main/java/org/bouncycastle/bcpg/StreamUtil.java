@@ -117,7 +117,7 @@ class StreamUtil
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (long)read4OctetLength(in) * 1000L;
+        return ((long)read4OctetLength(in) & 0xFFFFFFFFL) * 1000L;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)

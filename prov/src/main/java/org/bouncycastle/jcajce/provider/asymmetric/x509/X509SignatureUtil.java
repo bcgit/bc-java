@@ -116,9 +116,9 @@ class X509SignatureUtil
             }
             if (X9ObjectIdentifiers.ecdsa_with_SHA2.equals(sigAlgOid))
             {
-                ASN1Sequence ecDsaParams = ASN1Sequence.getInstance(params);
+                AlgorithmIdentifier ecDsaParams = AlgorithmIdentifier.getInstance(params);
 
-                return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
+                return getDigestAlgName(ecDsaParams.getAlgorithm()) + "withECDSA";
             }
         }
 

@@ -26,6 +26,23 @@ public class HSSPrivateKeyParameters
 
     private HSSPublicKeyParameters publicKey;
 
+    public HSSPrivateKeyParameters(LMSPrivateKeyParameters key, long index, long indexLimit)
+    {
+        super(true);
+
+        this.l = 1;
+        this.keys = Collections.singletonList(key);
+        this.sig = Collections.emptyList();
+        this.index = index;
+        this.indexLimit = indexLimit;
+        this.isShard = false;
+
+        //
+        // Correct Intermediate LMS values will be constructed during reset to index.
+        //
+        resetKeyToIndex();
+    }
+
     public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit)
     {
         super(true);
@@ -104,7 +121,16 @@ public class HSSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in);
+                try
+                {
+                    return getInstance(in);
+                }
+                catch (Exception e)
+                {
+                    // old style single LMS key.
+                    LMSPrivateKeyParameters lmsKey = LMSPrivateKeyParameters.getInstance(src);
+                    return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndex() + lmsKey.getUsagesRemaining());
+                }
             }
             finally
             {
