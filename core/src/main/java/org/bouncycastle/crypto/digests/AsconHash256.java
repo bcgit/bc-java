@@ -13,10 +13,10 @@ import org.bouncycastle.util.Pack;
  *  ASM implementations of Ascon (NIST SP 800-232)</a>.
  * </p>
  */
-public class AsconHash256Digest
+public class AsconHash256
     extends AsconBaseDigest
 {
-    public AsconHash256Digest()
+    public AsconHash256()
     {
         reset();
     }

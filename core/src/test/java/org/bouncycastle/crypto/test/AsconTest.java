@@ -12,12 +12,12 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.crypto.digests.AsconCxof128;
+import org.bouncycastle.crypto.digests.AsconCXof128;
 import org.bouncycastle.crypto.digests.AsconDigest;
-import org.bouncycastle.crypto.digests.AsconHash256Digest;
+import org.bouncycastle.crypto.digests.AsconHash256;
 import org.bouncycastle.crypto.digests.AsconXof;
 import org.bouncycastle.crypto.digests.AsconXof128;
-import org.bouncycastle.crypto.engines.AsconAEAD128Engine;
+import org.bouncycastle.crypto.engines.AsconAEAD128;
 import org.bouncycastle.crypto.engines.AsconEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -96,7 +96,7 @@ public class AsconTest
             @Override
             public AEADCipher CreateInstace()
             {
-                return new AsconAEAD128Engine();
+                return new AsconAEAD128();
             }
         });
 
@@ -127,10 +127,10 @@ public class AsconTest
             }
         });
 
-        DigestTest.checkDigestReset(this, new AsconHash256Digest());
+        DigestTest.checkDigestReset(this, new AsconHash256());
         DigestTest.checkDigestReset(this, new AsconXof128());
-        DigestTest.checkDigestReset(this, new AsconCxof128());
-        DigestTest.checkDigestReset(this, new AsconCxof128());
+        DigestTest.checkDigestReset(this, new AsconCXof128());
+        DigestTest.checkDigestReset(this, new AsconCXof128());
         DigestTest.checkDigestReset(this, new AsconXof(AsconXof.AsconParameters.AsconXof));
         DigestTest.checkDigestReset(this, new AsconXof(AsconXof.AsconParameters.AsconXofA));
         DigestTest.checkDigestReset(this, new AsconDigest(AsconDigest.AsconParameters.AsconHash));
@@ -184,7 +184,7 @@ public class AsconTest
             @Override
             public AEADCipher createEngine()
             {
-                return new AsconAEAD128Engine();
+                return new AsconAEAD128();
             }
         });
     }
@@ -223,7 +223,7 @@ public class AsconTest
             @Override
             public ExtendedDigest createDigest()
             {
-                return new AsconHash256Digest();
+                return new AsconHash256();
             }
         });
     }
@@ -275,7 +275,7 @@ public class AsconTest
             @Override
             public AEADCipher createEngine()
             {
-                return new AsconAEAD128Engine();
+                return new AsconAEAD128();
             }
         });
     }
@@ -327,7 +327,7 @@ public class AsconTest
             @Override
             public ExtendedDigest createDigest()
             {
-                return new AsconCxof128();
+                return new AsconCXof128();
             }
         });
     }
@@ -366,7 +366,7 @@ public class AsconTest
             @Override
             public ExtendedDigest createDigest()
             {
-                return new AsconHash256Digest();
+                return new AsconHash256();
             }
         }, 32);
     }
@@ -418,7 +418,7 @@ public class AsconTest
             @Override
             public AEADCipher createEngine()
             {
-                return new AsconAEAD128Engine();
+                return new AsconAEAD128();
             }
         }, 16, 16, 16);
     }
@@ -456,7 +456,7 @@ public class AsconTest
             @Override
             public ExtendedDigest createDigest()
             {
-                return new AsconCxof128();
+                return new AsconCXof128();
             }
         }, 32);
     }
@@ -494,13 +494,13 @@ public class AsconTest
     public void testVectorsEngine_asconaead128()
         throws Exception
     {
-        implTestVectorsEngine(new AsconAEAD128Engine(), "crypto/ascon/asconaead128", "128_128");
+        implTestVectorsEngine(new AsconAEAD128(), "crypto/ascon/asconaead128", "128_128");
     }
 
     public void testVectorsDigest_AsconHash256()
         throws Exception
     {
-        implTestVectorsDigest(new AsconHash256Digest(), "crypto/ascon/asconhash256", "LWC_HASH_KAT_256");
+        implTestVectorsDigest(new AsconHash256(), "crypto/ascon/asconhash256", "LWC_HASH_KAT_256");
     }
 
     public void testVectorsXof_AsconXof128()
@@ -653,8 +653,8 @@ public class AsconTest
         }
         else
         {
-            keySize = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
-            ivSize = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+            keySize = ((AsconAEAD128)ascon).getKeyBytesSize();
+            ivSize = ((AsconAEAD128)ascon).getIVBytesSize();
         }
 
         int offset;
@@ -1009,8 +1009,8 @@ public class AsconTest
         }
         else
         {
-            keySize2 = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
-            ivSize2 = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+            keySize2 = ((AsconAEAD128)ascon).getKeyBytesSize();
+            ivSize2 = ((AsconAEAD128)ascon).getIVBytesSize();
         }
         if (keySize2 != keySize)
         {
@@ -1221,8 +1221,8 @@ public class AsconTest
         }
         else
         {
-            keySize = ((AsconAEAD128Engine)ascon).getKeyBytesSize();
-            ivSize = ((AsconAEAD128Engine)ascon).getIVBytesSize();
+            keySize = ((AsconAEAD128)ascon).getKeyBytesSize();
+            ivSize = ((AsconAEAD128)ascon).getIVBytesSize();
         }
         int macSize = ivSize * 8;
 

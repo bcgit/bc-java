@@ -21,10 +21,10 @@ import org.bouncycastle.util.Pack;
  *
  * @version 1.3
  */
-public class AsconAEAD128Engine
+public class AsconAEAD128
     extends AsconBaseEngine
 {
-    public AsconAEAD128Engine()
+    public AsconAEAD128()
     {
         CRYPTO_KEYBYTES = 16;
         CRYPTO_ABYTES = 16;
