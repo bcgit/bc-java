@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -12,7 +11,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -45,7 +43,6 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
@@ -156,29 +153,17 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            ASN1OctetString lmsKey = parseOctetString(keyInfo.getPrivateKey(), 64);
+            byte[] keyEnc = lmsKey.getOctets();
             ASN1BitString pubKey = keyInfo.getPublicKeyData();
 
-            if (Pack.bigEndianToInt(keyEnc, 0) == 1)
+            if (pubKey != null)
             {
-                if (pubKey != null)
-                {
-                    byte[] pubEnc = pubKey.getOctets();
+                byte[] pubEnc = pubKey.getOctets();
 
-                    return LMSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length), Arrays.copyOfRange(pubEnc, 4, pubEnc.length));
-                }
-                return LMSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+                return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length), pubEnc);
             }
-            else
-            {
-                if (pubKey != null)
-                {
-                    byte[] pubEnc = pubKey.getOctets();
-
-                    return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length), pubEnc);
-                }
-                return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
-            }
+            return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
         }
         else if (algOID.on(BCObjectIdentifiers.sphincsPlus) || algOID.on(BCObjectIdentifiers.sphincsPlus_interop))
         {
@@ -466,6 +451,7 @@ public class PrivateKeyFactory
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
      */
     private static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
+        throws IOException
     {
         byte[] data = octStr.getOctets();
         //
@@ -478,37 +464,15 @@ public class PrivateKeyFactory
 
         //
         // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
-        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
-
-        int tag = bIn.read();
-        int len = readLen(bIn);
-        if (tag == BERTags.OCTET_STRING)
+        data = Utils.readOctetString(data);
+        if (data != null)
         {
-            if (len == bIn.available())
-            {
-                return ASN1OctetString.getInstance(data);
-            }
+            return new DEROctetString(data);
         }
 
         return octStr;
     }
-
-    private static int readLen(ByteArrayInputStream bIn)
-    {
-        int length = bIn.read();
-        if (length != (length & 0x7f))
-        {
-            int count = length & 0x7f;
-            length = 0;
-            while (count-- != 0)
-            {
-                length = (length << 8) + bIn.read();
-            }
-        }
-
-        return length;
-    }
-
+    
     private static short[] convert(byte[] octets)
     {
         short[] rv = new short[octets.length / 2];

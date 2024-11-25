@@ -145,6 +145,16 @@ public class BCDSAPrivateKey
         return attrCarrier.getBagAttributeKeys();
     }
 
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
+
     private void readObject(
         ObjectInputStream in)
         throws IOException, ClassNotFoundException

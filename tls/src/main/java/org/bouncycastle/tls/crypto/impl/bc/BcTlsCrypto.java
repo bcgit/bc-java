@@ -316,11 +316,6 @@ public class BcTlsCrypto
         return true;
     }
 
-    public boolean hasKemAgreement()
-    {
-        return true;
-    }
-
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
         switch (encryptionAlgorithm)
@@ -377,6 +372,11 @@ public class BcTlsCrypto
         default:
             return false;
         }
+    }
+
+    public boolean hasKemAgreement()
+    {
+        return true;
     }
 
     public boolean hasMacAlgorithm(int macAlgorithm)
