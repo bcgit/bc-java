@@ -1,3 +1,4 @@
+
 package org.bouncycastle.jce.interfaces;
 
 import java.util.Enumeration;
@@ -18,4 +19,8 @@ public interface PKCS12BagAttributeCarrier
         ASN1ObjectIdentifier oid);
 
     Enumeration getBagAttributeKeys();
+
+    boolean hasFriendlyName();
+
+    void setFriendlyName(String friendlyName);
 }

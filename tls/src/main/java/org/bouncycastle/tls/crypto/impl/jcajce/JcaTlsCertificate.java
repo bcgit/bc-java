@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
@@ -132,7 +133,7 @@ public class JcaTlsCertificate
 //        }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     public TlsVerifier createVerifier(short signatureAlgorithm) throws IOException
@@ -187,7 +188,7 @@ public class JcaTlsCertificate
         case SignatureAlgorithm.gostr34102012_512:
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -274,7 +275,7 @@ public class JcaTlsCertificate
 //        case SignatureScheme.sm2sig_sm3:
 
         default:
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
     }
 
@@ -329,7 +330,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DH", e);
         }
     }
 
@@ -341,7 +342,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not DSS", e);
         }
     }
 
@@ -353,7 +354,7 @@ public class JcaTlsCertificate
         }
         catch (ClassCastException e)
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown, e);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not EC", e);
         }
     }
 
@@ -365,7 +366,7 @@ public class JcaTlsCertificate
             // Oracle provider (Java 15+) returns the key as an EdDSA one
             if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed25519") >= 0))
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed25519");
             }
         }
         return publicKey;
@@ -379,7 +380,7 @@ public class JcaTlsCertificate
             // Oracle provider (Java 15+) returns the key as an EdDSA one
             if (!("EdDSA".equals(publicKey.getAlgorithm()) && publicKey.toString().indexOf("Ed448") >= 0))
             {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not Ed448");
             }
         }
         return publicKey;
@@ -387,6 +388,7 @@ public class JcaTlsCertificate
 
     PublicKey getPubKeyRSA() throws IOException
     {
+        // TODO[tls] How to reliably check that this is an RSA key?
         return getPublicKey();
     }
 
@@ -470,7 +472,7 @@ public class JcaTlsCertificate
         }
         }
 
-        throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+        throw new TlsFatalAlert(AlertDescription.internal_error);
     }
 
     protected boolean implSupportsSignatureAlgorithm(short signatureAlgorithm) throws IOException
@@ -574,7 +576,20 @@ public class JcaTlsCertificate
     {
         if (!supportsKeyUsageBit(keyUsageBit))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            switch (keyUsageBit)
+            {
+            case KeyUsage.digitalSignature:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow digital signatures");
+            case KeyUsage.keyAgreement:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key agreement");
+            case KeyUsage.keyEncipherment:
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "KeyUsage does not allow key encipherment");
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
         }
     }
 
@@ -583,7 +598,7 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PKCS1())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for rsa_pkcs1 signature schemes");
         }
     }
 
@@ -592,7 +607,8 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PSS_PSS(signatureAlgorithm))
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_pss signature schemes");
         }
     }
 
@@ -601,7 +617,8 @@ public class JcaTlsCertificate
     {
         if (!supportsRSA_PSS_RSAE())
         {
-            throw new TlsFatalAlert(AlertDescription.certificate_unknown);
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "No support for rsa_pss_rsae signature schemes");
         }
     }
 }
