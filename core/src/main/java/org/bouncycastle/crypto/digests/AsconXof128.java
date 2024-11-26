@@ -11,13 +11,15 @@ import org.bouncycastle.util.Pack;
  * <a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a>.
  * For reference source code and implementation details, please see:
  * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
- *  ASM implementations of Ascon (NIST SP 800-232)</a>.
+ * ASM implementations of Ascon (NIST SP 800-232)</a>.
  * </p>
  */
 public class AsconXof128
     extends AsconBaseDigest
     implements Xof
 {
+    private boolean m_squeezing = false;
+
     public AsconXof128()
     {
         reset();
@@ -48,10 +50,36 @@ public class AsconXof128
         Pack.longToLittleEndian(w, bytes, inOff, n);
     }
 
+    protected void padAndAbsorb()
+    {
+        m_squeezing = true;
+        super.padAndAbsorb();
+    }
+
     @Override
     public String getAlgorithmName()
     {
         return "Ascon-XOF-128";
+    }
+
+    @Override
+    public void update(byte in)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(in);
+    }
+
+    @Override
+    public void update(byte[] input, int inOff, int len)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(input, inOff, len);
     }
 
     @Override
@@ -63,7 +91,9 @@ public class AsconXof128
     @Override
     public int doFinal(byte[] output, int outOff, int outLen)
     {
-        return doOutput(output, outOff, outLen);
+        int rlt = doOutput(output, outOff, outLen);
+        reset();
+        return rlt;
     }
 
     @Override
@@ -75,6 +105,7 @@ public class AsconXof128
     @Override
     public void reset()
     {
+        m_squeezing = false;
         super.reset();
         /* initialize */
         x0 = -2701369817892108309L;

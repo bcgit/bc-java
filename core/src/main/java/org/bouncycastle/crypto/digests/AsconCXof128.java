@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -21,7 +20,7 @@ public class AsconCXof128
     extends AsconBaseDigest
     implements Xof
 {
-
+    private boolean m_squeezing = false;
     private final long z0, z1, z2, z3, z4;
 
     public AsconCXof128()
@@ -53,7 +52,25 @@ public class AsconCXof128
         z4 = x4;
     }
 
+    @Override
+    public void update(byte in)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(in);
+    }
 
+    @Override
+    public void update(byte[] input, int inOff, int len)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(input, inOff, len);
+    }
 
     protected long pad(int i)
     {
@@ -80,6 +97,12 @@ public class AsconCXof128
         Pack.longToLittleEndian(w, bytes, inOff, n);
     }
 
+    protected void padAndAbsorb()
+    {
+        m_squeezing = true;
+        super.padAndAbsorb();
+    }
+
     @Override
     public String getAlgorithmName()
     {
@@ -103,13 +126,16 @@ public class AsconCXof128
     @Override
     public int doFinal(byte[] output, int outOff, int outLen)
     {
-        return doOutput(output, outOff, outLen);
+        int rlt = doOutput(output, outOff, outLen);
+        reset();
+        return rlt;
     }
 
     @Override
     public void reset()
     {
         super.reset();
+        m_squeezing = false;
         /* initialize */
         x0 = z0;
         x1 = z1;
@@ -130,6 +156,7 @@ public class AsconCXof128
         p(12);
         update(z, zOff, zLen);
         padAndAbsorb();
+        m_squeezing = false;
     }
 }
 

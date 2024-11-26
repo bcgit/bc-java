@@ -3,11 +3,13 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
-/** ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
+/**
+ * ASCON v1.2 XOF, https://ascon.iaik.tugraz.at/ .
  * <p>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/ascon-spec-final.pdf
  * <p>
  * ASCON v1.2 XOF with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
+ *
  * @deprecated Now superseded - please use AsconXof128
  */
 public class AsconXof
@@ -42,7 +44,33 @@ public class AsconXof
     }
 
     private final String algorithmName;
+    private boolean m_squeezing = false;
 
+    @Override
+    public void update(byte in)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(in);
+    }
+
+    @Override
+    public void update(byte[] input, int inOff, int len)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
+        super.update(input, inOff, len);
+    }
+
+    protected void padAndAbsorb()
+    {
+        m_squeezing = true;
+        super.padAndAbsorb();
+    }
 
     protected long pad(int i)
     {
@@ -75,7 +103,6 @@ public class AsconXof
         return algorithmName;
     }
 
-
     @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
@@ -85,7 +112,9 @@ public class AsconXof
     @Override
     public int doFinal(byte[] output, int outOff, int outLen)
     {
-        return doOutput(output, outOff, outLen);
+        int rlt = doOutput(output, outOff, outLen);
+        reset();
+        return rlt;
     }
 
     @Override
@@ -98,6 +127,7 @@ public class AsconXof
     public void reset()
     {
         super.reset();
+        m_squeezing = false;
         /* initialize */
         switch (asconParameters)
         {
