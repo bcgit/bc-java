@@ -121,9 +121,9 @@ public class PGPEncryptedDataGenerator
      * Some versions of PGP always expect a session key, this will force use
      * of a session key even if a single PBE encryptor is provided.
      *
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.1-4">
-     *     RFC9580 - Description of the optional encrypted session key field</a>
      * @param forceSessionKey true if a session key should always be used, default is true.
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#section-5.3.1-4">
+     * RFC9580 - Description of the optional encrypted session key field</a>
      */
     public void setForceSessionKey(boolean forceSessionKey)
     {
@@ -219,40 +219,37 @@ public class PGPEncryptedDataGenerator
         pOut = new BCPGOutputStream(out, !useOldFormat);
 
         byte[] sessionKey;  // session key, either protected by - or directly derived from session key encryption mechanism.
-        byte[] sessionInfo; // sessionKey with prepended alg-id, appended checksum
-
+        byte[] sessionInfo = null; // sessionKey with prepended alg-id, appended checksum, null indicates direct use of S2K output as sessionKey/messageKey
         byte[] messageKey;          // key used to encrypt the message. In OpenPGP v6 this is derived from sessionKey + salt.
 
         boolean directS2K = !forceSessionKey && methods.size() == 1 &&
-            methods.get(0) instanceof PBEKeyEncryptionMethodGenerator;
-        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD();
-        boolean isSEIPv2 = dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD;
-        if (directS2K && !isSEIPv2)
+            methods.get(0) instanceof PBEKeyEncryptionMethodGenerator; // not public key
+        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD(); //v5
+        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
+        {
+            sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
+            // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
+            // Since we cannot inject the IV into the data encryptor, we append it to the message key.
+            byte[] info = SymmetricEncIntegrityPacket.createAAData(
+                SymmetricEncIntegrityPacket.VERSION_2,
+                defAlgorithm,
+                dataEncryptorBuilder.getAeadAlgorithm(),
+                dataEncryptorBuilder.getChunkSize());
+            // messageKey = key and IV, will be separated in the data encryptor
+            messageKey = AEADUtil.deriveMessageKeyAndIv(
+                dataEncryptorBuilder.getAeadAlgorithm(), defAlgorithm, sessionKey, salt, info);
+        }
+        else if (directS2K)
         {
             sessionKey = ((PBEKeyEncryptionMethodGenerator)methods.get(0)).getKey(defAlgorithm);
-            sessionInfo = null; // null indicates direct use of S2K output as sessionKey/messageKey
+            messageKey = sessionKey;
         }
         else
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
             // prepend algorithm, append checksum
             sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
-        }
-        messageKey = sessionKey;
-
-        // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
-        // Since we cannot inject the IV into the data encryptor, we append it to the message key.
-        if (isSEIPv2)
-        {
-            byte[] info = SymmetricEncIntegrityPacket.createAAData(
-                SymmetricEncIntegrityPacket.VERSION_2,
-                defAlgorithm,
-                dataEncryptorBuilder.getAeadAlgorithm(),
-                dataEncryptorBuilder.getChunkSize());
-
-            // messageKey = key and IV, will be separated in the data encryptor
-            messageKey = AEADUtil.deriveMessageKeyAndIv(
-                dataEncryptorBuilder.getAeadAlgorithm(), defAlgorithm, sessionKey, salt, info);
+            messageKey = sessionKey;
         }
 
         PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(messageKey);
@@ -272,6 +269,8 @@ public class PGPEncryptedDataGenerator
                 }
                 else // data is encrypted by v2 SEIPD (AEAD), so write v6 SKESK packet
                 {
+                    //https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.2.1 Table 2
+                    //AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
                     writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionKey);
                 }
             }
@@ -323,7 +322,7 @@ public class PGPEncryptedDataGenerator
             {
                 if (digestCalc != null)
                 {
-                    encOut =  SymmetricEncIntegrityPacket.createVersion1Packet();
+                    encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
                     if (useOldFormat)
                     {
                         throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
