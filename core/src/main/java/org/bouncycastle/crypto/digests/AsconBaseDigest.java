@@ -76,7 +76,7 @@ abstract class AsconBaseDigest
     @Override
     public int getByteLength()
     {
-        return 8;
+        return ASCON_HASH_RATE;
     }
 
     @Override
