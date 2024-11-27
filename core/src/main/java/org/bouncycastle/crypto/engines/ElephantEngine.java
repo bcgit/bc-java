@@ -404,6 +404,7 @@ public class ElephantEngine
             throw new OutputLengthException("output buffer is too short");
         }
         int mlen = len + messageLen - (forEncryption ? 0 : CRYPTO_ABYTES);
+        int rv = mlen - messageLen;
         int adlen = processAADBytes();
         int nblocks_c = 1 + mlen / BLOCK_SIZE;
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
@@ -418,7 +419,7 @@ public class ElephantEngine
         {
             System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
             System.arraycopy(tag, 0, output, outOff, tag.length);
-            mlen += CRYPTO_ABYTES;
+            rv += CRYPTO_ABYTES;
         }
         else
         {
@@ -432,7 +433,7 @@ public class ElephantEngine
             }
         }
         reset(false);
-        return mlen;
+        return rv;
     }
 
     @Override
@@ -455,6 +456,8 @@ public class ElephantEngine
         case EncData:
         case EncInit:
             return inputOff + len + CRYPTO_ABYTES;
+        case DecData:
+            return inputOff + len;
         }
         return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
@@ -472,9 +475,9 @@ public class ElephantEngine
         case EncAad:
         case EncData:
         case EncInit:
-            return len + CRYPTO_ABYTES;
+            return len + inputOff + CRYPTO_ABYTES;
         }
-        return Math.max(0, len - CRYPTO_ABYTES);
+        return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
 
     @Override
