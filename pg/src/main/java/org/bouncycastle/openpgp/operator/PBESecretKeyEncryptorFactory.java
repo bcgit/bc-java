@@ -7,7 +7,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
  * A concrete implementation of this class can not only choose the cryptographic backend (e.g. BC, JCA/JCE),
  * but also, whether to use AEAD (RFC9580) or classic CFB (RFC4880).
  */
-public abstract class PBESecretKeyEncryptorFactory
+public interface PBESecretKeyEncryptorFactory
 {
 
     /**
@@ -17,5 +17,5 @@ public abstract class PBESecretKeyEncryptorFactory
      * @param pubKeyPacket public-key packet of the key to protect (needed for AEAD)
      * @return key encryptor
      */
-    public abstract PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket);
+    PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket);
 }

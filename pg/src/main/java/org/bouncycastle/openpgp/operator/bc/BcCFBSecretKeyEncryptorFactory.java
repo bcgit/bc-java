@@ -17,7 +17,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
  * and uses AES256 for secret key protection.
  */
 public class BcCFBSecretKeyEncryptorFactory
-        extends PBESecretKeyEncryptorFactory
+        implements PBESecretKeyEncryptorFactory
 {
     @Override
     public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket)

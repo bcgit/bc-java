@@ -16,7 +16,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
  * for the Argon2 key derivation (see {@link S2K.Argon2Params#memoryConstrainedParameters()}).
  */
 public class BcAEADSecretKeyEncryptorFactory
-        extends PBESecretKeyEncryptorFactory
+        implements PBESecretKeyEncryptorFactory
 {
     @Override
     public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket)
@@ -25,7 +25,7 @@ public class BcAEADSecretKeyEncryptorFactory
         {
             return null;
         }
-        return new BcAEADSecretKeyEncryptorBuilder(
+        return new org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder(
                 AEADAlgorithmTags.OCB,
                 SymmetricKeyAlgorithmTags.AES_256,
                 S2K.Argon2Params.memoryConstrainedParameters())

@@ -10,7 +10,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import java.security.Provider;
 
 public class JcaCFBSecretKeyEncryptorFactory
-        extends PBESecretKeyEncryptorFactory
+        implements PBESecretKeyEncryptorFactory
 {
     private JcaPGPDigestCalculatorProviderBuilder digestCalcProviderBuilder =
             new JcaPGPDigestCalculatorProviderBuilder();
