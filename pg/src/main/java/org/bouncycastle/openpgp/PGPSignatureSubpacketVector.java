@@ -116,7 +116,7 @@ public class PGPSignatureSubpacketVector
     public SignatureSubpacket[] getSubpackets(
         int type)
     {
-        List list = new ArrayList();
+        List<SignatureSubpacket> list = new ArrayList<>();
 
         for (int i = 0; i != packets.length; i++)
         {
@@ -126,20 +126,20 @@ public class PGPSignatureSubpacketVector
             }
         }
 
-        return (SignatureSubpacket[])list.toArray(new SignatureSubpacket[]{});
+        return list.toArray(new SignatureSubpacket[0]);
     }
 
     public PGPSignatureList getEmbeddedSignatures()
         throws PGPException
     {
         SignatureSubpacket[] sigs = getSubpackets(SignatureSubpacketTags.EMBEDDED_SIGNATURE);
-        ArrayList l = new ArrayList();
+        ArrayList<PGPSignature> l = new ArrayList<>();
 
-        for (int i = 0; i < sigs.length; i++)
+        for (SignatureSubpacket sig : sigs)
         {
             try
             {
-                l.add(new PGPSignature(SignaturePacket.fromByteArray(sigs[i].getData())));
+                l.add(new PGPSignature(SignaturePacket.fromByteArray(sig.getData())));
             }
             catch (IOException e)
             {
@@ -147,7 +147,7 @@ public class PGPSignatureSubpacketVector
             }
         }
 
-        return new PGPSignatureList((PGPSignature[])l.toArray(new PGPSignature[l.size()]));
+        return new PGPSignatureList(l.toArray(new PGPSignature[0]));
     }
 
     public NotationData[] getNotationDataOccurrences()
@@ -179,7 +179,7 @@ public class PGPSignatureSubpacketVector
     public NotationData[] getNotationDataOccurrences(String notationName)
     {
         NotationData[] notations = getNotationDataOccurrences();
-        List<NotationData> notationsWithName = new ArrayList<NotationData>();
+        List<NotationData> notationsWithName = new ArrayList<>();
         for (int i = 0; i != notations.length; i++)
         {
             NotationData notation = notations[i];
@@ -188,7 +188,7 @@ public class PGPSignatureSubpacketVector
                 notationsWithName.add(notation);
             }
         }
-        return (NotationData[])notationsWithName.toArray(new NotationData[0]);
+        return notationsWithName.toArray(new NotationData[0]);
     }
 
     public long getIssuerKeyID()
