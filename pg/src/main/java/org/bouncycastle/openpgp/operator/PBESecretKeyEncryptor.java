@@ -5,6 +5,52 @@ import java.security.SecureRandom;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
 
+/**
+ * Class responsible for encrypting secret key material or data packets using a passphrase.
+ * <p>
+ * RFC9580 recommends the following S2K specifiers + usages:
+ * <table border="1">
+ * <tr>
+ *     <th>S2K Specifier</th>
+ *     <th>S2K Usage</th>
+ *     <th>Note</th>
+ * </tr>
+ * <tr>
+ *     <td>{@link S2K#ARGON_2}</td>
+ *     <td>{@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_AEAD}</td>
+ *     <td>RECOMMENDED; Argon2 MUST be used with AEAD</td>
+ * </tr>
+ * <tr>
+ *     <td>{@link S2K#SALTED_AND_ITERATED}</td>
+ *     <td>{@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_SHA1}</td>
+ *     <td>MAY be used if Argon2 is not available; Take care to use high octet count + strong passphrase</td>
+ * </tr>
+ * <tr>
+ *     <td>none</td>
+ *     <td>{@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_NONE}</td>
+ *     <td>Unprotected</td>
+ * </tr>
+ * </table>
+ * <p>
+ * Additionally, implementations MAY use the following combinations with caution:
+ * <table>
+ * <tr>
+ *     <th>S2K Specifier</th>
+ *     <th>S2K Usage</th>
+ *     <th>Note</th>
+ * </tr>
+ * <tr>
+ *     <td>{@link S2K#SALTED_AND_ITERATED}</td>
+ *     <td>{@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_AEAD}</td>
+ *     <td>Does not provide memory hardness</td>
+ * </tr>
+ * <tr>
+ *     <td>{@link S2K#SIMPLE}</td>
+ *     <td>{@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_SHA1}</td>
+ *     <td>Only for reading secret keys in backwards compatibility mode</td>
+ * </tr>
+ * </table>
+ */
 public abstract class PBESecretKeyEncryptor
 {
     protected int encAlgorithm;
