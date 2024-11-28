@@ -8,9 +8,11 @@ import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.operator.AEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 
 public class BcAEADSecretKeyEncryptorBuilder
+        implements AEADSecretKeyEncryptorBuilder
 {
 
     private int aeadAlgorithm;
