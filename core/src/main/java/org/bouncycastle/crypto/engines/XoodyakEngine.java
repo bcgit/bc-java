@@ -262,7 +262,7 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len + message.size();
+        return len + message.size() + (forEncryption ? TAGLEN : -TAGLEN);
     }
 
     @Override

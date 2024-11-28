@@ -51,6 +51,10 @@ public class ISAPTest
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
         testVectors("isapk128v20", IsapType.ISAP_K_128);
         testVectors();
+        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128A));
+        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128));
+        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_A_128A));
+        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_A_128));
     }
 
     private void testVectors(String filename, IsapType isapType)
@@ -282,6 +286,7 @@ public class ISAPTest
         }
 
         aeadBlockCipher.init(true, params);
+        c1 = new byte[aeadBlockCipher.getOutputSize(m.length)];
         try
         {
             aeadBlockCipher.doFinal(c1, m.length);
@@ -431,10 +436,11 @@ public class ISAPTest
         {
             m7[i] = (byte)rand.nextInt();
         }
+
+        aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
         byte[] c9 = new byte[c7.length];
-        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);

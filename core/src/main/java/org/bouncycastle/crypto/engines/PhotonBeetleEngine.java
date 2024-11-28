@@ -270,7 +270,7 @@ public class PhotonBeetleEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len + message.size();
+        return len + message.size() + (forEncryption ? TAG_INBYTES : -TAG_INBYTES);
     }
 
     @Override

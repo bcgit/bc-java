@@ -961,7 +961,7 @@ public class ISAPEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len + message.size();
+        return len + message.size() + (forEncryption ? 16 : -16);
     }
 
     @Override
