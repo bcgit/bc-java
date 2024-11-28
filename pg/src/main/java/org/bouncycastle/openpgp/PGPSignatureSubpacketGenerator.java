@@ -622,6 +622,25 @@ public class PGPSignatureSubpacketGenerator
     }
 
     /**
+     * Remove all {@link SignatureSubpacket} objects of the given subpacketType from the underlying subpacket vector.
+     * @param subpacketType type to remove
+     * @return true if any packet was removed, false otherwise
+     */
+    public boolean removePacketsOfType(int subpacketType)
+    {
+        boolean remove = false;
+        for (int i = packets.size() - 1; i >= 0; i--)
+        {
+            if (packets.get(i).getType() == subpacketType)
+            {
+                packets.remove(i);
+                remove = true;
+            }
+        }
+        return remove;
+    }
+
+    /**
      * Return true if a particular subpacket type exists.
      *
      * @param type type to look for.
