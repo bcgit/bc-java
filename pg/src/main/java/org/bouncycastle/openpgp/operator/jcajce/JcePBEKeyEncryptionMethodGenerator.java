@@ -83,6 +83,11 @@ public class JcePBEKeyEncryptionMethodGenerator
         super(passPhrase, new SHA1PGPDigestCalculator(), s2kCount);
     }
 
+    public JcePBEKeyEncryptionMethodGenerator(char[] passPhrase, S2K.Argon2Params params)
+    {
+        super(passPhrase, params);
+    }
+
     /**
      * Sets the JCE provider to source cryptographic primitives from.
      *
