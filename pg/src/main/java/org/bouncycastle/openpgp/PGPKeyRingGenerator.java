@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.bcpg.ECPublicBCPGKey;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -163,6 +167,63 @@ public class PGPKeyRingGenerator
         this.unhashedPcks = certSig.getUnhashedSubPackets();
 
         keys.addAll(originalSecretRing.keys);
+    }
+
+    private PGPKeyPair sanitizeKeyPair(PGPKeyPair keyPair)
+            throws PGPException
+    {
+        PGPPublicKey pubKey = keyPair.getPublicKey();
+        if (pubKey.getVersion() == PublicKeyPacket.VERSION_6)
+        {
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT ||
+                    pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ELGAMAL_GENERAL)
+            {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#name-elgamal
+                throw new PGPException("An implementation MUST NOT generate v6 ElGamal keys");
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL)
+            {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#name-rsa
+                if (pubKey.getBitStrength() < 3072)
+                {
+                    throw new PGPException("An implementation MUST NOT generate v6 RSA keys of a size less than 3072 bits.");
+                }
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.RSA_ENCRYPT ||
+                    pubKey.getAlgorithm() == PublicKeyAlgorithmTags.RSA_SIGN)
+            {
+                throw new PGPException("An implementation MUST NOT generate v6 RSA keys of type RSA_ENCRYPT/RSA_SIGN");
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.DSA)
+            {
+                // https://www.rfc-editor.org/rfc/rfc9580.html#name-dsa
+                throw new PGPException("An implementation MUST NOT generate v6 DSA keys.");
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.EDDSA_LEGACY)
+            {
+                throw new PGPException("An implementation MUST NOT generate v6 EDDSA_LEGACY keys.");
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
+            {
+                ECPublicBCPGKey ecKey = (ECPublicBCPGKey) pubKey.publicPk.getKey();
+                if (ecKey.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                {
+                    throw new PGPException("An implementation MUST NOT generate v6 ECDH keys over Curve25519Legacy.");
+                }
+            }
+
+            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.DIFFIE_HELLMAN)
+            {
+                throw new PGPException("An implementation MUST NOT generate v6 Diffie-Hellman keys.");
+            }
+        }
+
+        return keyPair;
     }
 
     /**
