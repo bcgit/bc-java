@@ -129,7 +129,7 @@ public class HSSPrivateKeyParameters
                 {
                     // old style single LMS key.
                     LMSPrivateKeyParameters lmsKey = LMSPrivateKeyParameters.getInstance(src);
-                    return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndex() + lmsKey.getUsagesRemaining());
+                    return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndexLimit());
                 }
             }
             finally
@@ -212,7 +212,7 @@ public class HSSPrivateKeyParameters
 
     public long getUsagesRemaining()
     {
-        return indexLimit - index;
+        return getIndexLimit() - getIndex();
     }
 
     LMSPrivateKeyParameters getRootKey()
@@ -233,31 +233,32 @@ public class HSSPrivateKeyParameters
     {
         synchronized (this)
         {
-
-            if (getUsagesRemaining() < usageCount)
+            if (usageCount < 0)
+            {
+                throw new IllegalArgumentException("usageCount cannot be negative");
+            }
+            if (usageCount > indexLimit - index)
             {
                 throw new IllegalArgumentException("usageCount exceeds usages remaining in current leaf");
             }
 
-            long maxIndexForShard = index + usageCount;
-            long shardStartIndex = index;
+            long shardIndex = index;
+            long shardIndexLimit = index + usageCount;
 
-            //
-            // Move this keys index along
-            //
-            index += usageCount;
+            // Move this key's index along
+            index = shardIndexLimit;
 
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
             List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
 
-            HSSPrivateKeyParameters shard = makeCopy(new HSSPrivateKeyParameters(l, keys, sig, shardStartIndex, maxIndexForShard, true));
+            HSSPrivateKeyParameters shard = makeCopy(
+                new HSSPrivateKeyParameters(l, keys, sig, shardIndex, shardIndexLimit, true));
 
             resetKeyToIndex();
 
             return shard;
         }
     }
-
 
     synchronized List<LMSPrivateKeyParameters> getKeys()
     {

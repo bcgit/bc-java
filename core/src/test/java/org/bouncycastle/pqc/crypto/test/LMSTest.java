@@ -112,6 +112,7 @@ public class LMSTest
         LMSSigner signer = new LMSSigner();
 
         assertEquals(2, privKey.getUsagesRemaining());
+        assertEquals(2, privKey.getIndexLimit());
         assertEquals(0, privKey.getIndex());
 
         signer.init(true, privKey);
