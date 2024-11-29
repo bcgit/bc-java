@@ -42,7 +42,7 @@ public class PhotonBeetleTest
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         testExceptions(new PhotonBeetleDigest(), 32);
         CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
-        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        CipherTest.checkAEADCipherOutputSize(16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
     }
 
     private void testVectorsHash()

@@ -455,7 +455,8 @@ public class ElephantEngine
         case EncAad:
         case EncData:
         case EncInit:
-            return inputOff + len + CRYPTO_ABYTES;
+            int total = inputOff + len;
+            return total - total % BLOCK_SIZE;
         case DecData:
             return inputOff + len;
         }
