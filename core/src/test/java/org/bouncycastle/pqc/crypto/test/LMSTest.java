@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
+import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
@@ -158,7 +159,7 @@ public class LMSTest
         PrivateKeyInfo pInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate());
         AsymmetricKeyParameter pKey = PrivateKeyFactory.createKey(pInfo.getEncoded());
 
-        signer.init(false, ((LMSPrivateKeyParameters)pKey).getPublicKey());
+        signer.init(false, ((HSSPrivateKeyParameters)pKey).getPublicKey());
 
         assertTrue(signer.verifySignature(msg1, sig1));
     }
