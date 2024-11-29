@@ -129,7 +129,7 @@ public abstract class CipherTest
         AEADCipher CreateInstace();
     }
 
-    static void checkCipher(int aeadLen, int ivLen, int msgLen, Instace instace)
+    static void checkCipher(int aeadLen, int ivLen, int msgLen, int strength, Instace instace)
     {
         AEADCipher pCipher = instace.CreateInstace();
 
@@ -146,7 +146,7 @@ public abstract class CipherTest
 
             /* Create the Key parameters */
             final CipherKeyGenerator myGenerator = new CipherKeyGenerator();
-            final KeyGenerationParameters myGenParams = new KeyGenerationParameters(myRandom, 128);
+            final KeyGenerationParameters myGenParams = new KeyGenerationParameters(myRandom, strength);
             myGenerator.init(myGenParams);
             final byte[] myKey = myGenerator.generateKey();
             final KeyParameter myKeyParams = new KeyParameter(myKey);
