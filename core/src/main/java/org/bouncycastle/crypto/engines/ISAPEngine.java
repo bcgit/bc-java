@@ -961,7 +961,8 @@ public class ISAPEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len + message.size() + (forEncryption ? 16 : -16);
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -16));
+        return total - total % ISAP_rH_SZ;
     }
 
     @Override

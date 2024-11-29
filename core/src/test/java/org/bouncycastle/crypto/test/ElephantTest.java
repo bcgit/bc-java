@@ -28,6 +28,9 @@ public class ElephantTest
     public void performTest()
         throws Exception
     {
+//        CipherTest.checkAEADCipherOutputSize(16, 12, 20, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
+//        CipherTest.checkAEADCipherOutputSize(16, 12, 22, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
+//        CipherTest.checkAEADCipherOutputSize(16, 12, 25, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));
         //testVectors(ElephantEngine.ElephantParameters.elephant160, "v160_2");
         CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
         {

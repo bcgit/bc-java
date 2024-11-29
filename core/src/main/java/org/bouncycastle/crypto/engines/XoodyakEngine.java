@@ -36,7 +36,7 @@ public class XoodyakEngine
     private byte[] iv;
     private final int PhaseDown = 1;
     private final int PhaseUp = 2;
-//    private final int NLANES = 12;
+    //    private final int NLANES = 12;
 //    private final int NROWS = 3;
 //    private final int NCOLUMS = 4;
     private final int MAXROUNDS = 12;
@@ -262,7 +262,8 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len + message.size() + (forEncryption ? TAGLEN : -TAGLEN);
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -TAGLEN));
+        return total - total % Rkout;
     }
 
     @Override
@@ -371,7 +372,7 @@ public class XoodyakEngine
             a3 ^= e3;
             a7 ^= e3;
             a11 ^= e3;
-            
+
             /* Rho-west: plane shift */
             int b0 = a0;
             int b1 = a1;
@@ -390,7 +391,7 @@ public class XoodyakEngine
 
             /* Iota: round ant */
             b0 ^= RC[i];
-            
+
             /* Chi: non linear layer */
             a0 = b0 ^ (~b4 & b8);
             a1 = b1 ^ (~b5 & b9);
@@ -406,7 +407,7 @@ public class XoodyakEngine
             b9 ^= (~b1 & b5);
             b10 ^= (~b2 & b6);
             b11 ^= (~b3 & b7);
-            
+
             /* Rho-east: plane shift */
             a4 = Integers.rotateLeft(a4, 1);
             a5 = Integers.rotateLeft(a5, 1);
