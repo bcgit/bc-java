@@ -208,11 +208,11 @@ public abstract class CipherTest
         Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength));
         Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength) + tmpLength);
         //during the encrypt process of the second block
-        len += cipher.processBytes(plaintext, tmpLength , blockSize, ciphertext, len);
+        len += cipher.processBytes(plaintext, tmpLength, blockSize, ciphertext, len);
         Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength - blockSize));
         Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength - blockSize) + tmpLength);
         //process the remaining bytes
-        len += cipher.processBytes(plaintext, tmpLength  + blockSize , blockSize, ciphertext, len);
+        len += cipher.processBytes(plaintext, tmpLength + blockSize, blockSize, ciphertext, len);
         Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(0));
         Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
         //process doFinal
@@ -228,13 +228,13 @@ public abstract class CipherTest
         Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength));
         Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength) + tmpLength);
         //during the encrypt process of the second block
-        len += cipher.processBytes(ciphertext, tmpLength , blockSize, plaintext, len);
+        len += cipher.processBytes(ciphertext, tmpLength, blockSize, plaintext, len);
         Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength - blockSize));
         Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength - blockSize) + tmpLength);
         //process the remaining bytes
-        len += cipher.processBytes(ciphertext, tmpLength + blockSize , blockSize + tagSize, plaintext, len);
+        len += cipher.processBytes(ciphertext, tmpLength + blockSize, blockSize + tagSize, plaintext, len);
         Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(0));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(0)  + tmpLength);
+        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
         //process doFinal
         len += cipher.doFinal(plaintext, len);
         Assert.assertEquals(len, plaintext.length);
