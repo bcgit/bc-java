@@ -403,7 +403,7 @@ public class ElephantTest
         aeadBlockCipher.doFinal(c8, offset);
 
         // random split for several times
-        for (int split = 25; split < blocksize * 3; ++split)
+        for (int split = 0; split < blocksize * 3; ++split)
         {
             aeadBlockCipher.init(true, params);
             aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
@@ -446,7 +446,5 @@ public class ElephantTest
     {
         runTest(new ElephantTest());
     }
-
-
 }
 
