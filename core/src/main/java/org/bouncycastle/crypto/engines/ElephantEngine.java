@@ -636,7 +636,6 @@ public class ElephantEngine
         int rv = 0;
         byte[] outputMessage = new byte[BLOCK_SIZE];
         int i;
-        int mlen_remaining = mlen;
         for (i = nb_its; i < nb_it; ++i)
         {
             int r_size = (i == nblocks_m - 1) ? mlen - i * BLOCK_SIZE : BLOCK_SIZE;
@@ -670,7 +669,6 @@ public class ElephantEngine
 
                 outOff += r_size;
                 rv += r_size;
-                mlen_remaining -= r_size;
             }
             if (i > 0 && i <= nblocks_c)
             {
