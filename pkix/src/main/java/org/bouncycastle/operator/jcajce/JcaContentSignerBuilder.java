@@ -37,6 +37,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.ExtendedContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
@@ -60,6 +61,7 @@ public class JcaContentSignerBuilder
     }
 
     private final String signatureAlgorithm;
+    private final AlgorithmIdentifier signatureDigestAlgorithm;
 
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private SecureRandom random;
@@ -69,13 +71,25 @@ public class JcaContentSignerBuilder
 
     public JcaContentSignerBuilder(String signatureAlgorithm)
     {
+        this(signatureAlgorithm, (AlgorithmIdentifier)null);
+    }
+
+    public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmIdentifier signatureDigestAlgorithmID)
+    {
         this.signatureAlgorithm = signatureAlgorithm;
+        this.signatureDigestAlgorithm = signatureDigestAlgorithmID;
     }
 
     public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmParameterSpec sigParamSpec)
     {
-        this.signatureAlgorithm = signatureAlgorithm;
+        this(signatureAlgorithm, sigParamSpec, null);
+    }
 
+    public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmParameterSpec sigParamSpec, AlgorithmIdentifier signatureDigestAlgorithmID)
+    {
+        this.signatureAlgorithm = signatureAlgorithm;
+        this.signatureDigestAlgorithm = signatureDigestAlgorithmID;
+        
         if (sigParamSpec instanceof PSSParameterSpec)
         {
             PSSParameterSpec pssSpec = (PSSParameterSpec)sigParamSpec;
@@ -160,7 +174,7 @@ public class JcaContentSignerBuilder
                 sig.initSign(privateKey);
             }
 
-            return new ContentSigner()
+            final ContentSigner contentSigner = new ContentSigner()
             {
                 private OutputStream stream = OutputStreamFactory.createStream(sig);
 
@@ -186,6 +200,39 @@ public class JcaContentSignerBuilder
                     }
                 }
             };
+
+            if (signatureDigestAlgorithm != null)
+            {
+                return new ExtendedContentSigner()
+                {
+                    private final AlgorithmIdentifier digestAlgorithm = signatureDigestAlgorithm;
+                    private final ContentSigner signer = contentSigner;
+
+                    public AlgorithmIdentifier getDigestAlgorithmIdentifier()
+                    {
+                        return digestAlgorithm;
+                    }
+
+                    public AlgorithmIdentifier getAlgorithmIdentifier()
+                    {
+                        return signer.getAlgorithmIdentifier();
+                    }
+
+                    public OutputStream getOutputStream()
+                    {
+                        return signer.getOutputStream();
+                    }
+
+                    public byte[] getSignature()
+                    {
+                        return signer.getSignature();
+                    }
+                };
+            }
+            else
+            {
+                return contentSigner;
+            }
         }
         catch (GeneralSecurityException e)
         {
