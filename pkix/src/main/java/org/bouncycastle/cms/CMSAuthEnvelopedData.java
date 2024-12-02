@@ -134,6 +134,15 @@ public class CMSAuthEnvelopedData
             recipientInfos, this.authEncAlg, secureReadable);
     }
 
+
+    /**
+     * return the object identifier for the content encryption algorithm.
+     */
+    public String getEncryptionAlgOID()
+    {
+        return authEncAlg.getAlgorithm().getId();
+    }
+
     /**
      * Return the originator information associated with this message if present.
      *
