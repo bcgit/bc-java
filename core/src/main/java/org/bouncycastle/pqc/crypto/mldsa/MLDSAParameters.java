@@ -2,9 +2,6 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 import java.security.SecureRandom;
 
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-
 public class MLDSAParameters
 {
     public static final int TYPE_PURE = 0;
@@ -37,11 +34,6 @@ public class MLDSAParameters
     public int getType()
     {
         return preHashDigest;
-    }
-    
-    Digest createDigest()
-    {
-        return preHashDigest == TYPE_PURE ? null : new SHA512Digest();
     }
 
     MLDSAEngine getEngine(SecureRandom random)

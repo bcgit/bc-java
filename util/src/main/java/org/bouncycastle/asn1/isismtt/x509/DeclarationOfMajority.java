@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.isismtt.x509;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Choice;
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -57,16 +56,13 @@ public class DeclarationOfMajority
 
         if (fullAge)
         {
-            declaration = new DERTaggedObject(false, 1, new DERSequence(new DERPrintableString(country, true)));
+            declaration = new DERTaggedObject(false, 1,
+                new DERSequence(new DERPrintableString(country, true)));
         }
         else
         {
-            ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-            v.add(ASN1Boolean.FALSE);
-            v.add(new DERPrintableString(country, true));
-
-            declaration = new DERTaggedObject(false, 1, new DERSequence(v));
+            declaration = new DERTaggedObject(false, 1,
+                new DERSequence(ASN1Boolean.FALSE, new DERPrintableString(country, true)));
         }
     }
 

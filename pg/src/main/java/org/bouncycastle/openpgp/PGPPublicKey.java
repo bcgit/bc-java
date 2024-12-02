@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParametersHolder;
@@ -17,7 +18,10 @@ import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSAPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
+import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.OctetArrayBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
@@ -27,9 +31,9 @@ import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.UserAttributePacket;
 import org.bouncycastle.bcpg.UserDataPacket;
 import org.bouncycastle.bcpg.UserIDPacket;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 /**
  * general class to handle a PGP public key object.
@@ -48,8 +52,7 @@ public class PGPPublicKey
 
     List<PGPSignature> subSigs = null;
 
-    private long keyID;
-    private byte[] fingerprint;
+    private KeyIdentifier keyIdentifier;
     private int keyStrength;
 
     private void init(KeyFingerPrintCalculator fingerPrintCalculator)
@@ -57,26 +60,19 @@ public class PGPPublicKey
     {
         BCPGKey key = publicPk.getKey();
 
-        this.fingerprint = fingerPrintCalculator.calculateFingerprint(publicPk);
+        byte[] fingerprint = fingerPrintCalculator.calculateFingerprint(publicPk);
+        long keyID = PublicKeyPacket.getKeyID(publicPk, fingerprint);
 
+        this.keyIdentifier = new KeyIdentifier(fingerprint, keyID);
+
+        // key strength
         if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
-            this.keyID = rK.getModulus().longValue();
             this.keyStrength = rK.getModulus().bitLength();
         }
-        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
-        {
-            this.keyID = Pack.bigEndianToLong(fingerprint, fingerprint.length - 8);
-        }
-        else if (publicPk.getVersion() == PublicKeyPacket.LIBREPGP_5 || publicPk.getVersion() ==  PublicKeyPacket.VERSION_6)
-        {
-            this.keyID = Pack.bigEndianToLong(fingerprint, 0);
-        }
-
-        // key strength
-        if (publicPk.getVersion() >= PublicKeyPacket.VERSION_4)
+        else if (publicPk.getVersion() >= PublicKeyPacket.VERSION_4)
         {
             if (key instanceof RSAPublicBCPGKey)
             {
@@ -98,6 +94,14 @@ public class PGPPublicKey
                 {
                     this.keyStrength = 256;
                 }
+                else if (curveOID.equals(EdECObjectIdentifiers.id_X448))
+                {
+                    this.keyStrength = X448PublicBCPGKey.LENGTH * 8;
+                }
+                else if (curveOID.equals(EdECObjectIdentifiers.id_Ed448))
+                {
+                    this.keyStrength = Ed448PublicBCPGKey.LENGTH * 8;
+                }
                 else
                 {
                     X9ECParametersHolder ecParameters = ECNamedCurveTable.getByOIDLazy(curveOID);
@@ -111,6 +115,10 @@ public class PGPPublicKey
                         this.keyStrength = -1; // unknown
                     }
                 }
+            }
+            else if (key instanceof OctetArrayBCPGKey)
+            {
+                this.keyStrength = key.getEncoded().length * 8;
             }
         }
     }
@@ -159,9 +167,8 @@ public class PGPPublicKey
         this.trustPk = trust;
         this.subSigs = subSigs;
 
-        this.fingerprint = key.fingerprint;
-        this.keyID = key.keyID;
         this.keyStrength = key.keyStrength;
+        this.keyIdentifier = key.keyIdentifier;
     }
 
     /**
@@ -189,9 +196,8 @@ public class PGPPublicKey
             this.subSigs.addAll(pubKey.subSigs);
         }
 
-        this.fingerprint = pubKey.fingerprint;
-        this.keyID = pubKey.keyID;
         this.keyStrength = pubKey.keyStrength;
+        this.keyIdentifier = pubKey.keyIdentifier;
     }
 
     PGPPublicKey(
@@ -224,9 +230,8 @@ public class PGPPublicKey
         throws PGPException
     {
         this.publicPk = original.publicPk;
-        this.fingerprint = original.fingerprint;
         this.keyStrength = original.keyStrength;
-        this.keyID = original.keyID;
+        this.keyIdentifier = original.keyIdentifier;
 
         this.trustPk = trustPk;
         this.keySigs = keySigs;
@@ -392,7 +397,7 @@ public class PGPPublicKey
      */
     public long getKeyID()
     {
-        return keyID;
+        return keyIdentifier.getKeyId();
     }
 
     /**
@@ -402,7 +407,7 @@ public class PGPPublicKey
      */
     public KeyIdentifier getKeyIdentifier()
     {
-        return new KeyIdentifier(this);
+        return keyIdentifier;
     }
 
     /**
@@ -412,12 +417,12 @@ public class PGPPublicKey
      */
     public byte[] getFingerprint()
     {
-        return Arrays.clone(fingerprint);
+        return keyIdentifier.getFingerprint();
     }
 
     public boolean hasFingerprint(byte[] fingerprint)
     {
-        return Arrays.areEqual(this.fingerprint, fingerprint);
+        return keyIdentifier.hasFingerprint(fingerprint);
     }
 
     /**
@@ -580,11 +585,11 @@ public class PGPPublicKey
 
     public Iterator<PGPSignature> getSignaturesForKey(KeyIdentifier identifier)
     {
-        List<PGPSignature> sigs = new ArrayList<>();
+        List<PGPSignature> sigs = new ArrayList<PGPSignature>();
         for (Iterator<PGPSignature> it = getSignatures(); it.hasNext(); )
         {
-            PGPSignature sig = it.next();
-            if (identifier.matches(sig))
+            PGPSignature sig = (PGPSignature)it.next();
+            if (identifier.isPresentIn(sig.getKeyIdentifiers()))
             {
                 sigs.add(sig);
             }
@@ -1227,7 +1232,8 @@ public class PGPPublicKey
             for (int i = 0; isNotNull && i < rlt.size(); i++)
             {
                 PGPSignature existingSubSig = (PGPSignature)rlt.get(i);
-                if (PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                if (existingSubSig.getVersion() == copySubSig.getVersion() &&
+                    PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
                 {
                     found = true;
                     // join existing sig with copy to apply modifications in unhashed subpackets

@@ -5,131 +5,125 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 
 public class HashSignatureSpi
-    extends java.security.SignatureSpi
-{
-    private final HashSLHDSASigner signer;
+    extends BaseDeterministicOrRandomSignature
+ {
+     private final HashSLHDSASigner signer;
 
-    protected HashSignatureSpi(HashSLHDSASigner signer)
-    {
-        this.signer = signer;
-    }
+     protected HashSignatureSpi(HashSLHDSASigner signer)
+     {
+         super("HASH-SLH-DSA");
+         
+         this.signer = signer;
+     }
 
-    protected void engineInitVerify(PublicKey publicKey)
-        throws InvalidKeyException
-    {
-        if (publicKey instanceof BCSLHDSAPublicKey)
-        {
-            BCSLHDSAPublicKey key = (BCSLHDSAPublicKey)publicKey;
+     protected void verifyInit(PublicKey publicKey)
+         throws InvalidKeyException
+     {
+         if (publicKey instanceof BCSLHDSAPublicKey)
+         {
+             BCSLHDSAPublicKey key = (BCSLHDSAPublicKey)publicKey;
 
-            CipherParameters param = key.getKeyParams();
+             this.keyParams = key.getKeyParams();
+         }
+         else
+         {
+             throw new InvalidKeyException("unknown public key passed to SLH-DSA");
+         }
+     }
 
-            signer.init(false, param);
-        }
-        else
-        {
-            throw new InvalidKeyException("unknown public key passed to SLH-DSA");
-        }
-    }
+     protected void signInit(PrivateKey privateKey, SecureRandom random)
+         throws InvalidKeyException
+     {
+         this.appRandom = random;
+         if (privateKey instanceof BCSLHDSAPrivateKey)
+         {
+             BCSLHDSAPrivateKey key = (BCSLHDSAPrivateKey)privateKey;
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
-        throws InvalidKeyException
-    {
-        this.appRandom = random;
-        engineInitSign(privateKey);
-    }
+             this.keyParams = key.getKeyParams();
+         }
+         else
+         {
+             throw new InvalidKeyException("unknown private key passed to SLH-DSA");
+         }
+     }
 
-    protected void engineInitSign(PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        if (privateKey instanceof BCSLHDSAPrivateKey)
-        {
-            BCSLHDSAPrivateKey key = (BCSLHDSAPrivateKey)privateKey;
+     protected void updateEngine(byte b)
+         throws SignatureException
+     {
+         signer.update(b);
+     }
 
-            CipherParameters param = key.getKeyParams();
+     protected void updateEngine(byte[] buf, int off, int len)
+         throws SignatureException
+     {
+         signer.update(buf, off, len);
+     }
 
-            if (appRandom != null)
-            {
-                signer.init(true, new ParametersWithRandom(param, appRandom));
-            }
-            else
-            {
-                signer.init(true, param);
-            }
-        }
-        else
-        {
-            throw new InvalidKeyException("unknown private key passed to SLH-DSA");
-        }
-    }
+     protected byte[] engineSign()
+         throws SignatureException
+     {
+         CipherParameters param = keyParams;
 
-    protected void engineUpdate(byte b)
-        throws SignatureException
-    {
-        signer.update(b);
-    }
+         if (!(param instanceof SLHDSAPrivateKeyParameters))
+         {
+             throw new SignatureException("engine initialized for verification");
+         }
 
-    protected void engineUpdate(byte[] b, int off, int len)
-        throws SignatureException
-    {
-        signer.update(b, off, len);
-    }
+         try
+         {
+             byte[] sig = signer.generateSignature();
 
-    protected byte[] engineSign()
-        throws SignatureException
-    {
-        try
-        {
-            byte[] sig = signer.generateSignature();
+             return sig;
+         }
+         catch (Exception e)
+         {
+             throw new SignatureException(e.toString());
+         }
+         finally
+         {
+             this.isInitState = true;
+         }
+     }
 
-            return sig;
-        }
-        catch (Exception e)
-        {
-            throw new SignatureException(e.toString());
-        }
-    }
+     protected boolean engineVerify(byte[] sigBytes)
+         throws SignatureException
+     {
+         CipherParameters param = keyParams;
 
-    protected boolean engineVerify(byte[] sigBytes)
-        throws SignatureException
-    {
-        return signer.verifySignature(sigBytes);
-    }
+         if (!(param instanceof SLHDSAPublicKeyParameters))
+         {
+             throw new SignatureException("engine initialized for signing");
+         }
 
-    protected void engineSetParameter(AlgorithmParameterSpec params)
-    {
-        // TODO
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
+         try
+         {
+             return signer.verifySignature(sigBytes);
+         }
+         finally
+         {
+             this.isInitState = true;
+         }
+     }
 
-    /**
-     * @deprecated replaced with #engineSetParameter(java.security.spec.AlgorithmParameterSpec)
-     */
-    protected void engineSetParameter(String param, Object value)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
+     protected void reInitialize(boolean forSigning, CipherParameters params)
+     {
+         signer.init(forSigning, params);
+     }
 
-    /**
-     * @deprecated
-     */
-    protected Object engineGetParameter(String param)
-    {
-        throw new UnsupportedOperationException("engineSetParameter unsupported");
-    }
-
-    static public class Direct
-        extends HashSignatureSpi
-    {
-        public Direct()
-        {
-            super(new HashSLHDSASigner());
-        }
-    }
-}
+     static public class Direct
+         extends HashSignatureSpi
+     {
+         public Direct()
+         {
+             super(new HashSLHDSASigner());
+         }
+     }
+ }

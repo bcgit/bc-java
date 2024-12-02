@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.ntru;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.KEMParameters;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048509;
 import org.bouncycastle.pqc.math.ntru.parameters.NTRUHPS2048677;
@@ -45,10 +44,7 @@ public class NTRUParameters
     public static final NTRUParameters ntruhrss1373 = new NTRUParameters("ntruhrss1373", new NTRUHRSS1373());
 
     private final String name;
-    /**
-     * Currently selected parameter set
-     */
-    final NTRUParameterSet parameterSet;
+    private final NTRUParameterSet parameterSet;
 
     private NTRUParameters(String name, NTRUParameterSet parameterSet)
     {
@@ -59,6 +55,21 @@ public class NTRUParameters
     public String getName()
     {
         return name;
+    }
+
+    NTRUParameterSet getParameterSet()
+    {
+        return parameterSet;
+    }
+
+    int getPrivateKeyLength()
+    {
+        return getParameterSet().ntruSecretKeyBytes();
+    }
+
+    int getPublicKeyLength()
+    {
+        return getParameterSet().ntruPublicKeyBytes();
     }
 
     public int getSessionKeySize()

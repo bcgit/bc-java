@@ -15,13 +15,12 @@ public class MLDSASigner
 {
     private static final byte[] EMPTY_CONTEXT = new byte[0];
 
-    private MLDSAPrivateKeyParameters privKey;
     private MLDSAPublicKeyParameters pubKey;
+    private MLDSAPrivateKeyParameters privKey;
+    private SecureRandom random;
 
     private MLDSAEngine engine;
     private SHAKEDigest msgDigest;
-
-    private SecureRandom random;
 
     public MLDSASigner()
     {
@@ -29,31 +28,29 @@ public class MLDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
-        boolean isPreHash;
-        byte[] ctx;
-
+        byte[] ctx = EMPTY_CONTEXT;
         if (param instanceof ParametersWithContext)
         {
-            ctx = ((ParametersWithContext)param).getContext();
-            param = ((ParametersWithContext)param).getParameters();
+            ParametersWithContext withContext = (ParametersWithContext)param;
+            ctx = withContext.getContext();
+            param = withContext.getParameters();
 
             if (ctx.length > 255)
             {
                 throw new IllegalArgumentException("context too long");
             }
         }
-        else
-        {
-            ctx = EMPTY_CONTEXT;
-        }
 
-
+        MLDSAParameters parameters;
         if (forSigning)
         {
+            pubKey = null;
+
             if (param instanceof ParametersWithRandom)
             {
-                privKey = (MLDSAPrivateKeyParameters)((ParametersWithRandom)param).getParameters();
-                random = ((ParametersWithRandom)param).getRandom();
+                ParametersWithRandom withRandom = (ParametersWithRandom)param;
+                privKey = (MLDSAPrivateKeyParameters)withRandom.getParameters();
+                random = withRandom.getRandom();
             }
             else
             {
@@ -61,31 +58,29 @@ public class MLDSASigner
                 random = null;
             }
 
-            engine = privKey.getParameters().getEngine(this.random);
+            parameters = privKey.getParameters();
+            engine = parameters.getEngine(random);
 
             engine.initSign(privKey.tr, false, ctx);
-
-            msgDigest = engine.getShake256Digest();
-
-            isPreHash = privKey.getParameters().isPreHash();
         }
         else
         {
             pubKey = (MLDSAPublicKeyParameters)param;
+            privKey = null;
+            random = null;
 
-            engine = pubKey.getParameters().getEngine(random);
+            parameters = pubKey.getParameters();
+            engine = parameters.getEngine(null);
 
             engine.initVerify(pubKey.rho, pubKey.t1, false, ctx);
-
-            msgDigest = engine.getShake256Digest();
-
-            isPreHash = pubKey.getParameters().isPreHash();
         }
 
-        if (isPreHash)
+        if (parameters.isPreHash())
         {
             throw new IllegalArgumentException("\"pure\" ml-dsa must use non pre-hash parameters");
         }
+
+        reset();
     }
 
     public void update(byte b)

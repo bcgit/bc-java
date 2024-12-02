@@ -1,27 +1,44 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.Date;
+
+import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
-import org.bouncycastle.openpgp.operator.bc.*;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
 
 public class DedicatedEd25519KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -42,6 +59,18 @@ public class DedicatedEd25519KeyPairTest
         testV4SigningVerificationWithBcKey();
 
         testConversionOfTestVectorKey();
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, date);
+        isEquals("Ed25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
@@ -52,8 +81,9 @@ public class DedicatedEd25519KeyPairTest
         gen.initialize(new EdDSAParameterSpec("Ed25519"));
         KeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, date);
             byte[] pubEnc = j1.getPublicKey().getEncoded();
             byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -99,8 +129,9 @@ public class DedicatedEd25519KeyPairTest
         gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, date);
             byte[] pubEnc = b1.getPublicKey().getEncoded();
             byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -147,7 +178,7 @@ public class DedicatedEd25519KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),
@@ -174,7 +205,7 @@ public class DedicatedEd25519KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed25519, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),
@@ -198,8 +229,9 @@ public class DedicatedEd25519KeyPairTest
         // ed25519 public key from https://www.rfc-editor.org/rfc/rfc9580.html#name-hashed-data-stream-for-sign
         Date creationTime = new Date(Pack.bigEndianToInt(Hex.decode("63877fe3"), 0) * 1000L);
         byte[] k = Hex.decode("f94da7bb48d60a61e567706a6587d0331999bb9d891a08242ead84543df895a3");
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             PGPPublicKey pgpk = new PGPPublicKey(
                 new PublicKeyPacket(version, PublicKeyAlgorithmTags.Ed25519, creationTime, new Ed25519PublicBCPGKey(k)),
                 new BcKeyFingerprintCalculator()

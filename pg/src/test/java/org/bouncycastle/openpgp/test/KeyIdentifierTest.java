@@ -1,9 +1,15 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
-import org.bouncycastle.openpgp.KeyIdentifier;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -13,13 +19,9 @@ import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Iterator;
 
 public class KeyIdentifierTest
         extends SimpleTest
@@ -99,50 +101,59 @@ public class KeyIdentifierTest
     {
         PGPSecretKeyRing secretKeys = getV4Key();
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         KeyIdentifier primaryIdentifier = primaryKey.getKeyIdentifier();
         isEquals(primaryKey.getKeyID(), primaryIdentifier.getKeyId());
         isTrue(Arrays.areEqual(primaryKey.getFingerprint(), primaryIdentifier.getFingerprint()));
-        isTrue(primaryIdentifier.matches(primaryKey));
-        isTrue(primaryIdentifier.matches(primaryKey.getPublicKey()));
+        isTrue(primaryIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(primaryIdentifier.matches(primaryKey.getPublicKey().getKeyIdentifier()));
         isTrue(primaryKey.getPublicKey().getKeyIdentifier().getKeyId()==primaryIdentifier.getKeyId());
-        isTrue(!primaryIdentifier.matches(subkey));
-        isTrue(!primaryIdentifier.matches(subkey.getPublicKey()));
+        isTrue(!primaryIdentifier.matches(subkey.getKeyIdentifier()));
+        isTrue(!primaryIdentifier.matches(subkey.getPublicKey().getKeyIdentifier()));
 
         KeyIdentifier subkeyIdentifier = subkey.getKeyIdentifier();
         isEquals(subkey.getKeyID(), subkeyIdentifier.getKeyId());
         isTrue(Arrays.areEqual(subkey.getFingerprint(), subkeyIdentifier.getFingerprint()));
-        isTrue(subkeyIdentifier.matches(subkey));
-        isTrue(subkeyIdentifier.matches(subkey.getPublicKey()));
-        isTrue(!subkeyIdentifier.matches(primaryKey));
-        isTrue(!subkeyIdentifier.matches(primaryKey.getPublicKey()));
+        isTrue(subkeyIdentifier.matches(subkey.getKeyIdentifier()));
+        isTrue(subkeyIdentifier.matches(subkey.getPublicKey().getKeyIdentifier()));
+        isTrue(!subkeyIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(!subkeyIdentifier.matches(primaryKey.getPublicKey().getKeyIdentifier()));
 
         PGPPrivateKey privateKey = primaryKey.extractPrivateKey(null);
-        KeyIdentifier privateKeyIdentifier = new KeyIdentifier(privateKey, new JcaKeyFingerprintCalculator());
-        isTrue(privateKeyIdentifier.matches(privateKey, new JcaKeyFingerprintCalculator()));
-        isTrue(privateKeyIdentifier.matches(primaryKey));
-        isTrue(primaryIdentifier.matches(privateKey, new JcaKeyFingerprintCalculator()));
-        isTrue(!subkeyIdentifier.matches(privateKey, new JcaKeyFingerprintCalculator()));
+        KeyIdentifier privateKeyIdentifier = privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator());
+        isTrue(privateKeyIdentifier.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
+        isTrue(privateKeyIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(primaryIdentifier.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
+        isTrue(!subkeyIdentifier.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
+
+        KeyIdentifier noFingerPrintId = new KeyIdentifier(primaryKey.getKeyID());
+        isTrue(primaryKey.getKeyIdentifier().matches(noFingerPrintId));
 
         KeyIdentifier wildcard = KeyIdentifier.wildcard();
-        isTrue(wildcard.matches(primaryKey));
-        isTrue(wildcard.matches(subkey));
-        isTrue(wildcard.matches(privateKey, new JcaKeyFingerprintCalculator()));
+        isTrue(wildcard.matches(primaryKey.getKeyIdentifier()));
+        isTrue(wildcard.matches(subkey.getKeyIdentifier()));
+        isTrue(wildcard.matches(privateKey.getKeyIdentifier(new JcaKeyFingerprintCalculator())));
 
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                primaryKey));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                primaryKey.getPublicKey()));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                subkey));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                subkey.getPublicKey()));
+        isTrue(primaryKey.getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(primaryKey.getPublicKey().getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(subkey.getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(subkey.getPublicKey().getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+    }
+
+    private List<KeyIdentifier> asList(KeyIdentifier a, KeyIdentifier b)
+    {
+        List<KeyIdentifier> l = new ArrayList<KeyIdentifier>(2);
+
+        l.add(a);
+        l.add(b);
+
+        return l;
     }
 
     private void testMatchV6Key()
@@ -150,49 +161,48 @@ public class KeyIdentifierTest
     {
         PGPSecretKeyRing secretKeys = getV6Key();
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
-        PGPSecretKey subkey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
+        PGPSecretKey subkey = (PGPSecretKey)it.next();
 
         KeyIdentifier primaryIdentifier = primaryKey.getKeyIdentifier();
         isEquals(primaryKey.getKeyID(), primaryIdentifier.getKeyId());
         isTrue(Arrays.areEqual(primaryKey.getFingerprint(), primaryIdentifier.getFingerprint()));
-        isTrue(primaryIdentifier.matches(primaryKey));
-        isTrue(primaryIdentifier.matches(primaryKey.getPublicKey()));
-        isTrue(!primaryIdentifier.matches(subkey));
-        isTrue(!primaryIdentifier.matches(subkey.getPublicKey()));
+        isTrue(primaryIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(primaryIdentifier.matches(primaryKey.getPublicKey().getKeyIdentifier()));
+        isTrue(!primaryIdentifier.matches(subkey.getKeyIdentifier()));
+        isTrue(!primaryIdentifier.matches(subkey.getPublicKey().getKeyIdentifier()));
 
         KeyIdentifier subkeyIdentifier = subkey.getKeyIdentifier();
         isEquals(subkey.getKeyID(), subkeyIdentifier.getKeyId());
         isTrue(Arrays.areEqual(subkey.getFingerprint(), subkeyIdentifier.getFingerprint()));
-        isTrue(subkeyIdentifier.matches(subkey));
-        isTrue(subkeyIdentifier.matches(subkey.getPublicKey()));
-        isTrue(!subkeyIdentifier.matches(primaryKey));
-        isTrue(!subkeyIdentifier.matches(primaryKey.getPublicKey()));
+        isTrue(subkeyIdentifier.matches(subkey.getKeyIdentifier()));
+        isTrue(subkeyIdentifier.matches(subkey.getPublicKey().getKeyIdentifier()));
+        isTrue(!subkeyIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(!subkeyIdentifier.matches(primaryKey.getPublicKey().getKeyIdentifier()));
 
         PGPPrivateKey privateKey = primaryKey.extractPrivateKey(null);
-        KeyIdentifier privateKeyIdentifier = new KeyIdentifier(privateKey, new BcKeyFingerprintCalculator());
-        isTrue(privateKeyIdentifier.matches(privateKey, new BcKeyFingerprintCalculator()));
-        isTrue(privateKeyIdentifier.matches(primaryKey));
-        isTrue(primaryIdentifier.matches(privateKey, new BcKeyFingerprintCalculator()));
-        isTrue(!subkeyIdentifier.matches(privateKey, new BcKeyFingerprintCalculator()));
+        KeyIdentifier privateKeyIdentifier = privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator());
+        isTrue(privateKeyIdentifier.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
+        isTrue(privateKeyIdentifier.matches(primaryKey.getKeyIdentifier()));
+        isTrue(primaryIdentifier.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
+        isTrue(!subkeyIdentifier.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
+
+        KeyIdentifier noFingerPrintId = new KeyIdentifier(primaryKey.getKeyID());
+        isTrue(primaryKey.getKeyIdentifier().matches(noFingerPrintId));
 
         KeyIdentifier wildcard = KeyIdentifier.wildcard();
-        isTrue(wildcard.matches(primaryKey));
-        isTrue(wildcard.matches(subkey));
-        isTrue(wildcard.matches(privateKey, new BcKeyFingerprintCalculator()));
+        isTrue(wildcard.matches(primaryKey.getKeyIdentifier()));
+        isTrue(wildcard.matches(subkey.getKeyIdentifier()));
+        isTrue(wildcard.matches(privateKey.getKeyIdentifier(new BcKeyFingerprintCalculator())));
 
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                primaryKey));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                primaryKey.getPublicKey()));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                subkey));
-        isTrue(KeyIdentifier.matches(
-                java.util.Arrays.asList(primaryIdentifier, subkeyIdentifier),
-                subkey.getPublicKey()));
+        isTrue(primaryKey.getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(primaryKey.getPublicKey().getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(subkey.getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
+        isTrue(subkey.getPublicKey().getKeyIdentifier().isPresentIn(
+                asList(primaryIdentifier, subkeyIdentifier)));
     }
 
     /**
@@ -222,7 +232,7 @@ public class KeyIdentifierTest
                 "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
                 "k0mXubZvyl4GBg==\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
@@ -258,7 +268,7 @@ public class KeyIdentifierTest
                 "Pnn+We1aTBhaGa86AQ==\n" +
                 "=n8OM\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----\n";
-        ByteArrayInputStream bIn = new ByteArrayInputStream(KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);

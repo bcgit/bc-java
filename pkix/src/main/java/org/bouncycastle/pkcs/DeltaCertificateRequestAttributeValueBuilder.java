@@ -42,12 +42,12 @@ public class DeltaCertificateRequestAttributeValueBuilder
 
         if (subject != null)
         {
-            v.add(new DERTaggedObject(false, 0, subject));
+            v.add(new DERTaggedObject(true, 0, subject));
         }
         v.add(subjectPublicKey);
         if (signatureAlgorithm != null)
         {
-            v.add(new DERTaggedObject(false, 2, signatureAlgorithm));
+            v.add(new DERTaggedObject(true, 2, signatureAlgorithm));
         }
 
         

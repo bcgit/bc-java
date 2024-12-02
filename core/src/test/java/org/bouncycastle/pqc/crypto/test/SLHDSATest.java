@@ -5,13 +5,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
@@ -27,10 +26,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 public class SLHDSATest
-        extends TestCase
+    extends TestCase
 {
-
-    private static Map<String, SLHDSAParameters> parametersMap = new HashMap<String, SLHDSAParameters>()
+    private static final Map<String, SLHDSAParameters> parametersMap = new HashMap<String, SLHDSAParameters>()
     {
         {
             put("SLH-DSA-SHA2-128s", SLHDSAParameters.sha2_128s);
@@ -49,17 +47,60 @@ public class SLHDSATest
         }
     };
 
+    SLHDSAParameters[] PARAMETER_SETS = new SLHDSAParameters[]
+    {
+        SLHDSAParameters.sha2_128f,
+        SLHDSAParameters.sha2_128s,
+        SLHDSAParameters.sha2_192f,
+        SLHDSAParameters.sha2_192s,
+        SLHDSAParameters.sha2_256f,
+        SLHDSAParameters.sha2_256s,
+        SLHDSAParameters.shake_128f,
+        SLHDSAParameters.shake_128s,
+        SLHDSAParameters.shake_192f,
+        SLHDSAParameters.shake_192s,
+        SLHDSAParameters.shake_256f,
+        SLHDSAParameters.shake_256s,
+    };
+
+    public void testConsistency()
+    {
+        SecureRandom random = new SecureRandom();
+
+        SLHDSAKeyPairGenerator kpg = new SLHDSAKeyPairGenerator();
+
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
+        {
+            SLHDSAParameters parameters = PARAMETER_SETS[idx];
+            kpg.init(new SLHDSAKeyGenerationParameters(random, parameters));
+
+            {
+                AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+                SLHDSASigner signer = new SLHDSASigner();
+
+                {
+                    int msgLen = random.nextInt(257);
+                    byte[] msg = new byte[msgLen];
+                    random.nextBytes(msg);
+    
+                    // sign
+                    signer.init(true, new ParametersWithRandom(kp.getPrivate(), random));
+                    byte[] signature = signer.generateSignature(msg);
+    
+                    // verify
+                    signer.init(false, kp.getPublic());
+                    boolean shouldVerify = signer.verifySignature(msg, signature);
+    
+                    assertTrue(shouldVerify);
+                }
+            }
+        }
+    }
 
     public void testKeyGenSingleFile() throws IOException
     {
-
-
-
-        TestSampler sampler = new TestSampler();
-
-        String name ="SLH-DSA-keyGen.txt";
-        // System.out.println("testing: " + name);
-        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/", name);
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/", "SLH-DSA-keyGen.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
         String line = null;
@@ -76,16 +117,17 @@ public class SLHDSATest
             {
                 if (buf.size() > 0)
                 {
-                    byte[] skSeed = Hex.decode((String) buf.get("skSeed"));
-                    byte[] skPrf = Hex.decode((String) buf.get("skPrf"));
-                    byte[] pkSeed = Hex.decode((String) buf.get("pkSeed"));
-                    byte[] pk = Hex.decode((String) buf.get("pk"));
-                    byte[] sk = Hex.decode((String) buf.get("sk"));
+                    byte[] skSeed = Hex.decode((String)buf.get("skSeed"));
+                    byte[] skPrf = Hex.decode((String)buf.get("skPrf"));
+                    byte[] pkSeed = Hex.decode((String)buf.get("pkSeed"));
+                    byte[] pk = Hex.decode((String)buf.get("pk"));
+                    byte[] sk = Hex.decode((String)buf.get("sk"));
 
-                    SLHDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
 
                     SLHDSAKeyPairGenerator kpGen = new SLHDSAKeyPairGenerator();
                     SLHDSAKeyGenerationParameters genParam = new SLHDSAKeyGenerationParameters(new SecureRandom(), parameters);
+
                     //
                     // Generate keys and test.
                     //
@@ -93,12 +135,12 @@ public class SLHDSATest
                     AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(skSeed, skPrf, pkSeed);
 
                     SLHDSAPublicKeyParameters pubParams = (SLHDSAPublicKeyParameters) PublicKeyFactory.createKey(
-                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SLHDSAPublicKeyParameters) kp.getPublic()));
+                        SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SLHDSAPublicKeyParameters) kp.getPublic()));
                     SLHDSAPrivateKeyParameters privParams = (SLHDSAPrivateKeyParameters) PrivateKeyFactory.createKey(
-                            PrivateKeyInfoFactory.createPrivateKeyInfo((SLHDSAPrivateKeyParameters) kp.getPrivate()));
+                        PrivateKeyInfoFactory.createPrivateKeyInfo((SLHDSAPrivateKeyParameters) kp.getPrivate()));
 
-                    assertTrue(name + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
-                    assertTrue(name + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
+                    assertTrue("public key", Arrays.areEqual(pk, pubParams.getEncoded()));
+                    assertTrue("secret key", Arrays.areEqual(sk, privParams.getEncoded()));
 
                 }
                 buf.clear();
@@ -112,157 +154,142 @@ public class SLHDSATest
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
         }
-        // System.out.println("testing successful!");
-
     }
-
 
     public void testSigGenSingleFile() throws IOException
     {
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", "SLH-DSA-sigGen.txt");
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
-            String name ="SLH-DSA-sigGen.txt";
-            // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", name);
-            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line = null;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
 
-            String line = null;
-            HashMap<String, String> buf = new HashMap<String, String>();
-            while ((line = bin.readLine()) != null)
+            if (line.startsWith("#"))
             {
-                line = line.trim();
-
-                if (line.startsWith("#"))
-                {
-                    continue;
-                }
-                if (line.length() == 0)
-                {
-                    if (buf.size() > 0)
-                    {
-                        boolean deterministic = !buf.containsKey("additionalRandomness");
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
-                        int messageLength = Integer.parseInt((String) buf.get("messageLength"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
-                        byte[] rnd = null;
-
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
-
-                        SLHDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
-
-                        SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
-
-                        // sign
-                        SLHDSASigner signer = new SLHDSASigner();
-
-                        signer.init(true, privParams);
-                        byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
-                        assertTrue(Arrays.areEqual(sigGenerated, signature));
-                    }
-                    buf.clear();
-
-                    continue;
-                }
-
-                int a = line.indexOf("=");
-                if (a > -1)
-                {
-                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-                }
+                continue;
             }
-            // System.out.println("testing successful!");
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    boolean deterministic = !buf.containsKey("additionalRandomness");
+                    byte[] sk = Hex.decode((String)buf.get("sk"));
+//                    int messageLength = Integer.parseInt((String)buf.get("messageLength"));
+                    byte[] message = Hex.decode((String)buf.get("message"));
+                    byte[] signature = Hex.decode((String)buf.get("signature"));
+                    byte[] rnd = null;
 
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
+
+                    SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
+
+                    if (!deterministic)
+                    {
+                        rnd = Hex.decode((String)buf.get("additionalRandomness"));
+                    }
+                    else
+                    {
+                        rnd = privParams.getPublicSeed();
+                    }
+
+                    // sign
+                    InternalSLHDSASigner signer = new InternalSLHDSASigner();
+
+                    signer.init(true, privParams);
+                    byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
+                    assertTrue(Arrays.areEqual(sigGenerated, signature));
+                }
+                buf.clear();
+
+                continue;
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
     }
-
 
     public void testSigVerSingleFile() throws IOException
     {
-            String name ="SLH-DSA-sigVer.txt";
-            // System.out.println("testing: " + name);
-            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", name);
-            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String name ="SLH-DSA-sigVer.txt";
+        InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", name);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
-            String line = null;
-            HashMap<String, String> buf = new HashMap<String, String>();
-            while ((line = bin.readLine()) != null)
+        String line = null;
+        HashMap<String, String> buf = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
+
+            if (line.startsWith("#"))
             {
-                line = line.trim();
-
-                if (line.startsWith("#"))
-                {
-                    continue;
-                }
-                if (line.length() == 0)
-                {
-                    if (buf.size() > 0)
-                    {
-                        boolean testPassed = Boolean.parseBoolean((String) buf.get("testPassed"));
-                        boolean deterministic = !buf.containsKey("additionalRandomness");
-                        String reason = buf.get("reason");
-
-                        byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
-
-                        byte[] rnd = null;
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
-
-                        SLHDSAParameters parameters = parametersMap.get(buf.get("parameterSet"));
-
-                        SLHDSAPublicKeyParameters pubParams = new SLHDSAPublicKeyParameters(parameters, pk);
-
-
-
-                        SLHDSASigner verifier = new SLHDSASigner();
-                        verifier.init(false, pubParams);
-                        boolean ver = verifier.internalVerifySignature(message, signature);
-                        assertEquals("expected " + testPassed + " " + reason, ver, testPassed);
-                    }
-                    buf.clear();
-
-                    continue;
-                }
-
-                int a = line.indexOf("=");
-                if (a > -1)
-                {
-                    buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-                }
+                continue;
             }
-            // System.out.println("testing successful!");
+            if (line.length() == 0)
+            {
+                if (buf.size() > 0)
+                {
+                    boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
+//                    boolean deterministic = !buf.containsKey("additionalRandomness");
+                    String reason = (String)buf.get("reason");
 
+                    byte[] pk = Hex.decode((String)buf.get("pk"));
+                    byte[] message = Hex.decode((String)buf.get("message"));
+                    byte[] signature = Hex.decode((String)buf.get("signature"));
+
+//                    byte[] rnd = null;
+//                    if (!deterministic)
+//                    {
+//                        rnd = Hex.decode((String)buf.get("additionalRandomness"));
+//                    }
+
+                    SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
+
+                    SLHDSAPublicKeyParameters pubParams = new SLHDSAPublicKeyParameters(parameters, pk);
+
+                    InternalSLHDSASigner verifier = new InternalSLHDSASigner();
+                    verifier.init(false, pubParams);
+                    boolean ver = verifier.internalVerifySignature(message, signature);
+                    assertEquals("expected " + testPassed + " " + reason, ver, testPassed);
+                }
+                buf.clear();
+
+                continue;
+            }
+
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
     }
-
-
-
 
     public void testKeyGen() throws IOException
     {
         String[] files = new String[]{
-                "keyGen_SLH-DSA-SHA2-128s.txt",
-                "keyGen_SLH-DSA-SHA2-192f.txt",
-                "keyGen_SLH-DSA-SHAKE-192s.txt",
-                "keyGen_SLH-DSA-SHAKE-256f.txt",
+            "keyGen_SLH-DSA-SHA2-128s.txt",
+            "keyGen_SLH-DSA-SHA2-192f.txt",
+            "keyGen_SLH-DSA-SHAKE-192s.txt",
+            "keyGen_SLH-DSA-SHAKE-256f.txt",
         };
 
         SLHDSAParameters[] params = new SLHDSAParameters[]{
-                SLHDSAParameters.sha2_128s,
-                SLHDSAParameters.sha2_192f,
-                SLHDSAParameters.shake_192s,
-                SLHDSAParameters.shake_256f,
+            SLHDSAParameters.sha2_128s,
+            SLHDSAParameters.sha2_192f,
+            SLHDSAParameters.shake_192s,
+            SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/acvp", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -280,11 +307,11 @@ public class SLHDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        byte[] skSeed = Hex.decode((String) buf.get("skSeed"));
-                        byte[] skPrf = Hex.decode((String) buf.get("skPrf"));
-                        byte[] pkSeed = Hex.decode((String) buf.get("pkSeed"));
-                        byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
+                        byte[] skSeed = Hex.decode((String)buf.get("skSeed"));
+                        byte[] skPrf = Hex.decode((String)buf.get("skPrf"));
+                        byte[] pkSeed = Hex.decode((String)buf.get("pkSeed"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
 
                         SLHDSAParameters parameters = params[fileIndex];
 
@@ -297,13 +324,12 @@ public class SLHDSATest
                         AsymmetricCipherKeyPair kp = kpGen.internalGenerateKeyPair(skSeed, skPrf, pkSeed);
 
                         SLHDSAPublicKeyParameters pubParams = (SLHDSAPublicKeyParameters) PublicKeyFactory.createKey(
-                                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SLHDSAPublicKeyParameters) kp.getPublic()));
+                            SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo((SLHDSAPublicKeyParameters) kp.getPublic()));
                         SLHDSAPrivateKeyParameters privParams = (SLHDSAPrivateKeyParameters) PrivateKeyFactory.createKey(
-                                PrivateKeyInfoFactory.createPrivateKeyInfo((SLHDSAPrivateKeyParameters) kp.getPrivate()));
+                            PrivateKeyInfoFactory.createPrivateKeyInfo((SLHDSAPrivateKeyParameters) kp.getPrivate()));
 
                         assertTrue(name + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
                         assertTrue(name + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
-
                     }
                     buf.clear();
 
@@ -316,34 +342,30 @@ public class SLHDSATest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            // System.out.println("testing successful!");
         }
     }
 
     public void testSigGen() throws IOException
     {
-
         String[] files = new String[]{
-                "sigGen_SLH-DSA-SHA2-192s.txt",
-                "sigGen_SLH-DSA-SHA2-256f.txt",
-                "sigGen_SLH-DSA-SHAKE-128f.txt",
-                "sigGen_SLH-DSA-SHAKE-192s.txt",
-                "sigGen_SLH-DSA-SHAKE-256f.txt",
+            "sigGen_SLH-DSA-SHA2-192s.txt",
+            "sigGen_SLH-DSA-SHA2-256f.txt",
+            "sigGen_SLH-DSA-SHAKE-128f.txt",
+            "sigGen_SLH-DSA-SHAKE-192s.txt",
+            "sigGen_SLH-DSA-SHAKE-256f.txt",
         };
 
         SLHDSAParameters[] params = new SLHDSAParameters[]{
-                SLHDSAParameters.sha2_192s,
-                SLHDSAParameters.sha2_256f,
-                SLHDSAParameters.shake_128f,
-                SLHDSAParameters.shake_192s,
-                SLHDSAParameters.shake_256f,
+            SLHDSAParameters.sha2_192s,
+            SLHDSAParameters.sha2_256f,
+            SLHDSAParameters.shake_128f,
+            SLHDSAParameters.shake_192s,
+            SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/acvp", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -362,23 +384,27 @@ public class SLHDSATest
                     if (buf.size() > 0)
                     {
                         boolean deterministic = !buf.containsKey("additionalRandomness");
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
-                        int messageLength = Integer.parseInt((String) buf.get("messageLength"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
+                        byte[] sk = Hex.decode((String)buf.get("sk"));
+//                        int messageLength = Integer.parseInt((String)buf.get("messageLength"));
+                        byte[] message = Hex.decode((String)buf.get("message"));
+                        byte[] signature = Hex.decode((String)buf.get("signature"));
                         byte[] rnd = null;
-
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
 
                         SLHDSAParameters parameters = params[fileIndex];
 
                         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
+                        if (!deterministic)
+                        {
+                            rnd = Hex.decode((String)buf.get("additionalRandomness"));
+                        }
+                        else
+                        {
+                            rnd = privParams.getPublicSeed();
+                        }
+
                         // sign
-                        SLHDSASigner signer = new SLHDSASigner();
+                        InternalSLHDSASigner signer = new InternalSLHDSASigner();
 
                         signer.init(true, privParams);
                         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
@@ -395,33 +421,30 @@ public class SLHDSATest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            // System.out.println("testing successful!");
         }
     }
 
     public void testSigVer() throws IOException
     {
         String[] files = new String[]{
-                "sigVer_SLH-DSA-SHA2-192s.txt",
-                "sigVer_SLH-DSA-SHA2-256f.txt",
-                "sigVer_SLH-DSA-SHAKE-128f.txt",
-                "sigVer_SLH-DSA-SHAKE-192s.txt",
-                "sigVer_SLH-DSA-SHAKE-256f.txt",
+            "sigVer_SLH-DSA-SHA2-192s.txt",
+            "sigVer_SLH-DSA-SHA2-256f.txt",
+            "sigVer_SLH-DSA-SHAKE-128f.txt",
+            "sigVer_SLH-DSA-SHAKE-192s.txt",
+            "sigVer_SLH-DSA-SHAKE-256f.txt",
         };
 
         SLHDSAParameters[] params = new SLHDSAParameters[]{
-                SLHDSAParameters.sha2_192s,
-                SLHDSAParameters.sha2_256f,
-                SLHDSAParameters.shake_128f,
-                SLHDSAParameters.shake_192s,
-                SLHDSAParameters.shake_256f,
+            SLHDSAParameters.sha2_192s,
+            SLHDSAParameters.sha2_256f,
+            SLHDSAParameters.shake_128f,
+            SLHDSAParameters.shake_192s,
+            SLHDSAParameters.shake_256f,
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa/acvp", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
@@ -439,28 +462,27 @@ public class SLHDSATest
                 {
                     if (buf.size() > 0)
                     {
-                        boolean testPassed = Boolean.parseBoolean((String) buf.get("testPassed"));
-                        boolean deterministic = !buf.containsKey("additionalRandomness");
-                        String reason = buf.get("reason");
+                        boolean testPassed = TestUtils.parseBoolean((String)buf.get("testPassed"));
+//                        boolean deterministic = !buf.containsKey("additionalRandomness");
+                        String reason = (String)buf.get("reason");
 
-                        byte[] pk = Hex.decode((String) buf.get("pk"));
-                        byte[] sk = Hex.decode((String) buf.get("sk"));
-                        byte[] message = Hex.decode((String) buf.get("message"));
-                        byte[] signature = Hex.decode((String) buf.get("signature"));
+                        byte[] pk = Hex.decode((String)buf.get("pk"));
+//                        byte[] sk = Hex.decode((String)buf.get("sk"));
+                        byte[] message = Hex.decode((String)buf.get("message"));
+                        byte[] signature = Hex.decode((String)buf.get("signature"));
 
-                        byte[] rnd = null;
-                        if (!deterministic)
-                        {
-                            rnd = Hex.decode((String) buf.get("additionalRandomness"));
-                        }
+//                        byte[] rnd = null;
+//                        if (!deterministic)
+//                        {
+//                            rnd = Hex.decode((String)buf.get("additionalRandomness"));
+//                        }
 
                         SLHDSAParameters parameters = params[fileIndex];
 
                         SLHDSAPublicKeyParameters pubParams = new SLHDSAPublicKeyParameters(parameters, pk);
-                        SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
+//                        SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
-
-                        SLHDSASigner verifier = new SLHDSASigner();
+                        InternalSLHDSASigner verifier = new InternalSLHDSASigner();
                         verifier.init(false, pubParams);
                         boolean ver = verifier.internalVerifySignature(message, signature);
                         assertEquals("expected " + testPassed + " " + reason, ver, testPassed);
@@ -476,9 +498,9 @@ public class SLHDSATest
                     buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
                 }
             }
-            // System.out.println("testing successful!");
         }
     }
+
 //    public void testVectors()
 //        throws Exception
 //    {
@@ -491,13 +513,11 @@ public class SLHDSATest
 //        TestSampler sampler = new TestSampler();
 //
 //        String[] fileList = splitOn(files, ' ');
-//        //long startTime = System.currentTimeMillis();
 //        for (int i = 0; i != fileList.length; i++)
 //        {
 //            String name = fileList[i];
 //            InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", "subset_" + name);
 //            BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-//            // System.out.println(name);
 //            String line = null;
 //            HashMap<String, String> buf = new HashMap<String, String>();
 //            while ((line = bin.readLine()) != null)
@@ -617,8 +637,6 @@ public class SLHDSATest
 //                                PrivateKeyInfoFactory.createPrivateKeyInfo(privParams));
 //                        }
 //
-////                            System.err.println(Hex.toHexString(pubParams.getEncoded()));
-////                            System.err.println(Hex.toHexString(Arrays.concatenate(pubParams.getParameters().getEncoded(), pk)));
 //                        assertTrue(name + " " + count + ": public key", Arrays.areEqual(pk, pubParams.getEncoded()));
 //                        assertTrue(name + " " + count + ": secret key", Arrays.areEqual(sk, privParams.getEncoded()));
 //
@@ -638,8 +656,6 @@ public class SLHDSATest
 //
 //                        assertTrue(name + " " + count + ": signature verify", signer.verifySignature(msg, Arrays.copyOfRange(sigExpected, 0, sigGenerated.length)));
 //
-////                            System.err.println(Hex.toHexString(sigExpected));
-////                            System.err.println(Hex.toHexString(attachedSig));
 //                        assertTrue(name + " " + count + ": signature gen match", Arrays.areEqual(sigExpected, attachedSig));
 //
 //                    }
@@ -656,9 +672,7 @@ public class SLHDSATest
 //            }
 //            src.close();
 //        }
-//        //System.err.println(System.currentTimeMillis() - startTime);
 //    }
-
 
     public void testBasicKeyGenerationSha2128sSimple()
     {
@@ -697,31 +711,45 @@ public class SLHDSATest
         SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, sk);
 
         // sign
-        SLHDSASigner signer = new SLHDSASigner();
+        InternalSLHDSASigner signer = new InternalSLHDSASigner();
 
         signer.init(true, privParams);
         byte[] sigGenerated = signer.internalGenerateSignature(message, rnd);
         assertTrue(Arrays.areEqual(sigGenerated, signature));
     }
 
-    private static String[] splitOn(String input, char c)
+//    private static String[] splitOn(String input, char c)
+//    {
+//        String s = input.trim();
+//        List l = new ArrayList();
+//
+//        int idx = s.indexOf(c);
+//        while (idx > 0)
+//        {
+//            l.add(s.substring(0, idx));
+//            s = s.substring(idx + 1).trim();
+//            idx = s.indexOf(c);
+//        }
+//
+//        if (s.length() > 0)
+//        {
+//            l.add(s);
+//        }
+//
+//        return (String[]) l.toArray(new String[0]);
+//    }
+
+    private class InternalSLHDSASigner
+        extends SLHDSASigner
     {
-        String s = input.trim();
-        List l = new ArrayList();
-
-        int idx = s.indexOf(c);
-        while (idx > 0)
+        public byte[] internalGenerateSignature(byte[] message, byte[] optRand)
         {
-            l.add(s.substring(0, idx));
-            s = s.substring(idx + 1).trim();
-            idx = s.indexOf(c);
+            return super.internalGenerateSignature(message, optRand);
         }
 
-        if (s.length() > 0)
+        public boolean internalVerifySignature(byte[] message, byte[] signature)
         {
-            l.add(s);
+            return super.internalVerifySignature(message, signature);
         }
-
-        return (String[]) l.toArray(new String[0]);
     }
 }

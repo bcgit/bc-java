@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;

@@ -1,12 +1,15 @@
 package org.bouncycastle.tsp.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -17,8 +20,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -31,6 +34,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.tsp.TSPAlgorithms;
@@ -106,7 +110,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+        assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -213,7 +217,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("06836dfdec4b556e05535d5696b0e4add5cee7d765bcba1f4c1613ddb9176813"),
+        assertTrue(Arrays.areEqual(Hex.decode("06836dfdec4b556e05535d5696b0e4add5cee7d765bcba1f4c1613ddb9176813"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -336,7 +340,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
+        assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
             tspReq.getMessageImprintDigest()));
 
         String signDN = "O=Bouncy Castle, C=AU";
@@ -514,7 +518,7 @@ public class ERSTest
                 }
             }
         }
-        Assert.assertEquals(atss.size(), count);
+        assertEquals(atss.size(), count);
     }
 
     private void checkAbsent(ERSEvidenceRecord ats, ERSData data)
@@ -625,7 +629,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+        assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
             tspReq.getMessageImprintDigest()));
 
 
@@ -716,15 +720,15 @@ public class ERSTest
 
         Collection<ERSEvidenceRecord> recs = store.getMatches(new ERSEvidenceRecordSelector(h3Docs));
 
-        Assert.assertEquals(1, recs.size());
+        assertEquals(1, recs.size());
         ERSEvidenceRecord r1 = (ERSEvidenceRecord)recs.iterator().next();
 
         recs = store.getMatches(new ERSEvidenceRecordSelector(new ERSByteData(H3A_DATA)));
 
-        Assert.assertEquals(1, recs.size());
+        assertEquals(1, recs.size());
         ERSEvidenceRecord r2 = (ERSEvidenceRecord)recs.iterator().next();
 
-        Assert.assertTrue(r2 == r1);
+        assertTrue(r2 == r1);
     }
 
     private void checkPresent(ERSEvidenceRecord ev, ERSData data)
@@ -1099,7 +1103,7 @@ public class ERSTest
 
         TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
+        assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
 
         ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
@@ -1119,7 +1123,7 @@ public class ERSTest
 
         tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-        Assert.assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
+        assertTrue(Arrays.areEqual(Hex.decode("d82fea0eaff4b12925a201dff2332965953ca38c1eef6c9e31b55bbce4ce2984"),
             tspReq.getMessageImprintDigest()));
     }
 
@@ -1167,7 +1171,7 @@ public class ERSTest
 
             TimeStampRequest tspReq = ersGen.generateTimeStampRequest(tspReqGen);
 
-            Assert.assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
+            assertTrue(Arrays.areEqual(Hex.decode("98fbf91c1aebdfec514d4a76532ec95f27ebcf4c8b6f7e2947afcbbfe7084cd4"),
                 tspReq.getMessageImprintDigest()));
 
             deleteDirectory(rootDir);
@@ -1439,19 +1443,16 @@ public class ERSTest
             private final ASN1ObjectIdentifier algorithm = NISTObjectIdentifiers.id_sha512;
             private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-            @Override
             public AlgorithmIdentifier getAlgorithmIdentifier()
             {
                 return new AlgorithmIdentifier(algorithm);
             }
 
-            @Override
             public OutputStream getOutputStream()
             {
                 return bOut;
             }
-
-            @Override
+            
             public byte[] getDigest()
             {
                 final byte[] bytes = bOut.toByteArray();
@@ -1488,7 +1489,7 @@ public class ERSTest
         final TimeStampRequest timeStampRequest = ersArchiveTimeStampGenerator.generateTimeStampRequest(timeStampRequestGenerator);
 
 
-        //Assert.assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
+        //assertTrue(Arrays.areEqual(Hex.decode("b7efd5e742df672584e69b36ba5592748f841cc400ef989180aa2a69e43499e8"),
         //       tspReq.getMessageImprintDigest()));
 
         final String signDN = "O=Bouncy Castle, C=AU";
@@ -1530,7 +1531,6 @@ public class ERSTest
 
         final DigestCalculatorProvider digestCalculatorProvider = new DigestCalculatorProvider()
         {
-            @Override
             public DigestCalculator get(AlgorithmIdentifier digestAlgorithmIdentifier)
                 throws OperatorCreationException
             {
@@ -1570,5 +1570,80 @@ public class ERSTest
 
         }
 
+    }
+
+    public void testCompareStreamAndByteData () throws TSPException, ERSException, OperatorCreationException, IOException,
+        NoSuchAlgorithmException
+    {
+        // ER for the String "foo" using SHA-256 and a dummy cert/key.
+        String evidenceRecordBase64 = "MIIDCgIBATANMAsGCWCGSAFlAwQCATCCAvQwggLwMIIC7DCCAugGCSqGSI"
+            + "b3DQEHAqCCAtkwggLVAgEDMQ0wCwYJYIZIAWUDBAIDMG0GCyqGSIb3DQEJEAEEoF4EXDBaAgEBBgYEA"
+            + "I9nAQEwLzALBglghkgBZQMEAgEEICwmtGto/8aP+ZtFPB0wQTQTQi1wZIO/oPmKXohiZueuAgEBGA8y"
+            + "MDI0MTAwMjIzMDAzNloCCFO56J9TFmGGMYICUDCCAkwCAQEwBTAAAgEAMAsGCWCGSAFlAwQCA6CCAR4"
+            + "wGgYJKoZIhvcNAQkDMQ0GCyqGSIb3DQEJEAEEMBwGCSqGSIb3DQEJBTEPFw0yNDEwMDIyMzAwMzZaMC"
+            + "sGCSqGSIb3DQEJNDEeMBwwCwYJYIZIAWUDBAIDoQ0GCSqGSIb3DQEBDQUAME8GCSqGSIb3DQEJBDFCB"
+            + "EDPPkk9PN5EGrAvZyjv9wJR77tQCIwoA3xWwqESBGICShZxNjt6YU3LZor99ARJ4As+yiIjW/hTg5v3"
+            + "vqbTrfSIMGQGCyqGSIb3DQEJEAIvMVUwUzBRME8wCwYJYIZIAWUDBAIDBEAPvi2mNblzqqI91nWRM9s"
+            + "ocS7TJfpyQsx4ZcBVeGK1XjCW6BQ5KmrPFCc+IefB5FB/ZQsPwdyYv6umJzCYK0SzMA0GCSqGSIb3DQ"
+            + "EBDQUABIIBALWgWcjxzY5QEOlK92GNf9kjBflbO65dYkAKxrrgcwQ6Dz+ablUwsG01ILDUUnSL9wTQC"
+            + "OkYKb1oEFNrd9lbHWBOqlu5/lMjhZcWnYzbK3rzQRuoPwXYD/GWgiO0wLmF3FQ9xaum1Oui+Y075OS4"
+            + "7fXfLlSe2wMPlnoDb/IFAgHGBK/3zJ7w7n9OCa1U6qwTYCpw9MTXsOI/PbNw2h3cHTVgbY+HCTB4oJC"
+            + "GpY9bbEMuJboe4DkQx2Eqpq1pVaMKRxsjhrnbH8QlkUGtuGztqnZa5AoCth79x70Ch7WhdDcxG3wiFi"
+            + "29pw69obUCh3c61Q2WKl+MKW/tqq7EGYu5+jE=";
+        DigestCalculatorProvider digestProvider = new BcDigestCalculatorProvider();
+        ERSEvidenceRecord ersEvidenceRecord = new ERSEvidenceRecord(
+            Base64.decode(evidenceRecordBase64), digestProvider);
+
+        // Sanity check, make sure root hash of ER is what we expect.
+        byte[] sourceData = Strings.toUTF8ByteArray("foo");
+        byte[] sourceSha256 = MessageDigest.getInstance("SHA-256").digest(sourceData);
+        assertTrue(Arrays.areEqual(sourceSha256, ersEvidenceRecord.getPrimaryRootHash()));
+
+
+        // Generate hash renewal request using ERSInputStreamData.
+        ERSData ersStreamData = new ERSInputStreamData(new ByteArrayInputStream(sourceData));
+        TimeStampRequest streamDataReq = ersEvidenceRecord.generateHashRenewalRequest(
+            digestProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512)),
+            ersStreamData,
+            new TimeStampRequestGenerator(),
+            BigInteger.ZERO);
+
+
+        // Generate hash renewal request using ERSByteData to compare against.
+        ERSData ersByteData = new ERSByteData(sourceData);
+        TimeStampRequest byteDataReq = ersEvidenceRecord.generateHashRenewalRequest(
+            digestProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512)),
+            ersByteData,
+            new TimeStampRequestGenerator(),
+            BigInteger.ZERO);
+
+
+        // check ERSByteData and ERSInputStreamData produce same output
+        assertTrue(Arrays.areEqual(byteDataReq.getMessageImprintDigest(),
+            streamDataReq.getMessageImprintDigest()));
+
+
+        // Generate the digest we expect to see in the requests and compare.
+        byte[] expectedDigest = generateExpectedRequestDigest(sourceData, ersEvidenceRecord,
+            MessageDigest.getInstance("SHA-512"));
+        assertTrue(Arrays.areEqual(byteDataReq.getMessageImprintDigest(), expectedDigest));
+        assertTrue(Arrays.areEqual(streamDataReq.getMessageImprintDigest(), expectedDigest));
+    }
+
+    /** Based on RFC 4998 section 5.2. */
+    private static byte[] generateExpectedRequestDigest (byte[] sourceData,
+                                                         ERSEvidenceRecord evidenceRecord, MessageDigest digest) throws IOException
+    {
+        byte[] atsci = evidenceRecord.toASN1Structure().getArchiveTimeStampSequence().getEncoded(ASN1Encoding.DER);
+        byte[] hi = digest.digest(sourceData);
+        byte[] hai = digest.digest(atsci);
+        byte[] hihai;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            outputStream.write(hi);
+            outputStream.write(hai);
+            hihai = outputStream.toByteArray();
+
+        byte[] hiprime = digest.digest(hihai);
+        return hiprime;
     }
 }

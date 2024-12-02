@@ -1,28 +1,31 @@
 package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 
 public interface X509ObjectIdentifiers
 {
+    static final ASN1ObjectIdentifier attributeType = new ASN1ObjectIdentifier("2.5.4").intern();
+
     /** Subject RDN components: commonName = 2.5.4.3 */
-    static final ASN1ObjectIdentifier    commonName              = new ASN1ObjectIdentifier("2.5.4.3").intern();
+    static final ASN1ObjectIdentifier    commonName              = attributeType.branch("3").intern();
     /** Subject RDN components: countryName = 2.5.4.6 */
-    static final ASN1ObjectIdentifier    countryName             = new ASN1ObjectIdentifier("2.5.4.6").intern();
+    static final ASN1ObjectIdentifier    countryName             = attributeType.branch("6").intern();
     /** Subject RDN components: localityName = 2.5.4.7 */
-    static final ASN1ObjectIdentifier    localityName            = new ASN1ObjectIdentifier("2.5.4.7").intern();
+    static final ASN1ObjectIdentifier    localityName            = attributeType.branch("7").intern();
     /** Subject RDN components: stateOrProvinceName = 2.5.4.8 */
-    static final ASN1ObjectIdentifier    stateOrProvinceName     = new ASN1ObjectIdentifier("2.5.4.8").intern();
+    static final ASN1ObjectIdentifier    stateOrProvinceName     = attributeType.branch("8").intern();
     /** Subject RDN components: organization = 2.5.4.10 */
-    static final ASN1ObjectIdentifier    organization            = new ASN1ObjectIdentifier("2.5.4.10").intern();
+    static final ASN1ObjectIdentifier    organization            = attributeType.branch("10").intern();
     /** Subject RDN components: organizationalUnitName = 2.5.4.11 */
-    static final ASN1ObjectIdentifier    organizationalUnitName  = new ASN1ObjectIdentifier("2.5.4.11").intern();
+    static final ASN1ObjectIdentifier    organizationalUnitName  = attributeType.branch("11").intern();
 
     /** Subject RDN components: telephone_number = 2.5.4.20 */
-    static final ASN1ObjectIdentifier    id_at_telephoneNumber   = new ASN1ObjectIdentifier("2.5.4.20").intern();
+    static final ASN1ObjectIdentifier    id_at_telephoneNumber   = attributeType.branch("20").intern();
     /** Subject RDN components: name = 2.5.4.41 */
-    static final ASN1ObjectIdentifier    id_at_name              = new ASN1ObjectIdentifier("2.5.4.41").intern();
-
-    static final ASN1ObjectIdentifier    id_at_organizationIdentifier = new ASN1ObjectIdentifier("2.5.4.97").intern();
+    static final ASN1ObjectIdentifier    id_at_name              = attributeType.branch("41").intern();
+    /** Subject RDN components: organizationIdentifier = 2.5.4.97 */
+    static final ASN1ObjectIdentifier    id_at_organizationIdentifier = attributeType.branch("97").intern();
 
     /**
      * id-SHA1 OBJECT IDENTIFIER ::=    
@@ -57,44 +60,43 @@ public interface X509ObjectIdentifiers
     static final ASN1ObjectIdentifier  id_pkix = new ASN1ObjectIdentifier("1.3.6.1.5.5.7");
 
     /**
+     * private internet extensions; OID = 1.3.6.1.5.5.7.1
+     */
+    static final ASN1ObjectIdentifier  id_pe   = id_pkix.branch("1");
+
+    /** 1.3.6.1.5.5.7.6 */
+    static final ASN1ObjectIdentifier pkix_algorithms = id_pkix.branch("6");
+
+    /**
      *    id-RSASSA-PSS-SHAKE128  OBJECT IDENTIFIER  ::=  { iso(1)
      *             identified-organization(3) dod(6) internet(1)
      *             security(5) mechanisms(5) pkix(7) algorithms(6) 30 }
      */
-    static final ASN1ObjectIdentifier  id_rsassa_pss_shake128   = id_pkix.branch("6.30");
+    static final ASN1ObjectIdentifier id_rsassa_pss_shake128 = pkix_algorithms.branch("30");
 
     /**
      *    id-RSASSA-PSS-SHAKE256  OBJECT IDENTIFIER  ::=  { iso(1)
      *             identified-organization(3) dod(6) internet(1)
      *             security(5) mechanisms(5) pkix(7) algorithms(6) 31 }
      */
-    static final ASN1ObjectIdentifier  id_rsassa_pss_shake256   = id_pkix.branch("6.31");
+    static final ASN1ObjectIdentifier id_rsassa_pss_shake256 = pkix_algorithms.branch("31");
 
     /**
      * id-ecdsa-with-shake128 OBJECT IDENTIFIER  ::=  { iso(1)
      *        identified-organization(3) dod(6) internet(1)
      *        security(5) mechanisms(5) pkix(7) algorithms(6) 32 }
      */
-    static final ASN1ObjectIdentifier  id_ecdsa_with_shake128   = id_pkix.branch("6.32");
+    static final ASN1ObjectIdentifier id_ecdsa_with_shake128 = pkix_algorithms.branch("32");
 
     /**
      * id-ecdsa-with-shake256 OBJECT IDENTIFIER  ::=  { iso(1)
      *         identified-organization(3) dod(6) internet(1)
      *         security(5) mechanisms(5) pkix(7) algorithms(6) 33 }
      */
-    static final ASN1ObjectIdentifier  id_ecdsa_with_shake256   = id_pkix.branch("6.33");
+    static final ASN1ObjectIdentifier id_ecdsa_with_shake256 = pkix_algorithms.branch("33");
 
-    /**
-     * private internet extensions; OID = 1.3.6.1.5.5.7.1
-     */
-    static final ASN1ObjectIdentifier  id_pe   = id_pkix.branch("1");
-
-    /**
-     * ISO ARC for standard certificate and CRL extensions
-     * <p>
-     * OID: 2.5.29
-     */
-    static final ASN1ObjectIdentifier id_ce = new ASN1ObjectIdentifier("2.5.29");
+    /** 1.3.6.1.5.5.7.9 */
+    static final ASN1ObjectIdentifier id_pda = id_pkix.branch("9");
 
     /** id-pkix OID:         1.3.6.1.5.5.7.48  */
     static final ASN1ObjectIdentifier  id_ad           = id_pkix.branch("48");
@@ -108,10 +110,17 @@ public interface X509ObjectIdentifiers
     /** OID for crl uri in AuthorityInformationAccess extension */
     static final ASN1ObjectIdentifier crlAccessMethod  = id_ad_caIssuers;
 
+    /**
+     * ISO ARC for standard certificate and CRL extensions
+     * <p>
+     * OID: 2.5.29
+     */
+    static final ASN1ObjectIdentifier id_ce = new ASN1ObjectIdentifier("2.5.29");
 
     /**
      *  id-PasswordBasedMac OBJECT IDENTIFIER ::= { iso(1) member-body(2)
      *          us(840) nt(113533) nsn(7) algorithms(66) 13 }
+     *  @deprecated Use CRMFObjectIdentifiers.passwordBasedMac instead 
      */
-    static final ASN1ObjectIdentifier id_PasswordBasedMac = new ASN1ObjectIdentifier("1.2.840.113533.7.66.13");
+    static final ASN1ObjectIdentifier id_PasswordBasedMac = MiscObjectIdentifiers.entrust.branch("66.13");
 }

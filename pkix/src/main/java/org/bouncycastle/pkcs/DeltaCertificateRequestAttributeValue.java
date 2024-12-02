@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
@@ -25,6 +26,21 @@ public class DeltaCertificateRequestAttributeValue
     public DeltaCertificateRequestAttributeValue(Attribute attribute)
     {
         this(ASN1Sequence.getInstance(attribute.getAttributeValues()[0]));
+    }
+
+    public static DeltaCertificateRequestAttributeValue getInstance(Object o)
+    {
+        if (o instanceof DeltaCertificateDescriptor)
+        {
+            return (DeltaCertificateRequestAttributeValue)o;
+        }
+        
+        if (o != null)
+        {
+            new DeltaCertificateRequestAttributeValue(ASN1Sequence.getInstance(o));
+        }
+
+        return null;
     }
 
     DeltaCertificateRequestAttributeValue(ASN1Sequence attrSeq)
@@ -56,11 +72,11 @@ public class DeltaCertificateRequestAttributeValue
                 ASN1TaggedObject tagObj = ASN1TaggedObject.getInstance(attrSeq.getObjectAt(idx));
                 if (tagObj.getTagNo() == 1)
                 {
-                    ext = Extensions.getInstance(tagObj, false);
+                    ext = Extensions.getInstance(tagObj, true);
                 }
                 else if (tagObj.getTagNo() == 2)
                 {
-                    sigAlg = AlgorithmIdentifier.getInstance(tagObj, false);
+                    sigAlg = AlgorithmIdentifier.getInstance(tagObj, true);
                 }
                 else
                 {

@@ -5,22 +5,26 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.EdECPrivateKey;
+import java.security.interfaces.EdECPublicKey;
+import java.security.spec.EdECPrivateKeySpec;
+import java.security.spec.EdECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.security.spec.NamedParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Optional;
 
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
@@ -28,6 +32,7 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.util.OpenSSHPrivateKeyUtil;
 import org.bouncycastle.crypto.util.OpenSSHPublicKeyUtil;
+import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.EdDSAPublicKey;
 import org.bouncycastle.jcajce.interfaces.XDHPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
@@ -129,6 +134,28 @@ public class KeyFactorySpi
                 return new RawEncodedKeySpec(((EdDSAPublicKey)key).getPointEncoding());
             }
         }
+        else if (spec.isAssignableFrom(EdECPrivateKeySpec.class))
+        {
+            if (key instanceof EdECPrivateKey)
+            {
+                Optional<byte[]> bytes = ((EdECPrivateKey)key).getBytes();
+                if (bytes.isPresent())
+                {
+                    return new EdECPrivateKeySpec(((EdECPrivateKey)key).getParams(), bytes.get());
+                }
+                else
+                {
+                    throw new IllegalArgumentException("no byte[] data associated with key");
+                }
+            }
+        }
+        else if (spec.isAssignableFrom(EdECPublicKeySpec.class))
+        {
+            if (key instanceof EdECPublicKey)
+            {
+                return new EdECPublicKeySpec(((EdECPublicKey)key).getParams(), ((EdECPublicKey)key).getPoint());
+            }
+        }
 
         return super.engineGetKeySpec(key, spec);
     }
@@ -144,7 +171,32 @@ public class KeyFactorySpi
             {
                 return new BC15EdDSAPrivateKey((Ed25519PrivateKeyParameters)parameters);
             }
-            throw new IllegalStateException("openssh private key not Ed25519 private key");
+            throw new InvalidKeySpecException("openssh private key not Ed25519 private key");
+        }
+        else if (keySpec instanceof EdECPrivateKeySpec)
+        {
+            EdECPrivateKeySpec edSpec = (EdECPrivateKeySpec)keySpec;
+            try
+            {
+                AsymmetricKeyParameter parameters;
+                if (NamedParameterSpec.ED448.getName().equalsIgnoreCase(edSpec.getParams().getName()))
+                {
+                    parameters = SignatureSpi.getEd448PrivateKey(edSpec.getBytes());
+                }
+                else if (NamedParameterSpec.ED25519.getName().equalsIgnoreCase(edSpec.getParams().getName()))
+                {
+                    parameters = SignatureSpi.getEd25519PrivateKey(edSpec.getBytes());
+                }
+                else
+                {
+                    throw new InvalidKeySpecException("unrecognized named parameters: " + edSpec.getParams().getName());
+                }
+                return new BC15EdDSAPrivateKey(parameters);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new InvalidKeySpecException(e.getMessage(), e);
+            }
         }
 
         return super.engineGeneratePrivate(keySpec);
@@ -210,6 +262,31 @@ public class KeyFactorySpi
                 throw new InvalidKeySpecException("factory not a specific type, cannot recognise raw encoding");
             }
         }
+        else if (keySpec instanceof EdECPublicKeySpec)
+        {
+            EdECPublicKeySpec edSpec = (EdECPublicKeySpec)keySpec;
+            try
+            {
+                AsymmetricKeyParameter parameters;
+                if (NamedParameterSpec.ED448.getName().equalsIgnoreCase(edSpec.getParams().getName()))
+                {
+                    parameters = SignatureSpi.getEd448PublicKey(edSpec.getPoint());
+                }
+                else if (NamedParameterSpec.ED25519.getName().equalsIgnoreCase(edSpec.getParams().getName()))
+                {
+                    parameters = SignatureSpi.getEd25519PublicKey(edSpec.getPoint());
+                }
+                else
+                {
+                    throw new InvalidKeySpecException("unrecognized named parameters: " + edSpec.getParams().getName());
+                }
+                return new BC15EdDSAPublicKey(parameters);
+            }
+            catch (InvalidKeyException e)
+            {
+                throw new InvalidKeySpecException(e.getMessage(), e);
+            }
+        }
         else if (keySpec instanceof OpenSSHPublicKeySpec)
         {
             CipherParameters parameters = OpenSSHPublicKeyUtil.parsePublicKey(((OpenSSHPublicKeySpec)keySpec).getEncoded());
@@ -218,7 +295,7 @@ public class KeyFactorySpi
                 return new BC15EdDSAPublicKey(new byte[0], ((Ed25519PublicKeyParameters)parameters).getEncoded());
             }
 
-            throw new IllegalStateException("openssh public key not Ed25519 public key");
+            throw new InvalidKeySpecException("openssh public key not Ed25519 public key");
         }
 
         return super.engineGeneratePublic(keySpec);

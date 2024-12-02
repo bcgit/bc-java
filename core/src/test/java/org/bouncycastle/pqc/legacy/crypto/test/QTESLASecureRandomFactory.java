@@ -1,8 +1,9 @@
 package org.bouncycastle.pqc.legacy.crypto.test;
 
-import javax.crypto.Cipher;
-import javax.crypto.spec.SecretKeySpec;
-
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
 /**
@@ -113,11 +114,13 @@ class QTESLASecureRandomFactory
     {
         try
         {
-            Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
+            BufferedBlockCipher bufferedBlockCipher = new DefaultBufferedBlockCipher(AESEngine.newInstance());
 
-            cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"));
+            bufferedBlockCipher.init(true, new KeyParameter(key));
 
-            cipher.doFinal(ctr, 0, ctr.length, buffer, startPosition);
+            int len = bufferedBlockCipher.processBytes(ctr, 0, ctr.length, buffer, startPosition);
+
+            bufferedBlockCipher.doFinal(buffer, len);
         }
         catch (Throwable ex)
         {

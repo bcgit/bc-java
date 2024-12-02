@@ -1,9 +1,18 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
@@ -21,11 +30,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
+import org.bouncycastle.util.Strings;
 
 public class LegacyEd25519KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -44,6 +49,19 @@ public class LegacyEd25519KeyPairTest
         testConversionOfBcKeyPair();
         testV4SigningVerificationWithJcaKey();
         testV4SigningVerificationWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
+        isEquals("Ed25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testV4SigningVerificationWithJcaKey()
@@ -55,7 +73,7 @@ public class LegacyEd25519KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
                 keyPair.getPublicKey().getAlgorithm(),
@@ -82,7 +100,7 @@ public class LegacyEd25519KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.EDDSA_LEGACY, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
                 keyPair.getPublicKey().getAlgorithm(),

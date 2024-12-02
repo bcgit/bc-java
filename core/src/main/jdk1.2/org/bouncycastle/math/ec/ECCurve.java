@@ -123,6 +123,19 @@ public abstract class ECCurve
         return new Config(this.coord, this.endomorphism, this.multiplier);
     }
 
+    public int getFieldElementEncodingLength()
+    {
+        return (this.getFieldSize() + 7) / 8;
+    }
+
+    public int getAffinePointEncodingLength(boolean compressed)
+    {
+        int fieldLength = getFieldElementEncodingLength();
+        return compressed
+            ?  1 + fieldLength
+            :  1 + fieldLength * 2;
+    }
+
     public ECPoint validatePoint(BigInteger x, BigInteger y)
     {
         ECPoint p = createPoint(x, y);
@@ -379,7 +392,7 @@ public abstract class ECCurve
     public ECPoint decodePoint(byte[] encoded)
     {
         ECPoint p = null;
-        int expectedLength = (this.getFieldSize() + 7) / 8;
+        int expectedLength = getFieldElementEncodingLength();
 
         byte type = encoded[0];
         switch (type)
@@ -463,25 +476,15 @@ public abstract class ECCurve
      */
     public ECLookupTable createCacheSafeLookupTable(final ECPoint[] points, int off, final int len)
     {
-        final int FE_BYTES = (this.getFieldSize() + 7) >>> 3;
-
+        final int FE_BYTES = getFieldElementEncodingLength();
         final byte[] table = new byte[len * FE_BYTES * 2];
+        int opos = 0;
+        for (int i = 0; i < len; ++i)
         {
-            int pos = 0;
-            for (int i = 0; i < len; ++i)
-            {
-                ECPoint p = points[off + i];
-                byte[] px = p.getRawXCoord().toBigInteger().toByteArray();
-                byte[] py = p.getRawYCoord().toBigInteger().toByteArray();
-
-                int pxStart = px.length > FE_BYTES ? 1 : 0, pxLen = px.length - pxStart;
-                int pyStart = py.length > FE_BYTES ? 1 : 0, pyLen = py.length - pyStart;
-
-                System.arraycopy(px, pxStart, table, pos + FE_BYTES - pxLen, pxLen); pos += FE_BYTES;
-                System.arraycopy(py, pyStart, table, pos + FE_BYTES - pyLen, pyLen); pos += FE_BYTES;
-            }
+            ECPoint p = points[off + i];
+            p.getRawXCoord().encodeTo(table, opos);      opos += FE_BYTES;
+            p.getRawYCoord().encodeTo(table, opos);      opos += FE_BYTES;
         }
-
         return new AbstractECLookupTable()
         {
             public int getSize()
@@ -526,7 +529,7 @@ public abstract class ECCurve
 
             private ECPoint createPoint(byte[] x, byte[] y)
             {
-                return createRawPoint(ECCurve.this.fromBigInteger(new BigInteger(1, x)), ECCurve.this.fromBigInteger(new BigInteger(1, y)));
+                return createRawPoint(fromBigInteger(new BigInteger(1, x)), fromBigInteger(new BigInteger(1, y)));
             }
         };
     }
@@ -718,7 +721,7 @@ public abstract class ECCurve
                 }
 
                 if (Primes.hasAnySmallFactors(q) || !Primes.isMRProbablePrime(
-                    q, CryptoServicesRegistrar.getSecureRandom(), ECCurve.getNumberOfIterations(qBitLength, certainty)))
+                    q, CryptoServicesRegistrar.getSecureRandom(), this.getNumberOfIterations(qBitLength, certainty)))
                 {
                     throw new IllegalArgumentException("Fp q value not prime");
                 }
@@ -845,6 +848,11 @@ public abstract class ECCurve
 
         private static FiniteField buildField(int m, int k1, int k2, int k3)
         {
+            if (m > Properties.asInteger("org.bouncycastle.ec.max_f2m_field_size", 1142))  // twice 571
+            {
+                throw new IllegalArgumentException("field size out of range: " + m);
+            }
+
             int[] exponents = (k2 | k3) == 0
                 ? new int[]{ 0, k1, m }
                 : new int[]{ 0, k1, k2, k3, m };
@@ -855,6 +863,15 @@ public abstract class ECCurve
         protected AbstractF2m(int m, int k1, int k2, int k3)
         {
             super(buildField(m, k1, k2, k3));
+
+            if (Properties.isOverrideSet("org.bouncycastle.ec.disable"))
+            {
+                throw new UnsupportedOperationException("F2M disabled by \"org.bouncycastle.ec.disable\"");
+            }
+            if (Properties.isOverrideSet("org.bouncycastle.ec.disable_f2m"))
+            {
+                throw new UnsupportedOperationException("F2M disabled by \"org.bouncycastle.ec.disable_f2m\"");
+            }
         }
 
         public ECPoint createPoint(BigInteger x, BigInteger y)
@@ -997,7 +1014,7 @@ public abstract class ECCurve
             }
 
             int m = this.getFieldSize();
-
+            
             // For odd m, use the half-trace 
             if (0 != (m & 1))
             {
@@ -1245,8 +1262,8 @@ public abstract class ECCurve
             this.cofactor = cofactor;
 
             this.infinity = new ECPoint.F2m(this, null, null);
-            this.a = fromBigInteger(a);
-            this.b = fromBigInteger(b);
+            this.a = this.fromBigInteger(a);
+            this.b = this.fromBigInteger(b);
             this.coord = F2M_DEFAULT_COORDS;
         }
 

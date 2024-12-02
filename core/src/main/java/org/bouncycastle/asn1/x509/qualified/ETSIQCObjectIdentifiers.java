@@ -15,4 +15,6 @@ public interface ETSIQCObjectIdentifiers
     static final ASN1ObjectIdentifier    id_etsi_qct_esign = id_etsi_qcs_QcType.branch("1");
     static final ASN1ObjectIdentifier    id_etsi_qct_eseal = id_etsi_qcs_QcType.branch("2");
     static final ASN1ObjectIdentifier    id_etsi_qct_web = id_etsi_qcs_QcType.branch("3");
+
+    static final ASN1ObjectIdentifier    id_etsi_qcs_QcCClegislation = new ASN1ObjectIdentifier("0.4.0.1862.1.7");
 }

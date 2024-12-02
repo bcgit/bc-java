@@ -536,7 +536,7 @@ public class CertPathValidatorTest
             isTrue("No CRLs found for issuer \"o=Certs 'r Us,c=XX\"".equals(e.getMessage()));
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
     }
 
     public void performTest()
@@ -664,7 +664,7 @@ public class CertPathValidatorTest
             }
         }
 
-        System.clearProperty("org.bouncycastle.x509.allow_ca_without_crl_sign");
+        System.setProperty("org.bouncycastle.x509.allow_ca_without_crl_sign", "true");
 
         checkCircProcessing();
         checkPolicyProcessingAtDomainMatch();
@@ -1951,13 +1951,7 @@ public class CertPathValidatorTest
             //
             // before and after dates
             //
-            {
-                ASN1EncodableVector validity = new ASN1EncodableVector(2);
-                validity.add(startDate);
-                validity.add(endDate);
-
-                v.add(new DERSequence(validity));
-            }
+            v.add(new DERSequence(startDate, endDate));
 
             if (subject != null)
             {
@@ -1991,7 +1985,7 @@ public class CertPathValidatorTest
         }
     }
 
-    public class DodgyExtensions
+    public static class DodgyExtensions
         extends ASN1Object
     {
         private Hashtable extensions = new Hashtable();

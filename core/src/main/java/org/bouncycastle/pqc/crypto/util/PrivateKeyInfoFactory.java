@@ -150,7 +150,7 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
+            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, params.getPublicKey());
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
@@ -247,7 +247,15 @@ public class PrivateKeyInfoFactory
             
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
+            byte[] seed = params.getSeed();
+            if (seed == null)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
+            }
+            else
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+            }
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -286,9 +294,19 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
-            MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
+            byte[] seed = params.getSeed();
+            if (seed == null)
+            {
+                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
 
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, pubParams.getEncoded());
+                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, pubParams.getEncoded());
+            }
+            else
+            {
+                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
+
+                return new PrivateKeyInfo(algorithmIdentifier, params.getSeed(), attributes);
+            }
         }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {

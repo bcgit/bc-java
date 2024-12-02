@@ -187,8 +187,6 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier    pkcs_9_at_smimeCapabilities  = pkcs_9.branch("15").intern();
     /** PKCS#9: 1.2.840.113549.1.9.16 */
     ASN1ObjectIdentifier    id_smime                     = pkcs_9.branch("16").intern();
-    /** PKCS#9: 1.2.840.113549.1.9.16.2.46 */
-    ASN1ObjectIdentifier    pkcs_9_at_binarySigningTime  = pkcs_9.branch("16.2.46").intern();
 
     /** PKCS#9: 1.2.840.113549.1.9.20 */
     ASN1ObjectIdentifier    pkcs_9_at_friendlyName  = pkcs_9.branch("20").intern();
@@ -231,7 +229,7 @@ public interface PKCSObjectIdentifiers
     // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) ct(1)}
     //
     /** PKCS#9: 1.2.840.113549.1.9.16.1 -- smime ct */
-    ASN1ObjectIdentifier    id_ct = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.1");
+    ASN1ObjectIdentifier    id_ct = id_smime.branch("1");
 
     /** PKCS#9: 1.2.840.113549.1.9.16.1.2 -- smime ct authData */
     ASN1ObjectIdentifier    id_ct_authData          = id_ct.branch("2");
@@ -246,20 +244,22 @@ public interface PKCSObjectIdentifiers
 
 
     /** S/MIME: Algorithm Identifiers ; 1.2.840.113549.1.9.16.3 */
-    ASN1ObjectIdentifier id_alg                  = id_smime.branch("3");
+    ASN1ObjectIdentifier smime_alg = id_smime.branch("3");
+    /** @deprecated use smime_alg instead */
+    ASN1ObjectIdentifier id_alg = id_smime.branch("3");
 
     /** PKCS#9: 1.2.840.113549.1.9.16.3.5 */
-    ASN1ObjectIdentifier    id_alg_ESDH             = id_alg.branch("5");
+    ASN1ObjectIdentifier    id_alg_ESDH             = smime_alg.branch("5");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.6 */
-    ASN1ObjectIdentifier    id_alg_CMS3DESwrap      = id_alg.branch("6");
+    ASN1ObjectIdentifier    id_alg_CMS3DESwrap      = smime_alg.branch("6");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.7 */
-    ASN1ObjectIdentifier    id_alg_CMSRC2wrap       = id_alg.branch("7");
+    ASN1ObjectIdentifier    id_alg_CMSRC2wrap       = smime_alg.branch("7");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.8 */
-    ASN1ObjectIdentifier id_alg_zlibCompress        = id_alg.branch("8");
+    ASN1ObjectIdentifier id_alg_zlibCompress        = smime_alg.branch("8");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.9 */
-    ASN1ObjectIdentifier id_alg_PWRI_KEK            = id_alg.branch("9");
+    ASN1ObjectIdentifier id_alg_PWRI_KEK            = smime_alg.branch("9");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.10 */
-    ASN1ObjectIdentifier    id_alg_SSDH             = id_alg.branch("10");
+    ASN1ObjectIdentifier    id_alg_SSDH             = smime_alg.branch("10");
 
     /**
      * <pre>
@@ -271,7 +271,7 @@ public interface PKCSObjectIdentifiers
      *   }
      * </pre>
      */
-    ASN1ObjectIdentifier id_rsa_KEM              = id_alg.branch("14");
+    ASN1ObjectIdentifier id_rsa_KEM              = smime_alg.branch("14");
 
 
     /**
@@ -279,7 +279,7 @@ public interface PKCSObjectIdentifiers
      *     member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs9(9)
      *    smime(16) alg(3) 17 }
      */
-    public static final ASN1ObjectIdentifier id_alg_hss_lms_hashsig = id_alg.branch("17");
+    public static final ASN1ObjectIdentifier id_alg_hss_lms_hashsig = smime_alg.branch("17");
 
     /**
      * <pre>
@@ -290,7 +290,7 @@ public interface PKCSObjectIdentifiers
      * AEADChaCha20Poly1305Nonce ::= OCTET STRING (SIZE(12))
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = id_alg.branch("18");
+    ASN1ObjectIdentifier id_alg_AEADChaCha20Poly1305 = smime_alg.branch("18");
 
     /**
      * <pre>
@@ -298,7 +298,7 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 28 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha256 = id_alg.branch("28");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha256 = smime_alg.branch("28");
 
     /**
      * <pre>
@@ -306,7 +306,7 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 29 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha384 = id_alg.branch("29");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha384 = smime_alg.branch("29");
 
     /**
      * <pre>
@@ -314,16 +314,16 @@ public interface PKCSObjectIdentifiers
      *        us(840) rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) alg(3) 30 }
      * </pre>
      */
-    ASN1ObjectIdentifier id_alg_hkdf_with_sha512 = id_alg.branch("30");
+    ASN1ObjectIdentifier id_alg_hkdf_with_sha512 = smime_alg.branch("30");
 
     //
     // id-cti OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
     // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) cti(6)}
     //
     /** PKCS#9: 1.2.840.113549.1.9.16.6 -- smime cti */
-    ASN1ObjectIdentifier    id_cti = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.6");
-    
-    /** PKCS#9: 1.2.840.113549.1.9.16.6.1 -- smime cti proofOfOrigin */
+    ASN1ObjectIdentifier    id_cti = id_smime.branch("6");
+
+     /** PKCS#9: 1.2.840.113549.1.9.16.6.1 -- smime cti proofOfOrigin */
     ASN1ObjectIdentifier    id_cti_ets_proofOfOrigin   = id_cti.branch("1");
     /** PKCS#9: 1.2.840.113549.1.9.16.6.2 -- smime cti proofOfReceipt*/
     ASN1ObjectIdentifier    id_cti_ets_proofOfReceipt  = id_cti.branch("2");
@@ -341,8 +341,10 @@ public interface PKCSObjectIdentifiers
     // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) attributes(2)}
     //
     /** PKCS#9: 1.2.840.113549.1.9.16.2 - smime attributes */
-    ASN1ObjectIdentifier    id_aa = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.2");
+    ASN1ObjectIdentifier    id_aa = id_smime.branch("2");
 
+    /** PKCS#9: 1.2.840.113549.1.9.16.2.46 */
+    ASN1ObjectIdentifier pkcs_9_at_binarySigningTime  = id_aa.branch("46").intern();
 
     /** PKCS#9: 1.2.840.113549.1.9.16.2.1 -- smime attribute receiptRequest */
     ASN1ObjectIdentifier id_aa_receiptRequest = id_aa.branch("1");
@@ -427,13 +429,15 @@ public interface PKCSObjectIdentifiers
      * id-spq OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
      * rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) id-spq(5)}; <p>
      * 1.2.840.113549.1.9.16.5
+     * @deprecated use id_spq_oid instead
      */
     final String id_spq = "1.2.840.113549.1.9.16.5";
+    ASN1ObjectIdentifier id_spq_oid = id_smime.branch("5");
 
     /** SMIME SPQ URI:     1.2.840.113549.1.9.16.5.1 */
-    ASN1ObjectIdentifier id_spq_ets_uri     = new ASN1ObjectIdentifier(id_spq + ".1");
+    ASN1ObjectIdentifier id_spq_ets_uri     = id_spq_oid.branch("1");
     /** SMIME SPQ UNOTICE: 1.2.840.113549.1.9.16.5.2 */
-    ASN1ObjectIdentifier id_spq_ets_unotice = new ASN1ObjectIdentifier(id_spq + ".2");
+    ASN1ObjectIdentifier id_spq_ets_unotice = id_spq_oid.branch("2");
 
     //
     // pkcs-12 OBJECT IDENTIFIER ::= {
