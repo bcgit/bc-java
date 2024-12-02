@@ -543,6 +543,7 @@ public class HSSTests
 
         assertEquals(1024, keyPair.getUsagesRemaining());
         assertEquals(1024, keyPair.getIndexLimit());
+        assertEquals(0, keyPair.getIndex());
 
         //
         // Split the space up with a shard.
@@ -555,7 +556,6 @@ public class HSSTests
         HSSPrivateKeyParameters pair = shard1;
 
         int c = 0;
-        String exhaustionMessage = null;
         for (int i = 0; i < keyPair.getIndexLimit(); i++)
         {
             if (i == 500)
@@ -640,6 +640,7 @@ public class HSSTests
 
         HSSPrivateKeyParameters shard = keyPair.extractKeyShard(10);
 
+        assertEquals(10, shard.getUsagesRemaining());
         assertEquals(15, shard.getIndexLimit());
         assertEquals(5, shard.getIndex());
 
