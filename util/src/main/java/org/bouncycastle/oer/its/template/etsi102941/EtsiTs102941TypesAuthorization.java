@@ -131,6 +131,7 @@ public class EtsiTs102941TypesAuthorization
         OERDefinition.octets(32).label("hmacKey"),
         SharedAtRequest.label("sharedAtRequest"),
         EtsiTs102941BaseTypes.EcSignature.label("ecSignature")
+        OERDefinition.extension()
     ).typeName("InnerAtRequest");
 
 
