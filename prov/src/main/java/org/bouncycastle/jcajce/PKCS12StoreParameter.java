@@ -17,6 +17,7 @@ public class PKCS12StoreParameter
     private final OutputStream out;
     private final ProtectionParameter protectionParameter;
     private final boolean forDEREncoding;
+    private final boolean overwriteFriendlyName;
 
     public PKCS12StoreParameter(OutputStream out, char[] password)
     {
@@ -25,19 +26,29 @@ public class PKCS12StoreParameter
 
     public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter)
     {
-        this(out, protectionParameter, false);
+        this(out, protectionParameter, false, true);
     }
 
     public PKCS12StoreParameter(OutputStream out, char[] password, boolean forDEREncoding)
     {
-        this(out, new KeyStore.PasswordProtection(password), forDEREncoding);
+        this(out, new KeyStore.PasswordProtection(password), forDEREncoding, true);
+    }
+    public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding)
+    {
+        this(out, protectionParameter, forDEREncoding, true);
     }
 
-    public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding)
+    public PKCS12StoreParameter(OutputStream out, char[] password, boolean forDEREncoding, boolean overwriteFriendlyName)
+    {
+        this(out, new KeyStore.PasswordProtection(password), forDEREncoding, overwriteFriendlyName);
+    }
+
+    public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding, boolean overwriteFriendlyName)
     {
         this.out = out;
         this.protectionParameter = protectionParameter;
         this.forDEREncoding = forDEREncoding;
+        this.overwriteFriendlyName = overwriteFriendlyName;
     }
 
     public OutputStream getOutputStream()
@@ -58,5 +69,16 @@ public class PKCS12StoreParameter
     public boolean isForDEREncoding()
     {
         return forDEREncoding;
+    }
+
+    /**
+     * Return whether the KeyStore used with this parameter should overwrite friendlyName
+     * when friendlyName is not present or does not equal the same name as alias
+     *
+     * @return true (default) to overwrite friendlyName, false otherwise,
+     */
+    public boolean isOverwriteFriendlyName()
+    {
+        return overwriteFriendlyName;
     }
 }

@@ -26,6 +26,23 @@ public class HSSPrivateKeyParameters
 
     private HSSPublicKeyParameters publicKey;
 
+    public HSSPrivateKeyParameters(LMSPrivateKeyParameters key, long index, long indexLimit)
+    {
+        super(true);
+
+        this.l = 1;
+        this.keys = Collections.singletonList(key);
+        this.sig = Collections.emptyList();
+        this.index = index;
+        this.indexLimit = indexLimit;
+        this.isShard = false;
+
+        //
+        // Correct Intermediate LMS values will be constructed during reset to index.
+        //
+        resetKeyToIndex();
+    }
+
     public HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit)
     {
         super(true);
@@ -104,7 +121,16 @@ public class HSSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
-                return getInstance(in);
+                try
+                {
+                    return getInstance(in);
+                }
+                catch (Exception e)
+                {
+                    // old style single LMS key.
+                    LMSPrivateKeyParameters lmsKey = LMSPrivateKeyParameters.getInstance(src);
+                    return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndexLimit());
+                }
             }
             finally
             {
@@ -186,7 +212,7 @@ public class HSSPrivateKeyParameters
 
     public long getUsagesRemaining()
     {
-        return indexLimit - index;
+        return getIndexLimit() - getIndex();
     }
 
     LMSPrivateKeyParameters getRootKey()
@@ -207,31 +233,32 @@ public class HSSPrivateKeyParameters
     {
         synchronized (this)
         {
-
-            if (getUsagesRemaining() < usageCount)
+            if (usageCount < 0)
+            {
+                throw new IllegalArgumentException("usageCount cannot be negative");
+            }
+            if (usageCount > indexLimit - index)
             {
                 throw new IllegalArgumentException("usageCount exceeds usages remaining in current leaf");
             }
 
-            long maxIndexForShard = index + usageCount;
-            long shardStartIndex = index;
+            long shardIndex = index;
+            long shardIndexLimit = index + usageCount;
 
-            //
-            // Move this keys index along
-            //
-            index += usageCount;
+            // Move this key's index along
+            index = shardIndexLimit;
 
             List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(this.getKeys());
             List<LMSSignature> sig = new ArrayList<LMSSignature>(this.getSig());
 
-            HSSPrivateKeyParameters shard = makeCopy(new HSSPrivateKeyParameters(l, keys, sig, shardStartIndex, maxIndexForShard, true));
+            HSSPrivateKeyParameters shard = makeCopy(
+                new HSSPrivateKeyParameters(l, keys, sig, shardIndex, shardIndexLimit, true));
 
             resetKeyToIndex();
 
             return shard;
         }
     }
-
 
     synchronized List<LMSPrivateKeyParameters> getKeys()
     {

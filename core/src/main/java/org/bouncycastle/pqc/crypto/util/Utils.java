@@ -1,9 +1,12 @@
 package org.bouncycastle.pqc.crypto.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -35,6 +38,7 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.io.Streams;
 
 class Utils
 {
@@ -101,7 +105,7 @@ class Utils
 
     static final Map shldsaOids = new HashMap<ASN1ObjectIdentifier, SLHDSAParameters>();
     static final Map shldsaParams = new HashMap<SLHDSAParameters, ASN1ObjectIdentifier>();
-    
+
     static
     {
         categories.put(PQCObjectIdentifiers.qTESLA_p_I, Integers.valueOf(QTESLASecurityCategory.PROVABLY_SECURE_I));
@@ -230,7 +234,7 @@ class Utils
 
         mlkemOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
         mlkemOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);
-        mlkemOids.put(MLKEMParameters.ml_kem_1024,NISTObjectIdentifiers.id_alg_ml_kem_1024);
+        mlkemOids.put(MLKEMParameters.ml_kem_1024, NISTObjectIdentifiers.id_alg_ml_kem_1024);
 
         mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
         mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
@@ -478,7 +482,7 @@ class Utils
     {
         return (SLHDSAParameters)shldsaParams.get(oid);
     }
-    
+
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
     {
         return ((Integer)categories.get(algorithm.getAlgorithm())).intValue();
@@ -777,5 +781,46 @@ class Utils
     static RainbowParameters rainbowParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (RainbowParameters)rainbowParams.get(oid);
+    }
+
+    static byte[] readOctetString(byte[] data)
+        throws IOException
+    {
+        if (data[0] == BERTags.OCTET_STRING)
+        {
+            ByteArrayInputStream bIn = new ByteArrayInputStream(data);
+
+            int tag = bIn.read();
+            int len = readLen(bIn);
+            if (len == bIn.available())
+            {
+                return Streams.readAll(bIn);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * ASN.1 length reader.
+     */
+    static int readLen(ByteArrayInputStream bIn)
+    {
+        int length = bIn.read();
+        if (length < 0)
+        {
+            return -1;
+        }
+        if (length != (length & 0x7f))
+        {
+            int count = length & 0x7f;
+            length = 0;
+            while (count-- != 0)
+            {
+                length = (length << 8) + bIn.read();
+            }
+        }
+
+        return length;
     }
 }

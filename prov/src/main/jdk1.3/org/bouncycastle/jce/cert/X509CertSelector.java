@@ -7,7 +7,6 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -36,6 +35,7 @@ import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.PrincipalUtil;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A <code>CertSelector</code> that selects
@@ -1685,7 +1685,7 @@ public class X509CertSelector implements CertSelector
             data = obj.get(1);
             if (data instanceof byte[])
             {
-                data = data.clone();
+                data = Arrays.clone((byte[])data);
             }
             returnList.add(data);
             returnAltNames.add(returnList);
@@ -1809,7 +1809,7 @@ public class X509CertSelector implements CertSelector
             data = obj.get(1);
             if (data instanceof byte[])
             {
-                data = data.clone();
+                data = Arrays.clone((byte[])data);
             }
             returnList.add(data);
             returnPathToNames.add(returnList);
@@ -2023,12 +2023,12 @@ public class X509CertSelector implements CertSelector
             try
             {
                 byte[] testData = ASN1OctetString.getInstance(data).getOctets();
-                if (!Arrays.equals(subjectKeyID, testData))
+                if (!Arrays.areEqual(subjectKeyID, testData))
                 {
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -2043,12 +2043,12 @@ public class X509CertSelector implements CertSelector
             try
             {
                 byte[] testData = ASN1OctetString.getInstance(data).getOctets();
-                if (!Arrays.equals(authorityKeyID, testData))
+                if (!Arrays.areEqual(authorityKeyID, testData))
                 {
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -2113,7 +2113,7 @@ public class X509CertSelector implements CertSelector
         }
         if (subjectPublicKeyByte != null)
         {
-            if (!Arrays.equals(subjectPublicKeyByte, certX509.getPublicKey().getEncoded()))
+            if (!Arrays.areEqual(subjectPublicKeyByte, certX509.getPublicKey().getEncoded()))
             {
                 return false;
             }
@@ -2302,7 +2302,7 @@ public class X509CertSelector implements CertSelector
             }
             if (subjectAltNames != null)
             {
-                copy.subjectAltNames = getSubjectAlternativeNames();
+                copy.subjectAltNames = (Set)getSubjectAlternativeNames();
                 Iterator iter = subjectAltNamesByte.iterator();
                 List obj;
                 List cloneObj;
@@ -2317,7 +2317,7 @@ public class X509CertSelector implements CertSelector
             }
             if (pathToNames != null)
             {
-                copy.pathToNames = getPathToNames();
+                copy.pathToNames = (Set)getPathToNames();
                 Iterator iter = pathToNamesByte.iterator();
                 List obj;
                 List cloneObj;

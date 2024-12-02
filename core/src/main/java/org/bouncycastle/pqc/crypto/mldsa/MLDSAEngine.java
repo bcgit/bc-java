@@ -9,7 +9,6 @@ class MLDSAEngine
 {
     private final SecureRandom random;
 
-    private final SHAKEDigest shake128Digest = new SHAKEDigest(128);
     private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
@@ -50,7 +49,6 @@ class MLDSAEngine
     private final int PolyUniformGamma1NBlocks;
 
     private final Symmetric symmetric;
-    ;
 
     protected Symmetric GetSymmetric()
     {
@@ -228,7 +226,7 @@ class MLDSAEngine
     }
 
     //Internal functions are deterministic. No randomness is sampled inside them
-    private byte[][] generateKeyPairInternal(byte[] seed)
+    byte[][] generateKeyPairInternal(byte[] seed)
     {
         byte[] buf = new byte[2 * SeedBytes + CrhBytes];
         byte[] tr = new byte[TrBytes];
@@ -302,7 +300,53 @@ class MLDSAEngine
 
         byte[][] sk = Packing.packSecretKey(rho, tr, key, t0, s1, s2, this);
 
-        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1};
+        return new byte[][]{sk[0], sk[1], sk[2], sk[3], sk[4], sk[5], encT1, seed};
+    }
+
+    byte[] deriveT1(byte[] rho, byte[] key, byte[] tr, byte[] s1Enc, byte[] s2Enc, byte[] t0Enc)
+    {
+        PolyVecMatrix aMatrix = new PolyVecMatrix(this);
+
+        PolyVecL s1 = new PolyVecL(this), s1hat;
+        PolyVecK s2 = new PolyVecK(this), t1 = new PolyVecK(this), t0 = new PolyVecK(this);
+
+        Packing.unpackSecretKey(t0, s1, s2, t0Enc, s1Enc, s2Enc, this);
+
+        // System.out.print("rho = ");
+        // Helper.printByteArray(rho);
+
+        // System.out.println("key = ");
+        // Helper.printByteArray(key);
+
+        aMatrix.expandMatrix(rho);
+        // System.out.print(aMatrix.toString("aMatrix"));
+
+        s1hat = new PolyVecL(this);
+
+        s1.copyPolyVecL(s1hat);
+        s1hat.polyVecNtt();
+
+        // System.out.println(s1hat.toString("s1hat"));
+
+        aMatrix.pointwiseMontgomery(t1, s1hat);
+        // System.out.println(t1.toString("t1"));
+
+        t1.reduce();
+        t1.invNttToMont();
+
+        t1.addPolyVecK(s2);
+        // System.out.println(s2.toString("s2"));
+        // System.out.println(t1.toString("t1"));
+        t1.conditionalAddQ();
+        t1.power2Round(t0);
+
+        // System.out.println(t1.toString("t1"));
+        // System.out.println(t0.toString("t0"));
+
+        byte[] encT1 = Packing.packPublicKey(t1, this);
+        // System.out.println("enc t1 = ");
+        // Helper.printByteArray(encT1);
+        return encT1;
     }
 
     SHAKEDigest getShake256Digest()
@@ -312,12 +356,12 @@ class MLDSAEngine
 
     void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
     {
-        this.shake256Digest.update(tr, 0, TrBytes);
+        shake256Digest.update(tr, 0, TrBytes);
         if (ctx != null)
         {
-            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
-            this.shake256Digest.update((byte)ctx.length);
-            this.shake256Digest.update(ctx, 0, ctx.length);
+            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
+            shake256Digest.update((byte)ctx.length);
+            shake256Digest.update(ctx, 0, ctx.length);
         }
     }
 
@@ -328,16 +372,13 @@ class MLDSAEngine
         shake256Digest.update(rho, 0, rho.length);
         shake256Digest.update(encT1, 0, encT1.length);
         shake256Digest.doFinal(mu, 0, TrBytes);
-        // System.out.println("mu before = ");
-        // Helper.printByteArray(mu);
 
         shake256Digest.update(mu, 0, TrBytes);
-
         if (ctx != null)
         {
-            this.shake256Digest.update((isPreHash) ? (byte)1 : (byte)0);
-            this.shake256Digest.update((byte)ctx.length);
-            this.shake256Digest.update(ctx, 0, ctx.length);
+            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
+            shake256Digest.update((byte)ctx.length);
+            shake256Digest.update(ctx, 0, ctx.length);
         }
     }
 

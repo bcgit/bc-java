@@ -5,12 +5,11 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
@@ -22,18 +21,6 @@ import org.bouncycastle.util.Strings;
 public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
-    private static Map parameters = new HashMap();
-
-    static
-    {
-        parameters.put(MLDSAParameterSpec.ml_dsa_44.getName(), MLDSAParameters.ml_dsa_44);
-        parameters.put(MLDSAParameterSpec.ml_dsa_65.getName(), MLDSAParameters.ml_dsa_65);
-        parameters.put(MLDSAParameterSpec.ml_dsa_87.getName(), MLDSAParameters.ml_dsa_87);
-        parameters.put(MLDSAParameterSpec.ml_dsa_44_with_sha512.getName(), MLDSAParameters.ml_dsa_44_with_sha512);
-        parameters.put(MLDSAParameterSpec.ml_dsa_65_with_sha512.getName(), MLDSAParameters.ml_dsa_65_with_sha512);
-        parameters.put(MLDSAParameterSpec.ml_dsa_87_with_sha512.getName(), MLDSAParameters.ml_dsa_87_with_sha512);
-    }
-
     private final MLDSAParameters mldsaParameters;
     MLDSAKeyGenerationParameters param;
     MLDSAKeyPairGenerator engine = new MLDSAKeyPairGenerator();
@@ -50,7 +37,7 @@ public class MLDSAKeyPairGeneratorSpi
     protected MLDSAKeyPairGeneratorSpi(MLDSAParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
-        this.mldsaParameters = (MLDSAParameters)parameters.get(paramSpec.getName());
+        this.mldsaParameters = Utils.getParameters(paramSpec.getName());
 
         if (param == null)
         {
@@ -69,17 +56,34 @@ public class MLDSAKeyPairGeneratorSpi
     }
 
     public void initialize(
+        AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        try
+        {
+            initialize(params, new BCJcaJceHelper().createSecureRandom("DEFAULT"));
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new IllegalStateException("unable to find DEFAULT DRBG");
+        }
+    }
+
+    public void initialize(
         AlgorithmParameterSpec params,
         SecureRandom random)
         throws InvalidAlgorithmParameterException
     {
         String name = getNameFromParams(params);
 
-        if (name != null && parameters.containsKey(name))
+        if (name != null)
         {
-            MLDSAParameters mldsaParams = (MLDSAParameters)parameters.get(name);
-
-            param = new MLDSAKeyGenerationParameters(random, (MLDSAParameters)parameters.get(name));
+            MLDSAParameters mldsaParams = Utils.getParameters(name);
+            if (mldsaParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+            param = new MLDSAKeyGenerationParameters(random, mldsaParams);
 
             if (mldsaParameters != null && !mldsaParams.getName().equals(mldsaParameters.getName()))
             {
@@ -128,7 +132,7 @@ public class MLDSAKeyPairGeneratorSpi
         }
         else
         {
-            return Strings.toLowerCase(SpecUtil.getNameFrom(paramSpec));
+            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
         }
     }
 

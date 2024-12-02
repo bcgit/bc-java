@@ -22,21 +22,21 @@ class WotsPlus
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
             ADRS adrs = new ADRS(paramAdrs);
-            adrs.setType(ADRS.WOTS_PRF);
+            adrs.setTypeAndClear(ADRS.WOTS_PRF);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
 
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
 
-            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setTypeAndClear(ADRS.WOTS_HASH);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
             tmp[i] = chain(sk, 0, w - 1, pkSeed, adrs);
         }
 
-        wotspkADRS.setType(ADRS.WOTS_PK);
+        wotspkADRS.setTypeAndClear(ADRS.WOTS_PK);
         wotspkADRS.setKeyPairAddress(paramAdrs.getKeyPairAddress());
 
         return engine.T_l(pkSeed, wotspkADRS, Arrays.concatenate(tmp));
@@ -93,12 +93,12 @@ class WotsPlus
         byte[][] sig = new byte[engine.WOTS_LEN][];
         for (int i = 0; i < engine.WOTS_LEN; i++)
         {
-            adrs.setType(ADRS.WOTS_PRF);
+            adrs.setTypeAndClear(ADRS.WOTS_PRF);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
             byte[] sk = engine.PRF(pkSeed, skSeed, adrs);
-            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setTypeAndClear(ADRS.WOTS_HASH);
             adrs.setKeyPairAddress(paramAdrs.getKeyPairAddress());
             adrs.setChainAddress(i);
             adrs.setHashAddress(0);
@@ -158,7 +158,7 @@ class WotsPlus
             tmp[i] = chain(sigI, msg[i], w - 1 - msg[i], pkSeed, adrs);
         }
 
-        wotspkADRS.setType(ADRS.WOTS_PK);
+        wotspkADRS.setTypeAndClear(ADRS.WOTS_PK);
         wotspkADRS.setKeyPairAddress(adrs.getKeyPairAddress());
         
         return engine.T_l(pkSeed, wotspkADRS, Arrays.concatenate(tmp));

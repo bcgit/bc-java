@@ -16,6 +16,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 
 /**
  * A {@link PBEDataDecryptorFactory} for handling PBE decryption operations using the Bouncy Castle
@@ -30,7 +31,7 @@ public class BcPBEDataDecryptorFactory
      * @param pass               the passphrase to use as the primary source of key material.
      * @param calculatorProvider a digest calculator provider to provide calculators to support the key generation calculation required.
      */
-    public BcPBEDataDecryptorFactory(char[] pass, BcPGPDigestCalculatorProvider calculatorProvider)
+    public BcPBEDataDecryptorFactory(char[] pass, PGPDigestCalculatorProvider calculatorProvider)
     {
         super(pass, calculatorProvider);
     }

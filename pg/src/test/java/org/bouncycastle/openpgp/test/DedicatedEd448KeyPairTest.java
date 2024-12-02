@@ -1,5 +1,13 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -22,11 +30,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
+import org.bouncycastle.util.Strings;
 
 public class DedicatedEd448KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -45,6 +49,19 @@ public class DedicatedEd448KeyPairTest
         testConversionOfBcKeyPair();
         testV4SigningVerificationWithJcaKey();
         testV4SigningVerificationWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("EDDSA", new BouncyCastleProvider());
+        gen.initialize(new EdDSAParameterSpec("Ed448"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed448, kp, date);
+        isEquals("Ed448 key size mismatch", 456, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
@@ -55,8 +72,9 @@ public class DedicatedEd448KeyPairTest
         gen.initialize(new EdDSAParameterSpec("Ed448"));
         KeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed448, kp, date);
             byte[] pubEnc = j1.getPublicKey().getEncoded();
             byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -102,8 +120,9 @@ public class DedicatedEd448KeyPairTest
         gen.init(new Ed448KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed448, kp, date);
             byte[] pubEnc = b1.getPublicKey().getEncoded();
             byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -150,7 +169,7 @@ public class DedicatedEd448KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new JcaPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),
@@ -177,7 +196,7 @@ public class DedicatedEd448KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.Ed448, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPContentSignerBuilder contSigBuilder = new BcPGPContentSignerBuilder(
             keyPair.getPublicKey().getAlgorithm(),

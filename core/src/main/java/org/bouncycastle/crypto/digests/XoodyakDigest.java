@@ -105,6 +105,7 @@ public class XoodyakDigest
         Up(output, outOff, TAGLEN, 0x40);
         Down(null, 0, 0, 0);
         Up(output, outOff + TAGLEN, TAGLEN, 0);
+        reset();
         return 32;
     }
 

@@ -111,13 +111,25 @@ class StreamUtil
     static void writeTime(BCPGOutputStream pOut, long time)
         throws IOException
     {
-        StreamUtil.write4OctetLength(pOut, (int)time);
+        StreamUtil.writeSeconds(pOut, time / 1000);
     }
 
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (long)read4OctetLength(in) * 1000L;
+        return readSeconds(in) * 1000L;
+    }
+
+    static void writeSeconds(BCPGOutputStream pOut, long time)
+        throws IOException
+    {
+        StreamUtil.write4OctetLength(pOut, (int)time);
+    }
+
+    static long readSeconds(BCPGInputStream in)
+        throws IOException
+    {
+        return ((long)read4OctetLength(in)) & 0xFFFFFFFFL;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)

@@ -162,4 +162,14 @@ public class JCEElGamalPrivateKey
     {
         return attrCarrier.getBagAttributeKeys();
     }
+
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
+    }
 }

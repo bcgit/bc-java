@@ -1,5 +1,9 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -7,10 +11,9 @@ import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
 
 public class BCMLKEMPublicKey
     implements MLKEMPublicKey
@@ -20,7 +23,6 @@ public class BCMLKEMPublicKey
     private transient MLKEMPublicKeyParameters params;
 
     private transient String algorithm;
-    private transient byte[] encoding;
 
     public BCMLKEMPublicKey(
             MLKEMPublicKeyParameters params)
@@ -38,13 +40,13 @@ public class BCMLKEMPublicKey
         throws IOException
     {
         this.params = (MLKEMPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
-        this.algorithm = params.getParameters().getName();
+        this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     private void init(MLKEMPublicKeyParameters params)
     {
         this.params = params;
-        this.algorithm = params.getParameters().getName();
+        this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
     /**
      * Compare this ML-KEM public key with another object.
@@ -82,6 +84,11 @@ public class BCMLKEMPublicKey
         return algorithm;
     }
 
+    public byte[] getPublicData()
+    {
+        return params.getEncoded();
+    }
+
     public byte[] getEncoded()
     {
         try
@@ -106,7 +113,27 @@ public class BCMLKEMPublicKey
         return MLKEMParameterSpec.fromName(params.getParameters().getName());
     }
 
-    public MLKEMPublicKeyParameters getKeyParams()
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder();
+        String nl = Strings.lineSeparator();
+        byte[] keyBytes = params.getEncoded();
+
+        // -DM Hex.toHexString
+        buf.append(getAlgorithm())
+            .append(" ")
+            .append("Public Key").append(" [")
+            .append(new Fingerprint(keyBytes).toString())
+            .append("]")
+            .append(nl)
+            .append("    public data: ")
+            .append(Hex.toHexString(keyBytes))
+            .append(nl);
+
+        return buf.toString();
+    }
+
+    MLKEMPublicKeyParameters getKeyParams()
     {
         return params;
     }

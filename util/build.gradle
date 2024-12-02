@@ -17,11 +17,8 @@ sourceSets {
 
 
 dependencies {
-    implementation project(':core')
+
     implementation project(':prov')
-    implementation files("${bc_prov}")
-  //  implementation project(path: ':core')
-    implementation project(path: ':prov')
 
     testImplementation group: 'junit', name: 'junit', version: '4.11'
 
@@ -29,27 +26,24 @@ dependencies {
         builtBy compileJava
     }
     java9Implementation project(':prov')
-   // java9Implementation project(':core')
-    java9Implementation project(path:':prov')
+
 
 }
 
+evaluationDependsOn(":prov")
+
 compileJava {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    targetCompatibility = 1.8;
-    sourceCompatibility = 1.8;
+    options.release = 8
 }
 
 
 compileJava9Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+
+
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
 
     options.compilerArgs += [
-            '--module-path', "${bc_prov}"
+            '--module-path', "${prov_jar}"
     ]
 
     sourceCompatibility = 9
@@ -74,6 +68,15 @@ jar {
     manifest.attributes('Bundle-Version': "${v}")
 }
 
+jar.doLast {
+    if (System.getenv("SIGNJAR_CMD") != null ) {
+        exec {
+            commandLine(System.getenv("SIGNJAR_CMD"),jar.archiveFile)
+        }
+    }
+}
+
+
 
 task sourcesJar(type: Jar) {
     archiveBaseName = jar.archiveBaseName
@@ -96,6 +99,21 @@ artifacts {
     archives javadocJar
     archives sourcesJar
 }
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcutil-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
+}
+
 
 test {
     forkEvery = 1;

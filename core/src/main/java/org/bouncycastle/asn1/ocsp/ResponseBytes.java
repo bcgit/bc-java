@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.ocsp;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -80,11 +79,6 @@ public class ResponseBytes
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(responseType);
-        v.add(response);
-
-        return new DERSequence(v);
+        return new DERSequence(responseType, response);
     }
 }

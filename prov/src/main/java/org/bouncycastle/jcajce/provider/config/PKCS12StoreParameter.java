@@ -24,6 +24,10 @@ public class PKCS12StoreParameter
     {
         super(out, new KeyStore.PasswordProtection(password), forDEREncoding);
     }
+    public PKCS12StoreParameter(OutputStream out, char[] password, boolean forDEREncoding, boolean overwriteFriendlyName)
+    {
+        super(out, new KeyStore.PasswordProtection(password), forDEREncoding, overwriteFriendlyName);
+    }
 
     public PKCS12StoreParameter(OutputStream out, ProtectionParameter protectionParameter, boolean forDEREncoding)
     {

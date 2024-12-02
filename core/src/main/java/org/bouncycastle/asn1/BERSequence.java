@@ -14,18 +14,29 @@ public class BERSequence
     extends ASN1Sequence
 {
     /**
-     * Create an empty sequence
+     * Create an empty sequence.
      */
     public BERSequence()
     {
     }
 
     /**
-     * Create a sequence containing one object
+     * Create a sequence containing one object.
+     * @param element the object to go in the sequence.
      */
     public BERSequence(ASN1Encodable element)
     {
         super(element);
+    }
+
+    /**
+     * Create a sequence containing two objects.
+     * @param element1 the first object to go in the sequence.
+     * @param element2 the second object to go in the sequence.
+     */
+    public BERSequence(ASN1Encodable element1, ASN1Encodable element2)
+    {
+        super(element1, element2);
     }
 
     /**

@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.x509;
 
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -77,11 +76,6 @@ public class DigestInfo
 
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(algId);
-        v.add(new DEROctetString(digest));
-
-        return new DERSequence(v);
+        return new DERSequence(algId, new DEROctetString(digest));
     }
 }

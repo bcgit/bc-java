@@ -29,44 +29,51 @@ public class NTRUKEMGenerator
      */
     public NTRUKEMGenerator(SecureRandom random)
     {
+        if (random == null)
+        {
+            throw new NullPointerException("'random' cannot be null");
+        }
+
         this.random = random;
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
-        NTRUParameterSet parameterSet = ((NTRUPublicKeyParameters)recipientKey).getParameters().parameterSet;
+        if (recipientKey == null)
+        {
+            throw new NullPointerException("'recipientKey' cannot be null");
+        }
+
+        NTRUPublicKeyParameters publicKey = (NTRUPublicKeyParameters)recipientKey;
+
+        NTRUParameterSet parameterSet = publicKey.getParameters().getParameterSet();
         NTRUSampling sampling = new NTRUSampling(parameterSet);
         NTRUOWCPA owcpa = new NTRUOWCPA(parameterSet);
-        Polynomial r;
-        Polynomial m;
         byte[] rm = new byte[parameterSet.owcpaMsgBytes()];
         byte[] rmSeed = new byte[parameterSet.sampleRmBytes()];
 
         random.nextBytes(rmSeed);
 
         PolynomialPair pair = sampling.sampleRm(rmSeed);
-        r = pair.r();
-        m = pair.m();
+        Polynomial r = pair.r();
+        Polynomial m = pair.m();
 
-        byte[] rm1 = r.s3ToBytes(parameterSet.owcpaMsgBytes());
-        System.arraycopy(rm1, 0, rm, 0, rm1.length);
-        byte[] rm2 = m.s3ToBytes(rm.length - parameterSet.packTrinaryBytes());
-        System.arraycopy(rm2, 0, rm, parameterSet.packTrinaryBytes(), rm2.length);
+        r.s3ToBytes(rm, 0);
+        m.s3ToBytes(rm, parameterSet.packTrinaryBytes());
 
         SHA3Digest sha3256 = new SHA3Digest(256);
-        sha3256.update(rm, 0, rm.length);
-
         byte[] k = new byte[sha3256.getDigestSize()];
 
+        sha3256.update(rm, 0, rm.length);
         sha3256.doFinal(k, 0);
 
         r.z3ToZq();
-        byte[] c = owcpa.encrypt(r, m, ((NTRUPublicKeyParameters)recipientKey).publicKey);
+
+        byte[] c = owcpa.encrypt(r, m, publicKey.publicKey);
 
         byte[] sharedKey = Arrays.copyOfRange(k, 0, parameterSet.sharedKeyBytes());
-
         Arrays.clear(k);
-        
+
         return new SecretWithEncapsulationImpl(sharedKey, c);
     }
 }

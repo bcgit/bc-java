@@ -1,5 +1,17 @@
 package org.bouncycastle.openpgp.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -10,7 +22,14 @@ import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
@@ -25,12 +44,8 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.*;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
 
 public class DedicatedX25519KeyPairTest
         extends AbstractPgpKeyPairTest
@@ -49,6 +64,19 @@ public class DedicatedX25519KeyPairTest
         testConversionOfBcKeyPair();
         testV4MessageEncryptionDecryptionWithJcaKey();
         testV4MessageEncryptionDecryptionWithBcKey();
+
+        testBitStrength();
+    }
+
+    private void testBitStrength()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        Date date = currentTimeRounded();
+        KeyPairGenerator gen = KeyPairGenerator.getInstance("XDH", new BouncyCastleProvider());
+        gen.initialize(new XDHParameterSpec("X25519"));
+        KeyPair kp = gen.generateKeyPair();
+        JcaPGPKeyPair k = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.X25519, kp, date);
+        isEquals("X25519 key size mismatch", 256, k.getPublicKey().getBitStrength());
     }
 
     private void testConversionOfJcaKeyPair()
@@ -59,8 +87,9 @@ public class DedicatedX25519KeyPairTest
         gen.initialize(new XDHParameterSpec("X25519"));
         KeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             JcaPGPKeyPair j1 = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.X25519, kp, date);
             byte[] pubEnc = j1.getPublicKey().getEncoded();
             byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -106,8 +135,9 @@ public class DedicatedX25519KeyPairTest
         gen.init(new X25519KeyGenerationParameters(new SecureRandom()));
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
 
-        for (int version: new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        for (int idx = 0; idx != 2; idx ++)
         {
+            int version = (idx == 0) ? PublicKeyPacket.VERSION_4 : PublicKeyPacket.VERSION_6;
             BcPGPKeyPair b1 = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.X25519, kp, date);
             byte[] pubEnc = b1.getPublicKey().getEncoded();
             byte[] privEnc = b1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
@@ -156,7 +186,7 @@ public class DedicatedX25519KeyPairTest
         KeyPair kp = gen.generateKeyPair();
         PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPDataEncryptorBuilder encBuilder = new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256)
             .setProvider(provider);
@@ -202,7 +232,7 @@ public class DedicatedX25519KeyPairTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         BcPGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyAlgorithmTags.X25519, kp, date);
 
-        byte[] data = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] data = Strings.toUTF8ByteArray("Hello, World!\n");
 
         PGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256);
         PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder);
