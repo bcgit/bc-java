@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.api.test;
 
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.openpgp.KeyIdentifier;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPKey;

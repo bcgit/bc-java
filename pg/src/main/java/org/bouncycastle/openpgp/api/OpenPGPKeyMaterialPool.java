@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.openpgp.KeyIdentifier;
+import org.bouncycastle.bcpg.KeyIdentifier;
 
 import java.util.Collection;
 import java.util.HashMap;

@@ -3,7 +3,7 @@ package org.bouncycastle.openpgp.api;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
-import org.bouncycastle.openpgp.KeyIdentifier;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;

@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.InputStreamPacket;
-import org.bouncycastle.openpgp.KeyIdentifier;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
