@@ -20,6 +20,7 @@ import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -31,9 +32,12 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorBuilder;
@@ -42,6 +46,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.util.encoders.Hex;
 
 public class AEADProtectedPGPSecretKeyTest
@@ -65,6 +70,8 @@ public class AEADProtectedPGPSecretKeyTest
 
         testUnlockKeyWithWrongPassphraseBc();
         testUnlockKeyWithWrongPassphraseJca();
+
+        reencryptKey();
     }
 
     private void unlockTestVector()
@@ -358,6 +365,101 @@ public class AEADProtectedPGPSecretKeyTest
         PGPPrivateKey dec = sk.extractPrivateKey(jceDecBuilder.build(decryptionPassphrase.toCharArray()));
         isEncodingEqual("Decrypted key encoding mismatch",
             keyPair.getPrivateKey().getPrivateKeyDataPacket().getEncoded(), dec.getPrivateKeyDataPacket().getEncoded());
+    }
+
+    private void reencryptKey()
+            throws PGPException, InvalidAlgorithmParameterException, NoSuchAlgorithmException
+    {
+        reencryptKeyBc();
+        reencryptKeyJca();
+    }
+
+    private void reencryptKeyJca()
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException
+    {
+        BouncyCastleProvider prov = new BouncyCastleProvider();
+        KeyPairGenerator eddsaGen = KeyPairGenerator.getInstance("EdDSA", prov);
+
+        eddsaGen.initialize(new ECNamedCurveGenParameterSpec("ed25519"));
+        KeyPair kp = eddsaGen.generateKeyPair();
+        Date creationTime = currentTimeRounded();
+        String passphrase = "recycle";
+
+        PGPKeyPair keyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+        PBESecretKeyEncryptor cfbEncBuilder = new JcePBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128)
+                .setProvider(prov)
+                .setSecureRandom(CryptoServicesRegistrar.getSecureRandom())
+                .build(passphrase.toCharArray());
+        PGPDigestCalculatorProvider digestProv = new JcaPGPDigestCalculatorProviderBuilder()
+                .setProvider(prov)
+                .build();
+
+        // Encrypt key using CFB mode
+        PGPSecretKey cfbEncKey = new PGPSecretKey(
+                keyPair.getPrivateKey(),
+                keyPair.getPublicKey(),
+                digestProv.get(HashAlgorithmTags.SHA1),
+                true,
+                cfbEncBuilder);
+
+        PBESecretKeyDecryptor cfbDecryptor = new JcePBESecretKeyDecryptorBuilder(digestProv)
+                .setProvider(prov)
+                .build(passphrase.toCharArray());
+
+        JcaAEADSecretKeyEncryptorBuilder aeadEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128, S2K.Argon2Params.memoryConstrainedParameters())
+                .setProvider(prov);
+
+        PGPSecretKey aeadEncKey = PGPSecretKey.copyWithNewPassword(
+                cfbEncKey,
+                cfbDecryptor,
+                aeadEncBuilder.build(passphrase.toCharArray(), cfbEncKey.getPublicKey().getPublicKeyPacket()));
+        PBESecretKeyDecryptor aeadDecryptor = new JcePBESecretKeyDecryptorBuilder(digestProv)
+                .setProvider(prov)
+                .build(passphrase.toCharArray());
+        isNotNull(aeadEncKey.extractPrivateKey(aeadDecryptor));
+    }
+
+    private void reencryptKeyBc()
+            throws PGPException
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = currentTimeRounded();
+        String passphrase = "recycle";
+        PGPKeyPair keyPair = new BcPGPKeyPair(PublicKeyPacket.VERSION_6, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+
+        PBESecretKeyEncryptor cfbEncBuilder = new BcPBESecretKeyEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_128)
+                .build(passphrase.toCharArray());
+        PGPDigestCalculatorProvider digestProv = new BcPGPDigestCalculatorProvider();
+
+        // Encrypt key using CFB mode
+        PGPSecretKey cfbEncKey = new PGPSecretKey(
+                keyPair.getPrivateKey(),
+                keyPair.getPublicKey(),
+                digestProv.get(HashAlgorithmTags.SHA1),
+                true,
+                cfbEncBuilder);
+
+        PBESecretKeyDecryptor cfbDecryptor = new BcPBESecretKeyDecryptorBuilder(digestProv)
+                .build(passphrase.toCharArray());
+
+        BcAEADSecretKeyEncryptorBuilder aeadEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_128,
+                S2K.Argon2Params.memoryConstrainedParameters());
+
+        // Reencrypt key using AEAD
+        PGPSecretKey aeadEncKey = PGPSecretKey.copyWithNewPassword(
+                cfbEncKey,
+                cfbDecryptor,
+                aeadEncBuilder.build(
+                        passphrase.toCharArray(),
+                        cfbEncKey.getPublicKey().getPublicKeyPacket()));
+
+        PBESecretKeyDecryptor aeadDecryptor = new BcPBESecretKeyDecryptorBuilder(digestProv)
+                .build(passphrase.toCharArray());
+        isNotNull(aeadEncKey.extractPrivateKey(aeadDecryptor));
     }
 
     public static void main(String[] args)

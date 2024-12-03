@@ -1,6 +1,8 @@
 package org.bouncycastle.openpgp;
 
 import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.PublicSubkeyPacket;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 
 /**
  * General class to handle JCA key pairs and convert them into OpenPGP ones.
@@ -62,5 +64,23 @@ public class PGPKeyPair
     public PGPPrivateKey getPrivateKey()
     {
         return priv;
+    }
+
+    public PGPKeyPair asSubkey(KeyFingerPrintCalculator fingerPrintCalculator)
+            throws PGPException
+    {
+        if (pub.getPublicKeyPacket() instanceof PublicSubkeyPacket)
+        {
+            return this; // is already subkey
+        }
+
+        PublicSubkeyPacket pubSubPkt = new PublicSubkeyPacket(
+                pub.getVersion(),
+                pub.getAlgorithm(),
+                pub.getCreationTime(),
+                pub.getPublicKeyPacket().getKey());
+        return new PGPKeyPair(
+                new PGPPublicKey(pubSubPkt, fingerPrintCalculator),
+                new PGPPrivateKey(pub.getKeyID(), pubSubPkt, priv.getPrivateKeyDataPacket()));
     }
 }
