@@ -1,6 +1,5 @@
 package org.bouncycastle.bcpg;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.util.Arrays;
@@ -16,6 +15,11 @@ public class KeyIdentifier
 {
     private final byte[] fingerprint;
     private final long keyId;
+
+    public KeyIdentifier(String hexEncoded)
+    {
+        this(Hex.decode(hexEncoded));
+    }
 
     /**
      * Create a new {@link KeyIdentifier} based on a keys fingerprint.
@@ -157,6 +161,26 @@ public class KeyIdentifier
         }
     }
 
+    public static boolean matches(List<KeyIdentifier> identifiers, KeyIdentifier identifier, boolean explicit)
+    {
+        for (KeyIdentifier candidate : identifiers)
+        {
+            if (!explicit && candidate.isWildcard())
+            {
+                return true;
+            }
+
+            if (candidate.getFingerprint() != null &&
+                    Arrays.constantTimeAreEqual(candidate.getFingerprint(), identifier.getFingerprint()))
+            {
+                return true;
+            }
+
+            return candidate.getKeyId() == identifier.getKeyId();
+        }
+        return false;
+    }
+
     /**
      * Return true, if this {@link KeyIdentifier} is present in the given list of {@link KeyIdentifier} .
      * This will return true if a fingerprint matches, or if a key-id matches,
@@ -167,15 +191,44 @@ public class KeyIdentifier
      */
     public boolean isPresentIn(List<KeyIdentifier> others)
     {
-        for (Iterator it = others.iterator(); it.hasNext();)
+        for (KeyIdentifier other : others)
         {
-            if (this.matches((KeyIdentifier)it.next()))
+            if (this.matches(other))
             {
                 return true;
             }
         }
 
         return false;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof KeyIdentifier))
+        {
+            return false;
+        }
+        KeyIdentifier other = (KeyIdentifier) obj;
+        if (getFingerprint() != null && other.getFingerprint() != null)
+        {
+            return Arrays.constantTimeAreEqual(getFingerprint(), other.getFingerprint());
+        }
+        return getKeyId() == other.getKeyId();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (int) getKeyId();
     }
 
     public String toString()
