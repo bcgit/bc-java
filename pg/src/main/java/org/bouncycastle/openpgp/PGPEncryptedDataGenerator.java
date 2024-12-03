@@ -225,9 +225,9 @@ public class PGPEncryptedDataGenerator
         boolean directS2K = !forceSessionKey && methods.size() == 1 &&
             methods.get(0) instanceof PBEKeyEncryptionMethodGenerator; // not public key
 
-        boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD(); //v5
-        boolean isSeipdV2 = dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD;
-        if (isSeipdV2)
+        boolean isAEAD = dataEncryptorBuilder.getAeadAlgorithm() != -1;
+        boolean isV5StyleAEAD = isAEAD && dataEncryptorBuilder.isV5StyleAEAD(); //v5
+        if (isAEAD && !isV5StyleAEAD) // v6
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
             sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
