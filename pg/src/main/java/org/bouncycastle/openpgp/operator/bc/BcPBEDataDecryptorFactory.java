@@ -27,7 +27,7 @@ public class BcPBEDataDecryptorFactory
      * @param pass               the passphrase to use as the primary source of key material.
      * @param calculatorProvider a digest calculator provider to provide calculators to support the key generation calculation required.
      */
-    public BcPBEDataDecryptorFactory(char[] pass, BcPGPDigestCalculatorProvider calculatorProvider)
+    public BcPBEDataDecryptorFactory(char[] pass, PGPDigestCalculatorProvider calculatorProvider)
     {
         super(pass, calculatorProvider);
     }
@@ -51,15 +51,7 @@ public class BcPBEDataDecryptorFactory
             if (secKeyData != null && secKeyData.length > 0)
             {
                 BlockCipher engine = BcImplProvider.createBlockCipher(keyAlgorithm);
-                BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(false, engine, key, new byte[engine.getBlockSize()]);
-
-                byte[] out = new byte[secKeyData.length];
-
-                int len = cipher.processBytes(secKeyData, 0, secKeyData.length, out, 0);
-
-                len += cipher.doFinal(out, len);
-
-                return out;
+                return BcUtil.processBufferedBlockCipher(false, engine, key, new byte[engine.getBlockSize()], secKeyData, 0, secKeyData.length);
             }
             else
             {
