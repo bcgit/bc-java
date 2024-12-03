@@ -220,6 +220,7 @@ public class AllTests
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCS+"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
+            new Object[]{PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS"},
 
             new Object[]{PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC"},
             new Object[]{PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE-3KEY/CBC"},

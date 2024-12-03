@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
@@ -100,6 +101,21 @@ public class BcUtil
         c.init(forEncryption, new ParametersWithIV(new KeyParameter(key), iv));
 
         return c;
+    }
+
+    static byte[] processBufferedBlockCipher(boolean forEncryption, BlockCipher engine, byte[] key, byte[] iv, byte[] msg, int msgOff, int msgLen)
+        throws InvalidCipherTextException
+
+    {
+        BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(forEncryption, engine, key, iv);
+
+        byte[] out = new byte[msgLen];
+
+        int len = cipher.processBytes(msg, msgOff, msgLen, out, 0);
+
+        len += cipher.doFinal(out, len);
+
+        return out;
     }
 
     static X9ECParameters getX9Parameters(ASN1ObjectIdentifier curveOID)

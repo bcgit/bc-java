@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
@@ -89,15 +88,7 @@ public class BcPBEKeyEncryptionMethodGenerator
         try
         {
             BlockCipher engine = BcImplProvider.createBlockCipher(encAlgorithm);
-            BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(true, engine, key, new byte[engine.getBlockSize()]);
-
-            byte[] out = new byte[sessionInfo.length];
-
-            int len = cipher.processBytes(sessionInfo, 0, sessionInfo.length, out, 0);
-
-            len += cipher.doFinal(out, len);
-
-            return out;
+            return BcUtil.processBufferedBlockCipher(true, engine, key, new byte[engine.getBlockSize()], sessionInfo, 0, sessionInfo.length);
         }
         catch (InvalidCipherTextException e)
         {
