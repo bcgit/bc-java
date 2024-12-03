@@ -201,7 +201,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         return SymmetricKeyEncSessionPacket.createV5Packet(kekAlgorithm, aeadAlgorithm, iv, s2k, esk, tag);
     }
 
-    private ContainedPacket generateV6ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionKey)
+    private ContainedPacket generateV6ESK(int kekAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
         throws PGPException
     {
         byte[] ikm = getKey(kekAlgorithm);
@@ -217,6 +217,7 @@ public abstract class PBEKeyEncryptionMethodGenerator
         random.nextBytes(iv);
 
         int tagLen = AEADUtils.getAuthTagLength(aeadAlgorithm);
+        byte[] sessionKey = getSessionKey(sessionInfo);
         byte[] eskAndTag = getEskAndTag(kekAlgorithm, aeadAlgorithm, sessionKey, kek, iv, info);
         byte[] esk = Arrays.copyOfRange(eskAndTag, 0, eskAndTag.length - tagLen);
         byte[] tag = Arrays.copyOfRange(eskAndTag, esk.length, eskAndTag.length);
