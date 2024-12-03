@@ -146,6 +146,11 @@ public class PGPEncryptedDataGenerator
         this.sessionKeyExtractionCallback = callback;
     }
 
+    public void setSessionKeyExtractionCallback(SessionKeyExtractionCallback callback)
+    {
+        this.sessionKeyExtractionCallback = callback;
+    }
+
     /**
      * Create an OutputStream based on the configured methods.
      * <p>
