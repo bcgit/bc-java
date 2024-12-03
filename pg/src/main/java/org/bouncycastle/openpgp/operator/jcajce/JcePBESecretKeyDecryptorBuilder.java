@@ -22,10 +22,12 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.util.Arrays;
 
 public class JcePBESecretKeyDecryptorBuilder
+        implements PBESecretKeyDecryptorBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private PGPDigestCalculatorProvider calculatorProvider;
