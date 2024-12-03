@@ -118,7 +118,7 @@ public abstract class AbstractPacketTest
      */
     public void isNotNull(Object value)
     {
-        isNotNull("Value is not null.", value);
+        isNotNull("Value is null.", value);
     }
 
     /**
