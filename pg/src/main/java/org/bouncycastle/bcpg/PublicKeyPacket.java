@@ -326,7 +326,7 @@ public class PublicKeyPacket
 
         pOut.write(version);
 
-        StreamUtil.writeTime(pOut, time);
+        StreamUtil.writeSeconds(pOut, time);
 
         if (version <= VERSION_3)
         {

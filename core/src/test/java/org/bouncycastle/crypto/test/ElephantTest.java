@@ -29,7 +29,7 @@ public class ElephantTest
         throws Exception
     {
         //testVectors(ElephantEngine.ElephantParameters.elephant160, "v160_2");
-        CipherTest.checkCipher(10, 12, 40, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
         {
             @Override
             public AEADCipher CreateInstace()
@@ -37,7 +37,7 @@ public class ElephantTest
                 return new ElephantEngine(ElephantEngine.ElephantParameters.elephant160);
             }
         });
-        CipherTest.checkCipher(10, 12, 40, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
         {
             @Override
             public AEADCipher CreateInstace()
@@ -45,7 +45,7 @@ public class ElephantTest
                 return new ElephantEngine(ElephantEngine.ElephantParameters.elephant176);
             }
         });
-        CipherTest.checkCipher(10, 12, 40, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
         {
             @Override
             public AEADCipher CreateInstace()

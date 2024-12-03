@@ -432,6 +432,7 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         noParams.add(BCObjectIdentifiers.dilithium3_aes);
         noParams.add(BCObjectIdentifiers.dilithium5_aes);
 
+        noParams.add(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);

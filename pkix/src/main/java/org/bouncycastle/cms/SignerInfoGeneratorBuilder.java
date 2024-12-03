@@ -10,6 +10,7 @@ import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.ExtendedContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 
 /**
@@ -146,7 +147,22 @@ public class SignerInfoGeneratorBuilder
         }
         else
         {
-            digester = digestProvider.get(digAlgFinder.find(contentSigner.getAlgorithmIdentifier()));
+            if (contentSigner instanceof ExtendedContentSigner)
+            {
+                digester = digestProvider.get(((ExtendedContentSigner)contentSigner).getDigestAlgorithmIdentifier());
+            }
+            else
+            {
+                AlgorithmIdentifier digAlg = digAlgFinder.find(contentSigner.getAlgorithmIdentifier());
+                if (digAlg != null)
+                {
+                    digester = digestProvider.get(digAlg);
+                }
+                else
+                {
+                    throw new OperatorCreationException("no digest algorithm specified for signature algorithm");
+                }
+            }
         }
 
         if (directSignature)
