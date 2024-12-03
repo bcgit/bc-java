@@ -1,13 +1,11 @@
 package org.bouncycastle.pqc.crypto.mlkem;
 
-import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
 class MLKEMIndCpa
 {
     private MLKEMEngine engine;
     private int kyberK;
-    private int eta1;
     private int indCpaPublicKeyBytes;
     private int polyVecBytes;
     private int indCpaBytes;
@@ -20,7 +18,6 @@ class MLKEMIndCpa
     {
         this.engine = engine;
         this.kyberK = engine.getKyberK();
-        this.eta1 = engine.getKyberEta1();
         this.indCpaPublicKeyBytes = engine.getKyberPublicKeyBytes();
         this.polyVecBytes = engine.getKyberPolyVecBytes();
         this.indCpaBytes = engine.getKyberIndCpaBytes();
@@ -54,9 +51,7 @@ class MLKEMIndCpa
         // (p, sigma) <- G(d || k)
 
         byte[] buf = new byte[64];
-        byte[] k = new byte[1];
-        k[0] = (byte)kyberK;
-        symmetric.hash_g(buf, Arrays.concatenate(d, k));
+        symmetric.hash_g(buf, Arrays.append(d, (byte)kyberK));
 
         byte[] publicSeed = new byte[32]; // p in docs
         byte[] noiseSeed = new byte[32]; // sigma in docs
@@ -320,7 +315,6 @@ class MLKEMIndCpa
     public void generateMatrix(PolyVec[] aMatrix, byte[] seed, boolean transposed)
     {
         int i, j, k, ctr, off;
-        SHAKEDigest kyberXOF;
         byte[] buf = new byte[KyberGenerateMatrixNBlocks * symmetric.xofBlockBytes + 2];
         for (i = 0; i < kyberK; i++)
         {
@@ -383,7 +377,6 @@ class MLKEMIndCpa
 
     public byte[] decrypt(byte[] secretKey, byte[] cipherText)
     {
-        int i;
         byte[] outputMessage = new byte[MLKEMEngine.getKyberIndCpaMsgBytes()];
 
         PolyVec bp = new PolyVec(engine), secretKeyPolyVec = new PolyVec(engine);

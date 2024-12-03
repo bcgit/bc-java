@@ -160,7 +160,7 @@ public class PQCTest
             new CMSProcessableCMPCertificate(cert),
             new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider("BC").build());
 
-        System.err.println(ASN1Dump.dumpAsString(encryptedCert.toASN1Structure()));
+//        System.err.println(ASN1Dump.dumpAsString(encryptedCert.toASN1Structure()));
         CertificateResponseBuilder certRespBuilder = new CertificateResponseBuilder(senderReqMessage.getCertReqId(), new PKIStatusInfo(PKIStatus.granted));
 
         certRespBuilder.withCertificate(encryptedCert);

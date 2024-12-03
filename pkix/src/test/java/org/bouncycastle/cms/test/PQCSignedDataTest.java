@@ -24,6 +24,10 @@ import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.CMSException;
@@ -55,6 +59,9 @@ public class PQCSignedDataTest
     private static String _origDN;
     private static KeyPair _origKP;
     private static X509Certificate _origCert;
+
+    private static KeyPair _origLmsKP;
+    private static X509Certificate _origLmsCert;
     private static KeyPair _origFalconKP;
     private static X509Certificate _origFalconCert;
     private static KeyPair _origPicnicKP;
@@ -67,6 +74,8 @@ public class PQCSignedDataTest
     private static String _signDN;
     private static KeyPair _signKP;
     private static X509Certificate _signCert;
+    private static KeyPair _signLmsKP;
+    private static X509Certificate _signLmsCert;
     private static KeyPair _signFalconKP;
     private static X509Certificate _signFalconCert;
     private static KeyPair _signPicnicKP;
@@ -136,6 +145,12 @@ public class PQCSignedDataTest
             _signDN = "CN=Bob, OU=Sales, O=Bouncy Castle, C=AU";
             _signKP = PQCTestUtil.makeKeyPair();
             _signCert = PQCTestUtil.makeCertificate(_signKP, _signDN, _origKP, _origDN);
+
+            _origLmsKP = PQCTestUtil.makeLmsKeyPair();
+            _origLmsCert = PQCTestUtil.makeCertificate(_origLmsKP, _origDN, _origLmsKP, _origDN);
+
+            _signLmsKP = PQCTestUtil.makeLmsKeyPair();
+            _signLmsCert = PQCTestUtil.makeCertificate(_signLmsKP, _signDN, _origLmsKP, _origDN);
 
             _origFalconKP = PQCTestUtil.makeFalconKeyPair();
             _origFalconCert = PQCTestUtil.makeCertificate(_origFalconKP, _origDN, _origFalconKP, _origDN);
@@ -274,6 +289,81 @@ public class PQCSignedDataTest
 
             assertTrue(MessageDigest.isEqual(contentDigest, ((ASN1OctetString)hash.getAttrValues().getObjectAt(0)).getOctets()));
         }
+    }
+
+    public void testLmsEncapsulated()
+        throws Exception
+    {
+        List certList = new ArrayList();
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        certList.add(_origLmsCert);
+        certList.add(_signLmsCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert));
+
+        gen.addCertificates(certs);
+
+        CMSSignedData s = gen.generate(msg, true);
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
+        ASN1InputStream aIn = new ASN1InputStream(bIn);
+
+        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+
+        certs = s.getCertificates();
+
+        SignerInformationStore signers = s.getSignerInfos();
+
+        Collection c = signers.getSigners();
+        Iterator it = c.iterator();
+
+        while (it.hasNext())
+        {
+            SignerInformation signer = (SignerInformation)it.next();
+            Collection certCollection = certs.getMatches(signer.getSID());
+
+            Iterator certIt = certCollection.iterator();
+            X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
+
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
+
+            //
+            // check content digest
+            //
+
+            byte[] contentDigest = (byte[])gen.getGeneratedDigests().get(signer.getDigestAlgOID());
+
+            AttributeTable table = signer.getSignedAttributes();
+            Attribute hash = table.get(CMSAttributes.messageDigest);
+
+            assertTrue(MessageDigest.isEqual(contentDigest, ((ASN1OctetString)hash.getAttrValues().getObjectAt(0)).getOctets()));
+        }
+    }
+
+    public void testTryLmsSettings()
+        throws Exception
+    {
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        try
+        {
+            new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS").setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert).generate(PKCSObjectIdentifiers.data);
+        }
+        catch (OperatorCreationException e)
+        {
+            assertEquals("no digest algorithm specified for signature algorithm", e.getMessage());
+        }
+
+        SignerInfo sigInfo = new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert).generate(PKCSObjectIdentifiers.data);
+
+        assertEquals(sigInfo.getDigestAlgorithm(), new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
     }
 
     public void testPicnicEncapsulated()
