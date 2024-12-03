@@ -31,7 +31,7 @@ public class BcAEADSecretKeyEncryptorBuilder
         return this;
     }
 
-    public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKey)
+    public PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey)
     {
         return new PBESecretKeyEncryptor(symmetricAlgorithm, aeadAlgorithm, argon2Params, random, passphrase)
         {
@@ -62,7 +62,7 @@ public class BcAEADSecretKeyEncryptorBuilder
                 }
                 catch (IOException e)
                 {
-                      throw new PGPException("Exception AEAD protecting private key material", e);
+                    throw new PGPException("Exception AEAD protecting private key material", e);
                 }
             }
 

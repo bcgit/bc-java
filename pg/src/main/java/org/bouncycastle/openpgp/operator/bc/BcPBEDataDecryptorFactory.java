@@ -7,11 +7,11 @@ import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
 import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
+import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.util.Arrays;
 
 /**
