@@ -4,24 +4,20 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.*;
 import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
-import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
-import org.bouncycastle.util.Iterable;
-import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -96,7 +92,7 @@ public class OpenPGPCertificate
         {
             PGPPublicKey rawSubkey = rawKeys.next();
             OpenPGPSubkey subkey = new OpenPGPSubkey(rawSubkey, this);
-            subkeys.put(new KeyIdentifier(rawSubkey), subkey);
+            subkeys.put(rawSubkey.getKeyIdentifier(), subkey);
             processSubkey(subkey);
         }
     }
@@ -215,7 +211,7 @@ public class OpenPGPCertificate
      */
     public OpenPGPComponentKey getKey(KeyIdentifier identifier)
     {
-        if (identifier.matches(getPrimaryKey().getPGPPublicKey()))
+        if (identifier.matches(getPrimaryKey().getPGPPublicKey().getKeyIdentifier()))
         {
             return primaryKey;
         }
@@ -1028,7 +1024,7 @@ public class OpenPGPCertificate
          */
         public KeyIdentifier getKeyIdentifier()
         {
-            return new KeyIdentifier(rawPubkey);
+            return rawPubkey.getKeyIdentifier();
         }
 
         /**
