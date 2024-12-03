@@ -10,7 +10,7 @@ import org.bouncycastle.util.io.BufferingOutputStream;
  * block when ready for signing.
  */
 public class BufferingContentSigner
-    implements ContentSigner
+    implements ExtendedContentSigner
 {
     private final ContentSigner contentSigner;
     private final OutputStream  output;
@@ -66,5 +66,22 @@ public class BufferingContentSigner
     public byte[] getSignature()
     {
         return contentSigner.getSignature();
+    }
+
+
+    /**
+     * Return the algorithm identifier describing the digest
+     * algorithm used by this signature algorithm, if known.
+     *
+     * @return algorithm oid and parameters, null otherwise.
+     */
+    public AlgorithmIdentifier getDigestAlgorithmIdentifier()
+    {
+        if (contentSigner instanceof ExtendedContentSigner)
+        {
+            return ((ExtendedContentSigner)contentSigner).getDigestAlgorithmIdentifier();
+        }
+
+        return null;
     }
 }

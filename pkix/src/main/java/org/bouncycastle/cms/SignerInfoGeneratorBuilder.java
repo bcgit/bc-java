@@ -147,21 +147,25 @@ public class SignerInfoGeneratorBuilder
         }
         else
         {
+            AlgorithmIdentifier digestAlgorithmIdentifier = null;
+
             if (contentSigner instanceof ExtendedContentSigner)
             {
-                digester = digestProvider.get(((ExtendedContentSigner)contentSigner).getDigestAlgorithmIdentifier());
+                digestAlgorithmIdentifier = ((ExtendedContentSigner)contentSigner).getDigestAlgorithmIdentifier();
+            }
+
+            if (digestAlgorithmIdentifier == null)
+            {
+                digestAlgorithmIdentifier = digAlgFinder.find(contentSigner.getAlgorithmIdentifier());
+            }
+
+            if (digestAlgorithmIdentifier != null)
+            {
+                digester = digestProvider.get(digestAlgorithmIdentifier);
             }
             else
             {
-                AlgorithmIdentifier digAlg = digAlgFinder.find(contentSigner.getAlgorithmIdentifier());
-                if (digAlg != null)
-                {
-                    digester = digestProvider.get(digAlg);
-                }
-                else
-                {
-                    throw new OperatorCreationException("no digest algorithm specified for signature algorithm");
-                }
+                throw new OperatorCreationException("no digest algorithm specified for signature algorithm");
             }
         }
 
