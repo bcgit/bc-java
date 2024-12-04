@@ -22,9 +22,13 @@ import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
+import org.bouncycastle.pqc.jcajce.interfaces.LMSKey;
 import org.bouncycastle.pqc.jcajce.interfaces.PicnicKey;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
@@ -47,6 +51,16 @@ public class PQCTestUtil
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SPHINCSPlus", "BCPQC");
 
         kpGen.initialize(SPHINCSPlusParameterSpec.sha2_128f_robust, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
+    public static KeyPair makeLmsKeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1), new SecureRandom());
 
         return kpGen.generateKeyPair();
     }
@@ -115,6 +129,10 @@ public class PQCTestUtil
         else if (issPriv instanceof SLHDSAKey)
         {
             sigGen = new JcaContentSignerBuilder("SLH-DSA").setProvider("BC").build(issPriv);
+        }
+        else if (issPriv instanceof LMSKey)
+        {
+            sigGen = new JcaContentSignerBuilder("LMS").setProvider("BC").build(issPriv);
         }
         else
         {

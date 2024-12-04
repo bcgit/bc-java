@@ -192,8 +192,6 @@ public class DefaultDigestAlgorithmIdentifierFinder
 
         digestOids.put(EdECObjectIdentifiers.id_Ed25519, NISTObjectIdentifiers.id_sha512);
 
-        digestOids.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, NISTObjectIdentifiers.id_sha256);
-
         digestNameToOids.put("SHA-1", OIWObjectIdentifiers.idSHA1);
         digestNameToOids.put("SHA-224", NISTObjectIdentifiers.id_sha224);
         digestNameToOids.put("SHA-256", NISTObjectIdentifiers.id_sha256);
@@ -299,6 +297,8 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOidToAlgIds.put(oid, algId);
     }
 
+    public static DigestAlgorithmIdentifierFinder INSTANCE = new DefaultDigestAlgorithmIdentifierFinder();
+
     public AlgorithmIdentifier find(AlgorithmIdentifier sigAlgId)
     {
         ASN1ObjectIdentifier sigAlgOid = sigAlgId.getAlgorithm();
@@ -324,6 +324,12 @@ public class DefaultDigestAlgorithmIdentifierFinder
             digAlgOid = (ASN1ObjectIdentifier)digestOids.get(sigAlgOid);
         }
 
+        if (digAlgOid == null)
+        {
+            return null;
+        }
+
+        // keep looking!
         return find(digAlgOid);
     }
 

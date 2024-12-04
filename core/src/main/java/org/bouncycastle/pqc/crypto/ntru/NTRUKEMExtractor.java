@@ -11,7 +11,6 @@ import org.bouncycastle.util.Arrays;
 public class NTRUKEMExtractor
     implements EncapsulatedSecretExtractor
 {
-    private final NTRUParameters params;
     private final NTRUPrivateKeyParameters ntruPrivateKey;
 
     /**
@@ -22,53 +21,50 @@ public class NTRUKEMExtractor
      */
     public NTRUKEMExtractor(NTRUPrivateKeyParameters ntruPrivateKey)
     {
-        this.params = ntruPrivateKey.getParameters();
+        if (ntruPrivateKey == null)
+        {
+            throw new NullPointerException("'ntruPrivateKey' cannot be null");
+        }
+
         this.ntruPrivateKey = ntruPrivateKey;
     }
 
-
-    @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
-//        assert this.ntruPrivateKey != null;
-        NTRUParameterSet parameterSet = this.params.parameterSet;
+        NTRUParameterSet parameterSet = ntruPrivateKey.getParameters().getParameterSet();
+
+        if (encapsulation == null)
+        {
+            throw new NullPointerException("'encapsulation' cannot be null");
+        }
+        if (encapsulation.length != parameterSet.ntruCiphertextBytes())
+        {
+            throw new IllegalArgumentException("encapsulation");
+        }
 
         byte[] sk = this.ntruPrivateKey.privateKey;
-        int i, fail;
-        byte[] rm;
-        byte[] buf = new byte[parameterSet.prfKeyBytes() + parameterSet.ntruCiphertextBytes()];
 
         NTRUOWCPA owcpa = new NTRUOWCPA(parameterSet);
-        OWCPADecryptResult owcpaResult = owcpa.decrypt(encapsulation, ntruPrivateKey.privateKey);
-        rm = owcpaResult.rm;
-        fail = owcpaResult.fail;
+        OWCPADecryptResult owcpaResult = owcpa.decrypt(encapsulation, sk);
+        byte[] rm = owcpaResult.rm;
+        int fail = owcpaResult.fail;
         /* If fail = 0 then c = Enc(h, rm). There is no need to re-encapsulate. */
         /* See comment in owcpa_dec for details.                                */
 
         SHA3Digest sha3256 = new SHA3Digest(256);
-
         byte[] k = new byte[sha3256.getDigestSize()];
 
         sha3256.update(rm, 0, rm.length);
         sha3256.doFinal(k, 0);
 
         /* shake(secret PRF key || input ciphertext) */
-        for (i = 0; i < parameterSet.prfKeyBytes(); i++)
-        {
-            buf[i] = sk[i + parameterSet.owcpaSecretKeyBytes()];
-        }
-        for (i = 0; i < parameterSet.ntruCiphertextBytes(); i++)
-        {
-            buf[parameterSet.prfKeyBytes() + i] = encapsulation[i];
-        }
-        sha3256.reset();
-        sha3256.update(buf, 0, buf.length);
+        sha3256.update(sk, parameterSet.owcpaSecretKeyBytes(), parameterSet.prfKeyBytes());
+        sha3256.update(encapsulation, 0, encapsulation.length);
         sha3256.doFinal(rm, 0);
 
         cmov(k, rm, (byte)fail);
 
         byte[] sharedKey = Arrays.copyOfRange(k, 0, parameterSet.sharedKeyBytes());
-
         Arrays.clear(k);
 
         return sharedKey;
@@ -85,6 +81,6 @@ public class NTRUKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return params.parameterSet.ntruCiphertextBytes();
+        return ntruPrivateKey.getParameters().getParameterSet().ntruCiphertextBytes();
     }
 }
