@@ -1,7 +1,9 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.threshold;
 
-public class PolynomialTable
-    extends Polynomial
+import java.security.SecureRandom;
+
+public class ShamirTableSecretSplitter
+    extends ShamirSecretSplitter
 {
     private final byte[] LOG;
     private final byte[] EXP;
@@ -146,9 +148,9 @@ public class PolynomialTable
         (byte)0x1b, (byte)0x36, (byte)0x6c, (byte)0xd8, (byte)0xad, (byte)0x47, (byte)0x8e, (byte)0x01
     };
 
-    public PolynomialTable(int algorithm, int l, int m, int n)
+    public ShamirTableSecretSplitter(int algorithm, int l, int m, int n, SecureRandom random)
     {
-        super(l, m, n);
+        super(l, m, n, random);
         switch (algorithm)
         {
         case AES:

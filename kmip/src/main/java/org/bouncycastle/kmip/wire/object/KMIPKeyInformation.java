@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.crypto.threshold.object;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.threshold.attribute.KMIPUniqueIdentifier;
 
 public class KMIPKeyInformation
     extends KMIPObject

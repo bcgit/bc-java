@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
 public class KMIPResponseMessage
     extends KMIPMessage

@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.test;
+package org.bouncycastle.crypto.threshold.test;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -6,8 +6,8 @@ import java.io.InputStream;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.bouncycastle.crypto.split.KMIPInputStream;
-import org.bouncycastle.crypto.split.message.KMIPMessage;
+import org.bouncycastle.crypto.threshold.KMIPInputStream;
+import org.bouncycastle.crypto.threshold.message.KMIPMessage;
 import org.bouncycastle.test.TestResourceFinder;
 
 

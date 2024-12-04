@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.crypto.threshold.object;
 
 public abstract class KMIPObject
 {

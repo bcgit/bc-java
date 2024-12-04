@@ -1,9 +1,9 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyCompressionType;
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyFormatType;
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyWrapType;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPKeyCompressionType;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPKeyFormatType;
+import org.bouncycastle.crypto.threshold.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPKeyWrapType;
 
 /**
  * Represents a Get Request Payload for requesting a managed object from the server.

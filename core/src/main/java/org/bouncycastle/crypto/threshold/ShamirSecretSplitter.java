@@ -1,9 +1,9 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.threshold;
 
 import java.security.SecureRandom;
 
-public abstract class Polynomial
-    implements SecretSharing
+public abstract class ShamirSecretSplitter
+    implements SecretSplitter
 {
     public static final int AES = 0;
     public static final int RSA = 1;
@@ -21,8 +21,9 @@ public abstract class Polynomial
      */
     protected int n;
     protected byte[][] p;
+    protected SecureRandom random;
 
-    protected Polynomial(int l, int m, int n)
+    protected ShamirSecretSplitter(int l, int m, int n, SecureRandom random)
     {
         if (l < 0 || l > 65534)
         {
@@ -39,6 +40,7 @@ public abstract class Polynomial
         this.l = l;
         this.m = m;
         this.n = n;
+        this.random = random;
     }
 
     protected void init()
@@ -53,10 +55,10 @@ public abstract class Polynomial
         }
     }
 
-    public byte[][] createShares(SecureRandom random)
+    public ShamirSplitSecret split()
     {
         byte[][] sr = new byte[m][l];
-        byte[][] result = new byte[p.length][l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
         int i;
         for (i = 0; i < m; ++i)
         {
@@ -64,9 +66,9 @@ public abstract class Polynomial
         }
         for (i = 0; i < p.length; i++)
         {
-            result[i] = gfVecMul(p[i], sr);
+            secretShares[i] = new ShamirSplitSecretShare(gfVecMul(p[i], sr), i + 1);
         }
-        return result;
+        return new ShamirSplitSecret(secretShares);
     }
 
     public byte[] recombineShares(int[] rr, byte[]... splits)

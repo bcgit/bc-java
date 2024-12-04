@@ -1,10 +1,10 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
 import java.util.Map;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
-import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
-import org.bouncycastle.crypto.split.enumeration.KMIPSecretDataType;
+import org.bouncycastle.crypto.threshold.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPObjectType;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPSecretDataType;
 
 /**
  * Request payload for the Join Split Key operation.

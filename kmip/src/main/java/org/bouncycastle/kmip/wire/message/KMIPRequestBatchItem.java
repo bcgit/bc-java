@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPOperation;
 
 public class KMIPRequestBatchItem
     extends KMIPBatchItem

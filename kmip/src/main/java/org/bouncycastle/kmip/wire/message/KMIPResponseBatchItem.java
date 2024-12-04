@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
-import org.bouncycastle.crypto.split.enumeration.KMIPResultReason;
-import org.bouncycastle.crypto.split.enumeration.KMIPResultStatus;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPOperation;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPResultReason;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPResultStatus;
 
 public class KMIPResponseBatchItem
     extends KMIPBatchItem

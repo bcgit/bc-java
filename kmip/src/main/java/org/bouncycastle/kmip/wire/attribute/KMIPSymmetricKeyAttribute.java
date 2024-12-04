@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.crypto.threshold.attribute;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPCryptographicAlgorithm;
 
 public class KMIPSymmetricKeyAttribute
     extends KMIPCryptographicObject

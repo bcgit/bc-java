@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.threshold;
 
 import java.io.IOException;
 

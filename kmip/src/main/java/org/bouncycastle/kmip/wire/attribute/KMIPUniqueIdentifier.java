@@ -1,7 +1,7 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.crypto.threshold.attribute;
 
 
-import org.bouncycastle.crypto.split.enumeration.KMIPUniqueIdentifierEnum;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPUniqueIdentifierEnum;
 
 public class KMIPUniqueIdentifier
 {
