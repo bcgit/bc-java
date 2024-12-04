@@ -2,11 +2,22 @@ package org.bouncycastle.crypto.threshold;
 
 import java.security.SecureRandom;
 
-public abstract class ShamirSecretSplitter
+public class ShamirSecretSplitter
     implements SecretSplitter
 {
-    public static final int AES = 0;
-    public static final int RSA = 1;
+    public enum Algorithm
+    {
+        AES,
+        RSA
+    }
+
+    public enum Mode
+    {
+        Native,
+        Table
+    }
+
+    private Polynomial poly;
     /**
      * Length of the secret
      */
@@ -23,7 +34,7 @@ public abstract class ShamirSecretSplitter
     protected byte[][] p;
     protected SecureRandom random;
 
-    protected ShamirSecretSplitter(int l, int m, int n, SecureRandom random)
+    public ShamirSecretSplitter(Algorithm algorithm, Mode mode, int l, int m, int n, SecureRandom random)
     {
         if (l < 0 || l > 65534)
         {
@@ -37,20 +48,17 @@ public abstract class ShamirSecretSplitter
         {
             throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to n.");
         }
+        poly = Polynomial.newInstance(algorithm, mode);
         this.l = l;
         this.m = m;
         this.n = n;
         this.random = random;
-    }
-
-    protected void init()
-    {
         p = new byte[n][m];
         for (int i = 0; i < n; i++)
         {
             for (int j = 0; j < m; j++)
             {
-                p[i][j] = gfPow((byte)(i + 1), (byte)j);
+                p[i][j] = poly.gfPow((byte)(i + 1), (byte)j);
             }
         }
     }
@@ -66,9 +74,9 @@ public abstract class ShamirSecretSplitter
         }
         for (i = 0; i < p.length; i++)
         {
-            secretShares[i] = new ShamirSplitSecretShare(gfVecMul(p[i], sr), i + 1);
+            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
         }
-        return new ShamirSplitSecret(secretShares);
+        return new ShamirSplitSecret(poly, secretShares);
     }
 
     public byte[] recombineShares(int[] rr, byte[]... splits)
@@ -84,52 +92,18 @@ public abstract class ShamirSecretSplitter
             {
                 if (j != i)
                 {
-                    products[tmp++] = gfDiv(rr[j], rr[i] ^ rr[j]);
+                    products[tmp++] = poly.gfDiv(rr[j], rr[i] ^ rr[j]);
                 }
             }
 
             tmp = 1;
             for (byte p : products)
             {
-                tmp = (byte)gfMul(tmp & 0xff, p & 0xff);
+                tmp = (byte)poly.gfMul(tmp & 0xff, p & 0xff);
             }
             r[i] = tmp;
         }
 
-        return gfVecMul(r, splits);
-    }
-
-    protected abstract int gfMul(int x, int y);
-
-    protected abstract byte gfDiv(int x, int y);
-
-    protected byte gfPow(int n, byte k)
-    {
-        int result = 1;
-        for (int i = 0; i < 8; i++)
-        {
-            if ((k & (1 << i)) != 0)
-            {
-                result = (byte)gfMul(result & 0xff, n & 0xff);
-            }
-            n = gfMul(n & 0xff, n & 0xff);
-        }
-        return (byte)result;
-    }
-
-    private byte[] gfVecMul(byte[] xs, byte[][] yss)
-    {
-        byte[] result = new byte[yss[0].length];
-        int sum;
-        for (int j = 0; j < yss[0].length; j++)
-        {
-            sum = 0;
-            for (int k = 0; k < xs.length; k++)
-            {
-                sum ^= gfMul(xs[k] & 0xff, yss[k][j] & 0xff);
-            }
-            result[j] = (byte)sum;
-        }
-        return result;
+        return poly.gfVecMul(r, splits);
     }
 }

@@ -1,9 +1,56 @@
 package org.bouncycastle.crypto.threshold;
 
-import java.security.SecureRandom;
+abstract class Polynomial
+{
+    public static Polynomial newInstance(ShamirSecretSplitter.Algorithm algorithm, ShamirSecretSplitter.Mode mode)
+    {
+        if (mode == ShamirSecretSplitter.Mode.Native)
+        {
+            return new PolynomialNative(algorithm);
+        }
+        else
+        {
+            return new PolynomialTable(algorithm);
+        }
+    }
 
-public class ShamirTableSecretSplitter
-    extends ShamirSecretSplitter
+    protected abstract int gfMul(int x, int y);
+
+    protected abstract byte gfDiv(int x, int y);
+
+    protected byte gfPow(int n, byte k)
+    {
+        int result = 1;
+        for (int i = 0; i < 8; i++)
+        {
+            if ((k & (1 << i)) != 0)
+            {
+                result = (byte)gfMul(result & 0xff, n & 0xff);
+            }
+            n = gfMul(n & 0xff, n & 0xff);
+        }
+        return (byte)result;
+    }
+
+    public byte[] gfVecMul(byte[] xs, byte[][] yss)
+    {
+        byte[] result = new byte[yss[0].length];
+        int sum;
+        for (int j = 0; j < yss[0].length; j++)
+        {
+            sum = 0;
+            for (int k = 0; k < xs.length; k++)
+            {
+                sum ^= gfMul(xs[k] & 0xff, yss[k][j] & 0xff);
+            }
+            result[j] = (byte)sum;
+        }
+        return result;
+    }
+}
+
+class PolynomialTable
+    extends Polynomial
 {
     private final byte[] LOG;
     private final byte[] EXP;
@@ -148,9 +195,8 @@ public class ShamirTableSecretSplitter
         (byte)0x1b, (byte)0x36, (byte)0x6c, (byte)0xd8, (byte)0xad, (byte)0x47, (byte)0x8e, (byte)0x01
     };
 
-    public ShamirTableSecretSplitter(int algorithm, int l, int m, int n, SecureRandom random)
+    public PolynomialTable(ShamirSecretSplitter.Algorithm algorithm)
     {
-        super(l, m, n, random);
         switch (algorithm)
         {
         case AES:
@@ -164,7 +210,6 @@ public class ShamirTableSecretSplitter
         default:
             throw new IllegalArgumentException("The algorithm is not correct");
         }
-        init();
     }
 
     protected int gfMul(int x, int y)
@@ -173,7 +218,7 @@ public class ShamirTableSecretSplitter
         {
             return 0;
         }
-        return EXP[((LOG[x] &0xff) + (LOG[y] & 0xff)) % 255] & 0xff;
+        return EXP[((LOG[x] & 0xff) + (LOG[y] & 0xff)) % 255] & 0xff;
     }
 
     protected byte gfDiv(int x, int y)
@@ -182,6 +227,61 @@ public class ShamirTableSecretSplitter
         {
             return 0;
         }
-        return EXP[((LOG[x] &0xff) - (LOG[y] & 0xff) + 255) % 255];
+        return EXP[((LOG[x] & 0xff) - (LOG[y] & 0xff) + 255) % 255];
+    }
+}
+
+class PolynomialNative
+    extends Polynomial
+{
+    private final int IRREDUCIBLE;
+
+    public PolynomialNative(ShamirSecretSplitter.Algorithm algorithm)
+    {
+        switch (algorithm)
+        {
+        case AES:
+            IRREDUCIBLE = 0x11B;
+            break;
+        case RSA:
+            IRREDUCIBLE = 0x11D;
+            break;
+        default:
+            throw new IllegalArgumentException("The algorithm is not correct");
+        }
+    }
+
+    protected int gfMul(int x, int y)
+    {
+        //pmult
+        int result = 0;
+        while (y > 0)
+        {
+            if ((y & 1) != 0)
+            {  // If the lowest bit of y is 1
+                result ^= x;     // XOR x into the result
+            }
+            x <<= 1;             // Shift x left (multiply by 2 in GF)
+            if ((x & 0x100) != 0)
+            {  // If x is larger than 8 bits, reduce
+                x ^= IRREDUCIBLE;  // XOR with the irreducible polynomial
+            }
+            y >>= 1;             // Shift y right
+        }
+        //mod
+        while (result >= (1 << 8))
+        {
+            if ((result & (1 << 8)) != 0)
+            {
+                result ^= IRREDUCIBLE;
+            }
+            result <<= 1;
+        }
+        return result & 0xFF;
+    }
+
+    protected byte gfDiv(int x, int y)
+    {
+        return (byte)gfMul(x, gfPow((byte)y, (byte)254) & 0xff);
     }
 }

@@ -6,7 +6,7 @@ public class ShamirSplitSecretShare
     implements SecretShare
 {
     private final byte[] secretShare;
-    private final int r; // index of secretShare
+    final int r; // index of secretShare
 
     public ShamirSplitSecretShare(byte[] secretShare, int r)
     {
