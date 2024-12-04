@@ -17,7 +17,7 @@ public class ShamirSecretSplitter
         Table
     }
 
-    private Polynomial poly;
+    private final Polynomial poly;
     /**
      * Length of the secret
      */
@@ -77,33 +77,5 @@ public class ShamirSecretSplitter
             secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
         }
         return new ShamirSplitSecret(poly, secretShares);
-    }
-
-    public byte[] recombineShares(int[] rr, byte[]... splits)
-    {
-        int n = rr.length;
-        byte[] r = new byte[n];
-        byte tmp;
-        byte[] products = new byte[n - 1];
-        for (int i = 0; i < n; i++)
-        {
-            tmp = 0;
-            for (int j = 0; j < n; j++)
-            {
-                if (j != i)
-                {
-                    products[tmp++] = poly.gfDiv(rr[j], rr[i] ^ rr[j]);
-                }
-            }
-
-            tmp = 1;
-            for (byte p : products)
-            {
-                tmp = (byte)poly.gfMul(tmp & 0xff, p & 0xff);
-            }
-            r[i] = tmp;
-        }
-
-        return poly.gfVecMul(r, splits);
     }
 }
