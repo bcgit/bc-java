@@ -13,13 +13,4 @@ public interface SecretSplitter
      * @return An array of {@code byte[][]} representing the generated secret shares for m users with l bytes each.
      */
     SplitSecret split();
-
-    /**
-     * Recombines secret shares to reconstruct the original secret.
-     *
-     * @param rr The threshold number of shares required for recombination.
-     * @param splits A vector of byte arrays representing the shares, where each share is l bytes long.
-     * @return A byte array containing the reconstructed secret.
-     */
-    byte[] recombineShares(int[] rr, byte[]... splits);
 }
