@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.crypto.threshold.message;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.crypto.threshold.attribute.KMIPUniqueIdentifier;
 
 public class KMIPRequestPayloadDefault
     extends KMIPRequestPayload

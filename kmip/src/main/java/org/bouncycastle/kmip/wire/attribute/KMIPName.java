@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.crypto.threshold.attribute;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPNameType;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPNameType;
 
 /**
  * Represents the Name attribute used to identify and locate an object in the key management system.

@@ -1,16 +1,18 @@
-package org.bouncycastle.crypto.split.test;
+package org.bouncycastle.crypto.threshold.test;
 
 import java.security.SecureRandom;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.crypto.split.Polynomial;
-import org.bouncycastle.crypto.split.PolynomialNative;
-import org.bouncycastle.crypto.split.PolynomialTable;
+import org.bouncycastle.crypto.threshold.ShamirSecretSplitter;
+import org.bouncycastle.crypto.threshold.ShamirNativeSecretSplitter;
+import org.bouncycastle.crypto.threshold.ShamirSplitSecret;
+import org.bouncycastle.crypto.threshold.ShamirSplitSecretShare;
+import org.bouncycastle.crypto.threshold.ShamirTableSecretSplitter;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
-public class PolynomialTest
+public class ShamirSecretSplitterTest
     extends TestCase
 {
 //    private static Polynomial polynomial1 = new PolynomialTable(Polynomial.AES);
@@ -775,14 +777,14 @@ public class PolynomialTest
 
     public static void main(String[] args)
     {
-        PolynomialTest test = new PolynomialTest();
+        ShamirSecretSplitterTest test = new ShamirSecretSplitterTest();
         test.performTest();
     }
 
     @FunctionalInterface
     private interface PolynomialFactory
     {
-        Polynomial newInstance(int l, int m, int n);
+        ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random);
     }
 
     @Override
@@ -793,7 +795,7 @@ public class PolynomialTest
 
     public void performTest()
     {
-        testPolynomial();;
+        testPolynomial();
     }
 
     public void testPolynomial()
@@ -801,96 +803,96 @@ public class PolynomialTest
         testPolynoimial1(new PolynomialFactory()
         {
             @Override
-            public Polynomial newInstance(int l, int m, int n)
+            public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new PolynomialNative(Polynomial.AES, l, m, n);
+                return new ShamirNativeSecretSplitter(ShamirSecretSplitter.AES, l, m, n, random);
             }
         });
         testPolynoimial1(new PolynomialFactory()
         {
             @Override
-            public Polynomial newInstance(int l, int m, int n)
+            public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new PolynomialTable(Polynomial.AES, l, m, n);
+                return new ShamirTableSecretSplitter(ShamirSecretSplitter.AES, l, m, n, random);
             }
         });
 
         testPolynoimial2(new PolynomialFactory()
         {
             @Override
-            public Polynomial newInstance(int l, int m, int n)
+            public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new PolynomialNative(Polynomial.RSA, l, m, n);
+                return new ShamirNativeSecretSplitter(ShamirSecretSplitter.RSA, l, m, n, random);
             }
         });
 
         testPolynoimial2(new PolynomialFactory()
         {
             @Override
-            public Polynomial newInstance(int l, int m, int n)
+            public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new PolynomialTable(Polynomial.RSA, l, m, n);
+                return new ShamirTableSecretSplitter(ShamirSecretSplitter.RSA, l, m, n, random);
             }
         });
     }
 
     private void testPolynoimial1(PolynomialFactory polynomialFactory)
     {
-        Polynomial poly = polynomialFactory.newInstance(5, 2, 2);
-        testMatrixMultiplication(poly, TV011B_TV1_SR, TV011B_TV1_SPLITS);
+        ShamirSecretSplitter poly = polynomialFactory.newInstance(5, 2, 2, getSecureRandom(TV011B_TV1_SR));
+        testMatrixMultiplication(poly, TV011B_TV1_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011B_TV1_1_2_SPLITS, TV011B_TV1_SECRET);
-        poly = polynomialFactory.newInstance(5, 2, 4);
-        testMatrixMultiplication(poly, TV011B_TV2_SR, TV011B_TV2_SPLITS);
+        poly = polynomialFactory.newInstance(5, 2, 4, getSecureRandom(TV011B_TV2_SR));
+        testMatrixMultiplication(poly, TV011B_TV2_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011B_TV2_1_2_SPLITS, TV011B_TV2_SECRET);
         testRecombine(poly, new int[]{1, 4}, TV011B_TV2_1_4_SPLITS, TV011B_TV2_SECRET);
         testRecombine(poly, new int[]{3, 4}, TV011B_TV2_3_4_SPLITS, TV011B_TV2_SECRET);
-        poly = polynomialFactory.newInstance(5, 3, 4);
-        testMatrixMultiplication(poly, TV011B_TV3_SR, TV011B_TV3_SPLITS);
+        poly = polynomialFactory.newInstance(5, 3, 4, getSecureRandom(TV011B_TV3_SR));
+        testMatrixMultiplication(poly, TV011B_TV3_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3}, TV011B_TV3_1_2_3_SPLITS, TV011B_TV3_SECRET);
         testRecombine(poly, new int[]{1, 2, 4}, TV011B_TV3_1_2_4_SPLITS, TV011B_TV3_SECRET);
         testRecombine(poly, new int[]{1, 3, 4}, TV011B_TV3_1_3_4_SPLITS, TV011B_TV3_SECRET);
-        poly = polynomialFactory.newInstance(5, 4, 4);
-        testMatrixMultiplication(poly, TV011B_TV4_SR, TV011B_TV4_SPLITS);
+        poly = polynomialFactory.newInstance(5, 4, 4, getSecureRandom(TV011B_TV4_SR));
+        testMatrixMultiplication(poly, TV011B_TV4_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3, 4}, TV011B_TV4_1_2_3_4_SPLITS, TV011B_TV4_SECRET);
-        poly = polynomialFactory.newInstance(9, 2, 9);
-        testMatrixMultiplication(poly, TV011B_TV5_SR, TV011B_TV5_SPLITS);
+        poly = polynomialFactory.newInstance(9, 2, 9, getSecureRandom(TV011B_TV5_SR));
+        testMatrixMultiplication(poly, TV011B_TV5_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011B_TV5_1_2_SPLITS, TV011B_TV5_SECRET);
         testRecombine(poly, new int[]{8, 9}, TV011B_TV5_8_9_SPLITS, TV011B_TV5_SECRET);
-        poly = polynomialFactory.newInstance(15, 3, 5);
-        testMatrixMultiplication(poly, TV011B_TV6_SR, TV011B_TV6_SPLITS);
+        poly = polynomialFactory.newInstance(15, 3, 5, getSecureRandom(TV011B_TV6_SR));
+        testMatrixMultiplication(poly, TV011B_TV6_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3}, TV011B_TV6_1_2_3_SPLITS, TV011B_TV6_SECRET);
         testRecombine(poly, new int[]{2, 3, 4}, TV011B_TV6_2_3_4_SPLITS, TV011B_TV6_SECRET);
     }
 
     private void testPolynoimial2(PolynomialFactory polynomialFactory)
     {
-        Polynomial poly = polynomialFactory.newInstance(5, 2, 2);
-        testMatrixMultiplication(poly, TV011D_TV1_SR, TV011D_TV1_SPLITS);
+        ShamirSecretSplitter poly = polynomialFactory.newInstance(5, 2, 2, getSecureRandom(TV011D_TV1_SR));
+        testMatrixMultiplication(poly, TV011D_TV1_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011D_TV1_1_2_SPLITS, TV011D_TV1_SECRET);
-        poly = polynomialFactory.newInstance(5, 2, 4);
-        testMatrixMultiplication(poly, TV011D_TV2_SR, TV011D_TV2_SPLITS);
+        poly = polynomialFactory.newInstance(5, 2, 4, getSecureRandom(TV011D_TV2_SR));
+        testMatrixMultiplication(poly, TV011D_TV2_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011D_TV2_1_2_SPLITS, TV011D_TV2_SECRET);
         testRecombine(poly, new int[]{1, 4}, TV011D_TV2_1_4_SPLITS, TV011D_TV2_SECRET);
         testRecombine(poly, new int[]{3, 4}, TV011D_TV2_3_4_SPLITS, TV011D_TV2_SECRET);
-        poly = polynomialFactory.newInstance(5, 3, 4);
-        testMatrixMultiplication(poly, TV011D_TV3_SR, TV011D_TV3_SPLITS);
+        poly = polynomialFactory.newInstance(5, 3, 4, getSecureRandom(TV011D_TV3_SR));
+        testMatrixMultiplication(poly, TV011D_TV3_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3}, TV011D_TV3_1_2_3_SPLITS, TV011D_TV3_SECRET);
         testRecombine(poly, new int[]{1, 2, 4}, TV011D_TV3_1_2_4_SPLITS, TV011D_TV3_SECRET);
         testRecombine(poly, new int[]{1, 3, 4}, TV011D_TV3_1_3_4_SPLITS, TV011D_TV3_SECRET);
-        poly = polynomialFactory.newInstance(5, 4, 4);
-        testMatrixMultiplication(poly, TV011D_TV4_SR, TV011D_TV4_SPLITS);
+        poly = polynomialFactory.newInstance(5, 4, 4, getSecureRandom(TV011D_TV4_SR));
+        testMatrixMultiplication(poly, TV011D_TV4_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3, 4}, TV011D_TV4_1_2_3_4_SPLITS, TV011D_TV4_SECRET);
-        poly = polynomialFactory.newInstance(9, 2, 9);
-        testMatrixMultiplication(poly, TV011D_TV5_SR, TV011D_TV5_SPLITS);
+        poly = polynomialFactory.newInstance(9, 2, 9, getSecureRandom(TV011D_TV5_SR));
+        testMatrixMultiplication(poly, TV011D_TV5_SPLITS);
         testRecombine(poly, new int[]{1, 2}, TV011D_TV5_1_2_SPLITS, TV011D_TV5_SECRET);
         testRecombine(poly, new int[]{8, 9}, TV011D_TV5_8_9_SPLITS, TV011D_TV5_SECRET);
-        poly = polynomialFactory.newInstance(15, 3, 5);
-        testMatrixMultiplication(poly, TV011D_TV6_SR, TV011D_TV6_SPLITS);
+        poly = polynomialFactory.newInstance(15, 3, 5, getSecureRandom(TV011D_TV6_SR));
+        testMatrixMultiplication(poly, TV011D_TV6_SPLITS);
         testRecombine(poly, new int[]{1, 2, 3}, TV011D_TV6_1_2_3_SPLITS, TV011D_TV6_SECRET);
         testRecombine(poly, new int[]{2, 3, 4}, TV011D_TV6_2_3_4_SPLITS, TV011D_TV6_SECRET);
     }
 
-    static void testMatrixMultiplication(Polynomial poly, byte[][] sr, byte[][] splits)
+    static SecureRandom getSecureRandom(byte[][] sr)
     {
         byte[] source = new byte[sr.length * sr[0].length];
         int currentIndex = 0;
@@ -900,12 +902,21 @@ public class PolynomialTest
             System.arraycopy(subArray, 0, source, currentIndex, subArray.length);
             currentIndex += subArray.length;
         }
-        SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(source)});
-        byte[][] result = poly.createShares(random);
+        return new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(source)});
+    }
+
+    static void testMatrixMultiplication(ShamirSecretSplitter poly, byte[][] splits)
+    {
+        ShamirSplitSecretShare[] secretShares = poly.split().getSecretShare();
+        byte[][] result = new byte[splits.length][splits[0].length];
+        for (int i = 0; i < result.length; ++i)
+        {
+            result[i] = secretShares[i].getSecretShare();
+        }
         assertEquals(Arrays.deepToString(splits), Arrays.deepToString(result));
     }
 
-    public void testRecombine(Polynomial poly, int[] rr, byte[][] splits, byte[] secret)
+    public void testRecombine(ShamirSecretSplitter poly, int[] rr, byte[][] splits, byte[] secret)
     {
         byte[] result = poly.recombineShares(rr, splits);
         assertTrue(Arrays.equals(secret, result));

@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.crypto.threshold.attribute;
 
 public abstract class KMIPCryptographicObject
 {

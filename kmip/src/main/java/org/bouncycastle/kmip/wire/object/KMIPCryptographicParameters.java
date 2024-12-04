@@ -1,12 +1,12 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.crypto.threshold.object;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPDigitalSignatureAlgorithm;
-import org.bouncycastle.crypto.split.enumeration.KMIPHashingAlgorithm;
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyRoleType;
-import org.bouncycastle.crypto.split.enumeration.KMIPMaskGenerator;
-import org.bouncycastle.crypto.split.enumeration.KMIPPaddingMethod;
-import org.bouncycastle.crypto.split.enumeration.KMIPBlockCipherMode;
-import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPDigitalSignatureAlgorithm;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPHashingAlgorithm;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPKeyRoleType;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPMaskGenerator;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPPaddingMethod;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPBlockCipherMode;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPCryptographicAlgorithm;
 
 /**
  * Class representing the Cryptographic Parameters attribute structure.
@@ -14,7 +14,7 @@ import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
 public class KMIPCryptographicParameters
 {
     private KMIPBlockCipherMode blockCipherMode; // Block Cipher Mode
-    private org.bouncycastle.crypto.split.enumeration.KMIPPaddingMethod KMIPPaddingMethod; // Padding Method
+    private org.bouncycastle.crypto.threshold.enumeration.KMIPPaddingMethod KMIPPaddingMethod; // Padding Method
     private KMIPHashingAlgorithm hashingAlgorithm; // Hashing Algorithm
     private KMIPKeyRoleType keyRoleType; // Key Role Type
     private KMIPDigitalSignatureAlgorithm digitalSignatureAlgorithm; // Digital Signature Algorithm

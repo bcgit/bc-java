@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.operation;
+package org.bouncycastle.crypto.threshold.operation;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPEncodingOption;
-import org.bouncycastle.crypto.split.enumeration.KMIPWrappingMethod;
-import org.bouncycastle.crypto.split.object.KMIPKeyInformation;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPEncodingOption;
+import org.bouncycastle.crypto.threshold.enumeration.KMIPWrappingMethod;
+import org.bouncycastle.crypto.threshold.object.KMIPKeyInformation;
 
 /**
  * Represents the Key Wrapping Specification structure for wrapping a key.

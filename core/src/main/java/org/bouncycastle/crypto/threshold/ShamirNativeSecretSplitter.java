@@ -1,13 +1,15 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.crypto.threshold;
 
-public class PolynomialNative
-    extends Polynomial
+import java.security.SecureRandom;
+
+public class ShamirNativeSecretSplitter
+    extends ShamirSecretSplitter
 {
     private final int IRREDUCIBLE;
 
-    public PolynomialNative(int algorithm, int l, int m, int n)
+    public ShamirNativeSecretSplitter(int algorithm, int l, int m, int n, SecureRandom random)
     {
-        super(l, m, n);
+        super(l, m, n, random);
         switch (algorithm)
         {
         case AES:
