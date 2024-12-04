@@ -31,7 +31,6 @@ import org.bouncycastle.util.encoders.Hex;
 public class NTRUTest
     extends TestCase
 {
-    private final String KAT_ROOT = "/org/bouncycastle/pqc/crypto/test/ntru/";
     private final NTRUParameters[] params = {
         NTRUParameters.ntruhps2048509,
         NTRUParameters.ntruhps2048677,
@@ -58,6 +57,16 @@ public class NTRUTest
         "PQCkemKAT_1450.rsp",
         "PQCkemKAT_2983.rsp"
     };
+
+    public void testParameters()
+    {
+        assertEquals(256, NTRUParameters.ntruhps2048509.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps2048677.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps4096821 .getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhps40961229.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhrss701.getSessionKeySize());
+        assertEquals(256, NTRUParameters.ntruhrss1373.getSessionKeySize());
+    }
 
     public void testPrivInfoGeneration()
         throws IOException
