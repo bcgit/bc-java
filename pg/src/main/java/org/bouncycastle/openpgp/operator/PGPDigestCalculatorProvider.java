@@ -5,6 +5,8 @@ import org.bouncycastle.openpgp.PGPException;
 
 /**
  * A factory for digest algorithms.
+ * The purpose of this class is to act as an abstract factory, whose subclasses can decide, which concrete
+ * implementation to use for calculating PGP digests.
  */
 public interface PGPDigestCalculatorProvider
 {
