@@ -26,7 +26,7 @@ public class ShamirSecretSplitterTest
         testShamirSecretSplitter();
     }
 
-    private void testShamirSecretSplitter()
+    public void testShamirSecretSplitter()
     {
         int l = 9, m = 3, n = 9;
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
