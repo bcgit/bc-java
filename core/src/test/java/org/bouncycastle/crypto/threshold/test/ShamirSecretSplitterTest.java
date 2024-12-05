@@ -9,10 +9,48 @@ import org.bouncycastle.crypto.threshold.ShamirSecretSplitter;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecret;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecretShare;
 import org.bouncycastle.util.test.FixedSecureRandom;
+import org.junit.Assert;
 
 public class ShamirSecretSplitterTest
     extends TestCase
 {
+    public static void main(String[] args)
+    {
+        ShamirSecretSplitterTest test = new ShamirSecretSplitterTest();
+        test.performTest();
+    }
+
+    public void performTest()
+    {
+        testPolynomial();
+        testShamirSecretSplitter();
+    }
+
+    private void testShamirSecretSplitter()
+    {
+        int l = 9, m = 3, n = 9;
+        ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
+        ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
+        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, m, n, new SecureRandom());
+        ShamirSplitSecret splitSecret = splitter.split();
+        ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShare();
+
+        ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
+        ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
+        byte[] secret1 = splitSecret1.recombine();
+
+        ShamirSplitSecretShare[] secretShares2 = new ShamirSplitSecretShare[]{secretShares[4], secretShares[7], secretShares[8]};
+        ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
+        byte[] secret2 = splitSecret2.recombine();
+
+        Assert.assertTrue(Arrays.equals(secret1, secret2));
+
+        // not enough secret shares cannot correctly recover the secret
+        ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares[3], secretShares[6]};
+        ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
+        byte[] secret3 = splitSecret3.recombine();
+        Assert.assertFalse(Arrays.equals(secret1, secret3));
+    }
 //    private static Polynomial polynomial1 = new PolynomialTable(Polynomial.AES);
 //    private static Polynomial polynomial2 = new PolynomialTable(Polynomial.RSA);
     // Test test vectors for Polynomial 1 (x^^8 + x^^4 + x^^3 + x + 1)
@@ -773,12 +811,6 @@ public class ShamirSecretSplitterTest
     private static final byte[] TV011D_TV6_SECRET =
         {(byte)0x01, (byte)0x02, (byte)0x03, (byte)0x04, (byte)0x05, (byte)0x06, (byte)0x07, (byte)0x08, (byte)0x09, (byte)0x0A, (byte)0x0B, (byte)0x0C, (byte)0x0D, (byte)0x0E, (byte)0x0F};
 
-    public static void main(String[] args)
-    {
-        ShamirSecretSplitterTest test = new ShamirSecretSplitterTest();
-        test.performTest();
-    }
-
     private interface PolynomialFactory
     {
         ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random);
@@ -790,11 +822,6 @@ public class ShamirSecretSplitterTest
     public String getName()
     {
         return "Polynomial Test";
-    }
-
-    public void performTest()
-    {
-        testPolynomial();
     }
 
     public void testPolynomial()
