@@ -89,6 +89,7 @@ public class PGPEncryptedDataGenerator
     // If true, force generation of a session key, even if we only have a single password-based encryption method
     //  and could therefore use the S2K output as session key directly.
     private boolean forceSessionKey = true;
+    private SessionKeyExtractionCallback sessionKeyExtractionCallback = null;
 
     /**
      * Base constructor.
@@ -178,6 +179,11 @@ public class PGPEncryptedDataGenerator
         return sessionInfo;
     }
 
+    public void setSessionKeyExtractionCallback(SessionKeyExtractionCallback callback)
+    {
+        this.sessionKeyExtractionCallback = callback;
+    }
+
     /**
      * Create an OutputStream based on the configured methods.
      * <p>
@@ -224,10 +230,13 @@ public class PGPEncryptedDataGenerator
 
         boolean directS2K = !forceSessionKey && methods.size() == 1 &&
             methods.get(0) instanceof PBEKeyEncryptionMethodGenerator; // not public key
+
         boolean isV5StyleAEAD = dataEncryptorBuilder.isV5StyleAEAD(); //v5
-        if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
+        boolean isSeipdV2 = dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD;
+        if (isSeipdV2)
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
+            sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
             // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
             // Since we cannot inject the IV into the data encryptor, we append it to the message key.
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
@@ -252,6 +261,11 @@ public class PGPEncryptedDataGenerator
             messageKey = sessionKey;
         }
 
+        if (sessionKeyExtractionCallback != null)
+        {
+            sessionKeyExtractionCallback.extractSessionKey(new PGPSessionKey(defAlgorithm, sessionKey));
+        }
+
         PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(messageKey);
         digestCalc = dataEncryptor.getIntegrityCalculator();
 
@@ -271,7 +285,7 @@ public class PGPEncryptedDataGenerator
                 {
                     //https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.2.1 Table 2
                     //AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
-                    writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionKey);
+                    writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionInfo);
                 }
             }
             // OpenPGP v4
@@ -578,5 +592,10 @@ public class PGPEncryptedDataGenerator
         {
             this.finish();
         }
+    }
+
+    public interface SessionKeyExtractionCallback
+    {
+        void extractSessionKey(PGPSessionKey sessionKey);
     }
 }
