@@ -15,7 +15,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     extends PGPKeyEncryptionMethodGenerator
 {
     public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
-    public static final long WILDCARD = 0L;
+    public static final long WILDCARD_KEYID = 0L;
+    public static final byte[] WILDCARD_FINGERPRINT = new byte[0];
 
     private static boolean getSessionKeyObfuscationDefault()
     {
@@ -26,7 +27,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     private PGPPublicKey pubKey;
 
     protected boolean sessionKeyObfuscation;
-    protected boolean useWildcardKeyID;
+    protected boolean useWildcardRecipient;
 
     protected PublicKeyKeyEncryptionMethodGenerator(
         PGPPublicKey pubKey)
@@ -62,7 +63,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     /**
      * Controls whether to obfuscate the size of ECDH session keys using extra padding where necessary.
      * <p>
-     * The default behaviour can be configured using the system property "", or else it will default to enabled.
+     * The default behaviour can be configured using the system property
+     * "org.bouncycastle.openpgp.session_key_obfuscation", or else it will default to enabled.
      * </p>
      *
      * @return the current generator.
@@ -75,15 +77,28 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     }
 
     /**
-     * Controls whether the recipient key ID is hidden (replaced by a wildcard ID <pre>0</pre>).
+     * Controls whether the recipient key ID/fingerprint is hidden (replaced by a wildcard value).
+     *
+     * @param enabled boolean
+     * @return this
+     * @deprecated use {@link #setUseWildcardRecipient(boolean)} instead
+     * TODO: Remove in a future release
+     */
+    @Deprecated
+    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardKeyID(boolean enabled)
+    {
+        return setUseWildcardRecipient(enabled);
+    }
+
+    /**
+     * Controls whether the recipient key ID/fingerprint is hidden (replaced by a wildcard value).
      *
      * @param enabled boolean
      * @return this
      */
-    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardKeyID(boolean enabled)
+    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardRecipient(boolean enabled)
     {
-        this.useWildcardKeyID = enabled;
-
+        this.useWildcardRecipient = enabled;
         return this;
     }
 
@@ -144,9 +159,9 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         throws PGPException
     {
         long keyId;
-        if (useWildcardKeyID)
+        if (useWildcardRecipient)
         {
-            keyId = WILDCARD;
+            keyId = WILDCARD_KEYID;
         }
         else
         {
