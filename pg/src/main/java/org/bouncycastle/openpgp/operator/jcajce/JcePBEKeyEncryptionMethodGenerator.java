@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.crypto.InvalidCipherTextException;
