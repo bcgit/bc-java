@@ -24,7 +24,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return !Properties.isOverrideSetTo(SESSION_KEY_OBFUSCATION_PROPERTY, false);
     }
 
-    private PGPPublicKey pubKey;
+    private final PGPPublicKey pubKey;
 
     protected boolean sessionKeyObfuscation;
     protected boolean useWildcardRecipient;
@@ -102,7 +102,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return this;
     }
 
-    public byte[][] processSessionInfo(
+    public byte[][] encodeEncryptedSessionInfo(
         byte[] encryptedSessionInfo)
         throws PGPException
     {
@@ -155,8 +155,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    public ContainedPacket generate(int encAlgorithm, byte[] sessionInfo)
-        throws PGPException
+    public ContainedPacket generateV3(int encAlgorithm, byte[] sessionInfo)
+            throws PGPException
     {
         long keyId;
         if (useWildcardRecipient)
@@ -167,47 +167,72 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
             keyId = pubKey.getKeyID();
         }
-        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        byte[] encryptedSessionInfo = encryptSessionInfoV3(pubKey, sessionInfo);
+        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
-    @Override
-    public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    public ContainedPacket generateV6(byte[] sessionInfo)
         throws PGPException
     {
-        // TODO: Implement
-        return null;
+        byte[] keyFingerprint;
+        int keyVersion;
+        if (useWildcardRecipient)
+        {
+            keyFingerprint = WILDCARD_FINGERPRINT;
+            keyVersion = 0;
+        }
+        else
+        {
+            keyFingerprint = pubKey.getFingerprint();
+            keyVersion = pubKey.getVersion();
+        }
+        byte[] encryptedSessionInfo = encryptSessionInfoV6(pubKey, sessionInfo);
+        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+        return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
-    @Override
-    public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-        throws PGPException
-    {
-        // TODO: Implement
-        return null;
-    }
-
-    abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
+    abstract protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
         throws PGPException;
 
-    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] c)
+    abstract protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
+        throws PGPException;
+
+    protected static byte[] concatECDHEphKeyWithWrappedSessionKey(byte[] ephPubEncoding, byte[] wrappedSessionKey)
         throws IOException
     {
-        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
+        // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
 
-        byte[] rv = new byte[VB.length + 1 + c.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)c.length;
-        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
-        return rv;
+        byte[] mpiEncodedEphemeralKey = new MPInteger(new BigInteger(1, ephPubEncoding))
+                .getEncoded();
+        byte[] out = new byte[mpiEncodedEphemeralKey.length + 1 + wrappedSessionKey.length];
+        // eph key
+        System.arraycopy(mpiEncodedEphemeralKey, 0, out, 0, mpiEncodedEphemeralKey.length);
+        // enc session-key len
+        out[mpiEncodedEphemeralKey.length] = (byte) wrappedSessionKey.length;
+        // enc session-key
+        System.arraycopy(wrappedSessionKey, 0, out, mpiEncodedEphemeralKey.length + 1, wrappedSessionKey.length);
+
+        return out;
     }
 
-    protected static byte[] getSessionInfo(byte[] VB, int sysmmetricKeyAlgorithm, byte[] c)
+    private static byte[] getSessionInfo(byte[] ephPubEncoding, int symmetricKeyAlgorithm, byte[] c)
     {
-        byte[] rv = new byte[VB.length + 2 + c.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)(c.length + 1);
-        rv[VB.length + 1] = (byte)sysmmetricKeyAlgorithm;
-        System.arraycopy(c, 0, rv, VB.length + 2, c.length);
-        return rv;
+        return getSessionInfo(ephPubEncoding, new byte[]{(byte) symmetricKeyAlgorithm}, c);
+    }
+
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] optSymKeyAlgorithm, byte[] wrappedSessionKey)
+    {
+        int len = ephPubEncoding.length + 1 + optSymKeyAlgorithm.length + wrappedSessionKey.length;
+        byte[] out = new byte[len];
+        // ephemeral pub key
+        System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
+        // len of two/one next fields
+        out[ephPubEncoding.length] = (byte) (wrappedSessionKey.length + optSymKeyAlgorithm.length);
+        // (optional) sym key alg
+        System.arraycopy(optSymKeyAlgorithm, 0, out, ephPubEncoding.length + 1, optSymKeyAlgorithm.length);
+        // wrapped session key
+        System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1 + optSymKeyAlgorithm.length, wrappedSessionKey.length);
+        return out;
     }
 }
