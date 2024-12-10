@@ -216,10 +216,10 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return out;
     }
 
-    private static byte[] getSessionInfo(byte[] ephPubEncoding, int symmetricKeyAlgorithm, byte[] c)
-    {
-        return getSessionInfo(ephPubEncoding, new byte[]{(byte) symmetricKeyAlgorithm}, c);
-    }
+//    private static byte[] getSessionInfo(byte[] ephPubEncoding, int symmetricKeyAlgorithm, byte[] c)
+//    {
+//        return getSessionInfo(ephPubEncoding, new byte[]{(byte) symmetricKeyAlgorithm}, c);
+//    }
 
     protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] optSymKeyAlgorithm, byte[] wrappedSessionKey)
     {

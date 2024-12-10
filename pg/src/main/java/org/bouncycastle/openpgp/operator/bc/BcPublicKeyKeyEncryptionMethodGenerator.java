@@ -328,7 +328,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     private byte[] encryptV3SessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
                                                          AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
                                                          int keySize, EphPubEncodingOperation ephPubEncodingOperation)
-        throws PGPException, IOException
+        throws PGPException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);
         byte[] secret = BcUtil.getSecret(agreement, ephKp.getPrivate(), cryptoPublicKey);
