@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -274,6 +278,30 @@ class JceAEADUtil
             + "/" + mode + "/NoPadding";
 
         return helper.createCipher(cName);
+    }
+
+    static byte[] processAeadKeyData(JceAEADUtil aeadUtil, int mode, int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, int keyOff, int keyLen, byte[] pubkeyData)
+        throws PGPException
+    {
+        // TODO: Replace HDKF code with JCE based implementation
+        byte[] key = generateHKDFBytes(s2kKey, null,
+            new byte[]{(byte)(0xC0 | packetTag), (byte)keyVersion, (byte)encAlgorithm, (byte)aeadAlgorithm},
+            SymmetricKeyUtils.getKeyLengthInOctets(encAlgorithm));
+
+        try
+        {
+            byte[] aad = Arrays.prepend(pubkeyData, (byte)(0xC0 | packetTag));
+            SecretKey secretKey = new SecretKeySpec(key, PGPUtil.getSymmetricCipherName(encAlgorithm));
+            final Cipher c = aeadUtil.createAEADCipher(encAlgorithm, aeadAlgorithm);
+
+            JceAEADCipherUtil.setUpAeadCipher(c, secretKey, mode, iv, 128, aad);
+            return c.doFinal(keyData, keyOff, keyLen);
+        }
+        catch (InvalidAlgorithmParameterException | InvalidKeyException |
+               IllegalBlockSizeException | BadPaddingException e)
+        {
+            throw new PGPException("Exception recovering AEAD protected private key material", e);
+        }
     }
 
     static class PGPAeadInputStream
