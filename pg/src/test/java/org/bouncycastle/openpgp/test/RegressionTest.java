@@ -87,7 +87,7 @@ public class RegressionTest
         new PGPv5KeyTest(),
         new PGPv5MessageDecryptionTest(),
         new PGPv6SignatureTest(),
-        new OpenPGPV6KeyGeneratorTest()
+        new OpenPGPV6KeyGeneratorTest(),
         new PGPKeyRingGeneratorTest()
     };
 
