@@ -94,7 +94,7 @@ public class LMSigParameters
         return digestOid;
     }
 
-    static LMSigParameters getParametersForType(int type)
+    public static LMSigParameters getParametersForType(int type)
     {
         return paramBuilders.get(type);
     }

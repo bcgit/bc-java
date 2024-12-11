@@ -41,6 +41,8 @@ public class PhotonBeetleTest
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         testExceptions(new PhotonBeetleDigest(), 32);
+        CipherTest.checkAEADCipherOutputSize(16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherOutputSize(16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
     }
 
     private void testVectorsHash()
@@ -228,6 +230,7 @@ public class PhotonBeetleTest
         }
 
         aeadBlockCipher.init(true, params);
+        c1 = new byte[aeadBlockCipher.getOutputSize(m.length)];
         try
         {
             aeadBlockCipher.doFinal(c1, m.length);
@@ -379,10 +382,10 @@ public class PhotonBeetleTest
         {
             m7[i] = (byte)rand.nextInt();
         }
+        aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
         byte[] c9 = new byte[c7.length];
-        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);

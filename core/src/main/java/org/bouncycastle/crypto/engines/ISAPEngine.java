@@ -806,7 +806,7 @@ public class ISAPEngine
         if (iv == null || iv.length != 16)
         {
             throw new IllegalArgumentException(
-                "ISAP AEAD requires exactly 12 bytes of IV");
+                "ISAP AEAD requires exactly 16 bytes of IV");
         }
 
         if (!(ivParams.getParameters() instanceof KeyParameter))
@@ -961,13 +961,14 @@ public class ISAPEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -16));
+        return total - total % ISAP_rH_SZ;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return len + 16;
+        return Math.max(0, len + message.size() + (forEncryption ? 16 : -16));
     }
 
     @Override
