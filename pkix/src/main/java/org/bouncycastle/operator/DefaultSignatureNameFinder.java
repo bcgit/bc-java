@@ -94,6 +94,8 @@ public class DefaultSignatureNameFinder
         addSignatureName(NISTObjectIdentifiers.dsa_with_sha224, "SHA224WITHDSA");
         addSignatureName(NISTObjectIdentifiers.dsa_with_sha256, "SHA256WITHDSA");
 
+        addSignatureName(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS");
+
         addSignatureName(NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44");
         addSignatureName(NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65");
         addSignatureName(NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87");

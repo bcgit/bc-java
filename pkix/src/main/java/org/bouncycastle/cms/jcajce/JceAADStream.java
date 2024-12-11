@@ -8,7 +8,7 @@ import javax.crypto.Cipher;
 class JceAADStream
     extends OutputStream
 {
-     private static final byte[] SINGLE_BYTE = new byte[1];
+     private final byte[] SINGLE_BYTE = new byte[1];
      private Cipher cipher;
 
      JceAADStream(Cipher cipher)
