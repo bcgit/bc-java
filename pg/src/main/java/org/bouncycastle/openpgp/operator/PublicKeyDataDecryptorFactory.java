@@ -4,6 +4,11 @@ import org.bouncycastle.bcpg.InputStreamPacket;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.openpgp.PGPException;
 
+/**
+ * Factory for public-key based {@link PGPDataDecryptor PGPDataDecryptors}.
+ * The purpose of this class is to act as an abstract factory, whose subclasses can decide, which concrete
+ * implementation to use to decrypt OpenPGP messages that were encrypted to a public-key.
+ */
 public interface PublicKeyDataDecryptorFactory
     extends PGPDataDecryptorFactory
 {

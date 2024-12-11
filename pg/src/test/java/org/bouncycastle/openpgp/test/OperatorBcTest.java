@@ -17,6 +17,7 @@ import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -25,8 +26,10 @@ import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
@@ -51,9 +54,11 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
@@ -79,6 +84,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
+import org.junit.Assert;
 
 public class OperatorBcTest
     extends SimpleTest
@@ -100,6 +106,7 @@ public class OperatorBcTest
     public void performTest()
         throws Exception
     {
+        testBcAEADSecretKeyEncryptorBuilder();
         testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
@@ -309,7 +316,7 @@ public class OperatorBcTest
             }
         });
     }
-    
+
     private void testCreateKeyPairEC(int algorithm, String name, final String curveName)
         throws Exception
     {
@@ -469,7 +476,7 @@ public class OperatorBcTest
             {
                 count++;
                 sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
-                   // TODO: appears to be failing on CI system
+                // TODO: appears to be failing on CI system
                 if (!sig.verifyCertification(vKey, sKey))
                 {
                     fail("failed to verify sub-key signature.");
@@ -637,6 +644,38 @@ public class OperatorBcTest
         isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
     }
 
+    public void testBcAEADSecretKeyEncryptorBuilder()
+        throws Exception
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = new Date();
+        SecureRandom random = new SecureRandom();
+        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        {
+            PGPKeyPair keyPair = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
+            BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters());
+
+            bcEncBuilder.build(
+                "passphrase".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            PBESecretKeyEncryptor encryptor = bcEncBuilder.build(
+                "Yin".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            byte[] key = new byte[16];
+            random.nextBytes(key);
+            byte[] input1 = new byte[64];
+            random.nextBytes(input1);
+
+            byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
+            byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
+            byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
+            Assert.assertTrue(Arrays.areEqual(output1, output2));
+        }
+    }
 
 }

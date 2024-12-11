@@ -88,6 +88,7 @@ public class RegressionTest
         new PGPv5MessageDecryptionTest(),
         new PGPv6SignatureTest(),
         new OpenPGPV6KeyGeneratorTest()
+        new PGPKeyRingGeneratorTest()
     };
 
     public static void main(String[] args)

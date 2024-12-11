@@ -320,7 +320,7 @@ public class ElephantEngine
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
         initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
-        inputMessage = new byte[BLOCK_SIZE + (forEncryption ? 0 : CRYPTO_ABYTES)];
+        inputMessage = new byte[BLOCK_SIZE * 2 + (forEncryption ? 0 : CRYPTO_ABYTES)];
         reset(false);
     }
 
@@ -372,12 +372,19 @@ public class ElephantEngine
             int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
             byte[] tempInput = new byte[Math.max(nblocks_c, 1) * BLOCK_SIZE];
             System.arraycopy(inputMessage, 0, tempInput, 0, inputOff);
-            System.arraycopy(input, inOff, tempInput, inputOff, Math.min(len, tempInput.length));
+            System.arraycopy(input, inOff, tempInput, inputOff, Math.min(len, tempInput.length - inputOff));
             int rv = processBytes(tempInput, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, false);
-            int copyLen = rv - inputOff;
-            inputOff = inputOff + len - rv;
-            System.arraycopy(input, inOff + copyLen, inputMessage, 0, inputOff);
-
+            if (rv >= inputOff)
+            {
+                int copyLen = rv - inputOff;
+                inputOff = inputOff + len - rv;
+                System.arraycopy(input, inOff + copyLen, inputMessage, 0, inputOff);
+            }
+            else
+            {
+                System.arraycopy(input, inOff + rv, inputMessage, inputOff, len - rv);
+                inputOff += len - rv;
+            }
             messageLen += rv;
             return rv;
         }
@@ -404,6 +411,7 @@ public class ElephantEngine
             throw new OutputLengthException("output buffer is too short");
         }
         int mlen = len + messageLen - (forEncryption ? 0 : CRYPTO_ABYTES);
+        int rv = mlen - messageLen;
         int adlen = processAADBytes();
         int nblocks_c = 1 + mlen / BLOCK_SIZE;
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
@@ -418,7 +426,7 @@ public class ElephantEngine
         {
             System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
             System.arraycopy(tag, 0, output, outOff, tag.length);
-            mlen += CRYPTO_ABYTES;
+            rv += CRYPTO_ABYTES;
         }
         else
         {
@@ -432,7 +440,7 @@ public class ElephantEngine
             }
         }
         reset(false);
-        return mlen;
+        return rv;
     }
 
     @Override
@@ -454,7 +462,17 @@ public class ElephantEngine
         case EncAad:
         case EncData:
         case EncInit:
-            return inputOff + len + CRYPTO_ABYTES;
+        {
+            int total = inputOff + len;
+            return total - total % BLOCK_SIZE;
+        }
+        case DecAad:
+        case DecData:
+        case DecInit:
+        {
+            int total = Math.max(0, inputOff + len - CRYPTO_ABYTES);
+            return total - total % BLOCK_SIZE;
+        }
         }
         return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
@@ -472,9 +490,9 @@ public class ElephantEngine
         case EncAad:
         case EncData:
         case EncInit:
-            return len + CRYPTO_ABYTES;
+            return len + inputOff + CRYPTO_ABYTES;
         }
-        return Math.max(0, len - CRYPTO_ABYTES);
+        return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
 
     @Override
@@ -523,7 +541,7 @@ public class ElephantEngine
 
     public int getBlockSize()
     {
-        return CRYPTO_ABYTES;
+        return BLOCK_SIZE;
     }
 
     private void checkAad()
@@ -621,7 +639,7 @@ public class ElephantEngine
         for (i = nb_its; i < nb_it; ++i)
         {
             int r_size = (i == nblocks_m - 1) ? mlen - i * BLOCK_SIZE : BLOCK_SIZE;
-            if (!isDofinal && (r_size % BLOCK_SIZE != 0 || mlen <= i * BLOCK_SIZE))
+            if (!isDofinal && (mlen <= i * BLOCK_SIZE || r_size % BLOCK_SIZE != 0))
             {
                 break;
             }
