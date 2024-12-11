@@ -39,6 +39,7 @@ public class XoodyakTest
         testExceptions(xoodyak, xoodyak.getKeyBytesSize(), xoodyak.getIVBytesSize(), xoodyak.getBlockSize());
         testParameters(xoodyak, 16, 16, 16);
         testExceptions(new XoodyakDigest(), 32);
+        CipherTest.checkAEADCipherOutputSize(16, 16, 24, 16, new XoodyakEngine());
     }
 
     private void testVectorsHash()
@@ -233,6 +234,7 @@ public class XoodyakTest
         }
 
         aeadBlockCipher.init(true, params);
+        c1 = new byte[aeadBlockCipher.getOutputSize(m.length)];
         try
         {
             aeadBlockCipher.doFinal(c1, m.length);
@@ -384,10 +386,11 @@ public class XoodyakTest
         {
             m7[i] = (byte)rand.nextInt();
         }
+
+        aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
         byte[] c9 = new byte[c7.length];
-        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);

@@ -451,10 +451,6 @@ public class PublicKeyFactory
         private LMSKeyParameters getLmsKeyParameters(byte[] keyEnc)
             throws IOException
         {
-            if (keyEnc.length == 64)
-            {
-                keyEnc = Arrays.copyOfRange(keyEnc, 4, keyEnc.length);
-            }
             return HSSPublicKeyParameters.getInstance(keyEnc);
         }
     }

@@ -56,7 +56,9 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(EACObjectIdentifiers.id_TA_ECDSA_SHA_512, "SHA512WITHCVC-ECDSA");
         addAlgorithm(BCObjectIdentifiers.falcon_512, "FALCON");
         addAlgorithm(BCObjectIdentifiers.falcon_1024, "FALCON");
-        
+
+        addAlgorithm(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS");
+
         addAlgorithm(NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44");
         addAlgorithm(NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65");
         addAlgorithm(NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87");
