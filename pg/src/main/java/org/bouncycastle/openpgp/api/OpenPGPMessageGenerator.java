@@ -504,7 +504,9 @@ public class OpenPGPMessageGenerator
                         {
                             List<PreferredAEADCiphersuites.Combination> nextPreferences = Arrays.asList(next.getAlgorithms());
                             return new PreferredAEADCiphersuites(false, Arrays.stream(current.getAlgorithms())
-                                    .filter(nextPreferences::contains).toArray(PreferredAEADCiphersuites.Combination[]::new));
+                                    .filter(nextPreferences::contains)
+                                    .filter(it -> it.getSymmetricAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
+                                    .toArray(PreferredAEADCiphersuites.Combination[]::new));
                         })
                         // If no common combination was found, fall back to implicitly supported algorithms
                         .orElse(PreferredAEADCiphersuites.builder(false)
@@ -535,6 +537,7 @@ public class OpenPGPMessageGenerator
                                 new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, false,
                                         Arrays.stream(current.getPreferences())
                                                 .filter(alg -> Arrays.stream(next.getPreferences()).anyMatch(it -> alg == it))
+                                                .filter(it -> it != SymmetricKeyAlgorithmTags.NULL)
                                                 .toArray()))
                         // If no common combination was found, fall back to implicitly supported algorithms
                         .orElse(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, false,
