@@ -11,10 +11,12 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.util.Arrays;
 
 public class BcPBESecretKeyDecryptorBuilder
+        implements PBESecretKeyDecryptorBuilder
 {
     private PGPDigestCalculatorProvider calculatorProvider;
 

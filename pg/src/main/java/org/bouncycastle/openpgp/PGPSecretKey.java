@@ -499,6 +499,13 @@ public class PGPSecretKey
 
     /**
      * Return the S2K usage associated with this key.
+     * This value indicates, how the secret key material is protected:
+     * <ul>
+     *     <li>{@link SecretKeyPacket#USAGE_NONE}: Unprotected</li>
+     *     <li>{@link SecretKeyPacket#USAGE_CHECKSUM}: Password-protected using malleable CFB (deprecated)</li>
+     *     <li>{@link SecretKeyPacket#USAGE_SHA1}: Password-protected using CFB</li>
+     *     <li>{@link SecretKeyPacket#USAGE_AEAD}: Password-protected using AEAD (recommended)</li>
+     * </ul>
      *
      * @return the key's S2K usage
      */
@@ -992,7 +999,15 @@ public class PGPSecretKey
 
         SecretKeyPacket secret;
 
-        secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+        if (newKeyEncryptor != null && newKeyEncryptor.getAeadAlgorithm() > 0)
+        {
+            s2kUsage = SecretKeyPacket.USAGE_AEAD;
+            secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, newKeyEncryptor.getAeadAlgorithm(), s2kUsage, s2k, iv, keyData);
+        }
+        else
+        {
+            secret = generateSecretKeyPacket(!(key.secret instanceof SecretSubkeyPacket), key.secret.getPublicKeyPacket(), newEncAlgorithm, s2kUsage, s2k, iv, keyData);
+        }
 
         return new PGPSecretKey(secret, key.pub);
     }

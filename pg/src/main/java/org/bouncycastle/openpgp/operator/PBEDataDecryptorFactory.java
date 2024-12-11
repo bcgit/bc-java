@@ -7,6 +7,8 @@ import org.bouncycastle.openpgp.PGPException;
 
 /**
  * A factory for performing PBE decryption operations.
+ * The purpose of this class is to act as an abstract factory, whose subclasses can decide, which concrete
+ * implementation to use for symmetric decryption of SKESK (symmetric-key-encrypted session-key) packets.
  */
 public abstract class PBEDataDecryptorFactory
     implements PGPDataDecryptorFactory
