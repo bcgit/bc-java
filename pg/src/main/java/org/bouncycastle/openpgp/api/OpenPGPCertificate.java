@@ -18,6 +18,7 @@ import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -124,6 +125,25 @@ public class OpenPGPCertificate
         return fromBytes(
                 armor.getBytes(StandardCharsets.UTF_8),
                 implementation);
+    }
+
+    public static OpenPGPCertificate fromInputStream(InputStream inputStream)
+            throws IOException
+    {
+        return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
+    }
+
+    public static OpenPGPCertificate fromInputStream(InputStream inputStream, OpenPGPImplementation implementation)
+            throws IOException
+    {
+        byte[] bytes = Streams.readAll(inputStream);
+        return fromBytes(bytes, implementation);
+    }
+
+    public static OpenPGPCertificate fromBytes(byte[] bytes)
+            throws IOException
+    {
+        return fromBytes(bytes, OpenPGPImplementation.getInstance());
     }
 
     public static OpenPGPCertificate fromBytes(

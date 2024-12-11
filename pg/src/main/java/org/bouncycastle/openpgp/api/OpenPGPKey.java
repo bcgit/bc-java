@@ -14,6 +14,7 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
+import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -110,6 +111,25 @@ public class OpenPGPKey
         return fromBytes(
                 armor.getBytes(StandardCharsets.UTF_8),
                 implementation);
+    }
+
+    public static OpenPGPKey fromInputStream(InputStream inputStream)
+            throws IOException
+    {
+        return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
+    }
+
+    public static OpenPGPKey fromInputStream(InputStream inputStream, OpenPGPImplementation implementation)
+            throws IOException
+    {
+        return fromBytes(Streams.readAll(inputStream), implementation);
+    }
+
+    public static OpenPGPKey fromBytes(
+            byte[] bytes)
+            throws IOException
+    {
+        return fromBytes(bytes, OpenPGPImplementation.getInstance());
     }
 
     public static OpenPGPKey fromBytes(
