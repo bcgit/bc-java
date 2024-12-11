@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import java.util.StringJoiner;
 
+import java.util.StringJoiner;
+
 class Poly
 {
     private short[] coeffs;
