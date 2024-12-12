@@ -265,7 +265,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         // wrap the padded session info using the shared-secret public key
         // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
         return  getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
-            .getEncoded(), (byte)0, getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, paddedSessionData));
+            .getEncoded(), getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, paddedSessionData));
     }
 
     /**
