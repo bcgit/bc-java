@@ -21,6 +21,10 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 {
     public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
     public static final long WILDCARD_KEYID = 0L;
+    /**
+     * @deprecated use WILDCARD_KEYID
+     * */
+    public static final long WILDCARD = 0L;
     public static final byte[] WILDCARD_FINGERPRINT = new byte[0];
 
     private static boolean getSessionKeyObfuscationDefault()
