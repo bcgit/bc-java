@@ -192,11 +192,50 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
-    abstract protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
+    /**
+     * Encrypt a session key using the recipients public key.
+     * @param pubKey recipients public key
+     * @param fullSessionInfo full session info (sym-alg-id + session-key + 2 octet checksum)
+     * @param sessionInfoToEncrypt for v3: full session info; for v6: just the session-key
+     * @param optSymAlgId for v3: session key algorithm ID; for v6: empty array
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected abstract byte[] encryptSessionInfo(PGPPublicKey pubKey,
+                                                 byte[] fullSessionInfo,
+                                                 byte[] sessionInfoToEncrypt,
+                                                 byte[] optSymAlgId)
         throws PGPException;
 
-    abstract protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
-        throws PGPException;
+    /**
+     * Encrypt a session key for a v3 PKESK.
+     * @param pubKey recipients public key
+     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
+        throws PGPException
+    {
+        return encryptSessionInfo(pubKey, sessionInfo, sessionInfo, new byte[]{sessionInfo[0]});
+    }
+
+    /**
+     * Encrypt a session key for a v6 PKESK.
+     * @param pubKey recipients public key
+     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
+        throws PGPException
+    {
+        // In V6, do not include the symmetric-key algorithm in the session-info
+        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
+        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
+
+        return encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, new byte[0]);
+    }
 
     protected static byte[] concatECDHEphKeyWithWrappedSessionKey(byte[] ephPubEncoding, byte[] wrappedSessionKey)
         throws IOException
