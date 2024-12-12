@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -22,6 +23,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -261,7 +263,9 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
         // wrap the padded session info using the shared-secret public key
-        return concatECDHEphKeyWithWrappedSessionKey(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, paddedSessionData));
+        // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
+        return  getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
+            .getEncoded(), (byte)0, getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, paddedSessionData));
     }
 
     /**
