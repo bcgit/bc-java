@@ -74,7 +74,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     }
 
     @Override
-    protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
+    protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] fullSessionInfo, byte[] sessionInfoToEncrypt, byte[] optSymAlgId)
         throws PGPException
     {
         try
@@ -98,7 +98,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
                     ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
-                    return encryptSessionInfoWithECDHKey(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
+                    return encryptSessionInfoWithECDHKey(sessionInfoToEncrypt, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
 
                 // LegacyX448
@@ -111,114 +111,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     byte[] ephPubEncoding = new byte[1 + X448PublicKeyParameters.KEY_SIZE];
                     ephPubEncoding[0] = X_HDR;
                     ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
-                    return encryptSessionInfoWithECDHKey(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
-                }
-
-                // Other ECDH curves
-                else
-                {
-                    AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new ECKeyPairGenerator(),
-                        new ECKeyGenerationParameters(((ECPublicKeyParameters)cryptoPublicKey).getParameters(), random));
-
-                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-                    agreement.init(ephKp.getPrivate());
-                    BigInteger S = agreement.calculateAgreement(cryptoPublicKey);
-                    byte[] secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
-
-                    byte[] ephPubEncoding = ((ECPublicKeyParameters)ephKp.getPublic()).getQ().getEncoded(false);
-
-                    return encryptSessionInfoWithECDHKey(sessionInfo, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
-                }
-            }
-
-            // X25519
-            else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
-            {
-                return encryptV3SessionInfoWithX25519X448Key(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
-                    new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random), new X25519Agreement(), cryptoPublicKey, X25519PublicKeyParameters.KEY_SIZE,
-                    new EphPubEncodingOperation()
-                    {
-                        @Override
-                        public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
-                        {
-                            ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
-                        }
-                    });
-            }
-
-            // X448
-            else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
-            {
-                return encryptV3SessionInfoWithX25519X448Key(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
-                    new X448KeyPairGenerator(), new X448KeyGenerationParameters(random), new X448Agreement(), cryptoPublicKey, X448PublicKeyParameters.KEY_SIZE,
-                    new EphPubEncodingOperation()
-                    {
-                        @Override
-                        public void getEphPubEncoding(AsymmetricKeyParameter publicKey, byte[] ephPubEncoding)
-                        {
-                            ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
-                        }
-                    });
-            }
-
-            // RSA / ElGamal etc.
-            else
-            {
-                AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(pubKey.getAlgorithm());
-
-                c.init(true, new ParametersWithRandom(cryptoPublicKey, random));
-
-                return c.processBlock(sessionInfo, 0, sessionInfo.length);
-            }
-        }
-        catch (Exception e)
-        {
-            throw new PGPException("exception encrypting session info: " + e.getMessage(), e);
-        }
-    }
-
-    protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
-            throws PGPException
-    {
-        // In V6, do not include the symmetric-key algorithm in the session-info
-        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
-        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
-
-        try
-        {
-            AsymmetricKeyParameter cryptoPublicKey = keyConverter.getPublicKey(pubKey);
-            PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
-
-            // ECDH
-            if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
-            {
-                ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
-                byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket, new BcKeyFingerprintCalculator());
-
-                // Legacy X25519
-                if (BcUtil.isX25519(ecPubKey.getCurveOID()))
-                {
-                    AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random));
-
-                    byte[] secret = BcUtil.getSecret(new X25519Agreement(), ephKp.getPrivate(), cryptoPublicKey);
-
-                    byte[] ephPubEncoding = new byte[1 + X25519PublicKeyParameters.KEY_SIZE];
-                    ephPubEncoding[0] = X_HDR;
-                    ((X25519PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
-                    return encryptSessionInfoWithECDHKey(sessionInfoWithoutAlgId, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
-                }
-
-                // LegacyX448
-                else if (ecPubKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
-                {
-                    AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new X448KeyPairGenerator(), new X448KeyGenerationParameters(random));
-
-                    byte[] secret = BcUtil.getSecret(new X448Agreement(), ephKp.getPrivate(), cryptoPublicKey);
-
-                    byte[] ephPubEncoding = new byte[1 + X448PublicKeyParameters.KEY_SIZE];
-                    ephPubEncoding[0] = X_HDR;
-                    ((X448PublicKeyParameters)ephKp.getPublic()).encode(ephPubEncoding, 1);
-                    return encryptSessionInfoWithECDHKey(sessionInfoWithoutAlgId, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
+                    return encryptSessionInfoWithECDHKey(sessionInfoToEncrypt, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
 
                 // Other ECDH curves
@@ -234,14 +127,14 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                     byte[] ephPubEncoding = ((ECPublicKeyParameters)ephKp.getPublic()).getQ().getEncoded(false);
 
-                    return encryptSessionInfoWithECDHKey(sessionInfoWithoutAlgId, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
+                    return encryptSessionInfoWithECDHKey(sessionInfoToEncrypt, secret, userKeyingMaterial, ephPubEncoding, ecPubKey.getHashAlgorithm(), ecPubKey.getSymmetricKeyAlgorithm());
                 }
             }
 
             // X25519
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
-                return encryptV6SessionInfoWithX25519X448Key(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
+                return encryptSessionInfoWithX25519X448Key(pubKeyPacket, fullSessionInfo, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128, "X25519",
                         new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random), new X25519Agreement(), cryptoPublicKey, X25519PublicKeyParameters.KEY_SIZE,
                         new EphPubEncodingOperation()
                         {
@@ -250,13 +143,14 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                             {
                                 ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
                             }
-                        });
+                        },
+                        optSymAlgId);
             }
 
             // X448
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
-                return encryptV6SessionInfoWithX25519X448Key(pubKeyPacket, sessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
+                return encryptSessionInfoWithX25519X448Key(pubKeyPacket, fullSessionInfo, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256, "X448",
                         new X448KeyPairGenerator(), new X448KeyGenerationParameters(random), new X448Agreement(), cryptoPublicKey, X448PublicKeyParameters.KEY_SIZE,
                         new EphPubEncodingOperation()
                         {
@@ -265,7 +159,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                             {
                                 ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
                             }
-                        });
+                        },
+                        optSymAlgId);
             }
 
             // RSA / ElGamal etc.
@@ -275,7 +170,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
                 c.init(true, new ParametersWithRandom(cryptoPublicKey, random));
 
-                return c.processBlock(sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
+                return c.processBlock(sessionInfoToEncrypt, 0, sessionInfoToEncrypt.length);
             }
         }
         catch (Exception e)
@@ -325,29 +220,19 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         return concatECDHEphKeyWithWrappedSessionKey(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
-    private byte[] encryptV3SessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
-                                                         AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
-                                                         int keySize, EphPubEncodingOperation ephPubEncodingOperation)
-        throws PGPException
-    {
-        AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);
-        byte[] secret = BcUtil.getSecret(agreement, ephKp.getPrivate(), cryptoPublicKey);
-        byte[] ephPubEncoding = new byte[keySize];
-        ephPubEncodingOperation.getEphPubEncoding(ephKp.getPublic(), ephPubEncoding);
-        KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
-            Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
-
-        //No checksum and padding
-        byte[] sessionKey = new byte[sessionInfo.length - 3];
-        System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
-
-        return getSessionInfo(ephPubEncoding, new byte[] {sessionInfo[0]}, getWrapper(symmetricKeyAlgorithm, key, sessionKey));
-    }
-
-    private byte[] encryptV6SessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket, byte[] sessionInfo, int hashAlgorithm, int symmetricKeyAlgorithm, String algorithmName,
-                                                         AsymmetricCipherKeyPairGenerator gen, KeyGenerationParameters parameters, RawAgreement agreement, AsymmetricKeyParameter cryptoPublicKey,
-                                                         int keySize, EphPubEncodingOperation ephPubEncodingOperation)
-        throws PGPException
+    private byte[] encryptSessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket,
+                                                       byte[] sessionInfo,
+                                                       int hashAlgorithm,
+                                                       int symmetricKeyAlgorithm,
+                                                       String algorithmName,
+                                                       AsymmetricCipherKeyPairGenerator gen,
+                                                       KeyGenerationParameters parameters,
+                                                       RawAgreement agreement,
+                                                       AsymmetricKeyParameter cryptoPublicKey,
+                                                       int keySize,
+                                                       EphPubEncodingOperation ephPubEncodingOperation,
+                                                       byte[] optSymAlgId)
+            throws PGPException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);
         byte[] secret = BcUtil.getSecret(agreement, ephKp.getPrivate(), cryptoPublicKey);
@@ -360,7 +245,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         byte[] sessionKey = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionKey, 0, sessionKey.length);
 
-        return getSessionInfo(ephPubEncoding, new byte[0], getWrapper(symmetricKeyAlgorithm, key, sessionKey));
+        return getSessionInfo(ephPubEncoding, optSymAlgId, getWrapper(symmetricKeyAlgorithm, key, sessionKey));
     }
 
     private byte[] getWrapper(int symmetricKeyAlgorithm, KeyParameter key, byte[] sessionData)
