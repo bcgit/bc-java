@@ -2,6 +2,8 @@ package org.bouncycastle.pqc.crypto.mlkem;
 
 import org.bouncycastle.util.Arrays;
 
+import java.util.StringJoiner;
+
 class PolyVec
 {
     Poly[] vec;
@@ -256,17 +258,11 @@ class PolyVec
 
     public String toString()
     {
-        StringBuffer out = new StringBuffer();
-        out.append("[");
+        final StringJoiner out = new StringJoiner(", ", "[", "]");
         for (int i = 0; i < kyberK; i++)
         {
-            out.append(vec[i].toString());
-            if (i != kyberK - 1)
-            {
-                out.append(", ");
-            }
+            out.add(vec[i].toString());
         }
-        out.append("]");
         return out.toString();
     }
 }

@@ -7,6 +7,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 
+import java.util.StringJoiner;
+
 public class CertificatePolicies
     extends ASN1Object
 {
@@ -112,16 +114,12 @@ public class CertificatePolicies
 
     public String toString()
     {
-        StringBuffer p = new StringBuffer();
-        for (int i = 0; i < policyInformation.length; i++)
+        final StringJoiner joiner = new StringJoiner(", ", "[", "]");
+        for (PolicyInformation p : policyInformation)
         {
-            if (p.length() != 0)
-            {
-                p.append(", ");
-            }
-            p.append(policyInformation[i]);
+            joiner.add(String.valueOf(p));
         }
 
-        return "CertificatePolicies: [" + p + "]";
+        return "CertificatePolicies: " + joiner;
     }
 }

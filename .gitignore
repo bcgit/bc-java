@@ -29,3 +29,9 @@ codesigning.jks
 /prov/src/main/core/
 
 bc-build.user.properties
+
+# files created during tests
+mail/compressed.message
+mail/encrypted.message
+mail/id.p12
+mail/signed.message
