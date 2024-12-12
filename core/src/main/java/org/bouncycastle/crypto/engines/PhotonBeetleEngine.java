@@ -270,13 +270,14 @@ public class PhotonBeetleEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -TAG_INBYTES));
+        return total - total % RATE_INBYTES;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return len + TAG_INBYTES;
+        return Math.max(0, len + message.size() + (forEncryption ? TAG_INBYTES : -TAG_INBYTES));
     }
 
     @Override

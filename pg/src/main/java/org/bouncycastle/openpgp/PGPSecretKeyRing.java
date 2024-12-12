@@ -492,6 +492,22 @@ public class PGPSecretKeyRing
         return keys.size();
     }
 
+    /**
+     * Return the OpenPGP certificate (Transferable Public Key) of this key.
+     *
+     * @return certificate
+     */
+    public PGPPublicKeyRing toCertificate()
+    {
+        List<PGPPublicKey> pubKeys = new ArrayList<PGPPublicKey>();
+        Iterator<PGPPublicKey> it = getPublicKeys();
+        while (it.hasNext())
+        {
+            pubKeys.add(it.next());
+        }
+        return new PGPPublicKeyRing(pubKeys);
+    }
+
     public byte[] getEncoded()
         throws IOException
     {
@@ -499,7 +515,8 @@ public class PGPSecretKeyRing
     }
 
     @Override
-    public byte[] getEncoded(PacketFormat format) throws IOException
+    public byte[] getEncoded(PacketFormat format)
+        throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
