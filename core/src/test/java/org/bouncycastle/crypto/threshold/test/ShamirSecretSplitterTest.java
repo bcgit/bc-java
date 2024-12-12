@@ -42,9 +42,9 @@ public class ShamirSecretSplitterTest
         SecureRandom random = new SecureRandom();
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
-        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, m, n, random);//, secretshare);
+        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, random);
 
-        ShamirSplitSecret splitSecret = splitter.split();
+        ShamirSplitSecret splitSecret = splitter.split(m, n);
         ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
@@ -52,7 +52,7 @@ public class ShamirSecretSplitterTest
         byte[] secret1 = splitSecret1.getSecret();
 
 
-        ShamirSplitSecret splitSecret2 = splitter.resplit(secret1);
+        ShamirSplitSecret splitSecret2 = splitter.resplit(secret1, m, n);
         ShamirSplitSecretShare[] secretShares2 = splitSecret2.getSecretShares();
         ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares2[0], secretShares2[1], secretShares2[2]};
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
@@ -62,7 +62,6 @@ public class ShamirSecretSplitterTest
         Assert.assertArrayEquals(secret1, secret3);
         Assert.assertFalse(Arrays.areEqual(Arrays.concatenate(secretShares[0].getEncoded(), secretShares[1].getEncoded(), secretShares[2].getEncoded()),
             Arrays.concatenate(secretShares2[0].getEncoded(), secretShares2[1].getEncoded(), secretShares2[2].getEncoded())));
-
     }
 
     public void testShamirSecretMultipleDivide()
@@ -72,9 +71,9 @@ public class ShamirSecretSplitterTest
         SecureRandom random = new SecureRandom();
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
-        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, m, n, random);//, secretshare);
+        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, random);
 
-        ShamirSplitSecret splitSecret = splitter.split();
+        ShamirSplitSecret splitSecret = splitter.split(m, n);
         ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
@@ -110,14 +109,14 @@ public class ShamirSecretSplitterTest
         int l = 9, m = 3, n = 9;
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
-        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, m, n, new SecureRandom());//, secretshare);
+        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, new SecureRandom());
         byte[] seed = Hex.decode("010203040506070809");
         //SecureRandom random = new SecureRandom();
 
         //random.nextBytes(seed);
         //System.out.println(Hex.decode(seed));
         ShamirSplitSecretShare ss = new ShamirSplitSecretShare(seed);
-        ShamirSplitSecret splitSecret = splitter.splitAround(ss);
+        ShamirSplitSecret splitSecret = splitter.splitAround(ss, m, n);
         ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
         Assert.assertArrayEquals(secretShares[0].getEncoded(), seed);
 
@@ -154,8 +153,8 @@ public class ShamirSecretSplitterTest
         int l = 9, m = 3, n = 9;
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
-        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, m, n, new SecureRandom());//, secretshare);
-        ShamirSplitSecret splitSecret = splitter.split(); //integers  multiply/ divide
+        ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, new SecureRandom());//, secretshare);
+        ShamirSplitSecret splitSecret = splitter.split(m, n); //integers  multiply/ divide
         ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
@@ -955,7 +954,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Native, l, m, n, random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Native, l, random);
             }
 
             @Override
@@ -970,7 +969,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Table, l, m, n, random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Table, l,  random);
             }
 
             @Override
@@ -985,7 +984,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Native, l, m, n, random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Native, l, random);
             }
 
             @Override
@@ -1000,7 +999,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Table, l, m, n, random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Table, l,random);
             }
 
             @Override
@@ -1015,27 +1014,27 @@ public class ShamirSecretSplitterTest
         throws IOException
     {
         ShamirSecretSplitter splitter = polynomialFactory.newInstance(5, 2, 2, getSecureRandom(TV011B_TV1_SR));
-        testMatrixMultiplication(splitter, TV011B_TV1_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV1_SPLITS, 2, 2);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011B_TV1_1_2_SPLITS)), TV011B_TV1_SECRET);
         splitter = polynomialFactory.newInstance(5, 2, 4, getSecureRandom(TV011B_TV2_SR));
-        testMatrixMultiplication(splitter, TV011B_TV2_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV2_SPLITS, 2, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011B_TV2_1_2_SPLITS)), TV011B_TV2_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 4}, TV011B_TV2_1_4_SPLITS)), TV011B_TV2_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{3, 4}, TV011B_TV2_3_4_SPLITS)), TV011B_TV2_SECRET);
         splitter = polynomialFactory.newInstance(5, 3, 4, getSecureRandom(TV011B_TV3_SR));
-        testMatrixMultiplication(splitter, TV011B_TV3_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV3_SPLITS, 3, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3}, TV011B_TV3_1_2_3_SPLITS)), TV011B_TV3_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 4}, TV011B_TV3_1_2_4_SPLITS)), TV011B_TV3_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 3, 4}, TV011B_TV3_1_3_4_SPLITS)), TV011B_TV3_SECRET);
         splitter = polynomialFactory.newInstance(5, 4, 4, getSecureRandom(TV011B_TV4_SR));
-        testMatrixMultiplication(splitter, TV011B_TV4_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV4_SPLITS, 4, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3, 4}, TV011B_TV4_1_2_3_4_SPLITS)), TV011B_TV4_SECRET);
         splitter = polynomialFactory.newInstance(9, 2, 9, getSecureRandom(TV011B_TV5_SR));
-        testMatrixMultiplication(splitter, TV011B_TV5_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV5_SPLITS, 2, 9);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011B_TV5_1_2_SPLITS)), TV011B_TV5_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{8, 9}, TV011B_TV5_8_9_SPLITS)), TV011B_TV5_SECRET);
         splitter = polynomialFactory.newInstance(15, 3, 5, getSecureRandom(TV011B_TV6_SR));
-        testMatrixMultiplication(splitter, TV011B_TV6_SPLITS);
+        testMatrixMultiplication(splitter, TV011B_TV6_SPLITS, 3, 5);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3}, TV011B_TV6_1_2_3_SPLITS)), TV011B_TV6_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{2, 3, 4}, TV011B_TV6_2_3_4_SPLITS)), TV011B_TV6_SECRET);
     }
@@ -1044,27 +1043,27 @@ public class ShamirSecretSplitterTest
         throws IOException
     {
         ShamirSecretSplitter poly = polynomialFactory.newInstance(5, 2, 2, getSecureRandom(TV011D_TV1_SR));
-        testMatrixMultiplication(poly, TV011D_TV1_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV1_SPLITS, 2, 2);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011D_TV1_1_2_SPLITS)), TV011D_TV1_SECRET);
         poly = polynomialFactory.newInstance(5, 2, 4, getSecureRandom(TV011D_TV2_SR));
-        testMatrixMultiplication(poly, TV011D_TV2_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV2_SPLITS, 2, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011D_TV2_1_2_SPLITS)), TV011D_TV2_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 4}, TV011D_TV2_1_4_SPLITS)), TV011D_TV2_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{3, 4}, TV011D_TV2_3_4_SPLITS)), TV011D_TV2_SECRET);
         poly = polynomialFactory.newInstance(5, 3, 4, getSecureRandom(TV011D_TV3_SR));
-        testMatrixMultiplication(poly, TV011D_TV3_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV3_SPLITS, 3, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3}, TV011D_TV3_1_2_3_SPLITS)), TV011D_TV3_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 4}, TV011D_TV3_1_2_4_SPLITS)), TV011D_TV3_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 3, 4}, TV011D_TV3_1_3_4_SPLITS)), TV011D_TV3_SECRET);
         poly = polynomialFactory.newInstance(5, 4, 4, getSecureRandom(TV011D_TV4_SR));
-        testMatrixMultiplication(poly, TV011D_TV4_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV4_SPLITS, 4, 4);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3, 4}, TV011D_TV4_1_2_3_4_SPLITS)), TV011D_TV4_SECRET);
         poly = polynomialFactory.newInstance(9, 2, 9, getSecureRandom(TV011D_TV5_SR));
-        testMatrixMultiplication(poly, TV011D_TV5_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV5_SPLITS, 2, 9);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2}, TV011D_TV5_1_2_SPLITS)), TV011D_TV5_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{8, 9}, TV011D_TV5_8_9_SPLITS)), TV011D_TV5_SECRET);
         poly = polynomialFactory.newInstance(15, 3, 5, getSecureRandom(TV011D_TV6_SR));
-        testMatrixMultiplication(poly, TV011D_TV6_SPLITS);
+        testMatrixMultiplication(poly, TV011D_TV6_SPLITS, 3, 5);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{1, 2, 3}, TV011D_TV6_1_2_3_SPLITS)), TV011D_TV6_SECRET);
         testRecombine(polynomialFactory.newInstance(getShamirSplitSecretShareArray(new int[]{2, 3, 4}, TV011D_TV6_2_3_4_SPLITS)), TV011D_TV6_SECRET);
     }
@@ -1092,10 +1091,10 @@ public class ShamirSecretSplitterTest
         return secretShares;
     }
 
-    static void testMatrixMultiplication(ShamirSecretSplitter poly, byte[][] splits)
+    static void testMatrixMultiplication(ShamirSecretSplitter poly, byte[][] splits, int m, int n)
         throws IOException
     {
-        ShamirSplitSecretShare[] secretShares = poly.split().getSecretShares();
+        ShamirSplitSecretShare[] secretShares = poly.split(m, n).getSecretShares();
         byte[][] result = new byte[splits.length][splits[0].length];
         for (int i = 0; i < result.length; ++i)
         {
