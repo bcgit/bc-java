@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.threshold;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 
 public class ShamirSecretSplitter
@@ -68,7 +69,7 @@ public class ShamirSecretSplitter
         byte[][] sr = new byte[m][l];
         ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
         int i;
-        for (i = 0; i < m; ++i)
+        for (i = 0; i < m; i++)
         {
             random.nextBytes(sr[i]);
         }
@@ -76,6 +77,37 @@ public class ShamirSecretSplitter
         {
             secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
         }
+        return new ShamirSplitSecret(poly, secretShares);
+    }
+
+    @Override
+    public ShamirSplitSecret splitAround(SecretShare s)
+        throws IOException
+    {
+        byte[][] sr = new byte[m][l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
+        byte[] ss0 = s.getEncoded();
+        secretShares[0] = new ShamirSplitSecretShare(ss0, 1);
+        int i, j;
+        byte tmp;
+        for (i = 0; i < m; i++)
+        {
+            random.nextBytes(sr[i]);
+        }
+        for (i = 0; i < l; i++)
+        {
+            tmp = sr[1][i];
+            for (j = 2; j < m; j++)
+            {
+                tmp ^= sr[j][i];
+            }
+            sr[0][i] = (byte)(tmp ^ ss0[i]);
+        }
+        for (i = 1; i < p.length; i++)
+        {
+            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
+        }
+
         return new ShamirSplitSecret(poly, secretShares);
     }
 }
