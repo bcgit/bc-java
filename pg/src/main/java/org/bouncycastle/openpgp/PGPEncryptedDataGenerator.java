@@ -394,7 +394,7 @@ public class PGPEncryptedDataGenerator
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
-            pOut.writePacket(mGen.generateV3(defAlgorithm, sessionInfo));
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
@@ -423,7 +423,7 @@ public class PGPEncryptedDataGenerator
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
-            pOut.writePacket(mGen.generateV3(defAlgorithm, sessionInfo));
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
