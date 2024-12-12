@@ -16,6 +16,7 @@ import org.bouncycastle.openpgp.PGPPadding;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.VerifyingInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,6 +135,7 @@ public class OpenPGPMessageInputStream
                     PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) next;
                     OpenPGPMessageProcessor.Decrypted decrypted = processor.decrypt(encryptedDataList);
                     InputStream decryptedIn = decrypted.inputStream;
+                    VerifyingInputStream verifyIn = new VerifyingInputStream(decryptedIn, decrypted.esk);
                     resultBuilder.encrypted(decrypted);
                     InputStream decodeIn = BCPGInputStream.wrap(decryptedIn);
                     PGPObjectFactory decFac = implementation.pgpObjectFactory(decodeIn);
@@ -533,9 +535,9 @@ public class OpenPGPMessageInputStream
             this.decryptionKey = decrypted.decryptionKey;
             this.decryptionPassphrase = decrypted.decryptionPassphrase;
             this.sessionKey = decrypted.sessionKey;
-            if (decrypted.dataPacket instanceof SymmetricEncIntegrityPacket)
+            if (decrypted.esk.getEncData() instanceof SymmetricEncIntegrityPacket)
             {
-                SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) decrypted.dataPacket;
+                SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) decrypted.esk.getEncData();
                 if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_2)
                 {
                     encryption = MessageEncryptionMechanism.aead(
@@ -546,13 +548,13 @@ public class OpenPGPMessageInputStream
                     encryption = MessageEncryptionMechanism.integrityProtected(sessionKey.getAlgorithm());
                 }
             }
-            else if (decrypted.dataPacket instanceof AEADEncDataPacket)
+            else if (decrypted.esk.getEncData() instanceof AEADEncDataPacket)
             {
                 encryption = MessageEncryptionMechanism.librePgp(sessionKey.getAlgorithm());
             }
             else
             {
-                throw new RuntimeException("Unexpected encrypted data packet type: " + decrypted.dataPacket.getClass().getName());
+                throw new RuntimeException("Unexpected encrypted data packet type: " + decrypted.esk.getClass().getName());
             }
         }
     }

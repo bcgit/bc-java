@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
@@ -35,7 +36,8 @@ public class OpenPGPDetachedSignatureProcessor
             throws IOException
     {
         InputStream decoderStream = PGPUtil.getDecoderStream(inputStream);
-        PGPObjectFactory objFac = implementation.pgpObjectFactory(decoderStream);
+        BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
+        PGPObjectFactory objFac = implementation.pgpObjectFactory(pIn);
         Object next;
         while ((next = objFac.nextObject()) != null)
         {
@@ -46,6 +48,11 @@ public class OpenPGPDetachedSignatureProcessor
                 {
                     pgpSignatures.add(signature);
                 }
+            }
+            else if (next instanceof PGPSignature)
+            {
+                PGPSignature signature = (PGPSignature) next;
+                pgpSignatures.add(signature);
             }
         }
         return this;

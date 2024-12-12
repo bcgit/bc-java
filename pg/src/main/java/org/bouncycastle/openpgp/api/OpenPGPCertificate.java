@@ -781,7 +781,16 @@ public class OpenPGPCertificate
          */
         public OpenPGPSignatureChains getSignatureChains()
         {
-            return getCertificate().getAllSignatureChainsFor(this);
+            OpenPGPSignatureChains chains = getCertificate().getAllSignatureChainsFor(this);
+            if (getPublicComponent() instanceof OpenPGPPrimaryKey)
+            {
+                OpenPGPPrimaryKey pk = (OpenPGPPrimaryKey) getPublicComponent();
+                if (!pk.getUserIDs().isEmpty())
+                {
+                    chains.addAll(getCertificate().getAllSignatureChainsFor(pk.getUserIDs().get(0)));
+                }
+            }
+            return chains;
         }
 
         /**

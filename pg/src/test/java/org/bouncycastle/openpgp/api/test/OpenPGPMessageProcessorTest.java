@@ -43,6 +43,8 @@ public class OpenPGPMessageProcessorTest
     public void performTest()
             throws Exception
     {
+        testVerificationOfSEIPD1MessageWithTamperedCiphertext();
+
         roundtripUnarmoredPlaintextMessage();
         roundtripArmoredPlaintextMessage();
         roundTripCompressedMessage();
@@ -655,6 +657,29 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageInputStream.Result result = in.getResult();
         OpenPGPSignature.OpenPGPDocumentSignature sig = result.getSignatures().get(0);
         isFalse(sig.isValid());
+    }
+
+    private void testVerificationOfSEIPD1MessageWithTamperedCiphertext() throws IOException, PGPException {
+        String MSG = "-----BEGIN PGP MESSAGE-----\n" +
+                "\n" +
+                "wcDMA3wvqk35PDeyAQwAsQZU7mGUrxAmETLOel7uIyFM4LARZh9GcR/9V6gzEE+x\n" +
+                "4nVIHd16L77TN8w0WobUqdxHTAbh6iSGY3nkd+s8lo8f+bxzptpSSUCE3YFeQcnb\n" +
+                "fNhB2y4xeCLDBL7eEzNZXi8ovz6Hyx/VnZ0/GPmKk+1ilze8Q6S5E6tCYFSEXd9D\n" +
+                "IKNyYV8OtjFV6qBJHBY0TgWALKK7Xan0PoB0ZM5Azb3nE6TGvkicLd3gKcKuo+jq\n" +
+                "xx8Rrq3D8DvaR8ieQQQzcRB1WxDDzUS1LBeqShdCzY5F4fUcnXyRb8e2dPc/1uYy\n" +
+                "EYCODPBOEvseZIrToScb3VHWArQRRZXVsYE5x85rWusEy9YfXyUXvVCZtCSgQVmp\n" +
+                "MDEM3QPWsUgF9ijDKgBAIwvjTxSF+sdlYWof2lSGq4FcdML7hmqp74JoJKLqbNxE\n" +
+                "O2eqbw8CxNyMjEK7DXzeGt5cVbYvIWjPvKY83OmMZdyP3DFzbquqiWOAb0x/T+mV\n" +
+                "irzkUPg2nmKHdAyMqpKY0kwBxWqYCIWLUYLAjQt63FVg7zxjMMY8vhlZd7+o4dsb\n" +
+                "OXlBenyffXJbGIih8SWviOIO7yDz0VuJP5dYLC2FeGlrYilt7wfUcNjhMH6w\n" +
+                "=T9pP\n" +
+                "-----END PGP MESSAGE-----\n";
+        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY);
+        OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
+        processor.addDecryptionKey(key);
+        OpenPGPMessageInputStream oIn = processor.process(new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8)));
+        Streams.drain(oIn);
+        oIn.close();
     }
 
     public static void main(String[] args)
