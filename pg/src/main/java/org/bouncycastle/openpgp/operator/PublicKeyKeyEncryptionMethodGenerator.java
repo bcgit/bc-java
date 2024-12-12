@@ -17,10 +17,11 @@ import java.math.BigInteger;
  * The purpose of this class is to allow subclasses to decide, which implementation to use.
  */
 public abstract class PublicKeyKeyEncryptionMethodGenerator
-    extends PGPKeyEncryptionMethodGenerator
+    implements PGPKeyEncryptionMethodGenerator
 {
     public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
-    public static final long WILDCARD = 0L;
+    public static final long WILDCARD_KEYID = 0L;
+    public static final byte[] WILDCARD_FINGERPRINT = new byte[0];
 
     private static boolean getSessionKeyObfuscationDefault()
     {
@@ -28,10 +29,10 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return !Properties.isOverrideSetTo(SESSION_KEY_OBFUSCATION_PROPERTY, false);
     }
 
-    private PGPPublicKey pubKey;
+    private final PGPPublicKey pubKey;
 
     protected boolean sessionKeyObfuscation;
-    protected boolean useWildcardKeyID;
+    protected boolean useWildcardRecipient;
 
     protected PublicKeyKeyEncryptionMethodGenerator(
         PGPPublicKey pubKey)
@@ -67,7 +68,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     /**
      * Controls whether to obfuscate the size of ECDH session keys using extra padding where necessary.
      * <p>
-     * The default behaviour can be configured using the system property "", or else it will default to enabled.
+     * The default behaviour can be configured using the system property
+     * "org.bouncycastle.openpgp.session_key_obfuscation", or else it will default to enabled.
      * </p>
      *
      * @return the current generator.
@@ -80,19 +82,32 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     }
 
     /**
-     * Controls whether the recipient key ID is hidden (replaced by a wildcard ID <pre>0</pre>).
+     * Controls whether the recipient key ID/fingerprint is hidden (replaced by a wildcard value).
+     *
+     * @param enabled boolean
+     * @return this
+     * @deprecated use {@link #setUseWildcardRecipient(boolean)} instead
+     * TODO: Remove in a future release
+     */
+    @Deprecated
+    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardKeyID(boolean enabled)
+    {
+        return setUseWildcardRecipient(enabled);
+    }
+
+    /**
+     * Controls whether the recipient key ID/fingerprint is hidden (replaced by a wildcard value).
      *
      * @param enabled boolean
      * @return this
      */
-    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardKeyID(boolean enabled)
+    public PublicKeyKeyEncryptionMethodGenerator setUseWildcardRecipient(boolean enabled)
     {
-        this.useWildcardKeyID = enabled;
-
+        this.useWildcardRecipient = enabled;
         return this;
     }
 
-    public byte[][] processSessionInfo(
+    public byte[][] encodeEncryptedSessionInfo(
         byte[] encryptedSessionInfo)
         throws PGPException
     {
@@ -145,59 +160,150 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    public ContainedPacket generate(int encAlgorithm, byte[] sessionInfo)
-        throws PGPException
+    /**
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 3.
+     * PKESKv3 packets are used with Symmetrically-Encrypted-Integrity-Protected Data (SEIPD) packets of
+     * version 1 or with Symmetrically-Encrypted Data (SED) packets and MUST NOT be used with SEIPDv2 packets.
+     * PKESKv3 packets are used with keys that do not support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}
+     * or as a fallback.
+     *
+     * @param sessionInfo session-key algorithm + session-key + checksum
+     * @return version 3 PKESK packet
+     *
+     * @throws PGPException
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
+     *     RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
+     */
+    public ContainedPacket generateV3(byte[] sessionInfo)
+            throws PGPException
     {
         long keyId;
-        if (useWildcardKeyID)
+        if (useWildcardRecipient)
         {
-            keyId = WILDCARD;
+            keyId = WILDCARD_KEYID;
         }
         else
         {
             keyId = pubKey.getKeyID();
         }
-        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), processSessionInfo(encryptSessionInfo(pubKey, sessionInfo)));
+        byte[] encryptedSessionInfo = encryptSessionInfoV3(pubKey, sessionInfo);
+        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
-    @Override
-    public ContainedPacket generateV5(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
+    /**
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 6.
+     * PKESKv6 packets are used with Symmetrically-Encrypted Integrity-Protected Data (SEIPD) packets
+     * of version 2 only.
+     * PKESKv6 packets are used with keys that support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}.
+     *
+     * @param sessionInfo session-key algorithm id + session-key + checksum
+     * @return PKESKv6 packet
+     *
+     * @throws PGPException if the PKESK packet cannot be generated
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
+     *     RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
+     */
+    public ContainedPacket generateV6(byte[] sessionInfo)
         throws PGPException
     {
-        // TODO: Implement
-        return null;
+        byte[] keyFingerprint;
+        int keyVersion;
+        if (useWildcardRecipient)
+        {
+            keyFingerprint = WILDCARD_FINGERPRINT;
+            keyVersion = 0;
+        }
+        else
+        {
+            keyFingerprint = pubKey.getFingerprint();
+            keyVersion = pubKey.getVersion();
+        }
+        byte[] encryptedSessionInfo = encryptSessionInfoV6(pubKey, sessionInfo);
+        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+        return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
-    @Override
-    public ContainedPacket generateV6(int encAlgorithm, int aeadAlgorithm, byte[] sessionInfo)
-        throws PGPException
-    {
-        // TODO: Implement
-        return null;
-    }
-
-    abstract protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionInfo)
+    /**
+     * Encrypt a session key using the recipients public key.
+     * @param pubKey recipients public key
+     * @param fullSessionInfo full session info (sym-alg-id + session-key + 2 octet checksum)
+     * @param sessionInfoToEncrypt for v3: full session info; for v6: just the session-key
+     * @param optSymAlgId for v3: session key algorithm ID; for v6: empty array
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected abstract byte[] encryptSessionInfo(PGPPublicKey pubKey,
+                                                 byte[] fullSessionInfo,
+                                                 byte[] sessionInfoToEncrypt,
+                                                 byte[] optSymAlgId)
         throws PGPException;
 
-    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] c)
-        throws IOException
+    /**
+     * Encrypt a session key for a v3 PKESK.
+     * @param pubKey recipients public key
+     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
+        throws PGPException
     {
-        byte[] VB = new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded();
-
-        byte[] rv = new byte[VB.length + 1 + c.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)c.length;
-        System.arraycopy(c, 0, rv, VB.length + 1, c.length);
-        return rv;
+        return encryptSessionInfo(pubKey, sessionInfo, sessionInfo, new byte[]{sessionInfo[0]});
     }
 
-    protected static byte[] getSessionInfo(byte[] VB, int sysmmetricKeyAlgorithm, byte[] c)
+    /**
+     * Encrypt a session key for a v6 PKESK.
+     * @param pubKey recipients public key
+     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
+     * @return encrypted session info
+     * @throws PGPException
+     */
+    protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
+        throws PGPException
     {
-        byte[] rv = new byte[VB.length + 2 + c.length];
-        System.arraycopy(VB, 0, rv, 0, VB.length);
-        rv[VB.length] = (byte)(c.length + 1);
-        rv[VB.length + 1] = (byte)sysmmetricKeyAlgorithm;
-        System.arraycopy(c, 0, rv, VB.length + 2, c.length);
-        return rv;
+        // In V6, do not include the symmetric-key algorithm in the session-info
+        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
+        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
+
+        return encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, new byte[0]);
+    }
+
+    protected static byte[] concatECDHEphKeyWithWrappedSessionKey(byte[] ephPubEncoding, byte[] wrappedSessionKey)
+        throws IOException
+    {
+        // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
+
+        byte[] mpiEncodedEphemeralKey = new MPInteger(new BigInteger(1, ephPubEncoding))
+                .getEncoded();
+        byte[] out = new byte[mpiEncodedEphemeralKey.length + 1 + wrappedSessionKey.length];
+        // eph key
+        System.arraycopy(mpiEncodedEphemeralKey, 0, out, 0, mpiEncodedEphemeralKey.length);
+        // enc session-key len
+        out[mpiEncodedEphemeralKey.length] = (byte) wrappedSessionKey.length;
+        // enc session-key
+        System.arraycopy(wrappedSessionKey, 0, out, mpiEncodedEphemeralKey.length + 1, wrappedSessionKey.length);
+
+        return out;
+    }
+
+    private static byte[] getSessionInfo(byte[] ephPubEncoding, int symmetricKeyAlgorithm, byte[] c)
+    {
+        return getSessionInfo(ephPubEncoding, new byte[]{(byte) symmetricKeyAlgorithm}, c);
+    }
+
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] optSymKeyAlgorithm, byte[] wrappedSessionKey)
+    {
+        int len = ephPubEncoding.length + 1 + optSymKeyAlgorithm.length + wrappedSessionKey.length;
+        byte[] out = new byte[len];
+        // ephemeral pub key
+        System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
+        // len of two/one next fields
+        out[ephPubEncoding.length] = (byte) (wrappedSessionKey.length + optSymKeyAlgorithm.length);
+        // (optional) sym key alg
+        System.arraycopy(optSymKeyAlgorithm, 0, out, ephPubEncoding.length + 1, optSymKeyAlgorithm.length);
+        // wrapped session key
+        System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1 + optSymKeyAlgorithm.length, wrappedSessionKey.length);
+        return out;
     }
 }

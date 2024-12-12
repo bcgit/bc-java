@@ -337,7 +337,20 @@ public class SymmetricKeyEncSessionPacket
                 pOut.write(secKeyData);
             }
         }
-        else if (version == VERSION_5 || version == VERSION_6)
+        else if (version == VERSION_5)
+        {
+            pOut.write(encAlgorithm);
+            pOut.write(aeadAlgorithm);
+            pOut.writeObject(s2k);
+            pOut.write(iv);
+
+            if (secKeyData != null && secKeyData.length > 0)
+            {
+                pOut.write(secKeyData);
+            }
+            pOut.write(authTag);
+        }
+        else if (version == VERSION_6)
         {
             int s2kLen = s2k.getEncoded().length;
             int count = 1 + 1 + 1 + s2kLen + iv.length;
