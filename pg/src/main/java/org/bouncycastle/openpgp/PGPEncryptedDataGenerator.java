@@ -394,14 +394,14 @@ public class PGPEncryptedDataGenerator
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
-            pOut.writePacket(mGen.generateV3(defAlgorithm, sessionInfo));
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
     /**
      * Write out a {@link org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket#VERSION_5 v5 SKESK} or
      * {@link org.bouncycastle.bcpg.PublicKeyEncSessionPacket#VERSION_3 v3 PKESK} packet,
-     * depending on the method generator. This method is used by what can be referred to as OpenPGP v5.
+     * depending on the method generator. This method is used by LibrePGP only.
      *
      * @param m           session key encryption method generator.
      * @param sessionInfo session info
@@ -423,7 +423,7 @@ public class PGPEncryptedDataGenerator
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
-            pOut.writePacket(mGen.generateV3(defAlgorithm, sessionInfo));
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
