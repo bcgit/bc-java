@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -217,7 +218,9 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         byte[] paddedSessionData = PGPPad.padSessionData(sessionInfo, sessionKeyObfuscation);
 
         // wrap the padded session info using the shared-secret public key
-        return concatECDHEphKeyWithWrappedSessionKey(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
+        // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
+        return getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
+            .getEncoded(), (byte)0, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
     private byte[] encryptSessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket,

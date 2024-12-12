@@ -221,33 +221,14 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
                                                  byte optSymAlgId)
         throws PGPException;
 
-
-    protected static byte[] concatECDHEphKeyWithWrappedSessionKey(byte[] ephPubEncoding, byte[] wrappedSessionKey)
-        throws IOException
-    {
-        // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
-
-        byte[] mpiEncodedEphemeralKey = new MPInteger(new BigInteger(1, ephPubEncoding))
-            .getEncoded();
-        byte[] out = new byte[mpiEncodedEphemeralKey.length + 1 + wrappedSessionKey.length];
-        // eph key
-        System.arraycopy(mpiEncodedEphemeralKey, 0, out, 0, mpiEncodedEphemeralKey.length);
-        // enc session-key len
-        out[mpiEncodedEphemeralKey.length] = (byte)wrappedSessionKey.length;
-        // enc session-key
-        System.arraycopy(wrappedSessionKey, 0, out, mpiEncodedEphemeralKey.length + 1, wrappedSessionKey.length);
-
-        return out;
-    }
-
     protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte optSymKeyAlgorithm, byte[] wrappedSessionKey)
     {
-        int len = ephPubEncoding.length  + wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 2 : 1);
+        int len = ephPubEncoding.length + wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 2 : 1);
         byte[] out = new byte[len];
         // ephemeral pub key
         System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
         // len of two/one next fields
-        out[ephPubEncoding.length] = (byte)(wrappedSessionKey.length + 1);
+        out[ephPubEncoding.length] = (byte)(wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 1 : 0));
         // (optional) sym key alg
         if (optSymKeyAlgorithm != 0)
         {
@@ -255,7 +236,6 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
         // wrapped session key
         System.arraycopy(wrappedSessionKey, 0, out, len - wrappedSessionKey.length, wrappedSessionKey.length);
-
         return out;
     }
 }
