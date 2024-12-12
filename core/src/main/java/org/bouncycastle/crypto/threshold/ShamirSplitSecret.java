@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.threshold;
 
+import java.io.IOException;
+
 public class ShamirSplitSecret
     implements SplitSecret
 {
@@ -18,22 +20,25 @@ public class ShamirSplitSecret
         this.poly = poly;
     }
 
-    public ShamirSplitSecretShare[] getSecretShare()
+    public ShamirSplitSecretShare[] getSecretShares()
     {
         return secretShares;
     }
 
+    //internal TODO: multiple/divide
+
     @Override
     public byte[] recombine()
+        throws IOException
     {
         int n = secretShares.length;
         byte[] r = new byte[n];
         byte tmp;
         byte[] products = new byte[n - 1];
-        byte[][] splits = new byte[n][secretShares[0].getSecretShare().length];
+        byte[][] splits = new byte[n][secretShares[0].getEncoded().length];
         for (int i = 0; i < n; i++)
         {
-            splits[i] = secretShares[i].getSecretShare();
+            splits[i] = secretShares[i].getEncoded();
             tmp = 0;
             for (int j = 0; j < n; j++)
             {

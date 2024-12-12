@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.threshold;
 
+import java.io.IOException;
+
 /**
  * Secret sharing (also called secret splitting) refers to methods for distributing a secret among a group.
  * In this process, no individual holds any intelligible information about the secret.
@@ -13,4 +15,7 @@ public interface SecretSplitter
      * @return An array of {@code byte[][]} representing the generated secret shares for m users with l bytes each.
      */
     SplitSecret split();
+
+    SplitSecret splitAround(SecretShare s)
+        throws IOException;
 }

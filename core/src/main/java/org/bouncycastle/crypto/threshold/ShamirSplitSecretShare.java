@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.threshold;
 
+import java.io.IOException;
+
 import org.bouncycastle.util.Arrays;
 
 public class ShamirSplitSecretShare
@@ -14,8 +16,16 @@ public class ShamirSplitSecretShare
         this.r = r;
     }
 
-    public byte[] getSecretShare()
+    public ShamirSplitSecretShare(byte[] secretShare)
     {
-        return secretShare;
+        this.secretShare = Arrays.clone(secretShare);
+        this.r = 1;
+    }
+
+    @Override
+    public byte[] getEncoded()
+        throws IOException
+    {
+        return Arrays.clone(secretShare);
     }
 }
