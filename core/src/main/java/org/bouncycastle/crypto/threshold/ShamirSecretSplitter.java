@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.threshold;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+import org.bouncycastle.util.Arrays;
+
 public class ShamirSecretSplitter
     implements SecretSplitter
 {
@@ -110,4 +112,24 @@ public class ShamirSecretSplitter
 
         return new ShamirSplitSecret(poly, secretShares);
     }
+
+    @Override
+    public ShamirSplitSecret resplit(byte[] secret)
+    {
+        byte[][] sr = new byte[m][l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
+        sr[0] = secret;
+        int i;
+        for (i = 1; i < m; i++)
+        {
+            random.nextBytes(sr[i]);
+        }
+        for (i = 0; i < p.length; i++)
+        {
+            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
+        }
+        return new ShamirSplitSecret(poly, secretShares);
+    }
+
+
 }
