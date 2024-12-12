@@ -22,6 +22,36 @@ public class VerifyingInputStream
     }
 
     @Override
+    public int read() throws IOException {
+        int i = in.read();
+        if (i == -1)
+        {
+            close();
+        }
+        return i;
+    }
+
+    @Override
+    public int read(byte[] b) throws IOException {
+        int r = in.read(b);
+        if (r == -1)
+        {
+            close();
+        }
+        return r;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        int r = in.read(b, off, len);
+        if (r == -1)
+        {
+            close();
+        }
+        return r;
+    }
+
+    @Override
     public void close()
             throws IOException
     {

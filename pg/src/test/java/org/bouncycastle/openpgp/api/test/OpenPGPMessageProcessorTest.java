@@ -659,21 +659,23 @@ public class OpenPGPMessageProcessorTest
         isFalse(sig.isValid());
     }
 
-    private void testVerificationOfSEIPD1MessageWithTamperedCiphertext() throws IOException, PGPException {
+    private void testVerificationOfSEIPD1MessageWithTamperedCiphertext()
+            throws IOException, PGPException
+    {
         String MSG = "-----BEGIN PGP MESSAGE-----\n" +
                 "\n" +
-                "wcDMA3wvqk35PDeyAQwAsQZU7mGUrxAmETLOel7uIyFM4LARZh9GcR/9V6gzEE+x\n" +
-                "4nVIHd16L77TN8w0WobUqdxHTAbh6iSGY3nkd+s8lo8f+bxzptpSSUCE3YFeQcnb\n" +
-                "fNhB2y4xeCLDBL7eEzNZXi8ovz6Hyx/VnZ0/GPmKk+1ilze8Q6S5E6tCYFSEXd9D\n" +
-                "IKNyYV8OtjFV6qBJHBY0TgWALKK7Xan0PoB0ZM5Azb3nE6TGvkicLd3gKcKuo+jq\n" +
-                "xx8Rrq3D8DvaR8ieQQQzcRB1WxDDzUS1LBeqShdCzY5F4fUcnXyRb8e2dPc/1uYy\n" +
-                "EYCODPBOEvseZIrToScb3VHWArQRRZXVsYE5x85rWusEy9YfXyUXvVCZtCSgQVmp\n" +
-                "MDEM3QPWsUgF9ijDKgBAIwvjTxSF+sdlYWof2lSGq4FcdML7hmqp74JoJKLqbNxE\n" +
-                "O2eqbw8CxNyMjEK7DXzeGt5cVbYvIWjPvKY83OmMZdyP3DFzbquqiWOAb0x/T+mV\n" +
-                "irzkUPg2nmKHdAyMqpKY0kwBxWqYCIWLUYLAjQt63FVg7zxjMMY8vhlZd7+o4dsb\n" +
-                "OXlBenyffXJbGIih8SWviOIO7yDz0VuJP5dYLC2FeGlrYilt7wfUcNjhMH6w\n" +
-                "=T9pP\n" +
-                "-----END PGP MESSAGE-----\n";
+                "wcDMA3wvqk35PDeyAQv/c0eFDZud8YCzKu0qzq7xOUeF0KiFFv58RSAookfyce9B\n" +
+                "LSXH7g/F/3Pdp9EHcrtBsxYRXUdWmZHvwFRvAiwCl9unjUgRendopmuNJ5zNgB2w\n" +
+                "DkuMA2J2J5HGTicvCwGrWALDG6Dc56UEFTwCsip8uKNG+Q3X5IwpU7Vztqywkt4/\n" +
+                "RNp8+neu+oJELWn3mC3oZrMzYIaD2SlyVaW5Vpksjz32VGKXCm4/hGC/03tGuE1i\n" +
+                "5sOZicHpeN24BD2tr3MMOdHKPXKxVPPx5T1MIJYUoYjMp7Tnml6F4Obhf+VllAli\n" +
+                "mkQHj6vevbEkLcJX67pvD04PJiQqm5ea1GwOZDW/nPLih80AJWHpXME36WBzk4X2\n" +
+                "bHaK3qQxyxqfpvMvWcargI3neWNLaSzqY/2eCrY/OEbAcj18W+9u7phkEoVRmrC7\n" +
+                "mqIeEUXtGjWSywtJXF8tIcxOU3+IqekXLW9yFIzRrHWEzRVKzP2P5q7mwOp2ddjg\n" +
+                "8vqe/DOz1r8VxN6orUue0kwBJVHfkYpW8cwX2AtIPYk90ct2qCTbCtNQul+txpRY\n" +
+                "IwBVELjaaSGpdOuIHkETYssCNfqPSv0rNmaTDq78xItvhjuc4lRaKkpF9DdE\n" +
+                "=I5BA\n" +
+                "-----END PGP MESSAGE-----";
         OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
         processor.addDecryptionKey(key);

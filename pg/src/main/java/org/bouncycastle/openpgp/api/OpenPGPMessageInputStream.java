@@ -135,7 +135,6 @@ public class OpenPGPMessageInputStream
                     PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList) next;
                     OpenPGPMessageProcessor.Decrypted decrypted = processor.decrypt(encryptedDataList);
                     InputStream decryptedIn = decrypted.inputStream;
-                    VerifyingInputStream verifyIn = new VerifyingInputStream(decryptedIn, decrypted.esk);
                     resultBuilder.encrypted(decrypted);
                     InputStream decodeIn = BCPGInputStream.wrap(decryptedIn);
                     PGPObjectFactory decFac = implementation.pgpObjectFactory(decodeIn);
