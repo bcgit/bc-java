@@ -220,7 +220,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         // wrap the padded session info using the shared-secret public key
         // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
         return getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
-            .getEncoded(), (byte)0, getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
+            .getEncoded(), getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
     private byte[] encryptSessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket,

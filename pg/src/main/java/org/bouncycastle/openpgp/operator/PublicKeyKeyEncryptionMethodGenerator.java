@@ -23,7 +23,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     public static final long WILDCARD_KEYID = 0L;
     /**
      * @deprecated use WILDCARD_KEYID
-     * */
+     */
     public static final long WILDCARD = 0L;
     public static final byte[] WILDCARD_FINGERPRINT = new byte[0];
 
@@ -173,13 +173,12 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      *
      * @param sessionInfo session-key algorithm + session-key + checksum
      * @return version 3 PKESK packet
-     *
      * @throws PGPException
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
-     *     RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
+     * RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
      */
     public ContainedPacket generateV3(byte[] sessionInfo)
-            throws PGPException
+        throws PGPException
     {
         long keyId;
         if (useWildcardRecipient)
@@ -203,10 +202,9 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      *
      * @param sessionInfo session-key algorithm id + session-key + checksum
      * @return PKESKv6 packet
-     *
      * @throws PGPException if the PKESK packet cannot be generated
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
-     *     RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
+     * RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
      */
     public ContainedPacket generateV6(byte[] sessionInfo)
         throws PGPException
@@ -227,7 +225,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
         System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
 
-        byte[] encryptedSessionInfo =  encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
+        byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
         byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
         return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
@@ -250,19 +248,29 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte optSymKeyAlgorithm, byte[] wrappedSessionKey)
     {
-        int len = ephPubEncoding.length + wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 2 : 1);
+        int len = ephPubEncoding.length + wrappedSessionKey.length + 2;
         byte[] out = new byte[len];
         // ephemeral pub key
         System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
         // len of two/one next fields
-        out[ephPubEncoding.length] = (byte)(wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 1 : 0));
-        // (optional) sym key alg
-        if (optSymKeyAlgorithm != 0)
-        {
-            out[ephPubEncoding.length + 1] = optSymKeyAlgorithm;
-        }
+        out[ephPubEncoding.length] = (byte)(wrappedSessionKey.length + 1);
+        // sym key alg
+        out[ephPubEncoding.length + 1] = optSymKeyAlgorithm;
         // wrapped session key
         System.arraycopy(wrappedSessionKey, 0, out, len - wrappedSessionKey.length, wrappedSessionKey.length);
+        return out;
+    }
+
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] wrappedSessionKey)
+    {
+        int len = ephPubEncoding.length + wrappedSessionKey.length + 1;
+        byte[] out = new byte[len];
+        // ephemeral pub key
+        System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
+        // len of two/one next fields
+        out[ephPubEncoding.length] = (byte)wrappedSessionKey.length;
+        // wrapped session key
+        System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1, wrappedSessionKey.length);
         return out;
     }
 }
