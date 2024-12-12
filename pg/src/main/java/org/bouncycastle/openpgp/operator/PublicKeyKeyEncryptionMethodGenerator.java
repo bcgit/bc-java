@@ -242,11 +242,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
 
     protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte optSymKeyAlgorithm, byte[] wrappedSessionKey)
     {
-        int len = ephPubEncoding.length + 1 + wrappedSessionKey.length;
-        if (optSymKeyAlgorithm != 0)
-        {
-            len++;
-        }
+        int len = ephPubEncoding.length  + wrappedSessionKey.length + (optSymKeyAlgorithm != 0 ? 2 : 1);
         byte[] out = new byte[len];
         // ephemeral pub key
         System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
@@ -256,14 +252,9 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         if (optSymKeyAlgorithm != 0)
         {
             out[ephPubEncoding.length + 1] = optSymKeyAlgorithm;
-            // wrapped session key
-            System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1 + 1, wrappedSessionKey.length);
         }
-        else
-        {
-            // wrapped session key
-            System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1, wrappedSessionKey.length);
-        }
+        // wrapped session key
+        System.arraycopy(wrappedSessionKey, 0, out, len - wrappedSessionKey.length, wrappedSessionKey.length);
 
         return out;
     }
