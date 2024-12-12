@@ -18,4 +18,6 @@ public interface SecretSplitter
 
     SplitSecret splitAround(SecretShare s)
         throws IOException;
+
+    SplitSecret resplit(byte[] secret);
 }

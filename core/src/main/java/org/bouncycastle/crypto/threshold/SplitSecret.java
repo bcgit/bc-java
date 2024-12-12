@@ -11,6 +11,6 @@ public interface SplitSecret
      *
      * @return A byte array containing the reconstructed secret.
      */
-    byte[] recombine()
+    byte[] getSecret()
         throws IOException;
 }

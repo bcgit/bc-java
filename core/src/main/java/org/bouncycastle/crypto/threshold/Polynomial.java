@@ -14,7 +14,7 @@ abstract class Polynomial
         }
     }
 
-    protected abstract int gfMul(int x, int y);
+    protected abstract byte gfMul(int x, int y);
 
     protected abstract byte gfDiv(int x, int y);
 
@@ -25,7 +25,7 @@ abstract class Polynomial
         {
             if ((k & (1 << i)) != 0)
             {
-                result = (byte)gfMul(result & 0xff, n & 0xff);
+                result = gfMul(result & 0xff, n & 0xff);
             }
             n = gfMul(n & 0xff, n & 0xff);
         }
@@ -212,13 +212,13 @@ class PolynomialTable
         }
     }
 
-    protected int gfMul(int x, int y)
+    protected byte gfMul(int x, int y)
     {
         if (x == 0 || y == 0)
         {
             return 0;
         }
-        return EXP[((LOG[x] & 0xff) + (LOG[y] & 0xff)) % 255] & 0xff;
+        return (byte)(EXP[((LOG[x] & 0xff) + (LOG[y] & 0xff)) % 255] & 0xff);
     }
 
     protected byte gfDiv(int x, int y)
@@ -251,7 +251,7 @@ class PolynomialNative
         }
     }
 
-    protected int gfMul(int x, int y)
+    protected byte gfMul(int x, int y)
     {
         //pmult
         int result = 0;
@@ -277,11 +277,11 @@ class PolynomialNative
             }
             result <<= 1;
         }
-        return result & 0xFF;
+        return (byte) (result & 0xFF);
     }
 
     protected byte gfDiv(int x, int y)
     {
-        return (byte)gfMul(x, gfPow((byte)y, (byte)254) & 0xff);
+        return gfMul(x, gfPow((byte)y, (byte)254) & 0xff);
     }
 }

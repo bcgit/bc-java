@@ -25,10 +25,40 @@ public class ShamirSplitSecret
         return secretShares;
     }
 
-    //internal TODO: multiple/divide
+    public ShamirSplitSecret multiple(int mul)
+        throws IOException
+    {
+        byte[] ss;
+        for (int i = 0; i < secretShares.length; ++i)
+        {
+            ss = secretShares[i].getEncoded();
+            for (int j = 0; j < ss.length; ++j)
+            {
+                ss[j] = poly.gfMul(ss[j] & 0xFF, mul);
+            }
+            secretShares[i] = new ShamirSplitSecretShare(ss, i + 1);
+        }
+        return this;
+    }
+
+    public ShamirSplitSecret divide(int div)
+        throws IOException
+    {
+        byte[] ss;
+        for (int i = 0; i < secretShares.length; ++i)
+        {
+            ss = secretShares[i].getEncoded();
+            for (int j = 0; j < ss.length; ++j)
+            {
+                ss[j] = poly.gfDiv(ss[j] & 0xFF, div);
+            }
+            secretShares[i] = new ShamirSplitSecretShare(ss, i + 1);
+        }
+        return this;
+    }
 
     @Override
-    public byte[] recombine()
+    public byte[] getSecret()
         throws IOException
     {
         int n = secretShares.length;
@@ -46,13 +76,12 @@ public class ShamirSplitSecret
                 {
                     products[tmp++] = poly.gfDiv(secretShares[j].r, secretShares[i].r ^ secretShares[j].r);
                 }
-
             }
 
             tmp = 1;
             for (byte p : products)
             {
-                tmp = (byte)poly.gfMul(tmp & 0xff, p & 0xff);
+                tmp = poly.gfMul(tmp & 0xff, p & 0xff);
             }
             r[i] = tmp;
         }
