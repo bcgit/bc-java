@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -38,7 +39,7 @@ import org.bouncycastle.bcpg.sig.TrustSignature;
  */
 public class PGPSignatureSubpacketGenerator
 {
-    List packets = new ArrayList();
+    List<SignatureSubpacket> packets = new ArrayList<SignatureSubpacket>();
 
     /**
      * Base constructor, creates an empty generator.
@@ -56,10 +57,7 @@ public class PGPSignatureSubpacketGenerator
     {
         if (sigSubV != null)
         {
-            for (int i = 0; i != sigSubV.packets.length; i++)
-            {
-                packets.add(sigSubV.packets[i]);
-            }
+            packets.addAll(Arrays.asList(sigSubV.packets));
         }
     }
 
@@ -76,6 +74,18 @@ public class PGPSignatureSubpacketGenerator
             throw new IllegalStateException("Revocable exists in the Signature Subpacket Generator");
         }
         packets.add(new Revocable(isCritical, isRevocable));
+    }
+
+    /**
+     * Specify, whether the signature should be marked as exportable.
+     * If this subpacket is missing, the signature is treated as being exportable.
+     * The subpacket is marked as critical, as is required (for non-exportable signatures) by the spec.
+     *
+     * @param isExportable true if the signature should be exportable, false otherwise.
+     */
+    public void setExportable(boolean isExportable)
+    {
+        setExportable(true, isExportable);
     }
 
     /**
@@ -122,6 +132,18 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a key is valid for after the time of its creation. A
      * value of zero means the key never expires.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param seconds seconds from key creation to expiration
+     */
+    public void setKeyExpirationTime(long seconds)
+    {
+        setKeyExpirationTime(true, seconds);
+    }
+
+    /**
+     * Set the number of seconds a key is valid for after the time of its creation. A
+     * value of zero means the key never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
@@ -134,6 +156,19 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Set the number of seconds a signature is valid for after the time of its creation.
      * A value of zero means the signature never expires.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     * .
+     *
+     * @param seconds seconds from signature creation to expiration
+     */
+    public void setSignatureExpirationTime(long seconds)
+    {
+        setSignatureExpirationTime(true, seconds);
+    }
+
+    /**
+     * Set the number of seconds a signature is valid for after the time of its creation.
+     * A value of zero means the signature never expires.
      *
      * @param isCritical true if should be treated as critical, false otherwise.
      * @param seconds
@@ -141,6 +176,20 @@ public class PGPSignatureSubpacketGenerator
     public void setSignatureExpirationTime(boolean isCritical, long seconds)
     {
         packets.add(new SignatureExpirationTime(isCritical, seconds));
+    }
+
+    /**
+     * Set the creation time for the signature.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     * <p>
+     * Note: this overrides the generation of a creation time when the signature is
+     * generated.
+     *
+     * @param date date
+     */
+    public void setSignatureCreationTime(Date date)
+    {
+        setSignatureCreationTime(true, date);
     }
 
     /**
@@ -212,11 +261,10 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Specify the preferred OpenPGP AEAD ciphersuites of this key.
      *
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
-     *     RFC9580: Preferred AEAD Ciphersuites</a>
-     *
      * @param isCritical true, if this packet should be treated as critical, false otherwise.
      * @param algorithms array of algorithms in descending preference
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
+     * RFC9580: Preferred AEAD Ciphersuites</a>
      */
     public void setPreferredAEADCiphersuites(boolean isCritical, PreferredAEADCiphersuites.Combination[] algorithms)
     {
@@ -226,10 +274,9 @@ public class PGPSignatureSubpacketGenerator
     /**
      * Specify the preferred OpenPGP AEAD ciphersuites of this key.
      *
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
-     *     RFC9580: Preferred AEAD Ciphersuites</a>
-     *
      * @param builder builder to build the ciphersuites packet from
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
+     * RFC9580: Preferred AEAD Ciphersuites</a>
      */
     public void setPreferredAEADCiphersuites(PreferredAEADCiphersuites.Builder builder)
     {
@@ -243,12 +290,11 @@ public class PGPSignatureSubpacketGenerator
      * The LibrePGP spec states that this subpacket shall be ignored and the application shall instead assume
      * {@link org.bouncycastle.bcpg.AEADAlgorithmTags#OCB}.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-preferred-encryption-modes">
-     *     LibrePGP: Preferred Encryption Modes</a>
-     * @see org.bouncycastle.bcpg.AEADAlgorithmTags for possible algorithms
-     *
      * @param isCritical whether the packet is critical
      * @param algorithms list of algorithms
+     * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-01.html#name-preferred-encryption-modes">
+     * LibrePGP: Preferred Encryption Modes</a>
+     * @see org.bouncycastle.bcpg.AEADAlgorithmTags for possible algorithms
      * @deprecated the use of this subpacket is deprecated in LibrePGP
      */
     @Deprecated
@@ -262,7 +308,7 @@ public class PGPSignatureSubpacketGenerator
      * Note, that the key server might also be a http/ftp etc. URI pointing to the key itself.
      *
      * @param isCritical true if the subpacket should be treated as critical
-     * @param uri key server URI
+     * @param uri        key server URI
      */
     public void setPreferredKeyServer(boolean isCritical, String uri)
     {
@@ -272,6 +318,18 @@ public class PGPSignatureSubpacketGenerator
     public void addPolicyURI(boolean isCritical, String policyUri)
     {
         packets.add(new PolicyURI(isCritical, policyUri));
+    }
+
+    /**
+     * Set this keys key flags.
+     * See {@link PGPKeyFlags}.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param flags flags
+     */
+    public void setKeyFlags(int flags)
+    {
+        setKeyFlags(true, flags);
     }
 
     /**
@@ -517,6 +575,19 @@ public class PGPSignatureSubpacketGenerator
 
     /**
      * Adds a intended recipient fingerprint for an encrypted payload the signature is associated with.
+     * The subpacket will be marked as critical, as is recommended by the spec.
+     *
+     * @param publicKey the public key the encrypted payload was encrypted against.
+     */
+    public void addIntendedRecipientFingerprint(PGPPublicKey publicKey)
+    {
+        // RFC9580 states, that the packet SHOULD be critical if generated in a v6 signature,
+        //  but it doesn't harm to default to critical for any signature version
+        addIntendedRecipientFingerprint(true, publicKey);
+    }
+
+    /**
+     * Adds a intended recipient fingerprint for an encrypted payload the signature is associated with.
      *
      * @param isCritical true if critical, false otherwise.
      * @param publicKey  the public key the encrypted payload was encrypted against.
@@ -547,6 +618,26 @@ public class PGPSignatureSubpacketGenerator
     public boolean removePacket(SignatureSubpacket packet)
     {
         return packets.remove(packet);
+    }
+
+    /**
+     * Remove all {@link SignatureSubpacket} objects of the given subpacketType from the underlying subpacket vector.
+     *
+     * @param subpacketType type to remove
+     * @return true if any packet was removed, false otherwise
+     */
+    public boolean removePacketsOfType(int subpacketType)
+    {
+        boolean remove = false;
+        for (int i = packets.size() - 1; i >= 0; i--)
+        {
+            if (packets.get(i).getType() == subpacketType)
+            {
+                packets.remove(i);
+                remove = true;
+            }
+        }
+        return remove;
     }
 
     /**
@@ -595,7 +686,7 @@ public class PGPSignatureSubpacketGenerator
     public PGPSignatureSubpacketVector generate()
     {
         return new PGPSignatureSubpacketVector(
-            (SignatureSubpacket[])packets.toArray(new SignatureSubpacket[packets.size()]));
+            packets.toArray(new SignatureSubpacket[0]));
     }
 
     private boolean contains(int type)
@@ -608,6 +699,17 @@ public class PGPSignatureSubpacketGenerator
             }
         }
         return false;
+    }
+
+    /**
+     * Adds a regular expression.
+     * The subpacket is marked as critical, as is recommended by the spec.
+     *
+     * @param regularExpression the regular expression
+     */
+    public void addRegularExpression(String regularExpression)
+    {
+        addRegularExpression(true, regularExpression);
     }
 
     /**
