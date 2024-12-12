@@ -155,8 +155,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    public ContainedPacket generateV3(int encAlgorithm, byte[] sessionInfo)
-            throws PGPException
+    public ContainedPacket generateV3(byte[] sessionInfo)
+        throws PGPException
     {
         long keyId;
         if (useWildcardRecipient)
@@ -167,7 +167,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         {
             keyId = pubKey.getKeyID();
         }
-        byte[] encryptedSessionInfo = encryptSessionInfoV3(pubKey, sessionInfo);
+        byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfo, sessionInfo[0]);
         byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
         return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
@@ -187,55 +187,31 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             keyFingerprint = pubKey.getFingerprint();
             keyVersion = pubKey.getVersion();
         }
-        byte[] encryptedSessionInfo = encryptSessionInfoV6(pubKey, sessionInfo);
+        // In V6, do not include the symmetric-key algorithm in the session-info
+        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
+        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
+
+        byte[] encryptedSessionInfo =  encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
         byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
         return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
     /**
      * Encrypt a session key using the recipients public key.
-     * @param pubKey recipients public key
-     * @param fullSessionInfo full session info (sym-alg-id + session-key + 2 octet checksum)
+     *
+     * @param pubKey               recipients public key
+     * @param fullSessionInfo      full session info (sym-alg-id + session-key + 2 octet checksum)
      * @param sessionInfoToEncrypt for v3: full session info; for v6: just the session-key
-     * @param optSymAlgId for v3: session key algorithm ID; for v6: empty array
+     * @param optSymAlgId          for v3: session key algorithm ID; for v6: empty array
      * @return encrypted session info
      * @throws PGPException
      */
     protected abstract byte[] encryptSessionInfo(PGPPublicKey pubKey,
                                                  byte[] fullSessionInfo,
                                                  byte[] sessionInfoToEncrypt,
-                                                 byte[] optSymAlgId)
+                                                 byte optSymAlgId)
         throws PGPException;
 
-    /**
-     * Encrypt a session key for a v3 PKESK.
-     * @param pubKey recipients public key
-     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
-     * @return encrypted session info
-     * @throws PGPException
-     */
-    protected byte[] encryptSessionInfoV3(PGPPublicKey pubKey, byte[] sessionInfo)
-        throws PGPException
-    {
-        return encryptSessionInfo(pubKey, sessionInfo, sessionInfo, new byte[]{sessionInfo[0]});
-    }
-
-    /**
-     * Encrypt a session key for a v6 PKESK.
-     * @param pubKey recipients public key
-     * @param sessionInfo session info (sym-alg-id + session-key + 2 octet checksum)
-     * @return encrypted session info
-     * @throws PGPException
-     */
-    protected byte[] encryptSessionInfoV6(PGPPublicKey pubKey, byte[] sessionInfo)
-        throws PGPException
-    {
-        // In V6, do not include the symmetric-key algorithm in the session-info
-        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
-        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
-
-        return encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, new byte[0]);
-    }
 
     protected static byte[] concatECDHEphKeyWithWrappedSessionKey(byte[] ephPubEncoding, byte[] wrappedSessionKey)
         throws IOException
@@ -243,35 +219,43 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
 
         byte[] mpiEncodedEphemeralKey = new MPInteger(new BigInteger(1, ephPubEncoding))
-                .getEncoded();
+            .getEncoded();
         byte[] out = new byte[mpiEncodedEphemeralKey.length + 1 + wrappedSessionKey.length];
         // eph key
         System.arraycopy(mpiEncodedEphemeralKey, 0, out, 0, mpiEncodedEphemeralKey.length);
         // enc session-key len
-        out[mpiEncodedEphemeralKey.length] = (byte) wrappedSessionKey.length;
+        out[mpiEncodedEphemeralKey.length] = (byte)wrappedSessionKey.length;
         // enc session-key
         System.arraycopy(wrappedSessionKey, 0, out, mpiEncodedEphemeralKey.length + 1, wrappedSessionKey.length);
 
         return out;
     }
 
-//    private static byte[] getSessionInfo(byte[] ephPubEncoding, int symmetricKeyAlgorithm, byte[] c)
-//    {
-//        return getSessionInfo(ephPubEncoding, new byte[]{(byte) symmetricKeyAlgorithm}, c);
-//    }
-
-    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte[] optSymKeyAlgorithm, byte[] wrappedSessionKey)
+    protected static byte[] getSessionInfo(byte[] ephPubEncoding, byte optSymKeyAlgorithm, byte[] wrappedSessionKey)
     {
-        int len = ephPubEncoding.length + 1 + optSymKeyAlgorithm.length + wrappedSessionKey.length;
+        int len = ephPubEncoding.length + 1 + wrappedSessionKey.length;
+        if (optSymKeyAlgorithm != 0)
+        {
+            len++;
+        }
         byte[] out = new byte[len];
         // ephemeral pub key
         System.arraycopy(ephPubEncoding, 0, out, 0, ephPubEncoding.length);
         // len of two/one next fields
-        out[ephPubEncoding.length] = (byte) (wrappedSessionKey.length + optSymKeyAlgorithm.length);
+        out[ephPubEncoding.length] = (byte)(wrappedSessionKey.length + 1);
         // (optional) sym key alg
-        System.arraycopy(optSymKeyAlgorithm, 0, out, ephPubEncoding.length + 1, optSymKeyAlgorithm.length);
-        // wrapped session key
-        System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1 + optSymKeyAlgorithm.length, wrappedSessionKey.length);
+        if (optSymKeyAlgorithm != 0)
+        {
+            out[ephPubEncoding.length + 1] = optSymKeyAlgorithm;
+            // wrapped session key
+            System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1 + 1, wrappedSessionKey.length);
+        }
+        else
+        {
+            // wrapped session key
+            System.arraycopy(wrappedSessionKey, 0, out, ephPubEncoding.length + 1, wrappedSessionKey.length);
+        }
+
         return out;
     }
 }

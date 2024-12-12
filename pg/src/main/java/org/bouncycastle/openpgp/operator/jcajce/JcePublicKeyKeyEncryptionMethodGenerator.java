@@ -91,7 +91,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     protected byte[] encryptSessionInfo(PGPPublicKey pubKey,
                                         byte[] fullSessionInfo,
                                         byte[] sessionInfoToEncrypt,
-                                        byte[] optSymAlgId)
+                                        byte optSymAlgId)
         throws PGPException
     {
         try
@@ -109,38 +109,77 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                 if (JcaJcePGPUtil.isX25519(ecKey.getCurveOID()))
                 {
                     return encryptSessionInfoWithECDHKey(pubKeyPacket, "X25519", cryptoPublicKey, keyEncryptionOID,
-                            ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
-                            (kpGen) -> kpGen.initialize(255, random),
-                            (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR));
+                        ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
+                        new KeyPairGeneratorOperation()
+                        {
+                            @Override
+                            public void initialize(KeyPairGenerator kpGen)
+                                throws GeneralSecurityException, IOException
+                            {
+                                kpGen.initialize(255, random);
+                            }
+                        },
+                        new EphPubEncoding()
+                        {
+                            @Override
+                            public byte[] getEphPubEncoding(byte[] publicKeyData)
+                            {
+                                return Arrays.prepend(publicKeyData, X_HDR);
+                            }
+                        });
                 }
 
                 // Legacy X448
                 else if (ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448))
                 {
                     return encryptSessionInfoWithECDHKey(pubKeyPacket, "X448", cryptoPublicKey, keyEncryptionOID,
-                            ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
-                            (kpGen) -> kpGen.initialize(448, random),
-                            (ephPubEncoding) -> Arrays.prepend(ephPubEncoding, X_HDR));
+                        ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getXDHAlgorithm(pubKeyPacket),
+                        new KeyPairGeneratorOperation()
+                        {
+                            @Override
+                            public void initialize(KeyPairGenerator kpGen)
+                                throws GeneralSecurityException, IOException
+                            {
+                                kpGen.initialize(448, random);
+                            }
+                        },
+                        new EphPubEncoding()
+                        {
+                            @Override
+                            public byte[] getEphPubEncoding(byte[] publicKeyData)
+                            {
+                                return Arrays.prepend(publicKeyData, X_HDR);
+                            }
+                        });
                 }
 
                 // Other ECDH curves
                 else
                 {
                     return encryptSessionInfoWithECDHKey(pubKeyPacket, "EC", cryptoPublicKey, keyEncryptionOID,
-                            ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getAgreementAlgorithm(pubKeyPacket),
-                            (kpGen) ->
+                        ecKey.getSymmetricKeyAlgorithm(), sessionInfoToEncrypt, RFC6637Utils.getAgreementAlgorithm(pubKeyPacket),
+                        new KeyPairGeneratorOperation()
+                        {
+                            @Override
+                            public void initialize(KeyPairGenerator kpGen)
+                                throws GeneralSecurityException, IOException
                             {
                                 AlgorithmParameters ecAlgParams = helper.createAlgorithmParameters("EC");
                                 ecAlgParams.init(new X962Parameters(ecKey.getCurveOID()).getEncoded());
                                 kpGen.initialize(ecAlgParams.getParameterSpec(AlgorithmParameterSpec.class), random);
-                            }, (ephPubEncoding) ->
+                            }
+                        }, new EphPubEncoding()
+                        {
+                            @Override
+                            public byte[] getEphPubEncoding(byte[] ephPubEncoding)
                             {
                                 if (null == ephPubEncoding || ephPubEncoding.length < 1 || ephPubEncoding[0] != 0x04)
                                 {
                                     ephPubEncoding = JcaJcePGPUtil.getX9Parameters(ecKey.getCurveOID()).getCurve().decodePoint(ephPubEncoding).getEncoded(false);
                                 }
                                 return ephPubEncoding;
-                            });
+                            }
+                        });
                 }
             }
 
@@ -148,14 +187,14 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X25519)
             {
                 return encryptSessionInfoWithX25519X448Key(pubKey, "X25519", cryptoPublicKey, NISTObjectIdentifiers.id_aes128_wrap.getId(),
-                        SymmetricKeyAlgorithmTags.AES_128, fullSessionInfo, "X25519withSHA256HKDF", 255, optSymAlgId);
+                    SymmetricKeyAlgorithmTags.AES_128, fullSessionInfo, "X25519withSHA256HKDF", 255, optSymAlgId);
             }
 
             // X448
             else if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.X448)
             {
                 return encryptSessionInfoWithX25519X448Key(pubKey, "X448", cryptoPublicKey, NISTObjectIdentifiers.id_aes256_wrap.getId(),
-                        SymmetricKeyAlgorithmTags.AES_256, fullSessionInfo, "X448withSHA512HKDF", 448, optSymAlgId);
+                    SymmetricKeyAlgorithmTags.AES_256, fullSessionInfo, "X448withSHA512HKDF", 448, optSymAlgId);
             }
 
             // RSA / ElGamal etc.
@@ -236,7 +275,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
      */
     private byte[] encryptSessionInfoWithX25519X448Key(PGPPublicKey pgpPublicKey, String algorithmName, PublicKey cryptoPublicKey, String keyEncryptionOID,
                                                        int symmetricKeyAlgorithm, byte[] sessionInfo, String agreementAlgorithmName, int keySize,
-                                                       byte[] optSymAlgId)
+                                                       byte optSymAlgId)
         throws GeneralSecurityException, IOException, PGPException
     {
         KeyPairGenerator kpGen = helper.createKeyPairGenerator(algorithmName);

@@ -74,7 +74,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     }
 
     @Override
-    protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] fullSessionInfo, byte[] sessionInfoToEncrypt, byte[] optSymAlgId)
+    protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] fullSessionInfo, byte[] sessionInfoToEncrypt, byte optSymAlgId)
         throws PGPException
     {
         try
@@ -231,7 +231,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                                                        AsymmetricKeyParameter cryptoPublicKey,
                                                        int keySize,
                                                        EphPubEncodingOperation ephPubEncodingOperation,
-                                                       byte[] optSymAlgId)
+                                                       byte optSymAlgId)
             throws PGPException
     {
         AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(gen, parameters);
