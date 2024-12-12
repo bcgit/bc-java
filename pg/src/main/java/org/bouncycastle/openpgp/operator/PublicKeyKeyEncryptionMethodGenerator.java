@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 public abstract class PublicKeyKeyEncryptionMethodGenerator
-    extends PGPKeyEncryptionMethodGenerator
+    implements PGPKeyEncryptionMethodGenerator
 {
     public static final String SESSION_KEY_OBFUSCATION_PROPERTY = "org.bouncycastle.openpgp.session_key_obfuscation";
     public static final long WILDCARD_KEYID = 0L;
@@ -155,7 +155,21 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
-    public ContainedPacket generateV3(int encAlgorithm, byte[] sessionInfo)
+    /**
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 3.
+     * PKESKv3 packets are used with Symmetrically-Encrypted-Integrity-Protected Data (SEIPD) packets of
+     * version 1 or with Symmetrically-Encrypted Data (SED) packets and MUST NOT be used with SEIPDv2 packets.
+     * PKESKv3 packets are used with keys that do not support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}
+     * or as a fallback.
+     *
+     * @param sessionInfo session-key algorithm + session-key + checksum
+     * @return version 3 PKESK packet
+     *
+     * @throws PGPException
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
+     *     RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
+     */
+    public ContainedPacket generateV3(byte[] sessionInfo)
             throws PGPException
     {
         long keyId;
@@ -172,6 +186,19 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
+    /**
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 6.
+     * PKESKv6 packets are used with Symmetrically-Encrypted Integrity-Protected Data (SEIPD) packets
+     * of version 2 only.
+     * PKESKv6 packets are used with keys that support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}.
+     *
+     * @param sessionInfo session-key algorithm id + session-key + checksum
+     * @return PKESKv6 packet
+     *
+     * @throws PGPException if the PKESK packet cannot be generated
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
+     *     RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
+     */
     public ContainedPacket generateV6(byte[] sessionInfo)
         throws PGPException
     {
