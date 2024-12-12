@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.util.Arrays;
 
+
 public class ShamirSecretSplitter
     implements SecretSplitter
 {
@@ -25,49 +26,25 @@ public class ShamirSecretSplitter
      * Length of the secret
      */
     protected int l;
-    /**
-     * A threshold number of shares
-     */
-    protected int m;
-    /**
-     * Total number of shares
-     * m <= n <= 255
-     */
-    protected int n;
-    protected byte[][] p;
+
     protected SecureRandom random;
 
-    public ShamirSecretSplitter(Algorithm algorithm, Mode mode, int l, int m, int n, SecureRandom random)
+    public ShamirSecretSplitter(Algorithm algorithm, Mode mode, int l, SecureRandom random)
     {
         if (l < 0 || l > 65534)
         {
             throw new IllegalArgumentException("Invalid input: l ranges from 0 to 65534 (2^16-2) bytes.");
         }
-        if (m < 1 || m > 255)
-        {
-            throw new IllegalArgumentException("Invalid input: m must be less than 256 and positive.");
-        }
-        if (n < m || n > 255)
-        {
-            throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to n.");
-        }
+
         poly = Polynomial.newInstance(algorithm, mode);
         this.l = l;
-        this.m = m;
-        this.n = n;
         this.random = random;
-        p = new byte[n][m];
-        for (int i = 0; i < n; i++)
-        {
-            for (int j = 0; j < m; j++)
-            {
-                p[i][j] = poly.gfPow((byte)(i + 1), (byte)j);
-            }
-        }
     }
 
-    public ShamirSplitSecret split()
+
+    public ShamirSplitSecret split(int m, int n)
     {
+        byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
         ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
         int i;
@@ -83,9 +60,10 @@ public class ShamirSecretSplitter
     }
 
     @Override
-    public ShamirSplitSecret splitAround(SecretShare s)
+    public ShamirSplitSecret splitAround(SecretShare s, int m, int n)
         throws IOException
     {
+        byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
         ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
         byte[] ss0 = s.getEncoded();
@@ -114,11 +92,12 @@ public class ShamirSecretSplitter
     }
 
     @Override
-    public ShamirSplitSecret resplit(byte[] secret)
+    public ShamirSplitSecret resplit(byte[] secret, int m, int n)
     {
+        byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
         ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
-        sr[0] = secret;
+        sr[0] = Arrays.clone(secret);
         int i;
         for (i = 1; i < m; i++)
         {
@@ -131,5 +110,24 @@ public class ShamirSecretSplitter
         return new ShamirSplitSecret(poly, secretShares);
     }
 
-
+    private byte[][] initP(int m, int n)
+    {
+        if (m < 1 || m > 255)
+        {
+            throw new IllegalArgumentException("Invalid input: m must be less than 256 and positive.");
+        }
+        if (n < m || n > 255)
+        {
+            throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to n.");
+        }
+        byte[][] p = new byte[n][m];
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < m; j++)
+            {
+                p[i][j] = poly.gfPow((byte)(i + 1), (byte)j);
+            }
+        }
+        return p;
+    }
 }
