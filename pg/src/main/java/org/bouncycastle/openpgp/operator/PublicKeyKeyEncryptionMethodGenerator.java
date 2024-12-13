@@ -164,6 +164,49 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
+    public ContainedPacket generate(int version, byte[] sessionInfo)
+        throws PGPException
+    {
+        if (version == PublicKeyEncSessionPacket.VERSION_3)
+        {
+            long keyId;
+            if (useWildcardRecipient)
+            {
+                keyId = WILDCARD_KEYID;
+            }
+            else
+            {
+                keyId = pubKey.getKeyID();
+            }
+            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfo, sessionInfo[0]);
+            byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+            return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
+        }
+        else if (version == PublicKeyEncSessionPacket.VERSION_6)
+        {
+            byte[] keyFingerprint;
+            int keyVersion;
+            if (useWildcardRecipient)
+            {
+                keyFingerprint = WILDCARD_FINGERPRINT;
+                keyVersion = 0;
+            }
+            else
+            {
+                keyFingerprint = pubKey.getFingerprint();
+                keyVersion = pubKey.getVersion();
+            }
+            // In V6, do not include the symmetric-key algorithm in the session-info
+            byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
+            System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
+
+            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
+            byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
+            return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
+        }
+        throw new PGPException("Unexpected version number");
+    }
+
     /**
      * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 3.
      * PKESKv3 packets are used with Symmetrically-Encrypted-Integrity-Protected Data (SEIPD) packets of
