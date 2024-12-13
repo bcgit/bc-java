@@ -253,14 +253,22 @@ public class LMSPrivateKeyParameters
     {
         synchronized (this)
         {
-            if (q + usageCount >= maxQ)
+            if (usageCount < 0)
+            {
+                throw new IllegalArgumentException("usageCount cannot be negative");
+            }
+            if (usageCount > maxQ - q)
             {
                 throw new IllegalArgumentException("usageCount exceeds usages remaining");
             }
-            LMSPrivateKeyParameters keyParameters = new LMSPrivateKeyParameters(this, q, q + usageCount);
-            q += usageCount;
 
-            return keyParameters;
+            int shardIndex = q;
+            int shardIndexLimit = q + usageCount;
+
+            // Move this key's index along
+            q = shardIndexLimit;
+
+            return new LMSPrivateKeyParameters(this, shardIndex, shardIndexLimit);
         }
     }
 
@@ -284,9 +292,15 @@ public class LMSPrivateKeyParameters
         return Arrays.clone(masterSecret);
     }
 
+    public int getIndexLimit()
+    {
+        return maxQ;
+    }
+
+    // TODO Only needs 'int'
     public long getUsagesRemaining()
     {
-        return maxQ - getIndex();
+        return getIndexLimit() - getIndex();
     }
 
     public LMSPublicKeyParameters getPublicKey()
