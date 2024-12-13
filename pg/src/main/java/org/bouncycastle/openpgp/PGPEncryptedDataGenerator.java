@@ -256,72 +256,63 @@ public class PGPEncryptedDataGenerator
 
         PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(messageKey);
         digestCalc = dataEncryptor.getIntegrityCalculator();
-
-        for (int i = 0; i < methods.size(); i++)
+        BCPGHeaderObject encOut;
+        try
         {
-            PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
             // OpenPGP v5 or v6
             if (dataEncryptor instanceof PGPAEADDataEncryptor)
             {
                 PGPAEADDataEncryptor aeadDataEncryptor = (PGPAEADDataEncryptor)dataEncryptor;
+                long ivOrSaltLen;
                 // data is encrypted by AEAD Encrypted Data packet (rfc4880bis10), so write v5 SKESK packet
                 if (isV5StyleAEAD)
                 {
-                    writeOpenPGPv5ESKPacket(method, sessionInfo);
+                    for (int i = 0; i < methods.size(); i++)
+                    {
+                        PGPKeyEncryptionMethodGenerator method = methods.get(i);
+                        writeOpenPGPv5ESKPacket(method, sessionInfo);
+                    }
+                    byte[] iv = aeadDataEncryptor.getIV();
+                    encOut = new AEADEncDataPacket(
+                        dataEncryptorBuilder.getAlgorithm(), aeadDataEncryptor.getAEADAlgorithm(), aeadDataEncryptor.getChunkSize(), iv);
+                    ivOrSaltLen = iv.length;
                 }
                 else // data is encrypted by v2 SEIPD (AEAD), so write v6 SKESK packet
                 {
                     //https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.2.1 Table 2
                     //AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
-                    writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionInfo);
+                    for (int i = 0; i < methods.size(); i++)
+                    {
+                        PGPKeyEncryptionMethodGenerator method = methods.get(i);
+                        writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionInfo);
+                    }
+                    encOut = SymmetricEncIntegrityPacket.createVersion2Packet(
+                        dataEncryptorBuilder.getAlgorithm(),
+                        aeadDataEncryptor.getAEADAlgorithm(),
+                        aeadDataEncryptor.getChunkSize(),
+                        salt);
+                    ivOrSaltLen = salt.length;
                 }
+                if (buffer == null)
+                {
+                    long chunkLength = 1L << (aeadDataEncryptor.getChunkSize() + 6);
+                    long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16 + 16; // data blocks + final tag
+                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + ivOrSaltLen));
+                }
+                else
+                {
+                    pOut = new ClosableBCPGOutputStream(out, encOut, buffer);
+                }
+                genOut = cOut = dataEncryptor.getOutputStream(pOut);
             }
             // OpenPGP v4
             else // data is encrypted by v1 SEIPD or SED packet, so write v4 SKESK packet
             {
-                writeOpenPGPv4ESKPacket(method, sessionInfo);
-            }
-        }
-
-        try
-        {
-            BCPGHeaderObject encOut;
-            if (dataEncryptor instanceof PGPAEADDataEncryptor)
-            {
-                PGPAEADDataEncryptor encryptor = (PGPAEADDataEncryptor)dataEncryptor;
-                long ivOrSaltLen;
-                // OpenPGP V5 style AEAD
-                if (isV5StyleAEAD)
+                for (int i = 0; i < methods.size(); i++)
                 {
-                    byte[] iv = encryptor.getIV();
-                    encOut = new AEADEncDataPacket(
-                        dataEncryptorBuilder.getAlgorithm(), encryptor.getAEADAlgorithm(), encryptor.getChunkSize(), iv);
-                    ivOrSaltLen = iv.length;
+                    PGPKeyEncryptionMethodGenerator method = methods.get(i);
+                    writeOpenPGPv4ESKPacket(method, sessionInfo);
                 }
-                else // OpenPGP V6 style AEAD
-                {
-                    encOut = SymmetricEncIntegrityPacket.createVersion2Packet(
-                        dataEncryptorBuilder.getAlgorithm(),
-                        encryptor.getAEADAlgorithm(),
-                        encryptor.getChunkSize(),
-                        salt);
-                    ivOrSaltLen = salt.length;
-                }
-
-                if (buffer != null)
-                {
-                    pOut = new ClosableBCPGOutputStream(out, encOut, buffer);
-                }
-                else
-                {
-                    long chunkLength = 1L << (encryptor.getChunkSize() + 6);
-                    long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16 + 16; // data blocks + final tag
-                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + ivOrSaltLen));
-                }
-                genOut = cOut = dataEncryptor.getOutputStream(pOut);
-            }
-            else
-            {
                 if (digestCalc != null)
                 {
                     encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
@@ -362,9 +353,12 @@ public class PGPEncryptedDataGenerator
                 inLineIv[inLineIv.length - 2] = inLineIv[inLineIv.length - 4];
 
                 genOut.write(inLineIv);
-
             }
             return new WrappedGeneratorStream(genOut, this);
+        }
+        catch (IOException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -393,7 +387,7 @@ public class PGPEncryptedDataGenerator
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
             pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
@@ -422,7 +416,7 @@ public class PGPEncryptedDataGenerator
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
             pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
@@ -452,7 +446,7 @@ public class PGPEncryptedDataGenerator
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
             pOut.writePacket(mGen.generateV6(sessionInfo));
         }
     }
