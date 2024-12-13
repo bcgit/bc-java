@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.kmip.wire.object;
 
 public class KMIPSymmetricKey
     extends KMIPObject

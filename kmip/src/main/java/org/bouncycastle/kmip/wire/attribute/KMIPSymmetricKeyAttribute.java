@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.kmip.wire.attribute;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.kmip.wire.enumeration.KMIPCryptographicAlgorithm;
 
 public class KMIPSymmetricKeyAttribute
     extends KMIPCryptographicObject

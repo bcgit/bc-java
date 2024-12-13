@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.kmip.wire.attribute;
 
 public abstract class KMIPCryptographicObject
 {

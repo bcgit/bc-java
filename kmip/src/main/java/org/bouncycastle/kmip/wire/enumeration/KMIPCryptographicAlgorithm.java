@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.enumeration;
+package org.bouncycastle.kmip.wire.enumeration;
 
 /**
  * The CryptographicAlgorithm enum represents various cryptographic algorithms and their corresponding values.

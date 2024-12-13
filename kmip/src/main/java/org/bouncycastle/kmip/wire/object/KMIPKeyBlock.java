@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.kmip.wire.object;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyCompressionType;
-import org.bouncycastle.crypto.split.enumeration.KMIPKeyFormatType;
-import org.bouncycastle.crypto.split.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.kmip.wire.enumeration.KMIPCryptographicAlgorithm;
+import org.bouncycastle.kmip.wire.enumeration.KMIPKeyCompressionType;
+import org.bouncycastle.kmip.wire.enumeration.KMIPKeyFormatType;
 
 /**
  * Represents a Key Block object, a structure used to encapsulate all information
@@ -49,7 +49,7 @@ public class KMIPKeyBlock
     /**
      * Data structure containing key wrapping information, if the key is wrapped.
      */
-    private org.bouncycastle.crypto.split.object.KMIPKeyWrappingData KMIPKeyWrappingData;
+    private org.bouncycastle.kmip.wire.object.KMIPKeyWrappingData KMIPKeyWrappingData;
 
     /**
      * Constructs a new KeyBlock with the specified parameters.

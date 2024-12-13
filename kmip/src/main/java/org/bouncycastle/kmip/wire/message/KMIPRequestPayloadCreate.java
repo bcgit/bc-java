@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
 import java.util.Map;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
+import org.bouncycastle.kmip.wire.enumeration.KMIPObjectType;
 
 public class KMIPRequestPayloadCreate
     extends KMIPRequestPayload

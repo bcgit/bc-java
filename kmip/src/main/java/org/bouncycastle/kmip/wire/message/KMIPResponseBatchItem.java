@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
-import org.bouncycastle.crypto.split.enumeration.KMIPResultReason;
-import org.bouncycastle.crypto.split.enumeration.KMIPResultStatus;
+import org.bouncycastle.kmip.wire.enumeration.KMIPOperation;
+import org.bouncycastle.kmip.wire.enumeration.KMIPResultReason;
+import org.bouncycastle.kmip.wire.enumeration.KMIPResultStatus;
 
 public class KMIPResponseBatchItem
     extends KMIPBatchItem

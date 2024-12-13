@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
-import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
-import org.bouncycastle.crypto.split.object.KMIPObject;
+import org.bouncycastle.kmip.wire.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.kmip.wire.enumeration.KMIPObjectType;
+import org.bouncycastle.kmip.wire.object.KMIPObject;
 
 public class KMIPResponsePayloadGet
     extends KMIPResponsePayloadDefault

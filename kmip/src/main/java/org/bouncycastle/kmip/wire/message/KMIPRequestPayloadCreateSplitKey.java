@@ -1,10 +1,10 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
 import java.util.Map;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
-import org.bouncycastle.crypto.split.enumeration.KMIPObjectType;
+import org.bouncycastle.kmip.wire.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.kmip.wire.enumeration.KMIPObjectType;
+import org.bouncycastle.kmip.wire.enumeration.KMIPSplitKeyMethod;
 
 /**
  * RequestPayload represents the payload of a request for creating or splitting a key.
