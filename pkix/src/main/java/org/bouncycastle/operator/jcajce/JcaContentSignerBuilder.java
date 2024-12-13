@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -27,6 +28,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
@@ -41,9 +43,14 @@ import org.bouncycastle.operator.ExtendedContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.TeeOutputStream;
 
+/**
+ * General builder class for ContentSigner operators based on the JCA.
+ */
 public class JcaContentSignerBuilder
 {
     private static final Set isAlgIdFromPrivate = new HashSet();
@@ -65,30 +72,76 @@ public class JcaContentSignerBuilder
 
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private SecureRandom random;
-    private DigestAlgorithmIdentifierFinder digestAlgIdFinder;
 
     private AlgorithmIdentifier sigAlgId;
     private AlgorithmParameterSpec sigAlgSpec;
 
+    /**
+     * Construct a basic content signer where the signature algorithm name
+     * tells us all we need to know.
+     *
+     * @param signatureAlgorithm the signature algorithm we perform.
+     */
     public JcaContentSignerBuilder(String signatureAlgorithm)
     {
         this(signatureAlgorithm, (AlgorithmIdentifier)null);
     }
 
+    //
+    // at the moment LMS is the only algorithm like this, we can wing it with other public keys.
+    //
+    private static AlgorithmIdentifier getSigDigAlgId(PublicKey publicKey)
+    {
+        byte[] encoded = publicKey.getEncoded();
+        SubjectPublicKeyInfo subInfo = SubjectPublicKeyInfo.getInstance(encoded);
+
+        if (subInfo.getAlgorithm().getAlgorithm().equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
+        {
+            byte[] keyData = subInfo.getPublicKeyData().getOctets();
+
+            int type = Pack.bigEndianToInt(keyData, 4);
+            LMSigParameters sigParams = LMSigParameters.getParametersForType(type);
+
+            return new AlgorithmIdentifier(sigParams.getDigestOID());
+        }
+
+        return null;
+    }
+
+    /**
+     * Constructor which calculates the digest algorithm used from the public key, if necessary.
+     * <p>
+     * Some PKIX operations, such as CMS signing, require the digest algorithm used for in the
+     * signature. Some algorithms, such as LMS, use different digests with different parameter sets but the same OID
+     * is used to represent the signature. In this case we either need to be told what digest is associated
+     * with the parameter set, or we need the public key so we can work it out.
+     * </p>
+     *
+     * @param signatureAlgorithm the signature algorithm we perform.
+     * @param verificationKey the public key associated with our private key.
+     */
+    public JcaContentSignerBuilder(String signatureAlgorithm, PublicKey verificationKey)
+    {
+        this(signatureAlgorithm, getSigDigAlgId(verificationKey));
+    }
+
+    /**
+     * Constructor which includes the digest algorithm identifier used.
+     * <p>
+     * Some PKIX operations, such as CMS signing, require the digest algorithm used for in the
+     * signature, this constructor allows the digest algorithm identifier to
+     * be explicitly specified.
+     * </p>
+     *
+     * @param signatureAlgorithm the signature algorithm we perform.
+     * @param signatureDigestAlgorithmID the public key associated with our private key.
+     */
     public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmIdentifier signatureDigestAlgorithmID)
     {
         this.signatureAlgorithm = signatureAlgorithm;
         this.signatureDigestAlgorithm = signatureDigestAlgorithmID;
-        this.digestAlgIdFinder = null;
     }
-
-    public JcaContentSignerBuilder(String signatureAlgorithm, DigestAlgorithmIdentifierFinder digestAlgIdFinder)
-    {
-        this.signatureAlgorithm = signatureAlgorithm;
-        this.signatureDigestAlgorithm = null;
-        this.digestAlgIdFinder = digestAlgIdFinder;
-    }
-
+    
     public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmParameterSpec sigParamSpec)
     {
         this(signatureAlgorithm, sigParamSpec, null);
@@ -158,6 +211,7 @@ public class JcaContentSignerBuilder
             {
                 this.sigAlgId = getSigAlgId(privateKey);
             }
+
             final AlgorithmIdentifier signatureAlgId = sigAlgId;
             final Signature sig = helper.createSignature(sigAlgId);
 
@@ -197,11 +251,11 @@ public class JcaContentSignerBuilder
                 }
             };
 
-            if (signatureDigestAlgorithm != null || digestAlgIdFinder != null)
+            if (signatureDigestAlgorithm != null)
             {
                 return new ExtendedContentSigner()
                 {
-                    private final AlgorithmIdentifier digestAlgorithm = (signatureDigestAlgorithm != null) ? signatureDigestAlgorithm : digestAlgIdFinder.find(contentSigner.getAlgorithmIdentifier());
+                    private final AlgorithmIdentifier digestAlgorithm = signatureDigestAlgorithm;
                     private final ContentSigner signer = contentSigner;
 
                     public AlgorithmIdentifier getDigestAlgorithmIdentifier()

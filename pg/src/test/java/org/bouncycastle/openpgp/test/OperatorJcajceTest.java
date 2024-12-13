@@ -9,6 +9,7 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -21,6 +22,7 @@ import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
@@ -30,21 +32,27 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
+import org.junit.Assert;
 
 public class OperatorJcajceTest
     extends SimpleTest
@@ -66,6 +74,7 @@ public class OperatorJcajceTest
     public void performTest()
         throws Exception
     {
+        testJcaAEADSecretKeyEncryptorBuilder();
         testCreateDigest();
         testX25519HKDF();
         testJcePBESecretKeyEncryptorBuilder();
@@ -316,12 +325,43 @@ public class OperatorJcajceTest
         //isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
     }
 
+    public void testJcaAEADSecretKeyEncryptorBuilder()
+        throws Exception
+    {
+        BouncyCastleProvider prov = new BouncyCastleProvider();
+        KeyPairGenerator eddsaGen = KeyPairGenerator.getInstance("EdDSA", prov);
+        Date creationTime = new Date();
+        eddsaGen.initialize(new ECNamedCurveGenParameterSpec("ed25519"));
+        KeyPair kp = eddsaGen.generateKeyPair();
+        SecureRandom random = new SecureRandom();
+        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        {
+            PGPKeyPair keyPair = new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
+            JcaAEADSecretKeyEncryptorBuilder jcaEncBuilder = new JcaAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters())
+                .setProvider(new BouncyCastleProvider());
+            PBESecretKeyEncryptor encryptor = jcaEncBuilder.build(
+                "Yin".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            byte[] key = new byte[16];
+            random.nextBytes(key);
+            byte[] input1 = new byte[64];
+            random.nextBytes(input1);
+
+            byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
+            byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
+            byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
+            Assert.assertTrue(Arrays.areEqual(output1, output2));
+        }
+    }
+
     private class NullProvider
         extends Provider
     {
         NullProvider()
         {
-             super("NULL", 0.0, "Null Provider");
+            super("NULL", 0.0, "Null Provider");
         }
     }
 

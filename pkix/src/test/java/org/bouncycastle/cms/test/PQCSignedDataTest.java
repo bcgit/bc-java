@@ -306,7 +306,7 @@ public class PQCSignedDataTest
 
         DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS", new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)).setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert));
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(new JcaContentSignerBuilder("LMS", _origLmsCert.getPublicKey()).setProvider(BC).build(_origLmsKP.getPrivate()), _origLmsCert));
 
         gen.addCertificates(certs);
 
@@ -317,6 +317,11 @@ public class PQCSignedDataTest
 
         s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
 
+        Set<AlgorithmIdentifier> digAlgIds = s.getDigestAlgorithmIDs();
+
+        assertTrue(digAlgIds.contains(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+        assertTrue(digAlgIds.size() == 1);
+        
         certs = s.getCertificates();
 
         SignerInformationStore signers = s.getSignerInfos();

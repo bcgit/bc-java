@@ -57,9 +57,6 @@ public class ElephantTest
         testVectors(ElephantEngine.ElephantParameters.elephant160, "v160");
         testVectors(ElephantEngine.ElephantParameters.elephant176, "v176");
 
-        ElephantEngine elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant200);
-        testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
-        testParameters(elephant, 16, 12, 16);
 
         elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant160);
         testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
@@ -233,6 +230,7 @@ public class ElephantTest
         }
 
         aeadBlockCipher.init(true, params);
+        c1 = new byte[aeadBlockCipher.getOutputSize(0)];
         try
         {
             aeadBlockCipher.doFinal(c1, m.length);
@@ -442,7 +440,5 @@ public class ElephantTest
     {
         runTest(new ElephantTest());
     }
-
-
 }
 
