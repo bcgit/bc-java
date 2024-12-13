@@ -94,7 +94,7 @@ public class AsconTest
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
         {
             @Override
-            public AEADCipher CreateInstace()
+            public AEADCipher createInstance()
             {
                 return new AsconAEAD128();
             }
@@ -103,7 +103,7 @@ public class AsconTest
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
         {
             @Override
-            public AEADCipher CreateInstace()
+            public AEADCipher createInstance()
             {
                 return new AsconEngine(AsconEngine.AsconParameters.ascon128);
             }
@@ -112,7 +112,7 @@ public class AsconTest
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instace()
         {
             @Override
-            public AEADCipher CreateInstace()
+            public AEADCipher createInstance()
             {
                 return new AsconEngine(AsconEngine.AsconParameters.ascon128a);
             }
@@ -121,7 +121,7 @@ public class AsconTest
         CipherTest.checkCipher(32, 16, 100, 160, new CipherTest.Instace()
         {
             @Override
-            public AEADCipher CreateInstace()
+            public AEADCipher createInstance()
             {
                 return new AsconEngine(AsconEngine.AsconParameters.ascon80pq);
             }

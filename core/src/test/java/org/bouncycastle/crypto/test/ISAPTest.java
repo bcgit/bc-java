@@ -51,10 +51,10 @@ public class ISAPTest
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
         testVectors("isapk128v20", IsapType.ISAP_K_128);
         testVectors();
-        CipherTest.checkAEADCipherOutputSize(16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128A));
-        CipherTest.checkAEADCipherOutputSize(16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128));
-        CipherTest.checkAEADCipherOutputSize(16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128A));
-        CipherTest.checkAEADCipherOutputSize(16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128A));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128A));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128));
     }
 
     private void testVectors(String filename, IsapType isapType)
