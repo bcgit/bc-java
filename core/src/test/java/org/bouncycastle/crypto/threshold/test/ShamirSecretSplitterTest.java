@@ -3,17 +3,13 @@ package org.bouncycastle.crypto.threshold.test;
 import java.io.IOException;
 import java.security.SecureRandom;
 
-
 import junit.framework.TestCase;
-
 import org.bouncycastle.crypto.threshold.ShamirSecretSplitter;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecret;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecretShare;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
-import org.bouncycastle.util.Arrays;
-
-import org.junit.Assert;
 
 public class ShamirSecretSplitterTest
     extends TestCase
@@ -59,8 +55,8 @@ public class ShamirSecretSplitterTest
         byte[] secret3 = splitSecret3.getSecret();
 
 
-        Assert.assertArrayEquals(secret1, secret3);
-        Assert.assertFalse(Arrays.areEqual(Arrays.concatenate(secretShares[0].getEncoded(), secretShares[1].getEncoded(), secretShares[2].getEncoded()),
+        assertTrue(Arrays.areEqual(secret1, secret3));
+        assertFalse(Arrays.areEqual(Arrays.concatenate(secretShares[0].getEncoded(), secretShares[1].getEncoded(), secretShares[2].getEncoded()),
             Arrays.concatenate(secretShares2[0].getEncoded(), secretShares2[1].getEncoded(), secretShares2[2].getEncoded())));
     }
 
@@ -93,14 +89,14 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
         byte[] secret2 = splitSecret2.getSecret();
 
-        Assert.assertArrayEquals(secret1, secret2);
+        assertTrue(Arrays.areEqual(secret1, secret2));
 
 
         // not enough secret shares cannot correctly recover the secret
         ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares[3], secretShares[6]};
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         byte[] secret3 = splitSecret3.getSecret();
-        Assert.assertFalse(Arrays.areEqual(secret1, secret3));
+        assertFalse(Arrays.areEqual(secret1, secret3));
     }
 
     public void testShamirSecretSplitterSplitAround()
@@ -118,7 +114,7 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecretShare ss = new ShamirSplitSecretShare(seed);
         ShamirSplitSecret splitSecret = splitter.splitAround(ss, m, n);
         ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
-        Assert.assertArrayEquals(secretShares[0].getEncoded(), seed);
+        assertTrue(Arrays.areEqual(secretShares[0].getEncoded(), seed));
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
         ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
@@ -132,19 +128,19 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
         byte[] secret2 = splitSecret2.getSecret();
 
-        Assert.assertArrayEquals(secret1, secret2);
-        Assert.assertArrayEquals(secret1, secret4);
+        assertTrue(Arrays.areEqual(secret1, secret2));
+        assertTrue(Arrays.areEqual(secret1, secret4));
 
         // not enough secret shares cannot correctly recover the secret
         ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares[3], secretShares[6]};
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         byte[] secret3 = splitSecret3.getSecret();
-        Assert.assertFalse(Arrays.areEqual(secret1, secret3));
+        assertFalse(Arrays.areEqual(secret1, secret3));
 
         secretShares3 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1]};
         splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         secret3 = splitSecret3.getSecret();
-        Assert.assertFalse(Arrays.areEqual(secret1, secret3));
+        assertFalse(Arrays.areEqual(secret1, secret3));
     }
 
     public void testShamirSecretSplitter()
@@ -165,13 +161,13 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
         byte[] secret2 = splitSecret2.getSecret();
 
-        Assert.assertArrayEquals(secret1, secret2);
+        assertTrue(Arrays.areEqual(secret1, secret2));
 
         // not enough secret shares cannot correctly recover the secret
         ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares[3], secretShares[6]};
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         byte[] secret3 = splitSecret3.getSecret();
-        Assert.assertFalse(Arrays.areEqual(secret1, secret3));
+        assertFalse(Arrays.areEqual(secret1, secret3));
     }
 //    private static Polynomial polynomial1 = new PolynomialTable(Polynomial.AES);
 //    private static Polynomial polynomial2 = new PolynomialTable(Polynomial.RSA);
