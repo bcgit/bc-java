@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -167,6 +168,11 @@ public class DefaultDigestAlgorithmIdentifierFinder
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, NISTObjectIdentifiers.id_sha512);
         digestOids.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, NISTObjectIdentifiers.id_sha512);
+
+        //technically these are non-pre-hash composites so MLDSA hashes with SHAKE and ECDSA with SHAxxx
+        //but for experimental we use this, more correct would be to define this only for prehash composites
+        digestOids.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, NISTObjectIdentifiers.id_sha256);
+        digestOids.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384, NISTObjectIdentifiers.id_sha384);
 
         digestOids.put(BCObjectIdentifiers.falcon, NISTObjectIdentifiers.id_shake256);
         digestOids.put(BCObjectIdentifiers.falcon_512, NISTObjectIdentifiers.id_shake256);
