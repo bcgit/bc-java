@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
 /**
  * This class represents the protocol version structure, containing both

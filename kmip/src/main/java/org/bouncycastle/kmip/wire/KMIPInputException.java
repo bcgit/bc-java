@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split;
+package org.bouncycastle.kmip.wire;
 
 import java.io.IOException;
 

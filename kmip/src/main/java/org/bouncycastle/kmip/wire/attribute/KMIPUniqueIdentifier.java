@@ -1,7 +1,7 @@
-package org.bouncycastle.crypto.split.attribute;
+package org.bouncycastle.kmip.wire.attribute;
 
 
-import org.bouncycastle.crypto.split.enumeration.KMIPUniqueIdentifierEnum;
+import org.bouncycastle.kmip.wire.enumeration.KMIPUniqueIdentifierEnum;
 
 public class KMIPUniqueIdentifier
 {

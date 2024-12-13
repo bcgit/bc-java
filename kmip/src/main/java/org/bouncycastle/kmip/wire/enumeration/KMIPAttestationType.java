@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.enumeration;
+package org.bouncycastle.kmip.wire.enumeration;
 
 public enum KMIPAttestationType
     implements KMIPEnumeration

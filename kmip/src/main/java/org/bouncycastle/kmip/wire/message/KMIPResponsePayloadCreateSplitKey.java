@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.kmip.wire.attribute.KMIPUniqueIdentifier;
 
 public class KMIPResponsePayloadCreateSplitKey
     extends KMIPResponsePayload

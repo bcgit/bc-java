@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.operation;
+package org.bouncycastle.kmip.wire.operation;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPEncodingOption;
-import org.bouncycastle.crypto.split.enumeration.KMIPWrappingMethod;
-import org.bouncycastle.crypto.split.object.KMIPKeyInformation;
+import org.bouncycastle.kmip.wire.enumeration.KMIPEncodingOption;
+import org.bouncycastle.kmip.wire.enumeration.KMIPWrappingMethod;
+import org.bouncycastle.kmip.wire.object.KMIPKeyInformation;
 
 /**
  * Represents the Key Wrapping Specification structure for wrapping a key.

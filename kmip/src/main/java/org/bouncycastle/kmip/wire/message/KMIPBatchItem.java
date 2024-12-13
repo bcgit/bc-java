@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPOperation;
+import org.bouncycastle.kmip.wire.enumeration.KMIPOperation;
 
 public abstract class KMIPBatchItem
 {

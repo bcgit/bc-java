@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.enumeration;
+package org.bouncycastle.kmip.wire.enumeration;
 
 /**
  * This field indicates a reason for failure or a modifier for a partially successful operation and SHALL be

@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
 import java.util.Date;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPAttestationType;
+import org.bouncycastle.kmip.wire.enumeration.KMIPAttestationType;
 
 public abstract class KMIPHeader
 {

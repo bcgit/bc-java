@@ -1,6 +1,6 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.kmip.wire.object;
 
-import org.bouncycastle.crypto.split.attribute.KMIPUniqueIdentifier;
+import org.bouncycastle.kmip.wire.attribute.KMIPUniqueIdentifier;
 
 public class KMIPKeyInformation
     extends KMIPObject

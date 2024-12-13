@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.split.message;
+package org.bouncycastle.kmip.wire.message;
 
 /**
  * A Nonce object is a structure used by the server to send a random value to the client. The Nonce

@@ -1,8 +1,8 @@
-package org.bouncycastle.crypto.split.object;
+package org.bouncycastle.kmip.wire.object;
 
 import java.math.BigInteger;
 
-import org.bouncycastle.crypto.split.enumeration.KMIPSplitKeyMethod;
+import org.bouncycastle.kmip.wire.enumeration.KMIPSplitKeyMethod;
 
 
 /**
