@@ -264,7 +264,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
         // wrap the padded session info using the shared-secret public key
         // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
-        return  getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
+        return getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
             .getEncoded(), getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, paddedSessionData));
     }
 
@@ -292,7 +292,10 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         //No checksum or padding
         byte[] sessionData = new byte[sessionInfo.length - 3];
         System.arraycopy(sessionInfo, 1, sessionData, 0, sessionData.length);
-
+        if (optSymAlgId == 0)
+        {
+            return getSessionInfo(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, sessionData));
+        }
         return getSessionInfo(ephPubEncoding, optSymAlgId, getWrapper(symmetricKeyAlgorithm, sessionInfo, secret, sessionData));
     }
 
