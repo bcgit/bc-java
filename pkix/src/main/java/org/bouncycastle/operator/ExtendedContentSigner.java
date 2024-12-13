@@ -9,10 +9,10 @@ public interface ExtendedContentSigner
     extends ContentSigner
 {
     /**
-     * Return the algorithm identifier describing the signature
-     * algorithm and parameters this signer generates.
+     * Return the algorithm identifier describing the digest algorithm used by
+     * this signature algorithm and parameters this signer generates.
      *
-     * @return algorithm oid and parameters.
+     * @return algorithm oid and parameters, null if unknown.
      */
     AlgorithmIdentifier getDigestAlgorithmIdentifier();
 }
