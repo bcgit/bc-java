@@ -54,7 +54,7 @@ public class MLKEMTest
     public void testParametersAndParamSpecs()
         throws Exception
     {
-        MLKEMParameters mldsaParameters[] = new MLKEMParameters[]
+        MLKEMParameters mlKemParameters[] = new MLKEMParameters[]
             {
                 MLKEMParameters.ml_kem_512,
                 MLKEMParameters.ml_kem_768,
@@ -63,7 +63,7 @@ public class MLKEMTest
 
         for (int i = 0; i != names.length; i++)
         {
-            assertEquals(names[i], MLKEMParameterSpec.fromName(mldsaParameters[i].getName()).getName());
+            assertEquals(names[i], MLKEMParameterSpec.fromName(mlKemParameters[i].getName()).getName());
         }
 
         for (int i = 0; i != names.length; i++)

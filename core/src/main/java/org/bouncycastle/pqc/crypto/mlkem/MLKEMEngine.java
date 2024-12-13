@@ -187,6 +187,16 @@ class MLKEMEngine
         this.random = random;
     }
 
+    public byte[][] generateKemKeyPair()
+    {
+        byte[] d = new byte[KyberSymBytes];
+        byte[] z = new byte[KyberSymBytes];
+        random.nextBytes(d);
+        random.nextBytes(z);
+
+        return generateKemKeyPairInternal(d, z);
+    }
+
     //Internal functions are deterministic. No randomness is sampled inside them
     public byte[][] generateKemKeyPairInternal(byte[] d, byte[] z)
     {
@@ -202,7 +212,15 @@ class MLKEMEngine
 
         byte[] outputPublicKey = new byte[KyberIndCpaPublicKeyBytes];
         System.arraycopy(indCpaKeyPair[0], 0, outputPublicKey, 0, KyberIndCpaPublicKeyBytes);
-        return new byte[][]{ Arrays.copyOfRange(outputPublicKey, 0, outputPublicKey.length - 32), Arrays.copyOfRange(outputPublicKey, outputPublicKey.length - 32, outputPublicKey.length), s, hashedPublicKey, z, Arrays.concatenate(d, z)};
+        return new byte[][]
+        {
+            Arrays.copyOfRange(outputPublicKey, 0, outputPublicKey.length - 32),
+            Arrays.copyOfRange(outputPublicKey, outputPublicKey.length - 32, outputPublicKey.length),
+            s,
+            hashedPublicKey,
+            z,
+            Arrays.concatenate(d, z)
+        };
     }
 
     public byte[][] kemEncryptInternal(byte[] publicKeyInput, byte[] randBytes)
@@ -261,16 +279,6 @@ class MLKEMEngine
         cmov(kr, implicit_rejection, KyberSymBytes, fail);
 
         return Arrays.copyOfRange(kr, 0, sessionKeyLength);
-    }
-
-    public byte[][] generateKemKeyPair()
-    {
-        byte[] d = new byte[KyberSymBytes];
-        byte[] z = new byte[KyberSymBytes];
-        random.nextBytes(d);
-        random.nextBytes(z);
-
-        return generateKemKeyPairInternal(d, z);
     }
 
     public byte[][] kemEncrypt(byte[] publicKeyInput, byte[] randBytes)
