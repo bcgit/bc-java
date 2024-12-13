@@ -164,6 +164,26 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         }
     }
 
+    /**
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 3.
+     * PKESKv3 packets are used with Symmetrically-Encrypted-Integrity-Protected Data (SEIPD) packets of
+     * version 1 or with Symmetrically-Encrypted Data (SED) packets and MUST NOT be used with SEIPDv2 packets.
+     * PKESKv3 packets are used with keys that do not support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}
+     * or as a fallback.
+     * <p/>
+     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 6.
+     * PKESKv6 packets are used with Symmetrically-Encrypted Integrity-Protected Data (SEIPD) packets
+     * of version 2 only.
+     * PKESKv6 packets are used with keys that support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}.
+     *
+     * @param sessionInfo session-key algorithm id + session-key + checksum
+     * @return PKESKv6 or v3 packet
+     * @throws PGPException if the PKESK packet cannot be generated
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
+     * RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
+     * RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
+     */
     public ContainedPacket generate(int version, byte[] sessionInfo)
         throws PGPException
     {
@@ -205,72 +225,6 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
         }
         throw new PGPException("Unexpected version number");
-    }
-
-    /**
-     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 3.
-     * PKESKv3 packets are used with Symmetrically-Encrypted-Integrity-Protected Data (SEIPD) packets of
-     * version 1 or with Symmetrically-Encrypted Data (SED) packets and MUST NOT be used with SEIPDv2 packets.
-     * PKESKv3 packets are used with keys that do not support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}
-     * or as a fallback.
-     *
-     * @param sessionInfo session-key algorithm + session-key + checksum
-     * @return version 3 PKESK packet
-     * @throws PGPException
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
-     * RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
-     */
-    public ContainedPacket generateV3(byte[] sessionInfo)
-        throws PGPException
-    {
-        long keyId;
-        if (useWildcardRecipient)
-        {
-            keyId = WILDCARD_KEYID;
-        }
-        else
-        {
-            keyId = pubKey.getKeyID();
-        }
-        byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfo, sessionInfo[0]);
-        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
-        return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
-    }
-
-    /**
-     * Generate a Public-Key Encrypted Session-Key (PKESK) packet of version 6.
-     * PKESKv6 packets are used with Symmetrically-Encrypted Integrity-Protected Data (SEIPD) packets
-     * of version 2 only.
-     * PKESKv6 packets are used with keys that support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}.
-     *
-     * @param sessionInfo session-key algorithm id + session-key + checksum
-     * @return PKESKv6 packet
-     * @throws PGPException if the PKESK packet cannot be generated
-     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
-     * RFC9580 - Version 6 Public Key Encrypted Session Key Packet</a>
-     */
-    public ContainedPacket generateV6(byte[] sessionInfo)
-        throws PGPException
-    {
-        byte[] keyFingerprint;
-        int keyVersion;
-        if (useWildcardRecipient)
-        {
-            keyFingerprint = WILDCARD_FINGERPRINT;
-            keyVersion = 0;
-        }
-        else
-        {
-            keyFingerprint = pubKey.getFingerprint();
-            keyVersion = pubKey.getVersion();
-        }
-        // In V6, do not include the symmetric-key algorithm in the session-info
-        byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
-        System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
-
-        byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
-        byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
-        return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
     }
 
     /**
