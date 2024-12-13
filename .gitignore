@@ -29,3 +29,5 @@ codesigning.jks
 /prov/src/main/core/
 
 bc-build.user.properties
+
+.DS_Store
