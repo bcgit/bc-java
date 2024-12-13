@@ -263,6 +263,7 @@ public class PGPEncryptedDataGenerator
         for (int i = 0; i < methods.size(); i++)
         {
             PGPKeyEncryptionMethodGenerator method = methods.get(i);
+            int packetVersion = 0;
             if (method instanceof PBEKeyEncryptionMethodGenerator)
             {
                 PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)method;
@@ -271,13 +272,13 @@ public class PGPEncryptedDataGenerator
                 {
                     mGen.setAEADAlgorithm(dataEncryptorBuilder.getAeadAlgorithm());
                 }
-                pOut.writePacket(mGen.generate(version, sessionInfo));
+                packetVersion = version;
             }
             else if (method instanceof PublicKeyKeyEncryptionMethodGenerator)
             {
-                PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)method;
-                pOut.writePacket(mGen.generate(version != 6 ? PublicKeyEncSessionPacket.VERSION_3 : PublicKeyEncSessionPacket.VERSION_6, sessionInfo));
+                packetVersion = version != 6 ? PublicKeyEncSessionPacket.VERSION_3 : PublicKeyEncSessionPacket.VERSION_6;
             }
+            pOut.writePacket(method.generate(packetVersion, sessionInfo));
         }
         try
         {
@@ -307,8 +308,8 @@ public class PGPEncryptedDataGenerator
                 if (buffer == null)
                 {
                     long chunkLength = 1L << (aeadDataEncryptor.getChunkSize() + 6);
-                    long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16 + 16; // data blocks + final tag
-                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4 + ivOrSaltLen));
+                    long tagLengths = ((length + chunkLength - 1) / chunkLength) * 16L + 16L; // data blocks + final tag
+                    pOut = new ClosableBCPGOutputStream(out, encOut, (length + tagLengths + 4L + ivOrSaltLen));
                 }
                 else
                 {
@@ -319,17 +320,10 @@ public class PGPEncryptedDataGenerator
             // OpenPGP v4
             else // data is encrypted by v1 SEIPD or SED packet, so write v4 SKESK packet
             {
-                if (digestCalc != null)
+                encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
+                if (digestCalc != null && useOldFormat)
                 {
-                    encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
-                    if (useOldFormat)
-                    {
-                        throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
-                    }
-                }
-                else
-                {
-                    encOut = new SymmetricEncDataPacket();
+                    throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
                 }
 
                 if (buffer == null)
