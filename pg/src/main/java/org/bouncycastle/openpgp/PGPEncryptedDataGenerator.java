@@ -12,9 +12,11 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
@@ -284,7 +286,7 @@ public class PGPEncryptedDataGenerator
                     for (int i = 0; i < methods.size(); i++)
                     {
                         PGPKeyEncryptionMethodGenerator method = methods.get(i);
-                        writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionInfo);
+                        writeOpenPGPv6ESKPacket(method, sessionInfo);
                     }
                     encOut = SymmetricEncIntegrityPacket.createVersion2Packet(
                         dataEncryptorBuilder.getAlgorithm(),
@@ -382,13 +384,14 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = mGen.generateV4(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm), sessionInfo);
+            ContainedPacket esk = mGen.setKekAlgorithm(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm))
+                .generate(SymmetricKeyEncSessionPacket.VERSION_4, sessionInfo);
             pOut.writePacket(esk);
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
-            pOut.writePacket(mGen.generateV3(sessionInfo));
+            pOut.writePacket(mGen.generate(PublicKeyEncSessionPacket.VERSION_3, sessionInfo));
         }
     }
 
@@ -408,16 +411,15 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = mGen.generateV5(
-                mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
-                dataEncryptorBuilder.getAeadAlgorithm(),
-                sessionInfo);
+            ContainedPacket esk = mGen.setKekAlgorithm(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm))
+                .setAEADAlgorithm(dataEncryptorBuilder.getAeadAlgorithm())
+                .generate(SymmetricKeyEncSessionPacket.VERSION_5, sessionInfo);
             pOut.writePacket(esk);
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
-            pOut.writePacket(mGen.generateV3(sessionInfo));
+            pOut.writePacket(mGen.generate(PublicKeyEncSessionPacket.VERSION_3, sessionInfo));
         }
     }
 
@@ -427,27 +429,25 @@ public class PGPEncryptedDataGenerator
      * depending on the method generator. This method is used by what can be referred to as OpenPGP v6.
      *
      * @param m             session key encryption method generator.
-     * @param aeadAlgorithm AEAD encryption algorithm
      * @param sessionInfo   session info
      * @throws IOException
      * @throws PGPException
      */
-    private void writeOpenPGPv6ESKPacket(PGPKeyEncryptionMethodGenerator m, int aeadAlgorithm, byte[] sessionInfo)
+    private void writeOpenPGPv6ESKPacket(PGPKeyEncryptionMethodGenerator m, byte[] sessionInfo)
         throws IOException, PGPException
     {
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = mGen.generateV6(
-                mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
-                aeadAlgorithm,
-                sessionInfo);
+            ContainedPacket esk = mGen.setKekAlgorithm(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm))
+                .setAEADAlgorithm(dataEncryptorBuilder.getAeadAlgorithm())
+                .generate(SymmetricKeyEncSessionPacket.VERSION_6, sessionInfo);
             pOut.writePacket(esk);
         }
         else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
             PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator)m;
-            pOut.writePacket(mGen.generateV6(sessionInfo));
+            pOut.writePacket(mGen.generate(PublicKeyEncSessionPacket.VERSION_6, sessionInfo));
         }
     }
 
