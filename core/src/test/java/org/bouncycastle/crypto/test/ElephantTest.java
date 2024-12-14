@@ -35,21 +35,21 @@ public class ElephantTest
         ElephantEngine elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant200);
         testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
         testParameters(elephant, 16, 12, 16);
-        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instance()
         {
             public AEADCipher createInstance()
             {
                 return new ElephantEngine(ElephantEngine.ElephantParameters.elephant160);
             }
         });
-        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instance()
         {
             public AEADCipher createInstance()
             {
                 return new ElephantEngine(ElephantEngine.ElephantParameters.elephant176);
             }
         });
-        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instace()
+        CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instance()
         {
             public AEADCipher createInstance()
             {
