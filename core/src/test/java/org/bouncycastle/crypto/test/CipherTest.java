@@ -125,14 +125,14 @@ public abstract class CipherTest
         }
     }
 
-    interface Instace
+    interface Instance
     {
         AEADCipher createInstance();
     }
 
-    static void checkCipher(int aeadLen, int ivLen, int msgLen, int strength, Instace instace)
+    static void checkCipher(int aeadLen, int ivLen, int msgLen, int strength, Instance instance)
     {
-        AEADCipher pCipher = instace.createInstance();
+        AEADCipher pCipher = instance.createInstance();
 
         try
         {
@@ -166,7 +166,7 @@ public abstract class CipherTest
             myOutLen += pCipher.doFinal(myEncrypted, myOutLen);
 
             /* Note that myOutLen is too large by DATALEN  */
-            pCipher = instace.createInstance();
+            pCipher = instance.createInstance();
             /* Initialise the cipher for decryption */
             pCipher.init(false, myParams);
             final int myMaxClearLen = pCipher.getOutputSize(myOutLen);
