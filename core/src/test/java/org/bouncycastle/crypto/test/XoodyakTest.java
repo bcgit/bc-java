@@ -39,7 +39,7 @@ public class XoodyakTest
         testExceptions(xoodyak, xoodyak.getKeyBytesSize(), xoodyak.getIVBytesSize(), xoodyak.getBlockSize());
         testParameters(xoodyak, 16, 16, 16);
         testExceptions(new XoodyakDigest(), 32);
-        CipherTest.checkAEADCipherOutputSize(16, 16, 24, 16, new XoodyakEngine());
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 24, 16, new XoodyakEngine());
     }
 
     private void testVectorsHash()
