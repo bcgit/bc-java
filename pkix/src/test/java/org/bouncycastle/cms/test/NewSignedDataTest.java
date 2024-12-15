@@ -2,6 +2,7 @@ package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -48,12 +49,16 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.ess.ESSCertIDv2;
+import org.bouncycastle.asn1.ess.SigningCertificateV2;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -76,6 +81,7 @@ import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.DefaultCMSSignatureAlgorithmNameGenerator;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.SignerId;
+import org.bouncycastle.cms.SignerInfoGenerator;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -92,6 +98,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcContentSignerBuilder;
@@ -3203,6 +3210,47 @@ public class NewSignedDataTest
         }
     }
 
+    public void testSignerInfoGenCopyConstructor()
+        throws Exception
+    {
+        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        SignerInfoGenerator signerInfoGen = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert);
+
+        DigestCalculator digCalc = new SHA256DigestCalculator();
+
+        OutputStream dOut = digCalc.getOutputStream();
+
+        dOut.write(_origCert.getEncoded());
+
+        dOut.close();
+
+        byte[] certHash256 = digCalc.getDigest();
+        final ESSCertIDv2 essCertIDv2 = new ESSCertIDv2(certHash256, new IssuerSerial(X500Name.getInstance(_origCert.getIssuerX500Principal().getEncoded()), _origCert.getSerialNumber()));
+
+        CMSAttributeTableGenerator signedAttrGen = new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                AttributeTable table = signerInfoGen.getSignedAttributeTableGenerator().getAttributes(parameters);
+
+                if (table.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2) == null)
+                {
+                    return table.add(PKCSObjectIdentifiers.id_aa_signingCertificateV2,
+                        new SigningCertificateV2(essCertIDv2));
+                }
+
+                return table;
+            }
+        };
+        SignerInfoGenerator newSignerInfoGen = new SignerInfoGenerator(signerInfoGen, signedAttrGen, signerInfoGen.getUnsignedAttributeTableGenerator());
+
+        assertTrue(signerInfoGen.hasAssociatedCertificate());
+        assertTrue(newSignerInfoGen.hasAssociatedCertificate());
+        assertTrue(signerInfoGen.getUnsignedAttributeTableGenerator() == newSignerInfoGen.getUnsignedAttributeTableGenerator());
+        assertTrue(newSignerInfoGen.getSignedAttributeTableGenerator() == signedAttrGen);
+    }
+    
     public void testMSPKCS7()
         throws Exception
     {
