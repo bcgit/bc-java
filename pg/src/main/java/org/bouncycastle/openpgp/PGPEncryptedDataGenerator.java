@@ -9,21 +9,16 @@ import java.util.List;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGHeaderObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
-import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
-import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPAEADDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
@@ -259,26 +254,10 @@ public class PGPEncryptedDataGenerator
         PGPDataEncryptor dataEncryptor = dataEncryptorBuilder.build(messageKey);
         digestCalc = dataEncryptor.getIntegrityCalculator();
         BCPGHeaderObject encOut;
-        int version = (dataEncryptor instanceof PGPAEADDataEncryptor ? (isV5StyleAEAD ? 5 : 6) : 4); // OpenPGP v4, v5 or v6
         for (int i = 0; i < methods.size(); i++)
         {
             PGPKeyEncryptionMethodGenerator method = methods.get(i);
-            int packetVersion = 0;
-            if (method instanceof PBEKeyEncryptionMethodGenerator)
-            {
-                PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)method;
-                mGen.setKekAlgorithm(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm));
-                if (version >= 5)
-                {
-                    mGen.setAEADAlgorithm(dataEncryptorBuilder.getAeadAlgorithm());
-                }
-                packetVersion = version;
-            }
-            else if (method instanceof PublicKeyKeyEncryptionMethodGenerator)
-            {
-                packetVersion = version != 6 ? PublicKeyEncSessionPacket.VERSION_3 : PublicKeyEncSessionPacket.VERSION_6;
-            }
-            pOut.writePacket(method.generate(packetVersion, sessionInfo));
+            pOut.writePacket(method.generate(dataEncryptorBuilder, sessionInfo));
         }
         try
         {
@@ -292,14 +271,14 @@ public class PGPEncryptedDataGenerator
                 {
                     byte[] iv = aeadDataEncryptor.getIV();
                     encOut = new AEADEncDataPacket(
-                        dataEncryptorBuilder.getAlgorithm(), aeadDataEncryptor.getAEADAlgorithm(), aeadDataEncryptor.getChunkSize(), iv);
+                        defAlgorithm, aeadDataEncryptor.getAEADAlgorithm(), aeadDataEncryptor.getChunkSize(), iv);
                     ivOrSaltLen = iv.length;
                 }
                 else // data is encrypted by v2 SEIPD (AEAD), so write v6 SKESK packet
                 {
                     //AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
                     encOut = SymmetricEncIntegrityPacket.createVersion2Packet(
-                        dataEncryptorBuilder.getAlgorithm(),
+                        defAlgorithm,
                         aeadDataEncryptor.getAEADAlgorithm(),
                         aeadDataEncryptor.getChunkSize(),
                         salt);
