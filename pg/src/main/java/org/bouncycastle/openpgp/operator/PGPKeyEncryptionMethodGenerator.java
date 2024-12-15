@@ -9,6 +9,7 @@ import org.bouncycastle.openpgp.PGPException;
  */
 public interface PGPKeyEncryptionMethodGenerator
 {
-    ContainedPacket generate(int version, byte[] sessionInfo)
+
+    ContainedPacket generate(PGPDataEncryptorBuilder dataEncryptorBuilder, byte[] sessionInfo)
         throws PGPException;
 }

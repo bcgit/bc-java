@@ -184,10 +184,10 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
      * RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
      */
-    public ContainedPacket generate(int version, byte[] sessionInfo)
+    public ContainedPacket generate(PGPDataEncryptorBuilder dataEncryptorBuilder, byte[] sessionInfo)
         throws PGPException
     {
-        if (version == PublicKeyEncSessionPacket.VERSION_3)
+        if (dataEncryptorBuilder.getAeadAlgorithm() <= 0 || dataEncryptorBuilder.isV5StyleAEAD())
         {
             long keyId;
             if (useWildcardRecipient)
@@ -202,7 +202,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
             return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
         }
-        else if (version == PublicKeyEncSessionPacket.VERSION_6)
+        else
         {
             byte[] keyFingerprint;
             int keyVersion;
@@ -224,7 +224,6 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
             return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
         }
-        throw new PGPException("Unexpected version number");
     }
 
     /**
