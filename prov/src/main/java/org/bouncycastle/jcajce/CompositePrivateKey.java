@@ -108,7 +108,7 @@ public class CompositePrivateKey implements PrivateKey
 
     public String getAlgorithm()
     {
-        return this.algorithmIdentifier.getId();
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
     }
 
     public ASN1ObjectIdentifier getAlgorithmIdentifier()
