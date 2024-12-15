@@ -176,7 +176,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * of version 2 only.
      * PKESKv6 packets are used with keys that support {@link org.bouncycastle.bcpg.sig.Features#FEATURE_SEIPD_V2}.
      *
-     * @param sessionInfo session-key algorithm id + session-key + checksum
+     * @param sessionKey session-key algorithm id + session-key + checksum
      * @return PKESKv6 or v3 packet
      * @throws PGPException if the PKESK packet cannot be generated
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-6-public-key-encryp">
@@ -184,7 +184,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-version-3-public-key-encryp">
      * RFC9580 - Version 3 Public Key Encrypted Session Key Packet</a>
      */
-    public ContainedPacket generate(PGPDataEncryptorBuilder dataEncryptorBuilder, byte[] sessionInfo)
+    public ContainedPacket generate(PGPDataEncryptorBuilder dataEncryptorBuilder, byte[] sessionKey)
         throws PGPException
     {
         if (dataEncryptorBuilder.getAeadAlgorithm() <= 0 || dataEncryptorBuilder.isV5StyleAEAD())
@@ -198,7 +198,7 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
             {
                 keyId = pubKey.getKeyID();
             }
-            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfo, sessionInfo[0]);
+            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionKey, (byte)dataEncryptorBuilder.getAlgorithm());
             byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
             return PublicKeyEncSessionPacket.createV3PKESKPacket(keyId, pubKey.getAlgorithm(), encodedEncSessionInfo);
         }
@@ -217,28 +217,59 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
                 keyVersion = pubKey.getVersion();
             }
             // In V6, do not include the symmetric-key algorithm in the session-info
-            byte[] sessionInfoWithoutAlgId = new byte[sessionInfo.length - 1];
-            System.arraycopy(sessionInfo, 1, sessionInfoWithoutAlgId, 0, sessionInfoWithoutAlgId.length);
 
-            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionInfo, sessionInfoWithoutAlgId, (byte)0);
+            byte[] encryptedSessionInfo = encryptSessionInfo(pubKey, sessionKey, (byte)0);
             byte[][] encodedEncSessionInfo = encodeEncryptedSessionInfo(encryptedSessionInfo);
             return PublicKeyEncSessionPacket.createV6PKESKPacket(keyVersion, keyFingerprint, pubKey.getAlgorithm(), encodedEncSessionInfo);
         }
+    }
+
+    protected byte[] createSessionInfo(
+        int algorithm,
+        byte[] keyBytes)
+    {
+        byte[] sessionInfo;
+        if (algorithm != 0)
+        {
+            sessionInfo = new byte[keyBytes.length + 3];
+            sessionInfo[0] = (byte)algorithm;
+            System.arraycopy(keyBytes, 0, sessionInfo, 1, keyBytes.length);
+            addCheckSum(sessionInfo, 1);
+        }
+        else
+        {
+            sessionInfo = new byte[keyBytes.length + 2];
+            System.arraycopy(keyBytes, 0, sessionInfo, 0, keyBytes.length);
+            addCheckSum(sessionInfo, 0);
+        }
+        return sessionInfo;
+    }
+
+    protected void addCheckSum(byte[] sessionInfo, int pos)
+    {
+        int check = 0;
+
+        for (int i = pos; i != sessionInfo.length - 2; i++)
+        {
+            check += sessionInfo[i] & 0xff;
+        }
+
+        sessionInfo[sessionInfo.length - 2] = (byte)(check >> 8);
+        sessionInfo[sessionInfo.length - 1] = (byte)(check);
     }
 
     /**
      * Encrypt a session key using the recipients public key.
      *
      * @param pubKey               recipients public key
-     * @param fullSessionInfo      full session info (sym-alg-id + session-key + 2 octet checksum)
-     * @param sessionInfoToEncrypt for v3: full session info; for v6: just the session-key
+//     * @param fullSessionInfo      full session info (sym-alg-id + session-key + 2 octet checksum)
+//     * @param sessionInfoToEncrypt for v3: full session info; for v6: just the session-key
      * @param optSymAlgId          for v3: session key algorithm ID; for v6: empty array
      * @return encrypted session info
      * @throws PGPException
      */
     protected abstract byte[] encryptSessionInfo(PGPPublicKey pubKey,
-                                                 byte[] fullSessionInfo,
-                                                 byte[] sessionInfoToEncrypt,
+                                                 byte[] sessionKey,
                                                  byte optSymAlgId)
         throws PGPException;
 

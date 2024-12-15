@@ -139,42 +139,6 @@ public class PGPEncryptedDataGenerator
         methods.add(method);
     }
 
-    /**
-     * Write a checksum into the last two bytes of the array.
-     *
-     * @param sessionInfo byte array
-     */
-    private void addCheckSum(
-        byte[] sessionInfo)
-    {
-        int check = 0;
-
-        for (int i = 1; i != sessionInfo.length - 2; i++)
-        {
-            check += sessionInfo[i] & 0xff;
-        }
-
-        sessionInfo[sessionInfo.length - 2] = (byte)(check >> 8);
-        sessionInfo[sessionInfo.length - 1] = (byte)(check);
-    }
-
-    /**
-     * Create a session info array containing of the algorithm-id followed by the key and a two-byte checksum.
-     *
-     * @param algorithm symmetric algorithm
-     * @param keyBytes  bytes of the key
-     * @return array of algorithm, key and checksum
-     */
-    private byte[] createSessionInfo(
-        int algorithm,
-        byte[] keyBytes)
-    {
-        byte[] sessionInfo = new byte[keyBytes.length + 3];
-        sessionInfo[0] = (byte)algorithm;
-        System.arraycopy(keyBytes, 0, sessionInfo, 1, keyBytes.length);
-        addCheckSum(sessionInfo);
-        return sessionInfo;
-    }
 
     /**
      * Create an OutputStream based on the configured methods.
@@ -226,7 +190,6 @@ public class PGPEncryptedDataGenerator
         if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
-            sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
             // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
             // Since we cannot inject the IV into the data encryptor, we append it to the message key.
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
@@ -246,8 +209,6 @@ public class PGPEncryptedDataGenerator
         else
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
-            // prepend algorithm, append checksum
-            sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
             messageKey = sessionKey;
         }
 
@@ -257,7 +218,7 @@ public class PGPEncryptedDataGenerator
         for (int i = 0; i < methods.size(); i++)
         {
             PGPKeyEncryptionMethodGenerator method = methods.get(i);
-            pOut.writePacket(method.generate(dataEncryptorBuilder, sessionInfo));
+            pOut.writePacket(method.generate(dataEncryptorBuilder, sessionKey));
         }
         try
         {
