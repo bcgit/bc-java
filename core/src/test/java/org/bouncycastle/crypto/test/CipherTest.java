@@ -12,7 +12,8 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
+import org.bouncycastle.util.test.SimpleTestResult;
+import org.bouncycastle.util.test.TestFailedException;
 
 public abstract class CipherTest
     extends SimpleTest
@@ -124,14 +125,14 @@ public abstract class CipherTest
         }
     }
 
-    interface Instace
+    interface Instance
     {
-        AEADCipher CreateInstace();
+        AEADCipher createInstance();
     }
 
-    static void checkCipher(int aeadLen, int ivLen, int msgLen, int strength, Instace instace)
+    static void checkCipher(int aeadLen, int ivLen, int msgLen, int strength, Instance instance)
     {
-        AEADCipher pCipher = instace.CreateInstace();
+        AEADCipher pCipher = instance.createInstance();
 
         try
         {
@@ -165,7 +166,7 @@ public abstract class CipherTest
             myOutLen += pCipher.doFinal(myEncrypted, myOutLen);
 
             /* Note that myOutLen is too large by DATALEN  */
-            pCipher = instace.CreateInstace();
+            pCipher = instance.createInstance();
             /* Initialise the cipher for decryption */
             pCipher.init(false, myParams);
             final int myMaxClearLen = pCipher.getOutputSize(myOutLen);
@@ -187,7 +188,7 @@ public abstract class CipherTest
         }
     }
 
-    static void checkAEADCipherOutputSize(int keySize, int ivSize, int blockSize, int tagSize, AEADCipher cipher)
+    static void checkAEADCipherOutputSize(SimpleTest parent, int keySize, int ivSize, int blockSize, int tagSize, AEADCipher cipher)
         throws InvalidCipherTextException
     {
         final SecureRandom random = new SecureRandom();
@@ -201,42 +202,53 @@ public abstract class CipherTest
         cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
         byte[] ciphertext = new byte[cipher.getOutputSize(plaintext.length)];
         //before the encrypt
-        Assert.assertEquals(plaintext.length + tagSize, ciphertext.length);
-        Assert.assertEquals(plaintext.length, cipher.getUpdateOutputSize(plaintext.length) + tmpLength);
+        isEqualTo(parent, plaintext.length + tagSize, ciphertext.length);
+        isEqualTo(parent, plaintext.length, cipher.getUpdateOutputSize(plaintext.length) + tmpLength);
         //during the encrypt process of the first block
         int len = cipher.processBytes(plaintext, 0, tmpLength, ciphertext, 0);
-        Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength) + tmpLength);
+        isEqualTo(parent, plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength) + tmpLength);
         //during the encrypt process of the second block
         len += cipher.processBytes(plaintext, tmpLength, blockSize, ciphertext, len);
-        Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength - blockSize));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength - blockSize) + tmpLength);
+        isEqualTo(parent, plaintext.length + tagSize, len + cipher.getOutputSize(plaintext.length - tmpLength - blockSize));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(plaintext.length - tmpLength - blockSize) + tmpLength);
         //process the remaining bytes
         len += cipher.processBytes(plaintext, tmpLength + blockSize, blockSize, ciphertext, len);
-        Assert.assertEquals(plaintext.length + tagSize, len + cipher.getOutputSize(0));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
+        isEqualTo(parent, plaintext.length + tagSize, len + cipher.getOutputSize(0));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
         //process doFinal
         len += cipher.doFinal(ciphertext, len);
-        Assert.assertEquals(len, ciphertext.length);
+        isEqualTo(parent, len, ciphertext.length);
 
         cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
         //before the encrypt
-        Assert.assertEquals(plaintext.length, cipher.getOutputSize(ciphertext.length));
-        Assert.assertEquals(plaintext.length, cipher.getUpdateOutputSize(ciphertext.length) + tmpLength);
+        isEqualTo(parent, plaintext.length, cipher.getOutputSize(ciphertext.length));
+        isEqualTo(parent, plaintext.length, cipher.getUpdateOutputSize(ciphertext.length) + tmpLength);
         //during the encrypt process of the first block
         len = cipher.processBytes(ciphertext, 0, tmpLength, plaintext, 0);
-        Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength) + tmpLength);
+        isEqualTo(parent, plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength) + tmpLength);
         //during the encrypt process of the second block
         len += cipher.processBytes(ciphertext, tmpLength, blockSize, plaintext, len);
-        Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength - blockSize));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength - blockSize) + tmpLength);
+        isEqualTo(parent, plaintext.length, len + cipher.getOutputSize(ciphertext.length - tmpLength - blockSize));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(ciphertext.length - tmpLength - blockSize) + tmpLength);
         //process the remaining bytes
         len += cipher.processBytes(ciphertext, tmpLength + blockSize, blockSize + tagSize, plaintext, len);
-        Assert.assertEquals(plaintext.length, len + cipher.getOutputSize(0));
-        Assert.assertEquals(plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
+        isEqualTo(parent, plaintext.length, len + cipher.getOutputSize(0));
+        isEqualTo(parent, plaintext.length, len + cipher.getUpdateOutputSize(0) + tmpLength);
         //process doFinal
         len += cipher.doFinal(plaintext, len);
-        Assert.assertEquals(len, plaintext.length);
+        isEqualTo(parent, len, plaintext.length);
+    }
+
+    static void isEqualTo(
+        SimpleTest parent,
+        int a,
+        int b)
+    {
+        if (a != b)
+        {
+            throw new TestFailedException(SimpleTestResult.failed(parent, "no message"));
+        }
     }
 }

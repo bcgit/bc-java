@@ -78,6 +78,7 @@ public class SignerInfoGenerator
         this.digestAlgorithm = original.digestAlgorithm;
         this.digester = original.digester;
         this.sigEncAlgFinder = original.sigEncAlgFinder;
+        this.certHolder = original.certHolder;
         this.sAttrGen = sAttrGen;
         this.unsAttrGen = unsAttrGen;
     }
