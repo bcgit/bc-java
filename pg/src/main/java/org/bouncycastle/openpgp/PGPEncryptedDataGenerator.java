@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
@@ -228,6 +229,7 @@ public class PGPEncryptedDataGenerator
         if (dataEncryptorBuilder.getAeadAlgorithm() != -1 && !isV5StyleAEAD)
         {
             sessionKey = PGPUtil.makeRandomKey(defAlgorithm, rand);
+            sessionInfo = createSessionInfo(defAlgorithm, sessionKey);
             // In OpenPGP v6, we need an additional step to derive a message key and IV from the session info.
             // Since we cannot inject the IV into the data encryptor, we append it to the message key.
             byte[] info = SymmetricEncIntegrityPacket.createAAData(
@@ -271,7 +273,7 @@ public class PGPEncryptedDataGenerator
                 {
                     //https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.2.1 Table 2
                     //AEAD(HKDF(S2K(passphrase), info), secrets, packetprefix)
-                    writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionKey);
+                    writeOpenPGPv6ESKPacket(method, aeadDataEncryptor.getAEADAlgorithm(), sessionInfo);
                 }
             }
             // OpenPGP v4
@@ -386,19 +388,20 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = m.generate(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm), sessionInfo);
+            ContainedPacket esk = mGen.generateV4(mGen.getSessionKeyWrapperAlgorithm(defAlgorithm), sessionInfo);
             pOut.writePacket(esk);
         }
-        else
+        else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
     /**
      * Write out a {@link org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket#VERSION_5 v5 SKESK} or
      * {@link org.bouncycastle.bcpg.PublicKeyEncSessionPacket#VERSION_3 v3 PKESK} packet,
-     * depending on the method generator. This method is used by what can be referred to as OpenPGP v5.
+     * depending on the method generator. This method is used by LibrePGP only.
      *
      * @param m           session key encryption method generator.
      * @param sessionInfo session info
@@ -411,15 +414,16 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = m.generateV5(
+            ContainedPacket esk = mGen.generateV5(
                 mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                 dataEncryptorBuilder.getAeadAlgorithm(),
                 sessionInfo);
             pOut.writePacket(esk);
         }
-        else
+        else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            pOut.writePacket(mGen.generateV3(sessionInfo));
         }
     }
 
@@ -440,15 +444,16 @@ public class PGPEncryptedDataGenerator
         if (m instanceof PBEKeyEncryptionMethodGenerator)
         {
             PBEKeyEncryptionMethodGenerator mGen = (PBEKeyEncryptionMethodGenerator)m;
-            ContainedPacket esk = m.generateV6(
+            ContainedPacket esk = mGen.generateV6(
                 mGen.getSessionKeyWrapperAlgorithm(defAlgorithm),
                 aeadAlgorithm,
                 sessionInfo);
             pOut.writePacket(esk);
         }
-        else
+        else if (m instanceof PublicKeyKeyEncryptionMethodGenerator)
         {
-            pOut.writePacket(m.generate(defAlgorithm, sessionInfo));
+            PublicKeyKeyEncryptionMethodGenerator mGen = (PublicKeyKeyEncryptionMethodGenerator) m;
+            pOut.writePacket(mGen.generateV6(sessionInfo));
         }
     }
 
