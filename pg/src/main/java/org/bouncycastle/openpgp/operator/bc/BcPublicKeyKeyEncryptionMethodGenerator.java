@@ -75,7 +75,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
     }
 
     @Override
-    protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionKey, byte optSymAlgId)
+    protected byte[] encryptSessionInfo(PGPPublicKey pubKey, byte[] sessionKey, byte symAlgId, boolean isV3)
         throws PGPException
     {
         try
@@ -87,7 +87,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
                 ECDHPublicBCPGKey ecPubKey = (ECDHPublicBCPGKey)pubKeyPacket.getKey();
-                byte[] sessionInfo = createSessionInfo(optSymAlgId, sessionKey);
+                byte[] sessionInfo = createSessionInfo(isV3 ? symAlgId : (byte)0, sessionKey);
                 byte[] userKeyingMaterial = RFC6637Utils.createUserKeyingMaterial(pubKeyPacket, new BcKeyFingerprintCalculator());
 
                 // Legacy X25519
@@ -146,7 +146,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                             ((X25519PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
                         }
                     },
-                    optSymAlgId);
+                    isV3 ? symAlgId : (byte)0);
             }
 
             // X448
@@ -162,7 +162,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                             ((X448PublicKeyParameters)publicKey).encode(ephPubEncoding, 0);
                         }
                     },
-                    optSymAlgId);
+                    isV3 ? symAlgId : (byte)0);
             }
 
             // RSA / ElGamal etc.
@@ -171,7 +171,7 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                 AsymmetricBlockCipher c = BcImplProvider.createPublicKeyCipher(pubKey.getAlgorithm());
 
                 c.init(true, new ParametersWithRandom(cryptoPublicKey, random));
-                byte[] sessionInfo = createSessionInfo(optSymAlgId, sessionKey);
+                byte[] sessionInfo = createSessionInfo(isV3 ? symAlgId : (byte)0, sessionKey);
 
                 return c.processBlock(sessionInfo, 0, sessionInfo.length);
             }
@@ -221,8 +221,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
 
         // wrap the padded session info using the shared-secret public key
         // https://www.rfc-editor.org/rfc/rfc9580.html#section-11.5-16
-        return getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding))
-            .getEncoded(), getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
+        return getSessionInfo(new MPInteger(new BigInteger(1, ephPubEncoding)).getEncoded(), (byte) 0,
+            getWrapper(symmetricKeyAlgorithm, key, paddedSessionData));
     }
 
     private byte[] encryptSessionInfoWithX25519X448Key(PublicKeyPacket pubKeyPacket,
@@ -246,10 +246,6 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
         KeyParameter key = new KeyParameter(RFC6637KDFCalculator.createKey(hashAlgorithm, symmetricKeyAlgorithm,
             Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
 
-        if (optSymAlgId == 0)
-        {
-            return getSessionInfo(ephPubEncoding, getWrapper(symmetricKeyAlgorithm, key, sessionKey));
-        }
         return getSessionInfo(ephPubEncoding, optSymAlgId, getWrapper(symmetricKeyAlgorithm, key, sessionKey));
     }
 
