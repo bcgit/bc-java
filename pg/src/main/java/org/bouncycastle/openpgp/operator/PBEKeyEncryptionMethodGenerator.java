@@ -30,8 +30,6 @@ public abstract class PBEKeyEncryptionMethodGenerator
     private SecureRandom random;
     private int s2kCount;
     private int wrapAlg = -1;
-    private int kekAlgorithm;
-    private int aeadAlgorithm;
 
     /**
      * Construct a PBE key generator using the default iteration count (<code>0x60</code> == 65536
