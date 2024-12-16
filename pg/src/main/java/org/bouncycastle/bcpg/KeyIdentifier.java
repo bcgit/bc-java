@@ -17,6 +17,11 @@ public class KeyIdentifier
     private final byte[] fingerprint;
     private final long keyId;
 
+    public KeyIdentifier(String hexEncoded)
+    {
+        this(Hex.decode(hexEncoded));
+    }
+
     /**
      * Create a new {@link KeyIdentifier} based on a keys fingerprint.
      * For fingerprints matching the format of a v4, v5 or v6 key, the constructor will
@@ -157,6 +162,26 @@ public class KeyIdentifier
         }
     }
 
+    public static boolean matches(List<KeyIdentifier> identifiers, KeyIdentifier identifier, boolean explicit)
+    {
+        for (KeyIdentifier candidate : identifiers)
+        {
+            if (!explicit && candidate.isWildcard())
+            {
+                return true;
+            }
+
+            if (candidate.getFingerprint() != null &&
+                    Arrays.constantTimeAreEqual(candidate.getFingerprint(), identifier.getFingerprint()))
+            {
+                return true;
+            }
+
+            return candidate.getKeyId() == identifier.getKeyId();
+        }
+        return false;
+    }
+
     /**
      * Return true, if this {@link KeyIdentifier} is present in the given list of {@link KeyIdentifier} .
      * This will return true if a fingerprint matches, or if a key-id matches,
@@ -176,6 +201,35 @@ public class KeyIdentifier
         }
 
         return false;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (obj == null)
+        {
+            return false;
+        }
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof KeyIdentifier))
+        {
+            return false;
+        }
+        KeyIdentifier other = (KeyIdentifier) obj;
+        if (getFingerprint() != null && other.getFingerprint() != null)
+        {
+            return Arrays.constantTimeAreEqual(getFingerprint(), other.getFingerprint());
+        }
+        return getKeyId() == other.getKeyId();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return (int) getKeyId();
     }
 
     public String toString()
