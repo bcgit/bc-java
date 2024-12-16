@@ -14,7 +14,6 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 public class BcAEADSecretKeyEncryptorBuilder
     implements AEADSecretKeyEncryptorBuilder
 {
-
     private int aeadAlgorithm;
     private int symmetricAlgorithm;
     private S2K.Argon2Params argon2Params;
