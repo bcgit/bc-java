@@ -11,6 +11,7 @@ import org.bouncycastle.bcpg.BCPGHeaderObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
@@ -260,10 +261,17 @@ public class PGPEncryptedDataGenerator
             // OpenPGP v4
             else // data is encrypted by v1 SEIPD or SED packet, so write v4 SKESK packet
             {
-                encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
-                if (digestCalc != null && useOldFormat)
+                if (digestCalc != null)
                 {
-                    throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
+                    encOut = SymmetricEncIntegrityPacket.createVersion1Packet();
+                    if (useOldFormat)
+                    {
+                        throw new PGPException("symmetric-enc-integrity packets not supported in old PGP format");
+                    }
+                }
+                else
+                {
+                    encOut = new SymmetricEncDataPacket();
                 }
 
                 if (buffer == null)
