@@ -82,6 +82,10 @@ class ProvAlgorithmConstraints
 
         if (null != configAlgorithmConstraints && !configAlgorithmConstraints.permits(primitives, algorithm, parameters))
         {
+            if (LOG.isLoggable(Level.FINEST))
+            {
+                LOG.finest("Configured algorithm constraints do not permit '" + algorithm + "' with given parameters");
+            }
             return false;
         }
 

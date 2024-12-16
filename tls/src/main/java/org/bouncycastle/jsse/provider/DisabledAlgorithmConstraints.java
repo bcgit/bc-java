@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.crypto.SecretKey;
@@ -53,8 +54,8 @@ class DisabledAlgorithmConstraints
             }
         }
 
-        return new DisabledAlgorithmConstraints(decomposer, Collections.unmodifiableSet(disabledAlgorithms),
-            Collections.unmodifiableMap(constraintsMap));
+        return new DisabledAlgorithmConstraints(decomposer, propertyName,
+            Collections.unmodifiableSet(disabledAlgorithms), Collections.unmodifiableMap(constraintsMap));
     }
 
     private static boolean addConstraint(Set<String> disabledAlgorithms, Map<String, List<Constraint>> constraintsMap,
@@ -151,27 +152,16 @@ class DisabledAlgorithmConstraints
         return null;
     }
 
-    private static String getConstraintsAlgorithm(Key key)
-    {
-        if (null != key)
-        {
-            String keyAlgorithm = JsseUtils.getKeyAlgorithm(key);
-            if (null != keyAlgorithm)
-            {
-                return getCanonicalAlgorithm(keyAlgorithm);
-            }
-        }
-        return null;
-    }
-
+    private final String logHeader;
     private final Set<String> disabledAlgorithms;
     private final Map<String, List<Constraint>> constraintsMap;
 
-    private DisabledAlgorithmConstraints(AlgorithmDecomposer decomposer, Set<String> disabledAlgorithms,
-        Map<String, List<Constraint>> constraintsMap)
+    private DisabledAlgorithmConstraints(AlgorithmDecomposer decomposer, String propertyName,
+        Set<String> disabledAlgorithms, Map<String, List<Constraint>> constraintsMap)
     {
         super(decomposer);
 
+        this.logHeader = "[" + propertyName + "]";
         this.disabledAlgorithms = disabledAlgorithms;
         this.constraintsMap = constraintsMap;
     }
@@ -181,20 +171,7 @@ class DisabledAlgorithmConstraints
         checkPrimitives(primitives);
         checkAlgorithmName(algorithm);
 
-        if (containsAnyPartIgnoreCase(disabledAlgorithms, algorithm))
-        {
-            return false;
-        }
-
-        for (Constraint constraint : getConstraints(getConstraintsAlgorithm(algorithm, parameters)))
-        {
-            if (!constraint.permits(parameters))
-            {
-                return false;
-            }
-        }
-
-        return true;
+        return implPermitsAlgorithm(primitives, algorithm, parameters);
     }
 
     public final boolean permits(Set<BCCryptoPrimitive> primitives, Key key)
@@ -216,23 +193,32 @@ class DisabledAlgorithmConstraints
         checkPrimitives(primitives);
         checkKey(key);
 
-        if (JsseUtils.isNameSpecified(algorithm)
-            && !permits(primitives, algorithm, parameters))
+        String keyAlgorithm = JsseUtils.getKeyAlgorithm(key);
+        checkAlgorithmName(keyAlgorithm);
+
+        if (JsseUtils.isNameSpecified(algorithm) &&
+            !implPermitsAlgorithm(primitives, algorithm, parameters))
         {
             return false;
         }
 
-        if (!permits(primitives, JsseUtils.getKeyAlgorithm(key), null))
+        if (!implPermitsKeyAlgorithm(primitives, keyAlgorithm))
         {
             return false;
         }
 
         // TODO[jsse] SunJSSE also checks the named curve for EC keys
 
-        for (Constraint constraint : getConstraints(getConstraintsAlgorithm(key)))
+        String constraintsAlgorithm = getCanonicalAlgorithm(keyAlgorithm);
+        for (Constraint constraint : getConstraints(constraintsAlgorithm))
         {
             if (!constraint.permits(key))
             {
+                if (LOG.isLoggable(Level.FINEST))
+                {
+                    LOG.finest(logHeader + " constraints for '" + constraintsAlgorithm + "' do not permit given '"
+                        + keyAlgorithm + "' key");
+                }
                 return false;
             }
         }
@@ -251,6 +237,49 @@ class DisabledAlgorithmConstraints
             }
         }
         return Collections.<Constraint> emptyList();
+    }
+
+    private boolean implPermitsAlgorithm(Set<BCCryptoPrimitive> primitives, String algorithm,
+        AlgorithmParameters parameters)
+    {
+        if (containsAnyPartIgnoreCase(disabledAlgorithms, algorithm))
+        {
+            if (LOG.isLoggable(Level.FINEST))
+            {
+                LOG.finest(logHeader + " disabled algorithm '" + algorithm + "'");
+            }
+            return false;
+        }
+
+        String constraintsAlgorithm = getConstraintsAlgorithm(algorithm, parameters);
+        for (Constraint constraint : getConstraints(constraintsAlgorithm))
+        {
+            if (!constraint.permits(parameters))
+            {
+                if (LOG.isLoggable(Level.FINEST))
+                {
+                    LOG.finest(logHeader + " constraints for '" + constraintsAlgorithm +
+                        "' do not permit algorithm '" + algorithm + "' for given parameters");
+                }
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean implPermitsKeyAlgorithm(Set<BCCryptoPrimitive> primitives, String keyAlgorithm)
+    {
+        if (containsAnyPartIgnoreCase(disabledAlgorithms, keyAlgorithm))
+        {
+            if (LOG.isLoggable(Level.FINEST))
+            {
+                LOG.finest(logHeader + " disabled key algorithm '" + keyAlgorithm + "'");
+            }
+            return false;
+        }
+
+        return true;
     }
 
     private static enum BinOp
