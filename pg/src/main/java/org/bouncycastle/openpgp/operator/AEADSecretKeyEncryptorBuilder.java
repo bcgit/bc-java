@@ -17,5 +17,5 @@ public interface AEADSecretKeyEncryptorBuilder
      * @param pubKey public primary or subkey packet
      * @return encryptor using AEAD
      */
-    PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKey);
+    PBESecretKeyEncryptor build(char[] passphrase, final PublicKeyPacket pubKey);
 }
