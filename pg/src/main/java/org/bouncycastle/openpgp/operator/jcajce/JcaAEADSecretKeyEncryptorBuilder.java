@@ -13,9 +13,11 @@ import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.operator.AEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 
 public class JcaAEADSecretKeyEncryptorBuilder
+    implements AEADSecretKeyEncryptorBuilder
 {
     private int aeadAlgorithm;
     private int symmetricAlgorithm;
