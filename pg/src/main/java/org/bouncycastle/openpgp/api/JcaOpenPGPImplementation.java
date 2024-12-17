@@ -9,19 +9,28 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaCFBSecretKeyEncryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPairGeneratorProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilderProvider;
@@ -153,5 +162,45 @@ public class JcaOpenPGPImplementation
         return new JcaPGPDigestCalculatorProviderBuilder()
                 .setProvider(provider)
                 .build();
+    }
+
+    @Override
+    public PGPKeyPairGeneratorProvider pgpKeyPairGeneratorProvider()
+    {
+        return new JcaPGPKeyPairGeneratorProvider()
+                .setProvider(provider)
+                .setSecureRandom(secureRandom);
+    }
+
+    @Override
+    public PGPContentSignerBuilderProvider pgpContentSignerBuilderProvider(int hashAlgorithmId)
+    {
+        return new JcaPGPContentSignerBuilderProvider(hashAlgorithmId)
+                .setSecurityProvider(provider)
+                .setDigestProvider(provider)
+                .setSecureRandom(secureRandom);
+    }
+
+    @Override
+    public KeyFingerPrintCalculator keyFingerPrintCalculator()
+    {
+        return new JcaKeyFingerprintCalculator()
+                .setProvider(provider);
+    }
+
+    @Override
+    public PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead)
+        throws PGPException
+    {
+        if (aead)
+        {
+            return new JcaAEADSecretKeyEncryptorFactory()
+                    .setProvider(provider);
+        }
+        else
+        {
+            return new JcaCFBSecretKeyEncryptorFactory()
+                    .setProvider(provider);
+        }
     }
 }
