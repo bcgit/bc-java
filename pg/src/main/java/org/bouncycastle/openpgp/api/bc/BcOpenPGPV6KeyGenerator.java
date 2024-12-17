@@ -1,13 +1,8 @@
 package org.bouncycastle.openpgp.api.bc;
 
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.api.BcOpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
-import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcCFBSecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilderProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
 
 import java.util.Date;
 
@@ -22,6 +17,7 @@ public class BcOpenPGPV6KeyGenerator
      * Create a new key generator for OpenPGP v6 keys.
      */
     public BcOpenPGPV6KeyGenerator()
+            throws PGPException
     {
         this(new Date());
     }
@@ -33,6 +29,7 @@ public class BcOpenPGPV6KeyGenerator
      * @param creationTime creation time of the generated OpenPGP key
      */
     public BcOpenPGPV6KeyGenerator(Date creationTime)
+            throws PGPException
     {
         this(DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime, true);
     }
@@ -44,6 +41,7 @@ public class BcOpenPGPV6KeyGenerator
      * @param signatureHashAlgorithm ID of the hash algorithm to be used for signature generation
      */
     public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm)
+            throws PGPException
     {
         this(signatureHashAlgorithm, new Date(), true);
     }
@@ -55,25 +53,8 @@ public class BcOpenPGPV6KeyGenerator
      * @param creationTime           creation time of the key and signatures
      */
     public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
+        throws PGPException
     {
-        super(
-            new BcPGPKeyPairGeneratorProvider(),
-            new BcPGPContentSignerBuilderProvider(signatureHashAlgorithm),
-            new BcPGPDigestCalculatorProvider(),
-            keyEncryptorFactory(aeadProtection),
-            new BcKeyFingerprintCalculator(),
-            creationTime);
-    }
-
-    private static PBESecretKeyEncryptorFactory keyEncryptorFactory(boolean aeadProtection)
-    {
-        if (aeadProtection)
-        {
-            return new BcAEADSecretKeyEncryptorFactory();
-        }
-        else
-        {
-            return new BcCFBSecretKeyEncryptorFactory();
-        }
+        super(new BcOpenPGPImplementation(), signatureHashAlgorithm, aeadProtection, creationTime);
     }
 }
