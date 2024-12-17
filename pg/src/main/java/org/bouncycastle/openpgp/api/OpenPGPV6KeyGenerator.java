@@ -6,18 +6,13 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.bouncycastle.bcpg.AEADAlgorithmTags;
-import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -39,6 +34,7 @@ import org.bouncycastle.util.Arrays;
  * High-level generator class for OpenPGP v6 keys.
  */
 public class OpenPGPV6KeyGenerator
+    extends AbstractOpenPGPKeySignatureGenerator
 {
     /**
      * Hash algorithm for key signatures if no other one is provided during construction.
@@ -51,131 +47,6 @@ public class OpenPGPV6KeyGenerator
     private static final long SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
     private static final long SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY;
 
-    /**
-     * Standard AEAD encryption preferences (SEIPDv2).
-     * By default, only announce support for OCB + AES.
-     */
-    public static SignatureSubpacketsFunction DEFAULT_AEAD_ALGORITHM_PREFERENCES = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
-            subpackets.setPreferredAEADCiphersuites(PreferredAEADCiphersuites.builder(false)
-                .addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB)
-                .addCombination(SymmetricKeyAlgorithmTags.AES_192, AEADAlgorithmTags.OCB)
-                .addCombination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB));
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard symmetric-key encryption preferences (SEIPDv1).
-     * By default, announce support for AES.
-     */
-    public static SignatureSubpacketsFunction DEFAULT_SYMMETRIC_KEY_PREFERENCES = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_SYM_ALGS);
-            subpackets.setPreferredSymmetricAlgorithms(false, new int[]{
-                SymmetricKeyAlgorithmTags.AES_256, SymmetricKeyAlgorithmTags.AES_192, SymmetricKeyAlgorithmTags.AES_128
-            });
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard signature hash algorithm preferences.
-     * By default, only announce SHA3 and SHA2 algorithms.
-     */
-    public static SignatureSubpacketsFunction DEFAULT_HASH_ALGORITHM_PREFERENCES = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_HASH_ALGS);
-            subpackets.setPreferredHashAlgorithms(false, new int[]{
-                HashAlgorithmTags.SHA3_512, HashAlgorithmTags.SHA3_256,
-                HashAlgorithmTags.SHA512, HashAlgorithmTags.SHA384, HashAlgorithmTags.SHA256
-            });
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard compression algorithm preferences.
-     * By default, announce support for all known algorithms.
-     */
-    public static SignatureSubpacketsFunction DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.PREFERRED_COMP_ALGS);
-            subpackets.setPreferredCompressionAlgorithms(false, new int[]{
-                CompressionAlgorithmTags.UNCOMPRESSED, CompressionAlgorithmTags.ZIP,
-                CompressionAlgorithmTags.ZLIB, CompressionAlgorithmTags.BZIP2
-            });
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard features to announce.
-     * By default, announce SEIPDv1 (modification detection) and SEIPDv2.
-     */
-    public static SignatureSubpacketsFunction DEFAULT_FEATURES = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
-            subpackets.setFeature(false, (byte)(Features.FEATURE_MODIFICATION_DETECTION | Features.FEATURE_SEIPD_V2));
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard signature subpackets for signing subkey's binding signatures.
-     * Sets the keyflag subpacket to SIGN_DATA.
-     */
-    public static SignatureSubpacketsFunction SIGNING_SUBKEY_SUBPACKETS = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
-            subpackets.setKeyFlags(true, KeyFlags.SIGN_DATA);
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard signature subpackets for encryption subkey's binding signatures.
-     * Sets the keyflag subpacket to ENCRYPT_STORAGE|ENCRYPT_COMMS.
-     */
-    public static SignatureSubpacketsFunction ENCRYPTION_SUBKEY_SUBPACKETS = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
-            subpackets.setKeyFlags(true, KeyFlags.ENCRYPT_STORAGE | KeyFlags.ENCRYPT_COMMS);
-            return subpackets;
-        }
-    };
-
-    /**
-     * Standard signature subpackets for the direct-key signature.
-     * Sets default features, hash-, compression-, symmetric-key-, and AEAD algorithm preferences.
-     */
-    public static SignatureSubpacketsFunction DIRECT_KEY_SIGNATURE_SUBPACKETS = new SignatureSubpacketsFunction()
-    {
-        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
-        {
-            subpackets = DEFAULT_FEATURES.apply(subpackets);
-            subpackets = DEFAULT_HASH_ALGORITHM_PREFERENCES.apply(subpackets);
-            subpackets = DEFAULT_COMPRESSION_ALGORITHM_PREFERENCES.apply(subpackets);
-            subpackets = DEFAULT_SYMMETRIC_KEY_PREFERENCES.apply(subpackets);
-            subpackets = DEFAULT_AEAD_ALGORITHM_PREFERENCES.apply(subpackets);
-            return subpackets;
-        }
-    };
 
     private final OpenPGPImplementation implementationProvider;
     private final Configuration configuration; // contains BC or JCA/JCE implementations
@@ -562,7 +433,7 @@ public class OpenPGPV6KeyGenerator
                     subpackets.setIssuerFingerprint(true, primaryKeyPair.getPublicKey());
                     subpackets.setSignatureCreationTime(configuration.keyCreationTime);
                     subpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
-                    subpackets = DIRECT_KEY_SIGNATURE_SUBPACKETS.apply(subpackets);
+                    subpackets = directKeySignatureSubpackets.apply(subpackets);
                     subpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
                     return subpackets;
                 }
@@ -629,7 +500,7 @@ public class OpenPGPV6KeyGenerator
      * Intermediate builder class.
      * Constructs an OpenPGP key from a specified primary key.
      */
-    public static class WithPrimaryKey
+    public class WithPrimaryKey
     {
         private final OpenPGPImplementation implementation;
         private final Configuration configuration;
@@ -893,7 +764,7 @@ public class OpenPGPV6KeyGenerator
             PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
             subpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
             subpackets.setSignatureCreationTime(configuration.keyCreationTime);
-            subpackets = ENCRYPTION_SUBKEY_SUBPACKETS.apply(subpackets);
+            subpackets = encryptionSubkeySubpackets.apply(subpackets);
 
             // allow subpacket customization
             PGPPublicKey publicSubkey = getPublicSubKey(encryptionSubkey, bindingSubpacketsCallback, subpackets);
@@ -1061,7 +932,7 @@ public class OpenPGPV6KeyGenerator
             bindingSigSubpackets.setIssuerFingerprint(true, primaryKey.pair.getPublicKey());
             bindingSigSubpackets.setSignatureCreationTime(configuration.keyCreationTime);
 
-            bindingSigSubpackets = SIGNING_SUBKEY_SUBPACKETS.apply(bindingSigSubpackets);
+            bindingSigSubpackets = signingSubkeySubpackets.apply(bindingSigSubpackets);
 
             PGPSignatureGenerator backSigGen = new PGPSignatureGenerator(
                 configuration.contentSignerBuilderProvider.get(signingSubkey.getPublicKey()),
