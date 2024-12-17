@@ -39,17 +39,17 @@ public class PublicKeyUtils
     {
         switch (publicKeyAlgorithm)
         {
-            case PublicKeyAlgorithmTags.RSA_GENERAL:
-            case PublicKeyAlgorithmTags.RSA_ENCRYPT:
-            case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
-            case PublicKeyAlgorithmTags.ECDH:
-            case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
-            case PublicKeyAlgorithmTags.DIFFIE_HELLMAN:
-            case PublicKeyAlgorithmTags.X25519:
-            case PublicKeyAlgorithmTags.X448:
-                return true;
-            default:
-                return false;
+        case PublicKeyAlgorithmTags.RSA_GENERAL:
+        case PublicKeyAlgorithmTags.RSA_ENCRYPT:
+        case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
+        case PublicKeyAlgorithmTags.ECDH:
+        case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
+        case PublicKeyAlgorithmTags.DIFFIE_HELLMAN:
+        case PublicKeyAlgorithmTags.X25519:
+        case PublicKeyAlgorithmTags.X448:
+            return true;
+        default:
+            return false;
         }
     }
 }

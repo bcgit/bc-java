@@ -323,9 +323,7 @@ public class PGPKeyRingGenerator
             }
 
             sGen.setUnhashedSubpackets(unhashedPcks);
-
             List<PGPSignature> subSigs = new ArrayList<PGPSignature>();
-
             subSigs.add(sGen.generateCertification(primaryKey.getPublicKey(), keyPair.getPublicKey()));
 
             // replace the public key packet structure with a public subkey one.
