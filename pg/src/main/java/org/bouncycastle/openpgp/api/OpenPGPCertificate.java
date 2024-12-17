@@ -53,7 +53,7 @@ import java.util.TreeSet;
  */
 public class OpenPGPCertificate
 {
-    private final OpenPGPImplementation implementation;
+    final OpenPGPImplementation implementation;
 
     private final PGPKeyRing keyRing;
 

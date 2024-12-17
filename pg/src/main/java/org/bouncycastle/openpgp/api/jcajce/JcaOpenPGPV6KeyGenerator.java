@@ -1,16 +1,11 @@
 package org.bouncycastle.openpgp.api.jcajce;
 
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.api.JcaOpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
-import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaCFBSecretKeyEncryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilderProvider;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
-import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPairGeneratorProvider;
 
 import java.security.Provider;
+import java.security.SecureRandom;
 import java.util.Date;
 
 public class JcaOpenPGPV6KeyGenerator
@@ -45,29 +40,9 @@ public class JcaOpenPGPV6KeyGenerator
         throws PGPException
     {
         super(
-            new JcaPGPKeyPairGeneratorProvider()
-                .setProvider(provider),
-            new JcaPGPContentSignerBuilderProvider(signatureHashAlgorithm)
-                .setSecurityProvider(provider),
-            new JcaPGPDigestCalculatorProviderBuilder()
-                .setProvider(provider)
-                .build(),
-            keyEncryptorFactory(provider, aeadProtection),
-            new JcaKeyFingerprintCalculator(),
-            creationTime);
-    }
-
-    private static PBESecretKeyEncryptorFactory keyEncryptorFactory(Provider provider, boolean aeadProtection)
-        throws PGPException
-    {
-        if (aeadProtection)
-        {
-            return new JcaAEADSecretKeyEncryptorFactory().setProvider(provider);
-        }
-        else
-        {
-            return new JcaCFBSecretKeyEncryptorFactory().setProvider(provider);
-
-        }
+                new JcaOpenPGPImplementation(provider, new SecureRandom()),
+                signatureHashAlgorithm,
+                aeadProtection,
+                creationTime);
     }
 }

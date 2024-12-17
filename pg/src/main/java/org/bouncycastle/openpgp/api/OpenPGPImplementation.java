@@ -6,13 +6,17 @@ import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
@@ -180,4 +184,12 @@ public abstract class OpenPGPImplementation
      */
     public abstract PGPDigestCalculatorProvider pgpDigestCalculatorProvider()
             throws PGPException;
+
+    public abstract PGPKeyPairGeneratorProvider pgpKeyPairGeneratorProvider();
+
+    public abstract PGPContentSignerBuilderProvider pgpContentSignerBuilderProvider(int hashAlgorithmId);
+
+    public abstract KeyFingerPrintCalculator keyFingerPrintCalculator();
+
+    public abstract PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead) throws PGPException;
 }
