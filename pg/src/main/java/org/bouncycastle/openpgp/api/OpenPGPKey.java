@@ -152,6 +152,11 @@ public class OpenPGPKey
         return new OpenPGPKey(keyRing, implementation);
     }
 
+    public OpenPGPSecretKey getPrimarySecretKey()
+    {
+        return getSecretKey(getPrimaryKey());
+    }
+
     /**
      * Return a {@link Map} containing all {@link OpenPGPSecretKey} components (secret subkeys) of the key.
      *
