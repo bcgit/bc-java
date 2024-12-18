@@ -71,7 +71,7 @@ public class ContentInfo
         ASN1TaggedObject obj,
         boolean explicit)
     {
-        return getInstance(ASN1Sequence.getInstance(obj, explicit));
+        return new ContentInfo(ASN1Sequence.getInstance(obj, explicit));
     }
 
     private ContentInfo(
@@ -104,11 +104,10 @@ public class ContentInfo
         ASN1ObjectIdentifier contentType,
         ASN1Encodable        content)
     {
-        // TODO[cms] Blocked by CMSSignedDataGenerator.generateCounterSigners transient usage of null here
-//        if (contentType == null)
-//        {
-//            throw new NullPointerException("'contentType' cannot be null");
-//        }
+        if (contentType == null)
+        {
+            throw new NullPointerException("'contentType' cannot be null");
+        }
 
         this.contentType = contentType;
         this.content = content;
