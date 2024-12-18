@@ -795,24 +795,52 @@ public class JcaPGPKeyConverter
         // Modern Ed25519 (1.3.6.1.4.1.11591.15.1 & 1.3.101.112)
         case PublicKeyAlgorithmTags.Ed25519:
         {
-            return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, Ed25519PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, Ed25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new Ed25519PublicBCPGKey(key);
+                }
+            });
         }
 
         // Modern Ed448 (1.3.101.113)
         case PublicKeyAlgorithmTags.Ed448:
         {
-            return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, Ed448PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, Ed448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new Ed448PublicBCPGKey(key);
+                }
+            });
         }
 
         // Modern X25519 (1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110)
         case PublicKeyAlgorithmTags.X25519:
         {
-            return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, X25519PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, X25519PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new X25519PublicBCPGKey(key);
+                }
+            });
         }
         // Modern X448 (1.3.101.111)
         case PublicKeyAlgorithmTags.X448:
         {
-            return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, X448PublicBCPGKey::new);
+            return getPublicBCPGKey(pubKey, X448PublicBCPGKey.LENGTH, new BCPGKeyOperation()
+            {
+                @Override
+                public BCPGKey getBCPGKey(byte[] key)
+                {
+                    return new X448PublicBCPGKey(key);
+                }
+            });
         }
 
         default:
