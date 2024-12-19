@@ -248,17 +248,17 @@ class HQCEngine
 
         int result = 1;
         // Compare u, v, d
-        if (!Arrays.areEqual(u, u2Bytes))
+        if (!Arrays.constantTimeAreEqual(u, u2Bytes))
         {
             result = 0;
         }
 
-        if (!Arrays.areEqual(v, v2Bytes))
+        if (!Arrays.constantTimeAreEqual(v, v2Bytes))
         {
             result = 0;
         }
 
-        if (!Arrays.areEqual(d, dPrime))
+        if (!Arrays.constantTimeAreEqual(d, dPrime))
         {
             result = 0;
         }
