@@ -51,10 +51,33 @@ public class DefaultSignatureAlgorithmIdentifierFinder
     {
         if (digestOids.containsKey(signatureOid))
         {
-            throw new IllegalStateException("algorithmName already present in addAlgorithm");
+            throw new IllegalStateException("signatureOid already present in addDigestOid");
         }
 
         digestOids.put(signatureOid, digestOid);
+    }
+
+    private static void addParameters(String algorithmName, ASN1Encodable parameters)
+    {
+        if (parameters == null)
+        {
+            throw new IllegalArgumentException("use 'noParams' instead for absent parameters");
+        }
+        if (params.containsKey(algorithmName))
+        {
+            throw new IllegalStateException("algorithmName already present in addParameters");
+        }
+
+        params.put(algorithmName, parameters);
+    }
+
+    private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
+    {
+        return new RSASSAPSSparams(
+            hashAlgId,
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
+            new ASN1Integer(saltSize),
+            new ASN1Integer(1));
     }
 
     static
@@ -564,31 +587,31 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         // explicit params
         //
         AlgorithmIdentifier sha1AlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
-        params.put("SHA1WITHRSAANDMGF1", createPSSParams(sha1AlgId, 20));
+        addParameters("SHA1WITHRSAANDMGF1", createPSSParams(sha1AlgId, 20));
 
         AlgorithmIdentifier sha224AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha224, DERNull.INSTANCE);
-        params.put("SHA224WITHRSAANDMGF1", createPSSParams(sha224AlgId, 28));
+        addParameters("SHA224WITHRSAANDMGF1", createPSSParams(sha224AlgId, 28));
 
         AlgorithmIdentifier sha256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE);
-        params.put("SHA256WITHRSAANDMGF1", createPSSParams(sha256AlgId, 32));
+        addParameters("SHA256WITHRSAANDMGF1", createPSSParams(sha256AlgId, 32));
 
         AlgorithmIdentifier sha384AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384, DERNull.INSTANCE);
-        params.put("SHA384WITHRSAANDMGF1", createPSSParams(sha384AlgId, 48));
+        addParameters("SHA384WITHRSAANDMGF1", createPSSParams(sha384AlgId, 48));
 
         AlgorithmIdentifier sha512AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512, DERNull.INSTANCE);
-        params.put("SHA512WITHRSAANDMGF1", createPSSParams(sha512AlgId, 64));
+        addParameters("SHA512WITHRSAANDMGF1", createPSSParams(sha512AlgId, 64));
 
         AlgorithmIdentifier sha3_224AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_224, DERNull.INSTANCE);
-        params.put("SHA3-224WITHRSAANDMGF1", createPSSParams(sha3_224AlgId, 28));
+        addParameters("SHA3-224WITHRSAANDMGF1", createPSSParams(sha3_224AlgId, 28));
 
         AlgorithmIdentifier sha3_256AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256, DERNull.INSTANCE);
-        params.put("SHA3-256WITHRSAANDMGF1", createPSSParams(sha3_256AlgId, 32));
+        addParameters("SHA3-256WITHRSAANDMGF1", createPSSParams(sha3_256AlgId, 32));
 
         AlgorithmIdentifier sha3_384AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_384, DERNull.INSTANCE);
-        params.put("SHA3-384WITHRSAANDMGF1", createPSSParams(sha3_384AlgId, 48));
+        addParameters("SHA3-384WITHRSAANDMGF1", createPSSParams(sha3_384AlgId, 48));
 
         AlgorithmIdentifier sha3_512AlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_512, DERNull.INSTANCE);
-        params.put("SHA3-512WITHRSAANDMGF1", createPSSParams(sha3_512AlgId, 64));
+        addParameters("SHA3-512WITHRSAANDMGF1", createPSSParams(sha3_512AlgId, 64));
 
         //
         // digests
@@ -713,15 +736,6 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addDigestOid(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, NISTObjectIdentifiers.id_shake256);
     }
 
-    private static RSASSAPSSparams createPSSParams(AlgorithmIdentifier hashAlgId, int saltSize)
-    {
-        return new RSASSAPSSparams(
-            hashAlgId,
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
-            new ASN1Integer(saltSize),
-            new ASN1Integer(1));
-    }
-
     public AlgorithmIdentifier find(String sigAlgName)
     {
         String algorithmName = Strings.toUpperCase(sigAlgName);
@@ -731,19 +745,17 @@ public class DefaultSignatureAlgorithmIdentifierFinder
             throw new IllegalArgumentException("Unknown signature type requested: " + sigAlgName);
         }
 
-        AlgorithmIdentifier sigAlgId;
         if (noParams.contains(sigOID))
         {
-            sigAlgId = new AlgorithmIdentifier(sigOID);
+            return new AlgorithmIdentifier(sigOID);
         }
-        else if (params.containsKey(algorithmName))
+
+        ASN1Encodable sigAlgParams = (ASN1Encodable)params.get(algorithmName);
+        if (sigAlgParams == null)
         {
-            sigAlgId = new AlgorithmIdentifier(sigOID, (ASN1Encodable)params.get(algorithmName));
+            sigAlgParams = DERNull.INSTANCE;
         }
-        else
-        {
-            sigAlgId = new AlgorithmIdentifier(sigOID, DERNull.INSTANCE);
-        }
-        return sigAlgId;
+
+        return new AlgorithmIdentifier(sigOID, sigAlgParams);
     }
 }
