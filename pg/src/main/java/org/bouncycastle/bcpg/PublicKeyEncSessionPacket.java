@@ -276,9 +276,16 @@ public class PublicKeyEncSessionPacket
         }
         else if (version == VERSION_6)
         {
-            pOut.write(keyFingerprint.length + 1);
-            pOut.write(keyVersion);
-            pOut.write(keyFingerprint);
+            if (keyFingerprint.length != 0)
+            {
+                pOut.write(keyFingerprint.length + 1);
+                pOut.write(keyVersion);
+                pOut.write(keyFingerprint);
+            }
+            else
+            {
+                pOut.write(0);
+            }
         }
 
         pOut.write(algorithm);
