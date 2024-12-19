@@ -12,6 +12,9 @@ module org.bouncycastle.pg
     exports org.bouncycastle.gpg.keybox;
     exports org.bouncycastle.gpg.keybox.bc;
     exports org.bouncycastle.gpg.keybox.jcajce;
+    exports org.bouncycastle.openpgp.api;
+    exports org.bouncycastle.openpgp.api.bc;
+    exports org.bouncycastle.openpgp.api.jcajce;
     exports org.bouncycastle.openpgp.bc;
     exports org.bouncycastle.openpgp.examples;
     exports org.bouncycastle.openpgp.jcajce;
