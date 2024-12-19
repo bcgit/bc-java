@@ -112,7 +112,7 @@ public class WildcardKeyIDTest
         PGPEncryptedDataList encDataList = (PGPEncryptedDataList) objectFactory.nextObject();
         PGPPublicKeyEncryptedData pkeData = (PGPPublicKeyEncryptedData) encDataList.get(0);
 
-        isEquals(PublicKeyKeyEncryptionMethodGenerator.WILDCARD, pkeData.getKeyID());
+        isEquals(PublicKeyKeyEncryptionMethodGenerator.WILDCARD_KEYID, pkeData.getKeyID());
 
         InputStream decryptedIn = pkeData.getDataStream(new BcPublicKeyDataDecryptorFactory(privateKey));
         objectFactory = new BcPGPObjectFactory(decryptedIn);
