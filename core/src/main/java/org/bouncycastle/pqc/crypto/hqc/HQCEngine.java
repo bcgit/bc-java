@@ -2,7 +2,6 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.encoders.Hex;
 
 class HQCEngine
 {
