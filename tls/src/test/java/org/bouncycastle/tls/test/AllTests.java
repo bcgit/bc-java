@@ -1,5 +1,6 @@
 package org.bouncycastle.tls.test;
 
+import org.bouncycastle.jsse.provider.GcmTls12NonceGeneratorUtil;
 import org.bouncycastle.test.PrintTestResult;
 
 import junit.extensions.TestSetup;
@@ -14,6 +15,13 @@ public class AllTests
         throws Exception
     {
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suiteWithCustomNonceGeneratorForTls12()));
+    }
+
+    public static Test suiteWithCustomNonceGeneratorForTls12() throws Exception
+    {
+        GcmTls12NonceGeneratorUtil.setGcmTlsNonceGeneratorFactory(TestTlsNonceGeneratorFactory.INSTANCE);
+        return suite();
     }
 
     public static Test suite()
