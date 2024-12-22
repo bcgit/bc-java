@@ -499,6 +499,51 @@ public class CompositeKeyTest
         CompositePublicKey puKey = (CompositePublicKey)keyConverter.getPublicKey((SubjectPublicKeyInfo)pPrs.readObject());
     }
 
+    public void testMLDSA44andEd25519()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("ED25519", "BC");
+
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PrivateKey ecPriv = ecKp.getPrivate();
+        PublicKey ecPub = ecKp.getPublic();
+
+        KeyPairGenerator rmldsaKpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+
+        KeyPair mldsaKp = rmldsaKpg.generateKeyPair();
+
+        PrivateKey mldsaPriv = mldsaKp.getPrivate();
+        PublicKey mldsaPub = mldsaKp.getPublic();
+
+        CompositePrivateKey mlecPriv = new CompositePrivateKey(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, mldsaPriv, ecPriv);
+
+        StringWriter sWrt = new StringWriter();
+        JcaPEMWriter pWrt = new JcaPEMWriter(sWrt);
+
+        pWrt.writeObject(mlecPriv);
+
+        pWrt.close();
+
+        CompositePublicKey mlecPub = new CompositePublicKey(mldsaPub, ecPub);
+
+        pWrt = new JcaPEMWriter(sWrt);
+
+        pWrt.writeObject(mlecPub);
+
+        pWrt.close();
+
+        PEMParser pPrs = new PEMParser(new StringReader(sWrt.toString()));
+
+        JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter().setProvider("BC");
+        CompositePrivateKey prKey = (CompositePrivateKey)keyConverter.getPrivateKey((PrivateKeyInfo)pPrs.readObject());
+
+        CompositePublicKey puKey = (CompositePublicKey)keyConverter.getPublicKey((SubjectPublicKeyInfo)pPrs.readObject());
+    }
+
     public void testMLDSA87andEd448()
         throws Exception
     {
