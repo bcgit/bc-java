@@ -162,7 +162,7 @@ public abstract class BaseDeterministicOrRandomSignature
     {
         if (engineParams == null)
         {
-            if (paramSpec != null)
+            if (paramSpec != null && paramSpec != ContextParameterSpec.EMPTY_CONTEXT_SPEC)
             {
                 try
                 {

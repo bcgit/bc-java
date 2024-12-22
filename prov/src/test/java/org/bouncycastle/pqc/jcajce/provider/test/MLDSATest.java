@@ -531,10 +531,8 @@ public class MLDSATest
         assertTrue(sig.verify(genS));
 
         AlgorithmParameters algP = sig.getParameters();
-
-        ContextParameterSpec cSpec = algP.getParameterSpec(ContextParameterSpec.class);
-
-        assertTrue(Arrays.areEqual(new byte[0], cSpec.getContext()));
+        
+        assertTrue(null == algP);
 
         // test using ml-dsa-44 for the key, should be the same.
 
