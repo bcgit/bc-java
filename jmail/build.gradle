@@ -10,6 +10,9 @@ sourceSets {
         java {
             srcDirs = ['build/src/main/java']
         }
+        resources {
+            srcDirs = ['build/src/main/resources']
+        }
     }
 
     java9 {
@@ -39,13 +42,14 @@ evaluationDependsOn(":pkix")
 
 task copyTask(type: Copy) {
     duplicatesStrategy = 'include'
-    from '../mail/src/main/java'
-    from 'src/main/java'
-    into 'build/src/main/java'
+    from '../mail/src/main'
+    from 'src/main'
+    into 'build/src/main'
     filter { String line -> (line.contains('javax.mail') ||  line.contains('javax.activation')) ? line.replace('javax.mail', 'jakarta.mail').replace('javax.activation', 'jakarta.activation') : line }
 }
 
 compileJava.dependsOn(copyTask)
+processResources.dependsOn(copyTask)
 
 
 compileJava {
