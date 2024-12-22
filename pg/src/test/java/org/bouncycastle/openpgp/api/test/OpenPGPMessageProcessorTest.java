@@ -681,7 +681,14 @@ public class OpenPGPMessageProcessorTest
         processor.addDecryptionKey(key);
         OpenPGPMessageInputStream oIn = processor.process(new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8)));
         Streams.drain(oIn);
-        oIn.close();
+        try
+        {
+            oIn.close();
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
     }
 
     public static void main(String[] args)

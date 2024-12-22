@@ -615,16 +615,22 @@ public class OpenPGPMessageInputStream
         {
             for (PGPOnePassSignature onePassSignature : onePassSignatures)
             {
+                if (issuers.containsKey(onePassSignature))
+                {
                 onePassSignature.update((byte) i);
             }
+        }
         }
 
         void update(byte[] b, int off, int len)
         {
             for (PGPOnePassSignature onePassSignature : onePassSignatures)
             {
+                if (issuers.containsKey(onePassSignature))
+                {
                 onePassSignature.update(b, off, len);
             }
+        }
         }
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(
