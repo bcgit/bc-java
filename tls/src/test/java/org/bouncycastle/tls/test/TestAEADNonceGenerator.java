@@ -1,10 +1,12 @@
 package org.bouncycastle.tls.test;
 
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
+import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
 
 import java.util.Arrays;
 
-class TestNonceGenerator implements TlsNonceGenerator
+class TestAEADNonceGenerator
+    implements AEADNonceGenerator
 {
     private final byte[] baseNonce;
     private final long counterMask;
@@ -13,7 +15,7 @@ class TestNonceGenerator implements TlsNonceGenerator
     private long counterValue;
     private boolean counterExhausted;
 
-    TestNonceGenerator(final byte[] baseNonce, final int counterBits)
+    TestAEADNonceGenerator(final byte[] baseNonce, final int counterBits)
     {
         this.baseNonce = Arrays.copyOf(baseNonce, baseNonce.length);
         this.counterMask = -1L >>> (64 - counterBits);
@@ -24,9 +26,9 @@ class TestNonceGenerator implements TlsNonceGenerator
     }
 
     @Override
-    public byte[] generateNonce(final int size)
+    public void generateNonce(byte[] nonce)
     {
-        if (size != baseNonce.length)
+        if (nonce.length != baseNonce.length)
         {
             throw new IllegalArgumentException("requested length is not equal to the length of the base nonce.");
         }
@@ -36,7 +38,7 @@ class TestNonceGenerator implements TlsNonceGenerator
             throw new IllegalStateException("TLS nonce generator exhausted");
         }
 
-        final byte[] nonce = Arrays.copyOf(baseNonce, baseNonce.length);
+        System.arraycopy(baseNonce, 0, nonce, 0, baseNonce.length);
         final int offset = baseNonce.length - counterBytes;
 
         for (int i = 0; i < counterBytes; i++)
@@ -45,7 +47,5 @@ class TestNonceGenerator implements TlsNonceGenerator
         }
 
         counterExhausted |= ((++counterValue & counterMask) == 0);
-
-        return nonce;
     }
 }

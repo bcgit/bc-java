@@ -1,6 +1,6 @@
 package org.bouncycastle.tls.test;
 
-import org.bouncycastle.jsse.provider.GcmTls12NonceGeneratorUtil;
+import org.bouncycastle.tls.crypto.impl.GcmTls12NonceGeneratorUtil;
 import org.bouncycastle.test.PrintTestResult;
 
 import junit.extensions.TestSetup;
@@ -20,7 +20,7 @@ public class AllTests
 
     public static Test suiteWithCustomNonceGeneratorForTls12() throws Exception
     {
-        GcmTls12NonceGeneratorUtil.setGcmTlsNonceGeneratorFactory(TestTlsNonceGeneratorFactory.INSTANCE);
+        GcmTls12NonceGeneratorUtil.setGcmTlsNonceGeneratorFactory(TestAEADGeneratorFactory.INSTANCE);
         return suite();
     }
 

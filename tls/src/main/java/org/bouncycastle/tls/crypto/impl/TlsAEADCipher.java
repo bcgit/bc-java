@@ -17,9 +17,6 @@ import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
-import static org.bouncycastle.jsse.provider.GcmTls12NonceGeneratorUtil.createGcmFipsNonceGenerator;
-import static org.bouncycastle.jsse.provider.GcmTls12NonceGeneratorUtil.isGcmFipsNonceGeneratorFactorySet;
-
 /**
  * A generic TLS 1.2 AEAD cipher.
  */
@@ -49,7 +46,7 @@ public final class TlsAEADCipher
 
     private final boolean isTLSv13;
     private final int nonceMode;
-    private final TlsNonceGenerator gcmFipsNonceGenerator;
+    private final AEADNonceGenerator gcmFipsNonceGenerator;
 
     public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
         int keySize, int macSize, int aeadType) throws IOException
@@ -130,7 +127,7 @@ public final class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (AEAD_GCM == aeadType && isGcmFipsNonceGeneratorFactorySet())
+        if (AEAD_GCM == aeadType && GcmTls12NonceGeneratorUtil.isGcmFipsNonceGeneratorFactorySet())
         {
             final int nonceLength = fixed_iv_length + record_iv_length;
             final byte[] baseNonce = Arrays.copyOf(encryptNonce, nonceLength);
@@ -145,7 +142,7 @@ public final class TlsAEADCipher
             {
                 counterSizeInBits = record_iv_length * 8; // 64
             }
-            gcmFipsNonceGenerator = createGcmFipsNonceGenerator(baseNonce, counterSizeInBits);
+            gcmFipsNonceGenerator = GcmTls12NonceGeneratorUtil.createGcmFipsNonceGenerator(baseNonce, counterSizeInBits);
         }
         else
         {
@@ -185,15 +182,14 @@ public final class TlsAEADCipher
         int headerAllocation, byte[] plaintext, int plaintextOffset, int plaintextLength) throws IOException
     {
         final int nonceSize = encryptNonce.length + record_iv_length;
-        final byte[] nonce;
+        final byte[] nonce = new byte[nonceSize];
 
         if (null != gcmFipsNonceGenerator)
         {
-            nonce = gcmFipsNonceGenerator.generateNonce(nonceSize);
+            gcmFipsNonceGenerator.generateNonce(nonce);
         }
         else
         {
-            nonce = new byte[nonceSize];
             switch (nonceMode)
             {
                 case NONCE_RFC5288:
