@@ -1246,7 +1246,7 @@ public class PKCS12StoreTest
     }
 
     public void testPKCS12StoreFriendlyName()
-            throws Exception
+        throws Exception
     {
         byte[] storeBytes = Base64.decode("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");
         char[] storePassword = "Axw9eE51lKEx0IuqHbzlJ+sx".toCharArray();
@@ -1267,7 +1267,7 @@ public class PKCS12StoreTest
 
         String alias1 = store1.aliases().nextElement();
         String alias2 = store2.aliases().nextElement();
-        PKCS12BagAttributeCarrier cert2 = (PKCS12BagAttributeCarrier) store2.getCertificate(alias2);
+        PKCS12BagAttributeCarrier cert2 = (PKCS12BagAttributeCarrier)store2.getCertificate(alias2);
 
         if (cert2.hasFriendlyName())
         {
@@ -1285,7 +1285,7 @@ public class PKCS12StoreTest
 
         alias1 = store1.aliases().nextElement();
         alias2 = store2.aliases().nextElement();
-        cert2 = (PKCS12BagAttributeCarrier) store2.getCertificate(alias2);
+        cert2 = (PKCS12BagAttributeCarrier)store2.getCertificate(alias2);
 
         if (!cert2.hasFriendlyName())
         {
@@ -1295,13 +1295,13 @@ public class PKCS12StoreTest
         // Add custom friendlyName to store1
         if (store1.isKeyEntry(alias1))
         {
-            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry) store1.getEntry(alias1, new KeyStore.PasswordProtection(storePassword));
+            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)store1.getEntry(alias1, new KeyStore.PasswordProtection(storePassword));
             ((PKCS12BagAttributeCarrier)pkEntry.getCertificate()).setFriendlyName("my_custom_friendly_name");
             ((PKCS12BagAttributeCarrier)pkEntry.getPrivateKey()).setFriendlyName("my_custom_friendly_name");
         }
         else
         {
-            KeyStore.TrustedCertificateEntry entry = (KeyStore.TrustedCertificateEntry) store1.getEntry(alias1, null);
+            KeyStore.TrustedCertificateEntry entry = (KeyStore.TrustedCertificateEntry)store1.getEntry(alias1, null);
             ((PKCS12BagAttributeCarrier)entry.getTrustedCertificate()).setFriendlyName("my_custom_friendly_name");
         }
 
@@ -1326,13 +1326,13 @@ public class PKCS12StoreTest
         // Add custom friendlyName to store1
         if (store1.isKeyEntry(alias1))
         {
-            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry) store1.getEntry(alias1, new KeyStore.PasswordProtection(storePassword));
+            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)store1.getEntry(alias1, new KeyStore.PasswordProtection(storePassword));
             ((PKCS12BagAttributeCarrier)pkEntry.getCertificate()).setFriendlyName("my_custom_friendly_name");
             ((PKCS12BagAttributeCarrier)pkEntry.getPrivateKey()).setFriendlyName("my_custom_friendly_name");
         }
         else
         {
-            KeyStore.TrustedCertificateEntry entry = (KeyStore.TrustedCertificateEntry) store1.getEntry(alias1, null);
+            KeyStore.TrustedCertificateEntry entry = (KeyStore.TrustedCertificateEntry)store1.getEntry(alias1, null);
             ((PKCS12BagAttributeCarrier)entry.getTrustedCertificate()).setFriendlyName("my_custom_friendly_name");
         }
 
@@ -2219,6 +2219,42 @@ public class PKCS12StoreTest
         isTrue(store.getCertificateChain("45cbf1116fb3f38b2984b3c7224cae70a74f7789").length == 1);
     }
 
+    private void checkNoDuplicateOracleTrustedCertAttribute()
+        throws Exception
+    {
+        String keystoreType = "PKCS12";
+        String certificateAlias = "myAlias";
+        String keystorePassword = "myPassword";
+
+        KeyPair kp1 = TestUtils.generateRSAKeyPair();
+        KeyPair kp2 = TestUtils.generateRSAKeyPair();
+
+        // generate certificate
+        X509Certificate rootCertificate = TestUtils.generateRootCert(kp1, new X500Name("CN=KP1 ROOT"));
+        X509Certificate originalCertificate = TestUtils.generateEndEntityCert(kp2.getPublic(), new X500Name("CN=KP3 EE"), KeyPurposeId.id_kp_capwapAC, KeyPurposeId.id_kp_capwapWTP, kp1.getPrivate(), rootCertificate);
+
+        // store original certificate to a truststore
+        KeyStore firstTrustStore = KeyStore.getInstance("PKCS12", "BC");
+        firstTrustStore.load(null, new char[0]);
+        firstTrustStore.setCertificateEntry(certificateAlias, originalCertificate);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        firstTrustStore.store(bOut, keystorePassword.toCharArray());
+
+        // read certificate from the truststore
+        KeyStore firstTrustStoreReadAgain = KeyStore.getInstance("PKCS12", "BC");
+        firstTrustStoreReadAgain.load(new ByteArrayInputStream(bOut.toByteArray()), keystorePassword.toCharArray());
+        Certificate certificateReadFromFirstTrustStore = firstTrustStoreReadAgain.getCertificate(certificateAlias);
+
+        KeyStore secondTrustStore = KeyStore.getInstance("PKCS12", "BC");
+        secondTrustStore.load(null, new char[0]);
+        secondTrustStore.setCertificateEntry(certificateAlias, certificateReadFromFirstTrustStore);
+        bOut = new ByteArrayOutputStream();
+        secondTrustStore.store(bOut, keystorePassword.toCharArray());
+        
+        KeyStore secondTrustStoreReadWithoutBc = KeyStore.getInstance("PKCS12", "SunJSSE");
+        secondTrustStoreReadWithoutBc.load(new ByteArrayInputStream(bOut.toByteArray()), keystorePassword.toCharArray());
+    }
+
     public String getName()
     {
         return "PKCS12Store";
@@ -2231,7 +2267,7 @@ public class PKCS12StoreTest
         {
             return;
         }
-                            
+
         KeyStore ks = KeyStore.getInstance("PKCS12", BC);
 
         ks.load(new ByteArrayInputStream(JKS_Store), JKS_TEST_PWD);
@@ -2249,7 +2285,7 @@ public class PKCS12StoreTest
         KeyStore keyStore = KeyStore.getInstance(storeType, "BC");
         keyStore.load(null, null);
 
-        keyStore.setKeyEntry("key", kp.getPrivate(), null, new Certificate[] { cert });
+        keyStore.setKeyEntry("key", kp.getPrivate(), null, new Certificate[]{cert});
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
@@ -2273,7 +2309,7 @@ public class PKCS12StoreTest
         }
 
     }
-    
+
     private void testAES256_AES128()
         throws Exception
     {
@@ -2337,6 +2373,7 @@ public class PKCS12StoreTest
         }
 
         testOrphanedCertCleanup();
+        checkNoDuplicateOracleTrustedCertAttribute();
     }
 
     public static void main(
