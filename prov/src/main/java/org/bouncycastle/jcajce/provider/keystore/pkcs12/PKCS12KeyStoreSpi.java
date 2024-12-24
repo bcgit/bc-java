@@ -1943,6 +1943,11 @@ public class PKCS12KeyStoreSpi
                     continue;
                 }
 
+                if (oid.equals(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage))
+                {
+                    continue;
+                }
+                
                 ASN1EncodableVector fSeq = new ASN1EncodableVector();
 
                 fSeq.add(oid);
