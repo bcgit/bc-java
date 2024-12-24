@@ -89,6 +89,7 @@ artifacts {
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
