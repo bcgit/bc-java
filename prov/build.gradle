@@ -231,28 +231,12 @@ publishing {
 
 
 test {
-    jvmArgs = ['-Dtest.java.version.prefix=1.8']
-    dependsOn("test21")
-}
-
-if (System.getenv("BC_JDK8") != null) {
-    System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
-    test.dependsOn("test8")
-}
-
-if (System.getenv("BC_JDK11") != null) {
-    System.out.println("${project.name}: Adding test11 as dependency for test task because BC_JDK11 is defined")
-    test.dependsOn("test11")
-}
-
-if (System.getenv("BC_JDK17") != null) {
-    System.out.println("${project.name}: Adding test15 as dependency for test task because BC_JDK17 is defined")
-    test.dependsOn("test15")
+    jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 
 
 task test8(type: Test) {
-
+    onlyIf {System.getenv("BC_JDK8") != null}
     dependsOn(jar)
 
     testClassesDirs = sourceSets.test.output.classesDirs
@@ -283,7 +267,7 @@ task test8(type: Test) {
 }
 
 task test11(type: Test) {
-
+    onlyIf {System.getenv("BC_JDK11") != null}
     dependsOn(jar)
 
     testClassesDirs = sourceSets.test11.output.classesDirs
@@ -300,7 +284,7 @@ task test11(type: Test) {
         languageVersion = JavaLanguageVersion.of(11)
     }
 
-    jvmArgs = ['-Dtest.java.version.prefix=11.']
+    jvmArgs = ['-Dtest.java.version.prefix=11']
 
 
     finalizedBy jacocoTestReport
@@ -316,7 +300,7 @@ task test11(type: Test) {
 task test15(type: Test) {
 
     // This is testing the 1.15 code base
-
+    onlyIf {System.getenv("BC_JDK17") != null}
     dependsOn jar
 
     testClassesDirs = sourceSets.test15.output.classesDirs
@@ -333,7 +317,7 @@ task test15(type: Test) {
         languageVersion = JavaLanguageVersion.of(17)
     }
 
-    jvmArgs = ['-Dtest.java.version.prefix=17.']
+    jvmArgs = ['-Dtest.java.version.prefix=17']
 
 
     finalizedBy jacocoTestReport
@@ -349,7 +333,7 @@ task test15(type: Test) {
 task test21(type: Test) {
 
     // This is testing the 21 code base
-
+    onlyIf {System.getenv("BC_JDK21") != null}
     dependsOn jar
 
     testClassesDirs = sourceSets.test21.output.classesDirs
@@ -378,6 +362,27 @@ task test21(type: Test) {
         }
     }
 }
+
+if (System.getenv("BC_JDK8") != null) {
+    System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
+    test.dependsOn("test8")
+}
+
+if (System.getenv("BC_JDK11") != null) {
+    System.out.println("${project.name}: Adding test11 as dependency for test task because BC_JDK11 is defined")
+    test.dependsOn("test11")
+}
+
+if (System.getenv("BC_JDK17") != null) {
+    System.out.println("${project.name}: Adding test15 as dependency for test task because BC_JDK17 is defined")
+    test.dependsOn("test15")
+}
+
+if (System.getenv("BC_JDK21") != null) {
+    System.out.println("${project.name}: Adding test21 as dependency for test task because BC_JDK21 is defined")
+    test.dependsOn("test21")
+}
+
 
 
 

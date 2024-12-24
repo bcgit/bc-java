@@ -226,9 +226,7 @@ subprojects {
         maxHeapSize = "1536m"
         testLogging.showStandardStreams = false
 
-        javaLauncher = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(8)
-        }
+        jvmArgs = ['-Dtest.java.version.prefix=any']
 
         finalizedBy jacocoTestReport
 
@@ -239,6 +237,7 @@ subprojects {
             }
         }
     }
+
 
 
     dependencies {
@@ -275,11 +274,11 @@ subprojects {
         }
     }
 
-    tasks.withType(JavaCompile).configureEach {
-        javaCompiler = javaToolchains.compilerFor {
-            languageVersion = JavaLanguageVersion.of(21)
-        }
-    }
+//    tasks.withType(JavaCompile).configureEach {
+//        javaCompiler = javaToolchains.compilerFor {
+//            languageVersion = JavaLanguageVersion.of(21)
+//        }
+//    }
 
 }
 

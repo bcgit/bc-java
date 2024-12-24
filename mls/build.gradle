@@ -188,6 +188,10 @@ artifacts {
     archives sourcesJar
 }
 
+test {
+    jvmArgs = ['-Dtest.java.version.prefix=any']
+}
+
 compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
 
 publishing {
