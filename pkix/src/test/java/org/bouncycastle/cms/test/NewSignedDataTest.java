@@ -3250,7 +3250,14 @@ public class NewSignedDataTest
         assertTrue(signerInfoGen.getUnsignedAttributeTableGenerator() == newSignerInfoGen.getUnsignedAttributeTableGenerator());
         assertTrue(newSignerInfoGen.getSignedAttributeTableGenerator() == signedAttrGen);
     }
-    
+
+    public void testEU()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
+        CMSSignedData cmsSignedData = new CMSSignedData(this.getInput("bc1639test.p7m"));
+        System.clearProperty("org.bouncycastle.asn1.allow_wrong_oid_enc");
+    }
     public void testMSPKCS7()
         throws Exception
     {
