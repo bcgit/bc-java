@@ -577,7 +577,7 @@ public class BaseBlockCipher
     protected void engineInit(
         int opmode,
         Key key,
-        final AlgorithmParameterSpec params,
+        final AlgorithmParameterSpec paramSpec,
         SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
@@ -599,9 +599,14 @@ public class BaseBlockCipher
         //
         // for RC5-64 we must have some default parameters
         //
-        if (params == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
+        if (paramSpec == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
         {
             throw new InvalidAlgorithmParameterException("RC5 requires an RC5ParametersSpec to be passed in.");
+        }
+
+        if (paramSpec instanceof PBEParameterSpec)
+        {
+            pbeSpec = (PBEParameterSpec)paramSpec;
         }
 
         //
@@ -619,9 +624,9 @@ public class BaseBlockCipher
                 throw new InvalidKeyException("PKCS12 requires a SecretKey/PBEKey");
             }
 
-            if (params instanceof PBEParameterSpec)
+            if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
+                pbeSpec = (PBEParameterSpec)paramSpec;
             }
 
             if (k instanceof PBEKey && pbeSpec == null)
@@ -670,9 +675,9 @@ public class BaseBlockCipher
         {
             PBKDF1Key k = (PBKDF1Key)key;
 
-            if (params instanceof PBEParameterSpec)
+            if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
+                pbeSpec = (PBEParameterSpec)paramSpec;
             }
             if (k instanceof PBKDF1KeyWithParameters && pbeSpec == null)
             {
@@ -700,12 +705,12 @@ public class BaseBlockCipher
 
             if (k.getParam() != null)
             {
-                param = adjustParameters(params, k.getParam());
+                param = adjustParameters(paramSpec, k.getParam());
             }
-            else if (params instanceof PBEParameterSpec)
+            else if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
-                param = PBE.Util.makePBEParameters(k, params, cipher.getUnderlyingCipher().getAlgorithmName());
+                pbeSpec = (PBEParameterSpec)paramSpec;
+                param = PBE.Util.makePBEParameters(k, paramSpec, cipher.getUnderlyingCipher().getAlgorithmName());
             }
             else
             {
@@ -720,7 +725,7 @@ public class BaseBlockCipher
         else if (key instanceof PBEKey)
         {
             PBEKey k = (PBEKey)key;
-            pbeSpec = (PBEParameterSpec)params;
+            pbeSpec = (PBEParameterSpec)paramSpec;
             if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
             {
                 pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
@@ -743,6 +748,16 @@ public class BaseBlockCipher
         else
         {
             param = null;
+        }
+
+        AlgorithmParameterSpec params;
+        if (pbeSpec != null)
+        {
+            params = pbeSpec.getParameterSpec();
+        }
+        else
+        {
+            params = paramSpec;
         }
 
         if (params instanceof AEADParameterSpec)
