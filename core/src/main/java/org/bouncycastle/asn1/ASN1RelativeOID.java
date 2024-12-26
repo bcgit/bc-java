@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class ASN1RelativeOID
     extends ASN1Primitive
@@ -254,7 +255,12 @@ public class ASN1RelativeOID
         for (int i = 0; i < contents.length; ++i)
         {
             if (subIDStart && (contents[i] & 0xff) == 0x80)
-                return false;
+            {
+                if (!Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
+                {
+                    return false;
+                }
+            }
 
             subIDStart = (contents[i] & 0x80) == 0;
         }
