@@ -524,6 +524,43 @@ public class PBETest
         }
     }
 
+    private void testExtendedPBEParameterSpec()
+        throws Exception
+    {
+        String keyAlgo = "PBKDF2WITHHMACSHA512";
+        String cipherAlgo = "2.16.840.1.101.3.4.1.42";
+
+        SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+
+        char[] password = "abcdefghijklmnop".toCharArray();
+        PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
+
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(keyAlgo, "BC");
+        SecretKey key = factory.generateSecret(pbeKeySpec);
+
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        byte[] iv = new byte[16];
+        random.nextBytes(iv);
+
+        PBEParameterSpec pbeParamSpec = new PBEParameterSpec(salt, 1000, new IvParameterSpec(iv));
+
+        Cipher encryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+        Cipher decryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+
+        encryptCipher.init(Cipher.ENCRYPT_MODE, key, pbeParamSpec);
+        decryptCipher.init(Cipher.DECRYPT_MODE, key, pbeParamSpec);
+
+        byte[] input = Strings.toByteArray("testing");
+        byte[] encryptedBytes = encryptCipher.doFinal(input);
+        byte[] decryptedBytes = decryptCipher.doFinal(encryptedBytes);
+
+        decryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+        decryptCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Hex.decode("6162636465666768696a6b6c6d6e6f70"), "AES"), pbeParamSpec.getParameterSpec());
+        decryptedBytes = decryptCipher.doFinal(encryptedBytes);
+
+        isTrue(Arrays.areEqual(input, decryptedBytes));
+    }
     public void performTest()
         throws Exception
     {
@@ -667,6 +704,8 @@ public class PBETest
         {
             openSSLTests[i].perform();
         }
+
+        testExtendedPBEParameterSpec();
 
         testPKCS12Interop();
 
