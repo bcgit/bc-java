@@ -246,6 +246,11 @@ public class ASN1RelativeOID
 
     static boolean isValidContents(byte[] contents)
     {
+        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
+        {
+            return true;
+        }
+
         if (contents.length < 1)
         {
             return false;
@@ -256,10 +261,7 @@ public class ASN1RelativeOID
         {
             if (subIDStart && (contents[i] & 0xff) == 0x80)
             {
-                if (!Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
-                {
-                    return false;
-                }
+                return false;
             }
 
             subIDStart = (contents[i] & 0x80) == 0;
