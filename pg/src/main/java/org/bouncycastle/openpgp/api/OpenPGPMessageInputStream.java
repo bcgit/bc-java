@@ -219,8 +219,8 @@ public class OpenPGPMessageInputStream
         int i = in.read(b, off, len);
         if (i >= 0)
         {
-            layer.onePassSignatures.update(b, off, len);
-            layer.prefixedSignatures.update(b, off, len);
+            layer.onePassSignatures.update(b, off, i);
+            layer.prefixedSignatures.update(b, off, i);
         }
         return i;
     }
