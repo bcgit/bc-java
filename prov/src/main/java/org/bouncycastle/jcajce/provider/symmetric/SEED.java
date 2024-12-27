@@ -39,7 +39,7 @@ public final class SEED
     {
         public ECB()
         {
-            super(new BlockCipherProvider()
+            super(128, new BlockCipherProvider()
             {
                 public BlockCipher get()
                 {
@@ -54,7 +54,7 @@ public final class SEED
     {
         public CBC()
         {
-            super(new CBCBlockCipher(new SEEDEngine()), 128);
+            super(128, new CBCBlockCipher(new SEEDEngine()), 128);
         }
     }
 
@@ -63,7 +63,7 @@ public final class SEED
     {
         public Wrap()
         {
-            super(new SEEDWrapEngine());
+            super(128, new SEEDWrapEngine());
         }
     }
 

@@ -75,6 +75,8 @@ import org.bouncycastle.crypto.params.RC5Parameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
+import org.bouncycastle.jcajce.PBKDF2Key;
+import org.bouncycastle.jcajce.PBKDF2KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
@@ -157,8 +159,27 @@ public class BaseBlockCipher
     }
 
     protected BaseBlockCipher(
+        int keySizeInBits,
+        BlockCipherProvider provider)
+    {
+        baseEngine = provider.get();
+        engineProvider = provider;
+        this.keySizeInBits = keySizeInBits;
+
+        cipher = new BufferedGenericBlockCipher(provider.get());
+    }
+
+    protected BaseBlockCipher(
         AEADBlockCipher engine)
     {
+        this(0, engine);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine)
+    {
+        this.keySizeInBits = keySizeInBits;
         this.baseEngine = engine.getUnderlyingCipher();
         if (engine.getAlgorithmName().indexOf("GCM") >= 0)
         {
@@ -187,6 +208,16 @@ public class BaseBlockCipher
         boolean fixedIv,
         int ivLength)
     {
+        this(0, engine, fixedIv, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
         this.baseEngine = engine.getUnderlyingCipher();
         this.fixedIv = fixedIv;
         this.ivLength = ivLength;
@@ -198,6 +229,19 @@ public class BaseBlockCipher
         int ivLength)
     {
         this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        org.bouncycastle.crypto.BlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine;
+
+        this.fixedIv = true;
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.ivLength = ivLength / 8;
     }
 
     protected BaseBlockCipher(
@@ -217,6 +261,19 @@ public class BaseBlockCipher
         int ivLength)
     {
         this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        BufferedBlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine.getUnderlyingCipher();
+
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.fixedIv = true;
+        this.ivLength = ivLength / 8;
     }
 
     protected BaseBlockCipher(
@@ -604,11 +661,6 @@ public class BaseBlockCipher
             throw new InvalidAlgorithmParameterException("RC5 requires an RC5ParametersSpec to be passed in.");
         }
 
-        if (paramSpec instanceof PBEParameterSpec)
-        {
-            pbeSpec = (PBEParameterSpec)paramSpec;
-        }
-
         //
         // a note on iv's - if ivLength is zero the IV gets ignored (we don't use it).
         //
@@ -690,6 +742,25 @@ public class BaseBlockCipher
                 ivParam = (ParametersWithIV)param;
             }
         }
+        else if (key instanceof PBKDF2Key)
+        {
+            PBKDF2Key k = (PBKDF2Key)key;
+
+            if (paramSpec instanceof PBEParameterSpec)
+            {
+                pbeSpec = (PBEParameterSpec)paramSpec;
+            }
+            if (k instanceof PBKDF2KeyWithParameters && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(((PBKDF2KeyWithParameters)k).getSalt(), ((PBKDF2KeyWithParameters)k).getIterationCount());
+            }
+
+            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S2, PBE.SHA512, keySizeInBits, 0, pbeSpec, cipher.getAlgorithmName());
+            if (param instanceof ParametersWithIV)
+            {
+                ivParam = (ParametersWithIV)param;
+            }
+        }
         else if (key instanceof BCPBEKey)
         {
             BCPBEKey k = (BCPBEKey)key;
@@ -751,9 +822,9 @@ public class BaseBlockCipher
         }
 
         AlgorithmParameterSpec params;
-        if (pbeSpec != null)
+        if (paramSpec instanceof PBEParameterSpec)
         {
-            params = pbeSpec.getParameterSpec();
+            params = ((PBEParameterSpec)paramSpec).getParameterSpec();
         }
         else
         {

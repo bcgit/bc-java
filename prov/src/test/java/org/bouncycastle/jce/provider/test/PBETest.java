@@ -36,6 +36,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -528,9 +529,11 @@ public class PBETest
         throws Exception
     {
         String keyAlgo = "PBKDF2WITHHMACSHA512";
-        String cipherAlgo = "2.16.840.1.101.3.4.1.42";
+        String cipherAlgo = "2.16.840.1.101.3.4.1.2";
 
-        SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+        SecureRandom random = new FixedSecureRandom(Hex.decode(
+            "000102030405060708090a0b0c0d0e0f"
+            + "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf"));
 
         char[] password = "abcdefghijklmnop".toCharArray();
         PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
@@ -556,7 +559,7 @@ public class PBETest
         byte[] decryptedBytes = decryptCipher.doFinal(encryptedBytes);
 
         decryptCipher = Cipher.getInstance(cipherAlgo, "BC");
-        decryptCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Hex.decode("6162636465666768696a6b6c6d6e6f70"), "AES"), pbeParamSpec.getParameterSpec());
+        decryptCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(Hex.decode("8d12394d80835639c2cf7d4703e76cea"), "AES"), pbeParamSpec.getParameterSpec());
         decryptedBytes = decryptCipher.doFinal(encryptedBytes);
 
         isTrue(Arrays.areEqual(input, decryptedBytes));
@@ -566,6 +569,7 @@ public class PBETest
         throws Exception
     {
         byte[] input = Hex.decode("1234567890abcdefabcdef1234567890fedbca098765");
+        testExtendedPBEParameterSpec();
 
         //
         // DES

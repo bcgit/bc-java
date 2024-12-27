@@ -58,12 +58,66 @@ public final class Camellia
         }
     }
 
+    public static class CBC128
+       extends BaseBlockCipher
+    {
+        public CBC128()
+        {
+            super(128, new CBCBlockCipher(new CamelliaEngine()), 128);
+        }
+    }
+
+    public static class CBC192
+       extends BaseBlockCipher
+    {
+        public CBC192()
+        {
+            super(192, new CBCBlockCipher(new CamelliaEngine()), 128);
+        }
+    }
+
+    public static class CBC256
+       extends BaseBlockCipher
+    {
+        public CBC256()
+        {
+            super(256, new CBCBlockCipher(new CamelliaEngine()), 128);
+        }
+    }
+
     public static class Wrap
         extends BaseWrapCipher
     {
         public Wrap()
         {
             super(new CamelliaWrapEngine());
+        }
+    }
+
+    public static class Wrap128
+        extends BaseWrapCipher
+    {
+        public Wrap128()
+        {
+            super(128, new CamelliaWrapEngine());
+        }
+    }
+
+    public static class Wrap192
+        extends BaseWrapCipher
+    {
+        public Wrap192()
+        {
+            super(192, new CamelliaWrapEngine());
+        }
+    }
+
+    public static class Wrap256
+        extends BaseWrapCipher
+    {
+        public Wrap256()
+        {
+            super(256, new CamelliaWrapEngine());
         }
     }
 
@@ -223,15 +277,15 @@ public final class Camellia
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator", NTTObjectIdentifiers.id_camellia256_cbc, "CAMELLIA");
 
             provider.addAlgorithm("Cipher.CAMELLIA", PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia128_cbc, PREFIX + "$CBC");
-            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia192_cbc, PREFIX + "$CBC");
-            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia256_cbc, PREFIX + "$CBC");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia128_cbc, PREFIX + "$CBC128");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia192_cbc, PREFIX + "$CBC192");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia256_cbc, PREFIX + "$CBC256");
 
             provider.addAlgorithm("Cipher.CAMELLIARFC3211WRAP", PREFIX + "$RFC3211Wrap");
             provider.addAlgorithm("Cipher.CAMELLIAWRAP", PREFIX + "$Wrap");
-            provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia128_wrap, "CAMELLIAWRAP");
-            provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia192_wrap, "CAMELLIAWRAP");
-            provider.addAlgorithm("Alg.Alias.Cipher", NTTObjectIdentifiers.id_camellia256_wrap, "CAMELLIAWRAP");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia128_wrap, PREFIX + "$Wrap128");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia192_wrap, PREFIX + "$Wrap192");
+            provider.addAlgorithm("Cipher", NTTObjectIdentifiers.id_camellia256_wrap, PREFIX + "$Wrap256");
 
             provider.addAlgorithm("SecretKeyFactory.CAMELLIA", PREFIX + "$KeyFactory");
             provider.addAlgorithm("Alg.Alias.SecretKeyFactory", NTTObjectIdentifiers.id_camellia128_cbc, "CAMELLIA");
