@@ -51,7 +51,7 @@ public class BCMLDSAPrivateKey
     {
         this.attributes = attributes;
         this.params = params;
-        algorithm = MLDSAParameterSpec.fromName(params.getParameters().getName()).getName().toUpperCase();
+        algorithm = Strings.toUpperCase(MLDSAParameterSpec.fromName(params.getParameters().getName()).getName());
     }
 
     /**
