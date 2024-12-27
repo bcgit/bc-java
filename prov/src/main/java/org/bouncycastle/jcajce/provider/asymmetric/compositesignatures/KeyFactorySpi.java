@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1BitString;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -192,7 +193,15 @@ public class KeyFactorySpi
             // TODO: backwards compatibility code - should be deleted after 1.84.
             try
             {
-                seq = DERSequence.getInstance(keyInfo.parsePrivateKey());
+                ASN1Encodable obj = keyInfo.parsePrivateKey();
+                if (obj instanceof ASN1OctetString)
+                {
+                    seq = DERSequence.getInstance(ASN1OctetString.getInstance(obj).getOctets());
+                }
+                else
+                {
+                    seq = DERSequence.getInstance(obj);
+                }
             }
             catch (Exception e)
             {
