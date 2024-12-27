@@ -11,6 +11,7 @@ import org.bouncycastle.openpgp.PGPUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class OpenPGPDetachedSignatureProcessor
@@ -19,6 +20,8 @@ public class OpenPGPDetachedSignatureProcessor
     private final OpenPGPImplementation implementation;
     private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool = new OpenPGPKeyMaterialPool.OpenPGPCertificatePool();
     private final List<PGPSignature> pgpSignatures = new ArrayList<>();
+    private Date verifyNotAfter = new Date();       // now
+    private Date verifyNotBefore = new Date(0L);    // beginning of time
 
     private OpenPGPMessageProcessor.PGPExceptionCallback exceptionCallback = null;
 
@@ -64,6 +67,18 @@ public class OpenPGPDetachedSignatureProcessor
         return this;
     }
 
+    public OpenPGPDetachedSignatureProcessor verifyNotBefore(Date date)
+    {
+        this.verifyNotBefore = date;
+        return this;
+    }
+
+    public OpenPGPDetachedSignatureProcessor verifyNotAfter(Date date)
+    {
+        this.verifyNotAfter = date;
+        return this;
+    }
+
     public List<OpenPGPSignature.OpenPGPDocumentSignature> verify(InputStream inputStream)
             throws IOException
     {
@@ -105,6 +120,10 @@ public class OpenPGPDetachedSignatureProcessor
 
             OpenPGPSignature.OpenPGPDocumentSignature sig =
                     new OpenPGPSignature.OpenPGPDocumentSignature(signature, signingKey);
+            if (!sig.createdInBounds(verifyNotBefore, verifyNotAfter))
+            {
+                continue;
+            }
             documentSignatures.add(sig);
         }
 

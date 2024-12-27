@@ -507,6 +507,7 @@ public abstract class OpenPGPSignature
          * @return true if the signature is valid now.
          */
         public boolean isValid()
+                throws MalformedPGPSignatureException
         {
             return isValidAt(getCreationTime());
         }
@@ -520,6 +521,7 @@ public abstract class OpenPGPSignature
          * @throws IllegalStateException if the signature has not yet been tested using a <pre>verify()</pre> method.
          */
         public boolean isValidAt(Date date)
+                throws MalformedPGPSignatureException
         {
             if (!isTested)
             {
@@ -529,9 +531,15 @@ public abstract class OpenPGPSignature
             {
                 return false;
             }
+            sanitize(issuer);
             return issuer.getCertificate().getPrimaryKey().isBoundAt(date) &&
                     issuer.isBoundAt(date) &&
                     issuer.isSigningKey(date);
+        }
+
+        public boolean createdInBounds(Date notBefore, Date notAfter)
+        {
+            return !getCreationTime().before(notBefore) && !getCreationTime().after(notAfter);
         }
     }
 }

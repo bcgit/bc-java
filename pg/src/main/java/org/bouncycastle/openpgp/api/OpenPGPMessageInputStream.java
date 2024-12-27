@@ -649,6 +649,11 @@ public class OpenPGPMessageInputStream
 
                 OpenPGPSignature.OpenPGPDocumentSignature dataSignature =
                         new OpenPGPSignature.OpenPGPDocumentSignature(signature, key);
+                if (!dataSignature.createdInBounds(processor.getVerifyNotBefore(), processor.getVerifyNotAfter()))
+                {
+                    // sig is not in bounds
+                    continue;
+                }
                 try
                 {
                     dataSignature.verify(ops);

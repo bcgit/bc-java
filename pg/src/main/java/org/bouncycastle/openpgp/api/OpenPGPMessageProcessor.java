@@ -20,6 +20,7 @@ import org.bouncycastle.util.Arrays;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class OpenPGPMessageProcessor
@@ -57,6 +58,18 @@ public class OpenPGPMessageProcessor
     public OpenPGPMessageProcessor addVerificationCertificate(OpenPGPCertificate issuerCertificate)
     {
         configuration.certificatePool.addItem(issuerCertificate);
+        return this;
+    }
+
+    public OpenPGPMessageProcessor verifyNotAfter(Date date)
+    {
+        configuration.verifyNotAfter = date;
+        return this;
+    }
+
+    public OpenPGPMessageProcessor verifyNotBefore(Date date)
+    {
+        configuration.verifyNotBefore = date;
         return this;
     }
 
@@ -215,6 +228,16 @@ public class OpenPGPMessageProcessor
         OpenPGPMessageInputStream in = new OpenPGPMessageInputStream(objectFactory, this);
         in.process();
         return in;
+    }
+
+    Date getVerifyNotBefore()
+    {
+        return configuration.verifyNotBefore;
+    }
+
+    Date getVerifyNotAfter()
+    {
+        return configuration.verifyNotAfter;
     }
 
     /**
@@ -465,6 +488,8 @@ public class OpenPGPMessageProcessor
         private MissingPassphraseCallback missingMessagePassphraseCallback;
         private PGPExceptionCallback exceptionCallback = null;
         private PGPSessionKey sessionKey;
+        private Date verifyNotAfter = new Date();       // now
+        private Date verifyNotBefore = new Date(0L);    // beginning of time
 
         public Configuration()
         {
