@@ -529,7 +529,9 @@ public abstract class OpenPGPSignature
             {
                 return false;
             }
-            return issuer.isSigningKey(date);
+            return issuer.getCertificate().getPrimaryKey().isBoundAt(date) &&
+                    issuer.isBoundAt(date) &&
+                    issuer.isSigningKey(date);
         }
     }
 }
