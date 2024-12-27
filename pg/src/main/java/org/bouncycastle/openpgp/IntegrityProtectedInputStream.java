@@ -9,13 +9,13 @@ import java.io.InputStream;
 /**
  * {@link InputStream} that performs verification of integrity protection upon {@link #close()}.
  */
-public class VerifyingInputStream
+public class IntegrityProtectedInputStream
         extends FilterInputStream
 {
 
     private final PGPEncryptedData esk;
 
-    public VerifyingInputStream(InputStream in, PGPEncryptedData dataPacket)
+    public IntegrityProtectedInputStream(InputStream in, PGPEncryptedData dataPacket)
     {
         super(in);
         this.esk = dataPacket;

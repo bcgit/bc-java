@@ -11,7 +11,7 @@ import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSessionKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.bouncycastle.openpgp.VerifyingInputStream;
+import org.bouncycastle.openpgp.IntegrityProtectedInputStream;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
@@ -258,7 +258,7 @@ public class OpenPGPMessageProcessor
                     implementation.sessionKeyDataDecryptorFactory(configuration.sessionKey);
             PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
             InputStream decryptedIn = encData.getDataStream(decryptorFactory);
-            VerifyingInputStream verifyingIn = new VerifyingInputStream(decryptedIn, encData);
+            IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
 
             return new Decrypted(encData, configuration.sessionKey, verifyingIn);
         }
@@ -287,7 +287,7 @@ public class OpenPGPMessageProcessor
                                 implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
                         PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
                         InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
-                        VerifyingInputStream verifyingIn = new VerifyingInputStream(decryptedIn, encData);
+                        IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
 
                         Decrypted decrypted = new Decrypted(encData, decryptedSessionKey, verifyingIn);
                         decrypted.decryptionPassphrase = passphrase;
@@ -340,7 +340,7 @@ public class OpenPGPMessageProcessor
                         implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
                 PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
                 InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
-                VerifyingInputStream verifyingIn = new VerifyingInputStream(decryptedIn, encData);
+                IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
                 Decrypted decrypted = new Decrypted(encData, decryptedSessionKey, verifyingIn);
                 decrypted.decryptionKey = decryptionKey;
                 return decrypted;
@@ -369,7 +369,7 @@ public class OpenPGPMessageProcessor
                         SessionKeyDataDecryptorFactory skDecryptorFactory = implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
                         PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
                         InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
-                        VerifyingInputStream verifyingIn = new VerifyingInputStream(decryptedIn, encData);
+                        IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
                         Decrypted decrypted = new Decrypted(encData, decryptedSessionKey, verifyingIn);
                         decrypted.decryptionPassphrase = passphrase;
                         return decrypted;

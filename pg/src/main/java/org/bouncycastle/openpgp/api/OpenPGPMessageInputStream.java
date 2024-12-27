@@ -16,7 +16,6 @@ import org.bouncycastle.openpgp.PGPPadding;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
-import org.bouncycastle.openpgp.VerifyingInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -617,9 +616,9 @@ public class OpenPGPMessageInputStream
             {
                 if (issuers.containsKey(onePassSignature))
                 {
-                onePassSignature.update((byte) i);
+                    onePassSignature.update((byte) i);
+                }
             }
-        }
         }
 
         void update(byte[] b, int off, int len)
@@ -628,9 +627,9 @@ public class OpenPGPMessageInputStream
             {
                 if (issuers.containsKey(onePassSignature))
                 {
-                onePassSignature.update(b, off, len);
+                    onePassSignature.update(b, off, len);
+                }
             }
-        }
         }
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(
