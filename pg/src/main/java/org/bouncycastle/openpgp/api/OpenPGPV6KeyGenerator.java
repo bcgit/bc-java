@@ -54,7 +54,9 @@ public class OpenPGPV6KeyGenerator
     public OpenPGPV6KeyGenerator(OpenPGPImplementation implementationProvider,
                                  int signatureHashAlgorithmId,
                                  boolean aead,
-                                 Date creationTime) throws PGPException {
+                                 Date creationTime)
+            throws PGPException
+    {
         this(
                 implementationProvider,
                 implementationProvider.pgpKeyPairGeneratorProvider(),

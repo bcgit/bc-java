@@ -159,7 +159,8 @@ public abstract class AbstractOpenPGPKeySignatureGenerator
         this.defaultCompressionAlgorithmPreferences = compressionAlgorithmPreferences;
     }
 
-    public void setDirectKeySignatureSubpackets(SignatureSubpacketsFunction directKeySignatureSubpackets) {
+    public void setDirectKeySignatureSubpackets(SignatureSubpacketsFunction directKeySignatureSubpackets)
+    {
         this.directKeySignatureSubpackets = directKeySignatureSubpackets;
     }
 
