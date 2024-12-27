@@ -29,6 +29,7 @@ import org.bouncycastle.crypto.engines.RFC5649WrapEngine;
 import org.bouncycastle.crypto.generators.Poly1305KeyGenerator;
 import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.macs.GMac;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.CCMModeCipher;
@@ -80,12 +81,84 @@ public final class AES
         }
     }
 
+    public static class ECB128
+        extends BaseBlockCipher
+    {
+        public ECB128()
+        {
+            super(128, new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return AESEngine.newInstance();
+                }
+            });
+        }
+    }
+
+    public static class ECB192
+        extends BaseBlockCipher
+    {
+        public ECB192()
+        {
+            super(192, new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return AESEngine.newInstance();
+                }
+            });
+        }
+    }
+
+    public static class ECB256
+        extends BaseBlockCipher
+    {
+        public ECB256()
+        {
+            super(256, new BlockCipherProvider()
+            {
+                public BlockCipher get()
+                {
+                    return AESEngine.newInstance();
+                }
+            });
+        }
+    }
+
     public static class CBC
         extends BaseBlockCipher
     {
         public CBC()
         {
             super(CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
+        }
+    }
+
+    public static class CBC128
+        extends BaseBlockCipher
+    {
+        public CBC128()
+        {
+            super(128, CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
+        }
+    }
+
+    public static class CBC192
+        extends BaseBlockCipher
+    {
+        public CBC192()
+        {
+            super(192, CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
+        }
+    }
+
+    public static class CBC256
+        extends BaseBlockCipher
+    {
+        public CBC256()
+        {
+            super(192, CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
         }
     }
 
@@ -97,7 +170,34 @@ public final class AES
             super(new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(AESEngine.newInstance(), 128)), 128);
         }
     }
-
+    
+    public static class CFB128
+            extends BaseBlockCipher
+        {
+            public CFB128()
+            {
+                super(128, new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+    
+        public static class CFB192
+            extends BaseBlockCipher
+        {
+            public CFB192()
+            {
+                super(192, new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+    
+        public static class CFB256
+            extends BaseBlockCipher
+        {
+            public CFB256()
+            {
+                super(256, new DefaultBufferedBlockCipher(CFBBlockCipher.newInstance(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+        
     static public class OFB
         extends BaseBlockCipher
     {
@@ -106,7 +206,35 @@ public final class AES
             super(new DefaultBufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128)), 128);
         }
     }
-
+    
+    public static class OFB128
+            extends BaseBlockCipher
+        {
+            public OFB128()
+            {
+                super(128, new DefaultBufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+    
+        public static class OFB192
+            extends BaseBlockCipher
+        {
+            public OFB192()
+            {
+                super(192, new DefaultBufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+    
+        public static class OFB256
+            extends BaseBlockCipher
+        {
+            public OFB256()
+            {
+                super(256, new DefaultBufferedBlockCipher(new OFBBlockCipher(AESEngine.newInstance(), 128)), 128);
+            }
+        }
+    
+    
     static public class GCM
         extends BaseBlockCipher
     {
@@ -116,12 +244,66 @@ public final class AES
         }
     }
 
+    static public class GCM128
+        extends BaseBlockCipher
+    {
+        public GCM128()
+        {
+            super(128, (AEADBlockCipher)GCMBlockCipher.newInstance(AESEngine.newInstance()));
+        }
+    }
+
+    static public class GCM192
+        extends BaseBlockCipher
+    {
+        public GCM192()
+        {
+            super(192, (AEADBlockCipher)GCMBlockCipher.newInstance(AESEngine.newInstance()));
+        }
+    }
+
+    static public class GCM256
+        extends BaseBlockCipher
+    {
+        public GCM256()
+        {
+            super(256, (AEADBlockCipher)GCMBlockCipher.newInstance(AESEngine.newInstance()));
+        }
+    }
+        
     static public class CCM
         extends BaseBlockCipher
     {
         public CCM()
         {
             super(CCMBlockCipher.newInstance(AESEngine.newInstance()), false, 12);
+        }
+    }
+
+    static public class CCM128
+        extends BaseBlockCipher
+    {
+        public CCM128()
+        {
+            super(128, (AEADBlockCipher)CCMBlockCipher.newInstance(AESEngine.newInstance()), false, 12);
+        }
+    }
+
+    static public class CCM192
+        extends BaseBlockCipher
+    {
+        public CCM192()
+        {
+            super(192, (AEADBlockCipher)CCMBlockCipher.newInstance(AESEngine.newInstance()), false, 12);
+        }
+    }
+
+    static public class CCM256
+        extends BaseBlockCipher
+    {
+        public CCM256()
+        {
+            super(256, (AEADBlockCipher)CCMBlockCipher.newInstance(AESEngine.newInstance()), false, 12);
         }
     }
 
@@ -143,6 +325,62 @@ public final class AES
         }
     }
 
+    static class CCMMac
+        implements Mac
+    {
+        private final CCMModeCipher ccm = CCMBlockCipher.newInstance(AESEngine.newInstance());
+
+        private int macLength = 8;
+
+        public void init(CipherParameters params)
+            throws IllegalArgumentException
+        {
+            ccm.init(true, params);
+
+            this.macLength = ccm.getMac().length;
+        }
+
+        public String getAlgorithmName()
+        {
+            return ccm.getAlgorithmName() + "Mac";
+        }
+
+        public int getMacSize()
+        {
+            return macLength;
+        }
+
+        public void update(byte in)
+            throws IllegalStateException
+        {
+            ccm.processAADByte(in);
+        }
+
+        public void update(byte[] in, int inOff, int len)
+            throws DataLengthException, IllegalStateException
+        {
+            ccm.processAADBytes(in, inOff, len);
+        }
+
+        public int doFinal(byte[] out, int outOff)
+            throws DataLengthException, IllegalStateException
+        {
+            try
+            {
+                return ccm.doFinal(out, 0);
+            }
+            catch (InvalidCipherTextException e)
+            {
+                throw new IllegalStateException("exception on doFinal(): " + e.toString());
+            }
+        }
+
+        public void reset()
+        {
+            ccm.reset();
+        }
+    }
+
     public static class AESCCMMAC
         extends BaseMac
     {
@@ -150,61 +388,32 @@ public final class AES
         {
             super(new CCMMac());
         }
+    }
 
-        private static class CCMMac
-            implements Mac
+    public static class AESCCMMAC128
+        extends BaseMac
+    {
+        public AESCCMMAC128()
         {
-            private final CCMModeCipher ccm = CCMBlockCipher.newInstance(AESEngine.newInstance());
+            super(128, new CCMMac());
+        }
+    }
 
-            private int macLength = 8;
+    public static class AESCCMMAC192
+        extends BaseMac
+    {
+        public AESCCMMAC192()
+        {
+            super(192, new CCMMac());
+        }
+    }
 
-            public void init(CipherParameters params)
-                throws IllegalArgumentException
-            {
-                ccm.init(true, params);
-
-                this.macLength = ccm.getMac().length;
-            }
-
-            public String getAlgorithmName()
-            {
-                return ccm.getAlgorithmName() + "Mac";
-            }
-
-            public int getMacSize()
-            {
-                return macLength;
-            }
-
-            public void update(byte in)
-                throws IllegalStateException
-            {
-                ccm.processAADByte(in);
-            }
-
-            public void update(byte[] in, int inOff, int len)
-                throws DataLengthException, IllegalStateException
-            {
-                ccm.processAADBytes(in, inOff, len);
-            }
-
-            public int doFinal(byte[] out, int outOff)
-                throws DataLengthException, IllegalStateException
-            {
-                try
-                {
-                    return ccm.doFinal(out, 0);
-                }
-                catch (InvalidCipherTextException e)
-                {
-                    throw new IllegalStateException("exception on doFinal(): " + e.toString());
-                }
-            }
-
-            public void reset()
-            {
-                ccm.reset();
-            }
+    public static class AESCCMMAC256
+        extends BaseMac
+    {
+        public AESCCMMAC256()
+        {
+            super(256, new CCMMac());
         }
     }
 
@@ -244,10 +453,64 @@ public final class AES
         }
     }
 
+    static public class Wrap128
+        extends BaseWrapCipher
+    {
+        public Wrap128()
+        {
+            super(new AESWrapEngine());
+        }
+    }
+
+    static public class Wrap192
+        extends BaseWrapCipher
+    {
+        public Wrap192()
+        {
+            super(new AESWrapEngine());
+        }
+    }
+
+    static public class Wrap256
+        extends BaseWrapCipher
+    {
+        public Wrap256()
+        {
+            super(new AESWrapEngine());
+        }
+    }
+
     public static class WrapPad
         extends BaseWrapCipher
     {
         public WrapPad()
+        {
+            super(new AESWrapPadEngine());
+        }
+    }
+
+    public static class WrapPad128
+        extends BaseWrapCipher
+    {
+        public WrapPad128()
+        {
+            super(new AESWrapPadEngine());
+        }
+    }
+
+    public static class WrapPad192
+        extends BaseWrapCipher
+    {
+        public WrapPad192()
+        {
+            super(new AESWrapPadEngine());
+        }
+    }
+
+    public static class WrapPad256
+        extends BaseWrapCipher
+    {
+        public WrapPad256()
         {
             super(new AESWrapPadEngine());
         }
@@ -838,31 +1101,31 @@ public final class AES
             provider.addAlgorithm("Alg.Alias.Cipher." + wrongAES128, "AES");
             provider.addAlgorithm("Alg.Alias.Cipher." + wrongAES192, "AES");
             provider.addAlgorithm("Alg.Alias.Cipher." + wrongAES256, "AES");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_ECB, PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_ECB, PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_ECB, PREFIX + "$ECB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_CBC, PREFIX + "$CBC");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CBC, PREFIX + "$CBC");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CBC, PREFIX + "$CBC");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_OFB, PREFIX + "$OFB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_OFB, PREFIX + "$OFB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_OFB, PREFIX + "$OFB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_CFB, PREFIX + "$CFB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CFB, PREFIX + "$CFB");
-            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CFB, PREFIX + "$CFB");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_ECB, PREFIX + "$ECB128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_ECB, PREFIX + "$ECB192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_ECB, PREFIX + "$ECB256");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_CBC, PREFIX + "$CBC128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CBC, PREFIX + "$CBC192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CBC, PREFIX + "$CBC256");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_OFB, PREFIX + "$OFB128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_OFB, PREFIX + "$OFB192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_OFB, PREFIX + "$OFB256");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_CFB, PREFIX + "$CFB128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CFB, PREFIX + "$CFB192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CFB, PREFIX + "$CFB256");
 
             provider.addAttributes("Cipher.AESWRAP", generalAesAttributes);
             provider.addAlgorithm("Cipher.AESWRAP", PREFIX + "$Wrap");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_wrap, "AESWRAP");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_wrap, "AESWRAP");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_wrap, "AESWRAP");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_wrap, PREFIX + "$Wrap128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_wrap, PREFIX + "$Wrap192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_wrap, PREFIX + "$Wrap256");
             provider.addAlgorithm("Alg.Alias.Cipher.AESKW", "AESWRAP");
 
             provider.addAttributes("Cipher.AESWRAPPAD", generalAesAttributes);
             provider.addAlgorithm("Cipher.AESWRAPPAD", PREFIX + "$WrapPad");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_wrap_pad, "AESWRAPPAD");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_wrap_pad, "AESWRAPPAD");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_wrap_pad, "AESWRAPPAD");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_wrap_pad, PREFIX + "$WrapPad128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_wrap_pad, PREFIX + "$WrapPad192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_wrap_pad, PREFIX + "$WrapPad256");
             provider.addAlgorithm("Alg.Alias.Cipher.AESKWP", "AESWRAPPAD");
 
             provider.addAlgorithm("Cipher.AESRFC3211WRAP", PREFIX + "$RFC3211Wrap");
@@ -875,9 +1138,9 @@ public final class AES
 
             provider.addAttributes("Cipher.CCM", generalAesAttributes);
             provider.addAlgorithm("Cipher.CCM", PREFIX + "$CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_CCM, "CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_CCM, "CCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_CCM, "CCM");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_CCM, PREFIX + "$CCM128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_CCM, PREFIX + "$CCM192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_CCM, PREFIX + "$CCM256");
 
             provider.addAlgorithm("AlgorithmParameterGenerator.GCM", PREFIX + "$AlgParamGenGCM");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameterGenerator." + NISTObjectIdentifiers.id_aes128_GCM, "GCM");
@@ -886,9 +1149,9 @@ public final class AES
 
             provider.addAttributes("Cipher.GCM", generalAesAttributes);
             provider.addAlgorithm("Cipher.GCM", PREFIX + "$GCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes128_GCM, "GCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes192_GCM, "GCM");
-            provider.addAlgorithm("Alg.Alias.Cipher", NISTObjectIdentifiers.id_aes256_GCM, "GCM");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes128_GCM, PREFIX + "$GCM128");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes192_GCM, PREFIX + "$GCM192");
+            provider.addAlgorithm("Cipher", NISTObjectIdentifiers.id_aes256_GCM, PREFIX + "$GCM256");
 
             provider.addAlgorithm("KeyGenerator.AES", PREFIX + "$KeyGen");
             provider.addAlgorithm("KeyGenerator." + wrongAES128, PREFIX + "$KeyGen128");
@@ -924,9 +1187,9 @@ public final class AES
             provider.addAlgorithm("Mac.AESCMAC", PREFIX + "$AESCMAC");
 
             provider.addAlgorithm("Mac.AESCCMMAC", PREFIX + "$AESCCMMAC");
-            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes128_CCM.getId(), "AESCCMMAC");
-            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes192_CCM.getId(), "AESCCMMAC");
-            provider.addAlgorithm("Alg.Alias.Mac." + NISTObjectIdentifiers.id_aes256_CCM.getId(), "AESCCMMAC");
+            provider.addAlgorithm("Mac." + NISTObjectIdentifiers.id_aes128_CCM.getId(), PREFIX + "$AESCCMMAC128");
+            provider.addAlgorithm("Mac." + NISTObjectIdentifiers.id_aes192_CCM.getId(), PREFIX + "$AESCCMMAC192");
+            provider.addAlgorithm("Mac." + NISTObjectIdentifiers.id_aes256_CCM.getId(), PREFIX + "$AESCCMMAC256");
 
             provider.addAlgorithm("Alg.Alias.Cipher", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes128_cbc, "PBEWITHSHAAND128BITAES-CBC-BC");
             provider.addAlgorithm("Alg.Alias.Cipher", BCObjectIdentifiers.bc_pbe_sha1_pkcs12_aes192_cbc, "PBEWITHSHAAND192BITAES-CBC-BC");

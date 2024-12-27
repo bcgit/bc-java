@@ -87,9 +87,26 @@ public abstract class BaseWrapCipher
     }
 
     protected BaseWrapCipher(
+        int keySizeInBits,
+        Wrapper wrapEngine)
+    {
+        this(keySizeInBits, wrapEngine, 0);
+    }
+
+    protected BaseWrapCipher(
         Wrapper wrapEngine,
         int ivSize)
     {
+        this.wrapEngine = wrapEngine;
+        this.ivSize = ivSize;
+    }
+
+    protected BaseWrapCipher(
+        int keySizeInBits,
+        Wrapper wrapEngine,
+        int ivSize)
+    {
+        this.pbeKeySize = keySizeInBits;
         this.wrapEngine = wrapEngine;
         this.ivSize = ivSize;
     }

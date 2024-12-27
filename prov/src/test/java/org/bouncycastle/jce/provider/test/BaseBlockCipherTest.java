@@ -58,7 +58,7 @@ public abstract class BaseBlockCipherTest
 
             if (!areEqual(data, result))
             {
-                fail("failed OID test");
+                fail("failed OID test: " + names[i]);
             }
 
             if (k.getEncoded().length != (16 + ((i / groupSize) * 8)))
