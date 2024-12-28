@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 
 /**
  * Encryption mode (SEIPDv1 / SEIPDv2 / OED) and algorithms.
@@ -91,6 +92,11 @@ public class MessageEncryptionMechanism
     public static MessageEncryptionMechanism aead(int symmetricKeyAlgorithm, int aeadAlgorithm)
     {
         return new MessageEncryptionMechanism(EncryptedDataPacketType.SEIPDv2, symmetricKeyAlgorithm, aeadAlgorithm);
+    }
+
+    public static MessageEncryptionMechanism aead(PreferredAEADCiphersuites.Combination combination)
+    {
+        return aead(combination.getSymmetricAlgorithm(), combination.getAeadAlgorithm());
     }
 
     /**

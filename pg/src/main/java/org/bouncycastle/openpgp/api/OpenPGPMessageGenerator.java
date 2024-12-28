@@ -6,7 +6,6 @@ import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.S2K;
-import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
@@ -33,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -46,7 +44,7 @@ public class OpenPGPMessageGenerator
     public static final int BUFFER_SIZE = 1024;
 
     private final OpenPGPImplementation implementation;
-    private final Configuration config = new Configuration();
+    private final Configuration config;
 
     // Literal Data metadata
     private Date fileModificationDate = null;
@@ -61,7 +59,13 @@ public class OpenPGPMessageGenerator
 
     public OpenPGPMessageGenerator(OpenPGPImplementation implementation)
     {
+        this(implementation, implementation.policy());
+    }
+
+    public OpenPGPMessageGenerator(OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
         this.implementation = Objects.requireNonNull(implementation);
+        this.config = new Configuration(policy);
     }
 
     /**
@@ -425,17 +429,6 @@ public class OpenPGPMessageGenerator
         int negotiateCompression(Configuration configuration);
     }
 
-    public interface EncryptionNegotiator
-    {
-        /**
-         * Negotiate encryption mode and algorithms.
-         *
-         * @param configuration message generator configuration
-         * @return negotiated encryption mode and algorithms
-         */
-        MessageEncryptionMechanism negotiateEncryption(Configuration configuration);
-    }
-
     public interface HashAlgorithmNegotiator
     {
         int negotiateHashAlgorithm(OpenPGPKey key, OpenPGPCertificate.OpenPGPComponentKey subkey);
@@ -448,6 +441,12 @@ public class OpenPGPMessageGenerator
         private final List<Recipient> recipients = new ArrayList<>();
         private final List<Signer> signingKeys = new ArrayList<>();
         private final List<char[]> passphrases = new ArrayList<>();
+        private final OpenPGPPolicy policy;
+
+        public Configuration(OpenPGPPolicy policy)
+        {
+            this.policy = policy;
+        }
 
         // Factory for creating ASCII armor
         private ArmoredOutputStreamFactory armorStreamFactory =
@@ -461,101 +460,39 @@ public class OpenPGPMessageGenerator
         private SubkeySelector signingKeySelector = OpenPGPCertificate::getSigningKeys;
 
         // Encryption method negotiator for when only password-based encryption is requested
-        private EncryptionNegotiator passwordBasedEncryptionNegotiator = configuration ->
+        private OpenPGPEncryptionNegotiator passwordBasedEncryptionNegotiator = configuration ->
                 MessageEncryptionMechanism.aead(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB);
 
         // Encryption method negotiator for when public-key encryption is requested
-        private EncryptionNegotiator publicKeyBasedEncryptionNegotiator = configuration ->
+        private OpenPGPEncryptionNegotiator publicKeyBasedEncryptionNegotiator = configuration ->
         {
-            // Decide, if SEIPDv2 (OpenPGP v6-style AEAD) is supported by all recipients.
-            boolean seipd2Supported = configuration.recipients
-                    .stream()
-                    // ignore keys that can't encrypt at all
-                    .filter(recipient -> !recipient.certificate.getEncryptionKeys().isEmpty())
-                    // Make sure all recipients have at least one key that can do SEIPD2
-                    .allMatch(recipient -> recipient.certificate.getEncryptionKeys()
-                            .stream()
-                            // if some recipient only has keys which DO NOT support SEIPD2 -> downgrade to SEIPD1
-                            .anyMatch(subkey ->
-                            {
-                                Features features = subkey.getFeatures();
-                                return features != null && features.supportsFeature(Features.FEATURE_SEIPD_V2);
-                            })
-                    );
+            List<OpenPGPCertificate> certificates = recipients.stream()
+                    .map(it -> it.certificate)
+                    .collect(Collectors.toList());
 
-            if (seipd2Supported)
+            // Decide, if SEIPDv2 (OpenPGP v6-style AEAD) is supported by all recipients.
+            if (policy.isProduceFeature(Features.FEATURE_SEIPD_V2) &&
+                    OpenPGPEncryptionNegotiator.allRecipientsSupportSeipd2(certificates))
             {
-                PreferredAEADCiphersuites commonDenominator = configuration.recipients
-                        .stream()
-                        // Ignore certificates that cannot encrypt
-                        .filter(recipient -> !recipient.certificate.getEncryptionKeys().isEmpty())
-                        // Ignore subkeys on recipients certificates that do not support SEIPDv2
-                        .map(recipient ->
-                        {
-                            List<OpenPGPCertificate.OpenPGPComponentKey> encKeys = recipient.encryptionSubkeys();
-                            return encKeys.stream().filter(it -> it.getFeatures().supportsSEIPDv2());
-                        })
-                        // go from List<List<Keys>> to List<Keys>
-                        .flatMap(it -> it)
-                        // Extract AEAD preferences per key
-                        .map(it -> org.bouncycastle.util.Objects.or(
-                                it.getAEADCipherSuitePreferences(),
-                                PreferredAEADCiphersuites::DEFAULT))
-                        // Take the intersection of combinations to find commonly preferred combination
-                        .reduce((current, next) ->
-                        {
-                            List<PreferredAEADCiphersuites.Combination> nextPreferences = Arrays.asList(next.getAlgorithms());
-                            return new PreferredAEADCiphersuites(false, Arrays.stream(current.getAlgorithms())
-                                    .filter(nextPreferences::contains)
-                                    .filter(it -> it.getSymmetricAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
-                                    .toArray(PreferredAEADCiphersuites.Combination[]::new));
-                        })
-                        // If no common combination was found, fall back to implicitly supported algorithms
-                        .orElse(PreferredAEADCiphersuites.builder(false)
-                                // Default combination
-                                .addCombination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB)
-                                .build()
-                        );
-                PreferredAEADCiphersuites.Combination[] combinations = commonDenominator.getAlgorithms();
-                // Select best combo from common combinations
-                // TODO: Make sure this is actually the best
-                PreferredAEADCiphersuites.Combination best = combinations[0];
-                return MessageEncryptionMechanism.aead(best.getSymmetricAlgorithm(), best.getAeadAlgorithm());
+                PreferredAEADCiphersuites commonDenominator =
+                        OpenPGPEncryptionNegotiator.negotiateAEADCiphersuite(certificates);
+                return MessageEncryptionMechanism.aead(commonDenominator.getAlgorithms()[0]);
+            }
+            else if (policy.isProduceFeature(Features.FEATURE_AEAD_ENCRYPTED_DATA) &&
+                    OpenPGPEncryptionNegotiator.allRecipientsSupportLibrePGPOED(certificates))
+            {
+                return MessageEncryptionMechanism.librePgp(
+                        OpenPGPEncryptionNegotiator.bestOEDEncryptionModeByWeight(certificates));
             }
             else
             {
-                PreferredAlgorithms commonDenominator = configuration.recipients
-                        .stream()
-                        // Ignore certificates that cannot encrypt
-                        .filter(recipient -> !recipient.certificate.getEncryptionKeys().isEmpty())
-                        .map(Recipient::encryptionSubkeys)
-                        .map(List::stream)
-                        // go from List<List<Keys>> to List<Keys>
-                        .flatMap(it -> it)
-                        // Extract sym. cipher preferences per key
-                        .map(OpenPGPCertificate.OpenPGPComponentKey::getSymmetricCipherPreferences)
-                        // Take the intersection of combinations to find commonly preferred combination
-                        .reduce((current, next) ->
-                                new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, false,
-                                        Arrays.stream(current.getPreferences())
-                                                .filter(alg -> Arrays.stream(next.getPreferences()).anyMatch(it -> alg == it))
-                                                .filter(it -> it != SymmetricKeyAlgorithmTags.NULL)
-                                                .toArray()))
-                        // If no common combination was found, fall back to implicitly supported algorithms
-                        .orElse(new PreferredAlgorithms(SignatureSubpacketTags.PREFERRED_SYM_ALGS, false,
-                                new int[] {
-                                        SymmetricKeyAlgorithmTags.AES_128
-                                } // AES128 is "MUST implement"
-                        ));
-                // TODO: Algorithm selection
-                int bestCipherPreference = commonDenominator.getPreferences()[0];
-
-                return MessageEncryptionMechanism.integrityProtected(bestCipherPreference);
+                return MessageEncryptionMechanism.integrityProtected(
+                        OpenPGPEncryptionNegotiator.bestSymmetricKeyAlgorithmByWeight(certificates));
             }
         };
 
         // Primary encryption method negotiator
-        private final EncryptionNegotiator encryptionNegotiator =
+        private final OpenPGPEncryptionNegotiator encryptionNegotiator =
                 configuration ->
                 {
                     // No encryption methods provided -> Unencrypted message
@@ -594,26 +531,26 @@ public class OpenPGPMessageGenerator
                 };
 
         /**
-         * Replace the default {@link EncryptionNegotiator} that gets to decide, which {@link MessageEncryptionMechanism} mode
+         * Replace the default {@link OpenPGPEncryptionNegotiator} that gets to decide, which {@link MessageEncryptionMechanism} mode
          * to use if only password-based encryption is used.
          *
          * @param pbeNegotiator custom PBE negotiator.
          * @return this
          */
-        public Configuration setPasswordBasedEncryptionNegotiator(EncryptionNegotiator pbeNegotiator)
+        public Configuration setPasswordBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pbeNegotiator)
         {
             this.passwordBasedEncryptionNegotiator = Objects.requireNonNull(pbeNegotiator);
             return this;
         }
 
         /**
-         * Replace the default {@link EncryptionNegotiator} that decides, which {@link MessageEncryptionMechanism}
+         * Replace the default {@link OpenPGPEncryptionNegotiator} that decides, which {@link MessageEncryptionMechanism}
          * mode to use if public-key encryption is used.
          *
          * @param pkbeNegotiator custom encryption negotiator that gets to decide if PK-based encryption is used
          * @return this
          */
-        public Configuration setPublicKeyBasedEncryptionNegotiator(EncryptionNegotiator pkbeNegotiator)
+        public Configuration setPublicKeyBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pkbeNegotiator)
         {
             this.publicKeyBasedEncryptionNegotiator = Objects.requireNonNull(pkbeNegotiator);
             return this;
