@@ -498,7 +498,9 @@ public class OpenPGPMessageGenerator
                         // go from List<List<Keys>> to List<Keys>
                         .flatMap(it -> it)
                         // Extract AEAD preferences per key
-                        .map(OpenPGPCertificate.OpenPGPComponentKey::getAEADCipherSuitePreferences)
+                        .map(it -> org.bouncycastle.util.Objects.or(
+                                it.getAEADCipherSuitePreferences(),
+                                PreferredAEADCiphersuites::DEFAULT))
                         // Take the intersection of combinations to find commonly preferred combination
                         .reduce((current, next) ->
                         {
