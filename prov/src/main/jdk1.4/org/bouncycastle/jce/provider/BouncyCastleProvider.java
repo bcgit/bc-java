@@ -51,7 +51,7 @@ import org.bouncycastle.pqc.jcajce.provider.dilithium.DilithiumKeyFactorySpi;
 public final class BouncyCastleProvider extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Security Provider v1.79";
+    private static String info = "BouncyCastle Security Provider v1.80";
 
     public static final String PROVIDER_NAME = "BC";
 
@@ -135,7 +135,7 @@ public final class BouncyCastleProvider extends Provider
      */
     public BouncyCastleProvider()
     {
-        super(PROVIDER_NAME, 1.7900, info);
+        super(PROVIDER_NAME, 1.8000, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
