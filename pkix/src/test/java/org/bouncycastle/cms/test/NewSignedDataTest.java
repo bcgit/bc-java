@@ -3214,7 +3214,7 @@ public class NewSignedDataTest
         throws Exception
     {
         ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
-        SignerInfoGenerator signerInfoGen = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert);
+        final SignerInfoGenerator signerInfoGen = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert);
 
         DigestCalculator digCalc = new SHA256DigestCalculator();
 
