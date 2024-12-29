@@ -4,12 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -297,8 +293,7 @@ class JceAEADUtil
             JceAEADCipherUtil.setUpAeadCipher(c, secretKey, mode, iv, 128, aad);
             return c.doFinal(keyData, keyOff, keyLen);
         }
-        catch (InvalidAlgorithmParameterException | InvalidKeyException |
-               IllegalBlockSizeException | BadPaddingException e)
+        catch (GeneralSecurityException e)
         {
             throw new PGPException("Exception recovering AEAD protected private key material", e);
         }

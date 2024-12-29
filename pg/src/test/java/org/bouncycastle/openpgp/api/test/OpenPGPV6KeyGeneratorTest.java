@@ -1,5 +1,9 @@
 package org.bouncycastle.openpgp.api.test;
 
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
@@ -28,10 +32,6 @@ import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
 import org.bouncycastle.openpgp.test.AbstractPgpKeyPairTest;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
 
 public class OpenPGPV6KeyGeneratorTest
     extends AbstractPgpKeyPairTest
@@ -466,7 +466,7 @@ public class OpenPGPV6KeyGeneratorTest
             encryptionSubkey.extractPrivateKey(keyDecryptorBuilder.build("encryption-key-passphrase".toCharArray())));
     }
 
-    private void testEnforcesPrimaryOrSubkeyType(APIProvider apiProvider)
+    private void testEnforcesPrimaryOrSubkeyType(final APIProvider apiProvider)
         throws PGPException
     {
         isNotNull(testException(

@@ -1,5 +1,10 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
@@ -28,11 +33,6 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 /**
  * High-level generator class for OpenPGP v6 keys.
@@ -521,7 +521,7 @@ public class OpenPGPV6KeyGenerator
      * @throws PGPException if the key cannot be generated
      */
     public WithPrimaryKey withPrimaryKey(
-        PGPKeyPair primaryKeyPair,
+        final PGPKeyPair primaryKeyPair,
         SignatureSubpacketsFunction directKeySubpackets,
         PBESecretKeyEncryptor keyEncryptor)
         throws PGPException

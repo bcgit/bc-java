@@ -104,7 +104,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
             if (pubKey.getAlgorithm() == PublicKeyAlgorithmTags.ECDH)
             {
                 byte[] sessionInfo = createSessionInfo(isV3 ? optSymAlgId : (byte)0, sessionKey);
-                ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
+                final ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKey.getPublicKeyPacket().getKey();
                 String keyEncryptionOID = RFC6637Utils.getKeyEncryptionOID(ecKey.getSymmetricKeyAlgorithm()).getId();
                 PublicKeyPacket pubKeyPacket = pubKey.getPublicKeyPacket();
 
