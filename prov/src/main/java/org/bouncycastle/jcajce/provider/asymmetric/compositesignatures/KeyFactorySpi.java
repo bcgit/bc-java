@@ -49,7 +49,6 @@ import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.encoders.Hex;
 
 /**
  * KeyFactory for composite signatures. List of supported combinations is in CompositeSignaturesConstants
@@ -315,7 +314,6 @@ public class KeyFactorySpi
         catch (Exception e)
         {
            componentKeys = split(keyIdentifier, keyInfo.getPublicKeyData());
-           System.err.println(Hex.toHexString(componentKeys[1]));
         }
         
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
@@ -391,12 +389,6 @@ public class KeyFactorySpi
         byte[] keyData = publicKeyData.getOctets();
         byte[][] components = new byte[][] { new byte[sizes[0]], new byte[sizes[1]] };
 
-        System.out.println(keyData.length + " " + (sizes[0] + sizes[1]) + " " + (keyData.length - sizes[0]));
-        System.arraycopy(keyData, 0, components[0], 0, sizes[0]);
-        System.arraycopy(keyData, sizes[0], components[1], 0, sizes[1]);
-        System.out.println("keydata: " + Hex.toHexString(keyData));
-        System.out.println("part1: " + Hex.toHexString(components[0]));
-        System.out.println("part2: " + Hex.toHexString(components[1]));
         return components;
     }
     
