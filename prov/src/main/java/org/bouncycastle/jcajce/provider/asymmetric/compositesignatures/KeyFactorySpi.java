@@ -32,6 +32,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
@@ -44,8 +45,11 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.BaseKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
+import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
  * KeyFactory for composite signatures. List of supported combinations is in CompositeSignaturesConstants
@@ -69,6 +73,7 @@ public class KeyFactorySpi
     private static final AlgorithmIdentifier ecDsaBrainpoolP384r1 = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, new X962Parameters(TeleTrusTObjectIdentifiers.brainpoolP384r1));
 
     private static Map<ASN1ObjectIdentifier, AlgorithmIdentifier[]> pairings = new HashMap<ASN1ObjectIdentifier, AlgorithmIdentifier[]>();
+    private static Map<ASN1ObjectIdentifier, int[]> componentKeySizes = new HashMap<ASN1ObjectIdentifier, int[]>();
     
     static
     {
@@ -101,6 +106,36 @@ public class KeyFactorySpi
         pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaP384});
         pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, new AlgorithmIdentifier[]{mlDsa87, ecDsaBrainpoolP384r1});
         pairings.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, new AlgorithmIdentifier[] { mlDsa87, ed448});
+
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PSS_SHA256, new int[]{1328, 268});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA44_ECDSA_P256_SHA256, new int[]{1312, 76});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PSS_SHA256, new int[]{1952, 256});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA3072_PKCS15_SHA256, new int[]{1952, 256});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PSS_SHA384, new int[]{1952, 542});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_RSA4096_PKCS15_SHA384, new int[]{1952, 542});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_P384_SHA384, new int[]{1952, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_ECDSA_brainpoolP256r1_SHA256, new int[]{1952, 76});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA65_Ed25519_SHA512, new int[]{1952, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_P384_SHA384, new int[]{2592, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_ECDSA_brainpoolP384r1_SHA384, new int[]{2592, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_MLDSA87_Ed448_SHA512, new int[]{2592, Ed448.PUBLIC_KEY_SIZE});
+
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PSS_SHA256, new int[]{1328, 268});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA44_RSA2048_PKCS15_SHA256, new int[]{1312, 284});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA44_Ed25519_SHA512, new int[]{1312, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA44_ECDSA_P256_SHA256, new int[]{1312, 76});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PSS_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA3072_PKCS15_SHA512, new int[]{1952, 256});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PSS_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_RSA4096_PKCS15_SHA512, new int[]{1952, 542});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_P384_SHA512, new int[]{1952, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_ECDSA_brainpoolP256r1_SHA512, new int[]{1952, 76});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA65_Ed25519_SHA512, new int[]{1952, Ed25519.PUBLIC_KEY_SIZE});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_P384_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA87_ECDSA_brainpoolP384r1_SHA512, new int[]{2592, 87});
+        componentKeySizes.put(MiscObjectIdentifiers.id_HashMLDSA87_Ed448_SHA512, new int[] { 2592, Ed448.PUBLIC_KEY_SIZE});
     }
 
     private JcaJceHelper helper;
@@ -267,10 +302,22 @@ public class KeyFactorySpi
         {
             helper = new BCJcaJceHelper();
         }
-        
-        ASN1Sequence seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+         System.err.println(ASN1Dump.dumpAsString(keyInfo, true));
         ASN1ObjectIdentifier keyIdentifier = keyInfo.getAlgorithm().getAlgorithm();
-
+        
+        ASN1Sequence seq = null;
+        byte[][] componentKeys = new byte[2][];
+        
+        try
+        {
+            seq = DERSequence.getInstance(keyInfo.getPublicKeyData().getBytes());
+        }
+        catch (Exception e)
+        {
+           componentKeys = split(keyIdentifier, keyInfo.getPublicKeyData());
+           System.err.println(Hex.toHexString(componentKeys[1]));
+        }
+        
         if (MiscObjectIdentifiers.id_alg_composite.equals(keyIdentifier)
             || MiscObjectIdentifiers.id_composite_key.equals(keyIdentifier))
         {
@@ -296,27 +343,36 @@ public class KeyFactorySpi
 
         try
         {
+            int numKeys = (seq == null) ? componentKeys.length : seq.size();
+
             List<KeyFactory> factories = getKeyFactoriesFromIdentifier(keyIdentifier);
-            ASN1BitString[] componentBitStrings = new ASN1BitString[seq.size()];
-            for (int i = 0; i < seq.size(); i++)
+            ASN1BitString[] componentBitStrings = new ASN1BitString[numKeys];
+            for (int i = 0; i < numKeys; i++)
             {
                 // Check if component is OCTET STRING. If yes, convert it to BIT STRING.
                 // This check should not be necessary since the draft RFC specifies components as BIT STRING encoded,
                 // but currently the example public keys are OCTET STRING. So we leave it for interoperability.
-                if (seq.getObjectAt(i) instanceof DEROctetString)
+                if (seq != null)
                 {
-                    componentBitStrings[i] = new DERBitString(((DEROctetString)seq.getObjectAt(i)).getOctets());
+                    if (seq.getObjectAt(i) instanceof DEROctetString)
+                    {
+                        componentBitStrings[i] = new DERBitString(((DEROctetString)seq.getObjectAt(i)).getOctets());
+                    }
+                    else
+                    {
+                        componentBitStrings[i] = (DERBitString)seq.getObjectAt(i);
+                    }
                 }
                 else
                 {
-                    componentBitStrings[i] = (DERBitString)seq.getObjectAt(i);
+                    componentBitStrings[i] = new DERBitString(componentKeys[i]);
                 }
             }
 
             // We need to get X509EncodedKeySpec to use key factories to produce component public keys.
             X509EncodedKeySpec[] x509EncodedKeySpecs = getKeysSpecs(keyIdentifier, componentBitStrings);
-            PublicKey[] publicKeys = new PublicKey[seq.size()];
-            for (int i = 0; i < seq.size(); i++)
+            PublicKey[] publicKeys = new PublicKey[numKeys];
+            for (int i = 0; i < numKeys; i++)
             {
                 publicKeys[i] = factories.get(i).generatePublic(x509EncodedKeySpecs[i]);
             }
@@ -329,6 +385,21 @@ public class KeyFactorySpi
         }
     }
 
+    byte[][] split(ASN1ObjectIdentifier algorithm, ASN1BitString publicKeyData)
+    {
+        int[] sizes = componentKeySizes.get(algorithm);
+        byte[] keyData = publicKeyData.getOctets();
+        byte[][] components = new byte[][] { new byte[sizes[0]], new byte[sizes[1]] };
+
+        System.out.println(keyData.length + " " + (sizes[0] + sizes[1]) + " " + (keyData.length - sizes[0]));
+        System.arraycopy(keyData, 0, components[0], 0, sizes[0]);
+        System.arraycopy(keyData, sizes[0], components[1], 0, sizes[1]);
+        System.out.println("keydata: " + Hex.toHexString(keyData));
+        System.out.println("part1: " + Hex.toHexString(components[0]));
+        System.out.println("part2: " + Hex.toHexString(components[1]));
+        return components;
+    }
+    
     /**
      * A helper method that returns a list of KeyFactory objects based on the composite signature OID.
      *

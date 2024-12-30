@@ -79,13 +79,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateRsaKeyPair(3072);
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.RSA_GENERAL);
-        isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getBitStrength(), 3072);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -96,13 +96,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         PGPKeyPair kp = gen.generateRsaKeyPair(4096);
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.RSA_GENERAL);
-        isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getBitStrength(), 4096);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -113,13 +113,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         PGPKeyPair kp = gen.generateEd25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.Ed25519);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), Ed25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -131,13 +131,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateEd25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.Ed25519);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), Ed25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -148,13 +148,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         PGPKeyPair kp = gen.generateEd448KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.Ed448);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), Ed448PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -165,13 +165,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateEd448KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.Ed448);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), Ed448PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -182,13 +182,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         PGPKeyPair kp = gen.generateX25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.X25519);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), X25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -199,13 +199,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateX25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.X25519);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), X25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -216,13 +216,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         PGPKeyPair kp = gen.generateX448KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_6);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.X448);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), X448PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -233,13 +233,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateX448KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.X448);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), X448PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -251,13 +251,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateLegacyEd25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.EDDSA_LEGACY);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), Ed25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 
@@ -266,7 +266,7 @@ public class PGPKeyPairGeneratorTest
         Date creationTime = currentTimeRounded();
         final PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         isNotNull(
-            "Expected exception when attempting to generate v6 LegacyEd25519 key with (" + gen.getClass().getSimpleName() + ")",
+            "Expected exception when attempting to generate v6 LegacyEd25519 key with (" + gen.getClass().getName() + ")",
             testException(
                 "An implementation MUST NOT generate a v6 LegacyEd25519 key pair.",
                 "PGPException",
@@ -286,7 +286,7 @@ public class PGPKeyPairGeneratorTest
         Date creationTime = currentTimeRounded();
         final PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_6, creationTime);
         isNotNull(
-            "Expected exception when attempting to generate v6 LegacyX25519 key with (" + gen.getClass().getSimpleName() + ")",
+            "Expected exception when attempting to generate v6 LegacyX25519 key with (" + gen.getClass().getName() + ")",
             testException(
                 "An implementation MUST NOT generate a v6 LegacyX25519 key pair.",
                 "PGPException",
@@ -308,13 +308,13 @@ public class PGPKeyPairGeneratorTest
         PGPKeyPairGenerator gen = factory.create(PublicKeyPacket.VERSION_4, creationTime);
         PGPKeyPair kp = gen.generateLegacyX25519KeyPair();
 
-        isEquals("Key version mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key version mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getVersion(), PublicKeyPacket.VERSION_4);
-        isEquals("Key algorithm mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key algorithm mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getAlgorithm(), PublicKeyAlgorithmTags.ECDH);
-        // isEquals("Key bit-strength mismatch (" + gen.getClass().getSimpleName() + ")",
+        // isEquals("Key bit-strength mismatch (" + gen.getClass().getName() + ")",
         //         kp.getPublicKey().getBitStrength(), X25519PublicBCPGKey.LENGTH * 8);
-        isEquals("Key creation time mismatch (" + gen.getClass().getSimpleName() + ")",
+        isEquals("Key creation time mismatch (" + gen.getClass().getName() + ")",
             kp.getPublicKey().getCreationTime(), creationTime);
     }
 

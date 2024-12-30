@@ -164,8 +164,10 @@ public class KeyIdentifier
 
     public static boolean matches(List<KeyIdentifier> identifiers, KeyIdentifier identifier, boolean explicit)
     {
-        for (KeyIdentifier candidate : identifiers)
+        for (Iterator it = identifiers.iterator(); it.hasNext();)
         {
+            KeyIdentifier candidate = (KeyIdentifier)it.next();
+            
             if (!explicit && candidate.isWildcard())
             {
                 return true;

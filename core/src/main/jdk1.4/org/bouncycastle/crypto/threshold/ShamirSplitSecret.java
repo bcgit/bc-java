@@ -20,7 +20,7 @@ public class ShamirSplitSecret
         this.poly = poly;
     }
 
-    public ShamirSplitSecretShare[] getSecretShares()
+    public SecretShare[] getSecretShares()
     {
         return secretShares;
     }

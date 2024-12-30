@@ -98,9 +98,9 @@ public class OpenPGPV6KeyGeneratorTest
         PGPSecretKeyRing secretKeys = generator.signOnlyKey(null);
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
         isFalse("sign-only key MUST consists of only a single key", it.hasNext());
-        PGPSignature directKeySignature = primaryKey.getPublicKey().getKeySignatures().next();
+        PGPSignature directKeySignature = (PGPSignature)primaryKey.getPublicKey().getKeySignatures().next();
         isNotNull("Key MUST have direct-key signature", directKeySignature);
         isEquals("Direct-key signature MUST be version 6",
             SignaturePacket.VERSION_6, directKeySignature.getVersion());
@@ -125,7 +125,7 @@ public class OpenPGPV6KeyGeneratorTest
         PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
         isFalse("sign-only key MUST consists of only a single key", it.hasNext());
 
         isEquals("Key MUST be AEAD-protected", SecretKeyPacket.USAGE_AEAD, primaryKey.getS2KUsage());
@@ -142,7 +142,7 @@ public class OpenPGPV6KeyGeneratorTest
         PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = it.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)it.next();
         isFalse("sign-only key MUST consists of only a single key", it.hasNext());
 
         isEquals("Key MUST be CFB-protected", SecretKeyPacket.USAGE_SHA1, primaryKey.getS2KUsage());
@@ -161,13 +161,13 @@ public class OpenPGPV6KeyGeneratorTest
             .classicKey("Alice <alice@example.com>", null);
 
         Iterator<PGPSecretKey> keys = secretKeys.getSecretKeys();
-        PGPSecretKey primaryKey = keys.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)keys.next();
         isEquals("Primary key version mismatch", PublicKeyPacket.VERSION_6,
             primaryKey.getPublicKey().getVersion());
         isEquals(creationTime, primaryKey.getPublicKey().getCreationTime());
         isTrue("Primary key uses signing-capable algorithm",
             PublicKeyUtils.isSigningAlgorithm(primaryKey.getPublicKey().getAlgorithm()));
-        PGPSignature directKeySig = primaryKey.getPublicKey().getKeySignatures().next();
+        PGPSignature directKeySig = (PGPSignature)primaryKey.getPublicKey().getKeySignatures().next();
         isEquals("Primary key of a classic key MUST carry C key flag.",
             KeyFlags.CERTIFY_OTHER, directKeySig.getHashedSubPackets().getKeyFlags());
 
@@ -177,26 +177,26 @@ public class OpenPGPV6KeyGeneratorTest
         isFalse(uids.hasNext());
 
         // Test signing subkey
-        PGPSecretKey signingSubkey = keys.next();
+        PGPSecretKey signingSubkey = (PGPSecretKey)keys.next();
         isEquals("Signing key version mismatch", PublicKeyPacket.VERSION_6,
             signingSubkey.getPublicKey().getVersion());
         isTrue("Signing subkey uses signing-capable algorithm",
             PublicKeyUtils.isSigningAlgorithm(signingSubkey.getPublicKey().getAlgorithm()));
         isEquals(creationTime, signingSubkey.getPublicKey().getCreationTime());
-        PGPSignature signingKeyBinding = signingSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignature signingKeyBinding = (PGPSignature)signingSubkey.getPublicKey().getKeySignatures().next();
         isEquals("Signing subkey MUST carry S key flag.",
             KeyFlags.SIGN_DATA, signingKeyBinding.getHashedSubPackets().getKeyFlags());
         isNotNull("Signing subkey binding MUST carry primary key binding sig",
             signingKeyBinding.getHashedSubPackets().getEmbeddedSignatures().get(0));
 
         // Test encryption subkey
-        PGPSecretKey encryptionSubkey = keys.next();
+        PGPSecretKey encryptionSubkey = (PGPSecretKey)keys.next();
         isEquals("Encryption key version mismatch", PublicKeyPacket.VERSION_6,
             encryptionSubkey.getPublicKey().getVersion());
         isTrue("Encryption subkey uses encryption-capable algorithm",
             encryptionSubkey.getPublicKey().isEncryptionKey());
         isEquals(creationTime, encryptionSubkey.getPublicKey().getCreationTime());
-        PGPSignature encryptionKeyBinding = encryptionSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignature encryptionKeyBinding = (PGPSignature)encryptionSubkey.getPublicKey().getKeySignatures().next();
         isEquals("Encryption key MUST carry encryption flags",
             KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE,
             encryptionKeyBinding.getHashedSubPackets().getKeyFlags());
@@ -205,8 +205,9 @@ public class OpenPGPV6KeyGeneratorTest
         isFalse(keys.hasNext());
 
         // Test all keys are unprotected
-        for (PGPSecretKey key : secretKeys)
+        for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
+            PGPSecretKey key = (PGPSecretKey)it.next();
             isEquals("(Sub-)keys MUST be unprotected", SecretKeyPacket.USAGE_NONE, key.getS2KUsage());
         }
     }
@@ -220,12 +221,13 @@ public class OpenPGPV6KeyGeneratorTest
             .classicKey("Alice <alice@example.com>", "passphrase".toCharArray());
 
         // Test creation time
-        for (PGPPublicKey key : secretKeys.toCertificate())
+        for (Iterator it = secretKeys.toCertificate().iterator(); it.hasNext();)
         {
+            PGPPublicKey key = (PGPPublicKey)it.next();
             isEquals(creationTime, key.getCreationTime());
-            for (Iterator<PGPSignature> it = key.getSignatures(); it.hasNext(); )
+            for (Iterator<PGPSignature> its = key.getSignatures(); its.hasNext(); )
             {
-                PGPSignature sig = it.next();
+                PGPSignature sig = (PGPSignature)its.next();
                 isEquals(creationTime, sig.getCreationTime());
             }
         }
@@ -236,8 +238,9 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals("Alice <alice@example.com>", uids.next());
         isFalse(uids.hasNext());
 
-        for (PGPSecretKey key : secretKeys)
+        for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
+            PGPSecretKey key = (PGPSecretKey)it.next();
             isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, key.getS2KUsage());
         }
     }
@@ -252,14 +255,14 @@ public class OpenPGPV6KeyGeneratorTest
         PGPSecretKeyRing secretKey = generator.ed25519x25519Key(userId, null);
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
-        PGPSecretKey primaryKey = iterator.next();
-        PGPSecretKey signingSubkey = iterator.next();
-        PGPSecretKey encryptionSubkey = iterator.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
+        PGPSecretKey signingSubkey = (PGPSecretKey)iterator.next();
+        PGPSecretKey encryptionSubkey = (PGPSecretKey)iterator.next();
         isFalse("Unexpected key", iterator.hasNext());
 
         isEquals(PublicKeyAlgorithmTags.Ed25519, primaryKey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> keySignatures = primaryKey.getPublicKey().getKeySignatures();
-        PGPSignature directKeySignature = keySignatures.next();
+        PGPSignature directKeySignature = (PGPSignature)keySignatures.next();
         isFalse(keySignatures.hasNext());
         PGPSignatureSubpacketVector hashedSubpackets = directKeySignature.getHashedSubPackets();
         isEquals(KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
@@ -268,13 +271,13 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(userId, userIds.next());
         isFalse(userIds.hasNext());
         Iterator<PGPSignature> userIdSignatures = primaryKey.getPublicKey().getSignaturesForID(userId);
-        PGPSignature userIdSig = userIdSignatures.next();
+        PGPSignature userIdSig = (PGPSignature)userIdSignatures.next();
         isFalse(userIdSignatures.hasNext());
         isEquals(PGPSignature.POSITIVE_CERTIFICATION, userIdSig.getSignatureType());
 
         isEquals(PublicKeyAlgorithmTags.Ed25519, signingSubkey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> signingSubkeySigs = signingSubkey.getPublicKey().getKeySignatures();
-        PGPSignature signingSubkeySig = signingSubkeySigs.next();
+        PGPSignature signingSubkeySig = (PGPSignature)signingSubkeySigs.next();
         isFalse(signingSubkeySigs.hasNext());
         isEquals(PGPSignature.SUBKEY_BINDING, signingSubkeySig.getSignatureType());
         hashedSubpackets = signingSubkeySig.getHashedSubPackets();
@@ -282,7 +285,7 @@ public class OpenPGPV6KeyGeneratorTest
 
         isEquals(PublicKeyAlgorithmTags.X25519, encryptionSubkey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> encryptionSubkeySigs = encryptionSubkey.getPublicKey().getKeySignatures();
-        PGPSignature encryptionSubkeySig = encryptionSubkeySigs.next();
+        PGPSignature encryptionSubkeySig = (PGPSignature)encryptionSubkeySigs.next();
         isFalse(encryptionSubkeySigs.hasNext());
         isEquals(PGPSignature.SUBKEY_BINDING, encryptionSubkeySig.getSignatureType());
         hashedSubpackets = encryptionSubkeySig.getHashedSubPackets();
@@ -299,14 +302,14 @@ public class OpenPGPV6KeyGeneratorTest
         PGPSecretKeyRing secretKey = generator.ed448x448Key(userId, null);
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
-        PGPSecretKey primaryKey = iterator.next();
-        PGPSecretKey signingSubkey = iterator.next();
-        PGPSecretKey encryptionSubkey = iterator.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
+        PGPSecretKey signingSubkey = (PGPSecretKey)iterator.next();
+        PGPSecretKey encryptionSubkey = (PGPSecretKey)iterator.next();
         isFalse("Unexpected key", iterator.hasNext());
 
         isEquals(PublicKeyAlgorithmTags.Ed448, primaryKey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> keySignatures = primaryKey.getPublicKey().getKeySignatures();
-        PGPSignature directKeySignature = keySignatures.next();
+        PGPSignature directKeySignature = (PGPSignature)keySignatures.next();
         isFalse(keySignatures.hasNext());
         PGPSignatureSubpacketVector hashedSubpackets = directKeySignature.getHashedSubPackets();
         isEquals(KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
@@ -315,13 +318,13 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(userId, userIds.next());
         isFalse(userIds.hasNext());
         Iterator<PGPSignature> userIdSignatures = primaryKey.getPublicKey().getSignaturesForID(userId);
-        PGPSignature userIdSig = userIdSignatures.next();
+        PGPSignature userIdSig = (PGPSignature)userIdSignatures.next();
         isFalse(userIdSignatures.hasNext());
         isEquals(PGPSignature.POSITIVE_CERTIFICATION, userIdSig.getSignatureType());
 
         isEquals(PublicKeyAlgorithmTags.Ed448, signingSubkey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> signingSubkeySigs = signingSubkey.getPublicKey().getKeySignatures();
-        PGPSignature signingSubkeySig = signingSubkeySigs.next();
+        PGPSignature signingSubkeySig = (PGPSignature)signingSubkeySigs.next();
         isFalse(signingSubkeySigs.hasNext());
         isEquals(PGPSignature.SUBKEY_BINDING, signingSubkeySig.getSignatureType());
         hashedSubpackets = signingSubkeySig.getHashedSubPackets();
@@ -329,7 +332,7 @@ public class OpenPGPV6KeyGeneratorTest
 
         isEquals(PublicKeyAlgorithmTags.X448, encryptionSubkey.getPublicKey().getAlgorithm());
         Iterator<PGPSignature> encryptionSubkeySigs = encryptionSubkey.getPublicKey().getKeySignatures();
-        PGPSignature encryptionSubkeySig = encryptionSubkeySigs.next();
+        PGPSignature encryptionSubkeySig = (PGPSignature)encryptionSubkeySigs.next();
         isFalse(encryptionSubkeySigs.hasNext());
         isEquals(PGPSignature.SUBKEY_BINDING, encryptionSubkeySig.getSignatureType());
         hashedSubpackets = encryptionSubkeySig.getHashedSubPackets();
@@ -404,13 +407,13 @@ public class OpenPGPV6KeyGeneratorTest
             .build();
 
         Iterator<PGPSecretKey> keyIt = secretKey.getSecretKeys();
-        PGPSecretKey primaryKey = keyIt.next();
+        PGPSecretKey primaryKey = (PGPSecretKey)keyIt.next();
         isEquals("Primary key MUST be RSA_GENERAL",
             PublicKeyAlgorithmTags.RSA_GENERAL, primaryKey.getPublicKey().getAlgorithm());
         isEquals("Primary key MUST be 4096 bits", 4096, primaryKey.getPublicKey().getBitStrength());
         isEquals("Primary key creation time mismatch",
             creationTime, primaryKey.getPublicKey().getCreationTime());
-        PGPSignature directKeySig = primaryKey.getPublicKey().getKeySignatures().next();
+        PGPSignature directKeySig = (PGPSignature)primaryKey.getPublicKey().getKeySignatures().next();
         PGPSignatureSubpacketVector hashedSubpackets = directKeySig.getHashedSubPackets();
         isEquals("Primary key key flags mismatch",
             KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
@@ -421,18 +424,18 @@ public class OpenPGPV6KeyGeneratorTest
             hashedSubpackets.getNotationDataOccurrences("notation@example.com")[0].getNotationValue());
 
         Iterator<String> uids = primaryKey.getUserIDs();
-        String uid = uids.next();
+        String uid = (String)uids.next();
         isFalse("Unexpected additional UID", uids.hasNext());
-        PGPSignature uidSig = primaryKey.getPublicKey().getSignaturesForID(uid).next();
+        PGPSignature uidSig = (PGPSignature)primaryKey.getPublicKey().getSignaturesForID(uid).next();
         isEquals("UID binding sig type mismatch",
             PGPSignature.DEFAULT_CERTIFICATION, uidSig.getSignatureType());
 
-        PGPSecretKey signingSubkey = keyIt.next();
+        PGPSecretKey signingSubkey = (PGPSecretKey)keyIt.next();
         isEquals("Subkey MUST be Ed448",
             PublicKeyAlgorithmTags.Ed448, signingSubkey.getPublicKey().getAlgorithm());
         isEquals("Subkey creation time mismatch",
             creationTime, signingSubkey.getPublicKey().getCreationTime());
-        PGPSignature sigSubBinding = signingSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignature sigSubBinding = (PGPSignature)signingSubkey.getPublicKey().getKeySignatures().next();
         PGPSignatureSubpacketVector sigSubBindHashPkts = sigSubBinding.getHashedSubPackets();
         isEquals("Encryption subkey key flags mismatch",
             KeyFlags.SIGN_DATA, sigSubBindHashPkts.getKeyFlags());
@@ -442,13 +445,13 @@ public class OpenPGPV6KeyGeneratorTest
         isFalse("Missing embedded primary key binding signature",
             sigSubBindHashPkts.getEmbeddedSignatures().isEmpty());
 
-        PGPSecretKey encryptionSubkey = keyIt.next();
+        PGPSecretKey encryptionSubkey = (PGPSecretKey)keyIt.next();
         isFalse("Unexpected additional subkey", keyIt.hasNext());
         isEquals("Subkey MUST be X448",
             PublicKeyAlgorithmTags.X448, encryptionSubkey.getPublicKey().getAlgorithm());
         isEquals("Subkey creation time mismatch",
             creationTime, encryptionSubkey.getPublicKey().getCreationTime());
-        PGPSignature encryptionBinding = encryptionSubkey.getPublicKey().getKeySignatures().next();
+        PGPSignature encryptionBinding = (PGPSignature)encryptionSubkey.getPublicKey().getKeySignatures().next();
         PGPSignatureSubpacketVector encBindHashPkts = encryptionBinding.getHashedSubPackets();
         isEquals("Encryption subkey key flags mismatch",
             KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, encBindHashPkts.getKeyFlags());

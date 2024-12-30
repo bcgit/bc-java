@@ -40,7 +40,7 @@ public class ObjectIdentifierTest
         System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
         String oid = ASN1ObjectIdentifier.getInstance(faultyOID).getId();
 
-        System.clearProperty("org.bouncycastle.asn1.allow_wrong_oid_enc");
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
         isEquals("1.2.840.114283.4.0", oid);
 
         // exercise the object cache

@@ -631,7 +631,7 @@ public class PGPSignatureSubpacketGenerator
         boolean remove = false;
         for (int i = packets.size() - 1; i >= 0; i--)
         {
-            if (packets.get(i).getType() == subpacketType)
+            if (((SignatureSubpacket)packets.get(i)).getType() == subpacketType)
             {
                 packets.remove(i);
                 remove = true;
@@ -686,7 +686,7 @@ public class PGPSignatureSubpacketGenerator
     public PGPSignatureSubpacketVector generate()
     {
         return new PGPSignatureSubpacketVector(
-            packets.toArray(new SignatureSubpacket[0]));
+            (SignatureSubpacket[])packets.toArray(new SignatureSubpacket[0]));
     }
 
     private boolean contains(int type)

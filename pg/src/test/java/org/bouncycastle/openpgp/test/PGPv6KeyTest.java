@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -42,6 +41,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class PGPv6KeyTest
@@ -288,14 +288,14 @@ public class PGPv6KeyTest
     private void parseProtectedKeyTest()
             throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(ARMORED_PROTECTED_KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(ARMORED_PROTECTED_KEY));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
 
         PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(pIn, fingerPrintCalculator);
         Iterator<PGPSecretKey> sIt = secretKeys.getSecretKeys();
 
-        PGPSecretKey key = sIt.next();
+        PGPSecretKey key = (PGPSecretKey)sIt.next();
         isEncodingEqual("Primary key fingerprint mismatch", PRIMARY_FINGERPRINT, key.getFingerprint());
         isEquals("Primary key ID mismatch", PRIMARY_KEYID, key.getKeyID());
         isEquals("Primary key algorithm mismatch",
@@ -310,7 +310,7 @@ public class PGPv6KeyTest
         isEncodingEqual("Primary key S2K salt mismatch",
                 Hex.decode("5d6fd71c9e096d1eb6917b6e6e1eecae"), key.getS2K().getIV());
 
-        key = sIt.next();
+        key = (PGPSecretKey)sIt.next();
         isEncodingEqual("Subkey fingerprint mismatch", SUBKEY_FINGERPRINT, key.getFingerprint());
         isEquals("Subkey ID mismatch", SUBKEY_KEYID, key.getKeyID());
         isEquals("Subkey algorithm mismatch",

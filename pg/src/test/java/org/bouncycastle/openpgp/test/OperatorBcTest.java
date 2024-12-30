@@ -59,6 +59,7 @@ import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
+import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
@@ -89,7 +90,6 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.UncloseableOutputStream;
-import org.junit.Assert;
 
 public class OperatorBcTest
     extends SimpleTest
@@ -206,7 +206,7 @@ public class OperatorBcTest
 
         BcPublicKeyKeyEncryptionMethodGenerator methodGenerator = new BcPublicKeyKeyEncryptionMethodGenerator(pgpKeyPair.getPublicKey());
 
-        BcPGPDataEncryptorBuilder v6 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 8);
+        BcPGPDataEncryptorBuilder v6 = (BcPGPDataEncryptorBuilder)new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 8);
         byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
         PublicKeyEncSessionPacket packet = (PublicKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
         BcPublicKeyDataDecryptorFactory decryptorFactory = new BcPublicKeyDataDecryptorFactory(pgpKeyPair.getPrivateKey());
@@ -242,7 +242,7 @@ public class OperatorBcTest
         int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
         BcPBEKeyEncryptionMethodGenerator methodGenerator = new BcPBEKeyEncryptionMethodGenerator("password".toCharArray());
         byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
-        BcPGPDataEncryptorBuilder v5 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV5AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        PGPDataEncryptorBuilder v5 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV5AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
         SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v5, sessionKey);
         BcPBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider());
         byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
@@ -257,7 +257,7 @@ public class OperatorBcTest
 
         BcPBEKeyEncryptionMethodGenerator methodGenerator = new BcPBEKeyEncryptionMethodGenerator("password".toCharArray());
         byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
-        BcPGPDataEncryptorBuilder v6 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        PGPDataEncryptorBuilder v6 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
         SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
         BcPBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider());
         byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
@@ -800,8 +800,10 @@ public class OperatorBcTest
         AsymmetricCipherKeyPair kp = gen.generateKeyPair();
         Date creationTime = new Date();
         SecureRandom random = new SecureRandom();
-        for (int version : new int[]{PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6})
+        int[] versions = {PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6};
+        for (int i = 0; i != versions.length; i++)
         {
+            int version = versions[i];
             PGPKeyPair keyPair = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
             BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
@@ -822,7 +824,7 @@ public class OperatorBcTest
             byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
             byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
             byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
-            Assert.assertTrue(Arrays.areEqual(output1, output2));
+            isTrue(Arrays.areEqual(output1, output2));
         }
     }
 

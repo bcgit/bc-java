@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.threshold.SecretShare;
 import org.bouncycastle.crypto.threshold.ShamirSecretSplitter;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecret;
 import org.bouncycastle.crypto.threshold.ShamirSplitSecretShare;
@@ -40,16 +41,16 @@ public class ShamirSecretSplitterTest
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
         ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, random);
 
-        ShamirSplitSecret splitSecret = splitter.split(m, n);
-        ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
+        ShamirSplitSecret splitSecret = (ShamirSplitSecret)splitter.split(m, n);
+        ShamirSplitSecretShare[] secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
         ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
         byte[] secret1 = splitSecret1.getSecret();
 
 
-        ShamirSplitSecret splitSecret2 = splitter.resplit(secret1, m, n);
-        ShamirSplitSecretShare[] secretShares2 = splitSecret2.getSecretShares();
+        ShamirSplitSecret splitSecret2 = (ShamirSplitSecret)splitter.resplit(secret1, m, n);
+        ShamirSplitSecretShare[] secretShares2 = (ShamirSplitSecretShare[])splitSecret2.getSecretShares();
         ShamirSplitSecretShare[] secretShares3 = new ShamirSplitSecretShare[]{secretShares2[0], secretShares2[1], secretShares2[2]};
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         byte[] secret3 = splitSecret3.getSecret();
@@ -69,8 +70,8 @@ public class ShamirSecretSplitterTest
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
         ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, random);
 
-        ShamirSplitSecret splitSecret = splitter.split(m, n);
-        ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
+        ShamirSplitSecret splitSecret = (ShamirSplitSecret)splitter.split(m, n);
+        ShamirSplitSecretShare[] secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
         ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
@@ -78,13 +79,13 @@ public class ShamirSecretSplitterTest
 
         int mul = random.nextInt(255);
         splitSecret.multiple(mul);
-        secretShares = splitSecret.getSecretShares();
+        secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
         ShamirSplitSecretShare[] secretShares4 = new ShamirSplitSecretShare[]{secretShares[1], secretShares[2], secretShares[5]};
         ShamirSplitSecret splitSecret4 = new ShamirSplitSecret(algorithm, mode, secretShares4);
         byte[] secret4 = splitSecret4.getSecret();
 
         splitSecret.divide(mul);
-        secretShares = splitSecret.getSecretShares();
+        secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
         ShamirSplitSecretShare[] secretShares2 = new ShamirSplitSecretShare[]{secretShares[4], secretShares[7], secretShares[8]};
         ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
         byte[] secret2 = splitSecret2.getSecret();
@@ -112,8 +113,8 @@ public class ShamirSecretSplitterTest
         //random.nextBytes(seed);
         //System.out.println(Hex.decode(seed));
         ShamirSplitSecretShare ss = new ShamirSplitSecretShare(seed);
-        ShamirSplitSecret splitSecret = splitter.splitAround(ss, m, n);
-        ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
+        ShamirSplitSecret splitSecret = (ShamirSplitSecret)splitter.splitAround(ss, m, n);
+        ShamirSplitSecretShare[] secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
         assertTrue(Arrays.areEqual(secretShares[0].getEncoded(), seed));
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
@@ -150,8 +151,8 @@ public class ShamirSecretSplitterTest
         ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
         ShamirSecretSplitter.Mode mode = ShamirSecretSplitter.Mode.Table;
         ShamirSecretSplitter splitter = new ShamirSecretSplitter(algorithm, mode, l, new SecureRandom());//, secretshare);
-        ShamirSplitSecret splitSecret = splitter.split(m, n); //integers  multiply/ divide
-        ShamirSplitSecretShare[] secretShares = splitSecret.getSecretShares();
+        ShamirSplitSecret splitSecret = (ShamirSplitSecret)splitter.split(m, n); //integers  multiply/ divide
+        ShamirSplitSecretShare[] secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
 
         ShamirSplitSecretShare[] secretShares1 = new ShamirSplitSecretShare[]{secretShares[0], secretShares[1], secretShares[2]};
         ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
@@ -1069,8 +1070,9 @@ public class ShamirSecretSplitterTest
         byte[] source = new byte[sr.length * sr[0].length];
         int currentIndex = 0;
 
-        for (byte[] subArray : sr)
+        for (int i = 0; i != sr.length; i++)
         {
+            byte[] subArray = sr[i];
             System.arraycopy(subArray, 0, source, currentIndex, subArray.length);
             currentIndex += subArray.length;
         }
@@ -1090,13 +1092,13 @@ public class ShamirSecretSplitterTest
     static void testMatrixMultiplication(ShamirSecretSplitter poly, byte[][] splits, int m, int n)
         throws IOException
     {
-        ShamirSplitSecretShare[] secretShares = poly.split(m, n).getSecretShares();
+        SecretShare[] secretShares = poly.split(m, n).getSecretShares();
         byte[][] result = new byte[splits.length][splits[0].length];
         for (int i = 0; i < result.length; ++i)
         {
             result[i] = secretShares[i].getEncoded();
+            assertTrue(Arrays.areEqual(splits[i], result[i]));
         }
-        assertEquals(java.util.Arrays.deepToString(splits), java.util.Arrays.deepToString(result));
     }
 
     public void testRecombine(ShamirSplitSecret splitSecret, byte[] secret)

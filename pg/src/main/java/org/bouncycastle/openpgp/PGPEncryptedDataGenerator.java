@@ -218,7 +218,7 @@ public class PGPEncryptedDataGenerator
         BCPGHeaderObject encOut;
         for (int i = 0; i < methods.size(); i++)
         {
-            PGPKeyEncryptionMethodGenerator method = methods.get(i);
+            PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
             pOut.writePacket(method.generate(dataEncryptorBuilder, sessionKey));
         }
         try
