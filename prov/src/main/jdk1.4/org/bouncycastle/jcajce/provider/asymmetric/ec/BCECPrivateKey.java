@@ -46,23 +46,28 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 public class BCECPrivateKey
     implements ECPrivateKey, PKCS12BagAttributeCarrier, ECPointEncoder
 {
-    private String          algorithm = "EC";
-    private boolean         withCompression;
+    static final long serialVersionUID = 994553197664784084L;
 
-    private transient BigInteger              d;
-    private transient ECParameterSpec         ecSpec;
-    private transient ProviderConfiguration   configuration;
-    private transient ASN1BitString           publicKey;
+    private String algorithm = "EC";
+    private boolean withCompression;
+
+    private transient BigInteger d;
+    private transient ECParameterSpec ecSpec;
+    private transient ProviderConfiguration configuration;
+    private transient ASN1BitString publicKey;
+    private transient PrivateKeyInfo privateKeyInfo;
+    private transient byte[] encoding;
 
     private transient ECPrivateKeyParameters baseKey;
     private transient PKCS12BagAttributeCarrierImpl attrCarrier = new PKCS12BagAttributeCarrierImpl();
+
 
     protected BCECPrivateKey()
     {
     }
 
-    BCECPrivateKey(
-        ECPrivateKey    key,
+    public BCECPrivateKey(
+        ECPrivateKey key,
         ProviderConfiguration configuration)
     {
         this.d = key.getD();
@@ -73,8 +78,8 @@ public class BCECPrivateKey
     }
 
     public BCECPrivateKey(
-        String              algorithm,
-        ECPrivateKeySpec    spec,
+        String algorithm,
+        ECPrivateKeySpec spec,
         ProviderConfiguration configuration)
     {
         this.algorithm = algorithm;
@@ -83,12 +88,26 @@ public class BCECPrivateKey
         this.configuration = configuration;
         this.baseKey = convertToBaseKey(this);
     }
+    
+    public BCECPrivateKey(
+        String algorithm,
+        BCECPrivateKey key)
+    {
+        this.algorithm = algorithm;
+        this.d = key.d;
+        this.ecSpec = key.ecSpec;
+        this.withCompression = key.withCompression;
+        this.attrCarrier = key.attrCarrier;
+        this.publicKey = key.publicKey;
+        this.configuration = key.configuration;
+        this.baseKey = key.baseKey;
+    }
 
     public BCECPrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params,
-        BCECPublicKey          pubKey,
-        ECParameterSpec         spec,
+        String algorithm,
+        ECPrivateKeyParameters params,
+        BCECPublicKey pubKey,
+        ECParameterSpec spec,
         ProviderConfiguration configuration)
     {
         ECDomainParameters      dp = params.getParameters();
@@ -116,49 +135,26 @@ public class BCECPrivateKey
     }
 
     public BCECPrivateKey(
-        String                  algorithm,
-        ECPrivateKeyParameters  params,
-        ProviderConfiguration   configuration)
+        String algorithm,
+        ECPrivateKeyParameters params,
+        ProviderConfiguration configuration)
     {
         this.algorithm = algorithm;
         this.d = params.getD();
         this.ecSpec = null;
         this.configuration = configuration;
-        this.baseKey = convertToBaseKey(this);
-    }
-
-    public BCECPrivateKey(
-        String             algorithm,
-        BCECPrivateKey    key)
-    {
-        this.algorithm = algorithm;
-        this.d = key.d;
-        this.ecSpec = key.ecSpec;
-        this.withCompression = key.withCompression;
-        this.publicKey = key.publicKey;
-        this.attrCarrier = key.attrCarrier;
-        this.configuration = key.configuration;
+        this.baseKey = params;
     }
 
     BCECPrivateKey(
-        PrivateKeyInfo      info,
+        String algorithm,
+        PrivateKeyInfo info,
         ProviderConfiguration configuration)
         throws IOException
     {
-        this.configuration = configuration;
-
-        populateFromPrivKeyInfo(info);
-    }
-
-    BCECPrivateKey(
-        String              algorithm,
-        PrivateKeyInfo      info,
-        ProviderConfiguration configuration)
-        throws IOException
-    {
-        this.configuration = configuration;
-        populateFromPrivKeyInfo(info);
         this.algorithm = algorithm;
+        this.configuration = configuration;
+        populateFromPrivKeyInfo(info);
     }
 
     private void populateFromPrivKeyInfo(PrivateKeyInfo info)
@@ -304,6 +300,16 @@ public class BCECPrivateKey
     public Enumeration getBagAttributeKeys()
     {
         return attrCarrier.getBagAttributeKeys();
+    }
+
+    public boolean hasFriendlyName()
+    {
+        return attrCarrier.hasFriendlyName();
+    }
+
+    public void setFriendlyName(String friendlyName)
+    {
+        attrCarrier.setFriendlyName(friendlyName);
     }
 
     public void setPointFormat(String style)

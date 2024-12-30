@@ -40,11 +40,6 @@ class CMSInputAEADDecryptor
 
     public OutputStream getAADStream()
     {
-        if (checkForAEAD())
-        {
-            return new JceAADStream(dataCipher);
-        }
-
         return null; // TODO: okay this is awful, we could use AEADParameterSpec for earlier JDKs.
     }
 
@@ -55,24 +50,5 @@ class CMSInputAEADDecryptor
             return ((InputStreamWithMAC)inputStream).getMAC();
         }
         return null;
-    }
-
-    private static boolean checkForAEAD()
-    {
-        return (Boolean)AccessController.doPrivileged(new PrivilegedAction()
-        {
-            public Object run()
-            {
-                try
-                {
-                    return Cipher.class.getMethod("updateAAD", byte[].class) != null;
-                }
-                catch (Exception ignore)
-                {
-                    // TODO[logging] Log the fact that we are falling back to BC-specific class
-                    return Boolean.FALSE;
-                }
-            }
-        });
     }
 }

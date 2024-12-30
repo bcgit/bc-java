@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.api;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -680,7 +681,7 @@ public class OpenPGPV6KeyGenerator
             SignatureSubpacketsFunction userIdSubpackets)
             throws PGPException
         {
-            if (userId == null || userId.trim().isEmpty())
+            if (userId == null || userId.trim().length() == 0)
             {
                 throw new IllegalArgumentException("User-ID cannot be null or empty.");
             }
@@ -1090,8 +1091,9 @@ public class OpenPGPV6KeyGenerator
             List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
             keys.add(primarySecretKey);
 
-            for (Key key : subkeys)
+            for (Iterator it = subkeys.iterator(); it.hasNext();)
             {
+                Key key = (Key)it.next();
                 PGPSecretKey subkey = new PGPSecretKey(
                     key.pair.getPrivateKey(),
                     key.pair.getPublicKey(),
@@ -1127,8 +1129,9 @@ public class OpenPGPV6KeyGenerator
             List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
             keys.add(primarySecretKey);
 
-            for (Key key : subkeys)
+            for (Iterator it = subkeys.iterator(); it.hasNext();)
             {
+                Key key = (Key)it.next();
                 PBESecretKeyEncryptor subkeyEncryptor = impl.keyEncryptorBuilderProvider
                     .build(passphrase, key.pair.getPublicKey().getPublicKeyPacket());
                 sanitizeKeyEncryptor(subkeyEncryptor);

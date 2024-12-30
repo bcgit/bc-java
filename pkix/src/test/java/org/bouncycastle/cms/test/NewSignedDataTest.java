@@ -3256,7 +3256,7 @@ public class NewSignedDataTest
     {
         System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
         CMSSignedData cmsSignedData = new CMSSignedData(this.getInput("bc1639test.p7m"));
-        System.clearProperty("org.bouncycastle.asn1.allow_wrong_oid_enc");
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
     }
     public void testMSPKCS7()
         throws Exception

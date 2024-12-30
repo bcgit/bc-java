@@ -2,8 +2,7 @@ package org.bouncycastle.tls.test;
 
 import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
-
-import java.util.Arrays;
+import org.bouncycastle.util.Arrays;
 
 class TestAEADNonceGenerator
     implements AEADNonceGenerator

@@ -100,7 +100,7 @@ public class WrapUtil
         }
         catch (IllegalArgumentException e)
         {
-            throw new InvalidKeyException(e.getMessage(), e);
+            throw new InvalidKeyException(e.getMessage());
         }
     }
 }
