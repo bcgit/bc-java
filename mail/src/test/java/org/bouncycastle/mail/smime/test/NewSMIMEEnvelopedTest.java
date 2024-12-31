@@ -42,11 +42,13 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMEEnveloped;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedGenerator;
 import org.bouncycastle.mail.smime.SMIMEEnvelopedParser;
+import org.bouncycastle.mail.smime.SMIMEToolkit;
 import org.bouncycastle.mail.smime.SMIMEUtil;
 import org.bouncycastle.mail.smime.util.FileBackedMimeBodyPart;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Base64;
 
 public class NewSMIMEEnvelopedTest 
@@ -184,7 +186,7 @@ public class NewSMIMEEnvelopedTest
     {
         MimeBodyPart  msg      = SMIMETestUtil.makeMimeBodyPart("WallaWallaWashington");
         String        algorithm = SMIMEEnvelopedGenerator.DES_EDE3_CBC;
-        
+
         verifyAlgorithm(algorithm, msg);
     }
 
@@ -473,6 +475,8 @@ public class NewSMIMEEnvelopedTest
 
         RecipientInformationStore  recipients = m.getRecipientInfos();
         RecipientInformation       recipient = recipients.get(recId);
+
+        assertTrue(new SMIMEToolkit(new JcaDigestCalculatorProviderBuilder().build()).isEncrypted(mp));
 
         MimeBodyPart    res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC)));
 

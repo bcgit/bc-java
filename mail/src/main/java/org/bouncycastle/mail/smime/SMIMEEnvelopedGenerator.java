@@ -62,9 +62,9 @@ public class SMIMEEnvelopedGenerator
     public static final String  SEED_WRAP       = CMSEnvelopedDataGenerator.SEED_WRAP;
     
     public static final String  ECDH_SHA1KDF    = CMSEnvelopedDataGenerator.ECDH_SHA1KDF;
-
-    private static final String ENCRYPTED_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data";
     
+    static final String ENVELOPED_DATA_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data";
+
     private EnvelopedGenerator fact;
 
     static
@@ -116,7 +116,7 @@ public class SMIMEEnvelopedGenerator
      * return encrypted content type for enveloped data.
      */
     protected String getEncryptedContentType() {
-        return ENCRYPTED_CONTENT_TYPE;
+        return ENVELOPED_DATA_CONTENT_TYPE;
     }
 
     /**
