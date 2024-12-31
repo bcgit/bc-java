@@ -898,6 +898,10 @@ public class OpenPGPCertificate
 
             sanitize(issuer);
 
+            if (!policy.isAcceptablePublicKey(issuer.getPGPPublicKey()))
+            {
+                throw new PGPSignatureException("Unacceptable issuer key.");
+            }
             if (!policy.hasAcceptableSignatureHashAlgorithm(signature))
             {
                 throw new PGPSignatureException("Unacceptable hash algorithm: " + signature.getHashAlgorithm());

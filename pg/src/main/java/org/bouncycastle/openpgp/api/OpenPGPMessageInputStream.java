@@ -635,6 +635,7 @@ public class OpenPGPMessageInputStream
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(
                 OpenPGPMessageProcessor processor)
         {
+            OpenPGPPolicy policy = processor.getImplementation().policy();
             List<OpenPGPSignature.OpenPGPDocumentSignature> dataSignatures = new ArrayList<>();
             int num = onePassSignatures.size();
             for (int i = 0; i < signatures.size(); i++)
@@ -643,6 +644,15 @@ public class OpenPGPMessageInputStream
                 PGPOnePassSignature ops = onePassSignatures.get(num - i - 1);
                 OpenPGPCertificate.OpenPGPComponentKey key = issuers.get(ops);
                 if (key == null)
+                {
+                    continue;
+                }
+
+                if (!policy.isAcceptablePublicKey(key.getPGPPublicKey()))
+                {
+                    continue;
+                }
+                if (!policy.isAcceptableSignature(signature))
                 {
                     continue;
                 }
@@ -737,8 +747,18 @@ public class OpenPGPMessageInputStream
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(OpenPGPMessageProcessor processor)
         {
+            OpenPGPPolicy policy = processor.getImplementation().policy();
             for (OpenPGPSignature.OpenPGPDocumentSignature sig : dataSignatures)
             {
+                if (!policy.isAcceptablePublicKey(sig.getIssuer().getPGPPublicKey()))
+                {
+                    continue;
+                }
+                if (!policy.isAcceptableSignature(sig.signature))
+                {
+                    continue;
+                }
+
                 try
                 {
                     sig.verify();

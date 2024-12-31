@@ -1,7 +1,5 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -36,27 +34,7 @@ public interface OpenPGPPolicy
 
     default boolean isAcceptablePublicKey(PGPPublicKey key)
     {
-        switch (key.getVersion())
-        {
-            case PublicKeyPacket.VERSION_4:
-            case PublicKeyPacket.LIBREPGP_5:
-            case PublicKeyPacket.VERSION_6:
-                switch (key.getAlgorithm())
-                {
-                    case PublicKeyAlgorithmTags.RSA_GENERAL:
-                    case PublicKeyAlgorithmTags.Ed25519:
-                    case PublicKeyAlgorithmTags.Ed448:
-                    case PublicKeyAlgorithmTags.X25519:
-                    case PublicKeyAlgorithmTags.X448:
-                        return isAcceptablePublicKeyStrength(key.getAlgorithm(), key.getBitStrength());
-
-                    default:
-                        return false;
-                }
-
-            default:
-                return false;
-        }
+        return isAcceptablePublicKeyStrength(key.getAlgorithm(), key.getBitStrength());
     }
 
     default boolean isAcceptableSignature(PGPSignature signature)
