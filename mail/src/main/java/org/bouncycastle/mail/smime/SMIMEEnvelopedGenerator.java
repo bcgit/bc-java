@@ -115,7 +115,8 @@ public class SMIMEEnvelopedGenerator
     /**
      * return encrypted content type for enveloped data.
      */
-    protected String getEncryptedContentType() {
+    protected String getEncryptedContentType()
+    {
         return ENVELOPED_DATA_CONTENT_TYPE;
     }
 
