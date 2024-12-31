@@ -7,7 +7,6 @@ import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -32,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -93,7 +93,7 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate, SubkeySelector subkeySelector)
     {
-        config.recipients.add(new Recipient(recipientCertificate, subkeySelector));
+        config.recipients.add(new Recipient(recipientCertificate, implementation.policy(), subkeySelector));
         return this;
     }
 
@@ -144,7 +144,7 @@ public class OpenPGPMessageGenerator
             SecretKeyPassphraseProvider signingKeyDecryptorProvider,
             SubkeySelector subkeySelector)
     {
-        config.signingKeys.add(new Signer(signingKey, signingKeyDecryptorProvider, subkeySelector));
+        config.signingKeys.add(new Signer(signingKey, implementation.policy(), signingKeyDecryptorProvider, subkeySelector));
         return this;
     }
 
@@ -426,12 +426,12 @@ public class OpenPGPMessageGenerator
          * @param configuration message generator configuration
          * @return negotiated compression algorithm ID
          */
-        int negotiateCompression(Configuration configuration);
+        int negotiateCompression(Configuration configuration, OpenPGPPolicy policy);
     }
 
     public interface HashAlgorithmNegotiator
     {
-        int negotiateHashAlgorithm(OpenPGPKey key, OpenPGPCertificate.OpenPGPComponentKey subkey);
+        int negotiateHashAlgorithm(OpenPGPKey key, OpenPGPCertificate.OpenPGPComponentKey subkey, OpenPGPPolicy policy);
     }
 
     public static class Configuration
@@ -455,9 +455,25 @@ public class OpenPGPMessageGenerator
                         .enableCRC(false)   // Disable CRC sum
                         .build(outputStream);
 
-        private SubkeySelector encryptionKeySelector = OpenPGPCertificate::getEncryptionKeys;
+        private SubkeySelector encryptionKeySelector = new SubkeySelector() {
+            @Override
+            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+                return certificate.getEncryptionKeys()
+                        .stream()
+                        .filter(key -> policy.isAcceptablePublicKey(key.getPGPPublicKey()))
+                        .collect(Collectors.toList());
+            }
+        };
 
-        private SubkeySelector signingKeySelector = OpenPGPCertificate::getSigningKeys;
+        private SubkeySelector signingKeySelector = new SubkeySelector() {
+            @Override
+            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+                return certificate.getSigningKeys()
+                        .stream()
+                        .filter(key -> policy.isAcceptablePublicKey(key.getPGPPublicKey()))
+                        .collect(Collectors.toList());
+            }
+        };
 
         // Encryption method negotiator for when only password-based encryption is requested
         private OpenPGPEncryptionNegotiator passwordBasedEncryptionNegotiator = configuration ->
@@ -471,23 +487,21 @@ public class OpenPGPMessageGenerator
                     .collect(Collectors.toList());
 
             // Decide, if SEIPDv2 (OpenPGP v6-style AEAD) is supported by all recipients.
-            if (policy.isProduceFeature(Features.FEATURE_SEIPD_V2) &&
-                    OpenPGPEncryptionNegotiator.allRecipientsSupportSeipd2(certificates))
+            if (OpenPGPEncryptionNegotiator.allRecipientsSupportSeipd2(certificates))
             {
                 PreferredAEADCiphersuites commonDenominator =
-                        OpenPGPEncryptionNegotiator.negotiateAEADCiphersuite(certificates);
+                        OpenPGPEncryptionNegotiator.negotiateAEADCiphersuite(certificates, configuration.policy);
                 return MessageEncryptionMechanism.aead(commonDenominator.getAlgorithms()[0]);
             }
-            else if (policy.isProduceFeature(Features.FEATURE_AEAD_ENCRYPTED_DATA) &&
-                    OpenPGPEncryptionNegotiator.allRecipientsSupportLibrePGPOED(certificates))
+            else if (OpenPGPEncryptionNegotiator.allRecipientsSupportLibrePGPOED(certificates))
             {
                 return MessageEncryptionMechanism.librePgp(
-                        OpenPGPEncryptionNegotiator.bestOEDEncryptionModeByWeight(certificates));
+                        OpenPGPEncryptionNegotiator.bestOEDEncryptionModeByWeight(certificates, configuration.policy));
             }
             else
             {
                 return MessageEncryptionMechanism.integrityProtected(
-                        OpenPGPEncryptionNegotiator.bestSymmetricKeyAlgorithmByWeight(certificates));
+                        OpenPGPEncryptionNegotiator.bestSymmetricKeyAlgorithmByWeight(certificates, configuration.policy));
             }
         };
 
@@ -516,18 +530,25 @@ public class OpenPGPMessageGenerator
 
         // TODO: Implement properly, taking encryption into account (sign-only should not compress)
         private CompressionNegotiator compressionNegotiator =
-                configuration -> CompressionAlgorithmTags.UNCOMPRESSED;
+                (configuration, policy) -> CompressionAlgorithmTags.UNCOMPRESSED;
 
         private HashAlgorithmNegotiator hashAlgorithmNegotiator =
-                (key, subkey) ->
+                (key, subkey, policy) ->
                 {
                     // TODO: Take into consideration hash preferences of recipients, not the sender
                     PreferredAlgorithms hashPreferences = subkey.getHashAlgorithmPreferences();
-                    if (hashPreferences == null)
+                    if (hashPreferences != null)
                     {
-                        return HashAlgorithmTags.SHA512;
+                        int[] pref = Arrays.stream(hashPreferences.getPreferences())
+                                .filter(it -> policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date()))
+                                .toArray();
+                        if (pref.length != 0)
+                        {
+                            return pref[0];
+                        }
                     }
-                    return hashPreferences.getPreferences()[0];
+
+                    return HashAlgorithmTags.SHA512;
                 };
 
         /**
@@ -634,12 +655,12 @@ public class OpenPGPMessageGenerator
 
         public int negotiateCompression()
         {
-            return compressionNegotiator.negotiateCompression(this);
+            return compressionNegotiator.negotiateCompression(this, policy);
         }
 
         public int negotiateHashAlgorithm(OpenPGPKey signingKey, OpenPGPKey.OpenPGPSecretKey signingSubkey)
         {
-            return hashAlgorithmNegotiator.negotiateHashAlgorithm(signingKey, signingSubkey);
+            return hashAlgorithmNegotiator.negotiateHashAlgorithm(signingKey, signingSubkey, policy);
         }
 
         public MessageEncryptionMechanism negotiateEncryption()
@@ -654,6 +675,7 @@ public class OpenPGPMessageGenerator
     static class Recipient
     {
         private final OpenPGPCertificate certificate;
+        private final OpenPGPPolicy policy;
         private final SubkeySelector subkeySelector;
 
         /**
@@ -664,12 +686,13 @@ public class OpenPGPMessageGenerator
          */
         public Recipient(PGPPublicKeyRing certificate, SubkeySelector subkeySelector, OpenPGPImplementation implementation)
         {
-            this(new OpenPGPCertificate(certificate, implementation), subkeySelector);
+            this(new OpenPGPCertificate(certificate, implementation), implementation.policy(), subkeySelector);
         }
 
-        public Recipient(OpenPGPCertificate certificate, SubkeySelector subkeySelector)
+        public Recipient(OpenPGPCertificate certificate, OpenPGPPolicy policy, SubkeySelector subkeySelector)
         {
             this.certificate = certificate;
+            this.policy = policy;
             this.subkeySelector = subkeySelector;
         }
 
@@ -680,7 +703,7 @@ public class OpenPGPMessageGenerator
          */
         public List<OpenPGPCertificate.OpenPGPComponentKey> encryptionSubkeys()
         {
-            return subkeySelector.select(certificate)
+            return subkeySelector.select(certificate, policy)
                     .stream()
                     .distinct()
                     .collect(Collectors.toList());
@@ -693,21 +716,24 @@ public class OpenPGPMessageGenerator
     static class Signer
     {
         private final OpenPGPKey signingKey;
+        private final OpenPGPPolicy policy;
         private final SecretKeyPassphraseProvider passphraseProvider;
         private final SubkeySelector subkeySelector;
 
         public Signer(OpenPGPKey signingKey,
+                      OpenPGPPolicy policy,
                       SecretKeyPassphraseProvider passphraseProvider,
                       SubkeySelector subkeySelector)
         {
             this.signingKey = signingKey;
+            this.policy = policy;
             this.passphraseProvider = passphraseProvider;
             this.subkeySelector = subkeySelector;
         }
 
         public List<OpenPGPKey.OpenPGPSecretKey> signingSubkeys()
         {
-            return subkeySelector.select(signingKey)
+            return subkeySelector.select(signingKey, policy)
                     .stream()
                     .map(signingKey::getSecretKey)
                     .distinct()
@@ -727,9 +753,10 @@ public class OpenPGPMessageGenerator
          * {@link KeyIdentifier KeyIdentifiers}.
          *
          * @param certificate OpenPGP key or certificate
+         * @param policy OpenPGP algorithm policy
          * @return non-null list of identifiers
          */
-        List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate);
+        List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy);
     }
 
     public interface SecretKeyPassphraseProvider

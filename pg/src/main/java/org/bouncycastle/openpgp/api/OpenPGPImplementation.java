@@ -37,7 +37,7 @@ import java.io.InputStream;
 public abstract class OpenPGPImplementation
 {
     private static OpenPGPImplementation INSTANCE;
-    private OpenPGPPolicy policy = OpenPGPPolicy.rfc9580();
+    private OpenPGPPolicy policy = new OpenPGPDefaultPolicy();
 
     /**
      * Replace the {@link OpenPGPImplementation} instance that is returned by {@link #getInstance()}.

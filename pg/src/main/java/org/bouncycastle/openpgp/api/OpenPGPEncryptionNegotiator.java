@@ -22,10 +22,10 @@ public interface OpenPGPEncryptionNegotiator
      */
     MessageEncryptionMechanism negotiateEncryption(OpenPGPMessageGenerator.Configuration configuration);
 
-    static PreferredAEADCiphersuites negotiateAEADCiphersuite(List<OpenPGPCertificate> certificates)
+    static PreferredAEADCiphersuites negotiateAEADCiphersuite(List<OpenPGPCertificate> certificates, OpenPGPPolicy policy)
     {
         return new PreferredAEADCiphersuites(false, new PreferredAEADCiphersuites.Combination[]{
-                bestAEADCiphersuiteByWeight(certificates)
+                bestAEADCiphersuiteByWeight(certificates, policy)
         });
     }
 
@@ -74,7 +74,9 @@ public interface OpenPGPEncryptionNegotiator
         return true;
     }
 
-    static PreferredAEADCiphersuites.Combination bestAEADCiphersuiteByWeight(Collection<OpenPGPCertificate> certificates)
+    static PreferredAEADCiphersuites.Combination bestAEADCiphersuiteByWeight(
+            Collection<OpenPGPCertificate> certificates,
+            OpenPGPPolicy policy)
     {
         // Keep track of combinations, assigning a weight
         Map<PreferredAEADCiphersuites.Combination, Float> weights = new HashMap<>();
@@ -118,6 +120,7 @@ public interface OpenPGPEncryptionNegotiator
                 List<PreferredAEADCiphersuites.Combination> algorithms =
                         Arrays.stream(preferences.getAlgorithms())
                                 .filter(it -> it.getSymmetricAlgorithm() != SymmetricKeyAlgorithmTags.NULL)
+                                .filter(it -> policy.isAcceptableSymmetricKeyAlgorithm(it.getSymmetricAlgorithm()))
                                 .collect(Collectors.toList());
                 for (int i = 0; i < algorithms.size(); i++)
                 {
@@ -148,7 +151,9 @@ public interface OpenPGPEncryptionNegotiator
         return PreferredAEADCiphersuites.DEFAULT().getAlgorithms()[0];
     }
 
-    static int bestSymmetricKeyAlgorithmByWeight(Collection<OpenPGPCertificate> certificates)
+    static int bestSymmetricKeyAlgorithmByWeight(
+            Collection<OpenPGPCertificate> certificates,
+            OpenPGPPolicy policy)
     {
         Map<Integer, Float> weights = new HashMap<>();
 
@@ -190,6 +195,7 @@ public interface OpenPGPEncryptionNegotiator
                 //  prevent a certificate with many capable subkeys from outvoting other certificates
                 int[] algorithms = Arrays.stream(preferences.getPreferences())
                         .filter(it -> it != SymmetricKeyAlgorithmTags.NULL)
+                        .filter(it -> policy.isAcceptableSymmetricKeyAlgorithm(it))
                         .toArray();
 
                 for (int i = 0; i < algorithms.length; i++)
@@ -221,7 +227,8 @@ public interface OpenPGPEncryptionNegotiator
         return SymmetricKeyAlgorithmTags.AES_128;
     }
 
-    static int bestOEDEncryptionModeByWeight(Collection<OpenPGPCertificate> certificates)
+    static int bestOEDEncryptionModeByWeight(Collection<OpenPGPCertificate> certificates,
+                                             OpenPGPPolicy policy)
     {
         Map<Integer, Float> weights = new HashMap<>();
 
@@ -272,6 +279,7 @@ public interface OpenPGPEncryptionNegotiator
                                     return false;
                             }
                         })
+                        .filter(it -> policy.isAcceptableSymmetricKeyAlgorithm(it))
                         .toArray();
 
                 // Weigh the preferences descending by index: w(p_i) = 1/(i+1)

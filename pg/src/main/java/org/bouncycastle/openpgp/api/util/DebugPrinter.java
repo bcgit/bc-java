@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.api.util;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.api.OpenPGPDefaultPolicy;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 
 import java.io.IOException;
@@ -142,7 +143,7 @@ public class DebugPrinter
                     sb.append(indent);
                     try
                     {
-                        link.verify(new BcPGPContentVerifierBuilderProvider());
+                        link.verify(new BcPGPContentVerifierBuilderProvider(), new OpenPGPDefaultPolicy());
                         if (revocation)
                         {
                             if (isHardRevocation)

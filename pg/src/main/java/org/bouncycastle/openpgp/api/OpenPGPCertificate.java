@@ -4,6 +4,8 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -593,7 +595,7 @@ public class OpenPGPCertificate
             }
 
             // Chain needs to be valid (signatures correct)
-            if (chain.isValid(implementation.pgpContentVerifierBuilderProvider()))
+            if (chain.isValid(implementation.pgpContentVerifierBuilderProvider(), implementation.policy()))
             {
                 // Chain needs to not contain a revocation signature, otherwise the component is considered revoked
                 return !chain.isRevocation();
@@ -884,7 +886,8 @@ public class OpenPGPCertificate
          * @param contentVerifierBuilderProvider provider for verifiers
          * @throws PGPSignatureException if the signature cannot be verified successfully
          */
-        public void verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
+        public void verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
+                           OpenPGPPolicy policy)
                 throws PGPSignatureException
         {
             if (issuer == null)
@@ -894,6 +897,11 @@ public class OpenPGPCertificate
             }
 
             sanitize(issuer);
+
+            if (!policy.hasAcceptableSignatureHashAlgorithm(signature))
+            {
+                throw new PGPSignatureException("Unacceptable hash algorithm: " + signature.getHashAlgorithm());
+            }
 
             // Direct-Key signature
             if (target == issuer)
@@ -1760,10 +1768,11 @@ public class OpenPGPCertificate
         public boolean isValid()
                 throws PGPSignatureException
         {
-            return isValid(getRootKey().getCertificate().implementation.pgpContentVerifierBuilderProvider());
+            return isValid(getRootKey().getCertificate().implementation.pgpContentVerifierBuilderProvider(),
+                    getRootKey().getCertificate().implementation.policy());
         }
 
-        public boolean isValid(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
+        public boolean isValid(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider, OpenPGPPolicy policy)
                 throws PGPSignatureException
         {
             boolean correct = true;
@@ -1771,7 +1780,7 @@ public class OpenPGPCertificate
             {
                 if (!link.signature.isTested)
                 {
-                    link.verify(contentVerifierBuilderProvider);
+                    link.verify(contentVerifierBuilderProvider, policy);
                 }
 
                 if (!link.signature.isCorrect)
@@ -1845,10 +1854,11 @@ public class OpenPGPCertificate
                 return signature.getExpirationTime();
             }
 
-            public boolean verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
+            public boolean verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
+                                  OpenPGPPolicy policy)
                     throws PGPSignatureException
             {
-                signature.verify(contentVerifierBuilderProvider);
+                signature.verify(contentVerifierBuilderProvider, policy);
                 return true;
             }
 

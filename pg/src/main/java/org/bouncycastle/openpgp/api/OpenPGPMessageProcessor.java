@@ -44,7 +44,7 @@ public class OpenPGPMessageProcessor
     public OpenPGPMessageProcessor(OpenPGPImplementation implementation)
     {
         this.implementation = implementation;
-        this.configuration = new Configuration();
+        this.configuration = new Configuration(implementation.policy());
     }
 
     /**
@@ -481,6 +481,7 @@ public class OpenPGPMessageProcessor
 
     public static class Configuration
     {
+        private final OpenPGPPolicy policy;
         private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool;
         private final OpenPGPKeyMaterialPool.OpenPGPKeyPool keyPool;
         private final KeyPassphraseProvider.DefaultKeyPassphraseProvider keyPassphraseProvider;
@@ -491,8 +492,9 @@ public class OpenPGPMessageProcessor
         private Date verifyNotAfter = new Date();       // now
         private Date verifyNotBefore = new Date(0L);    // beginning of time
 
-        public Configuration()
+        public Configuration(OpenPGPPolicy policy)
         {
+            this.policy = policy;
             this.certificatePool = new OpenPGPKeyMaterialPool.OpenPGPCertificatePool();
             this.keyPool = new OpenPGPKeyMaterialPool.OpenPGPKeyPool();
             this.keyPassphraseProvider = new KeyPassphraseProvider.DefaultKeyPassphraseProvider();

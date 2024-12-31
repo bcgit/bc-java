@@ -44,12 +44,11 @@ public interface OpenPGPPolicy
                 switch (key.getAlgorithm())
                 {
                     case PublicKeyAlgorithmTags.RSA_GENERAL:
-                        return key.getBitStrength() >= 2048;
                     case PublicKeyAlgorithmTags.Ed25519:
                     case PublicKeyAlgorithmTags.Ed448:
                     case PublicKeyAlgorithmTags.X25519:
                     case PublicKeyAlgorithmTags.X448:
-                        return true;
+                        return isAcceptablePublicKeyStrength(key.getAlgorithm(), key.getBitStrength());
 
                     default:
                         return false;
@@ -161,6 +160,10 @@ public interface OpenPGPPolicy
     boolean isAcceptableRevocationSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime);
 
     boolean isAcceptableCertificationSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime);
+
+    boolean isAcceptableSymmetricKeyAlgorithm(int symmetricKeyAlgorithmId);
+
+    boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength);
 
     OpenPGPNotationRegistry getNotationRegistry();
 
