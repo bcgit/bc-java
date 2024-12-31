@@ -25,6 +25,8 @@ public class GCFBBlockCipher
 
     private final CFBBlockCipher cfbEngine;
 
+    private ParametersWithIV initParams;
+
     private KeyParameter key;
     private long         counter = 0;
     private boolean      forEncryption;
@@ -41,12 +43,15 @@ public class GCFBBlockCipher
     {
         counter = 0;
         cfbEngine.init(forEncryption, params);
-
+		byte[] iv = null;
+        
         this.forEncryption = forEncryption;
 
         if (params instanceof ParametersWithIV)
         {
-            params = ((ParametersWithIV)params).getParameters();
+            ParametersWithIV ivParams = (ParametersWithIV) params;
+            params = ivParams.getParameters();
+            iv = ivParams.getIV();
         }
 
         if (params instanceof ParametersWithRandom)
@@ -60,6 +65,23 @@ public class GCFBBlockCipher
         }
 
         key = (KeyParameter)params;
+		
+		/* Pick up key/IV from parameters or most recent parameters */
+		if (key == null && initParams != null)
+		{
+            key = (KeyParameter) initParams.getParameters();
+        }
+        if (iv == null && initParams != null)
+		{
+            iv = initParams.getIV();
+        }
+        else
+        {
+            iv = cfbEngine.getCurrentIV();
+        }
+
+        /* Save the initParameters */
+        initParams = new ParametersWithIV(key, iv);
     }
 
     public String getAlgorithmName()
@@ -115,6 +137,14 @@ public class GCFBBlockCipher
     public void reset()
     {
         counter = 0;
-        cfbEngine.reset();
+        if (initParams != null) 
+		{
+            key = (KeyParameter) initParams.getParameters();
+            cfbEngine.init(forEncryption, initParams);
+        } 
+		else 
+		{
+            cfbEngine.reset();
+        }
     }
 }
