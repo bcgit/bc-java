@@ -49,6 +49,7 @@ public class AllTests
 
         suite.addTestSuite(NewSMIMESignedTest.class);
         suite.addTestSuite(SignedMailValidatorTest.class);
+        suite.addTestSuite(NewSMIMEAuthEnvelopedTest.class);
         suite.addTestSuite(NewSMIMEEnvelopedTest.class);
         suite.addTestSuite(SMIMECompressedTest.class);
         suite.addTestSuite(SMIMEMiscTest.class);
