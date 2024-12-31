@@ -54,7 +54,10 @@ public class SMIMEToolkit
     public boolean isEncrypted(Part message)
         throws MessagingException
     {
-        return message.getHeader("Content-Type")[0].equals("application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data");
+        String mainContentType = message.getHeader("Content-Type")[0];
+
+        return mainContentType.equals(SMIMEEnvelopedGenerator.ENVELOPED_DATA_CONTENT_TYPE)
+            || mainContentType.equals(SMIMEAuthEnvelopedGenerator.AUTH_ENVELOPED_DATA_CONTENT_TYPE);
     }
 
     /**

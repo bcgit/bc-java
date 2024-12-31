@@ -1,23 +1,27 @@
 package org.bouncycastle.mail.smime;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.cms.*;
-import org.bouncycastle.operator.OutputAEADEncryptor;
-import org.bouncycastle.operator.OutputEncryptor;
-
-import javax.activation.CommandMap;
-import javax.activation.MailcapCommandMap;
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeBodyPart;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import javax.activation.CommandMap;
+import javax.activation.MailcapCommandMap;
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeBodyPart;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
+import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.RecipientInfoGenerator;
+import org.bouncycastle.operator.OutputAEADEncryptor;
+import org.bouncycastle.operator.OutputEncryptor;
+
 /**
  * General class for generating a pkcs7-mime message using AEAD algorithm.
- *
+ * <p>
  * A simple example of usage.
  *
  * <pre>
@@ -34,11 +38,11 @@ import java.security.PrivilegedAction;
 public class SMIMEAuthEnvelopedGenerator
     extends SMIMEEnvelopedGenerator
 {
-    public static final String  AES128_GCM      = CMSAuthEnvelopedDataGenerator.AES128_GCM;
-    public static final String  AES192_GCM      = CMSAuthEnvelopedDataGenerator.AES192_GCM;
-    public static final String  AES256_GCM      = CMSAuthEnvelopedDataGenerator.AES256_GCM;
+    public static final String AES128_GCM = CMSAuthEnvelopedDataGenerator.AES128_GCM;
+    public static final String AES192_GCM = CMSAuthEnvelopedDataGenerator.AES192_GCM;
+    public static final String AES256_GCM = CMSAuthEnvelopedDataGenerator.AES256_GCM;
 
-    private static final String AUTH_ENCRYPTED_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=authEnveloped-data";
+    static final String AUTH_ENVELOPED_DATA_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=authEnveloped-data";
 
     final private AuthEnvelopedGenerator authFact;
 
@@ -90,19 +94,21 @@ public class SMIMEAuthEnvelopedGenerator
     /**
      * return encrypted content type for enveloped data.
      */
-    protected String getEncryptedContentType() {
-        return AUTH_ENCRYPTED_CONTENT_TYPE;
+    protected String getEncryptedContentType()
+    {
+        return AUTH_ENVELOPED_DATA_CONTENT_TYPE;
     }
 
     /**
      * return content encryptor.
      */
     protected SMIMEStreamingProcessor getContentEncryptor(
-            MimeBodyPart content,
-            OutputEncryptor encryptor)
-            throws SMIMEException
+        MimeBodyPart content,
+        OutputEncryptor encryptor)
+        throws SMIMEException
     {
-        if (encryptor instanceof OutputAEADEncryptor) {
+        if (encryptor instanceof OutputAEADEncryptor)
+        {
             return new ContentEncryptor(content, (OutputAEADEncryptor)encryptor);
         }
         // this would happen if the encryption algorithm is not AEAD algorithm
@@ -113,12 +119,12 @@ public class SMIMEAuthEnvelopedGenerator
         extends CMSAuthEnvelopedDataStreamGenerator
     {
         private ASN1ObjectIdentifier dataType;
-        private ASN1EncodableVector  recipientInfos;
+        private ASN1EncodableVector recipientInfos;
 
         protected OutputStream open(
             ASN1ObjectIdentifier dataType,
-            OutputStream         out,
-            ASN1EncodableVector  recipientInfos,
+            OutputStream out,
+            ASN1EncodableVector recipientInfos,
             OutputAEADEncryptor encryptor)
             throws IOException
         {
@@ -130,7 +136,7 @@ public class SMIMEAuthEnvelopedGenerator
 
         OutputStream regenerate(
             OutputStream out,
-            OutputAEADEncryptor     encryptor)
+            OutputAEADEncryptor encryptor)
             throws IOException
         {
             return super.open(dataType, out, recipientInfos, encryptor);
@@ -138,7 +144,7 @@ public class SMIMEAuthEnvelopedGenerator
     }
 
     private class ContentEncryptor
-            implements SMIMEStreamingProcessor
+        implements SMIMEStreamingProcessor
     {
         private final MimeBodyPart _content;
         private OutputAEADEncryptor _encryptor;
@@ -146,15 +152,15 @@ public class SMIMEAuthEnvelopedGenerator
         private boolean _firstTime = true;
 
         ContentEncryptor(
-                MimeBodyPart content,
-                OutputAEADEncryptor encryptor)
+            MimeBodyPart content,
+            OutputAEADEncryptor encryptor)
         {
             _content = content;
             _encryptor = encryptor;
         }
 
         public void write(OutputStream out)
-                throws IOException
+            throws IOException
         {
             OutputStream encrypted;
 
