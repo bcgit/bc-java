@@ -4,13 +4,13 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 
 /**
  * A participant in a Password Authenticated Key Exchange by Juggling (J-PAKE) exchange.
@@ -60,7 +60,8 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
  * (i.e. a new {@link ECJPAKEParticipant} should be constructed for each new J-PAKE exchange).
  * <p>
  */
-public class ECJPAKEParticipant {
+public class ECJPAKEParticipant
+{
 
     /*
      * Possible internal states.  Used for state checking.
@@ -107,12 +108,12 @@ public class ECJPAKEParticipant {
     private String partnerParticipantId;
 
     private ECCurve.Fp ecCurve;
-	private BigInteger ecca;
-	private BigInteger eccb;
-	private BigInteger q;
-	private BigInteger h;
-	private BigInteger n;
-	private ECPoint g;
+    private BigInteger ecca;
+    private BigInteger eccb;
+    private BigInteger q;
+    private BigInteger h;
+    private BigInteger n;
+    private ECPoint g;
 
     /**
      * Alice's x1 or Bob's x3.
@@ -161,7 +162,7 @@ public class ECJPAKEParticipant {
      * @param password      shared secret.
      *                      A defensive copy of this array is made (and cleared once {@link #calculateKeyingMaterial()} is called).
      *                      Caller should clear the input password as soon as possible.
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException     if any argument is null
      * @throws IllegalArgumentException if password is empty
      */
     public ECJPAKEParticipant(
@@ -187,7 +188,7 @@ public class ECJPAKEParticipant {
      *                      Caller should clear the input password as soon as possible.
      * @param curve         elliptic curve
      *                      See {@link ECJPAKECurves} for standard curves.
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException     if any argument is null
      * @throws IllegalArgumentException if password is empty
      */
     public ECJPAKEParticipant(
@@ -217,7 +218,7 @@ public class ECJPAKEParticipant {
      *                      See {@link ECJPAKECurves} for standard curves
      * @param digest        digest to use during zero knowledge proofs and key confirmation (SHA-256 or stronger preferred)
      * @param random        source of secure random data for x1 and x2, and for the zero knowledge proofs
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException     if any argument is null
      * @throws IllegalArgumentException if password is empty
      */
     public ECJPAKEParticipant(
@@ -238,16 +239,16 @@ public class ECJPAKEParticipant {
         }
 
         this.participantId = participantId;
-        
+
         /*
          * Create a defensive copy so as to fully encapsulate the password.
-         * 
+         *
          * This array will contain the password for the lifetime of this
          * participant BEFORE {@link #calculateKeyingMaterial()} is called.
-         * 
+         *
          * i.e. When {@link #calculateKeyingMaterial()} is called, the array will be cleared
          * in order to remove the password from memory.
-         * 
+         *
          * The caller is responsible for clearing the original password array
          * given as input to this constructor.
          */
@@ -256,7 +257,7 @@ public class ECJPAKEParticipant {
         this.ecCurve = curve.getCurve();
         this.ecca = curve.getA();
         this.eccb = curve.getB();
-        this.g = curve.getG(); 
+        this.g = curve.getG();
         this.h = curve.getH();
         this.n = curve.getN();
         this.q = curve.getQ();
@@ -287,7 +288,7 @@ public class ECJPAKEParticipant {
         {
             throw new IllegalStateException("Round1 payload already created for " + participantId);
         }
-        
+
         this.x1 = ECJPAKEUtil.generateX1(n, random);
         this.x2 = ECJPAKEUtil.generateX1(n, random);
 
@@ -309,7 +310,7 @@ public class ECJPAKEParticipant {
      * <p>
      * After execution, the {@link #getState() state} will be  {@link #STATE_ROUND_1_VALIDATED}.
      *
-     * @throws CryptoException if validation fails.
+     * @throws CryptoException       if validation fails.
      * @throws IllegalStateException if called multiple times.
      */
     public void validateRound1PayloadReceived(ECJPAKERound1Payload round1PayloadReceived)
@@ -323,7 +324,7 @@ public class ECJPAKEParticipant {
         this.gx3 = round1PayloadReceived.getGx1();
         this.gx4 = round1PayloadReceived.getGx2();
 
-        ECSchnorrZKP knowledgeProofForX3 = round1PayloadReceived.getKnowledgeProofForX1(); 
+        ECSchnorrZKP knowledgeProofForX3 = round1PayloadReceived.getKnowledgeProofForX1();
         ECSchnorrZKP knowledgeProofForX4 = round1PayloadReceived.getKnowledgeProofForX2();
 
         ECJPAKEUtil.validateParticipantIdsDiffer(participantId, round1PayloadReceived.getParticipantId());
@@ -374,7 +375,7 @@ public class ECJPAKEParticipant {
      * <p>
      * After execution, the {@link #getState() state} will be  {@link #STATE_ROUND_2_VALIDATED}.
      *
-     * @throws CryptoException if validation fails.
+     * @throws CryptoException       if validation fails.
      * @throws IllegalStateException if called prior to {@link #validateRound1PayloadReceived(ECJPAKERound1Payload)}, or multiple times
      */
     public void validateRound2PayloadReceived(ECJPAKERound2Payload round2PayloadReceived)
@@ -398,6 +399,7 @@ public class ECJPAKEParticipant {
 
         this.state = STATE_ROUND_2_VALIDATED;
     }
+
     /**
      * Calculates and returns the key material.
      * A session key must be derived from this key material using a secure key derivation function (KDF).
@@ -421,7 +423,7 @@ public class ECJPAKEParticipant {
      * After execution, the {@link #getState() state} will be  {@link #STATE_KEY_CALCULATED}.
      *
      * @throws IllegalStateException if called prior to {@link #validateRound2PayloadReceived(ECJPAKERound2Payload)},
-     * or if called multiple times.
+     *                               or if called multiple times.
      */
     public BigInteger calculateKeyingMaterial()
     {
@@ -437,26 +439,26 @@ public class ECJPAKEParticipant {
 
         /*
          * Clear the password array from memory, since we don't need it anymore.
-         * 
+         *
          * Also set the field to null as a flag to indicate that the key has already been calculated.
          */
         Arrays.fill(password, (char)0);
         this.password = null;
 
         BigInteger keyingMaterial = ECJPAKEUtil.calculateKeyingMaterial(n, gx4, x2, s, b);
-        
+
         /*
          * Clear the ephemeral private key fields as well.
          * Note that we're relying on the garbage collector to do its job to clean these up.
          * The old objects will hang around in memory until the garbage collector destroys them.
-         * 
+         *
          * If the ephemeral private keys x1 and x2 are leaked,
          * the attacker might be able to brute-force the password.
          */
         this.x1 = null;
         this.x2 = null;
         this.b = null;
-        
+
         /*
          * Do not clear gx* yet, since those are needed by round 3.
          */
@@ -509,8 +511,8 @@ public class ECJPAKEParticipant {
      * After execution, the {@link #getState() state} will be {@link #STATE_ROUND_3_VALIDATED}.
      *
      * @param round3PayloadReceived The round 3 payload received from the other participant.
-     * @param keyingMaterial The keying material as returned from {@link #calculateKeyingMaterial()}.
-     * @throws CryptoException if validation fails.
+     * @param keyingMaterial        The keying material as returned from {@link #calculateKeyingMaterial()}.
+     * @throws CryptoException       if validation fails.
      * @throws IllegalStateException if called prior to {@link #calculateKeyingMaterial()}, or multiple times
      */
     public void validateRound3PayloadReceived(ECJPAKERound3Payload round3PayloadReceived, BigInteger keyingMaterial)
@@ -537,8 +539,8 @@ public class ECJPAKEParticipant {
             keyingMaterial,
             this.digest,
             round3PayloadReceived.getMacTag());
-        
-        
+
+
         /*
          * Clear the rest of the fields.
          */
@@ -561,5 +563,5 @@ public class ECJPAKEParticipant {
             throw Exceptions.illegalStateException(e.getMessage(), e);
         }
     }
-    
+
 }

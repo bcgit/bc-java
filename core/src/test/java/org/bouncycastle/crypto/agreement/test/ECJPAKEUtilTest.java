@@ -6,14 +6,14 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
+import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
+import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEUtil;
+import org.bouncycastle.crypto.agreement.ecjpake.ECSchnorrZKP;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEUtil;
-import org.bouncycastle.crypto.agreement.ecjpake.ECSchnorrZKP;
-import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
-import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
 
 public class ECJPAKEUtilTest
     extends TestCase
@@ -127,7 +127,7 @@ public class ECJPAKEUtilTest
     }
 
     public void testValidateZeroKnowledgeProof()
-    throws CryptoException
+        throws CryptoException
     {
         ECJPAKECurve curve1 = ECJPAKECurves.NIST_P256;
 
@@ -217,7 +217,7 @@ public class ECJPAKEUtilTest
         }
 
         // (x,y) elements for Gx are not in Fq ie: not in [0,q-1]
-        ECCurve.Fp curve = (ECCurve.Fp) curve1.getCurve();
+        ECCurve.Fp curve = (ECCurve.Fp)curve1.getCurve();
         try
         {
             ECPoint invalidGx_1 = curve.createPoint(ONE.negate(), ONE);
@@ -275,7 +275,7 @@ public class ECJPAKEUtilTest
 
         /*  gx is such that n*gx == infinity
          *  Taking gx as any multiple of the generator G will create such a point
-        */
+         */
 
         try
         {
@@ -289,7 +289,7 @@ public class ECJPAKEUtilTest
 
         /*  V is not a point on the curve
          *  i.e. V != G*r + X*h
-        */
+         */
         try
         {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), curve.createPoint(ONE, ONE), zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId2, digest1);

@@ -4,14 +4,14 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEParticipant;
+import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
+import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEParticipant;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound1Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound2Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound3Payload;
-import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
 public class ECJPAKEParticipantTest
@@ -394,11 +394,11 @@ public class ECJPAKEParticipantTest
         try
         {
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                    bobRound1Payload.getParticipantId(),
-                    bobRound1Payload.getGx1(),
-                    curve.getCurve().getInfinity(),
-                    bobRound1Payload.getKnowledgeProofForX1(),
-                    bobRound1Payload.getKnowledgeProofForX2()));
+                bobRound1Payload.getParticipantId(),
+                bobRound1Payload.getGx1(),
+                curve.getCurve().getInfinity(),
+                bobRound1Payload.getKnowledgeProofForX1(),
+                bobRound1Payload.getKnowledgeProofForX2()));
             fail();
         }
         catch (CryptoException e)
@@ -411,11 +411,11 @@ public class ECJPAKEParticipantTest
         {
             ECJPAKERound1Payload bobRound1Payload2 = createBob().createRound1PayloadToSend();
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                    bobRound1Payload.getParticipantId(),
-                    bobRound1Payload.getGx1(),
-                    bobRound1Payload.getGx2(),
-                    bobRound1Payload2.getKnowledgeProofForX1(),
-                    bobRound1Payload.getKnowledgeProofForX2()));
+                bobRound1Payload.getParticipantId(),
+                bobRound1Payload.getGx1(),
+                bobRound1Payload.getGx2(),
+                bobRound1Payload2.getKnowledgeProofForX1(),
+                bobRound1Payload.getKnowledgeProofForX2()));
             fail();
         }
         catch (CryptoException e)
@@ -428,11 +428,11 @@ public class ECJPAKEParticipantTest
         {
             ECJPAKERound1Payload bobRound1Payload2 = createBob().createRound1PayloadToSend();
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                    bobRound1Payload.getParticipantId(),
-                    bobRound1Payload.getGx1(),
-                    bobRound1Payload.getGx2(),
-                    bobRound1Payload.getKnowledgeProofForX1(),
-                    bobRound1Payload2.getKnowledgeProofForX2()));
+                bobRound1Payload.getParticipantId(),
+                bobRound1Payload.getGx1(),
+                bobRound1Payload.getGx2(),
+                bobRound1Payload.getKnowledgeProofForX1(),
+                bobRound1Payload2.getKnowledgeProofForX2()));
             fail();
         }
         catch (CryptoException e)
@@ -477,7 +477,8 @@ public class ECJPAKEParticipantTest
         }
     }
 
-    private static class ExchangeAfterRound2Creation {
+    private static class ExchangeAfterRound2Creation
+    {
 
         public ECJPAKEParticipant alice;
         public ECJPAKERound2Payload aliceRound2Payload;
@@ -495,10 +496,10 @@ public class ECJPAKEParticipantTest
 
     }
 
-    private ExchangeAfterRound2Creation runExchangeUntilRound2Creation(ECJPAKEParticipant alice, ECJPAKEParticipant bob) 
-    throws CryptoException
+    private ExchangeAfterRound2Creation runExchangeUntilRound2Creation(ECJPAKEParticipant alice, ECJPAKEParticipant bob)
+        throws CryptoException
     {
-        
+
         ECJPAKERound1Payload aliceRound1Payload = alice.createRound1PayloadToSend();
         ECJPAKERound1Payload bobRound1Payload = bob.createRound1PayloadToSend();
 

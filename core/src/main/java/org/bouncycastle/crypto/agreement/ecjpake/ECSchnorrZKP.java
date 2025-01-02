@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.agreement.ecjpake;
 
 import java.math.BigInteger;
+
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
@@ -9,8 +10,9 @@ import org.bouncycastle.math.ec.ECPoint;
  * This class encapsulates the values involved in the Schnorr
  * zero-knowledge proof used in the EC J-PAKE protocol.
  * <p>
- */ 
-public class ECSchnorrZKP {
+ */
+public class ECSchnorrZKP
+{
 
     /**
      * The value of V = G x [v].
@@ -22,17 +24,17 @@ public class ECSchnorrZKP {
      */
     private final BigInteger r;
 
-    ECSchnorrZKP(ECPoint V, BigInteger r) 
+    ECSchnorrZKP(ECPoint V, BigInteger r)
     {
         this.V = V;
         this.r = r;
     }
-    
+
     public ECPoint getV()
     {
         return V;
     }
-    
+
     public BigInteger getr()
     {
         return r;
