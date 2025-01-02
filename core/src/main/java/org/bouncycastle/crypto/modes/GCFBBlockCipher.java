@@ -34,7 +34,7 @@ public class GCFBBlockCipher
     public GCFBBlockCipher(BlockCipher engine)
     {
         super(engine);
-
+        //TODO: Ensure the key size of the engine is 32 bits
         this.cfbEngine = new CFBBlockCipher(engine, engine.getBlockSize() * 8);
     }
 
@@ -113,8 +113,7 @@ public class GCFBBlockCipher
 
             byte[] nextKey = new byte[32];
             int blockSize = base.getBlockSize();
-            //TODO: The for-loop will not function correctly if 32 is not evenly divisible by blocksize
-            // (i.e., 32 % blocksize != 0), So it's not working for DSTU7624Engine(512), RijndaelEngine(except 256), etc.
+
             for (int i = 0; i < nextKey.length; i += blockSize)
             {
                 base.processBlock(C, i, nextKey, i);
