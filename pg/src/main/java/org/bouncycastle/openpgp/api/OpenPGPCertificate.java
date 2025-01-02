@@ -387,12 +387,12 @@ public class OpenPGPCertificate
         ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
                 .clearHeaders();
         // Add fingerprint comment
-        splitMultilineComment(armorBuilder, getPrettyFingerprint());
+        armorBuilder.addSplitMultilineComment(getPrettyFingerprint());
 
         // Add user-id comments
         for (OpenPGPUserId userId : getPrimaryKey().getUserIDs())
         {
-            ellipsizedComment(armorBuilder, userId.getUserId());
+            armorBuilder.addEllipsizedComment(userId.getUserId());
         }
 
         ArmoredOutputStream aOut = armorBuilder.build(bOut);
@@ -410,37 +410,6 @@ public class OpenPGPCertificate
         pOut.close();
         aOut.close();
         return bOut.toString();
-    }
-
-    private void splitMultilineComment(ArmoredOutputStream.Builder armorBuilder, String comment)
-    {
-        int availableCommentCharsPerLine = 64 - "Comment: ".length(); // ASCII armor width - header len
-
-        comment = comment.trim();
-
-        while (comment.length() > availableCommentCharsPerLine)
-        {
-            // split comment into multiple lines
-            armorBuilder.addComment(comment.substring(0, availableCommentCharsPerLine));
-            comment = comment.substring(availableCommentCharsPerLine).trim();
-        }
-
-        if (!comment.isEmpty())
-        {
-            armorBuilder.addComment(comment);
-        }
-    }
-
-    private void ellipsizedComment(ArmoredOutputStream.Builder armorBuilder, String comment)
-    {
-        int availableCommentCharsPerLine = 64 - "Comment: ".length(); // ASCII armor width - header len
-        comment = comment.trim();
-
-        if (comment.length() > availableCommentCharsPerLine)
-        {
-            comment = comment.substring(0, availableCommentCharsPerLine - 1) + '…';
-        }
-        armorBuilder.addComment(comment);
     }
 
     protected List<String> fingerprintComments()
