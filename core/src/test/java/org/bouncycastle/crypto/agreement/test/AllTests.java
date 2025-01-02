@@ -22,6 +22,10 @@ public class AllTests
         suite.addTestSuite(JPAKEPrimeOrderGroupTest.class);
         suite.addTestSuite(JPAKEUtilTest.class);
 
+        suite.addTestSuite(ECJPAKEParticipantTest.class);
+        suite.addTestSuite(ECJPAKECurveTest.class);
+        suite.addTestSuite(ECJPAKEUtilTest.class);
+
         return new BCTestSetup(suite);
     }
 

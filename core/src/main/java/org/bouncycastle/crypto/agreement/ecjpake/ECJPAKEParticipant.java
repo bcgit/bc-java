@@ -151,7 +151,7 @@ public class ECJPAKEParticipant {
 
     /**
      * Convenience constructor for a new {@link ECJPAKEParticipant} that uses
-     * the {@link ECJPAKECurves.NIST_P256} elliptic curve,
+     * the {@link ECJPAKECurves#NIST_P256} elliptic curve,
      * a SHA-256 digest, and a default {@link SecureRandom} implementation.
      * <p>
      * After construction, the {@link #getState() state} will be  {@link #STATE_INITIALIZED}.

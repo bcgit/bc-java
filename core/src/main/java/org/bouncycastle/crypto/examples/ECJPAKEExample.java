@@ -11,7 +11,6 @@ import org.bouncycastle.crypto.SavableDigest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEParticipant;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
-import org.bouncycastle.crypto.agreement.ecjpake.ECSCchnorrZKP;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound1Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound2Payload;
@@ -29,6 +28,7 @@ public class ECJPAKEExample {
 
     public static void main(String args[]) throws CryptoException
     {
+        // -DM 48 System.out.print
         /*
          * Initialization
          * 
@@ -180,6 +180,7 @@ public class ECJPAKEExample {
         ECJPAKERound3Payload aliceRound3Payload = alice.createRound3PayloadToSend(aliceKeyingMaterial);
         ECJPAKERound3Payload bobRound3Payload = bob.createRound3PayloadToSend(bobKeyingMaterial);
 
+        // -DM 11grad System.out.println
         System.out.println("************ Round 3 **************");
         System.out.println("Alice sends to Bob: ");
         System.out.println("MacTag=" + aliceRound3Payload.getMacTag().toString(16));

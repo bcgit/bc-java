@@ -55,7 +55,7 @@ public class ECJPAKECurve
      */
     public ECJPAKECurve(BigInteger a, BigInteger b, BigInteger q, BigInteger h, BigInteger n, ECPoint g, ECCurve.Fp curve)
     {
-        /**
+        /*
          * Don't skip the checks on user-specified groups.
          */
         this(a, b, q, h, n, g, curve, false);

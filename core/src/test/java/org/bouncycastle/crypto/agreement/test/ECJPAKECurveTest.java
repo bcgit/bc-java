@@ -1,24 +1,21 @@
-package org.example;
+package org.bouncycastle.crypto.agreement.test;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.junit.jupiter.api.Test;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
 
 
-public class ECJPAKECurveTest {
+public class ECJPAKECurveTest
+    extends TestCase
+{
 
-    @Test
-    public void testConstruction() 
-    throws CryptoException
+    public void testConstruction()
+        throws CryptoException
     {
         BigInteger a = new BigInteger("ffffffff00000001000000000000000000000000fffffffffffffffffffffffc", 16);
         //b
@@ -37,39 +34,81 @@ public class ECJPAKECurveTest {
         );
 
         // q not prime
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(a, b, BigInteger.valueOf(15), h, n, g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // n is not prime
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(a, b, q, h, BigInteger.valueOf(15), g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // Discriminant is zero
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(BigInteger.ZERO, BigInteger.ZERO, q, h, n, g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // G is not on the curve
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(a, b, q, h, n, curve.createPoint(BigInteger.valueOf(2), BigInteger.valueOf(3)), curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // n is not equal to the order to the curve
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(a, b, q, BigInteger.valueOf(2), n, g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // a is not in the field [0,q-1]
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(BigInteger.valueOf(-1), b, q, h, n, g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // b is not in the field [0,q-1]
-        assertThrows( IllegalArgumentException.class, () -> { 
+        try
+        {
             new ECJPAKECurve(a, BigInteger.valueOf(-1), q, h, n, g, curve);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // should work
         new ECJPAKECurve(a, b, q, h, n, g, curve);
