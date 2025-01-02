@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.api.jcajce;
 
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.api.JcaOpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 
 import java.security.Provider;

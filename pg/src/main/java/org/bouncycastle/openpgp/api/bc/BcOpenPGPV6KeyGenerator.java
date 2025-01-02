@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.api.bc;
 
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.api.BcOpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 
 import java.util.Date;

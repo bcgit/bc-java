@@ -1,4 +1,4 @@
-package org.bouncycastle.openpgp.api;
+package org.bouncycastle.openpgp.api.bc;
 
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.openpgp.PGPException;
@@ -6,6 +6,7 @@ import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.api.OpenPGPImplementation;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
