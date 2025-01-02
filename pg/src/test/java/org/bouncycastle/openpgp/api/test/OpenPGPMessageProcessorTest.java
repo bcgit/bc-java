@@ -79,7 +79,8 @@ public class OpenPGPMessageProcessorTest
                 .setArmored(false)
                 .setIsPadded(false);
 
-        gen.getConfiguration().setCompressionNegotiator(conf -> CompressionAlgorithmTags.UNCOMPRESSED);
+        gen.getConfiguration().setCompressionNegotiator(
+                (conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -103,7 +104,8 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
                 .setArmored(true)
                 .setIsPadded(false);
-        gen.getConfiguration().setCompressionNegotiator(conf -> CompressionAlgorithmTags.UNCOMPRESSED);
+        gen.getConfiguration().setCompressionNegotiator(
+                (conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -128,7 +130,8 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
                 .setArmored(true)
                 .setIsPadded(false);
-        gen.getConfiguration().setCompressionNegotiator(conf -> CompressionAlgorithmTags.ZIP);
+        gen.getConfiguration().setCompressionNegotiator(
+                (conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -158,7 +161,8 @@ public class OpenPGPMessageProcessorTest
         gen.getConfiguration()
                 .setPasswordBasedEncryptionNegotiator(conf ->
                         MessageEncryptionMechanism.integrityProtected(SymmetricKeyAlgorithmTags.AES_256))
-                .setCompressionNegotiator(conf -> CompressionAlgorithmTags.ZIP);
+                .setCompressionNegotiator(
+                        (conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);

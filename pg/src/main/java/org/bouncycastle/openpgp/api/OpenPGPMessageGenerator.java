@@ -455,9 +455,12 @@ public class OpenPGPMessageGenerator
                         .enableCRC(false)   // Disable CRC sum
                         .build(outputStream);
 
-        private SubkeySelector encryptionKeySelector = new SubkeySelector() {
+        private SubkeySelector encryptionKeySelector = new SubkeySelector()
+        {
             @Override
-            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
+                                                                       OpenPGPPolicy policy)
+            {
                 return certificate.getEncryptionKeys()
                         .stream()
                         .filter(key -> policy.isAcceptablePublicKey(key.getPGPPublicKey()))
@@ -465,9 +468,12 @@ public class OpenPGPMessageGenerator
             }
         };
 
-        private SubkeySelector signingKeySelector = new SubkeySelector() {
+        private SubkeySelector signingKeySelector = new SubkeySelector()
+        {
             @Override
-            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
+                                                                       OpenPGPPolicy policy)
+            {
                 return certificate.getSigningKeys()
                         .stream()
                         .filter(key -> policy.isAcceptablePublicKey(key.getPGPPublicKey()))

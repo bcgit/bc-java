@@ -85,7 +85,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
         gen.setIsPadded(false);
         OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
-        configuration.setCompressionNegotiator(conf -> CompressionAlgorithmTags.ZIP);
+        configuration.setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
@@ -109,7 +109,7 @@ public class OpenPGPMessageGeneratorTest
         gen.setArmored(false); // no armor
         gen.setIsPadded(false);
         OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
-        configuration.setCompressionNegotiator(conf -> CompressionAlgorithmTags.ZIP);
+        configuration.setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);

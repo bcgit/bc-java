@@ -4,15 +4,18 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
+import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.List;
 
 public class StaticV6OpenPGPMessageGeneratorTest
         extends AbstractPacketTest
@@ -79,8 +82,20 @@ public class StaticV6OpenPGPMessageGeneratorTest
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
 
         gen.getConfiguration()
-                .setEncryptionKeySelector(keyRing -> Collections.singletonList(keyRing.getKey(encryptionKeyIdentifier)))
-                .setSigningKeySelector(keyRing -> Collections.singletonList(keyRing.getKey(signingKeyIdentifier)));
+                .setEncryptionKeySelector(
+                        new OpenPGPMessageGenerator.SubkeySelector() {
+                            @Override
+                            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+                                return Collections.singletonList(certificate.getKey(encryptionKeyIdentifier));
+                            }
+                        })
+                .setSigningKeySelector(
+                        new OpenPGPMessageGenerator.SubkeySelector() {
+                            @Override
+                            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
+                                return Collections.singletonList(certificate.getKey(signingKeyIdentifier));
+                            }
+                        });
 
         return gen;
     }

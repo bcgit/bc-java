@@ -266,7 +266,8 @@ public interface OpenPGPEncryptionNegotiator
                 int[] algorithms = Arrays.stream(preferences.getPreferences())
                         .filter(alg ->
                         {
-                            switch (alg) {
+                            switch (alg)
+                            {
                                 case SymmetricKeyAlgorithmTags.AES_128:
                                 case SymmetricKeyAlgorithmTags.AES_192:
                                 case SymmetricKeyAlgorithmTags.AES_256:
