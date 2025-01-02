@@ -10,7 +10,7 @@ import org.bouncycastle.math.ec.ECPoint;
  * zero-knowledge proof used in the EC J-PAKE protocol.
  * <p>
  */ 
-class ECSchnorrZKP {
+public class ECSchnorrZKP {
 
     /**
      * The value of V = G x [v].
@@ -28,11 +28,13 @@ class ECSchnorrZKP {
         this.r = r;
     }
     
-    ECPoint getV() {
+    public ECPoint getV()
+    {
         return V;
     }
     
-    BigInteger getr() {
+    public BigInteger getr()
+    {
         return r;
     }
 }

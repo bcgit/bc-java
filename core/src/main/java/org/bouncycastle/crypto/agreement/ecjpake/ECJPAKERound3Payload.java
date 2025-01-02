@@ -27,7 +27,7 @@ public class ECJPAKERound3Payload
     /**
      * The value of MacTag, as computed by round 3.
      *
-     * @see ECJPAKEUtil#calculateMacTag(String, String, ECPoint, ECPoint, ECPoint, ECPoint, BigInteger, org.bouncycastle.crypto.Digest)
+     * @see ECJPAKEUtil#calculateMacTag
      */
     private final BigInteger macTag;
 

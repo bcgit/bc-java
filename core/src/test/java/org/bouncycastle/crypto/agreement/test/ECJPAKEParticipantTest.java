@@ -3,26 +3,23 @@ package org.bouncycastle.crypto.agreement.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEParticipant;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound1Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound2Payload;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKERound3Payload;
-import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEUtil;
-import org.bouncycastle.math.ec.ECCurve;
-import org.junit.jupiter.api.Test;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 
-public class ECJPAKEParticipantTest {
+public class ECJPAKEParticipantTest
+    extends TestCase
+{
 
-    @Test
-    public void testConstruction() 
-    throws CryptoException
+    public void testConstruction()
+        throws CryptoException
     {
         ECJPAKECurve curve = ECJPAKECurves.NIST_P256;
         SecureRandom random = new SecureRandom();
@@ -33,39 +30,74 @@ public class ECJPAKEParticipantTest {
         new ECJPAKEParticipant(participantId, password, curve, digest, random);
 
         // null participantID
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(null, password, curve, digest, random);
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
 
         // null password
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(participantId, null, curve, digest, random);
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
 
         // empty password
-        assertThrows(IllegalArgumentException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(participantId, "".toCharArray(), curve, digest, random);
-        });
+            fail();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
 
         // null curve
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(participantId, password, null, digest, random);
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
 
         // null digest
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(participantId, password, curve, null, random);
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
 
         // null random
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             new ECJPAKEParticipant(participantId, password, curve, digest, null);
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
     }
 
-    @Test 
     public void testSuccessfulExchange()
-    throws CryptoException
+        throws CryptoException
     {
 
         ECJPAKEParticipant alice = createAlice();
@@ -89,9 +121,8 @@ public class ECJPAKEParticipantTest {
 
     }
 
-    @Test
-    public void testIncorrectPassword() 
-    throws CryptoException
+    public void testIncorrectPassword()
+        throws CryptoException
     {
         ECJPAKEParticipant alice = createAlice();
         ECJPAKEParticipant bob = createBobWithWrongPassword();
@@ -108,18 +139,29 @@ public class ECJPAKEParticipantTest {
         ECJPAKERound3Payload bobRound3Payload = bob.createRound3PayloadToSend(bobKeyingMaterial);
 
         // Validate incorrect passwords result in a CryptoException
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             alice.validateRound3PayloadReceived(bobRound3Payload, aliceKeyingMaterial);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             bob.validateRound3PayloadReceived(aliceRound3Payload, bobKeyingMaterial);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
-    @Test
-    public void testStateValidation() 
-    throws CryptoException
+    public void testStateValidation()
+        throws CryptoException
     {
 
         ECJPAKEParticipant alice = createAlice();
@@ -132,28 +174,52 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_INITIALIZED, alice.getState());
 
         // create round 2 before round 1
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound2PayloadToSend();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         ECJPAKERound1Payload aliceRound1Payload = alice.createRound1PayloadToSend();
 
         assertEquals(ECJPAKEParticipant.STATE_ROUND_1_CREATED, alice.getState());
 
         // create round 1 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound1PayloadToSend();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         // create round 2 before validating round 1
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound2PayloadToSend();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         // validate round 2 before validating round 1
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.validateRound2PayloadReceived(null);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         ECJPAKERound1Payload bobRound1Payload = bob.createRound1PayloadToSend();
 
@@ -162,9 +228,15 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_ROUND_1_VALIDATED, alice.getState());
 
         // validate round 1 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.validateRound1PayloadReceived(bobRound1Payload);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         bob.validateRound1PayloadReceived(aliceRound1Payload);
 
@@ -175,19 +247,37 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_ROUND_2_CREATED, alice.getState());
 
         // create round 2 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound2PayloadToSend();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         // create key before validating round 2
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.calculateKeyingMaterial();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         // validate round 3 before validating round 2
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.validateRound3PayloadReceived(null, null);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         ECJPAKERound2Payload bobRound2Payload = bob.createRound2PayloadToSend();
 
@@ -196,16 +286,28 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_ROUND_2_VALIDATED, alice.getState());
 
         // validate round 2 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.validateRound2PayloadReceived(bobRound2Payload);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         bob.validateRound2PayloadReceived(aliceRound2Payload);
 
         // create round 3 before calculating key
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound3PayloadToSend(BigInteger.ONE);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         // START KEY CALCULATION CHECKS
 
@@ -214,9 +316,15 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_KEY_CALCULATED, alice.getState());
 
         // calculate key twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.calculateKeyingMaterial();
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         BigInteger bobKeyingMaterial = bob.calculateKeyingMaterial();
 
@@ -227,9 +335,15 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_ROUND_3_CREATED, alice.getState());
 
         // create round 3 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.createRound3PayloadToSend(aliceKeyingMaterial);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         ECJPAKERound3Payload bobRound3Payload = bob.createRound3PayloadToSend(bobKeyingMaterial);
 
@@ -238,18 +352,23 @@ public class ECJPAKEParticipantTest {
         assertEquals(ECJPAKEParticipant.STATE_ROUND_3_VALIDATED, alice.getState());
 
         // validate round 3 payload twice
-        assertThrows(IllegalStateException.class, () -> {
+        try
+        {
             alice.validateRound3PayloadReceived(bobRound3Payload, aliceKeyingMaterial);
-        });
+            fail();
+        }
+        catch (IllegalStateException e)
+        {
+            // pass
+        }
 
         bob.validateRound3PayloadReceived(aliceRound3Payload, bobKeyingMaterial);
 
 
     }
 
-    @Test
-    public void testValidateRound1PayloadReceived() 
-    throws CryptoException
+    public void testValidateRound1PayloadReceived()
+        throws CryptoException
     {
 
         // We're testing alice here. Bob is just used for help.
@@ -259,48 +378,71 @@ public class ECJPAKEParticipantTest {
         createAlice().validateRound1PayloadReceived(bobRound1Payload);
 
         // alice verifies alice's payload
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEParticipant alice = createAlice();
             alice.validateRound1PayloadReceived(alice.createRound1PayloadToSend());
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // g^x4 = infinity
         ECJPAKECurve curve = ECJPAKECurves.NIST_P256;
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                bobRound1Payload.getParticipantId(),
-                bobRound1Payload.getGx1(),
-                curve.getCurve().getInfinity(),
-                bobRound1Payload.getKnowledgeProofForX1(),
-                bobRound1Payload.getKnowledgeProofForX2()));
-        });
+                    bobRound1Payload.getParticipantId(),
+                    bobRound1Payload.getGx1(),
+                    curve.getCurve().getInfinity(),
+                    bobRound1Payload.getKnowledgeProofForX1(),
+                    bobRound1Payload.getKnowledgeProofForX2()));
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // zero knowledge proof for x3 fails
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKERound1Payload bobRound1Payload2 = createBob().createRound1PayloadToSend();
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                bobRound1Payload.getParticipantId(),
-                bobRound1Payload.getGx1(),
-                bobRound1Payload.getGx2(),
-                bobRound1Payload2.getKnowledgeProofForX1(),
-                bobRound1Payload.getKnowledgeProofForX2()));
-        });
+                    bobRound1Payload.getParticipantId(),
+                    bobRound1Payload.getGx1(),
+                    bobRound1Payload.getGx2(),
+                    bobRound1Payload2.getKnowledgeProofForX1(),
+                    bobRound1Payload.getKnowledgeProofForX2()));
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // zero knowledge proof for x4 fails
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKERound1Payload bobRound1Payload2 = createBob().createRound1PayloadToSend();
             createAlice().validateRound1PayloadReceived(new ECJPAKERound1Payload(
-                bobRound1Payload.getParticipantId(),
-                bobRound1Payload.getGx1(),
-                bobRound1Payload.getGx2(),
-                bobRound1Payload.getKnowledgeProofForX1(),
-                bobRound1Payload2.getKnowledgeProofForX2()));
-        });
+                    bobRound1Payload.getParticipantId(),
+                    bobRound1Payload.getGx1(),
+                    bobRound1Payload.getGx2(),
+                    bobRound1Payload.getKnowledgeProofForX1(),
+                    bobRound1Payload2.getKnowledgeProofForX2()));
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
-    @Test
-    public void testValidateRound2PayloadReceived() 
-    throws CryptoException
+    public void testValidateRound2PayloadReceived()
+        throws CryptoException
     {
 
         // We're testing alice here. Bob is just used for help.
@@ -311,16 +453,28 @@ public class ECJPAKEParticipantTest {
 
         // alice verifies alice's payload
         ExchangeAfterRound2Creation exchange2 = runExchangeUntilRound2Creation(createAlice(), createBob());
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             exchange2.alice.validateRound2PayloadReceived(exchange2.aliceRound2Payload);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // wrong z
         ExchangeAfterRound2Creation exchange3 = runExchangeUntilRound2Creation(createAlice(), createBob());
         ExchangeAfterRound2Creation exchange4 = runExchangeUntilRound2Creation(createAlice(), createBob());
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             exchange3.alice.validateRound2PayloadReceived(exchange4.bobRound2Payload);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
     private static class ExchangeAfterRound2Creation {

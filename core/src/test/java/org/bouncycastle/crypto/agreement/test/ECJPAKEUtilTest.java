@@ -3,51 +3,59 @@ package org.bouncycastle.crypto.agreement.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.ECFieldElement;
-import org.junit.jupiter.api.Test;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKEUtil;
 import org.bouncycastle.crypto.agreement.ecjpake.ECSchnorrZKP;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurves;
 import org.bouncycastle.crypto.agreement.ecjpake.ECJPAKECurve;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ECJPAKEUtilTest
+    extends TestCase
 {
     private static final BigInteger TEN = BigInteger.valueOf(10);
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
-    @Test
     public void testValidateParticipantIdsDiffer()
-    throws CryptoException
+        throws CryptoException
     {
         ECJPAKEUtil.validateParticipantIdsDiffer("a", "b");
         ECJPAKEUtil.validateParticipantIdsDiffer("a", "A");
 
-        CryptoException exception = assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateParticipantIdsDiffer("a", "a");
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
-    @Test
     public void testValidateParticipantIdsEqual()
-    throws CryptoException
+        throws CryptoException
     {
         ECJPAKEUtil.validateParticipantIdsEqual("a", "a");
 
-        CryptoException exception = assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateParticipantIdsEqual("a", "b");
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
-    @Test
     public void testValidateMacTag()
-    throws CryptoException
+        throws CryptoException
     {
         ECJPAKECurve curve1 = ECJPAKECurves.NIST_P256;
 
@@ -78,24 +86,44 @@ public class ECJPAKEUtilTest
 
         ECJPAKEUtil.validateMacTag("partnerParticipantId", "participantId", gx3, gx4, gx1, gx2, keyingMaterial, digest, macTag);
 
-        assertThrows(CryptoException.class, () -> {
+        // validating own macTag (as opposed to the other party's mactag)
+        try
+        {
             ECJPAKEUtil.validateMacTag("participantId", "partnerParticipantId", gx1, gx2, gx3, gx4, keyingMaterial, digest, macTag);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
-        assertThrows(CryptoException.class, () -> {
+        // participant ids switched
+        try
+        {
             ECJPAKEUtil.validateMacTag("participantId", "partnerParticipantId", gx3, gx4, gx1, gx2, keyingMaterial, digest, macTag);
-        });
+
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 
-    @Test
     public void testValidateNotNull()
-    throws CryptoException
+        throws CryptoException
     {
         ECJPAKEUtil.validateNotNull("a", "description");
 
-        assertThrows(NullPointerException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateNotNull(null, "description");
-        });
+            fail();
+        }
+        catch (NullPointerException e)
+        {
+            // pass
+        }
     }
 
     public void testValidateZeroKnowledgeProof()
@@ -116,84 +144,160 @@ public class ECJPAKEUtilTest
         ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), gx1, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
 
         // wrong group
-        ECJPAKECurve curve2 = ECJPAKECurves.NIST_P256; // make sure to change this to an incorrect group
-        assertThrows(CryptoException.class, () -> {
+        ECJPAKECurve curve2 = ECJPAKECurves.NIST_P384;
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve2.getG(), gx1, zkp1, curve2.getQ(), curve2.getN(), curve2.getCurve(), curve2.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // wrong digest
         Digest digest2 = new SHA1Digest();
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), gx1, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest2);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // wrong participant
         String participantId2 = "participant2";
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), gx1, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId2, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // wrong gx
         BigInteger x2 = ECJPAKEUtil.generateX1(curve1.getN(), random);
         ECPoint gx2 = ECJPAKEUtil.calculateGx(curve1.getG(), x2);
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), gx2, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
 
         // wrong zkp, we need to change the zkp in some way to test if it catches it
-        ECSchnorrZKP zkp2 = ECJPAKEUtil.calculateZeroKnowledgeProof(curve1.getG(), curve1.getN(), x2, gx2, digest1, participantId1, random);        
-        assertThrows(CryptoException.class, () -> {
+        ECSchnorrZKP zkp2 = ECJPAKEUtil.calculateZeroKnowledgeProof(curve1.getG(), curve1.getN(), x2, gx2, digest1, participantId1, random);
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), gx1, zkp2, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         // gx <= Infinity
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), curve1.getCurve().getInfinity(), zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
-        
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
+
         // (x,y) elements for Gx are not in Fq ie: not in [0,q-1]
         ECCurve.Fp curve = (ECCurve.Fp) curve1.getCurve();
-        ECPoint invalidGx_1 = curve.createPoint(ONE.negate(), ONE);
-        ECPoint invalidGx_2 = curve.createPoint(ONE, ONE.negate());
-        ECPoint invalidGx_3 = curve.createPoint(curve1.getQ(), ONE);
-        ECPoint invalidGx_4 = curve.createPoint(ONE, curve1.getQ());
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
+            ECPoint invalidGx_1 = curve.createPoint(ONE.negate(), ONE);
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), invalidGx_1, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (Exception e)
+        {
+            // pass
+        }
+        try
+        {
 
-        assertThrows(CryptoException.class, () -> {
+            ECPoint invalidGx_2 = curve.createPoint(ONE, ONE.negate());
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), invalidGx_2, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (Exception e)
+        {
+            // pass
+        }
+        try
+        {
 
-        assertThrows(CryptoException.class, () -> {
+            ECPoint invalidGx_3 = curve.createPoint(curve1.getQ(), ONE);
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), invalidGx_3, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
-
-        assertThrows(CryptoException.class, () -> {
+            fail();
+        }
+        catch (Exception e)
+        {
+            // pass
+        }
+        try
+        {
+            ECPoint invalidGx_4 = curve.createPoint(ONE, curve1.getQ());
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), invalidGx_4, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId1, digest1);
-        });
+            fail();
+        }
+        catch (Exception e)
+        {
+            // pass
+        }
 
         // gx is not on the curve
         ECPoint invalidPoint = curve.createPoint(ONE, ONE);//Must come back and test this since (1,1) may exist on certain curves. Not for p256 though.
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), invalidPoint, zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId2, digest1);
-        });
-    
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
+
         /*  gx is such that n*gx == infinity
          *  Taking gx as any multiple of the generator G will create such a point
         */
 
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), curve1.getG(), zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId2, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
 
         /*  V is not a point on the curve
          *  i.e. V != G*r + X*h
         */
-
-        assertThrows(CryptoException.class, () -> {
+        try
+        {
             ECJPAKEUtil.validateZeroKnowledgeProof(curve1.getG(), curve.createPoint(ONE, ONE), zkp1, curve1.getQ(), curve1.getN(), curve1.getCurve(), curve1.getH(), participantId2, digest1);
-        });
+            fail();
+        }
+        catch (CryptoException e)
+        {
+            // pass
+        }
     }
 }

@@ -1,8 +1,5 @@
 package org.bouncycastle.crypto.agreement.ecjpake;
 
-import java.math.BigInteger;
-
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.math.ec.ECPoint;
 
 /**
