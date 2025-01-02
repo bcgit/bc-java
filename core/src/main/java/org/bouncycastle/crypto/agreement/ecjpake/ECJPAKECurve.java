@@ -1,13 +1,14 @@
 package org.bouncycastle.crypto.agreement.ecjpake;
 
 import java.math.BigInteger;
-import org.bouncycastle.math.ec.ECPoint;
+
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * A pre-computed elliptic curve over a prime field, in short-Weierstrass form for use during an EC J-PAKE exchange.
  * <p>
- * In general, J-PAKE can use any elliptic curve or prime order group 
+ * In general, J-PAKE can use any elliptic curve or prime order group
  * that is suitable for public key cryptography.
  * <p>
  * See {@link ECJPAKECurves} for convenient standard curves.
@@ -18,12 +19,12 @@ import org.bouncycastle.math.ec.ECCurve;
 public class ECJPAKECurve
 {
     private final ECCurve.Fp curve;
-	private final BigInteger a;
-	private final BigInteger b;
-	private final BigInteger q;
-	private final BigInteger h;
-	private final BigInteger n;
-	private final ECPoint g;
+    private final BigInteger a;
+    private final BigInteger b;
+    private final BigInteger q;
+    private final BigInteger h;
+    private final BigInteger n;
+    private final ECPoint g;
 
     /**
      * Constructs a new {@link ECJPAKECurve}.
@@ -50,7 +51,7 @@ public class ECJPAKECurve
      * advanced attacks are not prevented.
      * Use it at your own risk.
      *
-     * @throws NullPointerException if any argument is null
+     * @throws NullPointerException     if any argument is null
      * @throws IllegalArgumentException if any of the above validations fail
      */
     public ECJPAKECurve(BigInteger a, BigInteger b, BigInteger q, BigInteger h, BigInteger n, ECPoint g, ECCurve.Fp curve)
@@ -83,32 +84,39 @@ public class ECJPAKECurve
              * Note that these checks do not guarantee that n and q are prime.
              * We just have reasonable certainty that they are prime.
              */
-            if(!q.isProbablePrime(20)) {
+            if (!q.isProbablePrime(20))
+            {
                 throw new IllegalArgumentException("Field size q must be prime");
             }
 
-            if(!n.isProbablePrime(20)) {
+            if (!n.isProbablePrime(20))
+            {
                 throw new IllegalArgumentException("The order n must be prime");
             }
 
-            if((a.pow(3).multiply(BigInteger.valueOf(4)).add(b.pow(2).multiply(BigInteger.valueOf(27))).mod(q)) == BigInteger.valueOf(0)) {
+            if ((a.pow(3).multiply(BigInteger.valueOf(4)).add(b.pow(2).multiply(BigInteger.valueOf(27))).mod(q)) == BigInteger.valueOf(0))
+            {
                 throw new IllegalArgumentException("The curve is singular, i.e the discriminant is equal to 0 mod q.");
             }
 
-            if (!g.isValid()) {
+            if (!g.isValid())
+            {
                 throw new IllegalArgumentException("The base point G does not lie on the curve.");
             }
 
             BigInteger totalPoints = n.multiply(h);
-            if(!totalPoints.equals(curve.getOrder())) {
+            if (!totalPoints.equals(curve.getOrder()))
+            {
                 throw new IllegalArgumentException("n is not equal to the order of your curve");
             }
 
-            if(a.compareTo(BigInteger.ZERO) == -1 || a.compareTo(q.subtract(BigInteger.ONE)) == 1) {
+            if (a.compareTo(BigInteger.ZERO) == -1 || a.compareTo(q.subtract(BigInteger.ONE)) == 1)
+            {
                 throw new IllegalArgumentException("The parameter 'a' is not in the field [0, q-1]");
             }
 
-            if(b.compareTo(BigInteger.ZERO) == -1 || b.compareTo(q.subtract(BigInteger.ONE)) == 1) {
+            if (b.compareTo(BigInteger.ZERO) == -1 || b.compareTo(q.subtract(BigInteger.ONE)) == 1)
+            {
                 throw new IllegalArgumentException("The parameter 'b' is not in the field [0, q-1]");
             }
         }

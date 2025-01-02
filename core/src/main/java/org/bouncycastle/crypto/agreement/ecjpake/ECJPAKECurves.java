@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.agreement.ecjpake;
 
 import java.math.BigInteger;
+
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -15,7 +16,7 @@ import org.bouncycastle.math.ec.ECPoint;
  * "Recommendations for Discrete Logarithm-based Cryptography: Elliptic Curve Domain Parameters",
  * <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-186.pdf">published by NIST</a>.
  */
-public class ECJPAKECurves 
+public class ECJPAKECurves
 {
 
     /**
@@ -24,7 +25,8 @@ public class ECJPAKECurves
      */
     public static final ECJPAKECurve NIST_P256;
 
-    static{
+    static
+    {
         //a
         BigInteger a_p256 = new BigInteger("ffffffff00000001000000000000000000000000fffffffffffffffffffffffc", 16);
         //b
@@ -50,7 +52,8 @@ public class ECJPAKECurves
      */
     public static final ECJPAKECurve NIST_P384;
 
-    static{
+    static
+    {
         //a
         BigInteger a_p384 = new BigInteger("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000fffffffc", 16);
         //b
@@ -76,7 +79,8 @@ public class ECJPAKECurves
      */
     public static final ECJPAKECurve NIST_P521;
 
-    static{
+    static
+    {
         //a
         BigInteger a_p521 = new BigInteger("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000fffffffc", 16);
         //b

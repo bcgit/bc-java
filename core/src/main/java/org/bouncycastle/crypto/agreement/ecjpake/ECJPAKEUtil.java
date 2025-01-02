@@ -8,11 +8,11 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECPoint;
 
 /**
  * Primitives needed for a EC J-PAKE exchange.
@@ -34,10 +34,10 @@ public class ECJPAKEUtil
      * <p>
      * The returned value is a random value in the range <tt>[1, n-1]</tt>.
      */
-    public static BigInteger generateX1(  
-        BigInteger n, 
-        SecureRandom random)  
-        {    
+    public static BigInteger generateX1(
+        BigInteger n,
+        SecureRandom random)
+    {
         BigInteger min = ONE;
         BigInteger max = n.subtract(ONE);
         return BigIntegers.createRandomInRange(min, max, random);
@@ -47,7 +47,7 @@ public class ECJPAKEUtil
      * Converts the given password to a {@link BigInteger} mod n.
      */
     public static BigInteger calculateS(
-        BigInteger n, 
+        BigInteger n,
         byte[] password)
         throws CryptoException
     {
@@ -63,7 +63,7 @@ public class ECJPAKEUtil
      * Converts the given password to a {@link BigInteger} mod n.
      */
     public static BigInteger calculateS(
-        BigInteger n, 
+        BigInteger n,
         char[] password)
         throws CryptoException
     {
@@ -120,14 +120,15 @@ public class ECJPAKEUtil
      * Calculate a zero knowledge proof of x using Schnorr's signature.
      * The returned object has two fields {g^v, r = v-x*h} for x.
      */
-    public static ECSchnorrZKP calculateZeroKnowledgeProof (
-        ECPoint generator, 
+    public static ECSchnorrZKP calculateZeroKnowledgeProof(
+        ECPoint generator,
         BigInteger n,
         BigInteger x,
-        ECPoint X, 
-        Digest digest, 
-        String userID, 
-        SecureRandom random) {
+        ECPoint X,
+        Digest digest,
+        String userID,
+        SecureRandom random)
+    {
 
         /* Generate a random v from [1, n-1], and compute V = G*v */
         BigInteger v = BigIntegers.createRandomInRange(BigInteger.ONE, n.subtract(BigInteger.ONE), random);
@@ -162,7 +163,7 @@ public class ECJPAKEUtil
     }
 
     private static void updateDigestIncludingSize(
-        Digest digest, 
+        Digest digest,
         ECPoint ecPoint)
     {
         byte[] byteArray = ecPoint.getEncoded(true);
@@ -172,7 +173,7 @@ public class ECJPAKEUtil
     }
 
     private static void updateDigestIncludingSize(
-        Digest digest, 
+        Digest digest,
         String string)
     {
         byte[] byteArray = Strings.toUTF8ByteArray(string);
@@ -189,8 +190,8 @@ public class ECJPAKEUtil
      * @throws CryptoException if the zero knowledge proof is not correct
      */
     public static void validateZeroKnowledgeProof(
-        ECPoint generator, 
-        ECPoint X, 
+        ECPoint generator,
+        ECPoint X,
         ECSchnorrZKP zkp,
         BigInteger q,
         BigInteger n,
@@ -202,51 +203,53 @@ public class ECJPAKEUtil
     {
         ECPoint V = zkp.getV();
         BigInteger r = zkp.getr();
-    	/* ZKP: {V=G*v, r} */    	    	
-    	BigInteger h = calculateHashForZeroKnowledgeProof(generator, V, X, userID, digest);
-    	
-    	/* Public key validation based on the following paper (Sec 3)
+        /* ZKP: {V=G*v, r} */
+        BigInteger h = calculateHashForZeroKnowledgeProof(generator, V, X, userID, digest);
+
+        /* Public key validation based on the following paper (Sec 3)
          * Antipa A., Brown D., Menezes A., Struik R. and Vanstone S.
          * "Validation of elliptic curve public keys", PKC, 2002
-         * https://iacr.org/archive/pkc2003/25670211/25670211.pdf 
+         * https://iacr.org/archive/pkc2003/25670211/25670211.pdf
          */
-    	// 1. X != infinity
-    	if (X.isInfinity())
+        // 1. X != infinity
+        if (X.isInfinity())
         {
             throw new CryptoException("Zero-knowledge proof validation failed: X cannot equal infinity");
         }
-    	
+
         ECPoint x_normalized = X.normalize();
-    	// 2. Check x and y coordinates are in Fq, i.e., x, y in [0, q-1]
-    	if (x_normalized.getAffineXCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
-    			x_normalized.getAffineXCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1 ||
-    			x_normalized.getAffineYCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
-    			x_normalized.getAffineYCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1) 
+        // 2. Check x and y coordinates are in Fq, i.e., x, y in [0, q-1]
+        if (x_normalized.getAffineXCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
+            x_normalized.getAffineXCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1 ||
+            x_normalized.getAffineYCoord().toBigInteger().compareTo(BigInteger.ZERO) == -1 ||
+            x_normalized.getAffineYCoord().toBigInteger().compareTo(q.subtract(BigInteger.ONE)) == 1)
         {
             throw new CryptoException("Zero-knowledge proof validation failed: x and y are not in the field");
         }
-    				
-    	// 3. Check X lies on the curve
-    	try {
-    		curve.decodePoint(X.getEncoded(true));
-    	}
-    	catch(Exception e){
+
+        // 3. Check X lies on the curve
+        try
+        {
+            curve.decodePoint(X.getEncoded(true));
+        }
+        catch (Exception e)
+        {
             throw new CryptoException("Zero-knowledge proof validation failed: x does not lie on the curve", e);
         }
-    	
-    	// 4. Check that nX = infinity.
-    	// It is equivalent - but more more efficient - to check the coFactor*X is not infinity
-    	if (X.multiply(coFactor).isInfinity()) 
+
+        // 4. Check that nX = infinity.
+        // It is equivalent - but more more efficient - to check the coFactor*X is not infinity
+        if (X.multiply(coFactor).isInfinity())
         {
             throw new CryptoException("Zero-knowledge proof validation failed: Nx cannot be infinity");
         }
-    	// Now check if V = G*r + X*h. 
-    	// Given that {G, X} are valid points on curve, the equality implies that V is also a point on curve.
-    	if (!V.equals(generator.multiply(r).add(X.multiply(h.mod(n))))) 
+        // Now check if V = G*r + X*h.
+        // Given that {G, X} are valid points on curve, the equality implies that V is also a point on curve.
+        if (!V.equals(generator.multiply(r).add(X.multiply(h.mod(n)))))
         {
             throw new CryptoException("Zero-knowledge proof validation failed: V must be a point on the curve");
         }
-    	
+
     }
 
     /**
@@ -256,7 +259,7 @@ public class ECJPAKEUtil
      * @throws CryptoException if the participantId strings are equal.
      */
     public static void validateParticipantIdsDiffer(
-        String participantId1, 
+        String participantId1,
         String participantId2)
         throws CryptoException
     {
@@ -278,7 +281,7 @@ public class ECJPAKEUtil
      * @throws CryptoException if the participantId strings are equal.
      */
     public static void validateParticipantIdsEqual(
-        String expectedParticipantId, 
+        String expectedParticipantId,
         String actualParticipantId)
         throws CryptoException
     {
@@ -296,12 +299,12 @@ public class ECJPAKEUtil
     /**
      * Validates that the given object is not null.
      *
-     *  @param object object in question
+     * @param object      object in question
      * @param description name of the object (to be used in exception message)
      * @throws NullPointerException if the object is null.
      */
     public static void validateNotNull(
-        Object object, 
+        Object object,
         String description)
     {
         if (object == null)
@@ -368,7 +371,7 @@ public class ECJPAKEUtil
         HMac mac = new HMac(digest);
         byte[] macOutput = new byte[mac.getMacSize()];
         mac.init(new KeyParameter(macKey));
-        
+
         /*
          * MacData = "KC_1_U" || participantId_Alice || participantId_Bob || gx1 || gx2 || gx3 || gx4.
          */
@@ -395,7 +398,7 @@ public class ECJPAKEUtil
      * </pre>
      */
     private static byte[] calculateMacKey(
-        BigInteger keyingMaterial, 
+        BigInteger keyingMaterial,
         Digest digest)
     {
         digest.reset();
@@ -433,7 +436,7 @@ public class ECJPAKEUtil
         /*
          * Calculate the expected MacTag using the parameters as the partner
          * would have used when the partner called calculateMacTag.
-         * 
+         *
          * i.e. basically all the parameters are reversed.
          * participantId <-> partnerParticipantId
          *            x1 <-> x3
