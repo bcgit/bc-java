@@ -141,12 +141,6 @@ public class PGPEncryptedDataGenerator
         methods.add(method);
     }
 
-
-    public void setSessionKeyExtractionCallback(SessionKeyExtractionCallback callback)
-    {
-        this.sessionKeyExtractionCallback = callback;
-    }
-
     public void setSessionKeyExtractionCallback(SessionKeyExtractionCallback callback)
     {
         this.sessionKeyExtractionCallback = callback;
