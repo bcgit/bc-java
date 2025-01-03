@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -247,6 +248,6 @@ public class KeyIdentifier
         }
 
         // -DM Hex.toHexString
-        return Hex.toHexString(fingerprint).toUpperCase();
+        return Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault());
     }
 }

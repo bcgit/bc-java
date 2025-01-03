@@ -23,6 +23,8 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.TrustPacket;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
+import org.bouncycastle.bcpg.sig.RevocationReason;
+import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.math.ec.rfc8032.Ed448;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
@@ -903,6 +905,46 @@ public class PGPSignature
             || PGPSignature.NO_CERTIFICATION == signatureType
             || PGPSignature.CASUAL_CERTIFICATION == signatureType
             || PGPSignature.POSITIVE_CERTIFICATION == signatureType;
+    }
+
+    public static boolean isRevocation(int signatureType)
+    {
+        return PGPSignature.KEY_REVOCATION == signatureType
+                || PGPSignature.CERTIFICATION_REVOCATION == signatureType
+                || PGPSignature.SUBKEY_REVOCATION == signatureType;
+    }
+
+    public boolean isHardRevocation()
+    {
+        if (!isRevocation(getSignatureType()))
+        {
+            return false; // no revocation
+        }
+
+        if (!hasSubpackets())
+        {
+            return true; // consider missing subpackets (and therefore missing reason) as hard revocation
+        }
+
+        // only consider reasons from the hashed packet area
+        RevocationReason reason = getHashedSubPackets() != null ?
+                getHashedSubPackets().getRevocationReason() : null;
+        if (reason == null)
+        {
+            return true; // missing reason packet is hard
+        }
+
+        byte code = reason.getRevocationReason();
+        if (code >= 100 && code <= 110)
+        {
+            // private / experimental reasons are considered hard
+            return true;
+        }
+
+        // Reason is not from the set of known soft reasons
+        return code != RevocationReasonTags.KEY_SUPERSEDED &&
+                code != RevocationReasonTags.KEY_RETIRED &&
+                code != RevocationReasonTags.USER_NO_LONGER_VALID;
     }
 
     /**

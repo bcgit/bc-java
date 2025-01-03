@@ -22,6 +22,7 @@ import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.KeyPairGeneratorCallback;
+import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
@@ -53,6 +54,7 @@ public class OpenPGPV6KeyGeneratorTest
             public OpenPGPV6KeyGenerator getKeyGenerator(int signatureHashAlgorithm,
                                                          Date creationTime,
                                                          boolean aeadProtection)
+                    throws PGPException
             {
                 return new BcOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection);
             }
@@ -95,7 +97,8 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator();
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey(null);
+        OpenPGPKey key = generator.signOnlyKey(null);
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -122,7 +125,8 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(true);
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
+        OpenPGPKey key = generator.signOnlyKey("passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -139,7 +143,8 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(false);
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
+        OpenPGPKey key = generator.signOnlyKey("passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -157,8 +162,9 @@ public class OpenPGPV6KeyGeneratorTest
     {
         Date creationTime = currentTimeRounded();
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
-        PGPSecretKeyRing secretKeys = generator
+        OpenPGPKey key = generator
             .classicKey("Alice <alice@example.com>", null);
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> keys = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)keys.next();
@@ -207,8 +213,8 @@ public class OpenPGPV6KeyGeneratorTest
         // Test all keys are unprotected
         for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
-            PGPSecretKey key = (PGPSecretKey)it.next();
-            isEquals("(Sub-)keys MUST be unprotected", SecretKeyPacket.USAGE_NONE, key.getS2KUsage());
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            isEquals("(Sub-)keys MUST be unprotected", SecretKeyPacket.USAGE_NONE, k.getS2KUsage());
         }
     }
 
@@ -217,15 +223,16 @@ public class OpenPGPV6KeyGeneratorTest
     {
         Date creationTime = currentTimeRounded();
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
-        PGPSecretKeyRing secretKeys = generator
+        OpenPGPKey key = generator
             .classicKey("Alice <alice@example.com>", "passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         // Test creation time
         for (Iterator it = secretKeys.toCertificate().iterator(); it.hasNext();)
         {
-            PGPPublicKey key = (PGPPublicKey)it.next();
-            isEquals(creationTime, key.getCreationTime());
-            for (Iterator<PGPSignature> its = key.getSignatures(); its.hasNext(); )
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            isEquals(creationTime, k.getCreationTime());
+            for (Iterator<PGPSignature> its = k.getSignatures(); its.hasNext(); )
             {
                 PGPSignature sig = (PGPSignature)its.next();
                 isEquals(creationTime, sig.getCreationTime());
@@ -240,8 +247,9 @@ public class OpenPGPV6KeyGeneratorTest
 
         for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
-            PGPSecretKey key = (PGPSecretKey)it.next();
-            isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, key.getS2KUsage());
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, k.getS2KUsage());
+
         }
     }
 
@@ -252,7 +260,8 @@ public class OpenPGPV6KeyGeneratorTest
         String userId = "Foo <bar@baz>";
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
 
-        PGPSecretKeyRing secretKey = generator.ed25519x25519Key(userId, null);
+        OpenPGPKey key = generator.ed25519x25519Key(userId, null);
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
@@ -299,7 +308,8 @@ public class OpenPGPV6KeyGeneratorTest
         String userId = "Foo <bar@baz>";
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
 
-        PGPSecretKeyRing secretKey = generator.ed448x448Key(userId, null);
+        OpenPGPKey key = generator.ed448x448Key(userId, null);
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
@@ -345,7 +355,7 @@ public class OpenPGPV6KeyGeneratorTest
         Date creationTime = currentTimeRounded();
         OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
 
-        PGPSecretKeyRing secretKey = generator
+        OpenPGPKey key = generator
             .withPrimaryKey(
                 new KeyPairGeneratorCallback()
                 {
@@ -406,6 +416,7 @@ public class OpenPGPV6KeyGeneratorTest
                 "encryption-key-passphrase".toCharArray())
             .build();
 
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
         Iterator<PGPSecretKey> keyIt = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)keyIt.next();
         isEquals("Primary key MUST be RSA_GENERAL",
