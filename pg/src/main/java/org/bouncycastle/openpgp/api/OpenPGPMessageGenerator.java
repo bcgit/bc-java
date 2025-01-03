@@ -554,7 +554,7 @@ public class OpenPGPMessageGenerator
                         }
                     }
 
-                    return HashAlgorithmTags.SHA512;
+                    return policy.getDefaultDocumentSignatureHashAlgorithm();
                 };
 
         /**

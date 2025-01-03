@@ -16,12 +16,16 @@ public class OpenPGPDefaultPolicy
     private final Map<Integer, Date> certificateHashAlgorithmCutoffDates = new HashMap<>();
     private final Map<Integer, Date> symmetricKeyAlgorithmCutoffDates = new HashMap<>();
     private final Map<Integer, Integer> publicKeyMinimalBitStrengths = new HashMap<>();
+    private int defaultDocumentSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
+    private int defaultCertificationSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
+    private int defaultSymmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
 
     public OpenPGPDefaultPolicy()
     {
         /*
          * Certification Signature Hash Algorithms
          */
+        setDefaultCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA512);
         // SHA-3
         acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA3_512);
         acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA3_256);
@@ -39,6 +43,7 @@ public class OpenPGPDefaultPolicy
         /*
          * Document Signature Hash Algorithms
          */
+        setDefaultDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA512);
         // SHA-3
         acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA3_512);
         acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA3_256);
@@ -51,6 +56,7 @@ public class OpenPGPDefaultPolicy
         /*
          * Symmetric Key Algorithms
          */
+        setDefaultSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_128);
         acceptSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_256);
         acceptSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_192);
         acceptSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_128);
@@ -164,9 +170,45 @@ public class OpenPGPDefaultPolicy
     }
 
     @Override
+    public int getDefaultCertificationSignatureHashAlgorithm()
+    {
+        return defaultCertificationSignatureHashAlgorithm;
+    }
+
+    public OpenPGPDefaultPolicy setDefaultCertificationSignatureHashAlgorithm(int hashAlgorithmId)
+    {
+        defaultCertificationSignatureHashAlgorithm = hashAlgorithmId;
+        return this;
+    }
+
+    @Override
+    public int getDefaultDocumentSignatureHashAlgorithm()
+    {
+        return defaultDocumentSignatureHashAlgorithm;
+    }
+
+    public OpenPGPDefaultPolicy setDefaultDocumentSignatureHashAlgorithm(int hashAlgorithmId)
+    {
+        defaultDocumentSignatureHashAlgorithm = hashAlgorithmId;
+        return this;
+    }
+
+    @Override
     public boolean isAcceptableSymmetricKeyAlgorithm(int symmetricKeyAlgorithmId)
     {
         return isAcceptable(symmetricKeyAlgorithmId, symmetricKeyAlgorithmCutoffDates);
+    }
+
+    @Override
+    public int getDefaultSymmetricKeyAlgorithm()
+    {
+        return defaultSymmetricKeyAlgorithm;
+    }
+
+    public OpenPGPDefaultPolicy setDefaultSymmetricKeyAlgorithm(int symmetricKeyAlgorithmId)
+    {
+        defaultSymmetricKeyAlgorithm = symmetricKeyAlgorithmId;
+        return this;
     }
 
     @Override

@@ -139,7 +139,13 @@ public interface OpenPGPPolicy
 
     boolean isAcceptableCertificationSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime);
 
+    int getDefaultCertificationSignatureHashAlgorithm();
+
+    int getDefaultDocumentSignatureHashAlgorithm();
+
     boolean isAcceptableSymmetricKeyAlgorithm(int symmetricKeyAlgorithmId);
+
+    int getDefaultSymmetricKeyAlgorithm();
 
     boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength);
 

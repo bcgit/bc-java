@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignature;
@@ -10,11 +9,14 @@ import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class OpenPGPDetachedSignatureGenerator
 {
     private final OpenPGPImplementation implementation;
+    private final OpenPGPPolicy policy;
     private int signatureType = PGPSignature.BINARY_DOCUMENT;
 
     private final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<>();
@@ -27,7 +29,13 @@ public class OpenPGPDetachedSignatureGenerator
 
     public OpenPGPDetachedSignatureGenerator(OpenPGPImplementation implementation)
     {
+        this(implementation, implementation.policy());
+    }
+
+    public OpenPGPDetachedSignatureGenerator(OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
         this.implementation = implementation;
+        this.policy = policy;
     }
 
     public OpenPGPDetachedSignatureGenerator setBinarySignature()
@@ -68,11 +76,18 @@ public class OpenPGPDetachedSignatureGenerator
     private int getPreferredHashAlgorithm(OpenPGPCertificate.OpenPGPComponentKey key)
     {
         PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
-        if (hashPreferences == null || hashPreferences.getPreferences().length == 0)
+        if (hashPreferences != null)
         {
-            return HashAlgorithmTags.SHA512;
+            int[] pref = Arrays.stream(hashPreferences.getPreferences())
+                    .filter(it -> policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date()))
+                    .toArray();
+            if (pref.length != 0)
+            {
+                return pref[0];
+            }
         }
-        return hashPreferences.getPreferences()[0];
+
+        return policy.getDefaultDocumentSignatureHashAlgorithm();
     }
 
     public List<OpenPGPSignature.OpenPGPDocumentSignature> sign(InputStream inputStream)
