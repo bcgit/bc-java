@@ -4,8 +4,6 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
-import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -15,7 +13,18 @@ import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyRing;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureException;
+import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
+import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
@@ -35,7 +44,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -410,23 +418,6 @@ public class OpenPGPCertificate
         pOut.close();
         aOut.close();
         return bOut.toString();
-    }
-
-    protected List<String> fingerprintComments()
-    {
-        // TODO: Implement slicing in ArmoredOutputStream.Builder instead?
-        String prettyPrinted = FingerprintUtil.prettifyFingerprint(getFingerprint());
-
-        int availableCommentCharsPerLine = 64 - "Comment: ".length(); // ASCII armor width - header len
-        List<String> slices = new ArrayList<>();
-
-        while (prettyPrinted.length() > availableCommentCharsPerLine)
-        {
-            slices.add(prettyPrinted.substring(0, availableCommentCharsPerLine));
-            prettyPrinted = prettyPrinted.substring(availableCommentCharsPerLine).trim();
-        }
-        slices.add(prettyPrinted);
-        return slices;
     }
 
     private OpenPGPSignatureChain getSignatureChainFor(OpenPGPCertificateComponent component,

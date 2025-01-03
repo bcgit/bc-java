@@ -203,10 +203,7 @@ public class OpenPGPKey
         ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
                 .clearHeaders();
 
-        for (String slice : fingerprintComments())
-        {
-            armorBuilder.addComment(slice);
-        }
+        armorBuilder.addSplitMultilineComment(getPrettyFingerprint());
 
         for (OpenPGPUserId userId : getPrimaryKey().getUserIDs())
         {
