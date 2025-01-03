@@ -5,6 +5,7 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureException;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPUtil;
 
@@ -116,10 +117,24 @@ public class OpenPGPDetachedSignatureProcessor
                 {
                     exceptionCallback.onException(e);
                 }
+                continue;
             }
 
             OpenPGPSignature.OpenPGPDocumentSignature sig =
                     new OpenPGPSignature.OpenPGPDocumentSignature(signature, signingKey);
+            try
+            {
+                sig.sanitize(signingKey, implementation.policy());
+            }
+            catch (PGPSignatureException e)
+            {
+                if (exceptionCallback != null)
+                {
+                    exceptionCallback.onException(e);
+                }
+                continue;
+            }
+
             if (!sig.createdInBounds(verifyNotBefore, verifyNotAfter))
             {
                 continue;

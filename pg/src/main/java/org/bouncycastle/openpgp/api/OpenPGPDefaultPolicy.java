@@ -12,28 +12,41 @@ import java.util.Map;
 public class OpenPGPDefaultPolicy
         implements OpenPGPPolicy
 {
-    private final Map<Integer, Date> hashAlgorithmCutoffDates = new HashMap<>();
+    private final Map<Integer, Date> documentHashAlgorithmCutoffDates = new HashMap<>();
+    private final Map<Integer, Date> certificateHashAlgorithmCutoffDates = new HashMap<>();
     private final Map<Integer, Date> symmetricKeyAlgorithmCutoffDates = new HashMap<>();
     private final Map<Integer, Integer> publicKeyMinimalBitStrengths = new HashMap<>();
 
     public OpenPGPDefaultPolicy()
     {
         /*
-         * Hash Algorithms
+         * Certification Signature Hash Algorithms
          */
         // SHA-3
-        acceptHashAlgorithm(HashAlgorithmTags.SHA3_512);
-        acceptHashAlgorithm(HashAlgorithmTags.SHA3_256);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA3_512);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA3_256);
         // SHA-2
-        acceptHashAlgorithm(HashAlgorithmTags.SHA512);
-        acceptHashAlgorithm(HashAlgorithmTags.SHA384);
-        acceptHashAlgorithm(HashAlgorithmTags.SHA256);
-        acceptHashAlgorithm(HashAlgorithmTags.SHA224);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA512);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA384);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA256);
+        acceptCertificationSignatureHashAlgorithm(HashAlgorithmTags.SHA224);
         // SHA-1
-        acceptHashAlgorithmUntil(HashAlgorithmTags.SHA1, UTCUtil.parse("2023-02-01 00:00:00 UTC"));
+        acceptCertificationSignatureHashAlgorithmUntil(HashAlgorithmTags.SHA1, UTCUtil.parse("2023-02-01 00:00:00 UTC"));
 
-        acceptHashAlgorithmUntil(HashAlgorithmTags.RIPEMD160, UTCUtil.parse("2023-02-01 00:00:00 UTC"));
-        acceptHashAlgorithmUntil(HashAlgorithmTags.MD5, UTCUtil.parse("1997-02-01 00:00:00 UTC"));
+        acceptCertificationSignatureHashAlgorithmUntil(HashAlgorithmTags.RIPEMD160, UTCUtil.parse("2023-02-01 00:00:00 UTC"));
+        acceptCertificationSignatureHashAlgorithmUntil(HashAlgorithmTags.MD5, UTCUtil.parse("1997-02-01 00:00:00 UTC"));
+
+        /*
+         * Document Signature Hash Algorithms
+         */
+        // SHA-3
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA3_512);
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA3_256);
+        // SHA-2
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA512);
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA384);
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA256);
+        acceptDocumentSignatureHashAlgorithm(HashAlgorithmTags.SHA224);
 
         /*
          * Symmetric Key Algorithms
@@ -70,18 +83,30 @@ public class OpenPGPDefaultPolicy
 
     public OpenPGPDefaultPolicy rejectHashAlgorithm(int hashAlgorithmId)
     {
-        hashAlgorithmCutoffDates.remove(hashAlgorithmId);
+        certificateHashAlgorithmCutoffDates.remove(hashAlgorithmId);
+        documentHashAlgorithmCutoffDates.remove(hashAlgorithmId);
         return this;
     }
 
-    public OpenPGPDefaultPolicy acceptHashAlgorithm(int hashAlgorithmId)
+    public OpenPGPDefaultPolicy acceptCertificationSignatureHashAlgorithm(int hashAlgorithmId)
     {
-        return acceptHashAlgorithmUntil(hashAlgorithmId, null);
+        return acceptCertificationSignatureHashAlgorithmUntil(hashAlgorithmId, null);
     }
 
-    public OpenPGPDefaultPolicy acceptHashAlgorithmUntil(int hashAlgorithmId, Date until)
+    public OpenPGPDefaultPolicy acceptCertificationSignatureHashAlgorithmUntil(int hashAlgorithmId, Date until)
     {
-        hashAlgorithmCutoffDates.put(hashAlgorithmId, until);
+        certificateHashAlgorithmCutoffDates.put(hashAlgorithmId, until);
+        return this;
+    }
+
+    public OpenPGPDefaultPolicy acceptDocumentSignatureHashAlgorithm(int hashAlgorithmId)
+    {
+        return acceptDocumentSignatureHashAlgorithmUntil(hashAlgorithmId, null);
+    }
+
+    public OpenPGPDefaultPolicy acceptDocumentSignatureHashAlgorithmUntil(int hashAlgorithmId, Date until)
+    {
+        documentHashAlgorithmCutoffDates.put(hashAlgorithmId, until);
         return this;
     }
 
@@ -123,19 +148,19 @@ public class OpenPGPDefaultPolicy
     @Override
     public boolean isAcceptableDocumentSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime)
     {
-        return isAcceptable(hashAlgorithmId, signatureCreationTime, hashAlgorithmCutoffDates);
+        return isAcceptable(hashAlgorithmId, signatureCreationTime, documentHashAlgorithmCutoffDates);
     }
 
     @Override
     public boolean isAcceptableRevocationSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime)
     {
-        return isAcceptable(hashAlgorithmId, signatureCreationTime, hashAlgorithmCutoffDates);
+        return isAcceptable(hashAlgorithmId, signatureCreationTime, certificateHashAlgorithmCutoffDates);
     }
 
     @Override
     public boolean isAcceptableCertificationSignatureHashAlgorithm(int hashAlgorithmId, Date signatureCreationTime)
     {
-        return isAcceptable(hashAlgorithmId, signatureCreationTime, hashAlgorithmCutoffDates);
+        return isAcceptable(hashAlgorithmId, signatureCreationTime, certificateHashAlgorithmCutoffDates);
     }
 
     @Override

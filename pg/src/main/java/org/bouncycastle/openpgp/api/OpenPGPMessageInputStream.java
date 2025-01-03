@@ -15,6 +15,7 @@ import org.bouncycastle.openpgp.PGPOnePassSignatureList;
 import org.bouncycastle.openpgp.PGPPadding;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureException;
 import org.bouncycastle.openpgp.PGPSignatureList;
 
 import java.io.IOException;
@@ -648,22 +649,23 @@ public class OpenPGPMessageInputStream
                     continue;
                 }
 
-                if (!policy.isAcceptablePublicKey(key.getPGPPublicKey()))
-                {
-                    continue;
-                }
-                if (!policy.isAcceptableSignature(signature))
-                {
-                    continue;
-                }
-
                 OpenPGPSignature.OpenPGPDocumentSignature dataSignature =
                         new OpenPGPSignature.OpenPGPDocumentSignature(signature, key);
+                try
+                {
+                    dataSignature.sanitize(key, policy);
+                }
+                catch (PGPSignatureException e)
+                {
+                    // continue
+                }
+
                 if (!dataSignature.createdInBounds(processor.getVerifyNotBefore(), processor.getVerifyNotAfter()))
                 {
                     // sig is not in bounds
                     continue;
                 }
+
                 try
                 {
                     dataSignature.verify(ops);
@@ -747,15 +749,17 @@ public class OpenPGPMessageInputStream
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(OpenPGPMessageProcessor processor)
         {
+            List<OpenPGPSignature.OpenPGPDocumentSignature> verifiedSignatures = new ArrayList<>();
             OpenPGPPolicy policy = processor.getImplementation().policy();
             for (OpenPGPSignature.OpenPGPDocumentSignature sig : dataSignatures)
             {
-                if (!policy.isAcceptablePublicKey(sig.getIssuer().getPGPPublicKey()))
+                try
                 {
-                    continue;
+                    sig.sanitize(sig.issuer, policy);
                 }
-                if (!policy.isAcceptableSignature(sig.signature))
+                catch (PGPSignatureException e)
                 {
+                    processor.onException(e);
                     continue;
                 }
 
@@ -767,8 +771,9 @@ public class OpenPGPMessageInputStream
                 {
                     processor.onException(e);
                 }
+                verifiedSignatures.add(sig);
             }
-            return dataSignatures;
+            return verifiedSignatures;
         }
     }
 }
