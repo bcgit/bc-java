@@ -934,8 +934,17 @@ public class PGPSignature
             return true; // missing reason packet is hard
         }
 
-        return reason.getRevocationReason() == RevocationReasonTags.NO_REASON // No reason is hard
-                || reason.getRevocationReason() == RevocationReasonTags.KEY_COMPROMISED; // key compromise is hard
+        byte code = reason.getRevocationReason();
+        if (code >= 100 && code <= 110)
+        {
+            // private / experimental reasons are considered hard
+            return true;
+        }
+
+        // Reason is not from the set of known soft reasons
+        return code != RevocationReasonTags.KEY_SUPERSEDED &&
+                code != RevocationReasonTags.KEY_RETIRED &&
+                code != RevocationReasonTags.USER_NO_LONGER_VALID;
     }
 
     /**
