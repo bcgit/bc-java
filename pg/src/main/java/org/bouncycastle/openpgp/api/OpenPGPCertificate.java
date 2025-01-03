@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -1354,7 +1355,7 @@ public class OpenPGPCertificate
         @Override
         public String toString()
         {
-            return "PrimaryKey[" + Long.toHexString(getKeyIdentifier().getKeyId()).toUpperCase() + "]";
+            return "PrimaryKey[" + Long.toHexString(getKeyIdentifier().getKeyId()).toUpperCase(Locale.getDefault()) + "]";
         }
 
         @Override
@@ -1553,7 +1554,7 @@ public class OpenPGPCertificate
         @Override
         public String toString()
         {
-            return "Subkey[" + Long.toHexString(getKeyIdentifier().getKeyId()).toUpperCase() + "]";
+            return "Subkey[" + Long.toHexString(getKeyIdentifier().getKeyId()).toUpperCase(Locale.getDefault()) + "]";
         }
 
         @Override

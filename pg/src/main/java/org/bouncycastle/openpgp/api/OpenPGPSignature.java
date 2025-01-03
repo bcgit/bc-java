@@ -15,6 +15,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * An OpenPGP signature.
@@ -353,7 +354,8 @@ public abstract class OpenPGPSignature
         {
             return "Anonymous";
         }
-        return "External[" + Long.toHexString(issuerIdentifier.getKeyId()).toUpperCase() + "]";
+        return "External[" + Long.toHexString(issuerIdentifier.getKeyId())
+                .toUpperCase(Locale.getDefault()) + "]";
     }
 
     protected abstract String getTargetDisplay();
