@@ -13,6 +13,7 @@ import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyRing;
 import org.bouncycastle.openpgp.PGPObjectFactory;
@@ -696,6 +697,28 @@ public class OpenPGPCertificate
         return new ArrayList<>(primaryKey.identityComponents);
     }
 
+    public OpenPGPUserId getPrimaryUserId()
+    {
+        return getPrimaryUserId(new Date());
+    }
+
+    public OpenPGPUserId getPrimaryUserId(Date evaluationTime)
+    {
+        return primaryKey.getExplicitOrImplicitPrimaryUserId(evaluationTime);
+    }
+
+    public OpenPGPUserId getUserId(String userId)
+    {
+        for (OpenPGPUserId uid : primaryKey.getUserIDs())
+        {
+            if (uid.getUserId().equals(userId))
+            {
+                return uid;
+            }
+        }
+        return null;
+    }
+
     /**
      * Component on an OpenPGP certificate.
      * Components can either be {@link OpenPGPComponentKey keys} or {@link OpenPGPIdentityComponent identities}.
@@ -768,6 +791,73 @@ public class OpenPGPCertificate
         protected OpenPGPCertificateComponent getPublicComponent()
         {
             return this;
+        }
+
+        /**
+         * Return the {@link SignatureSubpacket} instance of the given subpacketType, which currently applies to
+         * the key. Since subpackets from the Direct-Key signature apply to all subkeys of a certificate,
+         * this method first inspects the signature that immediately applies to this key (e.g. a subkey-binding
+         * signature), and - if the queried subpacket is found in there, returns that instance.
+         * Otherwise, indirectly applying signatures (e.g. Direct-Key signatures) are queried.
+         * That way, preferences from the direct-key signature are considered, but per-key overwrites take precedence.
+         *
+         * @see <a href="https://openpgp.dev/book/adv/verification.html#attribute-shadowing">
+         *     OpenPGP for application developers - Attribute Shadowing</a>
+         *
+         * @param evaluationTime evaluation time
+         * @param subpacketType subpacket type that is being searched for
+         * @return subpacket from directly or indirectly applying signature
+         */
+        protected OpenPGPSignature.OpenPGPSignatureSubpacket getApplyingSubpacket(Date evaluationTime, int subpacketType)
+        {
+            OpenPGPSignatureChain binding = getSignatureChains().getCertificationAt(evaluationTime);
+            if (binding == null)
+            {
+                // is not bound
+                return null;
+            }
+
+            // Check signatures
+            try
+            {
+                if (!binding.isValid())
+                {
+                    // Binding is incorrect
+                    return null;
+                }
+            }
+            catch (PGPSignatureException e)
+            {
+                // Binding cannot be verified
+                return null;
+            }
+
+            // find signature "closest to the key", e.g. subkey binding signature
+            OpenPGPComponentSignature keySignature = binding.getHeadLink().getSignature();
+
+            PGPSignatureSubpacketVector hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
+            if (hashedSubpackets == null || !hashedSubpackets.hasSubpacket(subpacketType))
+            {
+                // If the subkey binding signature doesn't carry the desired subpacket,
+                //  check direct-key or primary uid sig instead
+                OpenPGPSignatureChain preferenceBinding = getCertificate().getPreferenceSignature(evaluationTime);
+                if (preferenceBinding == null)
+                {
+                    // No direct-key / primary uid sig found -> No subpacket
+                    return null;
+                }
+                keySignature = preferenceBinding.getHeadLink().signature;
+                hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
+            }
+            // else -> attribute from DK sig is shadowed by SB sig
+
+            // Extract subpacket from hashed area
+            SignatureSubpacket subpacket = hashedSubpackets.getSubpacket(subpacketType);
+            if (subpacket == null)
+            {
+                return null;
+            }
+            return OpenPGPSignature.OpenPGPSignatureSubpacket.hashed(subpacket, keySignature);
         }
     }
 
@@ -1175,11 +1265,11 @@ public class OpenPGPCertificate
          */
         public KeyFlags getKeyFlags(Date evaluationTime)
         {
-            SignatureSubpacket subpacket = getApplyingSubpacket(
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(
                     evaluationTime, SignatureSubpacketTags.KEY_FLAGS);
             if (subpacket != null)
             {
-                return (KeyFlags) subpacket;
+                return (KeyFlags) subpacket.getSubpacket();
             }
             return null;
         }
@@ -1200,73 +1290,12 @@ public class OpenPGPCertificate
          */
         public Features getFeatures(Date evaluationTime)
         {
-            SignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.FEATURES);
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.FEATURES);
             if (subpacket != null)
             {
-                return (Features) subpacket;
+                return (Features) subpacket.getSubpacket();
             }
             return null;
-        }
-
-        /**
-         * Return the {@link SignatureSubpacket} instance of the given subpacketType, which currently applies to
-         * the key. Since subpackets from the Direct-Key signature apply to all subkeys of a certificate,
-         * this method first inspects the signature that immediately applies to this key (e.g. a subkey-binding
-         * signature), and - if the queried subpacket is found in there, returns that instance.
-         * Otherwise, indirectly applying signatures (e.g. Direct-Key signatures) are queried.
-         * That way, preferences from the direct-key signature are considered, but per-key overwrites take precedence.
-         *
-         * @see <a href="https://openpgp.dev/book/adv/verification.html#attribute-shadowing">
-         *     OpenPGP for application developers - Attribute Shadowing</a>
-         *
-         * @param evaluationTime evaluation time
-         * @param subpacketType subpacket type that is being searched for
-         * @return subpacket from directly or indirectly applying signature
-         */
-        protected SignatureSubpacket getApplyingSubpacket(Date evaluationTime, int subpacketType)
-        {
-            OpenPGPSignatureChain binding = getSignatureChains().getCertificationAt(evaluationTime);
-            if (binding == null)
-            {
-                // is not bound
-                return null;
-            }
-
-            // Check signatures
-            try
-            {
-                if (!binding.isValid())
-                {
-                    // Binding is incorrect
-                    return null;
-                }
-            }
-            catch (PGPSignatureException e)
-            {
-                // Binding cannot be verified
-                return null;
-            }
-
-            // find signature "closest to the key", e.g. subkey binding signature
-            OpenPGPComponentSignature keySignature = binding.getHeadLink().getSignature();
-
-            PGPSignatureSubpacketVector hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
-            if (hashedSubpackets == null || !hashedSubpackets.hasSubpacket(subpacketType))
-            {
-                // If the subkey binding signature doesn't carry the desired subpacket,
-                //  check direct-key or primary uid sig instead
-                OpenPGPSignatureChain preferenceBinding = getCertificate().getPreferenceSignature(evaluationTime);
-                if (preferenceBinding == null)
-                {
-                    // No direct-key / primary uid sig found -> No subpacket
-                    return null;
-                }
-                hashedSubpackets = preferenceBinding.getHeadLink().getSignature().getSignature().getHashedSubPackets();
-            }
-            // else -> attribute from DK sig is shadowed by SB sig
-
-            // Extract subpacket from hashed area
-            return hashedSubpackets.getSubpacket(subpacketType);
         }
 
         public PreferredAEADCiphersuites getAEADCipherSuitePreferences()
@@ -1276,11 +1305,11 @@ public class OpenPGPCertificate
 
         public PreferredAEADCiphersuites getAEADCipherSuitePreferences(Date evaluationTime)
         {
-            SignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime,
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime,
                     SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
             if (subpacket != null)
             {
-                return (PreferredAEADCiphersuites) subpacket;
+                return (PreferredAEADCiphersuites) subpacket.getSubpacket();
             }
             return null;
         }
@@ -1292,10 +1321,10 @@ public class OpenPGPCertificate
 
         public PreferredAlgorithms getSymmetricCipherPreferences(Date evaluationTime)
         {
-            SignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_SYM_ALGS);
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_SYM_ALGS);
             if (subpacket != null)
             {
-                return (PreferredAlgorithms) subpacket;
+                return (PreferredAlgorithms) subpacket.getSubpacket();
             }
             return null;
         }
@@ -1307,10 +1336,10 @@ public class OpenPGPCertificate
 
         public PreferredAlgorithms getHashAlgorithmPreferences(Date evaluationTime)
         {
-            SignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_HASH_ALGS);
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_HASH_ALGS);
             if (subpacket != null)
             {
-                return (PreferredAlgorithms) subpacket;
+                return (PreferredAlgorithms) subpacket.getSubpacket();
             }
             return null;
         }
@@ -1370,6 +1399,72 @@ public class OpenPGPCertificate
                 }
             }
             return userIds;
+        }
+
+        public OpenPGPUserId getExplicitPrimaryUserId(Date evaluationTime)
+        {
+            // Return the latest, valid, explicitly marked as primary UserID
+            OpenPGPSignature latestBinding = null;
+            OpenPGPUserId latestUid = null;
+
+            for (OpenPGPUserId userId : getUserIDs())
+            {
+                OpenPGPSignature.OpenPGPSignatureSubpacket subpacket =
+                        userId.getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PRIMARY_USER_ID);
+                if (subpacket == null)
+                {
+                    // Not bound at this time, or not explicit
+                    continue;
+                }
+
+                PrimaryUserID primaryUserId = (PrimaryUserID) subpacket.getSubpacket();
+                if (!primaryUserId.isPrimaryUserID())
+                {
+                    // explicitly marked as not primary
+                    continue;
+                }
+
+                if (latestBinding == null ||
+                        subpacket.getSignature().getCreationTime().after(latestBinding.getCreationTime()))
+                {
+                    latestBinding = subpacket.getSignature();
+                    latestUid = userId;
+                }
+            }
+            return latestUid;
+        }
+
+        public OpenPGPUserId getExplicitOrImplicitPrimaryUserId(Date evaluationTime)
+        {
+            OpenPGPUserId explicitPrimaryUserId = getExplicitPrimaryUserId(evaluationTime);
+            if (explicitPrimaryUserId != null)
+            {
+                return explicitPrimaryUserId;
+            }
+
+            // If no explicitly marked, valid primary UserID is found, return the oldest, valid UserId instead.
+            OpenPGPSignature oldestBinding = null;
+            OpenPGPUserId oldestUid = null;
+
+            for (OpenPGPUserId userId : getUserIDs())
+            {
+                OpenPGPSignatureChain chain = userId.getSignatureChains()
+                        .getCertificationAt(evaluationTime);
+                if (chain == null)
+                {
+                    // Not valid at this time
+                    continue;
+                }
+
+                OpenPGPSignature binding = chain.getHeadLink().getSignature();
+                if (oldestBinding == null ||
+                        binding.getCreationTime().before(oldestBinding.getCreationTime()))
+                {
+                    oldestBinding = binding;
+                    oldestUid = userId;
+                }
+            }
+            return oldestUid;
         }
 
         /**
@@ -1539,6 +1634,29 @@ public class OpenPGPCertificate
         public String toString()
         {
             return "UserID[" + userId + "]";
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null)
+            {
+                return false;
+            }
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof OpenPGPUserId))
+            {
+                return false;
+            }
+            return getUserId().equals(((OpenPGPUserId) obj).getUserId());
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return userId.hashCode();
         }
     }
 

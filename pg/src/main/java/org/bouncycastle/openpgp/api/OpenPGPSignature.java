@@ -398,6 +398,77 @@ public abstract class OpenPGPSignature
     }
 
     /**
+     * {@link SignatureSubpacket} and the {@link OpenPGPSignature} that contains it.
+     */
+    public static final class OpenPGPSignatureSubpacket
+    {
+        private final SignatureSubpacket subpacket;
+        private final OpenPGPSignature signature;
+        private final boolean hashed;
+
+        private OpenPGPSignatureSubpacket(SignatureSubpacket subpacket,
+                                          OpenPGPSignature signature,
+                                          boolean hashed)
+        {
+            this.signature = signature;
+            this.subpacket = subpacket;
+            this.hashed = hashed;
+        }
+
+        /**
+         * Create a {@link OpenPGPSignatureSubpacket} contained in the hashed area of an {@link OpenPGPSignature}.
+         *
+         * @param subpacket subpacket
+         * @param signature the signature containing the subpacket
+         * @return OpenPGPSignatureSubpacket
+         */
+        public static OpenPGPSignatureSubpacket hashed(SignatureSubpacket subpacket, OpenPGPSignature signature)
+        {
+            return new OpenPGPSignatureSubpacket(subpacket, signature, true);
+        }
+
+        /**
+         * Create a {@link OpenPGPSignatureSubpacket} contained in the unhashed area of an {@link OpenPGPSignature}.
+         *
+         * @param subpacket subpacket
+         * @param signature the signature containing the subpacket
+         * @return OpenPGPSignatureSubpacket
+         */
+        public static OpenPGPSignatureSubpacket unhashed(SignatureSubpacket subpacket, OpenPGPSignature signature)
+        {
+            return new OpenPGPSignatureSubpacket(subpacket, signature, false);
+        }
+
+        /**
+         * Return the {@link OpenPGPSignature} that contains the {@link SignatureSubpacket}.
+         * @return signature
+         */
+        public OpenPGPSignature getSignature()
+        {
+            return signature;
+        }
+
+        /**
+         * Return the {@link SignatureSubpacket} itself.
+         * @return
+         */
+        public SignatureSubpacket getSubpacket()
+        {
+            return subpacket;
+        }
+
+        /**
+         * Return <pre>true</pre> if the subpacket is contained in the hashed area of the {@link OpenPGPSignature},
+         * false otherwise.
+         * @return true if the subpacket is hashed, false if it is unhashed
+         */
+        public boolean isHashed()
+        {
+            return hashed;
+        }
+    }
+
+    /**
      * An {@link OpenPGPSignature} made over a binary or textual document (e.g. a message).
      * Also known as a Data Signature.
      * An {@link OpenPGPDocumentSignature} CANNOT live on a {@link OpenPGPCertificate}.

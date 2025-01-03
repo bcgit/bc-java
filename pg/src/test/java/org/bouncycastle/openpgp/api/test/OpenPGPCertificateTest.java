@@ -3,21 +3,28 @@ package org.bouncycastle.openpgp.api.test;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 
 public class OpenPGPCertificateTest
@@ -40,6 +47,7 @@ public class OpenPGPCertificateTest
         testPKSignsPKRevokedNoSubpacket();
         testSKSignsPKRevokedNoSubpacket();
         testPKSignsPKRevocationSuperseded();
+        testGetPrimaryUserId();
     }
 
     private void testOpenPGPv6Key()
@@ -784,6 +792,37 @@ public class OpenPGPCertificateTest
                 fail(sb.toString());
             }
         }
+    }
+
+    private void testGetPrimaryUserId()
+            throws PGPException
+    {
+        Date now = new Date((new Date().getTime() / 1000) * 1000);
+        Date oneHourAgo = new Date(now.getTime() - 1000 * 60 * 60);
+
+        OpenPGPV6KeyGenerator gen = new BcOpenPGPV6KeyGenerator(oneHourAgo);
+        OpenPGPKey key = gen.withPrimaryKey()
+                .addUserId("Old non-primary <non-primary@user.id>")
+                .addUserId("New primary <primary@user.id>",
+                        new SignatureSubpacketsFunction()
+                        {
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                            {
+                                subpackets.removePacketsOfType(SignatureSubpacketTags.CREATION_TIME);
+                                subpackets.setSignatureCreationTime(now);
+                                subpackets.setPrimaryUserID(false, true);
+                                return subpackets;
+                            }
+                        })
+                .build(null);
+        isEquals("Expect to find valid, explicit primary user ID",
+                key.getUserId("New primary <primary@user.id>"),
+                key.getPrimaryUserId());
+
+        isEquals("Explicit primary UserID is not yet valid, so return implicit UID",
+                key.getUserId("Old non-primary <non-primary@user.id>"),
+                key.getPrimaryUserId(oneHourAgo));
     }
 
     public static class TestSignature
