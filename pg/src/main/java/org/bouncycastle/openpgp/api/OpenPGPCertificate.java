@@ -947,16 +947,7 @@ public class OpenPGPCertificate
                 throw new MissingIssuerCertException("Issuer certificate unavailable.");
             }
 
-            sanitize(issuer);
-
-            if (!policy.isAcceptablePublicKey(issuer.getPGPPublicKey()))
-            {
-                throw new PGPSignatureException("Unacceptable issuer key.");
-            }
-            if (!policy.hasAcceptableSignatureHashAlgorithm(signature))
-            {
-                throw new PGPSignatureException("Unacceptable hash algorithm: " + signature.getHashAlgorithm());
-            }
+            sanitize(issuer, policy);
 
             // Direct-Key signature
             if (target == issuer)
@@ -1638,7 +1629,8 @@ public class OpenPGPCertificate
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(Object obj)
+        {
             if (obj == null)
             {
                 return false;

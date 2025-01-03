@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureException;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
@@ -245,9 +246,19 @@ public abstract class OpenPGPSignature
      * @param issuer signature issuer
      * @throws MalformedPGPSignatureException if the signature is malformed
      */
-    void sanitize(OpenPGPCertificate.OpenPGPComponentKey issuer)
-            throws MalformedPGPSignatureException
+    void sanitize(OpenPGPCertificate.OpenPGPComponentKey issuer,
+                  OpenPGPPolicy policy)
+            throws PGPSignatureException
     {
+        if (!policy.isAcceptablePublicKey(issuer.getPGPPublicKey()))
+        {
+            throw new PGPSignatureException("Unacceptable issuer key.");
+        }
+        if (!policy.hasAcceptableSignatureHashAlgorithm(signature))
+        {
+            throw new PGPSignatureException("Unacceptable hash algorithm: " + signature.getHashAlgorithm());
+        }
+
         PGPSignatureSubpacketVector hashed = signature.getHashedSubPackets();
         if (hashed == null)
         {
@@ -580,9 +591,22 @@ public abstract class OpenPGPSignature
          * @return true if the signature is valid now.
          */
         public boolean isValid()
-                throws MalformedPGPSignatureException
+                throws PGPSignatureException
         {
-            return isValidAt(getCreationTime());
+            return isValid(OpenPGPImplementation.getInstance().policy());
+        }
+
+        /**
+         * Return true, if the signature is valid at this moment using the given policy.
+         * A valid signature is effective, correct and was issued by a valid signing key.
+         *
+         * @param policy policy
+         * @return true if the signature is valid now.
+         */
+        public boolean isValid(OpenPGPPolicy policy)
+                throws PGPSignatureException
+        {
+            return isValidAt(getCreationTime(), policy);
         }
 
         /**
@@ -594,7 +618,22 @@ public abstract class OpenPGPSignature
          * @throws IllegalStateException if the signature has not yet been tested using a <pre>verify()</pre> method.
          */
         public boolean isValidAt(Date date)
-                throws MalformedPGPSignatureException
+                throws PGPSignatureException
+        {
+            return isValidAt(date, OpenPGPImplementation.getInstance().policy());
+        }
+
+        /**
+         * Return true, if th signature is valid at the given date using the given policy.
+         * A valid signature is effective, correct and was issued by a valid signing key.
+         *
+         * @param date evaluation time
+         * @param policy policy
+         * @return true if the signature is valid at the given date
+         * @throws IllegalStateException if the signature has not yet been tested using a <pre>verify()</pre> method.
+         */
+        public boolean isValidAt(Date date, OpenPGPPolicy policy)
+                throws PGPSignatureException
         {
             if (!isTested)
             {
@@ -604,7 +643,9 @@ public abstract class OpenPGPSignature
             {
                 return false;
             }
-            sanitize(issuer);
+
+            sanitize(issuer, policy);
+
             return issuer.getCertificate().getPrimaryKey().isBoundAt(date) &&
                     issuer.isBoundAt(date) &&
                     issuer.isSigningKey(date);
