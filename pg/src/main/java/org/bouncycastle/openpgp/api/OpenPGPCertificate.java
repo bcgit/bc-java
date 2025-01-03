@@ -10,6 +10,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
@@ -187,7 +188,6 @@ public class OpenPGPCertificate
             throw new IOException("Neither a certificate, nor secret key.");
         }
     }
-
 
     /**
      * Return the primary key of the certificate.
@@ -1334,6 +1334,34 @@ public class OpenPGPCertificate
                 return (PreferredAlgorithms) subpacket.getSubpacket();
             }
             return null;
+        }
+
+        public Date getKeyExpirationDate()
+        {
+            return getKeyExpirationDateAt(new Date());
+        }
+
+        public Date getKeyExpirationDateAt(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket =
+                    getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.KEY_EXPIRE_TIME);
+            if (subpacket != null)
+            {
+                long expiresIn = ((KeyExpirationTime) subpacket.getSubpacket()).getTime();
+                if (expiresIn == 0L)
+                {
+                    // Explicit no expiry
+                    return null;
+                }
+
+                Date creationTime = getCreationTime();
+                Date expirationTime = new Date(creationTime.getTime() + 1000 * expiresIn);
+                return expirationTime;
+            }
+            else
+            {
+                return null; // implicit no expiry
+            }
         }
     }
 
