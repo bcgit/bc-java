@@ -60,6 +60,8 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.prng;
     exports org.bouncycastle.crypto.prng.drbg;
     exports org.bouncycastle.crypto.signers;
+    exports org.bouncycastle.crypto.threshold;
+    exports org.bouncycastle.crypto.tls;
     exports org.bouncycastle.crypto.util;
     exports org.bouncycastle.i18n;
     exports org.bouncycastle.i18n.filter;
