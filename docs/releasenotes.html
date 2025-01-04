@@ -24,11 +24,23 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>A splitting issue for ML-KEM lead to an incorrect size for kemct in KEMRecipientInfos. This has been fixed.</li>
+<li>The PKCS12 KeyStore has been adjusted to prevent accidental doubling of the Oracle trusted certificate attribute (results in an IOException when used with the JVM PKCS12 implementation).</li>
+<li>The SignerInfoGenerator copy constructor was ignoring the certHolder field. This has been fixed.</li>
+<li>The getAlgorithm() method return value for a CompositePrivateKey was not consistent with the corresponding getAlgorithm() return value for the CompositePrivateKey. This has been fixed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
 <li>CompositeSignatures now updated to draft-ietf-lamps-pq-composite-sigs-03.</li>
 <li>ML-KEM, ML-DSA, SLH-DSA, and Composite private keys now use raw encodings as per the latest drafts from IETF 121: draft-ietf-lamps-kyber-certificates-06, draft-ietf-lamps-dilithium-certificates-05, and draft-ietf-lamps-x509-slhdsa.</li>
+<li>Initial support has been added for RFC 9579 PBMAC1 in the PKCS API.</li>
+<li>Support has been added for EC-JPAKE to the lightweight API.</li>
+<li>Support has been added for the direct construction of S/MIME AuthEnvelopedData objects, via the SMIMEAuthEnvelopedData class.</li>
+<li>An override "org.bouncycastle.asn1.allow_wrong_oid_enc" property has been added to disable new OID encoding checks (use with caution).</li>
+<li>Support has been added for the PBEParemeterSpec.getParameterSpec() method where supported by the JVM.</li>
+<li>The low-level TLS now provides some support for configuring GCM nonce-generation for TLS 1.2 (FIPS 140-2/3 requirement).</li>
+<li>ML-DSA/SLH-DSA now return null for Signature.getParameters() if no context is provided. This allows the algorithms to be used with the existing Java key tool.</li>
+<li>HQC has been updated to reflect the reference implementation released on 2024-10-30.</li>
+<li>Support has been added to the low-level APIs for the OASIS Shamir Secret Splitting algorithms.</li>
 </ul>
 
 <a id="r1rv79"><h3>2.2.1 Version</h3></a>
