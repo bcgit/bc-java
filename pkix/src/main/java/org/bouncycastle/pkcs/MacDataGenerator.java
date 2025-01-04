@@ -1,14 +1,16 @@
 package org.bouncycastle.pkcs;
 
 
-import java.io.IOException;
+
 import java.io.OutputStream;
 
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.operator.MacCalculator;
+import org.bouncycastle.util.Strings;
 
 class MacDataGenerator
 {
@@ -42,8 +44,21 @@ class MacDataGenerator
         AlgorithmIdentifier algId = macCalculator.getAlgorithmIdentifier();
 
         DigestInfo dInfo = new DigestInfo(builder.getDigestAlgorithmIdentifier(), macCalculator.getMac());
-        PKCS12PBEParams params = PKCS12PBEParams.getInstance(algId.getParameters());
-
-        return new MacData(dInfo, params.getIV(), params.getIterations().intValue());
+        byte[] salt;
+        int iterations;
+        
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(dInfo.getAlgorithmId().getAlgorithm())) 
+        {
+            salt = Strings.toUTF8ByteArray("NOT USED".toCharArray());
+            iterations = 1;
+        }
+        else
+        {
+            PKCS12PBEParams params = PKCS12PBEParams.getInstance(algId.getParameters());
+            salt = params.getIV();
+            iterations = params.getIterations().intValue();
+        }
+        
+        return new MacData(dInfo, salt, iterations);
     }
 }
