@@ -364,7 +364,7 @@ public class ElephantEngine
 
         if (inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES) >= BLOCK_SIZE)
         {
-            int mlen = inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES);
+            int mlen = inputOff + messageLen + len - (forEncryption ? 0 : CRYPTO_ABYTES);
             int adlen = processAADBytes();
             int nblocks_c = 1 + mlen / BLOCK_SIZE;
             int nblocks_m = ((mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1);
@@ -374,16 +374,17 @@ public class ElephantEngine
             System.arraycopy(inputMessage, 0, tempInput, 0, inputOff);
             System.arraycopy(input, inOff, tempInput, inputOff, Math.min(len, tempInput.length - inputOff));
             int rv = processBytes(tempInput, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, false);
-            if (rv >= inputOff)
+            int copyLen = rv - inputOff;
+            if (copyLen >= 0)
             {
-                int copyLen = rv - inputOff;
                 inputOff = inputOff + len - rv;
                 System.arraycopy(input, inOff + copyLen, inputMessage, 0, inputOff);
             }
             else
             {
-                System.arraycopy(input, inOff + rv, inputMessage, inputOff, len - rv);
-                inputOff += len - rv;
+                System.arraycopy(inputMessage, inputOff + copyLen, inputMessage, 0, -copyLen);
+                System.arraycopy(input, inOff, inputMessage, -copyLen, len);
+                inputOff = len - copyLen;
             }
             messageLen += rv;
             return rv;
