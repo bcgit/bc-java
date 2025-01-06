@@ -1,26 +1,21 @@
 package org.bouncycastle.tls.crypto.impl;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
-final public class GcmTls12NonceGeneratorUtil
+public final class GcmTls12NonceGeneratorUtil
 {
-    private static AEADNonceGeneratorFactory tlsNonceGeneratorFactory = null;
+    private static volatile AEADNonceGeneratorFactory globalFactory = null;
 
-    public static void setGcmTlsNonceGeneratorFactory(final AEADNonceGeneratorFactory factory)
+    public static void setGcmTlsNonceGeneratorFactory(AEADNonceGeneratorFactory factory)
     {
-        tlsNonceGeneratorFactory = factory;
+        globalFactory = factory;
     }
 
     public static boolean isGcmFipsNonceGeneratorFactorySet()
     {
-        return tlsNonceGeneratorFactory != null;
+        return globalFactory != null;
     }
 
-    public static AEADNonceGenerator createGcmFipsNonceGenerator(final byte[] baseNonce, final int counterSizeInBits)
+    public static AEADNonceGenerator createGcmFipsNonceGenerator(byte[] baseNonce, int counterSizeInBits)
     {
-        return tlsNonceGeneratorFactory != null
-                ? tlsNonceGeneratorFactory.create(baseNonce, counterSizeInBits)
-                : null;
+        return globalFactory == null ? null : globalFactory.create(baseNonce, counterSizeInBits);
     }
 }

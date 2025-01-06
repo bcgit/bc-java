@@ -13,8 +13,7 @@ class TestAEADGeneratorFactory
         // no op
     }
 
-    @Override
-    public AEADNonceGenerator create(final byte[] baseNonce, final int counterSizeInBits)
+    public AEADNonceGenerator create(byte[] baseNonce, int counterSizeInBits)
     {
         return new TestAEADNonceGenerator(baseNonce, counterSizeInBits);
     }
