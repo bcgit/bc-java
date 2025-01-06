@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
@@ -23,9 +22,8 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
-    private boolean forEncryption;
     private byte[] state;
     private int phase;
     private MODE mode;
@@ -34,13 +32,7 @@ public class XoodyakEngine
     private final int Rkout = 24;
     private byte[] K;
     private byte[] iv;
-    private final int PhaseDown = 1;
     private final int PhaseUp = 2;
-    //    private final int NLANES = 12;
-//    private final int NROWS = 3;
-//    private final int NCOLUMS = 4;
-    private final int MAXROUNDS = 12;
-    private final int TAGLEN = 16;
     final int Rkin = 44;
     private byte[] tag;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
@@ -57,43 +49,25 @@ public class XoodyakEngine
         ModeKeyed
     }
 
+    public XoodyakEngine()
+    {
+        algorithmName = "Xoodyak AEAD";
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_NPUBBYTES = 16;
+        CRYPTO_ABYTES = 16;
+    }
+
     @Override
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException("Xoodyak init parameters must include an IV");
-        }
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-        iv = ivParams.getIV();
-        if (iv == null || iv.length != 16)
-        {
-            throw new IllegalArgumentException("Xoodyak requires exactly 16 bytes of IV");
-        }
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException("Xoodyak init parameters must include a key");
-        }
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        K = key.getKey();
-        if (K.length != 16)
-        {
-            throw new IllegalArgumentException("Xoodyak key must be 128 bits long");
-        }
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        byte[][] keyiv = initialize(forEncryption, params);
+        K = keyiv[0];
+        iv = keyiv[1];
         state = new byte[48];
-        tag = new byte[TAGLEN];
+        tag = new byte[CRYPTO_ABYTES];
         initialised = true;
         reset();
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return "Xoodyak AEAD";
     }
 
     @Override
@@ -120,13 +94,6 @@ public class XoodyakEngine
             throw new DataLengthException("input buffer too short");
         }
         aadData.write(input, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte input, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     private void processAAD()
@@ -156,7 +123,7 @@ public class XoodyakEngine
             throw new DataLengthException("input buffer too short");
         }
         message.write(input, inOff, len);
-        int blockLen = message.size() - (forEncryption ? 0 : TAGLEN);
+        int blockLen = message.size() - (forEncryption ? 0 : CRYPTO_ABYTES);
         if (blockLen >= getBlockSize())
         {
             byte[] blocks = message.toByteArray();
@@ -219,7 +186,7 @@ public class XoodyakEngine
         }
         byte[] blocks = message.toByteArray();
         int len = message.size();
-        if ((forEncryption && len + TAGLEN + outOff > output.length) || (!forEncryption && len - TAGLEN + outOff > output.length))
+        if ((forEncryption && len + CRYPTO_ABYTES + outOff > output.length) || (!forEncryption && len - CRYPTO_ABYTES + outOff > output.length))
         {
             throw new OutputLengthException("output buffer too short");
         }
@@ -229,19 +196,19 @@ public class XoodyakEngine
         {
             encrypt(blocks, 0, len, output, outOff);
             outOff += len;
-            tag = new byte[TAGLEN];
-            Up(tag, TAGLEN, 0x40);
-            System.arraycopy(tag, 0, output, outOff, TAGLEN);
-            rv = len + TAGLEN;
+            tag = new byte[CRYPTO_ABYTES];
+            Up(tag, CRYPTO_ABYTES, 0x40);
+            System.arraycopy(tag, 0, output, outOff, CRYPTO_ABYTES);
+            rv = len + CRYPTO_ABYTES;
         }
         else
         {
-            int inOff = len - TAGLEN;
+            int inOff = len - CRYPTO_ABYTES;
             rv = inOff;
             encrypt(blocks, 0, inOff, output, outOff);
-            tag = new byte[TAGLEN];
-            Up(tag, TAGLEN, 0x40);
-            for (int i = 0; i < TAGLEN; ++i)
+            tag = new byte[CRYPTO_ABYTES];
+            Up(tag, CRYPTO_ABYTES, 0x40);
+            for (int i = 0; i < CRYPTO_ABYTES; ++i)
             {
                 if (tag[i] != blocks[inOff++])
                 {
@@ -262,14 +229,14 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -TAGLEN));
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -CRYPTO_ABYTES));
         return total - total % Rkout;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? TAGLEN : -TAGLEN));
+        return Math.max(0, len + message.size() + (forEncryption ? CRYPTO_ABYTES : -CRYPTO_ABYTES));
     }
 
     @Override
@@ -344,6 +311,10 @@ public class XoodyakEngine
         int a10 = Pack.littleEndianToInt(state, 40);
         int a11 = Pack.littleEndianToInt(state, 44);
 
+        //    private final int NLANES = 12;
+        //    private final int NROWS = 3;
+        //    private final int NCOLUMS = 4;
+        int MAXROUNDS = 12;
         for (int i = 0; i < MAXROUNDS; ++i)
         {
             /* Theta: Column Parity Mixer */
@@ -448,21 +419,12 @@ public class XoodyakEngine
         }
         state[XiLen] ^= 0x01;
         state[f_bPrime - 1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
-        phase = PhaseDown;
+        int phaseDown = 1;
+        phase = phaseDown;
     }
 
     public int getBlockSize()
     {
         return Rkout;
-    }
-
-    public int getKeyBytesSize()
-    {
-        return 16;
-    }
-
-    public int getIVBytesSize()
-    {
-        return 16;
     }
 }

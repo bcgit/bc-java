@@ -222,16 +222,6 @@ public class ElephantTest
             //expected
         }
 
-        try
-        {
-            aeadBlockCipher.init(true, new AEADParameters(new KeyParameter(k), 0, iv));
-            fail(aeadBlockCipher.getAlgorithmName() + " wrong type of CipherParameters");
-        }
-        catch (IllegalArgumentException e)
-        {
-            //expected
-        }
-
         aeadBlockCipher.init(true, params);
         c1 = new byte[aeadBlockCipher.getOutputSize(0)];
         try
