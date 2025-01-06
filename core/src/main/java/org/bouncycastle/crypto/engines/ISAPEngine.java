@@ -409,11 +409,11 @@ public class ISAPEngine
             // Absorb C
             ABSORB_MAC(SX, c, clen, E, C);
             // Derive K*
-            shortToByte(SX, tag, 0);
+            shortToByte(SX, tag);
             isap_rk(ISAP_IV2_16, tag, KEY_SIZE, SX, KEY_SIZE, C);
             // Squeeze tag
             PermuteRoundsHX(SX, E, C);
-            shortToByte(SX, tag, 0);
+            shortToByte(SX, tag);
         }
 
         public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
@@ -459,11 +459,11 @@ public class ISAPEngine
             }
         }
 
-        private void shortToByte(short[] input, byte[] output, int outOff)
+        private void shortToByte(short[] input, byte[] output)
         {
             for (int i = 0; i < 8; ++i)
             {
-                Pack.shortToLittleEndian(input[i], output, outOff + (i << 1));
+                Pack.shortToLittleEndian(input[i], output, (i << 1));
             }
         }
 
@@ -847,7 +847,7 @@ public class ISAPEngine
         }
         int len;
         byte[] c;
-        byte[] ad;
+        byte[] ad = aadData.toByteArray();
         if (forEncryption)
         {
             byte[] enc_input = message.toByteArray();
@@ -859,7 +859,6 @@ public class ISAPEngine
             ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
             outputStream.write(output, outOff, len);
             outOff += len;
-            ad = aadData.toByteArray();
             c = outputStream.toByteArray();
             mac = new byte[MAC_SIZE];
             ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac);
@@ -868,7 +867,6 @@ public class ISAPEngine
         }
         else
         {
-            ad = aadData.toByteArray();
             c = message.toByteArray();
             mac = new byte[MAC_SIZE];
             len = c.length - mac.length;
@@ -887,21 +885,20 @@ public class ISAPEngine
             }
             ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
         }
-//        reset(false);
         return len;
     }
 
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -16));
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -MAC_SIZE));
         return total - total % ISAP_rH_SZ;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? 16 : -16));
+        return Math.max(0, len + message.size() + (forEncryption ? MAC_SIZE : -MAC_SIZE));
     }
 
     protected void reset(boolean clearMac)
