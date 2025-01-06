@@ -70,12 +70,12 @@ public class ISAPEngine
 
         void init();
 
-        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff);
+        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag);
 
         void reset();
     }
 
-    public abstract class ISAPAEAD_A
+    private abstract class ISAPAEAD_A
         implements ISAP_AEAD
     {
         protected long[] k64;
@@ -94,13 +94,9 @@ public class ISAPEngine
         public void init()
         {
             npub64 = new long[getLongSize(npub.length)];
-            Pack.littleEndianToLong(npub, 0, npub64, 0, npub64.length);
-            npub64[0] = U64BIG(npub64[0]);
-            npub64[1] = U64BIG(npub64[1]);
             k64 = new long[getLongSize(k.length)];
-            Pack.littleEndianToLong(k, 0, k64, 0, k64.length);
-            k64[0] = U64BIG(k64[0]);
-            k64[1] = U64BIG(k64[1]);
+            Pack.bigEndianToLong(npub, 0, npub64);
+            Pack.bigEndianToLong(k, 0, k64);
             reset();
         }
 
@@ -111,11 +107,11 @@ public class ISAPEngine
         protected void ABSORB_MAC(byte[] src, int len)
         {
             long[] src64 = new long[src.length >> 3];
-            Pack.littleEndianToLong(src, 0, src64, 0, src64.length);
+            Pack.bigEndianToLong(src, 0, src64, 0, src64.length);
             int idx = 0;
             while (len >= ISAP_rH_SZ)
             {
-                x0 ^= U64BIG(src64[idx++]);
+                x0 ^= src64[idx++];
                 P12();
                 len -= ISAP_rH_SZ;
             }
@@ -128,7 +124,7 @@ public class ISAPEngine
             P12();
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
+        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
             // Init State
             x0 = npub64[0];
@@ -141,8 +137,8 @@ public class ISAPEngine
             x4 ^= 1L;
             ABSORB_MAC(c, clen);
             // Derive K*
-            Pack.longToLittleEndian(U64BIG(x0), tag, 0);
-            Pack.longToLittleEndian(U64BIG(x1), tag, 8);
+            Pack.longToBigEndian(x0, tag, 0);
+            Pack.longToBigEndian(x1, tag, 8);
             long tmp_x2 = x2, tmp_x3 = x3, tmp_x4 = x4;
             isap_rk(ISAP_IV2_64, tag, KEY_SIZE);
             x2 = tmp_x2;
@@ -150,8 +146,8 @@ public class ISAPEngine
             x4 = tmp_x4;
             // Squeeze tag
             P12();
-            Pack.longToLittleEndian(U64BIG(x0), tag, tagOff);
-            Pack.longToLittleEndian(U64BIG(x1), tag, tagOff + 8);
+            Pack.longToBigEndian(x0, tag, 0);
+            Pack.longToBigEndian(x1, tag, 8);
         }
 
         public void isap_rk(long iv64, byte[] y, int ylen)
@@ -399,7 +395,7 @@ public class ISAPEngine
             System.arraycopy(SX, 0, out16, 0, outlen == ISAP_STATE_SZ_CRYPTO_NPUBBYTES ? 17 : 8);
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
+        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
             SX = new short[25];
             // Init state
@@ -413,11 +409,11 @@ public class ISAPEngine
             // Absorb C
             ABSORB_MAC(SX, c, clen, E, C);
             // Derive K*
-            shortToByte(SX, tag, tagOff);
+            shortToByte(SX, tag, 0);
             isap_rk(ISAP_IV2_16, tag, KEY_SIZE, SX, KEY_SIZE, C);
             // Squeeze tag
             PermuteRoundsHX(SX, E, C);
-            shortToByte(SX, tag, tagOff);
+            shortToByte(SX, tag, 0);
         }
 
         public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
@@ -852,10 +848,6 @@ public class ISAPEngine
         int len;
         byte[] c;
         byte[] ad;
-        if (mac == null)
-        {
-            mac = new byte[MAC_SIZE];
-        }
         if (forEncryption)
         {
             byte[] enc_input = message.toByteArray();
@@ -869,7 +861,8 @@ public class ISAPEngine
             outOff += len;
             ad = aadData.toByteArray();
             c = outputStream.toByteArray();
-            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac, 0);
+            mac = new byte[MAC_SIZE];
+            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac);
             System.arraycopy(mac, 0, output, outOff, 16);
             len += 16;
         }
@@ -877,12 +870,13 @@ public class ISAPEngine
         {
             ad = aadData.toByteArray();
             c = message.toByteArray();
+            mac = new byte[MAC_SIZE];
             len = c.length - mac.length;
             if (len + outOff > output.length)
             {
                 throw new OutputLengthException("output buffer is too short");
             }
-            ISAPAEAD.isap_mac(ad, ad.length, c, len, mac, 0);
+            ISAPAEAD.isap_mac(ad, ad.length, c, len, mac);
             ISAPAEAD.reset();
             for (int i = 0; i < 16; ++i)
             {
@@ -893,6 +887,7 @@ public class ISAPEngine
             }
             ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
         }
+//        reset(false);
         return len;
     }
 
