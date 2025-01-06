@@ -116,12 +116,12 @@ public class SparkleEngine
             throw new IllegalArgumentException("Invalid definition of SCHWAEMM instance");
         }
         KEY_WORDS = SCHWAEMM_KEY_LEN >>> 5;
-        CRYPTO_KEYBYTES = SCHWAEMM_KEY_LEN >>> 3;
+        KEY_SIZE = SCHWAEMM_KEY_LEN >>> 3;
         TAG_WORDS = SCHWAEMM_TAG_LEN >>> 5;
-        CRYPTO_ABYTES = SCHWAEMM_TAG_LEN >>> 3;
+        MAC_SIZE = SCHWAEMM_TAG_LEN >>> 3;
         STATE_WORDS = SPARKLE_STATE >>> 5;
         RATE_WORDS = SCHWAEMM_NONCE_LEN >>> 5;
-        CRYPTO_NPUBBYTES = SCHWAEMM_NONCE_LEN >>> 3;
+        IV_SIZE = SCHWAEMM_NONCE_LEN >>> 3;
         int CAP_BRANS = SPARKLE_CAPACITY >>> 6;
         int CAP_WORDS = SPARKLE_CAPACITY >>> 5;
         CAP_MASK = RATE_WORDS > CAP_WORDS ? CAP_WORDS - 1 : -1;
@@ -133,7 +133,7 @@ public class SparkleEngine
         k = new int[KEY_WORDS];
         npub = new int[RATE_WORDS];
 
-        m_bufferSizeDecrypt = CRYPTO_NPUBBYTES + CRYPTO_ABYTES;
+        m_bufferSizeDecrypt = IV_SIZE + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
 
         // Relied on by processBytes method for decryption
@@ -156,7 +156,7 @@ public class SparkleEngine
     {
         checkAAD();
 
-        if (m_bufPos == CRYPTO_NPUBBYTES)
+        if (m_bufPos == IV_SIZE)
         {
             processBufferAAD(m_buf, 0);
             m_bufPos = 0;
@@ -180,7 +180,7 @@ public class SparkleEngine
 
         if (m_bufPos > 0)
         {
-            int available = CRYPTO_NPUBBYTES - m_bufPos;
+            int available = IV_SIZE - m_bufPos;
             if (len <= available)
             {
                 System.arraycopy(in, inOff, m_buf, m_bufPos, len);
@@ -196,11 +196,11 @@ public class SparkleEngine
             //m_bufPos = 0;
         }
 
-        while (len > CRYPTO_NPUBBYTES)
+        while (len > IV_SIZE)
         {
             processBufferAAD(in, inOff);
-            inOff += CRYPTO_NPUBBYTES;
-            len -= CRYPTO_NPUBBYTES;
+            inOff += IV_SIZE;
+            len -= IV_SIZE;
         }
 
         System.arraycopy(in, inOff, m_buf, 0, len);
@@ -223,7 +223,7 @@ public class SparkleEngine
         {
             if (m_bufPos > 0)
             {
-                int available = CRYPTO_NPUBBYTES - m_bufPos;
+                int available = IV_SIZE - m_bufPos;
                 if (len <= available)
                 {
                     System.arraycopy(in, inOff, m_buf, m_bufPos, len);
@@ -236,16 +236,16 @@ public class SparkleEngine
                 len -= available;
 
                 processBufferEncrypt(m_buf, 0, out, outOff);
-                resultLength = CRYPTO_NPUBBYTES;
+                resultLength = IV_SIZE;
                 //m_bufPos = 0;
             }
 
-            while (len > CRYPTO_NPUBBYTES)
+            while (len > IV_SIZE)
             {
                 processBufferEncrypt(in, inOff, out, outOff + resultLength);
-                inOff += CRYPTO_NPUBBYTES;
-                len -= CRYPTO_NPUBBYTES;
-                resultLength += CRYPTO_NPUBBYTES;
+                inOff += IV_SIZE;
+                len -= IV_SIZE;
+                resultLength += IV_SIZE;
             }
         }
         else
@@ -258,14 +258,14 @@ public class SparkleEngine
                 return 0;
             }
 
-            if (m_bufPos > CRYPTO_NPUBBYTES)
+            if (m_bufPos > IV_SIZE)
             {
                 processBufferDecrypt(m_buf, 0, out, outOff);
-                m_bufPos -= CRYPTO_NPUBBYTES;
-                System.arraycopy(m_buf, CRYPTO_NPUBBYTES, m_buf, 0, m_bufPos);
-                resultLength = CRYPTO_NPUBBYTES;
+                m_bufPos -= IV_SIZE;
+                System.arraycopy(m_buf, IV_SIZE, m_buf, 0, m_bufPos);
+                resultLength = IV_SIZE;
 
-                available += CRYPTO_NPUBBYTES;
+                available += IV_SIZE;
                 if (len <= available)
                 {
                     System.arraycopy(in, inOff, m_buf, m_bufPos, len);
@@ -274,20 +274,20 @@ public class SparkleEngine
                 }
             }
 
-            available = CRYPTO_NPUBBYTES - m_bufPos;
+            available = IV_SIZE - m_bufPos;
             System.arraycopy(in, inOff, m_buf, m_bufPos, available);
             inOff += available;
             len -= available;
             processBufferDecrypt(m_buf, 0, out, outOff + resultLength);
-            resultLength += CRYPTO_NPUBBYTES;
+            resultLength += IV_SIZE;
             //m_bufPos = 0;
 
             while (len > m_bufferSizeDecrypt)
             {
                 processBufferDecrypt(in, inOff, out, outOff + resultLength);
-                inOff += CRYPTO_NPUBBYTES;
-                len -= CRYPTO_NPUBBYTES;
-                resultLength += CRYPTO_NPUBBYTES;
+                inOff += IV_SIZE;
+                len -= IV_SIZE;
+                resultLength += IV_SIZE;
             }
         }
 
@@ -305,14 +305,14 @@ public class SparkleEngine
         int resultLength;
         if (forEncryption)
         {
-            resultLength = m_bufPos + CRYPTO_ABYTES;
+            resultLength = m_bufPos + MAC_SIZE;
         }
         else
         {
-            if (m_bufPos < CRYPTO_ABYTES)
+            if (m_bufPos < MAC_SIZE)
                 throw new InvalidCipherTextException("data too short");
 
-            m_bufPos -= CRYPTO_ABYTES;
+            m_bufPos -= MAC_SIZE;
 
             resultLength = m_bufPos;
         }
@@ -326,7 +326,7 @@ public class SparkleEngine
         {
             // Encryption of Last Block
             // addition of ant M2 or M3 to the state
-            state[STATE_WORDS - 1] ^= ((m_bufPos < CRYPTO_NPUBBYTES) ? _M2 : _M3);
+            state[STATE_WORDS - 1] ^= ((m_bufPos < IV_SIZE) ? _M2 : _M3);
             // combined Rho and rate-whitening (incl. padding)
             // Rho and rate-whitening for the encryption of the last plaintext block. Since
             // this last block may require padding, it is always copied to a buffer.
@@ -335,7 +335,7 @@ public class SparkleEngine
             {
                 buffer[i >>> 2] |= (m_buf[i] & 0xFF) << ((i & 3) << 3);
             }
-            if (m_bufPos < CRYPTO_NPUBBYTES)
+            if (m_bufPos < IV_SIZE)
             {
                 if (!forEncryption)
                 {
@@ -377,15 +377,15 @@ public class SparkleEngine
         {
             state[RATE_WORDS + i] ^= k[i];
         }
-        mac = new byte[CRYPTO_ABYTES];
+        mac = new byte[MAC_SIZE];
         Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, mac, 0);
         if (forEncryption)
         {
-            System.arraycopy(mac, 0, out, outOff, CRYPTO_ABYTES);
+            System.arraycopy(mac, 0, out, outOff, MAC_SIZE);
         }
         else
         {
-            if (!Arrays.constantTimeAreEqual(CRYPTO_ABYTES, mac, 0, m_buf, m_bufPos))
+            if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, m_buf, m_bufPos))
             {
                 throw new InvalidCipherTextException(algorithmName + " mac does not match");
             }
@@ -403,11 +403,11 @@ public class SparkleEngine
         {
         case DecInit:
         case DecAad:
-            total = Math.max(0, total - CRYPTO_ABYTES);
+            total = Math.max(0, total - MAC_SIZE);
             break;
         case DecData:
         case DecFinal:
-            total = Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+            total = Math.max(0, total + m_bufPos - MAC_SIZE);
             break;
         case EncData:
         case EncFinal:
@@ -417,7 +417,7 @@ public class SparkleEngine
             break;
         }
 
-        return total - total % CRYPTO_NPUBBYTES;
+        return total - total % IV_SIZE;
     }
 
     public int getOutputSize(int len)
@@ -428,15 +428,15 @@ public class SparkleEngine
         {
         case DecInit:
         case DecAad:
-            return Math.max(0, total - CRYPTO_ABYTES);
+            return Math.max(0, total - MAC_SIZE);
         case DecData:
         case DecFinal:
-            return Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+            return Math.max(0, total + m_bufPos - MAC_SIZE);
         case EncData:
         case EncFinal:
-            return total + m_bufPos + CRYPTO_ABYTES;
+            return total + m_bufPos + MAC_SIZE;
         default:
-            return total + CRYPTO_ABYTES;
+            return total + MAC_SIZE;
         }
     }
 
@@ -525,7 +525,7 @@ public class SparkleEngine
     {
 //        assert bufOff <= buffer.length - RATE_BYTES;
 
-        if (outOff > output.length - CRYPTO_NPUBBYTES)
+        if (outOff > output.length - IV_SIZE)
         {
             throw new OutputLengthException("output buffer too short");
         }
@@ -556,7 +556,7 @@ public class SparkleEngine
     {
 //      assert bufOff <= buffer.length - RATE_BYTES;
 
-        if (outOff > output.length - CRYPTO_NPUBBYTES)
+        if (outOff > output.length - IV_SIZE)
         {
             throw new OutputLengthException("output buffer too short");
         }
@@ -586,13 +586,13 @@ public class SparkleEngine
     private void processFinalAAD()
     {
         // addition of constant A0 or A1 to the state
-        if (m_bufPos < CRYPTO_NPUBBYTES)
+        if (m_bufPos < IV_SIZE)
         {
             state[STATE_WORDS - 1] ^= _A0;
 
             // padding
             m_buf[m_bufPos] = (byte)0x80;
-            while (++m_bufPos < CRYPTO_NPUBBYTES)
+            while (++m_bufPos < IV_SIZE)
             {
                 m_buf[m_bufPos] = 0x00;
             }

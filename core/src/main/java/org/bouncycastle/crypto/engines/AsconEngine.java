@@ -36,24 +36,24 @@ public class AsconEngine
     public AsconEngine(AsconParameters asconParameters)
     {
         this.asconParameters = asconParameters;
-        CRYPTO_NPUBBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
         switch (asconParameters)
         {
         case ascon80pq:
-            CRYPTO_KEYBYTES = 20;
+            KEY_SIZE = 20;
             ASCON_AEAD_RATE = 8;
             ASCON_IV = 0xa0400c0600000000L;
             algorithmName = "Ascon-80pq AEAD";
             break;
         case ascon128a:
-            CRYPTO_KEYBYTES = 16;
+            KEY_SIZE = 16;
             ASCON_AEAD_RATE = 16;
             ASCON_IV = 0x80800c0800000000L;
             algorithmName = "Ascon-128a AEAD";
             break;
         case ascon128:
-            CRYPTO_KEYBYTES = 16;
+            KEY_SIZE = 16;
             ASCON_AEAD_RATE = 8;
             ASCON_IV = 0x80400c0600000000L;
             algorithmName = "Ascon-128 AEAD";
@@ -62,7 +62,7 @@ public class AsconEngine
             throw new IllegalArgumentException("invalid parameter setting for ASCON AEAD");
         }
         nr = (ASCON_AEAD_RATE == 8) ? 6 : 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
+        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         dsep = 1L;
     }
@@ -87,7 +87,7 @@ public class AsconEngine
     {
         /* initialize */
         x0 = ASCON_IV;
-        if (CRYPTO_KEYBYTES == 20)
+        if (KEY_SIZE == 20)
         {
             x0 ^= K0;
         }
@@ -96,7 +96,7 @@ public class AsconEngine
         x3 = N0;
         x4 = N1;
         p(12);
-        if (CRYPTO_KEYBYTES == 20)
+        if (KEY_SIZE == 20)
         {
             x2 ^= K0;
         }
@@ -216,12 +216,12 @@ public class AsconEngine
 
         N0 = Pack.bigEndianToLong(keyiv[1], 0);
         N1 = Pack.bigEndianToLong(keyiv[1], 8);
-        if (CRYPTO_KEYBYTES == 16)
+        if (KEY_SIZE == 16)
         {
             K1 = Pack.bigEndianToLong(keyiv[0], 0);
             K2 = Pack.bigEndianToLong(keyiv[0], 8);
         }
-        else if (CRYPTO_KEYBYTES == 20)
+        else if (KEY_SIZE == 20)
         {
             K0 = Pack.bigEndianToInt(keyiv[0], 0);
             K1 = Pack.bigEndianToLong(keyiv[0], 4);

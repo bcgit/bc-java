@@ -29,9 +29,9 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        KEY_SIZE = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
         switch (isapType)
         {
         case ISAP_A_128A:
@@ -52,6 +52,7 @@ public class ISAPEngine
             break;
         }
     }
+
     private boolean initialised;
     final int ISAP_STATE_SZ = 40;
     private byte[] k;
@@ -143,7 +144,7 @@ public class ISAPEngine
             Pack.longToLittleEndian(U64BIG(x0), tag, 0);
             Pack.longToLittleEndian(U64BIG(x1), tag, 8);
             long tmp_x2 = x2, tmp_x3 = x3, tmp_x4 = x4;
-            isap_rk(ISAP_IV2_64, tag, CRYPTO_KEYBYTES);
+            isap_rk(ISAP_IV2_64, tag, KEY_SIZE);
             x2 = tmp_x2;
             x3 = tmp_x3;
             x4 = tmp_x4;
@@ -197,7 +198,7 @@ public class ISAPEngine
         public void reset()
         {
             // Init state
-            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES);
+            isap_rk(ISAP_IV3_64, npub, IV_SIZE);
             x3 = npub64[0];
             x4 = npub64[1];
             PX1();
@@ -300,7 +301,7 @@ public class ISAPEngine
     private abstract class ISAPAEAD_K
         implements ISAP_AEAD
     {
-        final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - CRYPTO_NPUBBYTES;
+        final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
         protected short[] ISAP_IV1_16;
         protected short[] ISAP_IV2_16;
         protected short[] ISAP_IV3_16;
@@ -333,7 +334,7 @@ public class ISAPEngine
             SX = new short[25];
             E = new short[25];
             C = new short[5];
-            isap_rk(ISAP_IV3_16, npub, CRYPTO_NPUBBYTES, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
+            isap_rk(ISAP_IV3_16, npub, IV_SIZE, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
             System.arraycopy(iv16, 0, SX, 17, 8);
             PermuteRoundsKX(SX, E, C);
         }
@@ -413,7 +414,7 @@ public class ISAPEngine
             ABSORB_MAC(SX, c, clen, E, C);
             // Derive K*
             shortToByte(SX, tag, tagOff);
-            isap_rk(ISAP_IV2_16, tag, CRYPTO_KEYBYTES, SX, CRYPTO_KEYBYTES, C);
+            isap_rk(ISAP_IV2_16, tag, KEY_SIZE, SX, KEY_SIZE, C);
             // Squeeze tag
             PermuteRoundsHX(SX, E, C);
             shortToByte(SX, tag, tagOff);
@@ -851,6 +852,10 @@ public class ISAPEngine
         int len;
         byte[] c;
         byte[] ad;
+        if (mac == null)
+        {
+            mac = new byte[MAC_SIZE];
+        }
         if (forEncryption)
         {
             byte[] enc_input = message.toByteArray();
@@ -864,7 +869,6 @@ public class ISAPEngine
             outOff += len;
             ad = aadData.toByteArray();
             c = outputStream.toByteArray();
-            mac = new byte[16];
             ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac, 0);
             System.arraycopy(mac, 0, output, outOff, 16);
             len += 16;
@@ -873,7 +877,6 @@ public class ISAPEngine
         {
             ad = aadData.toByteArray();
             c = message.toByteArray();
-            mac = new byte[16];
             len = c.length - mac.length;
             if (len + outOff > output.length)
             {

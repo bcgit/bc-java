@@ -21,14 +21,14 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        KEY_SIZE = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
         ASCON_AEAD_RATE = 16;
         ASCON_IV = 0x00001000808c0001L;
         algorithmName = "Ascon-AEAD128";
         nr = 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
+        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         dsep = -9223372036854775808L; //0x80L << 56
     }

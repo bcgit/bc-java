@@ -47,9 +47,9 @@ public class XoodyakEngine
     public XoodyakEngine()
     {
         algorithmName = "Xoodyak AEAD";
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        KEY_SIZE = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
     }
 
     @Override
@@ -60,7 +60,7 @@ public class XoodyakEngine
         K = keyiv[0];
         iv = keyiv[1];
         state = new byte[48];
-        mac = new byte[CRYPTO_ABYTES];
+        mac = new byte[MAC_SIZE];
         initialised = true;
         reset();
     }
@@ -118,7 +118,7 @@ public class XoodyakEngine
             throw new DataLengthException("input buffer too short");
         }
         message.write(input, inOff, len);
-        int blockLen = message.size() - (forEncryption ? 0 : CRYPTO_ABYTES);
+        int blockLen = message.size() - (forEncryption ? 0 : MAC_SIZE);
         if (blockLen >= getBlockSize())
         {
             byte[] blocks = message.toByteArray();
@@ -181,7 +181,7 @@ public class XoodyakEngine
         }
         byte[] blocks = message.toByteArray();
         int len = message.size();
-        if ((forEncryption && len + CRYPTO_ABYTES + outOff > output.length) || (!forEncryption && len - CRYPTO_ABYTES + outOff > output.length))
+        if ((forEncryption && len + MAC_SIZE + outOff > output.length) || (!forEncryption && len - MAC_SIZE + outOff > output.length))
         {
             throw new OutputLengthException("output buffer too short");
         }
@@ -191,19 +191,19 @@ public class XoodyakEngine
         {
             encrypt(blocks, 0, len, output, outOff);
             outOff += len;
-            mac = new byte[CRYPTO_ABYTES];
-            Up(mac, CRYPTO_ABYTES, 0x40);
-            System.arraycopy(mac, 0, output, outOff, CRYPTO_ABYTES);
-            rv = len + CRYPTO_ABYTES;
+            mac = new byte[MAC_SIZE];
+            Up(mac, MAC_SIZE, 0x40);
+            System.arraycopy(mac, 0, output, outOff, MAC_SIZE);
+            rv = len + MAC_SIZE;
         }
         else
         {
-            int inOff = len - CRYPTO_ABYTES;
+            int inOff = len - MAC_SIZE;
             rv = inOff;
             encrypt(blocks, 0, inOff, output, outOff);
-            mac = new byte[CRYPTO_ABYTES];
-            Up(mac, CRYPTO_ABYTES, 0x40);
-            for (int i = 0; i < CRYPTO_ABYTES; ++i)
+            mac = new byte[MAC_SIZE];
+            Up(mac, MAC_SIZE, 0x40);
+            for (int i = 0; i < MAC_SIZE; ++i)
             {
                 if (mac[i] != blocks[inOff++])
                 {
@@ -218,14 +218,14 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -CRYPTO_ABYTES));
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -MAC_SIZE));
         return total - total % Rkout;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? CRYPTO_ABYTES : -CRYPTO_ABYTES));
+        return Math.max(0, len + message.size() + (forEncryption ? MAC_SIZE : -MAC_SIZE));
     }
 
     @Override

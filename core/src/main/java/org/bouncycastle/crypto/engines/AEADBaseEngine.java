@@ -14,9 +14,9 @@ abstract class AEADBaseEngine
 {
     protected boolean forEncryption;
     protected String algorithmName;
-    protected int CRYPTO_KEYBYTES;
-    protected int CRYPTO_NPUBBYTES;
-    protected int CRYPTO_ABYTES;
+    protected int KEY_SIZE;
+    protected int IV_SIZE;
+    protected int MAC_SIZE;
     protected byte[] initialAssociatedText;
     protected byte[] mac;
 
@@ -28,12 +28,12 @@ abstract class AEADBaseEngine
 
     public int getKeyBytesSize()
     {
-        return CRYPTO_KEYBYTES;
+        return KEY_SIZE;
     }
 
     public int getIVBytesSize()
     {
-        return CRYPTO_NPUBBYTES;
+        return IV_SIZE;
     }
 
     public byte[] getMac()
@@ -67,7 +67,7 @@ abstract class AEADBaseEngine
             initialAssociatedText = aeadParameters.getAssociatedText();
 
             int macSizeBits = aeadParameters.getMacSize();
-            if (macSizeBits != CRYPTO_ABYTES * 8)
+            if (macSizeBits != MAC_SIZE * 8)
             {
                 throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
             }
@@ -88,15 +88,15 @@ abstract class AEADBaseEngine
         {
             throw new IllegalArgumentException(algorithmName + " Init parameters must include a key");
         }
-        if (npub == null || npub.length != CRYPTO_NPUBBYTES)
+        if (npub == null || npub.length != IV_SIZE)
         {
-            throw new IllegalArgumentException(algorithmName + " requires exactly " + CRYPTO_NPUBBYTES + " bytes of IV");
+            throw new IllegalArgumentException(algorithmName + " requires exactly " + IV_SIZE + " bytes of IV");
         }
 
         k = key.getKey();
-        if (k.length != CRYPTO_KEYBYTES)
+        if (k.length != KEY_SIZE)
         {
-            throw new IllegalArgumentException(algorithmName + " key must be " + CRYPTO_KEYBYTES + " bytes long");
+            throw new IllegalArgumentException(algorithmName + " key must be " + KEY_SIZE + " bytes long");
         }
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
