@@ -3,13 +3,9 @@ package org.bouncycastle.crypto.engines;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -34,7 +30,6 @@ public class XoodyakEngine
     private byte[] iv;
     private final int PhaseUp = 2;
     final int Rkin = 44;
-    private byte[] tag;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean aadFinished;
@@ -65,7 +60,7 @@ public class XoodyakEngine
         K = keyiv[0];
         iv = keyiv[1];
         state = new byte[48];
-        tag = new byte[CRYPTO_ABYTES];
+        mac = new byte[CRYPTO_ABYTES];
         initialised = true;
         reset();
     }
@@ -196,9 +191,9 @@ public class XoodyakEngine
         {
             encrypt(blocks, 0, len, output, outOff);
             outOff += len;
-            tag = new byte[CRYPTO_ABYTES];
-            Up(tag, CRYPTO_ABYTES, 0x40);
-            System.arraycopy(tag, 0, output, outOff, CRYPTO_ABYTES);
+            mac = new byte[CRYPTO_ABYTES];
+            Up(mac, CRYPTO_ABYTES, 0x40);
+            System.arraycopy(mac, 0, output, outOff, CRYPTO_ABYTES);
             rv = len + CRYPTO_ABYTES;
         }
         else
@@ -206,11 +201,11 @@ public class XoodyakEngine
             int inOff = len - CRYPTO_ABYTES;
             rv = inOff;
             encrypt(blocks, 0, inOff, output, outOff);
-            tag = new byte[CRYPTO_ABYTES];
-            Up(tag, CRYPTO_ABYTES, 0x40);
+            mac = new byte[CRYPTO_ABYTES];
+            Up(mac, CRYPTO_ABYTES, 0x40);
             for (int i = 0; i < CRYPTO_ABYTES; ++i)
             {
-                if (tag[i] != blocks[inOff++])
+                if (mac[i] != blocks[inOff++])
                 {
                     throw new IllegalArgumentException("Mac does not match");
                 }
@@ -218,12 +213,6 @@ public class XoodyakEngine
         }
         reset(false);
         return rv;
-    }
-
-    @Override
-    public byte[] getMac()
-    {
-        return tag;
     }
 
     @Override
@@ -253,7 +242,7 @@ public class XoodyakEngine
     {
         if (clearMac)
         {
-            tag = null;
+            mac = null;
         }
         Arrays.fill(state, (byte)0);
         aadFinished = false;

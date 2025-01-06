@@ -4,14 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
  * Elephant AEAD v2, based on the current round 3 submission, https://www.esat.kuleuven.be/cosic/elephant/
@@ -46,7 +41,6 @@ public class ElephantEngine
     private int nSBox;
     private final int nRounds;
     private byte lfsrIV;
-    private byte[] tag;
     private byte[] npub;
     private byte[] expanded_key;
     private boolean initialised;
@@ -380,14 +374,14 @@ public class ElephantEngine
         int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
         outOff += processBytes(inputMessage, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, true);
-        tag = new byte[CRYPTO_ABYTES];
+        mac = new byte[CRYPTO_ABYTES];
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         permutation(tag_buffer);
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         if (forEncryption)
         {
-            System.arraycopy(tag_buffer, 0, tag, 0, CRYPTO_ABYTES);
-            System.arraycopy(tag, 0, output, outOff, tag.length);
+            System.arraycopy(tag_buffer, 0, mac, 0, CRYPTO_ABYTES);
+            System.arraycopy(mac, 0, output, outOff, mac.length);
             rv += CRYPTO_ABYTES;
         }
         else
@@ -403,12 +397,6 @@ public class ElephantEngine
         }
         reset(false);
         return rv;
-    }
-
-    @Override
-    public byte[] getMac()
-    {
-        return tag;
     }
 
     @Override
@@ -480,7 +468,7 @@ public class ElephantEngine
     {
         if (clearMac)
         {
-            tag = null;
+            mac = null;
         }
         aadData.reset();
         Arrays.fill(tag_buffer, (byte)0);

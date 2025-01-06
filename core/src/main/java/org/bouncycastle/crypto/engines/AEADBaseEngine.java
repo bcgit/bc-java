@@ -18,6 +18,7 @@ abstract class AEADBaseEngine
     protected int CRYPTO_NPUBBYTES;
     protected int CRYPTO_ABYTES;
     protected byte[] initialAssociatedText;
+    protected byte[] mac;
 
     @Override
     public String getAlgorithmName()
@@ -35,6 +36,10 @@ abstract class AEADBaseEngine
         return CRYPTO_NPUBBYTES;
     }
 
+    public byte[] getMac()
+    {
+        return mac;
+    }
 
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException

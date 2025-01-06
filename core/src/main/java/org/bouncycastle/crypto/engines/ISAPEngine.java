@@ -3,14 +3,9 @@ package org.bouncycastle.crypto.engines;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -59,11 +54,8 @@ public class ISAPEngine
     private boolean initialised;
     final int ISAP_STATE_SZ = 40;
     private byte[] k;
-    private byte[] c;
-    private byte[] ad;
     private byte[] npub;
-    private byte[] mac;
-    private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private int ISAP_rH;
@@ -856,6 +848,8 @@ public class ISAPEngine
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
         int len;
+        byte[] c;
+        byte[] ad;
         if (forEncryption)
         {
             byte[] enc_input = message.toByteArray();
@@ -896,12 +890,6 @@ public class ISAPEngine
             ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
         }
         return len;
-    }
-
-    @Override
-    public byte[] getMac()
-    {
-        return mac;
     }
 
     @Override

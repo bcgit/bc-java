@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
@@ -25,7 +24,6 @@ abstract class AsconBaseEngine
 
 
     protected State m_state = State.Uninitialized;
-    protected byte[] mac;
     protected int nr;
     protected int ASCON_AEAD_RATE;
     protected long K0;
@@ -380,11 +378,6 @@ abstract class AsconBaseEngine
             reset(true);
         }
         return resultLength;
-    }
-
-    public byte[] getMac()
-    {
-        return mac;
     }
 
     public int getUpdateOutputSize(int len)

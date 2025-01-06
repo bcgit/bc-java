@@ -34,19 +34,12 @@ public class Grain128AEADEngine
     private boolean aadFinished = false;
     private final ErasableOutputStream aadData = new ErasableOutputStream();
 
-    private byte[] mac;
-
     public Grain128AEADEngine()
     {
         algorithmName = "Grain-128AEAD";
         CRYPTO_KEYBYTES = 16;
         CRYPTO_NPUBBYTES = 12;
         CRYPTO_ABYTES = 8;
-    }
-
-    public String getAlgorithmName()
-    {
-        return "Grain-128AEAD";
     }
 
     /**
@@ -63,7 +56,7 @@ public class Grain128AEADEngine
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
-        byte[][] keyiv = initialize(true, params);
+        byte[][] keyiv = initialize(forEncryption, params);
 
 
         /*
@@ -397,12 +390,6 @@ public class Grain128AEADEngine
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
 
-    public int processByte(byte input, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{input}, 0, 1, output, outOff);
-    }
-
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
@@ -421,11 +408,6 @@ public class Grain128AEADEngine
         reset(false);
 
         return mac.length;
-    }
-
-    public byte[] getMac()
-    {
-        return mac;
     }
 
     public int getUpdateOutputSize(int len)
