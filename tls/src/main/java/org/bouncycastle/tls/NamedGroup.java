@@ -117,7 +117,7 @@ public class NamedGroup
     public static final int MLKEM1024 = 0x1024;
 
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
-    private static final String[] CURVE_NAMES = new String[] { "sect163k1", "sect163r1", "sect163r2", "sect193r1",
+    private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
         "sect571k1", "sect571r1", "secp160k1", "secp160r1", "secp160r2", "secp192k1", "secp192r1", "secp224k1",
         "secp224r1", "secp256k1", "secp256r1", "secp384r1", "secp521r1", "brainpoolP256r1", "brainpoolP384r1",
@@ -126,7 +126,7 @@ public class NamedGroup
         "GostR3410-2001-CryptoPro-C", "Tc26-Gost-3410-12-512-paramSetA", "Tc26-Gost-3410-12-512-paramSetB",
         "Tc26-Gost-3410-12-512-paramSetC", "sm2p256v1" };
 
-    private static final String[] FINITE_FIELD_NAMES = new String[] { "ffdhe2048", "ffdhe3072", "ffdhe4096",
+    private static final String[] FINITE_FIELD_NAMES = new String[]{ "ffdhe2048", "ffdhe3072", "ffdhe4096",
         "ffdhe6144", "ffdhe8192" };
 
     public static boolean canBeNegotiated(int namedGroup, ProtocolVersion version)

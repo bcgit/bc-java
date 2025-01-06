@@ -36,7 +36,7 @@ class MockPSKTls13Client
 
 //    public short[] getPskKeyExchangeModes()
 //    {
-//        return new short[] { PskKeyExchangeMode.psk_dhe_ke, PskKeyExchangeMode.psk_ke };
+//        return new short[]{ PskKeyExchangeMode.psk_dhe_ke, PskKeyExchangeMode.psk_ke };
 //    }
 
     protected Vector getProtocolNames()

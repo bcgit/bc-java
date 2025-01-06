@@ -111,7 +111,7 @@ public class OCSPTest
 
         OCSPResponder responder = new TestOCSPResponderImpl(server);
 
-        Certificate certs = new Certificate(new TlsCertificate[] {
+        Certificate certs = new Certificate(new TlsCertificate[]{
             crypto.createCertificate(cert1.getEncoded()),
             crypto.createCertificate(cert2.getEncoded())});
 

@@ -66,7 +66,7 @@ public class TlsServerRawKeysTest
                 MockRawKeysTlsServer server = new MockRawKeysTlsServer(
                         CertificateType.RawPublicKey,
                         CertificateType.RawPublicKey,
-                        new short[] {CertificateType.RawPublicKey},
+                        new short[]{ CertificateType.RawPublicKey },
                         new Ed25519PrivateKeyParameters(new SecureRandom()),
                         tlsVersion);
                 TlsServerProtocol serverProtocol = new TlsServerProtocol(s.getInputStream(), s.getOutputStream());
