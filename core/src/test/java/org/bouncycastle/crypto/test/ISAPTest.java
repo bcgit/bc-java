@@ -50,10 +50,42 @@ public class ISAPTest
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
         testVectors("isapk128v20", IsapType.ISAP_K_128);
         testVectors();
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new ISAPEngine(IsapType.ISAP_K_128A);
+            }
+        });
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new ISAPEngine(IsapType.ISAP_K_128);
+            }
+        });
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new ISAPEngine(IsapType.ISAP_A_128A);
+            }
+        });
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new ISAPEngine(IsapType.ISAP_A_128);
+            }
+        });
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128A));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128));
-        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_A_128A));
-        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_A_128));
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128A));
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128A));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128A));
