@@ -42,7 +42,8 @@ public class SparkleTest
         testBufferingEngine_SCHWAEMM256_256();
 
         testExceptionsDigest_ESCH256();
-        testExceptionsDigest_ESCH384();;
+        testExceptionsDigest_ESCH384();
+        ;
 
         testExceptionsEngine_SCHWAEMM128_128();
         testExceptionsEngine_SCHWAEMM192_192();
@@ -64,114 +65,140 @@ public class SparkleTest
         testVectorsEngine_SCHWAEMM192_192();
         testVectorsEngine_SCHWAEMM256_128();
         testVectorsEngine_SCHWAEMM256_256();
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128));
+        CipherTest.checkAEADParemeter(this, 24, 24, 24, 24, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192));
+        CipherTest.checkAEADParemeter(this, 16, 32, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128));
+        CipherTest.checkAEADParemeter(this, 32, 32, 32, 32, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256));
     }
 
-    public void testBufferingEngine_SCHWAEMM128_128() throws Exception
+    public void testBufferingEngine_SCHWAEMM128_128()
+        throws Exception
     {
         implTestBufferingEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128);
     }
 
-    public void testBufferingEngine_SCHWAEMM192_192() throws Exception
+    public void testBufferingEngine_SCHWAEMM192_192()
+        throws Exception
     {
         implTestBufferingEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192);
     }
 
-    public void testBufferingEngine_SCHWAEMM256_128() throws Exception
+    public void testBufferingEngine_SCHWAEMM256_128()
+        throws Exception
     {
         implTestBufferingEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128);
     }
 
-    public void testBufferingEngine_SCHWAEMM256_256() throws Exception
+    public void testBufferingEngine_SCHWAEMM256_256()
+        throws Exception
     {
         implTestBufferingEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256);
     }
 
-    public void testExceptionsDigest_ESCH256() throws Exception
+    public void testExceptionsDigest_ESCH256()
+        throws Exception
     {
         implTestExceptionsDigest(SparkleDigest.SparkleParameters.ESCH256);
     }
 
-    public void testExceptionsDigest_ESCH384() throws Exception
+    public void testExceptionsDigest_ESCH384()
+        throws Exception
     {
         implTestExceptionsDigest(SparkleDigest.SparkleParameters.ESCH384);
     }
 
-    public void testExceptionsEngine_SCHWAEMM128_128() throws Exception
+    public void testExceptionsEngine_SCHWAEMM128_128()
+        throws Exception
     {
         implTestExceptionsEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128);
     }
 
-    public void testExceptionsEngine_SCHWAEMM192_192() throws Exception
+    public void testExceptionsEngine_SCHWAEMM192_192()
+        throws Exception
     {
         implTestExceptionsEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192);
     }
 
-    public void testExceptionsEngine_SCHWAEMM256_128() throws Exception
+    public void testExceptionsEngine_SCHWAEMM256_128()
+        throws Exception
     {
         implTestExceptionsEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128);
     }
 
-    public void testExceptionsEngine_SCHWAEMM256_256() throws Exception
+    public void testExceptionsEngine_SCHWAEMM256_256()
+        throws Exception
     {
         implTestExceptionsEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256);
     }
 
-    public void testParametersDigest_ESCH256() throws Exception
+    public void testParametersDigest_ESCH256()
+        throws Exception
     {
         implTestParametersDigest(SparkleDigest.SparkleParameters.ESCH256, 32);
     }
 
-    public void testParametersDigest_ESCH384() throws Exception
+    public void testParametersDigest_ESCH384()
+        throws Exception
     {
         implTestParametersDigest(SparkleDigest.SparkleParameters.ESCH384, 48);
     }
 
-    public void testParametersEngine_SCHWAEMM128_128() throws Exception
+    public void testParametersEngine_SCHWAEMM128_128()
+        throws Exception
     {
         implTestParametersEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128, 16, 16, 16);
     }
 
-    public void testParametersEngine_SCHWAEMM192_192() throws Exception
+    public void testParametersEngine_SCHWAEMM192_192()
+        throws Exception
     {
         implTestParametersEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192, 24, 24, 24);
     }
 
-    public void testParametersEngine_SCHWAEMM256_128() throws Exception
+    public void testParametersEngine_SCHWAEMM256_128()
+        throws Exception
     {
         implTestParametersEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128, 16, 32, 16);
     }
 
-    public void testParametersEngine_SCHWAEMM256_256() throws Exception
+    public void testParametersEngine_SCHWAEMM256_256()
+        throws Exception
     {
         implTestParametersEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256, 32, 32, 32);
     }
 
-    public void testVectorsDigest_ESCH256() throws Exception
+    public void testVectorsDigest_ESCH256()
+        throws Exception
     {
         implTestVectorsDigest(SparkleDigest.SparkleParameters.ESCH256, "256");
     }
 
-    public void testVectorsDigest_ESCH384() throws Exception
+    public void testVectorsDigest_ESCH384()
+        throws Exception
     {
         implTestVectorsDigest(SparkleDigest.SparkleParameters.ESCH384, "384");
     }
 
-    public void testVectorsEngine_SCHWAEMM128_128() throws Exception
+    public void testVectorsEngine_SCHWAEMM128_128()
+        throws Exception
     {
         implTestVectorsEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128, "128_128");
     }
 
-    public void testVectorsEngine_SCHWAEMM192_192() throws Exception
+    public void testVectorsEngine_SCHWAEMM192_192()
+        throws Exception
     {
         implTestVectorsEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192, "192_192");
     }
 
-    public void testVectorsEngine_SCHWAEMM256_128() throws Exception
+    public void testVectorsEngine_SCHWAEMM256_128()
+        throws Exception
     {
         implTestVectorsEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128, "128_256");
     }
 
-    public void testVectorsEngine_SCHWAEMM256_256() throws Exception
+    public void testVectorsEngine_SCHWAEMM256_256()
+        throws Exception
     {
         implTestVectorsEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256, "256_256");
     }
@@ -671,7 +698,7 @@ public class SparkleTest
     }
 
     private void implTestExceptionsGetUpdateOutputSize(SparkleEngine sparkle, boolean forEncryption,
-        CipherParameters parameters, int maxInputSize)
+                                                       CipherParameters parameters, int maxInputSize)
     {
         sparkle.init(forEncryption, parameters);
 
@@ -715,7 +742,7 @@ public class SparkleTest
     }
 
     private void implTestParametersEngine(SparkleEngine.SparkleParameters sparkleParameters, int keySize, int ivSize,
-        int macSize)
+                                          int macSize)
     {
         SparkleEngine sparkle = createEngine(sparkleParameters);
 

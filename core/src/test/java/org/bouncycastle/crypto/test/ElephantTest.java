@@ -10,7 +10,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.engines.ElephantEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.test.TestResourceFinder;
@@ -28,6 +27,9 @@ public class ElephantTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 20, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 22, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
+        CipherTest.checkAEADParemeter(this, 16, 12, 16, 25, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 20, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 22, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 25, 16, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));

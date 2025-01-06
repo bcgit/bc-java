@@ -8,12 +8,14 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.modes.AEADCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.TestFailedException;
+import org.junit.Assert;
 
 public abstract class CipherTest
     extends SimpleTest
@@ -250,5 +252,46 @@ public abstract class CipherTest
         {
             throw new TestFailedException(SimpleTestResult.failed(parent, "no message"));
         }
+    }
+
+    static void checkAEADParemeter(SimpleTest test, int keySize, int ivSize, final int macSize, int blockSize, final AEADCipher cipher)
+        throws Exception
+    {
+        final SecureRandom random = new SecureRandom();
+        final byte[] key = new byte[keySize];
+        final byte[] iv = new byte[ivSize];
+        int tmpLength = random.nextInt(blockSize - 1) + 1;
+        final byte[] plaintext = new byte[blockSize * 2 + tmpLength];
+        byte[] aad = new byte[random.nextInt(100)];
+        random.nextBytes(key);
+        random.nextBytes(iv);
+        random.nextBytes(plaintext);
+        //random.nextBytes(aad);
+        cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+        byte[] ciphertext1 = new byte[cipher.getOutputSize(plaintext.length)];
+        cipher.processAADBytes(aad, 0, aad.length);
+        int len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext1, 0);
+        len += cipher.doFinal(ciphertext1, len);
+        cipher.init(true, new AEADParameters(new KeyParameter(key), macSize * 8, iv, aad));
+        byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
+        len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
+        len += cipher.doFinal(ciphertext2, len);
+        Assert.assertArrayEquals(ciphertext1, ciphertext2);
+
+        test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            @Override
+            public void operation()
+                throws Exception
+            {
+                int macSize2 = random.nextInt();
+                while (macSize2 == macSize * 8)
+                {
+                    macSize2 = random.nextInt();
+                }
+                cipher.init(true, new AEADParameters(new KeyParameter(key), macSize2, iv, null));
+            }
+        });
+
     }
 }

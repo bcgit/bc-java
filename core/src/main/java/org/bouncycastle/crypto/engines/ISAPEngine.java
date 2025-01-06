@@ -31,6 +31,7 @@ public class ISAPEngine
     {
         CRYPTO_KEYBYTES = 16;
         CRYPTO_NPUBBYTES = 16;
+        CRYPTO_ABYTES = 16;
         switch (isapType)
         {
         case ISAP_A_128A:
@@ -905,8 +906,7 @@ public class ISAPEngine
         return Math.max(0, len + message.size() + (forEncryption ? 16 : -16));
     }
 
-    @Override
-    public void reset()
+    protected void reset(boolean clearMac)
     {
         if (!initialised)
         {
@@ -916,6 +916,7 @@ public class ISAPEngine
         ISAPAEAD.reset();
         message.reset();
         outputStream.reset();
+        super.reset(clearMac);
     }
 
     public int getBlockSize()

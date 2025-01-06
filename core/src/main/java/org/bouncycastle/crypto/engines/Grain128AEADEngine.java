@@ -265,22 +265,14 @@ public class Grain128AEADEngine
         return len;
     }
 
-    public void reset()
+    protected void reset(boolean clearMac)
     {
-        reset(true);
-    }
-
-    private void reset(boolean clearMac)
-    {
-        if (clearMac)
-        {
-            this.mac = null;
-        }
         this.aadData.reset();
         this.aadFinished = false;
 
         setKey(workingKey, workingIV);
         initGrain();
+        super.reset(clearMac);
     }
 
     private void getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
@@ -297,17 +289,22 @@ public class Grain128AEADEngine
                 int input_i_j = (input_i >> j) & 1;
                 cc |= (input_i_j ^ output) << j;
 
-                int mask = -input_i_j;
-                authAcc[0] ^= authSr[0] & mask;
-                authAcc[1] ^= authSr[1] & mask;
-
-                authShift(getOutput());
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+                updateInternalState(input_i_j);
             }
             ciphertext[outOff + i] = cc;
         }
 
+    }
+
+    private void updateInternalState(int input_i_j)
+    {
+        int mask = -input_i_j;
+        authAcc[0] ^= authSr[0] & mask;
+        authAcc[1] ^= authSr[1] & mask;
+
+        authShift(getOutput());
+        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
     }
 
     public void processAADByte(byte in)
@@ -367,13 +364,7 @@ public class Grain128AEADEngine
 
                 int ader_i_j = (ader_i >> j) & 1;
 
-                int mask = -ader_i_j;
-                authAcc[0] ^= authSr[0] & mask;
-                authAcc[1] ^= authSr[1] & mask;
-
-                authShift(getOutput());
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+                updateInternalState(ader_i_j);
             }
         }
     }
