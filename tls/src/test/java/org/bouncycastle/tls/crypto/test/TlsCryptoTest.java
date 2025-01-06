@@ -444,7 +444,7 @@ public abstract class TlsCryptoTest
 
     public void testHKDFExpandLimit()
     {
-        int[] hashes = new int[] { CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
+        int[] hashes = new int[]{ CryptoHashAlgorithm.md5, CryptoHashAlgorithm.sha1, CryptoHashAlgorithm.sha224,
             CryptoHashAlgorithm.sha256, CryptoHashAlgorithm.sha384, CryptoHashAlgorithm.sha512,
             CryptoHashAlgorithm.sm3, CryptoHashAlgorithm.gostr3411_2012_256 };
 
@@ -561,7 +561,7 @@ public abstract class TlsCryptoTest
         }
 
         // Signature algorithms usable with HashAlgorithm.Intrinsic in TLS 1.2
-        short[] intrinsicSignatureAlgorithms = new short[] { SignatureAlgorithm.ed25519, SignatureAlgorithm.ed448,
+        short[] intrinsicSignatureAlgorithms = new short[]{ SignatureAlgorithm.ed25519, SignatureAlgorithm.ed448,
             SignatureAlgorithm.gostr34102012_256, SignatureAlgorithm.gostr34102012_512,
             SignatureAlgorithm.rsa_pss_pss_sha256, SignatureAlgorithm.rsa_pss_pss_sha384,
             SignatureAlgorithm.rsa_pss_pss_sha512, SignatureAlgorithm.rsa_pss_rsae_sha256,
@@ -587,7 +587,7 @@ public abstract class TlsCryptoTest
 
     public void testSignatures13() throws Exception
     {
-        int[] signatureSchemes = new int[] { SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256,
+        int[] signatureSchemes = new int[]{ SignatureScheme.ecdsa_brainpoolP256r1tls13_sha256,
             SignatureScheme.ecdsa_brainpoolP384r1tls13_sha384, SignatureScheme.ecdsa_brainpoolP512r1tls13_sha512,
             SignatureScheme.ecdsa_secp256r1_sha256, SignatureScheme.ecdsa_secp384r1_sha384,
             SignatureScheme.ecdsa_secp521r1_sha512, SignatureScheme.ed25519, SignatureScheme.ed448,

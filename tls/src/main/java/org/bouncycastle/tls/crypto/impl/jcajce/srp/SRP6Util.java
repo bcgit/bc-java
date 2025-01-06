@@ -8,7 +8,7 @@ import org.bouncycastle.util.BigIntegers;
 
 class SRP6Util
 {
-    private static final byte[] colon = new byte[] { (byte)':' };
+    private static final byte[] COLON = new byte[]{ (byte)':' };
 
     private static BigInteger ZERO = BigInteger.valueOf(0);
     private static BigInteger ONE = BigInteger.valueOf(1);
@@ -26,7 +26,7 @@ class SRP6Util
     public static BigInteger calculateX(TlsHash digest, BigInteger N, byte[] salt, byte[] identity, byte[] password)
     {
         digest.update(identity, 0, identity.length);
-        digest.update(colon, 0, 1);
+        digest.update(COLON, 0, 1);
         digest.update(password, 0, password.length);
 
         byte[] output = digest.calculateHash();

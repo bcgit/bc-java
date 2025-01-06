@@ -199,7 +199,7 @@ public class KeyManagerFactoryTest
 
         ks.load(null, PASSWORD);
 
-        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[] { eCert, iCert });
+        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[]{ eCert, iCert });
 
         ks.setCertificateEntry("root", rCert);
 
@@ -230,7 +230,7 @@ public class KeyManagerFactoryTest
 
         ks.load(null, PASSWORD);
 
-        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[] { eCert, iCert });
+        ks.setKeyEntry("test", ePair.getPrivate(), PASSWORD, new Certificate[]{ eCert, iCert });
 
         ks.setCertificateEntry("root", rCert);
 
@@ -248,14 +248,14 @@ public class KeyManagerFactoryTest
         BCX509Key key = manager.chooseServerKeyBC(new String[]{ keyType }, null, null);
         assertNotNull(key);
 
-        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[]{ new X500Principal("CN=TLS Test") }, null);
         assertNull(alias);
 
-        key = manager.chooseServerKeyBC(new String[]{ keyType }, new Principal[] { new X500Principal("CN=TLS Test") },
+        key = manager.chooseServerKeyBC(new String[]{ keyType }, new Principal[]{ new X500Principal("CN=TLS Test") },
             null);
         assertNull(key);
 
-        alias = manager.chooseServerAlias(keyType, new Principal[] { new X500Principal("CN=TLS Test CA") }, null);
+        alias = manager.chooseServerAlias(keyType, new Principal[]{ new X500Principal("CN=TLS Test CA") }, null);
         assertNotNull(alias);
         assertNotNull(manager.getCertificateChain(alias));
         assertNotNull(manager.getPrivateKey(alias));
