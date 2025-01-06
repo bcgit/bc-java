@@ -3,14 +3,9 @@ package org.bouncycastle.crypto.engines;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
  * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
@@ -34,7 +29,6 @@ public class PhotonBeetleEngine
     private byte[] N;
     private byte[] state;
     private byte[][] state_2d;
-    private byte[] T;
     private boolean initialised;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
@@ -97,12 +91,12 @@ public class PhotonBeetleEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        byte[][] keyiv =initialize(forEncryption, params);
+        byte[][] keyiv = initialize(forEncryption, params);
         K = keyiv[0];
         N = keyiv[1];
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
-        T = new byte[TAG_INBYTES];
+        mac = new byte[TAG_INBYTES];
         initialised = true;
         reset(false);
     }
@@ -200,18 +194,18 @@ public class PhotonBeetleEngine
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
         PHOTON_Permutation();
-        T = new byte[TAG_INBYTES];
-        System.arraycopy(state, 0, T, 0, TAG_INBYTES);
+        mac = new byte[TAG_INBYTES];
+        System.arraycopy(state, 0, mac, 0, TAG_INBYTES);
         if (forEncryption)
         {
-            System.arraycopy(T, 0, output, outOff, TAG_INBYTES);
+            System.arraycopy(mac, 0, output, outOff, TAG_INBYTES);
             len += TAG_INBYTES;
         }
         else
         {
             for (i = 0; i < TAG_INBYTES; ++i)
             {
-                if (T[i] != input[len + i])
+                if (mac[i] != input[len + i])
                 {
                     throw new IllegalArgumentException("Mac does not match");
                 }
@@ -219,12 +213,6 @@ public class PhotonBeetleEngine
         }
         reset(false);
         return len;
-    }
-
-    @Override
-    public byte[] getMac()
-    {
-        return T;
     }
 
     @Override
@@ -255,7 +243,7 @@ public class PhotonBeetleEngine
     {
         if (clearMac)
         {
-            T = null;
+            mac = null;
         }
         input_empty = true;
         aadData.reset();

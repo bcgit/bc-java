@@ -1,15 +1,10 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.digests.SparkleDigest;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -49,7 +44,6 @@ public class SparkleEngine
     private final int[] state;
     private final int[] k;
     private final int[] npub;
-    private byte[] tag;
     private boolean encrypted;
     private State m_state = State.Uninitialized;
 
@@ -383,26 +377,21 @@ public class SparkleEngine
         {
             state[RATE_WORDS + i] ^= k[i];
         }
-        tag = new byte[CRYPTO_ABYTES];
-        Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, tag, 0);
+        mac = new byte[CRYPTO_ABYTES];
+        Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, mac, 0);
         if (forEncryption)
         {
-            System.arraycopy(tag, 0, out, outOff, CRYPTO_ABYTES);
+            System.arraycopy(mac, 0, out, outOff, CRYPTO_ABYTES);
         }
         else
         {
-            if (!Arrays.constantTimeAreEqual(CRYPTO_ABYTES, tag, 0, m_buf, m_bufPos))
+            if (!Arrays.constantTimeAreEqual(CRYPTO_ABYTES, mac, 0, m_buf, m_bufPos))
             {
                 throw new InvalidCipherTextException(algorithmName + " mac does not match");
             }
         }
         reset(!forEncryption);
         return resultLength;
-    }
-
-    public byte[] getMac()
-    {
-        return tag;
     }
 
     public int getUpdateOutputSize(int len)
@@ -639,7 +628,7 @@ public class SparkleEngine
     {
         if (clearMac)
         {
-            tag = null;
+            mac = null;
         }
 
         Arrays.clear(m_buf);
