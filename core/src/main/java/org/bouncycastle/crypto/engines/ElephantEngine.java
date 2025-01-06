@@ -88,8 +88,8 @@ public class ElephantEngine
 
     public ElephantEngine(ElephantParameters parameters)
     {
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 12;
+        KEY_SIZE = 16;
+        IV_SIZE = 12;
         switch (parameters)
         {
         case elephant160:
@@ -98,7 +98,7 @@ public class ElephantEngine
             nSBox = 20;
             nRounds = 80;
             lfsrIV = 0x75;
-            CRYPTO_ABYTES = 8;
+            MAC_SIZE = 8;
             algorithmName = "Elephant 160 AEAD";
             break;
         case elephant176:
@@ -108,13 +108,13 @@ public class ElephantEngine
             nRounds = 90;
             lfsrIV = 0x45;
             algorithmName = "Elephant 176 AEAD";
-            CRYPTO_ABYTES = 8;
+            MAC_SIZE = 8;
             break;
         case elephant200:
             BLOCK_SIZE = 25;
             nRounds = 18;
             algorithmName = "Elephant 200 AEAD";
-            CRYPTO_ABYTES = 16;
+            MAC_SIZE = 16;
             break;
         default:
             throw new IllegalArgumentException("Invalid parameter settings for Elephant");
@@ -285,11 +285,11 @@ public class ElephantEngine
         npub = keyiv[1];
         // Storage for the expanded key L
         expanded_key = new byte[BLOCK_SIZE];
-        System.arraycopy(k, 0, expanded_key, 0, CRYPTO_KEYBYTES);
+        System.arraycopy(k, 0, expanded_key, 0, KEY_SIZE);
         permutation(expanded_key);
         initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
-        inputMessage = new byte[BLOCK_SIZE * 2 + (forEncryption ? 0 : CRYPTO_ABYTES)];
+        inputMessage = new byte[BLOCK_SIZE * 2 + (forEncryption ? 0 : MAC_SIZE)];
         reset(false);
     }
 
@@ -318,13 +318,13 @@ public class ElephantEngine
             throw new DataLengthException("input buffer too short");
         }
 
-        if (inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES) >= BLOCK_SIZE)
+        if (inputOff + len - (forEncryption ? 0 : MAC_SIZE) >= BLOCK_SIZE)
         {
-            int mlen = inputOff + len - (forEncryption ? 0 : CRYPTO_ABYTES);
+            int mlen = inputOff + len - (forEncryption ? 0 : MAC_SIZE);
             int adlen = processAADBytes();
             int nblocks_c = 1 + mlen / BLOCK_SIZE;
             int nblocks_m = ((mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1);
-            int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
+            int nblocks_ad = 1 + (IV_SIZE + adlen) / BLOCK_SIZE;
             int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
             byte[] tempInput = new byte[Math.max(nblocks_c, 1) * BLOCK_SIZE];
             System.arraycopy(inputMessage, 0, tempInput, 0, inputOff);
@@ -361,33 +361,33 @@ public class ElephantEngine
             throw new IllegalArgumentException(algorithmName + " needs call init function before doFinal");
         }
         int len = inputOff;
-        if ((forEncryption && len + outOff + CRYPTO_ABYTES > output.length) ||
-            (!forEncryption && len + outOff - CRYPTO_ABYTES > output.length))
+        if ((forEncryption && len + outOff + MAC_SIZE > output.length) ||
+            (!forEncryption && len + outOff - MAC_SIZE > output.length))
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        int mlen = len + messageLen - (forEncryption ? 0 : CRYPTO_ABYTES);
+        int mlen = len + messageLen - (forEncryption ? 0 : MAC_SIZE);
         int rv = mlen - messageLen;
         int adlen = processAADBytes();
         int nblocks_c = 1 + mlen / BLOCK_SIZE;
         int nblocks_m = (mlen % BLOCK_SIZE) != 0 ? nblocks_c : nblocks_c - 1;
-        int nblocks_ad = 1 + (CRYPTO_NPUBBYTES + adlen) / BLOCK_SIZE;
+        int nblocks_ad = 1 + (IV_SIZE + adlen) / BLOCK_SIZE;
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
         outOff += processBytes(inputMessage, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad, true);
-        mac = new byte[CRYPTO_ABYTES];
+        mac = new byte[MAC_SIZE];
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         permutation(tag_buffer);
         xor_block(tag_buffer, expanded_key, 0, BLOCK_SIZE);
         if (forEncryption)
         {
-            System.arraycopy(tag_buffer, 0, mac, 0, CRYPTO_ABYTES);
+            System.arraycopy(tag_buffer, 0, mac, 0, MAC_SIZE);
             System.arraycopy(mac, 0, output, outOff, mac.length);
-            rv += CRYPTO_ABYTES;
+            rv += MAC_SIZE;
         }
         else
         {
-            inputOff -= CRYPTO_ABYTES;
-            for (int i = 0; i < CRYPTO_ABYTES; ++i)
+            inputOff -= MAC_SIZE;
+            for (int i = 0; i < MAC_SIZE; ++i)
             {
                 if (tag_buffer[i] != inputMessage[inputOff + i])
                 {
@@ -420,11 +420,11 @@ public class ElephantEngine
         case DecData:
         case DecInit:
         {
-            int total = Math.max(0, inputOff + len - CRYPTO_ABYTES);
+            int total = Math.max(0, inputOff + len - MAC_SIZE);
             return total - total % BLOCK_SIZE;
         }
         }
-        return Math.max(0, len + inputOff - CRYPTO_ABYTES);
+        return Math.max(0, len + inputOff - MAC_SIZE);
     }
 
     @Override
@@ -440,9 +440,9 @@ public class ElephantEngine
         case EncAad:
         case EncData:
         case EncInit:
-            return len + inputOff + CRYPTO_ABYTES;
+            return len + inputOff + MAC_SIZE;
         }
-        return Math.max(0, len + inputOff - CRYPTO_ABYTES);
+        return Math.max(0, len + inputOff - MAC_SIZE);
     }
 
     private int processAADBytes()
@@ -505,14 +505,14 @@ public class ElephantEngine
         {
         case DecInit:
             System.arraycopy(expanded_key, 0, current_mask, 0, BLOCK_SIZE);
-            System.arraycopy(npub, 0, output, 0, CRYPTO_NPUBBYTES);
-            len += CRYPTO_NPUBBYTES;
+            System.arraycopy(npub, 0, output, 0, IV_SIZE);
+            len += IV_SIZE;
             m_state = State.DecAad;
             break;
         case EncInit:
             System.arraycopy(expanded_key, 0, current_mask, 0, BLOCK_SIZE);
-            System.arraycopy(npub, 0, output, 0, CRYPTO_NPUBBYTES);
-            len += CRYPTO_NPUBBYTES;
+            System.arraycopy(npub, 0, output, 0, IV_SIZE);
+            len += IV_SIZE;
             m_state = State.EncAad;
             break;
         case DecAad:
@@ -579,8 +579,8 @@ public class ElephantEngine
             if (i < nblocks_m)
             {
                 // Compute ciphertext block
-                System.arraycopy(npub, 0, buffer, 0, CRYPTO_NPUBBYTES);
-                Arrays.fill(buffer, CRYPTO_NPUBBYTES, BLOCK_SIZE, (byte)0);
+                System.arraycopy(npub, 0, buffer, 0, IV_SIZE);
+                Arrays.fill(buffer, IV_SIZE, BLOCK_SIZE, (byte)0);
                 xor_block(buffer, current_mask, 0, BLOCK_SIZE);
                 xor_block(buffer, next_mask, 0, BLOCK_SIZE);
                 permutation(buffer);

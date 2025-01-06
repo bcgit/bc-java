@@ -35,7 +35,6 @@ public class PhotonBeetleEngine
     private final int RATE_INBYTES;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
-    private final int TAG_INBYTES = 16;
     private final int LAST_THREE_BITS_OFFSET;
     private final int D = 8;
     private final byte[][] RC = {
@@ -63,9 +62,9 @@ public class PhotonBeetleEngine
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        KEY_SIZE = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
         int CAPACITY_INBITS = 0, RATE_INBITS = 0;
         switch (pbp)
         {
@@ -96,7 +95,7 @@ public class PhotonBeetleEngine
         N = keyiv[1];
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
-        mac = new byte[TAG_INBYTES];
+        mac = new byte[MAC_SIZE];
         initialised = true;
         reset(false);
     }
@@ -137,8 +136,8 @@ public class PhotonBeetleEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        int len = message.size() - (forEncryption ? 0 : TAG_INBYTES);
-        if ((forEncryption && len + TAG_INBYTES + outOff > output.length) ||
+        int len = message.size() - (forEncryption ? 0 : MAC_SIZE);
+        if ((forEncryption && len + MAC_SIZE + outOff > output.length) ||
             (!forEncryption && len + outOff > output.length))
         {
             throw new OutputLengthException("output buffer too short");
@@ -194,16 +193,16 @@ public class PhotonBeetleEngine
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
         PHOTON_Permutation();
-        mac = new byte[TAG_INBYTES];
-        System.arraycopy(state, 0, mac, 0, TAG_INBYTES);
+        mac = new byte[MAC_SIZE];
+        System.arraycopy(state, 0, mac, 0, MAC_SIZE);
         if (forEncryption)
         {
-            System.arraycopy(mac, 0, output, outOff, TAG_INBYTES);
-            len += TAG_INBYTES;
+            System.arraycopy(mac, 0, output, outOff, MAC_SIZE);
+            len += MAC_SIZE;
         }
         else
         {
-            for (i = 0; i < TAG_INBYTES; ++i)
+            for (i = 0; i < MAC_SIZE; ++i)
             {
                 if (mac[i] != input[len + i])
                 {
@@ -218,14 +217,14 @@ public class PhotonBeetleEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -TAG_INBYTES));
+        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -MAC_SIZE));
         return total - total % RATE_INBYTES;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? TAG_INBYTES : -TAG_INBYTES));
+        return Math.max(0, len + message.size() + (forEncryption ? MAC_SIZE : -MAC_SIZE));
     }
 
     @Override

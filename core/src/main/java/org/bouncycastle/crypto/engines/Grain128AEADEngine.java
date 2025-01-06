@@ -37,9 +37,9 @@ public class Grain128AEADEngine
     public Grain128AEADEngine()
     {
         algorithmName = "Grain-128AEAD";
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_NPUBBYTES = 12;
-        CRYPTO_ABYTES = 8;
+        KEY_SIZE = 16;
+        IV_SIZE = 12;
+        MAC_SIZE = 8;
     }
 
     /**
@@ -69,7 +69,7 @@ public class Grain128AEADEngine
         authAcc = new int[2];
         authSr = new int[2];
 
-        System.arraycopy(keyiv[1], 0, workingIV, 0, CRYPTO_NPUBBYTES);
+        System.arraycopy(keyiv[1], 0, workingIV, 0, IV_SIZE);
 
         reset();
     }
