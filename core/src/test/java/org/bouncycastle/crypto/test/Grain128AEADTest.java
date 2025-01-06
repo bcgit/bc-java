@@ -26,6 +26,7 @@ public class Grain128AEADTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 16, new Grain128AEADEngine());
         testVectors();
         testSplitUpdate();
         testExceptions();

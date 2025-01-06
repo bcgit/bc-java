@@ -440,11 +440,6 @@ public class SparkleEngine
         }
     }
 
-    public void reset()
-    {
-        reset(true);
-    }
-
     private void checkAAD()
     {
         switch (m_state)
@@ -624,13 +619,8 @@ public class SparkleEngine
         sparkle_opt(state, SPARKLE_STEPS_BIG);
     }
 
-    private void reset(boolean clearMac)
+    protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
-
         Arrays.clear(m_buf);
         m_bufPos = 0;
         encrypted = false;
@@ -663,10 +653,7 @@ public class SparkleEngine
 
         sparkle_opt(state, SPARKLE_STEPS_BIG);
 
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
-        }
+        super.reset(clearMac);
     }
 
     private static int ELL(int x)

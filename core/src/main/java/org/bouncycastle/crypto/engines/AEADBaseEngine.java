@@ -41,10 +41,15 @@ abstract class AEADBaseEngine
         return mac;
     }
 
+    public void reset()
+    {
+        reset(true);
+    }
+
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
-        return processBytes(new byte[]{ in }, 0, 1, out, outOff);
+        return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
     protected byte[][] initialize(boolean forEncryption, CipherParameters params)
@@ -97,5 +102,17 @@ abstract class AEADBaseEngine
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
         return new byte[][]{k, npub};
+    }
+
+    protected void reset(boolean clearMac)
+    {
+        if (clearMac)
+        {
+            mac = null;
+        }
+        if (initialAssociatedText != null)
+        {
+            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
+        }
     }
 }

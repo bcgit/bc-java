@@ -239,17 +239,14 @@ public class PhotonBeetleEngine
         reset(true);
     }
 
-    private void reset(boolean clearMac)
+    protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
         input_empty = true;
         aadData.reset();
         message.reset();
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
+        super.reset(clearMac);
     }
 
     private void PHOTON_Permutation()

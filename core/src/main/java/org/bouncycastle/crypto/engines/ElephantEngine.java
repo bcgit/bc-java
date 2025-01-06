@@ -445,12 +445,6 @@ public class ElephantEngine
         return Math.max(0, len + inputOff - CRYPTO_ABYTES);
     }
 
-    @Override
-    public void reset()
-    {
-        reset(true);
-    }
-
     private int processAADBytes()
     {
         byte[] ad = aadData.toByteArray();
@@ -464,12 +458,8 @@ public class ElephantEngine
         return ad.length;
     }
 
-    private void reset(boolean clearMac)
+    protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
         aadData.reset();
         Arrays.fill(tag_buffer, (byte)0);
         Arrays.fill(previous_outputMessage, (byte)0);
@@ -477,6 +467,7 @@ public class ElephantEngine
         nb_its = 0;
         adOff = -1;
         messageLen = 0;
+        super.reset(clearMac);
     }
 
     public int getBlockSize()

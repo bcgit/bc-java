@@ -91,6 +91,11 @@ public class AsconTest
         testVectorsXof_AsconXof();
         testVectorsXof_AsconXofA();
 
+        CipherTest.checkAEADParemeter(this, 16,16, 16, 16, new AsconAEAD128());
+        CipherTest.checkAEADParemeter(this, 16,16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128));
+        CipherTest.checkAEADParemeter(this, 16,16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
+        CipherTest.checkAEADParemeter(this, 20,16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
+
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
             @Override

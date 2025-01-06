@@ -238,12 +238,8 @@ public class XoodyakEngine
         reset(true);
     }
 
-    private void reset(boolean clearMac)
+    protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
         Arrays.fill(state, (byte)0);
         aadFinished = false;
         encrypted = false;
@@ -260,6 +256,7 @@ public class XoodyakEngine
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
         AbsorbAny(KID, 0, KLen + IDLen + 1, Rabsorb, 0x02);
+        super.reset(clearMac);
     }
 
     private void AbsorbAny(byte[] X, int Xoff, int XLen, int r, int Cd)

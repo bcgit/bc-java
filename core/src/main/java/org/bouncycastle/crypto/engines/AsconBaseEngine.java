@@ -423,17 +423,9 @@ abstract class AsconBaseEngine
         }
     }
 
-    public void reset()
-    {
-        reset(true);
-    }
 
     protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
         Arrays.clear(m_buf);
         m_bufPos = 0;
 
@@ -456,10 +448,7 @@ abstract class AsconBaseEngine
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
         ascon_aeadinit();
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
-        }
+        super.reset(clearMac);
     }
 
     public abstract String getAlgorithmVersion();
