@@ -21,7 +21,7 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class ISAPEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
 
     public enum IsapType
@@ -34,6 +34,8 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_NPUBBYTES = 16;
         switch (isapType)
         {
         case ISAP_A_128A:
@@ -54,12 +56,7 @@ public class ISAPEngine
             break;
         }
     }
-
-    private String algorithmName;
-    private boolean forEncryption;
     private boolean initialised;
-    final int CRYPTO_KEYBYTES = 16;
-    final int CRYPTO_NPUBBYTES = 16;
     final int ISAP_STATE_SZ = 40;
     private byte[] k;
     private byte[] c;
@@ -792,56 +789,12 @@ public class ISAPEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD init parameters must include an IV");
-        }
-
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-
-        byte[] iv = ivParams.getIV();
-
-        if (iv == null || iv.length != 16)
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD requires exactly 16 bytes of IV");
-        }
-
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD init parameters must include a key");
-        }
-
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        byte[] keyBytes = key.getKey();
-        if (keyBytes.length != 16)
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD key must be 128 bits long");
-        }
-
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-
-        /*
-         * Initialize variables.
-         */
-        npub = new byte[iv.length];
-        k = new byte[keyBytes.length];
-        System.arraycopy(iv, 0, npub, 0, iv.length);
-        System.arraycopy(keyBytes, 0, k, 0, keyBytes.length);
+        byte[][] keyiv = initialize(forEncryption, params);
+        npub = keyiv[1];
+        k = keyiv[0];
         ISAPAEAD.init();
         initialised = true;
         reset();
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
     }
 
     @Override
@@ -859,13 +812,6 @@ public class ISAPEngine
         }
 
         aadData.write(in, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
     @Override
@@ -982,16 +928,6 @@ public class ISAPEngine
         ISAPAEAD.reset();
         message.reset();
         outputStream.reset();
-    }
-
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_NPUBBYTES;
     }
 
     public int getBlockSize()

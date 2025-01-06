@@ -8,7 +8,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
     protected enum State
     {
@@ -25,11 +25,7 @@ abstract class AsconBaseEngine
 
 
     protected State m_state = State.Uninitialized;
-    protected String algorithmName;
     protected byte[] mac;
-    protected byte[] initialAssociatedText;
-    protected int CRYPTO_KEYBYTES;
-    protected int CRYPTO_ABYTES;
     protected int nr;
     protected int ASCON_AEAD_RATE;
     protected long K0;
@@ -254,12 +250,6 @@ abstract class AsconBaseEngine
         m_bufPos = len;
     }
 
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
-    }
-
     public int processBytes(byte[] inBytes, int inOff, int len, byte[] outBytes, int outOff)
         throws DataLengthException
     {
@@ -479,22 +469,5 @@ abstract class AsconBaseEngine
         }
     }
 
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_ABYTES;
-    }
-
-
-    public String getAlgorithmName()
-    {
-        return algorithmName;
-    }
-
     public abstract String getAlgorithmVersion();
-
 }

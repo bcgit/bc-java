@@ -21,7 +21,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  */
 
 public class PhotonBeetleEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
     public enum PhotonBeetleParameters
     {
@@ -30,31 +30,20 @@ public class PhotonBeetleEngine
     }
 
     private boolean input_empty;
-    private boolean forEncryption;
     private byte[] K;
     private byte[] N;
     private byte[] state;
     private byte[][] state_2d;
-    private byte[] A;
     private byte[] T;
-    private boolean encrypted;
     private boolean initialised;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
-    private final int CRYPTO_KEYBYTES = 16;
-    private final int CRYPTO_NPUBBYTES = 16;
     private final int RATE_INBYTES;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
     private final int TAG_INBYTES = 16;
     private final int LAST_THREE_BITS_OFFSET;
-    private final int ROUND = 12;
     private final int D = 8;
-    private final int Dq = 3;
-    private final int Dr = 7;
-    private final int DSquare = 64;
-    private final int S = 4;
-    private final int S_1 = 3;
     private final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
@@ -80,6 +69,9 @@ public class PhotonBeetleEngine
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_NPUBBYTES = 16;
+        CRYPTO_ABYTES = 16;
         int CAPACITY_INBITS = 0, RATE_INBITS = 0;
         switch (pbp)
         {
@@ -98,46 +90,21 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         initialised = false;
+        algorithmName = "Photon-Beetle AEAD";
     }
 
     @Override
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException("Photon-Beetle AEAD init parameters must include an IV");
-        }
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-        N = ivParams.getIV();
-        if (N == null || N.length != CRYPTO_NPUBBYTES)
-        {
-            throw new IllegalArgumentException("Photon-Beetle AEAD requires exactly 16 bytes of IV");
-        }
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException("Photon-Beetle AEAD init parameters must include a key");
-        }
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        K = key.getKey();
-        if (K.length != CRYPTO_KEYBYTES)
-        {
-            throw new IllegalArgumentException("Photon-Beetle AEAD key must be 128 bits long");
-        }
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
+        byte[][] keyiv =initialize(forEncryption, params);
+        K = keyiv[0];
+        N = keyiv[1];
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
         T = new byte[TAG_INBYTES];
         initialised = true;
         reset(false);
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return "Photon-Beetle AEAD";
     }
 
     @Override
@@ -154,13 +121,6 @@ public class PhotonBeetleEngine
             throw new DataLengthException("input buffer too short");
         }
         aadData.write(input, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte input, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     @Override
@@ -191,8 +151,8 @@ public class PhotonBeetleEngine
         }
         byte[] input = message.toByteArray();
         int inOff = 0;
-        A = aadData.toByteArray();
-        int adlen = A.length, i;
+        byte[] a = aadData.toByteArray();
+        int adlen = a.length, i;
         if (adlen != 0 || len != 0)
         {
             input_empty = false;
@@ -206,11 +166,11 @@ public class PhotonBeetleEngine
             for (i = 0; i < Dlen_inblocks - 1; i++)
             {
                 PHOTON_Permutation();
-                XOR(A, i * RATE_INBYTES, RATE_INBYTES);
+                XOR(a, i * RATE_INBYTES, RATE_INBYTES);
             }
             PHOTON_Permutation();
             LastDBlocklen = adlen - i * RATE_INBYTES;
-            XOR(A, i * RATE_INBYTES, LastDBlocklen);
+            XOR(a, i * RATE_INBYTES, LastDBlocklen);
             if (LastDBlocklen < RATE_INBYTES)
             {
                 state[LastDBlocklen] ^= 0x01; // ozs
@@ -302,16 +262,19 @@ public class PhotonBeetleEngine
         message.reset();
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
-        encrypted = false;
     }
 
     private void PHOTON_Permutation()
     {
         int i, j, k;
+        int dq = 3;
+        int dr = 7;
+        int DSquare = 64;
         for (i = 0; i < DSquare; i++)
         {
-            state_2d[i >>> Dq][i & Dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
+            state_2d[i >>> dq][i & dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
         }
+        int ROUND = 12;
         for (int round = 0; round < ROUND; round++)
         {
             //AddKey
@@ -367,7 +330,7 @@ public class PhotonBeetleEngine
         }
         for (i = 0; i < DSquare; i += 2)
         {
-            state[i >>> 1] = (byte)(((state_2d[i >>> Dq][i & Dr] & 0xf)) | ((state_2d[i >>> Dq][(i + 1) & Dr] & 0xf) << 4));
+            state[i >>> 1] = (byte)(((state_2d[i >>> dq][i & dr] & 0xf)) | ((state_2d[i >>> dq][(i + 1) & dr] & 0xf) << 4));
         }
     }
 
@@ -427,15 +390,5 @@ public class PhotonBeetleEngine
     public int getBlockSize()
     {
         return RATE_INBYTES;
-    }
-
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_NPUBBYTES;
     }
 }

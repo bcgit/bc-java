@@ -3,21 +3,16 @@ package org.bouncycastle.crypto.engines;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
 
 /**
  * Grain-128 AEAD, based on the current round 3 submission, https://grain-128aead.github.io/
  */
 public class Grain128AEADEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
     /**
      * Constants
@@ -37,9 +32,17 @@ public class Grain128AEADEngine
 
     private boolean initialised = false;
     private boolean aadFinished = false;
-    private ErasableOutputStream aadData = new ErasableOutputStream();
+    private final ErasableOutputStream aadData = new ErasableOutputStream();
 
     private byte[] mac;
+
+    public Grain128AEADEngine()
+    {
+        algorithmName = "Grain-128AEAD";
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_NPUBBYTES = 12;
+        CRYPTO_ABYTES = 8;
+    }
 
     public String getAlgorithmName()
     {
@@ -60,51 +63,20 @@ public class Grain128AEADEngine
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException(
-                "Grain-128AEAD init parameters must include an IV");
-        }
+        byte[][] keyiv = initialize(true, params);
 
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-
-        byte[] iv = ivParams.getIV();
-
-        if (iv == null || iv.length != 12)
-        {
-            throw new IllegalArgumentException(
-                "Grain-128AEAD requires exactly 12 bytes of IV");
-        }
-
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException(
-                "Grain-128AEAD init parameters must include a key");
-        }
-
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        byte[] keyBytes = key.getKey();
-        if (keyBytes.length != 16)
-        {
-            throw new IllegalArgumentException(
-                "Grain-128AEAD key must be 128 bits long");
-        }
-
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
 
         /*
          * Initialize variables.
          */
         workingIV = new byte[16];
-        workingKey = new byte[16];
+        workingKey = keyiv[0];
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
         authAcc = new int[2];
         authSr = new int[2];
 
-        System.arraycopy(iv, 0, workingIV, 0, iv.length);
-        System.arraycopy(keyBytes, 0, workingKey, 0, keyBytes.length);
+        System.arraycopy(keyiv[1], 0, workingIV, 0, CRYPTO_NPUBBYTES);
 
         reset();
     }
@@ -129,27 +101,23 @@ public class Grain128AEADEngine
                 lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
             }
         }
-        for (int quotient = 0; quotient < 2; ++quotient)
-        {
-            for (int remainder = 0; remainder < 32; ++remainder)
-            {
-                int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                authAcc[quotient] |= output << remainder;
-            }
-        }
-        for (int quotient = 0; quotient < 2; ++quotient)
-        {
-            for (int remainder = 0; remainder < 32; ++remainder)
-            {
-                int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-                authSr[quotient] |= output << remainder;
-            }
-        }
+        initGrain(authAcc);
+        initGrain(authSr);
         initialised = true;
+    }
+
+    private void initGrain(int[] auth)
+    {
+        for (int quotient = 0; quotient < 2; ++quotient)
+        {
+            for (int remainder = 0; remainder < 32; ++remainder)
+            {
+                int output = getOutput();
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+                auth[quotient] |= output << remainder;
+            }
+        }
     }
 
     /**
@@ -287,7 +255,7 @@ public class Grain128AEADEngine
 
         if (!aadFinished)
         {
-            doProcessAADBytes(aadData.getBuf(), 0, aadData.size());
+            doProcessAADBytes(aadData.getBuf(), aadData.size());
             aadFinished = true;
         }
 
@@ -322,7 +290,7 @@ public class Grain128AEADEngine
         initGrain();
     }
 
-    private byte[] getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
+    private void getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
     {
         for (int i = 0; i < len; ++i)
         {
@@ -336,10 +304,6 @@ public class Grain128AEADEngine
                 int input_i_j = (input_i >> j) & 1;
                 cc |= (input_i_j ^ output) << j;
 
-//                if (input_i_j != 0)
-//                {
-//                    accumulate();
-//                }
                 int mask = -input_i_j;
                 authAcc[0] ^= authSr[0] & mask;
                 authAcc[1] ^= authSr[1] & mask;
@@ -351,7 +315,6 @@ public class Grain128AEADEngine
             ciphertext[outOff + i] = cc;
         }
 
-        return ciphertext;
     }
 
     public void processAADByte(byte in)
@@ -372,7 +335,7 @@ public class Grain128AEADEngine
         aadData.write(input, inOff, len);
     }
 
-    private void doProcessAADBytes(byte[] input, int inOff, int len)
+    private void doProcessAADBytes(byte[] input, int len)
     {
         byte[] ader;
         int aderlen;
@@ -398,7 +361,7 @@ public class Grain128AEADEngine
         }
         for (int i = 0; i < len; ++i)
         {
-            ader[1 + aderlen + i] = input[inOff + i];
+            ader[1 + aderlen + i] = input[i];
         }
 
         for (int i = 0; i < ader.length; ++i)
@@ -410,10 +373,7 @@ public class Grain128AEADEngine
                 lfsr = shift(lfsr, (getOutputLFSR()) & 1);
 
                 int ader_i_j = (ader_i >> j) & 1;
-//                if (ader_i_j != 0)
-//                {
-//                    accumulate();
-//                }
+
                 int mask = -ader_i_j;
                 authAcc[0] ^= authSr[0] & mask;
                 authAcc[1] ^= authSr[1] & mask;
@@ -448,7 +408,7 @@ public class Grain128AEADEngine
     {
         if (!aadFinished)
         {
-            doProcessAADBytes(aadData.getBuf(), 0, aadData.size());
+            doProcessAADBytes(aadData.getBuf(), aadData.size());
             aadFinished = true;
         }
 

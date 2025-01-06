@@ -1,11 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -36,31 +31,29 @@ public class AsconEngine
     }
 
     private final AsconParameters asconParameters;
-
     private long K2;
 
     public AsconEngine(AsconParameters asconParameters)
     {
         this.asconParameters = asconParameters;
+        CRYPTO_NPUBBYTES = 16;
+        CRYPTO_ABYTES = 16;
         switch (asconParameters)
         {
         case ascon80pq:
             CRYPTO_KEYBYTES = 20;
-            CRYPTO_ABYTES = 16;
             ASCON_AEAD_RATE = 8;
             ASCON_IV = 0xa0400c0600000000L;
             algorithmName = "Ascon-80pq AEAD";
             break;
         case ascon128a:
             CRYPTO_KEYBYTES = 16;
-            CRYPTO_ABYTES = 16;
             ASCON_AEAD_RATE = 16;
             ASCON_IV = 0x80800c0800000000L;
             algorithmName = "Ascon-128a AEAD";
             break;
         case ascon128:
             CRYPTO_KEYBYTES = 16;
-            CRYPTO_ABYTES = 16;
             ASCON_AEAD_RATE = 8;
             ASCON_IV = 0x80400c0600000000L;
             algorithmName = "Ascon-128 AEAD";
@@ -219,62 +212,20 @@ public class AsconEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        KeyParameter key;
-        byte[] npub;
-        if (params instanceof AEADParameters)
-        {
-            AEADParameters aeadParameters = (AEADParameters)params;
-            key = aeadParameters.getKey();
-            npub = aeadParameters.getNonce();
-            initialAssociatedText = aeadParameters.getAssociatedText();
+        byte[][] keyiv = initialize(forEncryption, params);
 
-            int macSizeBits = aeadParameters.getMacSize();
-            if (macSizeBits != CRYPTO_ABYTES * 8)
-            {
-                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
-            }
-        }
-        else if (params instanceof ParametersWithIV)
-        {
-            ParametersWithIV withIV = (ParametersWithIV)params;
-            key = (KeyParameter)withIV.getParameters();
-            npub = withIV.getIV();
-            initialAssociatedText = null;
-        }
-        else
-        {
-            throw new IllegalArgumentException("invalid parameters passed to Ascon");
-        }
-
-        if (key == null)
-        {
-            throw new IllegalArgumentException("Ascon Init parameters must include a key");
-        }
-        if (npub == null || npub.length != CRYPTO_ABYTES)
-        {
-            throw new IllegalArgumentException(asconParameters + " requires exactly " + CRYPTO_ABYTES + " bytes of IV");
-        }
-
-        byte[] k = key.getKey();
-        if (k.length != CRYPTO_KEYBYTES)
-        {
-            throw new IllegalArgumentException(asconParameters + " key must be " + CRYPTO_KEYBYTES + " bytes long");
-        }
-
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        N0 = Pack.bigEndianToLong(npub, 0);
-        N1 = Pack.bigEndianToLong(npub, 8);
+        N0 = Pack.bigEndianToLong(keyiv[1], 0);
+        N1 = Pack.bigEndianToLong(keyiv[1], 8);
         if (CRYPTO_KEYBYTES == 16)
         {
-            K1 = Pack.bigEndianToLong(k, 0);
-            K2 = Pack.bigEndianToLong(k, 8);
+            K1 = Pack.bigEndianToLong(keyiv[0], 0);
+            K2 = Pack.bigEndianToLong(keyiv[0], 8);
         }
         else if (CRYPTO_KEYBYTES == 20)
         {
-            K0 = Pack.bigEndianToInt(k, 0);
-            K1 = Pack.bigEndianToLong(k, 4);
-            K2 = Pack.bigEndianToLong(k, 12);
+            K0 = Pack.bigEndianToInt(keyiv[0], 0);
+            K1 = Pack.bigEndianToLong(keyiv[0], 4);
+            K2 = Pack.bigEndianToLong(keyiv[0], 12);
         }
         else
         {

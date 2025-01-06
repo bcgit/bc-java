@@ -19,7 +19,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/elephant-spec-final.pdf
  */
 public class ElephantEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
     public enum ElephantParameters
     {
@@ -40,9 +40,6 @@ public class ElephantEngine
         DecData, // cannot process AAD
         DecFinal,
     }
-
-    private boolean forEncryption;
-    private final String algorithmName;
     private final ElephantParameters parameters;
     private final int BLOCK_SIZE;
     private int nBits;
@@ -52,9 +49,6 @@ public class ElephantEngine
     private byte[] tag;
     private byte[] npub;
     private byte[] expanded_key;
-    private final byte CRYPTO_KEYBYTES = 16;
-    private final byte CRYPTO_NPUBBYTES = 12;
-    private final byte CRYPTO_ABYTES;
     private boolean initialised;
     private int nb_its;
     private byte[] ad;
@@ -100,7 +94,8 @@ public class ElephantEngine
 
     public ElephantEngine(ElephantParameters parameters)
     {
-
+        CRYPTO_KEYBYTES = 16;
+        CRYPTO_NPUBBYTES = 12;
         switch (parameters)
         {
         case elephant160:
@@ -291,43 +286,17 @@ public class ElephantEngine
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException(algorithmName + " init parameters must include an IV");
-        }
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-        npub = ivParams.getIV();
-        if (npub == null || npub.length != CRYPTO_NPUBBYTES)
-        {
-            throw new IllegalArgumentException(algorithmName + " requires exactly 12 bytes of IV");
-        }
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException(algorithmName + " init parameters must include a key");
-        }
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        byte[] k = key.getKey();
-        if (k.length != CRYPTO_KEYBYTES)
-        {
-            throw new IllegalArgumentException(algorithmName + " key must be 128 bits long");
-        }
+        byte[][] keyiv = initialize(forEncryption, params);
+        byte[] k = keyiv[0];
+        npub = keyiv[1];
         // Storage for the expanded key L
         expanded_key = new byte[BLOCK_SIZE];
         System.arraycopy(k, 0, expanded_key, 0, CRYPTO_KEYBYTES);
         permutation(expanded_key);
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
         initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         inputMessage = new byte[BLOCK_SIZE * 2 + (forEncryption ? 0 : CRYPTO_ABYTES)];
         reset(false);
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
     }
 
     @Override
@@ -344,13 +313,6 @@ public class ElephantEngine
             throw new DataLengthException("input buffer too short");
         }
         aadData.write(input, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte input, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{input}, 0, 1, output, outOff);
     }
 
     @Override
@@ -527,16 +489,6 @@ public class ElephantEngine
         nb_its = 0;
         adOff = -1;
         messageLen = 0;
-    }
-
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_NPUBBYTES;
     }
 
     public int getBlockSize()
