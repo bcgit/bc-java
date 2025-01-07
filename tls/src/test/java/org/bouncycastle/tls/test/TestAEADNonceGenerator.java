@@ -1,6 +1,5 @@
 package org.bouncycastle.tls.test;
 
-import org.bouncycastle.tls.crypto.TlsNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
 import org.bouncycastle.util.Arrays;
 
@@ -14,7 +13,7 @@ class TestAEADNonceGenerator
     private long counterValue;
     private boolean counterExhausted;
 
-    TestAEADNonceGenerator(final byte[] baseNonce, final int counterBits)
+    TestAEADNonceGenerator(byte[] baseNonce, int counterBits)
     {
         this.baseNonce = Arrays.copyOf(baseNonce, baseNonce.length);
         this.counterMask = -1L >>> (64 - counterBits);
@@ -24,7 +23,6 @@ class TestAEADNonceGenerator
         this.counterExhausted = false;
     }
 
-    @Override
     public void generateNonce(byte[] nonce)
     {
         if (nonce.length != baseNonce.length)
@@ -38,7 +36,7 @@ class TestAEADNonceGenerator
         }
 
         System.arraycopy(baseNonce, 0, nonce, 0, baseNonce.length);
-        final int offset = baseNonce.length - counterBytes;
+        int offset = baseNonce.length - counterBytes;
 
         for (int i = 0; i < counterBytes; i++)
         {
