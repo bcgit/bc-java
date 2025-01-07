@@ -1,9 +1,8 @@
 package org.bouncycastle.tls.crypto.impl;
 
-import org.bouncycastle.tls.TlsFatalAlert;
+import java.io.IOException;
 
 public interface AEADNonceGenerator
 {
-    public void generateNonce(byte[] nonce)
-        throws TlsFatalAlert;
+    public void generateNonce(byte[] nonce) throws IOException;
 }

@@ -46,7 +46,7 @@ class MockPSKTls13Server
     protected int[] getSupportedCipherSuites()
     {
         return TlsUtils.getSupportedCipherSuites(getCrypto(),
-            new int[] { CipherSuite.TLS_AES_128_CCM_8_SHA256, CipherSuite.TLS_AES_128_CCM_SHA256,
+            new int[]{ CipherSuite.TLS_AES_128_CCM_8_SHA256, CipherSuite.TLS_AES_128_CCM_SHA256,
                 CipherSuite.TLS_AES_128_GCM_SHA256, CipherSuite.TLS_CHACHA20_POLY1305_SHA256 });
     }
 

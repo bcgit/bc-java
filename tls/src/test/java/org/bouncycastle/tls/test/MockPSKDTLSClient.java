@@ -101,7 +101,7 @@ class MockPSKDTLSClient
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
 
-                String[] trustedCertResources = new String[] { "x509-server-rsa-enc.pem" };
+                String[] trustedCertResources = new String[]{ "x509-server-rsa-enc.pem" };
 
                 TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],
                     trustedCertResources);

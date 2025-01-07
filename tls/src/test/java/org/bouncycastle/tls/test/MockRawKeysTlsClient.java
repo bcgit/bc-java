@@ -55,7 +55,7 @@ class MockRawKeysTlsClient
 
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return new ProtocolVersion[] {tlsVersion};
+        return new ProtocolVersion[]{tlsVersion};
     }
 
     protected int[] getSupportedCipherSuites()
