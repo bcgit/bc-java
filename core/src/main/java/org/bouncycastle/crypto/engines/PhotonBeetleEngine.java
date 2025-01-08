@@ -162,11 +162,20 @@ public class PhotonBeetleEngine
         int rv = 0;
 
         int originalInOff = inOff;
+        if (!forEncryption && bufferOff >= RATE_INBYTES)
+        {
+            PHOTON_Permutation();
+            rhoohr(output, outOff, buffer, 0, RATE_INBYTES);
+            rv += RATE_INBYTES;
+            System.arraycopy(buffer, RATE_INBYTES, buffer, 0, bufferOff - RATE_INBYTES);
+            bufferOff -= RATE_INBYTES;
+            blockLen -= RATE_INBYTES;
+            outOff += RATE_INBYTES;
+        }
         if (blockLen >= RATE_INBYTES)
         {
             tmp = Math.max(RATE_INBYTES - bufferOff, 0);
             System.arraycopy(input, inOff, buffer, bufferOff, tmp);
-
             PHOTON_Permutation();
             rhoohr(output, outOff, buffer, 0, RATE_INBYTES);
             inOff += tmp;
