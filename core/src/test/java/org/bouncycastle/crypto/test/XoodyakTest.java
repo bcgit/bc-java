@@ -32,6 +32,14 @@ public class XoodyakTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
+        {
+            @Override
+            public AEADCipher createInstance()
+            {
+                return new XoodyakEngine();
+            }
+        });
         DigestTest.checkDigestReset(this, new XoodyakDigest());
         testVectorsHash();
         testVectors();
@@ -99,6 +107,9 @@ public class XoodyakTest
             int a = line.indexOf('=');
             if (a < 0)
             {
+//                if(map.get("Count").equals("793")){
+//                    System.out.println();
+//                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));
@@ -128,6 +139,7 @@ public class XoodyakTest
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
                 xoodyak.reset();
+                //System.out.println(map.get("Count") +" pass");
                 map.clear();
             }
             else
