@@ -5,6 +5,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
@@ -17,6 +18,7 @@ public class OpenPGPKeyEditor
 {
 
     private final OpenPGPImplementation implementation;
+    private final OpenPGPPolicy policy;
     private OpenPGPKey key;
 
     public OpenPGPKeyEditor(OpenPGPKey key)
@@ -26,8 +28,14 @@ public class OpenPGPKeyEditor
 
     public OpenPGPKeyEditor(OpenPGPKey key, OpenPGPImplementation implementation)
     {
+        this(key, implementation, implementation.policy());
+    }
+
+    public OpenPGPKeyEditor(OpenPGPKey key, OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
         this.key = key;
         this.implementation = implementation;
+        this.policy = policy;
     }
 
     public OpenPGPKeyEditor addUserId(String userId, char[] primaryKeyPassphrase)
@@ -77,7 +85,37 @@ public class OpenPGPKeyEditor
         PGPPublicKeyRing publicKeyRing = PGPPublicKeyRing.insertPublicKey(key.getPGPPublicKeyRing(), pubKey);
         PGPSecretKeyRing secretKeyRing = PGPSecretKeyRing.replacePublicKeys(key.getPGPKeyRing(), publicKeyRing);
 
-        this.key = new OpenPGPKey(secretKeyRing, implementation);
+        this.key = new OpenPGPKey(secretKeyRing, implementation, policy);
+        return this;
+    }
+
+    public OpenPGPKeyEditor changePassphrase(OpenPGPCertificate.OpenPGPComponentKey subkey,
+                                             char[] oldPassphrase,
+                                             char[] newPassphrase,
+                                             boolean useAEAD)
+    {
+        OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(subkey);
+        if (secretKey == null)
+        {
+            throw new IllegalArgumentException("Subkey is not part of the key.");
+        }
+
+        try
+        {
+            PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
+            PGPSecretKey reencrypted = PGPSecretKey.copyWithNewPassword(
+                    secretKey.getPGPSecretKey(),
+                    implementation.pbeSecretKeyDecryptorBuilderProvider().provide().build(oldPassphrase),
+                    implementation.pbeSecretKeyEncryptorFactory(useAEAD)
+                            .build(
+                                    newPassphrase,
+                                    secretKey.getPGPSecretKey().getPublicKey().getPublicKeyPacket()),
+                    implementation.pgpDigestCalculatorProvider().get(HashAlgorithmTags.SHA1));
+            secretKeys = PGPSecretKeyRing.insertSecretKey(secretKeys, reencrypted);
+            key = new OpenPGPKey(secretKeys, implementation, policy);
+        } catch (PGPException e) {
+            throw new RuntimeException(e);
+        }
         return this;
     }
 

@@ -43,8 +43,13 @@ public class OpenPGPMessageProcessor
      */
     public OpenPGPMessageProcessor(OpenPGPImplementation implementation)
     {
+        this(implementation, implementation.policy());
+    }
+
+    public OpenPGPMessageProcessor(OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
         this.implementation = implementation;
-        this.configuration = new Configuration(implementation.policy());
+        this.configuration = new Configuration(policy);
     }
 
     /**
