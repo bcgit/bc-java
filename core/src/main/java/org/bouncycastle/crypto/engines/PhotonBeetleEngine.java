@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -9,7 +7,7 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 
 /**
- * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
+ * Photon-Beetle, <a href="https://www.isical.ac.in/~lightweight/beetle/"></a>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
  * <p>
  * Photon-Beetle with reference to C Reference Impl from: https://github.com/PHOTON-Beetle/Software
@@ -31,15 +29,16 @@ public class PhotonBeetleEngine
     private byte[] state;
     private byte[][] state_2d;
     private boolean initialised;
-    private final byte[] aadData;
-    private int aadOff;
+    private final byte[] buffer;
+    private int bufferOff;
     private int aadLen;
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private int messageLen;
     private final int RATE_INBYTES;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
     private final int D = 8;
+    private boolean aadFinished;
     private final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
@@ -87,7 +86,7 @@ public class PhotonBeetleEngine
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         initialised = false;
         algorithmName = "Photon-Beetle AEAD";
-        aadData = new byte[RATE_INBYTES];
+        buffer = new byte[RATE_INBYTES + (forEncryption ? 0 : MAC_SIZE)];
     }
 
     @Override
@@ -107,13 +106,13 @@ public class PhotonBeetleEngine
     @Override
     public void processAADByte(byte input)
     {
-        if (aadOff >= aadData.length)
+        if (bufferOff >= RATE_INBYTES)
         {
             PHOTON_Permutation();
-            XOR(aadData, 0, RATE_INBYTES);
-            aadOff = 0;
+            XOR(buffer, 0, RATE_INBYTES);
+            bufferOff = 0;
         }
-        aadData[aadOff++] = input;
+        buffer[bufferOff++] = input;
         aadLen++;
     }
 
@@ -126,15 +125,15 @@ public class PhotonBeetleEngine
         }
         int tmp;
         aadLen += len;
-        if (aadOff + len >= RATE_INBYTES)
+        if (bufferOff + len >= RATE_INBYTES)
         {
-            tmp = RATE_INBYTES - aadOff;
-            System.arraycopy(input, inOff, aadData, aadOff, tmp);
+            tmp = RATE_INBYTES - bufferOff;
+            System.arraycopy(input, inOff, buffer, bufferOff, tmp);
             PHOTON_Permutation();
-            XOR(aadData, 0, RATE_INBYTES);
+            XOR(buffer, 0, RATE_INBYTES);
             inOff += tmp;
             len -= tmp;
-            aadOff = 0;
+            bufferOff = 0;
         }
         while (len >= RATE_INBYTES)
         {
@@ -143,9 +142,8 @@ public class PhotonBeetleEngine
             inOff += RATE_INBYTES;
             len -= RATE_INBYTES;
         }
-        System.arraycopy(input, inOff, aadData, aadOff, len);
-        aadOff += len;
-
+        System.arraycopy(input, inOff, buffer, bufferOff, len);
+        bufferOff += len;
     }
 
     @Override
@@ -156,8 +154,40 @@ public class PhotonBeetleEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        message.write(input, inOff, len);
-        return 0;
+        messageLen += len;
+        // bufferOff will be set back to 0 if processFinalAADBlock is processed
+        processFinalAADBlock(messageLen - (forEncryption ? 0 : MAC_SIZE) > 0);
+        int blockLen = len + bufferOff - (forEncryption ? 0 : MAC_SIZE);
+        int tmp;
+        int rv = 0;
+
+        int originalInOff = inOff;
+        if (blockLen >= RATE_INBYTES)
+        {
+            tmp = Math.max(RATE_INBYTES - bufferOff, 0);
+            System.arraycopy(input, inOff, buffer, bufferOff, tmp);
+
+            PHOTON_Permutation();
+            rhoohr(output, outOff, buffer, 0, RATE_INBYTES);
+            inOff += tmp;
+            rv += RATE_INBYTES;
+            blockLen -= RATE_INBYTES;
+            outOff += RATE_INBYTES;
+            bufferOff = 0;
+        }
+        while (blockLen >= RATE_INBYTES)
+        {
+            PHOTON_Permutation();
+            rhoohr(output, outOff, input, inOff, RATE_INBYTES);
+            outOff += RATE_INBYTES;
+            inOff += RATE_INBYTES;
+            rv += RATE_INBYTES;
+            blockLen -= RATE_INBYTES;
+        }
+        len -= inOff - originalInOff;
+        System.arraycopy(input, inOff, buffer, bufferOff, len);
+        bufferOff += len;
+        return rv;
     }
 
     @Override
@@ -168,51 +198,32 @@ public class PhotonBeetleEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        int len = message.size() - (forEncryption ? 0 : MAC_SIZE);
-        if ((forEncryption && len + MAC_SIZE + outOff > output.length) ||
-            (!forEncryption && len + outOff > output.length))
+        processFinalAADBlock(false);
+        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        int bufferLen = bufferOff - (forEncryption ? 0 : MAC_SIZE);
+        if ((forEncryption && bufferLen + MAC_SIZE + outOff > output.length) ||
+            (!forEncryption && bufferLen + outOff > output.length))
         {
             throw new OutputLengthException("output buffer too short");
         }
-        byte[] input = message.toByteArray();
-        int inOff = 0;
-
         int i;
         if (aadLen != 0 || len != 0)
         {
             input_empty = false;
         }
-        byte c0 = select((len != 0), ((aadLen % RATE_INBYTES) == 0), (byte)3, (byte)4);
         byte c1 = select((aadLen != 0), ((len % RATE_INBYTES) == 0), (byte)5, (byte)6);
-        int Dlen_inblocks, LastDBlocklen;
-        if (aadLen != 0)
-        {
-            if (aadOff != 0)
-            {
-                PHOTON_Permutation();
-                XOR(aadData, 0, aadOff);
-                state[aadOff] ^= 0x01; // ozs
-            }
-            state[STATE_INBYTES - 1] ^= c0 << LAST_THREE_BITS_OFFSET;
-        }
+
         if (len != 0)
         {
-            Dlen_inblocks = (len + RATE_INBYTES - 1) / RATE_INBYTES;
-            for (i = 0; i < Dlen_inblocks - 1; i++)
+            if (bufferLen != 0)
             {
                 PHOTON_Permutation();
-                rhoohr(output, outOff + i * RATE_INBYTES, input, inOff + i * RATE_INBYTES, RATE_INBYTES);
-            }
-            PHOTON_Permutation();
-            LastDBlocklen = len - i * RATE_INBYTES;
-            rhoohr(output, outOff + i * RATE_INBYTES, input, inOff + i * RATE_INBYTES, LastDBlocklen);
-            if (LastDBlocklen < RATE_INBYTES)
-            {
-                state[LastDBlocklen] ^= 0x01; // ozs
+                rhoohr(output, outOff, buffer, 0, bufferLen);
+                state[bufferLen] ^= 0x01; // ozs
             }
             state[STATE_INBYTES - 1] ^= c1 << LAST_THREE_BITS_OFFSET;
         }
-        outOff += len;
+        outOff += bufferLen;
         if (input_empty)
         {
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
@@ -223,33 +234,71 @@ public class PhotonBeetleEngine
         if (forEncryption)
         {
             System.arraycopy(mac, 0, output, outOff, MAC_SIZE);
-            len += MAC_SIZE;
+            bufferLen += MAC_SIZE;
         }
         else
         {
             for (i = 0; i < MAC_SIZE; ++i)
             {
-                if (mac[i] != input[len + i])
+                if (mac[i] != buffer[bufferLen + i])
                 {
                     throw new IllegalArgumentException("Mac does not match");
                 }
             }
         }
         reset(false);
-        return len;
+        return bufferLen;
+    }
+
+    private void processFinalAADBlock(boolean lenIsNotZero)
+    {
+        if (!aadFinished)
+        {
+            if (aadLen != 0)
+            {
+                if (bufferOff != 0)
+                {
+                    PHOTON_Permutation();
+                    XOR(buffer, 0, bufferOff);
+                    if (bufferOff < RATE_INBYTES)
+                    {
+                        state[bufferOff] ^= 0x01; // ozs
+                    }
+                }
+                state[STATE_INBYTES - 1] ^= select(lenIsNotZero, ((aadLen % RATE_INBYTES) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
+            }
+            bufferOff = 0;
+            aadFinished = true;
+        }
     }
 
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -MAC_SIZE));
+        int total;
+        if (aadFinished)
+        {
+            total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
+        }
+        else
+        {
+            total = Math.max(0, len + (forEncryption ? 0 : -MAC_SIZE));
+        }
         return total - total % RATE_INBYTES;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+        if (aadFinished)
+        {
+            return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+        }
+        else
+        {
+            return Math.max(0, len + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+        }
+
     }
 
     @Override
@@ -266,10 +315,11 @@ public class PhotonBeetleEngine
     protected void reset(boolean clearMac)
     {
         input_empty = true;
-        Arrays.fill(aadData, (byte)0);
-        aadOff = 0;
+        Arrays.fill(buffer, (byte)0);
+        bufferOff = 0;
         aadLen = 0;
-        message.reset();
+        aadFinished = false;
+        messageLen = 0;
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
         super.reset(clearMac);
@@ -386,7 +436,7 @@ public class PhotonBeetleEngine
         }
         else
         {
-            XOR(ciphertext, inOff, DBlen_inbytes);
+            XOR(ciphertext, outOff, DBlen_inbytes);
         }
     }
 
