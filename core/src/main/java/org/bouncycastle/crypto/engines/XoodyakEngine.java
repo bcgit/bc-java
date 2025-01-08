@@ -36,7 +36,8 @@ public class XoodyakEngine
     private boolean encrypted;
     private boolean initialised = false;
     private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private byte[] message;
+    private int messageOff;
 
     enum MODE
     {
@@ -62,6 +63,8 @@ public class XoodyakEngine
         state = new byte[48];
         mac = new byte[MAC_SIZE];
         initialised = true;
+        message = new byte[forEncryption ? Rkout : Rkout + MAC_SIZE];
+        messageOff = 0;
         reset();
     }
 
@@ -70,7 +73,7 @@ public class XoodyakEngine
     {
         if (aadFinished)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + getBlockSize() +
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + Rkout +
                 " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
         }
         aadData.write(input);
@@ -81,7 +84,7 @@ public class XoodyakEngine
     {
         if (aadFinished)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + getBlockSize() +
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + Rkout +
                 " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
         }
         if ((inOff + len) > input.length)
@@ -96,7 +99,7 @@ public class XoodyakEngine
         if (!aadFinished)
         {
             byte[] ad = aadData.toByteArray();
-            AbsorbAny(ad, 0, ad.length, Rabsorb, 0x03);
+            AbsorbAny(ad, ad.length, Rabsorb, 0x03);
             aadFinished = true;
         }
     }
@@ -117,27 +120,34 @@ public class XoodyakEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        message.write(input, inOff, len);
-        int blockLen = message.size() - (forEncryption ? 0 : MAC_SIZE);
-        if (blockLen >= getBlockSize())
+        int blockLen = len + messageOff - (forEncryption ? 0 : MAC_SIZE);
+        if (blockLen / Rkout * Rkout + outOff > output.length)
         {
-            byte[] blocks = message.toByteArray();
-            len = blockLen / getBlockSize() * getBlockSize();
-            if (len + outOff > output.length)
-            {
-                throw new OutputLengthException("output buffer is too short");
-            }
-            processAAD();
-            encrypt(blocks, 0, len, output, outOff);
-            message.reset();
-            message.write(blocks, len, blocks.length - len);
-            return len;
+            throw new OutputLengthException("output buffer is too short");
         }
-        return 0;
+        int rv = 0;
+        int originalInOff = inOff;
+        while (blockLen >= Rkout)
+        {
+            int copyLen = Math.min(len, Rkout - messageOff);
+            System.arraycopy(input, inOff, message, messageOff, copyLen);
+            processAAD();
+            encrypt(message, Rkout, output, outOff);
+            messageOff = 0;
+            outOff += Rkout;
+            rv += Rkout;
+            blockLen -= Rkout;
+            inOff += copyLen;
+        }
+        len -= inOff - originalInOff;
+        System.arraycopy(input, inOff, message, messageOff, len);
+        messageOff = len;
+        return rv;
     }
 
-    private int encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
+    private void encrypt(byte[] input, int len, byte[] output, int outOff)
     {
+        int inOff = 0;
         int IOLen = len;
         int splitLen;
         byte[] P = new byte[Rkout];
@@ -168,7 +178,6 @@ public class XoodyakEngine
             IOLen -= splitLen;
             encrypted = true;
         }
-        return len;
     }
 
     @Override
@@ -179,8 +188,9 @@ public class XoodyakEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        byte[] blocks = message.toByteArray();
-        int len = message.size();
+        byte[] blocks = message;
+        Arrays.fill(blocks, messageOff, message.length, (byte)0);
+        int len = messageOff;
         if ((forEncryption && len + MAC_SIZE + outOff > output.length) || (!forEncryption && len - MAC_SIZE + outOff > output.length))
         {
             throw new OutputLengthException("output buffer too short");
@@ -189,7 +199,7 @@ public class XoodyakEngine
         int rv = 0;
         if (forEncryption)
         {
-            encrypt(blocks, 0, len, output, outOff);
+            encrypt(blocks, len, output, outOff);
             outOff += len;
             mac = new byte[MAC_SIZE];
             Up(mac, MAC_SIZE, 0x40);
@@ -198,9 +208,14 @@ public class XoodyakEngine
         }
         else
         {
-            int inOff = len - MAC_SIZE;
-            rv = inOff;
-            encrypt(blocks, 0, inOff, output, outOff);
+            int inOff = 0;
+            if (len >= MAC_SIZE)
+            {
+                inOff = len - MAC_SIZE;
+                rv = inOff;
+                encrypt(blocks, inOff, output, outOff);
+            }
+
             mac = new byte[MAC_SIZE];
             Up(mac, MAC_SIZE, 0x40);
             for (int i = 0; i < MAC_SIZE; ++i)
@@ -218,14 +233,14 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + message.size() + (forEncryption ? 0 : -MAC_SIZE));
+        int total = Math.max(0, len + messageOff + (forEncryption ? 0 : -MAC_SIZE));
         return total - total % Rkout;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + message.size() + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+        return Math.max(0, len + messageOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
     }
 
     @Override
@@ -244,7 +259,8 @@ public class XoodyakEngine
         aadFinished = false;
         encrypted = false;
         phase = PhaseUp;
-        message.reset();
+        Arrays.fill(message, (byte)0);
+        messageOff = 0;
         aadData.reset();
         //Absorb key
         int KLen = K.length;
@@ -255,12 +271,13 @@ public class XoodyakEngine
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
-        AbsorbAny(KID, 0, KLen + IDLen + 1, Rabsorb, 0x02);
+        AbsorbAny(KID, KLen + IDLen + 1, Rabsorb, 0x02);
         super.reset(clearMac);
     }
 
-    private void AbsorbAny(byte[] X, int Xoff, int XLen, int r, int Cd)
+    private void AbsorbAny(byte[] X, int XLen, int r, int Cd)
     {
+        int Xoff = 0;
         int splitLen;
         do
         {
@@ -297,9 +314,6 @@ public class XoodyakEngine
         int a10 = Pack.littleEndianToInt(state, 40);
         int a11 = Pack.littleEndianToInt(state, 44);
 
-        //    private final int NLANES = 12;
-        //    private final int NROWS = 3;
-        //    private final int NCOLUMS = 4;
         int MAXROUNDS = 12;
         for (int i = 0; i < MAXROUNDS; ++i)
         {
@@ -349,7 +363,7 @@ public class XoodyakEngine
             /* Iota: round ant */
             b0 ^= RC[i];
 
-            /* Chi: non linear layer */
+            /* Chi: non-linear layer */
             a0 = b0 ^ (~b4 & b8);
             a1 = b1 ^ (~b5 & b9);
             a2 = b2 ^ (~b6 & b10);
@@ -403,10 +417,13 @@ public class XoodyakEngine
         {
             state[i] ^= Xi[XiOff++];
         }
+        if (XiLen == -16)
+        {
+            System.out.println();
+        }
         state[XiLen] ^= 0x01;
         state[f_bPrime - 1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
-        int phaseDown = 1;
-        phase = phaseDown;
+        phase = 1;
     }
 
     public int getBlockSize()
