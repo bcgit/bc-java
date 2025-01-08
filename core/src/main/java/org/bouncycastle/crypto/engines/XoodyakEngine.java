@@ -23,8 +23,7 @@ public class XoodyakEngine
     private byte[] state;
     private int phase;
     private MODE mode;
-    private int Rabsorb;
-    private final int f_bPrime = 48;
+    private final int f_bPrime_1 = 47;
     private final int Rkout = 24;
     private byte[] K;
     private byte[] iv;
@@ -99,7 +98,7 @@ public class XoodyakEngine
         if (!aadFinished)
         {
             byte[] ad = aadData.toByteArray();
-            AbsorbAny(ad, ad.length, Rabsorb, 0x03);
+            AbsorbAny(ad, ad.length, Rkin, 0x03);
             aadFinished = true;
         }
     }
@@ -129,11 +128,19 @@ public class XoodyakEngine
         int originalInOff = inOff;
         while (blockLen >= Rkout)
         {
-            int copyLen = Math.min(len, Rkout - messageOff);
+            int copyLen = Math.min(len, Math.max(Rkout - messageOff, 0));
             System.arraycopy(input, inOff, message, messageOff, copyLen);
             processAAD();
             encrypt(message, Rkout, output, outOff);
-            messageOff = 0;
+            if (!forEncryption && Rkout < messageOff)
+            {
+                System.arraycopy(message, Rkout, message, 0, messageOff - Rkout);
+                messageOff -= Rkout;
+            }
+            else
+            {
+                messageOff = 0;
+            }
             outOff += Rkout;
             rv += Rkout;
             blockLen -= Rkout;
@@ -141,7 +148,7 @@ public class XoodyakEngine
         }
         len -= inOff - originalInOff;
         System.arraycopy(input, inOff, message, messageOff, len);
-        messageOff = len;
+        messageOff += len;
         return rv;
     }
 
@@ -267,11 +274,10 @@ public class XoodyakEngine
         int IDLen = iv.length;
         byte[] KID = new byte[Rkin];
         mode = MODE.ModeKeyed;
-        Rabsorb = Rkin;
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
-        AbsorbAny(KID, KLen + IDLen + 1, Rabsorb, 0x02);
+        AbsorbAny(KID, KLen + IDLen + 1, Rkin, 0x02);
         super.reset(clearMac);
     }
 
@@ -298,7 +304,7 @@ public class XoodyakEngine
     {
         if (mode != MODE.ModeHash)
         {
-            state[f_bPrime - 1] ^= Cu;
+            state[f_bPrime_1] ^= Cu;
         }
 
         int a0 = Pack.littleEndianToInt(state, 0);
@@ -417,12 +423,8 @@ public class XoodyakEngine
         {
             state[i] ^= Xi[XiOff++];
         }
-        if (XiLen == -16)
-        {
-            System.out.println();
-        }
         state[XiLen] ^= 0x01;
-        state[f_bPrime - 1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
+        state[f_bPrime_1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
         phase = 1;
     }
 
