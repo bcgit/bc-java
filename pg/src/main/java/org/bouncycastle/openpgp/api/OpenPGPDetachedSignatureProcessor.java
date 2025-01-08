@@ -15,10 +15,29 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * High-Level Processor for Messages Signed Using Detached OpenPGP Signatures.
+ * <p>
+ * To use this class, first instantiate the processor, optionally passing in a concrete
+ * {@link OpenPGPImplementation} and {@link OpenPGPPolicy}.
+ * Then, pass in any detached signatures you want to verify using {@link #addSignatures(InputStream)}.
+ * Next, provide the expected issuers {@link OpenPGPCertificate OpenPGPCertificates} for signature
+ * verification using {@link #addVerificationCertificate(OpenPGPCertificate)}.
+ * Signatures for which no certificate was provided, and certificates for which no signature was added,
+ * are ignored.
+ * Optionally, you can specify a validity date range for the signatures using
+ * {@link #verifyNotBefore(Date)} and {@link #verifyNotAfter(Date)}.
+ * Signatures outside this range will be ignored as invalid.
+ * Lastly, provide an {@link InputStream} containing the original plaintext data, over which you want to
+ * verify the detached signatures using {@link #process(InputStream)}.
+ * As a result you will receive a list containing all processed
+ * {@link OpenPGPSignature.OpenPGPDocumentSignature OpenPGPDocumentSignatures}.
+ * For these, you can check validity by calling {@link OpenPGPSignature.OpenPGPDocumentSignature#isValid()}.
+ */
 public class OpenPGPDetachedSignatureProcessor
 {
-
     private final OpenPGPImplementation implementation;
+    private final OpenPGPPolicy policy;
     private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool = new OpenPGPKeyMaterialPool.OpenPGPCertificatePool();
     private final List<PGPSignature> pgpSignatures = new ArrayList<>();
     private Date verifyNotAfter = new Date();       // now
@@ -26,16 +45,44 @@ public class OpenPGPDetachedSignatureProcessor
 
     private OpenPGPMessageProcessor.PGPExceptionCallback exceptionCallback = null;
 
+    /**
+     * Instantiate a signature processor using the default {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
+     */
     public OpenPGPDetachedSignatureProcessor()
     {
         this(OpenPGPImplementation.getInstance());
     }
 
+    /**
+     * Instantiate a signature processor using a custom {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
+     *
+     * @param implementation custom OpenPGP implementation
+     */
     public OpenPGPDetachedSignatureProcessor(OpenPGPImplementation implementation)
     {
-        this.implementation = implementation;
+        this(implementation, implementation.policy());
     }
 
+    /**
+     * Instantiate a signature processor using a custom {@link OpenPGPImplementation} and custom {@link OpenPGPPolicy}.
+     *
+     * @param implementation custom OpenPGP implementation
+     * @param policy custom OpenPGP policy
+     */
+    public OpenPGPDetachedSignatureProcessor(OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
+        this.implementation = implementation;
+        this.policy = policy;
+    }
+
+    /**
+     * Read one or more {@link PGPSignature detached signatures} from the provided {@link InputStream} and
+     * add them to the processor.
+     *
+     * @param inputStream input stream of armored or unarmored detached OpenPGP signatures
+     * @return this
+     * @throws IOException if something goes wrong reading from the stream
+     */
     public OpenPGPDetachedSignatureProcessor addSignatures(InputStream inputStream)
             throws IOException
     {
@@ -47,40 +94,94 @@ public class OpenPGPDetachedSignatureProcessor
         {
             if (next instanceof PGPSignatureList)
             {
-                PGPSignatureList signatureList = (PGPSignatureList) next;
-                for (PGPSignature signature : signatureList)
-                {
-                    pgpSignatures.add(signature);
-                }
+                addSignatures((PGPSignatureList) next);
             }
             else if (next instanceof PGPSignature)
             {
-                PGPSignature signature = (PGPSignature) next;
-                pgpSignatures.add(signature);
+                addSignature((PGPSignature) next);
             }
         }
         return this;
     }
 
+    /**
+     * Add one or more {@link PGPSignature detached signatures} from the given {@link PGPSignatureList} to the
+     * processor.
+     *
+     * @param signatures detached signature list
+     * @return this
+     */
+    public OpenPGPDetachedSignatureProcessor addSignatures(PGPSignatureList signatures)
+    {
+        for (PGPSignature signature : signatures)
+        {
+            addSignature(signature);
+        }
+        return this;
+    }
+
+    /**
+     * Add a single {@link PGPSignature detached signature} to the processor.
+     *
+     * @param signature detached signature
+     * @return this
+     */
+    public OpenPGPDetachedSignatureProcessor addSignature(PGPSignature signature)
+    {
+        pgpSignatures.add(signature);
+        return this;
+    }
+
+    /**
+     * Add an issuers {@link OpenPGPCertificate} for signature verification.
+     *
+     * @param certificate OpenPGP certificate
+     * @return this
+     */
     public OpenPGPDetachedSignatureProcessor addVerificationCertificate(OpenPGPCertificate certificate)
     {
         this.certificatePool.addItem(certificate);
         return this;
     }
 
+    /**
+     * Reject detached signatures made before <pre>date</pre>.
+     * By default, this value is set to the beginning of time.
+     *
+     * @param date date
+     * @return this
+     */
     public OpenPGPDetachedSignatureProcessor verifyNotBefore(Date date)
     {
         this.verifyNotBefore = date;
         return this;
     }
 
+    /**
+     * Reject detached signatures made after the given <pre>date</pre>.
+     * By default, this value is set to the current time at instantiation time, in order to prevent
+     * verification of signatures from the future.
+     *
+     * @param date date
+     * @return this
+     */
     public OpenPGPDetachedSignatureProcessor verifyNotAfter(Date date)
     {
         this.verifyNotAfter = date;
         return this;
     }
 
-    public List<OpenPGPSignature.OpenPGPDocumentSignature> verify(InputStream inputStream)
+    /**
+     * Process the plaintext data from the given {@link InputStream} and return a list of processed
+     * detached signatures.
+     * Note: This list will NOT contain any malformed signatures, or signatures for which no verification key was found.
+     * Correctness of these signatures can be checked via {@link OpenPGPSignature.OpenPGPDocumentSignature#isValid()}.
+     *
+     * @param inputStream data over which the detached signatures are calculated
+     * @return list of processed detached signatures
+     * @throws IOException if the data cannot be processed
+     */
+    public List<OpenPGPSignature.OpenPGPDocumentSignature> process(InputStream inputStream)
             throws IOException
     {
         List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<>();
@@ -91,18 +192,21 @@ public class OpenPGPDetachedSignatureProcessor
             KeyIdentifier identifier = OpenPGPSignature.getMostExpressiveIdentifier(signature.getKeyIdentifiers());
             if (identifier == null)
             {
+                // Missing issuer -> ignore sig
                 continue;
             }
 
             OpenPGPCertificate certificate = certificatePool.provide(identifier);
             if (certificate == null)
             {
+                // missing cert -> ignore sig
                 continue;
             }
 
             OpenPGPCertificate.OpenPGPComponentKey signingKey = certificate.getKey(identifier);
             if (signingKey == null)
             {
+                // unbound signing subkey -> ignore sig
                 continue;
             }
 
@@ -124,7 +228,8 @@ public class OpenPGPDetachedSignatureProcessor
                     new OpenPGPSignature.OpenPGPDocumentSignature(signature, signingKey);
             try
             {
-                sig.sanitize(signingKey, implementation.policy());
+                // sanitize signature (required subpackets, check algorithm policy...)
+                sig.sanitize(signingKey, policy);
             }
             catch (PGPSignatureException e)
             {
@@ -135,10 +240,13 @@ public class OpenPGPDetachedSignatureProcessor
                 continue;
             }
 
+            // check allowed date range
             if (!sig.createdInBounds(verifyNotBefore, verifyNotAfter))
             {
                 continue;
             }
+
+            // sig qualifies for further processing :)
             documentSignatures.add(sig);
         }
 
@@ -158,6 +266,7 @@ public class OpenPGPDetachedSignatureProcessor
         {
             try
             {
+                // verify the signature. Correctness can be checked via
                 sig.verify();
             }
             catch (PGPException e)
@@ -172,6 +281,13 @@ public class OpenPGPDetachedSignatureProcessor
         return documentSignatures;
     }
 
+    /**
+     * Add a callback to which any OpenPGP-related exceptions are forwarded.
+     * Useful for debugging purposes.
+     *
+     * @param callback callback
+     * @return this
+     */
     public OpenPGPDetachedSignatureProcessor setExceptionCallback(OpenPGPMessageProcessor.PGPExceptionCallback callback)
     {
         this.exceptionCallback = callback;
