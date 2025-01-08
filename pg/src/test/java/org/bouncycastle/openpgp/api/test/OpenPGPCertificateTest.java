@@ -15,6 +15,7 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
@@ -30,6 +31,8 @@ import java.util.List;
 public class OpenPGPCertificateTest
         extends AbstractPacketTest
 {
+    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
+
     @Override
     public String getName()
     {
@@ -53,7 +56,7 @@ public class OpenPGPCertificateTest
     private void testOpenPGPv6Key()
             throws IOException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
 
         isTrue("Test key has no identities", key.getIdentities().isEmpty());
 
@@ -772,7 +775,7 @@ public class OpenPGPCertificateTest
     private void signatureValidityTest(String cert, TestSignature... testSignatures)
             throws IOException
     {
-        OpenPGPCertificate certificate = OpenPGPCertificate.fromAsciiArmor(cert);
+        OpenPGPCertificate certificate = reader.parseCertificate(cert);
 
         for (TestSignature test : testSignatures)
         {

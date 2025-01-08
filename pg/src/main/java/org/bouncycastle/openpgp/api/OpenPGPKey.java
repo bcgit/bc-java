@@ -1,26 +1,19 @@
 package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
-import org.bouncycastle.util.io.Streams;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -109,89 +102,6 @@ public class OpenPGPKey
             }
         }
         return components;
-    }
-
-    public static OpenPGPKey fromAsciiArmor(String armor)
-            throws IOException
-    {
-        return fromAsciiArmor(armor, OpenPGPImplementation.getInstance());
-    }
-
-    public static OpenPGPKey fromAsciiArmor(
-            String armor,
-            OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromAsciiArmor(armor, implementation, implementation.policy());
-    }
-
-    public static OpenPGPKey fromAsciiArmor(
-            String armor,
-            OpenPGPImplementation implementation,
-            OpenPGPPolicy policy)
-            throws IOException
-    {
-        return fromBytes(
-                armor.getBytes(StandardCharsets.UTF_8),
-                implementation,
-                policy);
-    }
-
-    public static OpenPGPKey fromInputStream(InputStream inputStream)
-            throws IOException
-    {
-        return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
-    }
-
-    public static OpenPGPKey fromInputStream(InputStream inputStream,
-                                             OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromInputStream(inputStream, implementation, implementation.policy());
-    }
-
-    public static OpenPGPKey fromInputStream(InputStream inputStream,
-                                             OpenPGPImplementation implementation,
-                                             OpenPGPPolicy policy)
-            throws IOException
-    {
-        return fromBytes(Streams.readAll(inputStream), implementation);
-    }
-
-    public static OpenPGPKey fromBytes(
-            byte[] bytes)
-            throws IOException
-    {
-        return fromBytes(bytes, OpenPGPImplementation.getInstance());
-    }
-
-    public static OpenPGPKey fromBytes(
-            byte[] bytes,
-            OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromBytes(bytes, implementation, implementation.policy());
-    }
-
-    public static OpenPGPKey fromBytes(
-            byte[] bytes,
-            OpenPGPImplementation implementation,
-            OpenPGPPolicy policy)
-            throws IOException
-    {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
-        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
-        BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
-        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
-
-        Object object = objectFactory.nextObject();
-        if (!(object instanceof PGPSecretKeyRing))
-        {
-            throw new IOException("Not a secret key.");
-        }
-
-        PGPSecretKeyRing keyRing = (PGPSecretKeyRing) object;
-        return new OpenPGPKey(keyRing, implementation, policy);
     }
 
     public OpenPGPSecretKey getPrimarySecretKey()

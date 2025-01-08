@@ -3,6 +3,7 @@ package org.bouncycastle.openpgp.api.util;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPDefaultPolicy;
+import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 
 import java.io.IOException;
@@ -111,8 +112,8 @@ public class DebugPrinter
     public static void main(String[] args)
             throws IOException
     {
-
-        OpenPGPCertificate certificate = OpenPGPCertificate.fromAsciiArmor(v6SecretKey);
+        OpenPGPKeyReader reader = new OpenPGPKeyReader();
+        OpenPGPCertificate certificate = reader.parseCertificate(v6SecretKey);
         // -DM System.out.println
         System.out.println(toString(certificate, new Date()));
     }

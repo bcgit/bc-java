@@ -6,6 +6,7 @@ import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.util.encoders.Hex;
@@ -18,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 public class OpenPGPMessageGeneratorTest
         extends AbstractPacketTest
 {
+    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
+
     @Override
     public String getName()
     {
@@ -125,7 +128,7 @@ public class OpenPGPMessageGeneratorTest
     private void seipd2EncryptedMessage()
             throws IOException, PGPException
     {
-        OpenPGPCertificate cert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.V6_CERT);
+        OpenPGPCertificate cert = reader.parseCertificate(OpenPGPTestKeys.V6_CERT);
 
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
         gen.addEncryptionCertificate(cert);
@@ -141,7 +144,7 @@ public class OpenPGPMessageGeneratorTest
     private void seipd1EncryptedMessage()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.BOB_KEY);
 
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
         gen.addEncryptionCertificate(key);
@@ -157,7 +160,7 @@ public class OpenPGPMessageGeneratorTest
     private void seipd2EncryptedSignedMessage()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
 
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
                 .setIsPadded(true)

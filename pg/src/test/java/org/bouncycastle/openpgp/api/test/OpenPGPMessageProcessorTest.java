@@ -9,6 +9,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageInputStream;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
@@ -30,6 +31,8 @@ public class OpenPGPMessageProcessorTest
         extends AbstractPacketTest
 {
     private static final byte[] PLAINTEXT = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+
+    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
 
     private PGPSessionKey encryptionSessionKey;
 
@@ -238,7 +241,7 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);
@@ -247,7 +250,7 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
-        processor.addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.ALICE_KEY));
+        processor.addDecryptionKey(reader.parseKey(OpenPGPTestKeys.ALICE_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
@@ -263,7 +266,7 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.BOB_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.BOB_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);
@@ -272,7 +275,7 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
-        processor.addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY));
+        processor.addDecryptionKey(reader.parseKey(OpenPGPTestKeys.BOB_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
@@ -289,7 +292,7 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.CAROL_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.CAROL_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);
@@ -298,7 +301,7 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
-        processor.addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.CAROL_KEY));
+        processor.addDecryptionKey(reader.parseKey(OpenPGPTestKeys.CAROL_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
@@ -314,7 +317,7 @@ public class OpenPGPMessageProcessorTest
     private void roundTripV6KeyEncryptedMessage()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
 
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
                 .setArmored(true)
@@ -345,8 +348,8 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT));
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.V6_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.V6_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);
@@ -355,7 +358,7 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
-                .addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.ALICE_KEY));
+                .addDecryptionKey(reader.parseKey(OpenPGPTestKeys.ALICE_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
@@ -372,8 +375,8 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT));
-        gen.addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.V6_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT));
+        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.V6_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);
@@ -382,7 +385,7 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
-                .addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY));
+                .addDecryptionKey(reader.parseKey(OpenPGPTestKeys.V6_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
@@ -397,7 +400,7 @@ public class OpenPGPMessageProcessorTest
     private void encryptDecryptWithLockedKey()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY_LOCKED);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY_LOCKED);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         OpenPGPMessageOutputStream encOut = new OpenPGPMessageGenerator()
@@ -453,7 +456,7 @@ public class OpenPGPMessageProcessorTest
     private void encryptDecryptWithMissingKey()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         OutputStream encOut = new OpenPGPMessageGenerator()
@@ -485,7 +488,7 @@ public class OpenPGPMessageProcessorTest
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        OpenPGPKey aliceKey = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.ALICE_KEY);
+        OpenPGPKey aliceKey = reader.parseKey(OpenPGPTestKeys.ALICE_KEY);
         gen.addSigningKey(aliceKey);
 
         OutputStream signOut = gen.open(bOut);
@@ -495,7 +498,7 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         bOut = new ByteArrayOutputStream();
 
-        OpenPGPCertificate aliceCert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT);
+        OpenPGPCertificate aliceCert = reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
                 .addVerificationCertificate(aliceCert);
 
@@ -517,7 +520,7 @@ public class OpenPGPMessageProcessorTest
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        OpenPGPKey bobKey = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY);
+        OpenPGPKey bobKey = reader.parseKey(OpenPGPTestKeys.BOB_KEY);
         gen.addSigningKey(bobKey);
 
         OutputStream signOut = gen.open(bOut);
@@ -527,7 +530,7 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         bOut = new ByteArrayOutputStream();
 
-        OpenPGPCertificate bobCert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.BOB_CERT);
+        OpenPGPCertificate bobCert = reader.parseCertificate(OpenPGPTestKeys.BOB_CERT);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
                 .addVerificationCertificate(bobCert);
 
@@ -548,7 +551,7 @@ public class OpenPGPMessageProcessorTest
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        OpenPGPKey carolKey = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.CAROL_KEY);
+        OpenPGPKey carolKey = reader.parseKey(OpenPGPTestKeys.CAROL_KEY);
         gen.addSigningKey(carolKey);
 
         OutputStream signOut = gen.open(bOut);
@@ -558,7 +561,7 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         bOut = new ByteArrayOutputStream();
 
-        OpenPGPCertificate carolCert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.CAROL_CERT);
+        OpenPGPCertificate carolCert = reader.parseCertificate(OpenPGPTestKeys.CAROL_CERT);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
                 .addVerificationCertificate(carolCert);
 
@@ -579,7 +582,7 @@ public class OpenPGPMessageProcessorTest
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-        OpenPGPKey v6Key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey v6Key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
         gen.addSigningKey(v6Key);
 
         OutputStream signOut = gen.open(bOut);
@@ -589,7 +592,7 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         bOut = new ByteArrayOutputStream();
 
-        OpenPGPCertificate v6Cert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.V6_CERT);
+        OpenPGPCertificate v6Cert = reader.parseCertificate(OpenPGPTestKeys.V6_CERT);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
                 .addVerificationCertificate(v6Cert);
 
@@ -609,7 +612,7 @@ public class OpenPGPMessageProcessorTest
             throws PGPException, IOException
     {
         // Create a minimal signed message
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.ALICE_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.ALICE_KEY);
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
         gen.addSigningKey(key);
 
@@ -619,7 +622,7 @@ public class OpenPGPMessageProcessorTest
         oOut.close();
 
         // Load the certificate and import its revocation signature
-        OpenPGPCertificate cert = OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT);
+        OpenPGPCertificate cert = reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT);
         cert = OpenPGPCertificate.join(cert, OpenPGPTestKeys.ALICE_REVOCATION_CERT);
 
         // Process the signed message using the revoked key
@@ -640,8 +643,8 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
-                .addEncryptionCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.ALICE_CERT))
-                .addSigningKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY));
+                .addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT))
+                .addSigningKey(reader.parseKey(OpenPGPTestKeys.BOB_KEY));
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream out = gen.open(bOut);
 
@@ -650,8 +653,8 @@ public class OpenPGPMessageProcessorTest
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor()
-                .addVerificationCertificate(OpenPGPCertificate.fromAsciiArmor(OpenPGPTestKeys.BOB_CERT))
-                .addDecryptionKey(OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.ALICE_KEY));
+                .addVerificationCertificate(reader.parseCertificate(OpenPGPTestKeys.BOB_CERT))
+                .addDecryptionKey(reader.parseKey(OpenPGPTestKeys.ALICE_KEY));
         OpenPGPMessageInputStream in = processor.process(bIn);
 
         // read a single byte (not the entire message)
@@ -680,7 +683,7 @@ public class OpenPGPMessageProcessorTest
                 "IwBVELjaaSGpdOuIHkETYssCNfqPSv0rNmaTDq78xItvhjuc4lRaKkpF9DdE\n" +
                 "=I5BA\n" +
                 "-----END PGP MESSAGE-----";
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.BOB_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.BOB_KEY);
         OpenPGPMessageProcessor processor = new OpenPGPMessageProcessor();
         processor.addDecryptionKey(key);
         OpenPGPMessageInputStream oIn = processor.process(new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8)));

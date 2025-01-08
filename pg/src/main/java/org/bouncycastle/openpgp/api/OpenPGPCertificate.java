@@ -31,13 +31,11 @@ import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
-import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -131,110 +129,6 @@ public class OpenPGPCertificate
             OpenPGPSubkey subkey = new OpenPGPSubkey(rawSubkey, this);
             subkeys.put(rawSubkey.getKeyIdentifier(), subkey);
             processSubkey(subkey);
-        }
-    }
-
-    /**
-     * Parse an {@link OpenPGPCertificate} (or {@link OpenPGPKey}) from its ASCII armored representation.
-     * @param armor ASCII armored key or certificate
-     * @return certificate or key
-     * @throws IOException
-     */
-    public static OpenPGPCertificate fromAsciiArmor(String armor)
-            throws IOException
-    {
-        return fromAsciiArmor(armor, OpenPGPImplementation.getInstance());
-    }
-
-    /**
-     * Parse an {@link OpenPGPCertificate} (or {@link OpenPGPKey}) from its ASCII armored representation.
-     * @param armor ASCII armored key or certificate
-     * @param implementation OpenPGP implementation
-     * @return certificate or key
-     * @throws IOException
-     */
-    public static OpenPGPCertificate fromAsciiArmor(
-            String armor,
-            OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromAsciiArmor(armor, implementation, implementation.policy());
-    }
-
-    public static OpenPGPCertificate fromAsciiArmor(
-            String armor,
-            OpenPGPImplementation implementation,
-            OpenPGPPolicy policy)
-            throws IOException
-    {
-        return fromBytes(armor.getBytes(StandardCharsets.UTF_8),
-                implementation,
-                policy);
-    }
-
-    public static OpenPGPCertificate fromInputStream(InputStream inputStream)
-            throws IOException
-    {
-        return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
-    }
-
-    public static OpenPGPCertificate fromInputStream(InputStream inputStream,
-                                                     OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromInputStream(inputStream, implementation, implementation.policy());
-    }
-
-    public static OpenPGPCertificate fromInputStream(InputStream inputStream,
-                                                     OpenPGPImplementation implementation,
-                                                     OpenPGPPolicy policy)
-            throws IOException
-    {
-        byte[] bytes = Streams.readAll(inputStream);
-        return fromBytes(bytes, implementation, policy);
-    }
-
-    public static OpenPGPCertificate fromBytes(byte[] bytes)
-            throws IOException
-    {
-        return fromBytes(bytes, OpenPGPImplementation.getInstance());
-    }
-
-    public static OpenPGPCertificate fromBytes(
-            byte[] bytes,
-            OpenPGPImplementation implementation)
-            throws IOException
-    {
-        return fromBytes(bytes, implementation, implementation.policy());
-    }
-
-    public static OpenPGPCertificate fromBytes(
-            byte[] bytes,
-            OpenPGPImplementation implementation,
-            OpenPGPPolicy policy)
-            throws IOException
-    {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
-        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
-        BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
-        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
-        Object object = objectFactory.nextObject();
-
-        // TODO: Is it dangerous, if we don't explicitly fail upon encountering secret key material here?
-        //  Could it lead to a situation where we need to be cautious with the certificate API design to
-        //  prevent the user from doing dangerous things like accidentally publishing their private key?
-
-        if (object instanceof PGPSecretKeyRing)
-        {
-            return new OpenPGPKey((PGPSecretKeyRing) object, implementation, policy);
-        }
-        else if (object instanceof PGPPublicKeyRing)
-        {
-            return new OpenPGPCertificate((PGPPublicKeyRing) object, implementation, policy);
-        }
-        else
-        {
-            throw new IOException("Neither a certificate, nor secret key.");
         }
     }
 

@@ -6,6 +6,7 @@ import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
@@ -20,6 +21,8 @@ import java.util.List;
 public class StaticV6OpenPGPMessageGeneratorTest
         extends AbstractPacketTest
 {
+    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
+
     KeyIdentifier signingKeyIdentifier = new KeyIdentifier(
             Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9"));
     KeyIdentifier encryptionKeyIdentifier = new KeyIdentifier(
@@ -42,7 +45,7 @@ public class StaticV6OpenPGPMessageGeneratorTest
     private void staticEncryptedMessage()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
 
         OpenPGPMessageGenerator gen = getStaticGenerator()
                 .addEncryptionCertificate(key);
@@ -58,7 +61,7 @@ public class StaticV6OpenPGPMessageGeneratorTest
     private void staticSignedMessage()
             throws IOException, PGPException
     {
-        OpenPGPKey key = OpenPGPKey.fromAsciiArmor(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
         OpenPGPMessageGenerator gen = getStaticGenerator()
                 .addSigningKey(key);
 
