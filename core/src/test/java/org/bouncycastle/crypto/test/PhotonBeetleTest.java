@@ -30,6 +30,8 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
+        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
+        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
         testVectorsHash();
         PhotonBeetleEngine pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32);
@@ -38,8 +40,7 @@ public class PhotonBeetleTest
         pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128);
         testExceptions(pb, pb.getKeyBytesSize(), pb.getIVBytesSize(), pb.getBlockSize());
         testParameters(pb, 16, 16, 16);
-        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
-        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
+
         testExceptions(new PhotonBeetleDigest(), 32);
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
@@ -95,6 +96,10 @@ public class PhotonBeetleTest
             int a = line.indexOf('=');
             if (a < 0)
             {
+                if (map.get("Count").equals("5"))
+                {
+                    System.out.println("test");
+                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));
@@ -124,6 +129,7 @@ public class PhotonBeetleTest
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
                 PhotonBeetle.reset();
+                //System.out.println(map.get("Count") + " pass");
                 map.clear();
 
             }

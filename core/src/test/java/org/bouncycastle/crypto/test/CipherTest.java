@@ -262,7 +262,7 @@ public abstract class CipherTest
         final byte[] iv = new byte[ivSize];
         int tmpLength = random.nextInt(blockSize - 1) + 1;
         final byte[] plaintext = new byte[blockSize * 2 + tmpLength];
-        byte[] aad = new byte[random.nextInt(100)];
+        byte[] aad = new byte[random.nextInt(100) + 2];
         random.nextBytes(key);
         random.nextBytes(iv);
         random.nextBytes(plaintext);
@@ -275,7 +275,7 @@ public abstract class CipherTest
         }
         int len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext1, 0);
         len += cipher.doFinal(ciphertext1, len);
-        int aadSplit = random.nextInt(aad.length);
+        int aadSplit = random.nextInt(aad.length) + 1;
         cipher.init(true, new AEADParameters(new KeyParameter(key), macSize * 8, iv, Arrays.copyOf(aad, aadSplit)));
         cipher.processAADBytes(aad, aadSplit, aad.length - aadSplit);
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
