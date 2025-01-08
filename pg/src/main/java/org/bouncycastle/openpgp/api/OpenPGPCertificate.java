@@ -68,6 +68,7 @@ import java.util.TreeSet;
 public class OpenPGPCertificate
 {
     final OpenPGPImplementation implementation;
+    final OpenPGPPolicy policy;
 
     private final PGPKeyRing keyRing;
 
@@ -78,20 +79,41 @@ public class OpenPGPCertificate
     //  proper functionality with secret key components.
     private final Map<OpenPGPCertificateComponent, OpenPGPSignatureChains> componentSignatureChains;
 
+    /**
+     * Instantiate an {@link OpenPGPCertificate} from a parksed {@link PGPKeyRing} using the default
+     * {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
+     *
+     * @param keyRing key ring
+     */
     public OpenPGPCertificate(PGPKeyRing keyRing)
     {
         this(keyRing, OpenPGPImplementation.getInstance());
     }
 
     /**
-     * Instantiate an {@link OpenPGPCertificate} from a parsed {@link PGPPublicKeyRing}.
+     * Instantiate an {@link OpenPGPCertificate} from a parsed {@link PGPKeyRing}
+     * using the provided {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
      *
      * @param keyRing public key ring
      * @param implementation OpenPGP implementation
      */
     public OpenPGPCertificate(PGPKeyRing keyRing, OpenPGPImplementation implementation)
     {
+        this(keyRing, implementation, implementation.policy());
+    }
+
+    /**
+     * Instantiate an {@link OpenPGPCertificate} from a parsed {@link PGPKeyRing}
+     * using the provided {@link OpenPGPImplementation} and provided {@link OpenPGPPolicy}.
+     *
+     * @param keyRing public key ring
+     * @param implementation OpenPGP implementation
+     * @param policy OpenPGP policy
+     */
+    public OpenPGPCertificate(PGPKeyRing keyRing, OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
         this.implementation = implementation;
+        this.policy = policy;
 
         this.keyRing = keyRing;
         this.subkeys = new HashMap<>();
@@ -136,9 +158,18 @@ public class OpenPGPCertificate
             OpenPGPImplementation implementation)
             throws IOException
     {
-        return fromBytes(
-                armor.getBytes(StandardCharsets.UTF_8),
-                implementation);
+        return fromAsciiArmor(armor, implementation, implementation.policy());
+    }
+
+    public static OpenPGPCertificate fromAsciiArmor(
+            String armor,
+            OpenPGPImplementation implementation,
+            OpenPGPPolicy policy)
+            throws IOException
+    {
+        return fromBytes(armor.getBytes(StandardCharsets.UTF_8),
+                implementation,
+                policy);
     }
 
     public static OpenPGPCertificate fromInputStream(InputStream inputStream)
@@ -147,11 +178,20 @@ public class OpenPGPCertificate
         return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
     }
 
-    public static OpenPGPCertificate fromInputStream(InputStream inputStream, OpenPGPImplementation implementation)
+    public static OpenPGPCertificate fromInputStream(InputStream inputStream,
+                                                     OpenPGPImplementation implementation)
+            throws IOException
+    {
+        return fromInputStream(inputStream, implementation, implementation.policy());
+    }
+
+    public static OpenPGPCertificate fromInputStream(InputStream inputStream,
+                                                     OpenPGPImplementation implementation,
+                                                     OpenPGPPolicy policy)
             throws IOException
     {
         byte[] bytes = Streams.readAll(inputStream);
-        return fromBytes(bytes, implementation);
+        return fromBytes(bytes, implementation, policy);
     }
 
     public static OpenPGPCertificate fromBytes(byte[] bytes)
@@ -163,6 +203,15 @@ public class OpenPGPCertificate
     public static OpenPGPCertificate fromBytes(
             byte[] bytes,
             OpenPGPImplementation implementation)
+            throws IOException
+    {
+        return fromBytes(bytes, implementation, implementation.policy());
+    }
+
+    public static OpenPGPCertificate fromBytes(
+            byte[] bytes,
+            OpenPGPImplementation implementation,
+            OpenPGPPolicy policy)
             throws IOException
     {
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
@@ -177,11 +226,11 @@ public class OpenPGPCertificate
 
         if (object instanceof PGPSecretKeyRing)
         {
-            return new OpenPGPKey((PGPSecretKeyRing) object, implementation);
+            return new OpenPGPKey((PGPSecretKeyRing) object, implementation, policy);
         }
         else if (object instanceof PGPPublicKeyRing)
         {
-            return new OpenPGPCertificate((PGPPublicKeyRing) object, implementation);
+            return new OpenPGPCertificate((PGPPublicKeyRing) object, implementation, policy);
         }
         else
         {
@@ -557,7 +606,7 @@ public class OpenPGPCertificate
             }
 
             // Chain needs to be valid (signatures correct)
-            if (chain.isValid(implementation.pgpContentVerifierBuilderProvider(), implementation.policy()))
+            if (chain.isValid(implementation.pgpContentVerifierBuilderProvider(), policy))
             {
                 // Chain needs to not contain a revocation signature, otherwise the component is considered revoked
                 return !chain.isRevocation();
@@ -1871,8 +1920,8 @@ public class OpenPGPCertificate
         public boolean isValid()
                 throws PGPSignatureException
         {
-            return isValid(getRootKey().getCertificate().implementation.pgpContentVerifierBuilderProvider(),
-                    getRootKey().getCertificate().implementation.policy());
+            OpenPGPCertificate cert = getRootKey().getCertificate();
+            return isValid(cert.implementation.pgpContentVerifierBuilderProvider(), cert.policy);
         }
 
         public boolean isValid(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider, OpenPGPPolicy policy)

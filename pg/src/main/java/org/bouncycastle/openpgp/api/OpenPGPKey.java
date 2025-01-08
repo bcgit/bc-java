@@ -48,14 +48,28 @@ public class OpenPGPKey
     }
 
     /**
-     * Create an {@link OpenPGPKey} instance based on a {@link PGPSecretKeyRing}.
+     * Create an {@link OpenPGPKey} instance based on a {@link PGPSecretKeyRing},
+     * a provided {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
      *
      * @param keyRing secret key ring
      * @param implementation OpenPGP implementation
      */
     public OpenPGPKey(PGPSecretKeyRing keyRing, OpenPGPImplementation implementation)
     {
-        super(keyRing, implementation);
+        this(keyRing, implementation, implementation.policy());
+    }
+
+    /**
+     * Create an {@link OpenPGPKey} instance based on a {@link PGPSecretKeyRing},
+     * a provided {@link OpenPGPImplementation} and {@link OpenPGPPolicy}.
+     *
+     * @param keyRing secret key ring
+     * @param implementation OpenPGP implementation
+     * @param policy OpenPGP policy
+     */
+    public OpenPGPKey(PGPSecretKeyRing keyRing, OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
+        super(keyRing, implementation, policy);
 
         // Process and map secret keys
         this.secretKeys = new HashMap<>();
@@ -108,9 +122,19 @@ public class OpenPGPKey
             OpenPGPImplementation implementation)
             throws IOException
     {
+        return fromAsciiArmor(armor, implementation, implementation.policy());
+    }
+
+    public static OpenPGPKey fromAsciiArmor(
+            String armor,
+            OpenPGPImplementation implementation,
+            OpenPGPPolicy policy)
+            throws IOException
+    {
         return fromBytes(
                 armor.getBytes(StandardCharsets.UTF_8),
-                implementation);
+                implementation,
+                policy);
     }
 
     public static OpenPGPKey fromInputStream(InputStream inputStream)
@@ -119,7 +143,16 @@ public class OpenPGPKey
         return fromInputStream(inputStream, OpenPGPImplementation.getInstance());
     }
 
-    public static OpenPGPKey fromInputStream(InputStream inputStream, OpenPGPImplementation implementation)
+    public static OpenPGPKey fromInputStream(InputStream inputStream,
+                                             OpenPGPImplementation implementation)
+            throws IOException
+    {
+        return fromInputStream(inputStream, implementation, implementation.policy());
+    }
+
+    public static OpenPGPKey fromInputStream(InputStream inputStream,
+                                             OpenPGPImplementation implementation,
+                                             OpenPGPPolicy policy)
             throws IOException
     {
         return fromBytes(Streams.readAll(inputStream), implementation);
@@ -137,6 +170,15 @@ public class OpenPGPKey
             OpenPGPImplementation implementation)
             throws IOException
     {
+        return fromBytes(bytes, implementation, implementation.policy());
+    }
+
+    public static OpenPGPKey fromBytes(
+            byte[] bytes,
+            OpenPGPImplementation implementation,
+            OpenPGPPolicy policy)
+            throws IOException
+    {
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
         BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
@@ -149,7 +191,7 @@ public class OpenPGPKey
         }
 
         PGPSecretKeyRing keyRing = (PGPSecretKeyRing) object;
-        return new OpenPGPKey(keyRing, implementation);
+        return new OpenPGPKey(keyRing, implementation, policy);
     }
 
     public OpenPGPSecretKey getPrimarySecretKey()
