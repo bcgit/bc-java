@@ -41,7 +41,7 @@ public class PhotonBeetleTest
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         testExceptions(new PhotonBeetleDigest(), 32);
-        CipherTest.checkAEADParemeter(this, 16, 16, 16,16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));

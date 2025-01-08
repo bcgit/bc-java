@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Photon-Beetle, https://www.isical.ac.in/~lightweight/beetle/
@@ -30,7 +31,9 @@ public class PhotonBeetleEngine
     private byte[] state;
     private byte[][] state_2d;
     private boolean initialised;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final byte[] aadData;
+    private int aadOff;
+    private int aadLen;
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final int RATE_INBYTES;
     private final int RATE_INBYTES_HALF;
@@ -84,6 +87,7 @@ public class PhotonBeetleEngine
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         initialised = false;
         algorithmName = "Photon-Beetle AEAD";
+        aadData = new byte[RATE_INBYTES];
     }
 
     @Override
@@ -103,7 +107,14 @@ public class PhotonBeetleEngine
     @Override
     public void processAADByte(byte input)
     {
-        aadData.write(input);
+        if (aadOff >= aadData.length)
+        {
+            PHOTON_Permutation();
+            XOR(aadData, 0, RATE_INBYTES);
+            aadOff = 0;
+        }
+        aadData[aadOff++] = input;
+        aadLen++;
     }
 
     @Override
@@ -113,7 +124,28 @@ public class PhotonBeetleEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        aadData.write(input, inOff, len);
+        int tmp;
+        aadLen += len;
+        if (aadOff + len >= RATE_INBYTES)
+        {
+            tmp = RATE_INBYTES - aadOff;
+            System.arraycopy(input, inOff, aadData, aadOff, tmp);
+            PHOTON_Permutation();
+            XOR(aadData, 0, RATE_INBYTES);
+            inOff += tmp;
+            len -= tmp;
+            aadOff = 0;
+        }
+        while (len >= RATE_INBYTES)
+        {
+            PHOTON_Permutation();
+            XOR(input, inOff, RATE_INBYTES);
+            inOff += RATE_INBYTES;
+            len -= RATE_INBYTES;
+        }
+        System.arraycopy(input, inOff, aadData, aadOff, len);
+        aadOff += len;
+
     }
 
     @Override
@@ -144,29 +176,22 @@ public class PhotonBeetleEngine
         }
         byte[] input = message.toByteArray();
         int inOff = 0;
-        byte[] a = aadData.toByteArray();
-        int adlen = a.length, i;
-        if (adlen != 0 || len != 0)
+
+        int i;
+        if (aadLen != 0 || len != 0)
         {
             input_empty = false;
         }
-        byte c0 = select((len != 0), ((adlen % RATE_INBYTES) == 0), (byte)3, (byte)4);
-        byte c1 = select((adlen != 0), ((len % RATE_INBYTES) == 0), (byte)5, (byte)6);
+        byte c0 = select((len != 0), ((aadLen % RATE_INBYTES) == 0), (byte)3, (byte)4);
+        byte c1 = select((aadLen != 0), ((len % RATE_INBYTES) == 0), (byte)5, (byte)6);
         int Dlen_inblocks, LastDBlocklen;
-        if (adlen != 0)
+        if (aadLen != 0)
         {
-            Dlen_inblocks = (adlen + RATE_INBYTES - 1) / RATE_INBYTES;
-            for (i = 0; i < Dlen_inblocks - 1; i++)
+            if (aadOff != 0)
             {
                 PHOTON_Permutation();
-                XOR(a, i * RATE_INBYTES, RATE_INBYTES);
-            }
-            PHOTON_Permutation();
-            LastDBlocklen = adlen - i * RATE_INBYTES;
-            XOR(a, i * RATE_INBYTES, LastDBlocklen);
-            if (LastDBlocklen < RATE_INBYTES)
-            {
-                state[LastDBlocklen] ^= 0x01; // ozs
+                XOR(aadData, 0, aadOff);
+                state[aadOff] ^= 0x01; // ozs
             }
             state[STATE_INBYTES - 1] ^= c0 << LAST_THREE_BITS_OFFSET;
         }
@@ -241,7 +266,9 @@ public class PhotonBeetleEngine
     protected void reset(boolean clearMac)
     {
         input_empty = true;
-        aadData.reset();
+        Arrays.fill(aadData, (byte)0);
+        aadOff = 0;
+        aadLen = 0;
         message.reset();
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);

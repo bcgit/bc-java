@@ -96,17 +96,18 @@ public class XoodyakEngine
         {
             throw new DataLengthException("input buffer too short");
         }
+        int tmp;
         if (aadOff + len >= Rkin)
         {
-            System.arraycopy(input, inOff, aadData, aadOff, Rkin - aadOff);
+            tmp = Rkin - aadOff;
+            System.arraycopy(input, inOff, aadData, aadOff, tmp);
             AbsorbAny(aadData, 0, aadData.length, aadcd);
             aadcd = 0;
-            aadOff = Rkin - aadOff;
-            inOff += aadOff;
-            len -= aadOff;
+            inOff += tmp;
+            len -= tmp;
             aadOff = 0;
         }
-        int tmp = len / Rkin;
+        tmp = len / Rkin;
         if (tmp > 0)
         {
             tmp *= Rkin;
