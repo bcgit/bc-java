@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -11,9 +9,9 @@ import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 /**
- * Xoodyak v1, https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/xoodyak-spec-final.pdf
+ * Xoodyak v1, <a href="https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/xoodyak-spec-final.pdf"></a>
  * <p>
- * Xoodyak with reference to C Reference Impl from: https://github.com/XKCP/XKCP
+ * Xoodyak with reference to C Reference Impl from: <a href="https://github.com/XKCP/XKCP"></a>
  * </p>
  */
 
@@ -34,9 +32,11 @@ public class XoodyakEngine
     private boolean aadFinished;
     private boolean encrypted;
     private boolean initialised = false;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final byte[] aadData = new byte[Rkin];
     private byte[] message;
     private int messageOff;
+    private int aadOff;
+    private byte aadcd;
 
     enum MODE
     {
@@ -75,7 +75,13 @@ public class XoodyakEngine
             throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + Rkout +
                 " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
         }
-        aadData.write(input);
+        if (aadOff >= aadData.length)
+        {
+            AbsorbAny(aadData, 0, aadData.length, aadcd);
+            aadcd = 0;
+            aadOff = 0;
+        }
+        aadData[aadOff++] = input;
     }
 
     @Override
@@ -90,15 +96,33 @@ public class XoodyakEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        aadData.write(input, inOff, len);
+        if (aadOff + len >= Rkin)
+        {
+            System.arraycopy(input, inOff, aadData, aadOff, Rkin - aadOff);
+            AbsorbAny(aadData, 0, aadData.length, aadcd);
+            aadcd = 0;
+            aadOff = Rkin - aadOff;
+            inOff += aadOff;
+            len -= aadOff;
+            aadOff = 0;
+        }
+        int tmp = len / Rkin;
+        if (tmp > 0)
+        {
+            tmp *= Rkin;
+            AbsorbAny(input, inOff, tmp, aadcd);
+            inOff += tmp;
+            len -= tmp;
+        }
+        System.arraycopy(input, inOff, aadData, aadOff, len);
+        aadOff += len;
     }
 
     private void processAAD()
     {
         if (!aadFinished)
         {
-            byte[] ad = aadData.toByteArray();
-            AbsorbAny(ad, ad.length, Rkin, 0x03);
+            AbsorbAny(aadData, 0, aadOff, aadcd);
             aadFinished = true;
         }
     }
@@ -268,7 +292,9 @@ public class XoodyakEngine
         phase = PhaseUp;
         Arrays.fill(message, (byte)0);
         messageOff = 0;
-        aadData.reset();
+        Arrays.fill(aadData, (byte)0);
+        aadOff = 0;
+        aadcd = (byte)0x03;
         //Absorb key
         int KLen = K.length;
         int IDLen = iv.length;
@@ -277,13 +303,12 @@ public class XoodyakEngine
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
-        AbsorbAny(KID, KLen + IDLen + 1, Rkin, 0x02);
+        AbsorbAny(KID, 0, KLen + IDLen + 1, 0x02);
         super.reset(clearMac);
     }
 
-    private void AbsorbAny(byte[] X, int XLen, int r, int Cd)
+    private void AbsorbAny(byte[] X, int Xoff, int XLen, int Cd)
     {
-        int Xoff = 0;
         int splitLen;
         do
         {
@@ -291,7 +316,7 @@ public class XoodyakEngine
             {
                 Up(null, 0, 0);
             }
-            splitLen = Math.min(XLen, r);
+            splitLen = Math.min(XLen, Rkin);
             Down(X, Xoff, splitLen, Cd);
             Cd = 0;
             Xoff += splitLen;
@@ -320,8 +345,7 @@ public class XoodyakEngine
         int a10 = Pack.littleEndianToInt(state, 40);
         int a11 = Pack.littleEndianToInt(state, 44);
 
-        int MAXROUNDS = 12;
-        for (int i = 0; i < MAXROUNDS; ++i)
+        for (int i = 0; i < 12; ++i)
         {
             /* Theta: Column Parity Mixer */
             int p0 = a0 ^ a4 ^ a8;

@@ -266,13 +266,18 @@ public abstract class CipherTest
         random.nextBytes(key);
         random.nextBytes(iv);
         random.nextBytes(plaintext);
-        //random.nextBytes(aad);
+        random.nextBytes(aad);
         cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
         byte[] ciphertext1 = new byte[cipher.getOutputSize(plaintext.length)];
-        cipher.processAADBytes(aad, 0, aad.length);
+        for (int i = 0; i < aad.length; ++i)
+        {
+            cipher.processAADByte(aad[i]);
+        }
         int len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext1, 0);
         len += cipher.doFinal(ciphertext1, len);
-        cipher.init(true, new AEADParameters(new KeyParameter(key), macSize * 8, iv, aad));
+        int aadSplit = random.nextInt(99);
+        cipher.init(true, new AEADParameters(new KeyParameter(key), macSize * 8, iv, Arrays.copyOf(aad, aadSplit)));
+        cipher.processAADBytes(aad, aadSplit, aad.length - aadSplit);
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
