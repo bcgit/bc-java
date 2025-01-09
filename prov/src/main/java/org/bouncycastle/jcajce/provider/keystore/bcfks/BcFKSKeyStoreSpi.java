@@ -118,6 +118,16 @@ class BcFKSKeyStoreSpi
         oidMap.put("HMACSHA256", PKCSObjectIdentifiers.id_hmacWithSHA256);
         oidMap.put("HMACSHA384", PKCSObjectIdentifiers.id_hmacWithSHA384);
         oidMap.put("HMACSHA512", PKCSObjectIdentifiers.id_hmacWithSHA512);
+        oidMap.put("HMACSHA512/224", PKCSObjectIdentifiers.id_hmacWithSHA512_224);
+        oidMap.put("HMACSHA512/256", PKCSObjectIdentifiers.id_hmacWithSHA512_256);
+        oidMap.put("HMACSHA512(224)", PKCSObjectIdentifiers.id_hmacWithSHA512_224);
+        oidMap.put("HMACSHA512(256)", PKCSObjectIdentifiers.id_hmacWithSHA512_256);
+        oidMap.put("HMACSHA3-224", NISTObjectIdentifiers.id_hmacWithSHA3_224);
+        oidMap.put("HMACSHA3-256", NISTObjectIdentifiers.id_hmacWithSHA3_256);
+        oidMap.put("HMACSHA3-384", NISTObjectIdentifiers.id_hmacWithSHA3_384);
+        oidMap.put("HMACSHA3-512", NISTObjectIdentifiers.id_hmacWithSHA3_512);
+        oidMap.put("KMAC128", NISTObjectIdentifiers.id_Kmac128);
+        oidMap.put("KMAC256", NISTObjectIdentifiers.id_Kmac256);
         oidMap.put("SEED", KISAObjectIdentifiers.id_seedCBC);
 
         oidMap.put("CAMELLIA.128", NTTObjectIdentifiers.id_camellia128_cbc);
