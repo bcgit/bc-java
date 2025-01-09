@@ -32,6 +32,10 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
+        testVectors("isapa128av20", IsapType.ISAP_A_128A);
+        testVectors("isapa128v20", IsapType.ISAP_A_128);
+        testVectors("isapk128av20", IsapType.ISAP_K_128A);
+        testVectors("isapk128v20", IsapType.ISAP_K_128);
         ISAPEngine ISAP = new ISAPEngine(IsapType.ISAP_K_128A);
         testExceptions(ISAP, ISAP.getKeyBytesSize(), ISAP.getIVBytesSize(), ISAP.getBlockSize());
         testParameters(ISAP, 16, 16, 16);
@@ -45,10 +49,7 @@ public class ISAPTest
         testExceptions(ISAP, ISAP.getKeyBytesSize(), ISAP.getIVBytesSize(), ISAP.getBlockSize());
         testParameters(ISAP, 16, 16, 16);
         testExceptions(new ISAPDigest(), 32);
-        testVectors("isapa128av20", IsapType.ISAP_A_128A);
-        testVectors("isapa128v20", IsapType.ISAP_A_128);
-        testVectors("isapk128av20", IsapType.ISAP_K_128A);
-        testVectors("isapk128v20", IsapType.ISAP_K_128);
+
         testVectors();
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
@@ -107,7 +108,7 @@ public class ISAPTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("265"))
+//                if (!map.get("Count").equals("19"))
 //                {
 //                    continue;
 //                }
@@ -143,6 +144,7 @@ public class ISAPTest
                 {
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
+                //System.out.println("Keystream " + map.get("Count") + " pass");
                 isap.reset();
                 map.clear();
 

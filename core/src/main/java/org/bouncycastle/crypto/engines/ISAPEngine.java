@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -51,18 +52,22 @@ public class ISAPEngine
             algorithmName = "ISAP-K-128 AEAD";
             break;
         }
+        aadData = new byte[ISAP_rH_SZ];
     }
 
     private boolean initialised;
     final int ISAP_STATE_SZ = 40;
     private byte[] k;
     private byte[] npub;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    //private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
+    private final byte[] aadData;
+    private int aadOff;
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private int ISAP_rH;
     private int ISAP_rH_SZ;
     private ISAP_AEAD ISAPAEAD;
+    private boolean aadFinished;
 
     private interface ISAP_AEAD
     {
@@ -73,6 +78,10 @@ public class ISAPEngine
         void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag);
 
         void reset();
+
+        void absorbMacBlock(byte[] input, int inOff);
+
+        void swapInternalState();
     }
 
     private abstract class ISAPAEAD_A
@@ -83,7 +92,7 @@ public class ISAPEngine
         protected long ISAP_IV1_64;
         protected long ISAP_IV2_64;
         protected long ISAP_IV3_64;
-        protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4;
+        protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4, macx0, macx1, macx2, macx3, macx4;
 
         public ISAPAEAD_A()
         {
@@ -97,12 +106,37 @@ public class ISAPEngine
             k64 = new long[getLongSize(k.length)];
             Pack.bigEndianToLong(npub, 0, npub64);
             Pack.bigEndianToLong(k, 0, k64);
-            reset();
+            //reset();
         }
 
         protected abstract void PX1();
 
         protected abstract void PX2();
+
+        public void swapInternalState()
+        {
+            t0 = x0;
+            t1 = x1;
+            t2 = x2;
+            t3 = x3;
+            t4 = x4;
+            x0 = macx0;
+            x1 = macx1;
+            x2 = macx2;
+            x3 = macx3;
+            x4 = macx4;
+            macx0 = t0;
+            macx1 = t1;
+            macx2 = t2;
+            macx3 = t3;
+            macx4 = t4;
+        }
+
+        public void absorbMacBlock(byte[] input, int inOff)
+        {
+            x0 ^= Pack.bigEndianToLong(input, inOff);
+            P12();
+        }
 
         protected void ABSORB_MAC(byte[] src, int len)
         {
@@ -127,11 +161,12 @@ public class ISAPEngine
         public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
             // Init State
-            x0 = npub64[0];
-            x1 = npub64[1];
-            x2 = ISAP_IV1_64;
-            x3 = x4 = 0;
-            P12();
+//            x0 = npub64[0];
+//            x1 = npub64[1];
+//            x2 = ISAP_IV1_64;
+//            x3 = x4 = 0;
+//            P12();
+
             ABSORB_MAC(ad, adlen);
             // Domain seperation
             x4 ^= 1L;
@@ -198,6 +233,13 @@ public class ISAPEngine
             x3 = npub64[0];
             x4 = npub64[1];
             PX1();
+            swapInternalState();
+            // Init State for mac
+            x0 = npub64[0];
+            x1 = npub64[1];
+            x2 = ISAP_IV1_64;
+            x3 = x4 = 0;
+            P12();
         }
 
         private int getLongSize(int x)
@@ -306,8 +348,11 @@ public class ISAPEngine
         private final int[] KeccakF400RoundConstants = {0x0001, 0x8082, 0x808a, 0x8000, 0x808b, 0x0001, 0x8081, 0x8009,
             0x008a, 0x0088, 0x8009, 0x000a, 0x808b, 0x008b, 0x8089, 0x8003, 0x8002, 0x0080, 0x800a, 0x000a};
         protected short[] SX = new short[25];
+        protected short[] macSX = new short[25];
         protected short[] E = new short[25];
         protected short[] C = new short[5];
+        protected short[] macE = new short[25];
+        protected short[] macC = new short[5];
 
         public ISAPAEAD_K()
         {
@@ -321,18 +366,35 @@ public class ISAPEngine
             byteToShort(k, k16, k16.length);
             iv16 = new short[npub.length >> 1];
             byteToShort(npub, iv16, iv16.length);
-            reset();
+            //reset();
         }
 
         public void reset()
         {
             // Init state
-            SX = new short[25];
-            E = new short[25];
-            C = new short[5];
+            Arrays.fill(SX, (byte)0);
             isap_rk(ISAP_IV3_16, npub, IV_SIZE, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
             System.arraycopy(iv16, 0, SX, 17, 8);
             PermuteRoundsKX(SX, E, C);
+            // Init state for mac
+            swapInternalState();
+            Arrays.fill(SX, 12, 25, (short) 0);
+            System.arraycopy(iv16, 0, SX, 0, 8);
+            System.arraycopy(ISAP_IV1_16, 0, SX, 8, 4);
+            PermuteRoundsHX(SX, E, C);
+        }
+
+        public void swapInternalState()
+        {
+            short[] tmp = SX;
+            SX = macSX;
+            macSX = tmp;
+            tmp = E;
+            E = macE;
+            macE = tmp;
+            tmp = C;
+            C = macC;
+            macC = tmp;
         }
 
         protected abstract void PermuteRoundsHX(short[] SX, short[] E, short[] C);
@@ -340,6 +402,12 @@ public class ISAPEngine
         protected abstract void PermuteRoundsKX(short[] SX, short[] E, short[] C);
 
         protected abstract void PermuteRoundsBX(short[] SX, short[] E, short[] C);
+
+        public void absorbMacBlock(byte[] input, int inOff)
+        {
+            byteToShortXor(input, inOff, SX, ISAP_rH_SZ >> 1);
+            PermuteRoundsHX(SX, E, C);
+        }
 
         protected void ABSORB_MAC(short[] SX, byte[] src, int len, short[] E, short[] C)
         {
@@ -349,14 +417,14 @@ public class ISAPEngine
             {
                 if (rem_bytes > ISAP_rH_SZ)
                 {
-                    byteToShortXor(src, SX, ISAP_rH_SZ >> 1);
+                    byteToShortXor(src, idx, SX, ISAP_rH_SZ >> 1);
                     idx += ISAP_rH_SZ;
                     rem_bytes -= ISAP_rH_SZ;
                     PermuteRoundsHX(SX, E, C);
                 }
                 else if (rem_bytes == ISAP_rH_SZ)
                 {
-                    byteToShortXor(src, SX, ISAP_rH_SZ >> 1);
+                    byteToShortXor(src, idx, SX, ISAP_rH_SZ >> 1);
                     PermuteRoundsHX(SX, E, C);
                     SX[0] ^= 0x80;
                     PermuteRoundsHX(SX, E, C);
@@ -397,11 +465,6 @@ public class ISAPEngine
 
         public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
-            SX = new short[25];
-            // Init state
-            System.arraycopy(iv16, 0, SX, 0, 8);
-            System.arraycopy(ISAP_IV1_16, 0, SX, 8, 4);
-            PermuteRoundsHX(SX, E, C);
             // Absorb AD
             ABSORB_MAC(SX, ad, adlen, E, C);
             // Domain seperation
@@ -443,11 +506,11 @@ public class ISAPEngine
             }
         }
 
-        private void byteToShortXor(byte[] input, short[] output, int outLen)
+        private void byteToShortXor(byte[] input, int inOff, short[] output, int outLen)
         {
             for (int i = 0; i < outLen; ++i)
             {
-                output[i] ^= Pack.littleEndianToShort(input, (i << 1));
+                output[i] ^= Pack.littleEndianToShort(input, inOff + (i << 1));
             }
         }
 
@@ -790,7 +853,12 @@ public class ISAPEngine
     @Override
     public void processAADByte(byte in)
     {
-        aadData.write(in);
+        if (aadOff >= aadData.length)
+        {
+            aadOff = 0;
+            ISAPAEAD.absorbMacBlock(aadData, 0);
+        }
+        aadData[aadOff++] = in;
     }
 
     @Override
@@ -800,8 +868,24 @@ public class ISAPEngine
         {
             throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
         }
-
-        aadData.write(in, inOff, len);
+        int tmp;
+        if (aadOff + len >= ISAP_rH_SZ)
+        {
+            tmp = ISAP_rH_SZ - aadOff;
+            System.arraycopy(in, inOff, aadData, aadOff, tmp);
+            ISAPAEAD.absorbMacBlock(aadData, 0);
+            inOff += tmp;
+            len -= tmp;
+            aadOff = 0;
+        }
+        while (len > ISAP_rH_SZ)
+        {
+            ISAPAEAD.absorbMacBlock(in, inOff);
+            inOff += ISAP_rH_SZ;
+            len -= ISAP_rH_SZ;
+        }
+        System.arraycopy(in, inOff, aadData, aadOff, len);
+        aadOff += len;
     }
 
     @Override
@@ -815,6 +899,11 @@ public class ISAPEngine
         if ((inOff + len) > input.length)
         {
             throw new DataLengthException("input buffer too short");
+        }
+        if(!aadFinished)
+        {
+            ISAPAEAD.swapInternalState();
+            aadFinished = true;
         }
         message.write(input, inOff, len);
         if (forEncryption)
@@ -847,7 +936,7 @@ public class ISAPEngine
         }
         int len;
         byte[] c;
-        byte[] ad = aadData.toByteArray();
+
         if (forEncryption)
         {
             byte[] enc_input = message.toByteArray();
@@ -857,11 +946,13 @@ public class ISAPEngine
                 throw new OutputLengthException("output buffer is too short");
             }
             ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
+
             outputStream.write(output, outOff, len);
             outOff += len;
             c = outputStream.toByteArray();
             mac = new byte[MAC_SIZE];
-            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac);
+            ISAPAEAD.swapInternalState();
+            ISAPAEAD.isap_mac(aadData, aadOff, c, c.length, mac);
             System.arraycopy(mac, 0, output, outOff, 16);
             len += 16;
         }
@@ -874,7 +965,8 @@ public class ISAPEngine
             {
                 throw new OutputLengthException("output buffer is too short");
             }
-            ISAPAEAD.isap_mac(ad, ad.length, c, len, mac);
+            ISAPAEAD.swapInternalState();
+            ISAPAEAD.isap_mac(aadData, aadOff, c, len, mac);
             ISAPAEAD.reset();
             for (int i = 0; i < 16; ++i)
             {
@@ -883,6 +975,7 @@ public class ISAPEngine
                     throw new IllegalArgumentException("Mac does not match");
                 }
             }
+            ISAPAEAD.swapInternalState();
             ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
         }
         return len;
@@ -907,11 +1000,14 @@ public class ISAPEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        aadData.reset();
+        Arrays.fill(aadData, (byte)0);
         ISAPAEAD.reset();
         message.reset();
         outputStream.reset();
+        aadOff = 0;
+        aadFinished = false;
         super.reset(clearMac);
+
     }
 
     public int getBlockSize()
