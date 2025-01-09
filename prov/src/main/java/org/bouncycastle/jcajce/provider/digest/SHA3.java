@@ -1,5 +1,6 @@
 package org.bouncycastle.jcajce.provider.digest;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.digests.ParallelHash;
@@ -11,6 +12,7 @@ import org.bouncycastle.crypto.macs.KMAC;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 
 public class SHA3
 {
@@ -103,6 +105,78 @@ public class SHA3
             super(new HMac(new SHA3Digest(size)));
         }
     }
+
+    static public class KeyFactorySHA3
+        extends BaseSecretKeyFactory
+    {
+        public KeyFactorySHA3(int size, ASN1ObjectIdentifier algOid)
+        {
+            super("HmacSHA3-" + size, algOid);
+        }
+    }
+
+    static public class KeyFactory224
+        extends KeyFactorySHA3
+    {
+        public KeyFactory224()
+        {
+            super(224, NISTObjectIdentifiers.id_hmacWithSHA3_224);
+        }
+    }
+
+    static public class KeyFactory256
+         extends KeyFactorySHA3
+     {
+         public KeyFactory256()
+         {
+             super(256, NISTObjectIdentifiers.id_hmacWithSHA3_256);
+         }
+     }
+
+    static public class KeyFactory384
+         extends KeyFactorySHA3
+     {
+         public KeyFactory384()
+         {
+             super(384, NISTObjectIdentifiers.id_hmacWithSHA3_384);
+         }
+     }
+
+    static public class KeyFactory512
+         extends KeyFactorySHA3
+     {
+         public KeyFactory512()
+         {
+             super(512, NISTObjectIdentifiers.id_hmacWithSHA3_512);
+         }
+     }
+
+    static public class KeyFactoryKMAC
+        extends BaseSecretKeyFactory
+    {
+        public KeyFactoryKMAC(int size, ASN1ObjectIdentifier algOid)
+        {
+            super("KMAC" + size, algOid);
+        }
+    }
+
+    static public class KeyFactoryKMAC128
+         extends KeyFactoryKMAC
+     {
+         public KeyFactoryKMAC128()
+         {
+             super(128, NISTObjectIdentifiers.id_KmacWithSHAKE128);
+         }
+     }
+
+    static public class KeyFactoryKMAC256
+         extends KeyFactoryKMAC
+     {
+         public KeyFactoryKMAC256()
+         {
+             super(256, NISTObjectIdentifiers.id_KmacWithSHAKE256);
+         }
+     }
 
     public static class KeyGeneratorSHA3
         extends BaseKeyGenerator
@@ -321,18 +395,31 @@ public class SHA3
 
             addHMACAlgorithm(provider, "SHA3-224", PREFIX + "$HashMac224",  PREFIX + "$KeyGenerator224");
             addHMACAlias(provider, "SHA3-224", NISTObjectIdentifiers.id_hmacWithSHA3_224);
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA3-224", PREFIX + "$KeyFactory224");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_hmacWithSHA3_224, "HMACSHA3-224");
 
             addHMACAlgorithm(provider, "SHA3-256", PREFIX + "$HashMac256",  PREFIX + "$KeyGenerator256");
             addHMACAlias(provider, "SHA3-256", NISTObjectIdentifiers.id_hmacWithSHA3_256);
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA3-256", PREFIX + "$KeyFactory256");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_hmacWithSHA3_256, "HMACSHA3-256");
 
             addHMACAlgorithm(provider, "SHA3-384", PREFIX + "$HashMac384",  PREFIX + "$KeyGenerator384");
             addHMACAlias(provider, "SHA3-384", NISTObjectIdentifiers.id_hmacWithSHA3_384);
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA3-384", PREFIX + "$KeyFactory384");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_hmacWithSHA3_384, "HMACSHA3-384");
 
             addHMACAlgorithm(provider, "SHA3-512", PREFIX + "$HashMac512",  PREFIX + "$KeyGenerator512");
             addHMACAlias(provider, "SHA3-512", NISTObjectIdentifiers.id_hmacWithSHA3_512);
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA3-512", PREFIX + "$KeyFactory512");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_hmacWithSHA3_512, "HMACSHA3-512");
 
             addKMACAlgorithm(provider, "128", PREFIX + "$KMac128",  PREFIX + "$KeyGenerator256");
+            provider.addAlgorithm("SecretKeyFactory.KMAC128", PREFIX + "$KeyFactoryKMAC128");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_Kmac128, "KMAC128");
+
             addKMACAlgorithm(provider, "256", PREFIX + "$KMac256",  PREFIX + "$KeyGenerator512");
+            provider.addAlgorithm("SecretKeyFactory.KMAC256", PREFIX + "$KeyFactoryKMAC256");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + NISTObjectIdentifiers.id_Kmac256, "KMAC256");
 
             provider.addAlgorithm("MessageDigest.TUPLEHASH256-512", PREFIX + "$DigestTupleHash256_512");
             provider.addAlgorithm("MessageDigest.TUPLEHASH128-256", PREFIX + "$DigestTupleHash128_256");

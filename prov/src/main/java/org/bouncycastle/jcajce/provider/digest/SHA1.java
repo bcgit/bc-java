@@ -9,6 +9,7 @@ import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseMac;
+import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 
 public class SHA1
@@ -78,7 +79,16 @@ public class SHA1
     {
         public PBEWithMacKeyFactory()
         {
-            super("PBEwithHmacSHA", null, false, PKCS12, SHA1, 160, 0);
+            super("PBEwithHmacSHA1", null, false, PKCS12, SHA1, 160, 0);
+        }
+    }
+
+    static public class KeyFactory
+        extends BaseSecretKeyFactory
+    {
+        public KeyFactory()
+        {
+            super("HmacSHA1", null);
         }
     }
 
@@ -109,6 +119,8 @@ public class SHA1
             provider.addAlgorithm("Alg.Alias.Mac." + OIWObjectIdentifiers.idSHA1, "PBEWITHHMACSHA");
 
             provider.addAlgorithm("SecretKeyFactory.PBEWITHHMACSHA1", PREFIX + "$PBEWithMacKeyFactory");
+            provider.addAlgorithm("SecretKeyFactory.HMACSHA1", PREFIX + "$KeyFactory");
+            provider.addAlgorithm("Alg.Alias.SecretKeyFactory." + PKCSObjectIdentifiers.id_hmacWithSHA1, "HMACSHA1");
           }
     }
 }
