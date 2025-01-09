@@ -74,7 +74,7 @@ public class ISAPEngine
 
         void init();
 
-        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag);
+        void isap_mac(byte[] c, int clen, byte[] tag);
 
         void reset();
 
@@ -170,7 +170,7 @@ public class ISAPEngine
             x4 ^= 1L;
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
+        public void isap_mac(byte[] c, int clen, byte[] tag)
         {
             ABSORB_MAC(c, clen);
             // Derive K*
@@ -478,7 +478,7 @@ public class ISAPEngine
             System.arraycopy(SX, 0, out16, 0, outlen == ISAP_STATE_SZ_CRYPTO_NPUBBYTES ? 17 : 8);
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
+        public void isap_mac(byte[] c, int clen, byte[] tag)
         {
             // Absorb C
             ABSORB_MAC(SX, c, clen, E, C);
@@ -965,7 +965,7 @@ public class ISAPEngine
             c = outputStream.toByteArray();
             mac = new byte[MAC_SIZE];
             ISAPAEAD.swapInternalState();
-            ISAPAEAD.isap_mac(buffer, bufferOff, c, c.length, mac);
+            ISAPAEAD.isap_mac(c, c.length, mac);
             System.arraycopy(mac, 0, output, outOff, 16);
             len += 16;
         }
@@ -979,7 +979,7 @@ public class ISAPEngine
                 throw new OutputLengthException("output buffer is too short");
             }
             ISAPAEAD.swapInternalState();
-            ISAPAEAD.isap_mac(buffer, bufferOff, c, len, mac);
+            ISAPAEAD.isap_mac(c, len, mac);
             ISAPAEAD.reset();
             for (int i = 0; i < 16; ++i)
             {
