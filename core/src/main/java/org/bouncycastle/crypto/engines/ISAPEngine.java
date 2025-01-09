@@ -52,16 +52,15 @@ public class ISAPEngine
             algorithmName = "ISAP-K-128 AEAD";
             break;
         }
-        aadData = new byte[ISAP_rH_SZ];
+        buffer = new byte[ISAP_rH_SZ];
     }
 
     private boolean initialised;
     final int ISAP_STATE_SZ = 40;
     private byte[] k;
     private byte[] npub;
-    //private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final byte[] aadData;
-    private int aadOff;
+    private final byte[] buffer;
+    private int bufferOff;
     private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private int ISAP_rH;
@@ -80,6 +79,8 @@ public class ISAPEngine
         void reset();
 
         void absorbMacBlock(byte[] input, int inOff);
+
+        void absorbFinalAADBlock();
 
         void swapInternalState();
     }
@@ -158,18 +159,19 @@ public class ISAPEngine
             P12();
         }
 
+        public void absorbFinalAADBlock()
+        {
+            for (int i = 0; i < bufferOff; ++i)
+            {
+                x0 ^= (buffer[i] & 0xFFL) << ((7 - i) << 3);
+            }
+            x0 ^= 0x80L << ((7 - bufferOff) << 3);
+            P12();
+            x4 ^= 1L;
+        }
+
         public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
-            // Init State
-//            x0 = npub64[0];
-//            x1 = npub64[1];
-//            x2 = ISAP_IV1_64;
-//            x3 = x4 = 0;
-//            P12();
-
-            ABSORB_MAC(ad, adlen);
-            // Domain seperation
-            x4 ^= 1L;
             ABSORB_MAC(c, clen);
             // Derive K*
             Pack.longToBigEndian(x0, tag, 0);
@@ -378,7 +380,7 @@ public class ISAPEngine
             PermuteRoundsKX(SX, E, C);
             // Init state for mac
             swapInternalState();
-            Arrays.fill(SX, 12, 25, (short) 0);
+            Arrays.fill(SX, 12, 25, (short)0);
             System.arraycopy(iv16, 0, SX, 0, 8);
             System.arraycopy(ISAP_IV1_16, 0, SX, 8, 4);
             PermuteRoundsHX(SX, E, C);
@@ -443,6 +445,19 @@ public class ISAPEngine
             }
         }
 
+        public void absorbFinalAADBlock()
+        {
+            for (int i = 0; i < bufferOff; i++)
+            {
+                SX[i >> 1] ^= (buffer[i] & 0xFF) << ((i & 1) << 3);
+            }
+            SX[bufferOff >> 1] ^= 0x80 << ((bufferOff & 1) << 3);
+            PermuteRoundsHX(SX, E, C);
+
+            // Domain seperation
+            SX[24] ^= 0x0100;
+        }
+
         public void isap_rk(short[] iv16, byte[] y, int ylen, short[] out16, int outlen, short[] C)
         {
             // Init state
@@ -465,10 +480,6 @@ public class ISAPEngine
 
         public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag)
         {
-            // Absorb AD
-            ABSORB_MAC(SX, ad, adlen, E, C);
-            // Domain seperation
-            SX[24] ^= 0x0100;
             // Absorb C
             ABSORB_MAC(SX, c, clen, E, C);
             // Derive K*
@@ -853,12 +864,12 @@ public class ISAPEngine
     @Override
     public void processAADByte(byte in)
     {
-        if (aadOff >= aadData.length)
+        if (bufferOff >= buffer.length)
         {
-            aadOff = 0;
-            ISAPAEAD.absorbMacBlock(aadData, 0);
+            bufferOff = 0;
+            ISAPAEAD.absorbMacBlock(buffer, 0);
         }
-        aadData[aadOff++] = in;
+        buffer[bufferOff++] = in;
     }
 
     @Override
@@ -869,23 +880,23 @@ public class ISAPEngine
             throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
         }
         int tmp;
-        if (aadOff + len >= ISAP_rH_SZ)
+        if (bufferOff + len >= ISAP_rH_SZ)
         {
-            tmp = ISAP_rH_SZ - aadOff;
-            System.arraycopy(in, inOff, aadData, aadOff, tmp);
-            ISAPAEAD.absorbMacBlock(aadData, 0);
+            tmp = ISAP_rH_SZ - bufferOff;
+            System.arraycopy(in, inOff, buffer, bufferOff, tmp);
+            ISAPAEAD.absorbMacBlock(buffer, 0);
             inOff += tmp;
             len -= tmp;
-            aadOff = 0;
+            bufferOff = 0;
         }
-        while (len > ISAP_rH_SZ)
+        while (len >= ISAP_rH_SZ)
         {
             ISAPAEAD.absorbMacBlock(in, inOff);
             inOff += ISAP_rH_SZ;
             len -= ISAP_rH_SZ;
         }
-        System.arraycopy(in, inOff, aadData, aadOff, len);
-        aadOff += len;
+        System.arraycopy(in, inOff, buffer, bufferOff, len);
+        bufferOff += len;
     }
 
     @Override
@@ -900,9 +911,11 @@ public class ISAPEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        if(!aadFinished)
+        if (!aadFinished)
         {
+            ISAPAEAD.absorbFinalAADBlock();
             ISAPAEAD.swapInternalState();
+            bufferOff = 0;
             aadFinished = true;
         }
         message.write(input, inOff, len);
@@ -952,7 +965,7 @@ public class ISAPEngine
             c = outputStream.toByteArray();
             mac = new byte[MAC_SIZE];
             ISAPAEAD.swapInternalState();
-            ISAPAEAD.isap_mac(aadData, aadOff, c, c.length, mac);
+            ISAPAEAD.isap_mac(buffer, bufferOff, c, c.length, mac);
             System.arraycopy(mac, 0, output, outOff, 16);
             len += 16;
         }
@@ -966,7 +979,7 @@ public class ISAPEngine
                 throw new OutputLengthException("output buffer is too short");
             }
             ISAPAEAD.swapInternalState();
-            ISAPAEAD.isap_mac(aadData, aadOff, c, len, mac);
+            ISAPAEAD.isap_mac(buffer, bufferOff, c, len, mac);
             ISAPAEAD.reset();
             for (int i = 0; i < 16; ++i)
             {
@@ -1000,11 +1013,11 @@ public class ISAPEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        Arrays.fill(aadData, (byte)0);
+        Arrays.fill(buffer, (byte)0);
         ISAPAEAD.reset();
         message.reset();
         outputStream.reset();
-        aadOff = 0;
+        bufferOff = 0;
         aadFinished = false;
         super.reset(clearMac);
 
