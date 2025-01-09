@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -65,6 +66,7 @@ public class AsconAEAD128
 
     protected void processFinalAadBlock()
     {
+        Arrays.fill(m_buf, m_bufPos, m_buf.length, (byte) 0);
         if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             x0 ^= Pack.littleEndianToLong(m_buf, 0);

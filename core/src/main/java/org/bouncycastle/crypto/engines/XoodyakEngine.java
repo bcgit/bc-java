@@ -22,7 +22,7 @@ public class XoodyakEngine
     private int phase;
     private MODE mode;
     private final int f_bPrime_1 = 47;
-    private final int Rkout = 24;
+    private final int AADBufferSize = 24; //Rkout
     private byte[] K;
     private byte[] iv;
     private final int PhaseUp = 2;
@@ -68,7 +68,7 @@ public class XoodyakEngine
     {
         if (aadFinished)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + Rkout +
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + AADBufferSize +
                 " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
         }
         if (bufferOff >= Rkin)
@@ -85,7 +85,7 @@ public class XoodyakEngine
     {
         if (aadFinished)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + Rkout +
+            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + AADBufferSize +
                 " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
         }
         if ((inOff + len) > input.length)
@@ -143,29 +143,29 @@ public class XoodyakEngine
         }
         processAAD();
         int blockLen = len + bufferOff - (forEncryption ? 0 : MAC_SIZE);
-        if (blockLen / Rkout * Rkout + outOff > output.length)
+        if (blockLen / AADBufferSize * AADBufferSize + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
         }
         int rv = 0;
         int originalInOff = inOff;
-        while (blockLen >= Rkout)
+        while (blockLen >= AADBufferSize)
         {
-            int copyLen = Math.min(len, Math.max(Rkout - bufferOff, 0));
+            int copyLen = Math.min(len, Math.max(AADBufferSize - bufferOff, 0));
             System.arraycopy(input, inOff, buffer, bufferOff, copyLen);
-            encrypt(buffer, Rkout, output, outOff);
-            if (!forEncryption && Rkout < bufferOff)
+            encrypt(buffer, AADBufferSize, output, outOff);
+            if (!forEncryption && AADBufferSize < bufferOff)
             {
-                System.arraycopy(buffer, Rkout, buffer, 0, bufferOff - Rkout);
-                bufferOff -= Rkout;
+                System.arraycopy(buffer, AADBufferSize, buffer, 0, bufferOff - AADBufferSize);
+                bufferOff -= AADBufferSize;
             }
             else
             {
                 bufferOff = 0;
             }
-            outOff += Rkout;
-            rv += Rkout;
-            blockLen -= Rkout;
+            outOff += AADBufferSize;
+            rv += AADBufferSize;
+            blockLen -= AADBufferSize;
             inOff += copyLen;
         }
         len -= inOff - originalInOff;
@@ -179,11 +179,11 @@ public class XoodyakEngine
         int inOff = 0;
         int IOLen = len;
         int splitLen;
-        byte[] P = new byte[Rkout];
+        byte[] P = new byte[AADBufferSize];
         int Cu = encrypted ? 0 : 0x80;
         while (IOLen != 0 || !encrypted)
         {
-            splitLen = Math.min(IOLen, Rkout); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
+            splitLen = Math.min(IOLen, AADBufferSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             if (forEncryption)
             {
                 System.arraycopy(input, inOff, P, 0, splitLen);
@@ -227,7 +227,7 @@ public class XoodyakEngine
         int rv = 0;
         if (forEncryption)
         {
-            Arrays.fill(buffer, bufferOff, Rkout, (byte)0);
+            Arrays.fill(buffer, bufferOff, AADBufferSize, (byte)0);
             encrypt(buffer, len, output, outOff);
             outOff += len;
             mac = new byte[MAC_SIZE];
@@ -271,7 +271,7 @@ public class XoodyakEngine
         {
             total = Math.max(0, len + (forEncryption ? 0 : -MAC_SIZE));
         }
-        return total - total % Rkout;
+        return total - total % AADBufferSize;
     }
 
     @Override
@@ -465,6 +465,6 @@ public class XoodyakEngine
 
     public int getBlockSize()
     {
-        return Rkout;
+        return AADBufferSize;
     }
 }
