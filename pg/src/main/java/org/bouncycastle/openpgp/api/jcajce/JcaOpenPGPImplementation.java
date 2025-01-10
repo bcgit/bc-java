@@ -81,7 +81,8 @@ public class JcaOpenPGPImplementation
     {
         JcaPGPDigestCalculatorProviderBuilder dp = new JcaPGPDigestCalculatorProviderBuilder();
         dp.setProvider(provider);
-        JcePBESecretKeyDecryptorBuilderProvider p = new JcePBESecretKeyDecryptorBuilderProvider(dp);
+        JcePBESecretKeyDecryptorBuilderProvider p = new JcePBESecretKeyDecryptorBuilderProvider(dp)
+                .setProvider(provider);
         return p;
     }
 

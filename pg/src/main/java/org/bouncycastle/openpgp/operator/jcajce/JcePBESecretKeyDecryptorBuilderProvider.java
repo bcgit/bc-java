@@ -4,20 +4,34 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
 
+import java.security.Provider;
+
 public class JcePBESecretKeyDecryptorBuilderProvider
         implements PBESecretKeyDecryptorBuilderProvider
 {
     private final JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder;
+    private Provider provider;
 
     public JcePBESecretKeyDecryptorBuilderProvider(JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder)
     {
         this.digestCalculatorProviderBuilder = digestCalculatorProviderBuilder;
     }
 
+    public JcePBESecretKeyDecryptorBuilderProvider setProvider(Provider provider)
+    {
+        this.provider = provider;
+        return this;
+    }
+
     @Override
     public PBESecretKeyDecryptorBuilder provide()
             throws PGPException
     {
-        return new JcePBESecretKeyDecryptorBuilder(digestCalculatorProviderBuilder.build());
+        JcePBESecretKeyDecryptorBuilder b = new JcePBESecretKeyDecryptorBuilder(digestCalculatorProviderBuilder.build());
+        if (provider != null)
+        {
+            b.setProvider(provider);
+        }
+        return b;
     }
 }
