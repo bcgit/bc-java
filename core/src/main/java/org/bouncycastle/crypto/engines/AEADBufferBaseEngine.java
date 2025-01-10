@@ -127,6 +127,19 @@ abstract class AEADBufferBaseEngine
         return BlockSize;
     }
 
+    @Override
+    public int getUpdateOutputSize(int len)
+    {
+        int total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
+        return total - total % BlockSize;
+    }
+
+    @Override
+    public int getOutputSize(int len)
+    {
+        return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+    }
+
     protected abstract void processBufferAAD(byte[] input, int inOff);
 
     protected abstract void processFinalAADBlock();
