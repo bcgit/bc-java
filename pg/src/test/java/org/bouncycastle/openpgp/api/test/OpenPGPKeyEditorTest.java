@@ -2,11 +2,13 @@ package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
+import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 
 import java.io.IOException;
 
@@ -25,7 +27,9 @@ public class OpenPGPKeyEditorTest
             throws Exception
     {
         OpenPGPApi api = new BcOpenPGPApi();
+        performTestWith(api);
 
+        api = new JcaOpenPGPApi(new BouncyCastleProvider());
         performTestWith(api);
     }
 
@@ -34,8 +38,8 @@ public class OpenPGPKeyEditorTest
     {
         unmodifiedKeyTest(api);
         addUserIdTest(api);
-        changePassphraseNoAEADTest(api);
-        changePassphraseAEADTest(api);
+        changePassphraseUnprotectedToCFBTest(api);
+        changePassphraseUnprotectedToAEADTest(api);
     }
 
     private void unmodifiedKeyTest(OpenPGPApi api)
@@ -55,16 +59,17 @@ public class OpenPGPKeyEditorTest
     {
         OpenPGPKey key = api.readKeyOrCertificate()
                 .parseKey(OpenPGPTestKeys.V6_KEY);
-        isNull(key.getPrimaryUserId());
+        isNull("Expect primary user-id to be null", key.getPrimaryUserId());
 
         key = api.editKey(key)
                 .addUserId("Alice <alice@example.com>", null)
                 .done();
 
-        isEquals("Alice <alice@example.com>", key.getPrimaryUserId().getUserId());
+        isEquals("Expect the new user-id to be primary now",
+                "Alice <alice@example.com>", key.getPrimaryUserId().getUserId());
     }
 
-    private void changePassphraseNoAEADTest(OpenPGPApi api)
+    private void changePassphraseUnprotectedToCFBTest(OpenPGPApi api)
             throws IOException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
@@ -73,23 +78,28 @@ public class OpenPGPKeyEditorTest
         key = api.editKey(key)
                 .changePassphrase(key.getPrimaryKey(), null, "sw0rdf1sh".toCharArray(), false)
                 .done();
-        isTrue(key.getPrimarySecretKey().isLocked());
-        isTrue(key.getPrimarySecretKey().isPassphraseCorrect("sw0rdf1sh".toCharArray()));
-        isEquals(SecretKeyPacket.USAGE_SHA1, key.getPrimarySecretKey().getPGPSecretKey().getS2KUsage());
+        isTrue("Expect key to be locked", key.getPrimarySecretKey().isLocked());
+        isTrue("Expect sw0rdf1sh to be the correct passphrase",
+                key.getPrimarySecretKey().isPassphraseCorrect("sw0rdf1sh".toCharArray()));
+        isEquals("Expect use of USAGE_CHECKSUM for key protection",
+                SecretKeyPacket.USAGE_SHA1, key.getPrimarySecretKey().getPGPSecretKey().getS2KUsage());
     }
 
-    private void changePassphraseAEADTest(OpenPGPApi api)
+    private void changePassphraseUnprotectedToAEADTest(OpenPGPApi api)
             throws IOException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
-        isFalse(key.getPrimarySecretKey().isLocked());
+        isFalse("Expect key to be unprotected", key.getPrimarySecretKey().isLocked());
 
         key = api.editKey(key)
                 .changePassphrase(key.getPrimaryKey(), null, "sw0rdf1sh".toCharArray(), true)
                 .done();
-        isTrue(key.getPrimarySecretKey().isLocked());
-        isTrue(key.getPrimarySecretKey().isPassphraseCorrect("sw0rdf1sh".toCharArray()));
-        isEquals(SecretKeyPacket.USAGE_AEAD, key.getPrimarySecretKey().getPGPSecretKey().getS2KUsage());
+        isTrue("Expect key to be locked after changing passphrase",
+                key.getPrimarySecretKey().isLocked());
+        isTrue("Expect sw0rdf1sh to be the correct passphrase using AEAD",
+                key.getPrimarySecretKey().isPassphraseCorrect("sw0rdf1sh".toCharArray()));
+        isEquals("Expect use of AEAD for key protection",
+                SecretKeyPacket.USAGE_AEAD, key.getPrimarySecretKey().getPGPSecretKey().getS2KUsage());
     }
 
     public static void main(String[] args)
