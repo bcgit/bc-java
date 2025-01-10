@@ -24,9 +24,7 @@ class ProviderUtils
 
     static Provider createProviderBCJSSE(boolean fips)
     {
-        // TODO Use new constructor when available
-//        return new BouncyCastleJsseProvider(fips);
-        return new BouncyCastleJsseProvider(fips, new JcaTlsCryptoProvider());
+        return new BouncyCastleJsseProvider(fips);
     }
 
     static Provider createProviderBCJSSE(Provider bc)
@@ -42,6 +40,11 @@ class ProviderUtils
     static Provider createProviderBCJSSE(String config)
     {
         return new BouncyCastleJsseProvider(config);
+    }
+
+    static Provider createProviderBCJSSE(boolean fips, JcaTlsCryptoProvider cryptoProvider)
+    {
+        return new BouncyCastleJsseProvider(fips, cryptoProvider);
     }
 
     static Provider getProviderBC()

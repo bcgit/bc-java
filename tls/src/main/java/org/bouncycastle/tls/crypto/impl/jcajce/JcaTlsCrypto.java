@@ -58,6 +58,7 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
+import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipherImpl;
@@ -1226,7 +1227,7 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(this, helper, true),
-            new JceChaCha20Poly1305(this, helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305);
+            new JceChaCha20Poly1305(this, helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305, null);
     }
 
     private TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1234,7 +1235,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true),
             createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_CCM);
+            TlsAEADCipher.AEAD_CCM, null);
     }
 
     private TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1242,7 +1243,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true),
             createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM);
+            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
     }
 
     private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1250,7 +1251,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, true),
             createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM);
+            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
     }
 
     private TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1259,7 +1260,7 @@ public class JcaTlsCrypto
         return new TlsAEADCipher(cryptoParams,
             createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true),
             createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM);
+            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
     }
 
     protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, String algorithm, int cipherKeySize,
@@ -1280,7 +1281,7 @@ public class JcaTlsCrypto
         int cipherKeySize = 16, macSize = 16;
         return new TlsAEADCipher(cryptoParams, createAEADCipher("SM4/CCM/NoPadding", "SM4", cipherKeySize, true),
             createAEADCipher("SM4/CCM/NoPadding", "SM4", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_CCM);
+            TlsAEADCipher.AEAD_CCM, null);
     }
 
     private TlsAEADCipher createCipher_SM4_GCM(TlsCryptoParameters cryptoParams)
@@ -1289,7 +1290,12 @@ public class JcaTlsCrypto
         int cipherKeySize = 16, macSize = 16;
         return new TlsAEADCipher(cryptoParams, createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, true),
             createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM);
+            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
+    }
+
+    protected AEADNonceGeneratorFactory getGCMNonceGeneratorFactory()
+    {
+        return GCMUtil.getDefaultNonceGeneratorFactory();
     }
 
     String getDigestName(int cryptoHashAlgorithm)

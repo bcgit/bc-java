@@ -1,5 +1,6 @@
 package org.bouncycastle.jsse.provider.test;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -14,7 +15,10 @@ public class FipsCipherSuitesEngineTestSuite
     public static Test suite()
         throws Exception
     {
-        return CipherSuitesEngineTestSuite.createSuite(new FipsCipherSuitesEngineTestSuite(), "FIPS", true, new CipherSuitesFilter()
+        FipsTestUtils.setupFipsSuite();
+
+        TestSuite suite = CipherSuitesEngineTestSuite.createSuite(new FipsCipherSuitesEngineTestSuite(), "FIPS", true,
+            new CipherSuitesFilter()
         {
             public boolean isIgnored(String cipherSuite)
             {
@@ -26,5 +30,22 @@ public class FipsCipherSuitesEngineTestSuite
                 return FipsCipherSuitesTestSuite.isFipsSupportedCipherSuite(cipherSuite);
             }
         });
+
+        FipsTestUtils.teardownFipsSuite();
+
+        return new TestSetup(suite)
+        {
+            @Override
+            protected void setUp() throws Exception
+            {
+                FipsTestUtils.setupFipsSuite();
+            }
+
+            @Override
+            protected void tearDown() throws Exception
+            {
+                FipsTestUtils.teardownFipsSuite();
+            }
+        };
     }
 }
