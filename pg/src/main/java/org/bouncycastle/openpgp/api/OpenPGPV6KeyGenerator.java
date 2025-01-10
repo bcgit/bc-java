@@ -107,8 +107,12 @@ public class OpenPGPV6KeyGenerator
     public OpenPGPKey classicKey(String userId, char[] passphrase)
         throws PGPException
     {
-        return withPrimaryKey()
-            .addUserId(userId)
+        WithPrimaryKey builder = withPrimaryKey();
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+        return builder
             .addSigningSubkey()
             .addEncryptionSubkey()
             .build(passphrase);
@@ -127,7 +131,7 @@ public class OpenPGPV6KeyGenerator
     public OpenPGPKey ed25519x25519Key(String userId, char[] passphrase)
         throws PGPException
     {
-        return withPrimaryKey(new KeyPairGeneratorCallback()
+        WithPrimaryKey builder = withPrimaryKey(new KeyPairGeneratorCallback()
         {
             public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
                 throws PGPException
@@ -150,9 +154,14 @@ public class OpenPGPV6KeyGenerator
                 {
                     return generator.generateX25519KeyPair();
                 }
-            })
-            .addUserId(userId)
-            .build(passphrase);
+            });
+
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+
+        return builder.build(passphrase);
     }
 
 
@@ -169,7 +178,7 @@ public class OpenPGPV6KeyGenerator
     public OpenPGPKey ed448x448Key(String userId, char[] passphrase)
         throws PGPException
     {
-        return withPrimaryKey(new KeyPairGeneratorCallback()
+        WithPrimaryKey builder = withPrimaryKey(new KeyPairGeneratorCallback()
         {
             public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
                 throws PGPException
@@ -192,9 +201,14 @@ public class OpenPGPV6KeyGenerator
                 {
                     return generator.generateX448KeyPair();
                 }
-            })
-            .addUserId(userId)
-            .build(passphrase);
+            });
+
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+
+        return builder.build(passphrase);
     }
 
     /**
