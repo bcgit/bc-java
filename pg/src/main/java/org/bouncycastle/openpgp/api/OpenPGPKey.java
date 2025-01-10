@@ -9,6 +9,7 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
 
@@ -254,11 +255,18 @@ public class OpenPGPKey
                 throws PGPException
         {
             PBESecretKeyDecryptor decryptor = null;
-            if (passphrase != null)
+            try
             {
-                decryptor = decryptorBuilderProvider.provide().build(passphrase);
+                if (passphrase != null)
+                {
+                    decryptor = decryptorBuilderProvider.provide().build(passphrase);
+                }
+                return getPGPSecretKey().extractPrivateKey(decryptor);
             }
-            return getPGPSecretKey().extractPrivateKey(decryptor);
+            catch (PGPException e)
+            {
+                throw new KeyPassphraseException(e);
+            }
         }
 
         public boolean isPassphraseCorrect(char[] passphrase)

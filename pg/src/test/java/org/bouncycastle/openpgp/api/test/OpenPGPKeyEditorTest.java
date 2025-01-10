@@ -1,16 +1,22 @@
 package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.SecretKeyPacket;
+import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
+import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.SignatureParameters;
+import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 
 import java.io.IOException;
+import java.util.Date;
 
 public class OpenPGPKeyEditorTest
     extends AbstractPacketTest
@@ -36,13 +42,28 @@ public class OpenPGPKeyEditorTest
     private void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
-        unmodifiedKeyTest(api);
+        doNothingTest(api);
+
         addUserIdTest(api);
+        softRevokeUserIdTest(api);
+        hardRevokeUserIdTest(api);
+        /*
+        addEncryptionSubkeyTest(api);
+        revokeEncryptionSubkeyTest(api);
+
+        addSigningSubkeyTest(api);
+        revokeSigningSubkeyTest(api);
+
+        extendExpirationTimeTest(api);
+        revokeCertificateTest(api);
+
+
+         */
         changePassphraseUnprotectedToCFBTest(api);
         changePassphraseUnprotectedToAEADTest(api);
     }
 
-    private void unmodifiedKeyTest(OpenPGPApi api)
+    private void doNothingTest(OpenPGPApi api)
             throws PGPException
     {
         OpenPGPKey key = api.generateKey()
@@ -67,6 +88,71 @@ public class OpenPGPKeyEditorTest
 
         isEquals("Expect the new user-id to be primary now",
                 "Alice <alice@example.com>", key.getPrimaryUserId().getUserId());
+    }
+
+    private void softRevokeUserIdTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate()
+                .parseKey(OpenPGPTestKeys.ALICE_KEY);
+        Date now = new Date();
+        Date oneHourAgo = new Date(new Date().getTime() - (1000 * 60 * 60));
+        OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
+        isNotNull(userId);
+        isTrue(userId.isBound());
+        isEquals("Alice Lovelace <alice@openpgp.example>", userId.getUserId());
+
+        key = api.editKey(key)
+                .revokeUserId(userId, null, new SignatureParameters.Callback()
+                {
+                    @Override
+                    public SignatureParameters apply(SignatureParameters parameters)
+                    {
+                        parameters.setSignatureCreationTime(now);
+                        parameters.setHashedSubpacketsFunction(new SignatureSubpacketsFunction()
+                        {
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                            {
+                                subpackets.setRevocationReason(true, RevocationReasonTags.USER_NO_LONGER_VALID, "");
+                                return subpackets;
+                            }
+                        });
+                        return parameters;
+                    }
+                })
+                .done();
+        isTrue(key.getPrimaryUserId().isBoundAt(oneHourAgo));
+        isFalse(key.getPrimaryUserId().isBoundAt(now));
+    }
+
+
+    private void hardRevokeUserIdTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate()
+                .parseKey(OpenPGPTestKeys.ALICE_KEY);
+        Date now = new Date();
+        Date oneHourAgo = new Date(new Date().getTime() - (1000 * 60 * 60));
+        OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
+        isNotNull(userId);
+        isTrue(userId.isBound());
+        isEquals("Alice Lovelace <alice@openpgp.example>", userId.getUserId());
+
+        key = api.editKey(key)
+                .revokeUserId(userId, null, new SignatureParameters.Callback()
+                {
+                    @Override
+                    public SignatureParameters apply(SignatureParameters parameters)
+                    {
+                        parameters.setSignatureCreationTime(now);
+                        // no reason -> hard revocation
+                        return parameters;
+                    }
+                })
+                .done();
+        isFalse(key.getPrimaryUserId().isBoundAt(oneHourAgo));
+        isFalse(key.getPrimaryUserId().isBoundAt(now));
     }
 
     private void changePassphraseUnprotectedToCFBTest(OpenPGPApi api)

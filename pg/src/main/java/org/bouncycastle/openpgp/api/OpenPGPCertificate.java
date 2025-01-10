@@ -693,6 +693,11 @@ public class OpenPGPCertificate
          */
         public abstract String toDetailString();
 
+        public boolean isBound()
+        {
+            return isBoundAt(new Date());
+        }
+
         /**
          * Return true, if this component is - at evaluation time - properly bound to its certificate.
          *
