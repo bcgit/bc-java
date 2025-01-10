@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -23,6 +22,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.api.exception.InvalidEncryptionKeyException;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
@@ -78,6 +78,7 @@ public class OpenPGPMessageGenerator
      * @return this
      */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate)
+            throws InvalidEncryptionKeyException
     {
         return addEncryptionCertificate(recipientCertificate, config.encryptionKeySelector);
     }
@@ -91,8 +92,14 @@ public class OpenPGPMessageGenerator
      * @param subkeySelector selector for encryption subkeys
      * @return this
      */
-    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate, SubkeySelector subkeySelector)
+    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate,
+                                                            SubkeySelector subkeySelector)
+            throws InvalidEncryptionKeyException
     {
+        if (subkeySelector.select(recipientCertificate, config.policy).isEmpty())
+        {
+            throw new InvalidEncryptionKeyException("Key does not have valid encryption subkeys.");
+        }
         config.recipients.add(new Recipient(recipientCertificate, implementation.policy(), subkeySelector));
         return this;
     }
