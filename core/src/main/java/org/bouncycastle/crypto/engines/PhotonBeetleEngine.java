@@ -217,19 +217,6 @@ public class PhotonBeetleEngine
     }
 
     @Override
-    public int getUpdateOutputSize(int len)
-    {
-        int total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
-        return total - total % BlockSize;
-    }
-
-    @Override
-    public int getOutputSize(int len)
-    {
-        return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
-    }
-
-    @Override
     public void reset()
     {
         if (!initialised)
@@ -376,10 +363,5 @@ public class PhotonBeetleEngine
         {
             state[i] ^= in_right[rOff++];
         }
-    }
-
-    public int getBlockSize()
-    {
-        return BlockSize;
     }
 }
