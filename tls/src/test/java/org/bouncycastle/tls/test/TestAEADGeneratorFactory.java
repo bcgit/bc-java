@@ -3,7 +3,7 @@ package org.bouncycastle.tls.test;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 
-class TestAEADGeneratorFactory
+public class TestAEADGeneratorFactory
     implements AEADNonceGeneratorFactory
 {
     public static final AEADNonceGeneratorFactory INSTANCE = new TestAEADGeneratorFactory();

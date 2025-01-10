@@ -4,15 +4,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 public class FipsCipherSuitesTestSuite
     extends TestSuite
 {
-    private static final boolean provAllowGCMCiphersIn12 = false;
-    private static final boolean provAllowRSAKeyExchange = true;
-
     private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
 
     private static Set<String> createFipsSupportedCipherSuites()
@@ -80,7 +78,7 @@ public class FipsCipherSuitesTestSuite
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
 
-        if (provAllowGCMCiphersIn12)
+        if (FipsTestUtils.provAllowGCMCiphersIn12)
         {
 //            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
 //            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
@@ -107,7 +105,7 @@ public class FipsCipherSuitesTestSuite
             cs.add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
         }
 
-        if (provAllowRSAKeyExchange)
+        if (FipsTestUtils.provAllowRSAKeyExchange)
         {
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
@@ -118,7 +116,7 @@ public class FipsCipherSuitesTestSuite
             cs.add("TLS_RSA_WITH_AES_256_CCM");
             cs.add("TLS_RSA_WITH_AES_256_CCM_8");
 
-            if (provAllowGCMCiphersIn12)
+            if (FipsTestUtils.provAllowGCMCiphersIn12)
             {
                 cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
                 cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
@@ -141,7 +139,10 @@ public class FipsCipherSuitesTestSuite
     public static Test suite()
         throws Exception
     {
-        return CipherSuitesTestSuite.createSuite(new FipsCipherSuitesTestSuite(), "FIPS", true, new CipherSuitesFilter()
+        FipsTestUtils.setupFipsSuite();
+
+        TestSuite suite = CipherSuitesTestSuite.createSuite(new FipsCipherSuitesTestSuite(), "FIPS", true,
+            new CipherSuitesFilter()
         {
             public boolean isIgnored(String cipherSuite)
             {
@@ -153,5 +154,22 @@ public class FipsCipherSuitesTestSuite
                 return isFipsSupportedCipherSuite(cipherSuite);
             }
         });
+
+        FipsTestUtils.teardownFipsSuite();
+
+        return new TestSetup(suite)
+        {
+            @Override
+            protected void setUp() throws Exception
+            {
+                FipsTestUtils.setupFipsSuite();
+            }
+
+            @Override
+            protected void tearDown() throws Exception
+            {
+                FipsTestUtils.teardownFipsSuite();
+            }
+        };
     }
 }

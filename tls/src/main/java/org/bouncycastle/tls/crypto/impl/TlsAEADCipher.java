@@ -45,10 +45,18 @@ public final class TlsAEADCipher
 
     private final boolean isTLSv13;
     private final int nonceMode;
-    private final AEADNonceGenerator gcmFipsNonceGenerator;
+    private final AEADNonceGenerator nonceGenerator;
 
-    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
-        int keySize, int macSize, int aeadType) throws IOException
+    /** @deprecated Use version with extra 'nonceGeneratorFactory' parameter */ 
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
+        TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType) throws IOException
+    {
+        this(cryptoParams, encryptCipher, decryptCipher, keySize, macSize, aeadType, null);
+    }
+
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
+        TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType,
+        AEADNonceGeneratorFactory nonceGeneratorFactory) throws IOException
     {
         final SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
@@ -94,7 +102,7 @@ public final class TlsAEADCipher
         final boolean isServer = cryptoParams.isServer();
         if (isTLSv13)
         {
-            gcmFipsNonceGenerator = null;
+            nonceGenerator = null;
             rekeyCipher(securityParameters, decryptCipher, decryptNonce, !isServer);
             rekeyCipher(securityParameters, encryptCipher, encryptNonce, isServer);
             return;
@@ -126,7 +134,7 @@ public final class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        if (AEAD_GCM == aeadType && GcmTls12NonceGeneratorUtil.isGcmFipsNonceGeneratorFactorySet())
+        if (AEAD_GCM == aeadType && nonceGeneratorFactory != null)
         {
             int nonceLength = fixed_iv_length + record_iv_length;
             byte[] baseNonce = Arrays.copyOf(encryptNonce, nonceLength);
@@ -141,12 +149,11 @@ public final class TlsAEADCipher
             {
                 counterSizeInBits = record_iv_length * 8; // 64
             }
-            gcmFipsNonceGenerator = GcmTls12NonceGeneratorUtil.createGcmFipsNonceGenerator(baseNonce,
-                counterSizeInBits);
+            nonceGenerator = nonceGeneratorFactory.create(baseNonce, counterSizeInBits);
         }
         else
         {
-            gcmFipsNonceGenerator = null;
+            nonceGenerator = null;
         }
     }
 
@@ -183,9 +190,9 @@ public final class TlsAEADCipher
     {
         byte[] nonce = new byte[encryptNonce.length + record_iv_length];
 
-        if (null != gcmFipsNonceGenerator)
+        if (null != nonceGenerator)
         {
-            gcmFipsNonceGenerator.generateNonce(nonce);
+            nonceGenerator.generateNonce(nonce);
         }
         else
         {
