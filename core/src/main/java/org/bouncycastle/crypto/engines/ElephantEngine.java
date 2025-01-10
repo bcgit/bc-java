@@ -277,12 +277,10 @@ public class ElephantEngine
     }
 
     @Override
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] k, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
-        byte[] k = keyiv[0];
-        npub = keyiv[1];
+        npub = iv;
         // Storage for the expanded key L
         expanded_key = new byte[BLOCK_SIZE];
         System.arraycopy(k, 0, expanded_key, 0, KEY_SIZE);

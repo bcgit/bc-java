@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -139,15 +138,13 @@ public class AsconAEAD128
         m_state = nextState;
     }
 
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
-
-        K0 = Pack.littleEndianToLong(keyiv[0], 0);
-        K1 = Pack.littleEndianToLong(keyiv[0], 8);
-        N0 = Pack.littleEndianToLong(keyiv[1], 0);
-        N1 = Pack.littleEndianToLong(keyiv[1], 8);
+        K0 = Pack.littleEndianToLong(key, 0);
+        K1 = Pack.littleEndianToLong(key, 8);
+        N0 = Pack.littleEndianToLong(iv, 0);
+        N1 = Pack.littleEndianToLong(iv, 8);
 
         m_state = forEncryption ? State.EncInit : State.DecInit;
 

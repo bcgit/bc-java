@@ -209,23 +209,22 @@ public class AsconEngine
         m_state = nextState;
     }
 
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
 
-        N0 = Pack.bigEndianToLong(keyiv[1], 0);
-        N1 = Pack.bigEndianToLong(keyiv[1], 8);
+        N0 = Pack.bigEndianToLong(iv, 0);
+        N1 = Pack.bigEndianToLong(iv, 8);
         if (KEY_SIZE == 16)
         {
-            K1 = Pack.bigEndianToLong(keyiv[0], 0);
-            K2 = Pack.bigEndianToLong(keyiv[0], 8);
+            K1 = Pack.bigEndianToLong(key, 0);
+            K2 = Pack.bigEndianToLong(key, 8);
         }
         else if (KEY_SIZE == 20)
         {
-            K0 = Pack.bigEndianToInt(keyiv[0], 0);
-            K1 = Pack.bigEndianToLong(keyiv[0], 4);
-            K2 = Pack.bigEndianToLong(keyiv[0], 12);
+            K0 = Pack.bigEndianToInt(key, 0);
+            K1 = Pack.bigEndianToLong(key, 4);
+            K2 = Pack.bigEndianToLong(key, 12);
         }
         else
         {
