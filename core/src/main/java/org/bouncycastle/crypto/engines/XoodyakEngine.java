@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
@@ -16,24 +15,18 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    extends AEADBaseEngine
+    extends AEADBufferBaseEngine
 {
     private byte[] state;
     private int phase;
     private MODE mode;
     private final int f_bPrime_1 = 47;
-    private final int AADBufferSize = 24; //Rkout
     private byte[] K;
     private byte[] iv;
     private final int PhaseUp = 2;
-    final int Rkin = 44;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
-    private boolean aadFinished;
     private boolean encrypted;
-    private boolean initialised = false;
-    private final byte[] buffer = new byte[Rkin];
-    private int bufferOff;
     private byte aadcd;
 
     enum MODE
@@ -48,6 +41,9 @@ public class XoodyakEngine
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
+        BlockSize = 24;
+        AADBufferSize = 44;
+        aadData = new byte[AADBufferSize];
     }
 
     @Override
@@ -59,131 +55,45 @@ public class XoodyakEngine
         iv = keyiv[1];
         state = new byte[48];
         mac = new byte[MAC_SIZE];
+        buffer = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         initialised = true;
         reset();
     }
 
-    @Override
-    public void processAADByte(byte input)
+    protected void processBufferAAD(byte[] input, int inOff)
     {
-        if (aadFinished)
-        {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + AADBufferSize +
-                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
-        }
-        if (bufferOff >= Rkin)
-        {
-            AbsorbAny(buffer, 0, Rkin, aadcd);
-            aadcd = 0;
-            bufferOff = 0;
-        }
-        buffer[bufferOff++] = input;
+        AbsorbAny(input, inOff, AADBufferSize, aadcd);
+        aadcd = 0;
     }
 
-    @Override
-    public void processAADBytes(byte[] input, int inOff, int len)
+    protected void processFinalAADBlock()
     {
-        if (aadFinished)
-        {
-            throw new IllegalArgumentException("AAD cannot be added after reading a full block(" + AADBufferSize +
-                " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
-        }
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-        int tmp;
-        if (bufferOff + len >= Rkin)
-        {
-            tmp = Rkin - bufferOff;
-            System.arraycopy(input, inOff, buffer, bufferOff, tmp);
-            AbsorbAny(buffer, 0, buffer.length, aadcd);
-            aadcd = 0;
-            inOff += tmp;
-            len -= tmp;
-            bufferOff = 0;
-        }
-        tmp = len / Rkin;
-        if (tmp > 0)
-        {
-            tmp *= Rkin;
-            AbsorbAny(input, inOff, tmp, aadcd);
-            inOff += tmp;
-            len -= tmp;
-        }
-        System.arraycopy(input, inOff, buffer, bufferOff, len);
-        bufferOff += len;
-    }
-
-    private void processAAD()
-    {
-        if (!aadFinished)
-        {
-            AbsorbAny(buffer, 0, bufferOff, aadcd);
-            aadFinished = true;
-            bufferOff = 0;
-        }
-    }
-
-    @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
         if (mode != MODE.ModeKeyed)
         {
             throw new IllegalArgumentException("Xoodyak has not been initialised");
         }
-        if (inOff + len > input.length)
+        if (!aadFinished)
         {
-            throw new DataLengthException("input buffer too short");
+            AbsorbAny(aadData, 0, aadDataOff, aadcd);
+            aadFinished = true;
+            aadDataOff = 0;
         }
-        processAAD();
-        int blockLen = len + bufferOff - (forEncryption ? 0 : MAC_SIZE);
-        if (blockLen / AADBufferSize * AADBufferSize + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-        int rv = 0;
-        int originalInOff = inOff;
-        while (blockLen >= AADBufferSize)
-        {
-            int copyLen = Math.min(len, Math.max(AADBufferSize - bufferOff, 0));
-            System.arraycopy(input, inOff, buffer, bufferOff, copyLen);
-            encrypt(buffer, AADBufferSize, output, outOff);
-            if (!forEncryption && AADBufferSize < bufferOff)
-            {
-                System.arraycopy(buffer, AADBufferSize, buffer, 0, bufferOff - AADBufferSize);
-                bufferOff -= AADBufferSize;
-            }
-            else
-            {
-                bufferOff = 0;
-            }
-            outOff += AADBufferSize;
-            rv += AADBufferSize;
-            blockLen -= AADBufferSize;
-            inOff += copyLen;
-        }
-        len -= inOff - originalInOff;
-        System.arraycopy(input, inOff, buffer, bufferOff, len);
-        bufferOff += len;
-        return rv;
     }
 
-    private void encrypt(byte[] input, int len, byte[] output, int outOff)
+    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
     {
-        int inOff = 0;
+        encrypt(input, inOff, BlockSize, output, outOff);
+    }
+
+    private void encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
+    {
         int IOLen = len;
         int splitLen;
-        byte[] P = new byte[AADBufferSize];
+        byte[] P = new byte[BlockSize];
         int Cu = encrypted ? 0 : 0x80;
         while (IOLen != 0 || !encrypted)
         {
-            splitLen = Math.min(IOLen, AADBufferSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
+            splitLen = Math.min(IOLen, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             if (forEncryption)
             {
                 System.arraycopy(input, inOff, P, 0, splitLen);
@@ -217,7 +127,7 @@ public class XoodyakEngine
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        processAAD();
+        processFinalAADBlock();
         int len = bufferOff;
         if ((forEncryption && len + MAC_SIZE + outOff > output.length) || (!forEncryption && len - MAC_SIZE + outOff > output.length))
         {
@@ -227,8 +137,8 @@ public class XoodyakEngine
         int rv = 0;
         if (forEncryption)
         {
-            Arrays.fill(buffer, bufferOff, AADBufferSize, (byte)0);
-            encrypt(buffer, len, output, outOff);
+            Arrays.fill(buffer, bufferOff, BlockSize, (byte)0);
+            encrypt(buffer, 0, len, output, outOff);
             outOff += len;
             mac = new byte[MAC_SIZE];
             Up(mac, MAC_SIZE, 0x40);
@@ -242,7 +152,7 @@ public class XoodyakEngine
             {
                 inOff = len - MAC_SIZE;
                 rv = inOff;
-                encrypt(buffer, inOff, output, outOff);
+                encrypt(buffer, 0, inOff, output, outOff);
             }
 
             mac = new byte[MAC_SIZE];
@@ -262,29 +172,14 @@ public class XoodyakEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        int total;
-        if (aadFinished)
-        {
-            total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
-        }
-        else
-        {
-            total = Math.max(0, len + (forEncryption ? 0 : -MAC_SIZE));
-        }
-        return total - total % AADBufferSize;
+        int total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
+        return total - total % BlockSize;
     }
 
     @Override
     public int getOutputSize(int len)
     {
-        if (aadFinished)
-        {
-            return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
-        }
-        else
-        {
-            return Math.max(0, len + (forEncryption ? MAC_SIZE : -MAC_SIZE));
-        }
+        return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
     }
 
     @Override
@@ -304,12 +199,14 @@ public class XoodyakEngine
         encrypted = false;
         phase = PhaseUp;
         Arrays.fill(buffer, (byte)0);
+        Arrays.fill(aadData, (byte)0);
         bufferOff = 0;
+        aadDataOff = 0;
         aadcd = (byte)0x03;
         //Absorb key
         int KLen = K.length;
         int IDLen = iv.length;
-        byte[] KID = new byte[Rkin];
+        byte[] KID = new byte[AADBufferSize];
         mode = MODE.ModeKeyed;
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
@@ -327,7 +224,7 @@ public class XoodyakEngine
             {
                 Up(null, 0, 0);
             }
-            splitLen = Math.min(XLen, Rkin);
+            splitLen = Math.min(XLen, AADBufferSize);
             Down(X, Xoff, splitLen, Cd);
             Cd = 0;
             Xoff += splitLen;
@@ -461,10 +358,5 @@ public class XoodyakEngine
         state[XiLen] ^= 0x01;
         state[f_bPrime_1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
         phase = 1;
-    }
-
-    public int getBlockSize()
-    {
-        return AADBufferSize;
     }
 }
