@@ -1,58 +1,78 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 
 abstract class AEADBufferBaseEngine
     extends AEADBaseEngine
 {
-    protected byte[] buffer;
-    protected byte[] aadData;
-    protected int bufferOff;
-    protected int aadDataOff;
+    protected enum State
+    {
+        Uninitialized,
+        EncInit,
+        EncAad,
+        EncData,
+        EncFinal,
+        DecInit,
+        DecAad,
+        DecData,
+        DecFinal,
+    }
+
+    protected byte[] m_buf;
+    protected byte[] m_aad;
+    protected int m_bufPos;
+    protected int m_aadPos;
     protected boolean aadFinished;
     protected boolean initialised = false;
     protected int AADBufferSize;
     protected int BlockSize;
+    protected State m_state = State.Uninitialized;
 
     @Override
     public void processAADByte(byte input)
     {
-        if (aadFinished)
+        checkAAD();
+        m_aad[m_aadPos++] = input;
+        if (m_aadPos >= AADBufferSize)
         {
-            throw new IllegalArgumentException("AAD cannot be added after reading input for "
-                + (forEncryption ? "encryption" : "decryption"));
+            processBufferAAD(m_aad, 0);
+            m_aadPos = 0;
         }
-        aadData[aadDataOff++] = input;
-        if (aadDataOff >= AADBufferSize)
-        {
-            processBufferAAD(aadData, 0);
-            aadDataOff = 0;
-        }
-
     }
 
     @Override
     public void processAADBytes(byte[] input, int inOff, int len)
     {
-        if (aadFinished)
-        {
-            throw new IllegalArgumentException("AAD cannot be added after reading input for "
-                + (forEncryption ? "encryption" : "decryption"));
-        }
         if ((inOff + len) > input.length)
         {
             throw new DataLengthException("input buffer too short");
         }
-        int tmp;
-        if (aadDataOff + len >= AADBufferSize)
+        // Don't enter AAD state until we actually get input
+        if (len <= 0)
         {
-            tmp = AADBufferSize - aadDataOff;
-            System.arraycopy(input, inOff, aadData, aadDataOff, tmp);
-            processBufferAAD(aadData, 0);
-            inOff += tmp;
-            len -= tmp;
-            aadDataOff = 0;
+            return;
+        }
+
+        checkAAD();
+        if (m_aadPos > 0)
+        {
+            int available = AADBufferSize - m_aadPos;
+            if (len <= available)
+            {
+                System.arraycopy(input, inOff, m_aad, m_aadPos, len);
+                m_aadPos += len;
+                return;
+            }
+
+            System.arraycopy(input, inOff, m_aad, m_aadPos, available);
+            inOff += available;
+            len -= available;
+
+            processBufferAAD(m_aad, 0);
+            m_aadPos = 0;
         }
         while (len >= AADBufferSize)
         {
@@ -60,66 +80,148 @@ abstract class AEADBufferBaseEngine
             inOff += AADBufferSize;
             len -= AADBufferSize;
         }
-        System.arraycopy(input, inOff, aadData, aadDataOff, len);
-        aadDataOff += len;
+        System.arraycopy(input, inOff, m_aad, m_aadPos, len);
+        m_aadPos += len;
     }
 
     @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException(algorithmName + " needs to be initialized");
-        }
         if (inOff + len > input.length)
         {
             throw new DataLengthException("input buffer too short");
         }
-
-        int blockLen = len + bufferOff - (forEncryption ? 0 : MAC_SIZE);
+        int blockLen = len + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
         if (blockLen / BlockSize * BlockSize + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
         }
-        int tmp;
-        int rv = 0;
+        boolean forEncryption = checkData();
+        int resultLength = 0;
 
-        int originalInOff = inOff;
-        if (!forEncryption && bufferOff >= BlockSize)
+        if (forEncryption)
         {
-            processFinalAADBlock();
-            processBuffer(buffer, 0, output, outOff);
-            rv += BlockSize;
-            System.arraycopy(buffer, BlockSize, buffer, 0, bufferOff - BlockSize);
-            bufferOff -= BlockSize;
-            blockLen -= BlockSize;
-            outOff += BlockSize;
+            if (m_bufPos > 0)
+            {
+                int available = BlockSize - m_bufPos;
+                if (len < available)
+                {
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return 0;
+                }
+
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+
+                processBuffer(m_buf, 0, output, outOff);
+                resultLength = BlockSize;
+                //m_bufPos = 0;
+            }
+
+            while (len >= BlockSize)
+            {
+                processBuffer(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
         }
-        if (blockLen >= BlockSize)
+        else
         {
-            processFinalAADBlock();
-            tmp = Math.max(BlockSize - bufferOff, 0);
-            System.arraycopy(input, inOff, buffer, bufferOff, tmp);
-            processBuffer(buffer, 0, output, outOff);
-            inOff += tmp;
-            rv += BlockSize;
-            blockLen -= BlockSize;
-            outOff += BlockSize;
-            bufferOff = 0;
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len < available)
+            {
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+
+            if (m_bufPos >= BlockSize)
+            {
+                processBuffer(m_buf, 0, output, outOff);
+                m_bufPos -= BlockSize;
+                System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
+                resultLength = BlockSize;
+
+                available += BlockSize;
+                if (len <= available)
+                {
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return resultLength;
+                }
+            }
+
+            available = BlockSize - m_bufPos;
+            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+            inOff += available;
+            len -= available;
+            processBuffer(m_buf, 0, output, outOff + resultLength);
+            resultLength += BlockSize;
+            //m_bufPos = 0;
+
+            while (len >= BlockSize + MAC_SIZE)
+            {
+                processBuffer(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
         }
-        while (blockLen >= BlockSize)
+
+        System.arraycopy(input, inOff, m_buf, 0, len);
+        m_bufPos = len;
+
+        return resultLength;
+    }
+
+    @Override
+    public int doFinal(byte[] output, int outOff)
+        throws IllegalStateException, InvalidCipherTextException
+    {
+        if (!initialised)
         {
-            processBuffer(input, inOff, output, outOff);
-            outOff += BlockSize;
-            inOff += BlockSize;
-            rv += BlockSize;
-            blockLen -= BlockSize;
+            throw new IllegalStateException("Need call init function before encryption/decryption");
         }
-        len -= inOff - originalInOff;
-        System.arraycopy(input, inOff, buffer, bufferOff, len);
-        bufferOff += len;
-        return rv;
+        boolean forEncryption = checkData();
+        int resultLength;
+        if (forEncryption)
+        {
+            resultLength = m_bufPos + MAC_SIZE;
+        }
+        else
+        {
+            if (m_bufPos < MAC_SIZE)
+            {
+                throw new InvalidCipherTextException("data too short");
+            }
+
+            m_bufPos -= MAC_SIZE;
+
+            resultLength = m_bufPos;
+        }
+
+        if (outOff > output.length - resultLength)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+        processFinalBlock(output, outOff);
+        if (forEncryption)
+        {
+            System.arraycopy(mac, 0, output, outOff + resultLength - MAC_SIZE, MAC_SIZE);
+        }
+        else
+        {
+            if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, m_buf, m_bufPos))
+            {
+                throw new InvalidCipherTextException(algorithmName + " mac does not match");
+            }
+        }
+        reset(!forEncryption);
+        return resultLength;
     }
 
     public int getBlockSize()
@@ -127,22 +229,144 @@ abstract class AEADBufferBaseEngine
         return BlockSize;
     }
 
-    @Override
     public int getUpdateOutputSize(int len)
     {
-        int total = Math.max(0, len + bufferOff + (forEncryption ? 0 : -MAC_SIZE));
+        // The -1 is to account for the lazy processing of a full buffer
+        int total = Math.max(0, len) - 1;
+
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            total = Math.max(0, total - MAC_SIZE);
+            break;
+        case DecData:
+        case DecFinal:
+            total = Math.max(0, total + m_bufPos - MAC_SIZE);
+            break;
+        case EncData:
+        case EncFinal:
+            total = Math.max(0, total + m_bufPos);
+            break;
+        default:
+            break;
+        }
         return total - total % BlockSize;
     }
 
-    @Override
     public int getOutputSize(int len)
     {
-        return Math.max(0, len + bufferOff + (forEncryption ? MAC_SIZE : -MAC_SIZE));
+        int total = Math.max(0, len);
+
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            return Math.max(0, total - MAC_SIZE);
+        case DecData:
+        case DecFinal:
+            return Math.max(0, total + m_bufPos - MAC_SIZE);
+        case EncData:
+        case EncFinal:
+            return total + m_bufPos + MAC_SIZE;
+        default:
+            return total + MAC_SIZE;
+        }
     }
+
+    protected void checkAAD()
+    {
+        switch (m_state)
+        {
+        case DecInit:
+            m_state = State.DecAad;
+            break;
+        case EncInit:
+            m_state = State.EncAad;
+            break;
+        case DecAad:
+        case EncAad:
+            break;
+        case EncFinal:
+            throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
+        default:
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
+        }
+    }
+
+    protected boolean checkData()
+    {
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            finishAAD(State.DecData);
+            return false;
+        case EncInit:
+        case EncAad:
+            finishAAD(State.EncData);
+            return true;
+        case DecData:
+            return false;
+        case EncData:
+            return true;
+        case EncFinal:
+            throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
+        default:
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
+        }
+    }
+
+    private void finishAAD(State nextState)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
+    protected void bufferReset()
+    {
+        Arrays.fill(m_buf, (byte)0);
+        Arrays.fill(m_aad, (byte)0);
+        m_bufPos = 0;
+        m_aadPos = 0;
+        switch (m_state)
+        {
+        case DecInit:
+        case EncInit:
+            break;
+        case DecAad:
+        case DecData:
+        case DecFinal:
+            m_state = State.DecInit;
+            break;
+        case EncAad:
+        case EncData:
+        case EncFinal:
+            m_state = State.EncFinal;
+            return;
+        default:
+            throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
+        }
+    }
+
+    protected abstract void processFinalBlock(byte[] output, int outOff);
 
     protected abstract void processBufferAAD(byte[] input, int inOff);
 
-    protected abstract void processFinalAADBlock();
+    protected abstract void processFinalAAD();
 
     protected abstract void processBuffer(byte[] input, int inOff, byte[] output, int outOff);
 }

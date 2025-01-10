@@ -1,8 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -43,20 +40,20 @@ public class XoodyakEngine
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
-        aadData = new byte[AADBufferSize];
+        m_aad = new byte[AADBufferSize];
     }
 
     @Override
-    public void init(boolean forEncryption, CipherParameters params)
+    public void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
-        K = keyiv[0];
-        iv = keyiv[1];
+        K = key;
+        this.iv = iv;
         state = new byte[48];
         mac = new byte[MAC_SIZE];
-        buffer = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
+        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         initialised = true;
+        m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
 
@@ -66,7 +63,7 @@ public class XoodyakEngine
         aadcd = 0;
     }
 
-    protected void processFinalAADBlock()
+    protected void processFinalAAD()
     {
         if (mode != MODE.ModeKeyed)
         {
@@ -74,14 +71,15 @@ public class XoodyakEngine
         }
         if (!aadFinished)
         {
-            AbsorbAny(aadData, 0, aadDataOff, aadcd);
+            AbsorbAny(m_aad, 0, m_aadPos, aadcd);
             aadFinished = true;
-            aadDataOff = 0;
+            m_aadPos = 0;
         }
     }
 
     protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
     {
+        processFinalAAD();
         encrypt(input, inOff, BlockSize, output, outOff);
     }
 
@@ -120,53 +118,16 @@ public class XoodyakEngine
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
+    protected void processFinalBlock(byte[] output, int outOff)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        processFinalAADBlock();
-        int len = bufferOff;
-        if ((forEncryption && len + MAC_SIZE + outOff > output.length) || (!forEncryption && len - MAC_SIZE + outOff > output.length))
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
-
-        int rv = 0;
+        processFinalAAD();
         if (forEncryption)
         {
-            Arrays.fill(buffer, bufferOff, BlockSize, (byte)0);
-            encrypt(buffer, 0, len, output, outOff);
-            outOff += len;
-            mac = new byte[MAC_SIZE];
-            Up(mac, MAC_SIZE, 0x40);
-            System.arraycopy(mac, 0, output, outOff, MAC_SIZE);
-            rv = len + MAC_SIZE;
+            Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
         }
-        else
-        {
-            int inOff = 0;
-            if (len >= MAC_SIZE)
-            {
-                inOff = len - MAC_SIZE;
-                rv = inOff;
-                encrypt(buffer, 0, inOff, output, outOff);
-            }
-
-            mac = new byte[MAC_SIZE];
-            Up(mac, MAC_SIZE, 0x40);
-            for (int i = 0; i < MAC_SIZE; ++i)
-            {
-                if (mac[i] != buffer[inOff++])
-                {
-                    throw new IllegalArgumentException("Mac does not match");
-                }
-            }
-        }
-        reset(false);
-        return rv;
+        encrypt(m_buf, 0, m_bufPos, output, outOff);
+        mac = new byte[MAC_SIZE];
+        Up(mac, MAC_SIZE, 0x40);
     }
 
     @Override
@@ -185,10 +146,10 @@ public class XoodyakEngine
         aadFinished = false;
         encrypted = false;
         phase = PhaseUp;
-        Arrays.fill(buffer, (byte)0);
-        Arrays.fill(aadData, (byte)0);
-        bufferOff = 0;
-        aadDataOff = 0;
+        Arrays.fill(m_buf, (byte)0);
+        Arrays.fill(m_aad, (byte)0);
+        m_bufPos = 0;
+        m_aadPos = 0;
         aadcd = (byte)0x03;
         //Absorb key
         int KLen = K.length;

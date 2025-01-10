@@ -1,9 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -51,7 +47,7 @@ public class ISAPEngine
             break;
         }
         AADBufferSize = BlockSize;
-        aadData = new byte[AADBufferSize];
+        m_aad = new byte[AADBufferSize];
     }
 
     final int ISAP_STATE_SZ = 40;
@@ -135,11 +131,11 @@ public class ISAPEngine
 
         public void absorbFinalAADBlock()
         {
-            for (int i = 0; i < aadDataOff; ++i)
+            for (int i = 0; i < m_aadPos; ++i)
             {
-                x0 ^= (aadData[i] & 0xFFL) << ((7 - i) << 3);
+                x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
             }
-            x0 ^= 0x80L << ((7 - aadDataOff) << 3);
+            x0 ^= 0x80L << ((7 - m_aadPos) << 3);
             P12();
             x4 ^= 1L;
         }
@@ -196,10 +192,10 @@ public class ISAPEngine
         {
             /* Encrypt final m block */
             byte[] xo = Pack.longToLittleEndian(x0);
-            int mlen = bufferOff - (forEncryption ? 0 : MAC_SIZE);
+            int mlen = m_bufPos;
             while (mlen > 0)
             {
-                output[outOff + mlen - 1] = (byte)(xo[BlockSize - mlen] ^ buffer[--mlen]);
+                output[outOff + mlen - 1] = (byte)(xo[BlockSize - mlen] ^ m_buf[--mlen]);
             }
         }
 
@@ -388,11 +384,11 @@ public class ISAPEngine
 
         public void absorbFinalAADBlock()
         {
-            for (int i = 0; i < aadDataOff; i++)
+            for (int i = 0; i < m_aadPos; i++)
             {
-                SX[i >> 1] ^= (aadData[i] & 0xFF) << ((i & 1) << 3);
+                SX[i >> 1] ^= (m_aad[i] & 0xFF) << ((i & 1) << 3);
             }
-            SX[aadDataOff >> 1] ^= 0x80 << ((aadDataOff & 1) << 3);
+            SX[m_aadPos >> 1] ^= 0x80 << ((m_aadPos & 1) << 3);
             PermuteRoundsHX(SX, E, C);
 
             // Domain seperation
@@ -448,10 +444,10 @@ public class ISAPEngine
         public void processEncFinalBlock(byte[] output, int outOff)
         {
             // Squeeze full or partial lane and stop
-            int len = bufferOff - (forEncryption ? 0 : MAC_SIZE);
+            int len = m_bufPos;
             for (int i = 0; i < len; ++i)
             {
-                output[outOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ buffer[i]);
+                output[outOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m_buf[i]);
             }
         }
 
@@ -788,15 +784,15 @@ public class ISAPEngine
     }
 
     @Override
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
-        npub = keyiv[1];
-        k = keyiv[0];
-        buffer = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
+        npub = iv;
+        k = key;
+        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         ISAPAEAD.init();
         initialised = true;
+        m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
 
@@ -805,19 +801,20 @@ public class ISAPEngine
         ISAPAEAD.absorbMacBlock(input, inOff);
     }
 
-    protected void processFinalAADBlock()
+    protected void processFinalAAD()
     {
         if (!aadFinished)
         {
             ISAPAEAD.absorbFinalAADBlock();
             ISAPAEAD.swapInternalState();
-            aadDataOff = 0;
+            m_aadPos = 0;
             aadFinished = true;
         }
     }
 
     protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
     {
+        processFinalAAD();
         ISAPAEAD.processEncBlock(input, inOff, output, outOff);
         ISAPAEAD.swapInternalState();
         if (forEncryption)
@@ -831,195 +828,35 @@ public class ISAPEngine
         ISAPAEAD.swapInternalState();
     }
 
-//    @Override
-//    public void processAADByte(byte in)
-//    {
-//        buffer[bufferOff++] = in;
-//        if (bufferOff >= BlockSize)
-//        {
-//            bufferOff = 0;
-//            ISAPAEAD.absorbMacBlock(buffer, 0);
-//        }
-//    }
-
-//    @Override
-//    public void processAADBytes(byte[] in, int inOff, int len)
-//    {
-//        if ((inOff + len) > in.length)
-//        {
-//            throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
-//        }
-//        int tmp;
-//        if (bufferOff + len >= BlockSize)
-//        {
-//            tmp = BlockSize - bufferOff;
-//            System.arraycopy(in, inOff, buffer, bufferOff, tmp);
-//            ISAPAEAD.absorbMacBlock(buffer, 0);
-//            inOff += tmp;
-//            len -= tmp;
-//            bufferOff = 0;
-//        }
-//        while (len >= BlockSize)
-//        {
-//            ISAPAEAD.absorbMacBlock(in, inOff);
-//            inOff += BlockSize;
-//            len -= BlockSize;
-//        }
-//        System.arraycopy(in, inOff, buffer, bufferOff, len);
-//        bufferOff += len;
-//    }
-
-    private void processAAD(boolean containMac)
-    {
-        if (!aadFinished)
-        {
-            ISAPAEAD.absorbFinalAADBlock();
-            ISAPAEAD.swapInternalState();
-            aadDataOff = 0;
-            aadFinished = true;
-        }
-    }
-
-//    @Override
-//    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-//        throws DataLengthException
-//    {
-//        if (!initialised)
-//        {
-//            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-//        }
-//        if ((inOff + len) > input.length)
-//        {
-//            throw new DataLengthException("input buffer too short");
-//        }
-//        processAAD(false);
-//        int rv = 0;
-//        int originalInOff = inOff;
-//        int blockLen = len + bufferOff - (forEncryption ? 0 : MAC_SIZE);
-//        if (outOff + blockLen / BlockSize * BlockSize > output.length)
-//        {
-//            throw new OutputLengthException("output buffer is too short");
-//        }
-//
-//        if (!forEncryption && bufferOff >= BlockSize && blockLen >= BlockSize)
-//        {
-//            ISAPAEAD.processEncBlock(buffer, 0, output, outOff);
-//            ISAPAEAD.swapInternalState();
-//            ISAPAEAD.absorbMacBlock(buffer, 0);
-//            ISAPAEAD.swapInternalState();
-//            System.arraycopy(buffer, BlockSize, buffer, 0, bufferOff - BlockSize);
-//            bufferOff -= BlockSize;
-//            rv += BlockSize;
-//            outOff += BlockSize;
-//            blockLen -= BlockSize;
-//        }
-//        if (blockLen >= BlockSize)
-//        {
-//            int copyLen = Math.min(len, Math.max(BlockSize - bufferOff, 0));
-//            System.arraycopy(input, inOff, buffer, bufferOff, copyLen);
-//            ISAPAEAD.processEncBlock(buffer, 0, output, outOff);
-//            ISAPAEAD.swapInternalState();
-//            if (forEncryption)
-//            {
-//                ISAPAEAD.absorbMacBlock(output, outOff);
-//            }
-//            else
-//            {
-//                ISAPAEAD.absorbMacBlock(buffer, 0);
-//            }
-//            ISAPAEAD.swapInternalState();
-//            rv += BlockSize;
-//            inOff += copyLen;
-//            outOff += BlockSize;
-//            blockLen -= BlockSize;
-//            bufferOff = 0;
-//        }
-//        while (blockLen >= BlockSize)
-//        {
-//            ISAPAEAD.processEncBlock(input, inOff, output, outOff);
-//            ISAPAEAD.swapInternalState();
-//            if (forEncryption)
-//            {
-//                ISAPAEAD.absorbMacBlock(output, outOff);
-//            }
-//            else
-//            {
-//                ISAPAEAD.absorbMacBlock(input, inOff);
-//            }
-//            ISAPAEAD.swapInternalState();
-//            rv += BlockSize;
-//            inOff += BlockSize;
-//            outOff += BlockSize;
-//            blockLen -= BlockSize;
-//        }
-//        len -= inOff - originalInOff;
-//        System.arraycopy(input, inOff, buffer, bufferOff, len);
-//        bufferOff += len;
-//        return rv;
-//    }
-
     @Override
-    public int doFinal(byte[] output, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
+    protected void processFinalBlock(byte[] output, int outOff)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        int len;
-        processAAD(!forEncryption);
-
+        processFinalAAD();
+        int len = m_bufPos;
+        mac = new byte[MAC_SIZE];
+        ISAPAEAD.processEncFinalBlock(output, outOff);
+        ISAPAEAD.swapInternalState();
         if (forEncryption)
         {
-            if (outOff + bufferOff + 16 > output.length)
-            {
-                throw new OutputLengthException("output buffer is too short");
-            }
-            ISAPAEAD.processEncFinalBlock(output, outOff);
-            len = bufferOff;
-            mac = new byte[MAC_SIZE];
-            ISAPAEAD.swapInternalState();
             ISAPAEAD.processMACFinal(output, outOff, len, mac);
-            outOff += len;
-            System.arraycopy(mac, 0, output, outOff, 16);
-            len += 16;
         }
         else
         {
-            mac = new byte[MAC_SIZE];
-            len = bufferOff - MAC_SIZE;
-            if (len + outOff > output.length)
-            {
-                throw new OutputLengthException("output buffer is too short");
-            }
-            ISAPAEAD.swapInternalState();
-            ISAPAEAD.processMACFinal(buffer, 0, len, mac);
-
-            for (int i = 0; i < MAC_SIZE; ++i)
-            {
-                if (mac[i] != buffer[len + i])
-                {
-                    throw new IllegalArgumentException("Mac does not match");
-                }
-            }
-            ISAPAEAD.swapInternalState();
-            ISAPAEAD.processEncFinalBlock(output, outOff);
+            ISAPAEAD.processMACFinal(m_buf, 0, len, mac);
         }
-        reset(false);
-        return len;
     }
 
     protected void reset(boolean clearMac)
     {
         if (!initialised)
         {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
+            throw new IllegalStateException("Need call init function before encryption/decryption");
         }
-        Arrays.fill(buffer, (byte)0);
-        Arrays.fill(aadData, (byte)0);
+        Arrays.fill(m_buf, (byte)0);
+        Arrays.fill(m_aad, (byte)0);
         ISAPAEAD.reset();
-        bufferOff = 0;
-        aadDataOff = 0;
+        m_bufPos = 0;
+        m_aadPos = 0;
         aadFinished = false;
         super.reset(clearMac);
     }

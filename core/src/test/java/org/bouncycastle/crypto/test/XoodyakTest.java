@@ -9,6 +9,7 @@ import java.util.Random;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.XoodyakDigest;
 import org.bouncycastle.crypto.engines.XoodyakEngine;
@@ -32,6 +33,7 @@ public class XoodyakTest
     public void performTest()
         throws Exception
     {
+        testVectors();
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
             @Override
@@ -42,7 +44,7 @@ public class XoodyakTest
         });
         DigestTest.checkDigestReset(this, new XoodyakDigest());
         testVectorsHash();
-        testVectors();
+
         XoodyakEngine xoodyak = new XoodyakEngine();
         testExceptions(xoodyak, xoodyak.getKeyBytesSize(), xoodyak.getIVBytesSize(), xoodyak.getBlockSize());
         testParameters(xoodyak, 16, 16, 16);
@@ -107,8 +109,8 @@ public class XoodyakTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if(map.get("Count").equals("793")){
-//                    System.out.println();
+//                if(!map.get("Count").equals("793")){
+//                    continue;
 //                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
@@ -164,7 +166,7 @@ public class XoodyakTest
             aeadBlockCipher.processBytes(m, 0, m.length, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processBytes");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -174,7 +176,7 @@ public class XoodyakTest
             aeadBlockCipher.processByte((byte)0, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processByte");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -267,6 +269,7 @@ public class XoodyakTest
         }
 
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         byte[] mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.doFinal(mac1, 0);
@@ -275,13 +278,14 @@ public class XoodyakTest
             fail(aeadBlockCipher.getAlgorithmName() + ": mac should not match");
         }
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processBytes(new byte[blocksize], 0, blocksize, new byte[blocksize], 0);
         try
         {
             aeadBlockCipher.processAADByte((byte)0);
             fail(aeadBlockCipher.getAlgorithmName() + ": processAADByte(s) cannot be called after encryption/decryption");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -290,7 +294,7 @@ public class XoodyakTest
             aeadBlockCipher.processAADBytes(new byte[]{0}, 0, 1);
             fail(aeadBlockCipher.getAlgorithmName() + ": processAADByte(s) cannot be called once only");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -336,9 +340,11 @@ public class XoodyakTest
         mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         mac2 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(new byte[]{0, 0}, 0, 2);
         aeadBlockCipher.doFinal(mac1, 0);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.doFinal(mac2, 0);
@@ -356,10 +362,12 @@ public class XoodyakTest
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         byte[] m4 = new byte[m2.length];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
         aeadBlockCipher.doFinal(c2, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad3, 1, aad2.length);
         offset = aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
         aeadBlockCipher.doFinal(c3, offset + 1);
@@ -389,7 +397,7 @@ public class XoodyakTest
             aeadBlockCipher.doFinal(m4, offset);
             fail(aeadBlockCipher.getAlgorithmName() + ": The decryption should fail");
         }
-        catch (IllegalArgumentException e)
+        catch (InvalidCipherTextException e)
         {
             //expected;
         }
@@ -408,11 +416,13 @@ public class XoodyakTest
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
         offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
         aeadBlockCipher.doFinal(c8, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         int split = rand.nextInt(blocksize * 2);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);

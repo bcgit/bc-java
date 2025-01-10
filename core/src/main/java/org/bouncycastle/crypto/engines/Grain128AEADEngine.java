@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import java.io.ByteArrayOutputStream;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -45,31 +44,27 @@ public class Grain128AEADEngine
     /**
      * Initialize a Grain-128AEAD cipher.
      *
-     * @param forEncryption Whether or not we are for encryption.
-     * @param params        The parameters required to set up the cipher.
      * @throws IllegalArgumentException If the params argument is inappropriate.
      */
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
         /*
          * Grain encryption and decryption is completely symmetrical, so the
          * 'forEncryption' is irrelevant.
          */
-        byte[][] keyiv = initialize(forEncryption, params);
-
 
         /*
          * Initialize variables.
          */
         workingIV = new byte[16];
-        workingKey = keyiv[0];
+        workingKey = key;
         lfsr = new int[STATE_SIZE];
         nfsr = new int[STATE_SIZE];
         authAcc = new int[2];
         authSr = new int[2];
 
-        System.arraycopy(keyiv[1], 0, workingIV, 0, IV_SIZE);
+        System.arraycopy(iv, 0, workingIV, 0, IV_SIZE);
 
         reset();
     }

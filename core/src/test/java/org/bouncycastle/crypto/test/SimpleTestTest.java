@@ -20,9 +20,15 @@ public class SimpleTestTest
                 {
                     result.getException().printStackTrace();
                 }
-                fail(i+" -> "+  result.toString());
+                fail(i + " -> " + result.toString());
             }
         }
+    }
+
+    public static void main(String[] args)
+    {
+        SimpleTestTest test = new SimpleTestTest();
+        test.testCrypto();
     }
 }
 

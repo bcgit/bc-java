@@ -52,7 +52,7 @@ abstract class AEADBaseEngine
         return processBytes(new byte[]{in}, 0, 1, out, outOff);
     }
 
-    protected byte[][] initialize(boolean forEncryption, CipherParameters params)
+    public void init(boolean forEncryption, CipherParameters params)
     {
         this.forEncryption = forEncryption;
         KeyParameter key;
@@ -101,18 +101,21 @@ abstract class AEADBaseEngine
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
             this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        return new byte[][]{k, npub};
+
+        init(k, npub);
+        if (initialAssociatedText != null)
+        {
+            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
+        }
     }
+
+    protected abstract void init(byte[] key, byte[] iv);
 
     protected void reset(boolean clearMac)
     {
         if (clearMac)
         {
             mac = null;
-        }
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
         }
     }
 }

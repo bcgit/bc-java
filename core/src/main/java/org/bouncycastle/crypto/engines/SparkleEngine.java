@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
@@ -140,12 +139,11 @@ public class SparkleEngine
 //        assert RATE_BYTES >= TAG_BYTES;
     }
 
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        byte[][] keyiv = initialize(forEncryption, params);
-        Pack.littleEndianToInt(keyiv[0], 0, k);
-        Pack.littleEndianToInt(keyiv[1], 0, npub);
+        Pack.littleEndianToInt(key, 0, k);
+        Pack.littleEndianToInt(iv, 0, npub);
 
         m_state = forEncryption ? State.EncInit : State.DecInit;
 
@@ -416,7 +414,6 @@ public class SparkleEngine
         default:
             break;
         }
-
         return total - total % IV_SIZE;
     }
 

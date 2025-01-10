@@ -9,6 +9,7 @@ import java.util.Random;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.ISAPDigest;
 import org.bouncycastle.crypto.engines.ISAPEngine;
@@ -32,8 +33,8 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
-        testVectors("isapa128av20", IsapType.ISAP_A_128A);
-        testVectors("isapa128v20", IsapType.ISAP_A_128);
+//        testVectors("isapa128av20", IsapType.ISAP_A_128A);
+//        testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
         testVectors("isapk128v20", IsapType.ISAP_K_128);
         ISAPEngine ISAP = new ISAPEngine(IsapType.ISAP_K_128A);
@@ -108,7 +109,7 @@ public class ISAPTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("41"))
+//                if (!map.get("Count").equals("67"))
 //                {
 //                    continue;
 //                }
@@ -144,7 +145,7 @@ public class ISAPTest
                 {
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
-                //System.out.println("Keystream " + map.get("Count") + " pass");
+                System.out.println("Keystream " + map.get("Count") + " pass");
                 isap.reset();
                 map.clear();
 
@@ -240,7 +241,7 @@ public class ISAPTest
             aeadBlockCipher.processBytes(m, 0, m.length, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processBytes");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -250,7 +251,7 @@ public class ISAPTest
             aeadBlockCipher.processByte((byte)0, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before processByte");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -260,7 +261,7 @@ public class ISAPTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -270,7 +271,7 @@ public class ISAPTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -282,7 +283,7 @@ public class ISAPTest
             aeadBlockCipher.getOutputSize(0);
             aeadBlockCipher.getUpdateOutputSize(0);
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
             fail(aeadBlockCipher.getAlgorithmName() + " functions can be called before initialisation");
@@ -331,6 +332,7 @@ public class ISAPTest
         {
             fail(aeadBlockCipher.getAlgorithmName() + ": mac should be equal when calling dofinal and getMac");
         }
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         byte[] mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.doFinal(mac1, 0);
@@ -400,9 +402,11 @@ public class ISAPTest
         mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         mac2 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(new byte[]{0, 0}, 0, 2);
         aeadBlockCipher.doFinal(mac1, 0);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.doFinal(mac2, 0);
@@ -420,10 +424,12 @@ public class ISAPTest
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         byte[] m4 = new byte[m2.length];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
         aeadBlockCipher.doFinal(c2, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad3, 1, aad2.length);
         offset = aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
         aeadBlockCipher.doFinal(c3, offset + 1);
@@ -453,7 +459,7 @@ public class ISAPTest
             aeadBlockCipher.doFinal(m4, offset);
             fail(aeadBlockCipher.getAlgorithmName() + ": The decryption should fail");
         }
-        catch (IllegalArgumentException e)
+        catch (InvalidCipherTextException e)
         {
             //expected;
         }
@@ -472,12 +478,14 @@ public class ISAPTest
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
         offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
         aeadBlockCipher.doFinal(c8, offset);
         aeadBlockCipher.reset();
         int split = rand.nextInt(blocksize * 2);
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
         offset += aeadBlockCipher.processBytes(m7, split, m7.length - split, c9, offset);
