@@ -196,7 +196,7 @@ public class XoodyakTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -320,7 +320,7 @@ public class XoodyakTest
         }
         try
         {
-            aeadBlockCipher.processBytes(new byte[blocksize], 0, blocksize, new byte[blocksize], blocksize >> 1);
+            aeadBlockCipher.processBytes(new byte[blocksize + 1], 0, blocksize + 1, new byte[blocksize], blocksize >> 1);
             fail(aeadBlockCipher.getAlgorithmName() + ": output for processBytes is too short");
         }
         catch (OutputLengthException e)

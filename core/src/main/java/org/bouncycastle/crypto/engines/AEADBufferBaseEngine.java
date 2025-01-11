@@ -35,12 +35,12 @@ abstract class AEADBufferBaseEngine
     public void processAADByte(byte input)
     {
         checkAAD();
-        m_aad[m_aadPos++] = input;
-        if (m_aadPos >= AADBufferSize)
+        if (m_aadPos == AADBufferSize)
         {
             processBufferAAD(m_aad, 0);
             m_aadPos = 0;
         }
+        m_aad[m_aadPos++] = input;
     }
 
     @Override
@@ -74,7 +74,7 @@ abstract class AEADBufferBaseEngine
             processBufferAAD(m_aad, 0);
             m_aadPos = 0;
         }
-        while (len >= AADBufferSize)
+        while (len > AADBufferSize)
         {
             processBufferAAD(input, inOff);
             inOff += AADBufferSize;
@@ -92,12 +92,9 @@ abstract class AEADBufferBaseEngine
         {
             throw new DataLengthException("input buffer too short");
         }
-        int blockLen = len + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
-        if (blockLen / BlockSize * BlockSize + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
+
         boolean forEncryption = checkData();
+
         int resultLength = 0;
 
         if (forEncryption)
@@ -105,7 +102,7 @@ abstract class AEADBufferBaseEngine
             if (m_bufPos > 0)
             {
                 int available = BlockSize - m_bufPos;
-                if (len < available)
+                if (len <= available)
                 {
                     System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                     m_bufPos += len;
@@ -116,14 +113,14 @@ abstract class AEADBufferBaseEngine
                 inOff += available;
                 len -= available;
 
-                processBuffer(m_buf, 0, output, outOff);
+                validateAndProcessBuffer(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
                 //m_bufPos = 0;
             }
 
-            while (len >= BlockSize)
+            while (len > BlockSize)
             {
-                processBuffer(input, inOff, output, outOff + resultLength);
+                validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
                 inOff += BlockSize;
                 len -= BlockSize;
                 resultLength += BlockSize;
@@ -132,16 +129,16 @@ abstract class AEADBufferBaseEngine
         else
         {
             int available = BlockSize + MAC_SIZE - m_bufPos;
-            if (len < available)
+            if (len <= available)
             {
                 System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                 m_bufPos += len;
                 return 0;
             }
 
-            if (m_bufPos >= BlockSize)
+            if (m_bufPos > BlockSize)
             {
-                processBuffer(m_buf, 0, output, outOff);
+                validateAndProcessBuffer(m_buf, 0, output, outOff);
                 m_bufPos -= BlockSize;
                 System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
                 resultLength = BlockSize;
@@ -159,13 +156,13 @@ abstract class AEADBufferBaseEngine
             System.arraycopy(input, inOff, m_buf, m_bufPos, available);
             inOff += available;
             len -= available;
-            processBuffer(m_buf, 0, output, outOff + resultLength);
+            validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
             resultLength += BlockSize;
             //m_bufPos = 0;
 
-            while (len >= BlockSize + MAC_SIZE)
+            while (len > BlockSize + MAC_SIZE)
             {
-                processBuffer(input, inOff, output, outOff + resultLength);
+                validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
                 inOff += BlockSize;
                 len -= BlockSize;
                 resultLength += BlockSize;
@@ -182,10 +179,6 @@ abstract class AEADBufferBaseEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        if (!initialised)
-        {
-            throw new IllegalStateException("Need call init function before encryption/decryption");
-        }
         boolean forEncryption = checkData();
         int resultLength;
         if (forEncryption)
@@ -360,6 +353,15 @@ abstract class AEADBufferBaseEngine
         default:
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
+    }
+
+    protected void validateAndProcessBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        if (outOff > output.length - BlockSize)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
+        processBuffer(input, inOff, output, outOff);
     }
 
     protected abstract void processFinalBlock(byte[] output, int outOff);

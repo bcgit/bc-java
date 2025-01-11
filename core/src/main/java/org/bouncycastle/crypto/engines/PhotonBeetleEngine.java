@@ -146,7 +146,10 @@ public class PhotonBeetleEngine
             {
                 PHOTON_Permutation();
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
-                state[bufferLen] ^= 0x01; // ozs
+                if(bufferLen < BlockSize)
+                {
+                    state[bufferLen] ^= 0x01; // ozs
+                }
             }
             state[STATE_INBYTES - 1] ^= c1 << LAST_THREE_BITS_OFFSET;
         }

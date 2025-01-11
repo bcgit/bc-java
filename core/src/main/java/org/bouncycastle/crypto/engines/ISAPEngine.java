@@ -131,9 +131,17 @@ public class ISAPEngine
 
         public void absorbFinalAADBlock()
         {
-            for (int i = 0; i < m_aadPos; ++i)
+            if (m_aadPos == AADBufferSize)
             {
-                x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
+                absorbMacBlock(m_aad, 0);
+                m_aadPos = 0;
+            }
+            else
+            {
+                for (int i = 0; i < m_aadPos; ++i)
+                {
+                    x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
+                }
             }
             x0 ^= 0x80L << ((7 - m_aadPos) << 3);
             P12();
@@ -142,9 +150,17 @@ public class ISAPEngine
 
         public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
         {
-            for (int i = 0; i < len; ++i)
+            if (len == BlockSize)
             {
-                x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
+                absorbMacBlock(input, inOff);
+                len = 0;
+            }
+            else
+            {
+                for (int i = 0; i < len; ++i)
+                {
+                    x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
+                }
             }
             x0 ^= 0x80L << ((7 - len) << 3);
             P12();
@@ -190,12 +206,19 @@ public class ISAPEngine
 
         public void processEncFinalBlock(byte[] output, int outOff)
         {
-            /* Encrypt final m block */
-            byte[] xo = Pack.longToLittleEndian(x0);
-            int mlen = m_bufPos;
-            while (mlen > 0)
+            if (m_bufPos == BlockSize)
             {
-                output[outOff + mlen - 1] = (byte)(xo[BlockSize - mlen] ^ m_buf[--mlen]);
+                processEncBlock(m_buf, 0, output, outOff);
+            }
+            else
+            {
+                /* Encrypt final m block */
+                byte[] xo = Pack.longToLittleEndian(x0);
+                int mlen = m_bufPos;
+                while (mlen > 0)
+                {
+                    output[outOff + mlen - 1] = (byte)(xo[BlockSize - mlen] ^ m_buf[--mlen]);
+                }
             }
         }
 
@@ -384,9 +407,17 @@ public class ISAPEngine
 
         public void absorbFinalAADBlock()
         {
-            for (int i = 0; i < m_aadPos; i++)
+            if (m_aadPos == AADBufferSize)
             {
-                SX[i >> 1] ^= (m_aad[i] & 0xFF) << ((i & 1) << 3);
+                absorbMacBlock(m_aad, 0);
+                m_aadPos = 0;
+            }
+            else
+            {
+                for (int i = 0; i < m_aadPos; i++)
+                {
+                    SX[i >> 1] ^= (m_aad[i] & 0xFF) << ((i & 1) << 3);
+                }
             }
             SX[m_aadPos >> 1] ^= 0x80 << ((m_aadPos & 1) << 3);
             PermuteRoundsHX(SX, E, C);
@@ -417,10 +448,18 @@ public class ISAPEngine
 
         public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
         {
-            // Absorb C final block
-            for (int i = 0; i < len; i++)
+            if (len == BlockSize)
             {
-                SX[i >> 1] ^= (input[inOff++] & 0xFF) << ((i & 1) << 3);
+                absorbMacBlock(input, inOff);
+                len = 0;
+            }
+            else
+            {
+                // Absorb C final block
+                for (int i = 0; i < len; i++)
+                {
+                    SX[i >> 1] ^= (input[inOff++] & 0xFF) << ((i & 1) << 3);
+                }
             }
             SX[len >> 1] ^= 0x80 << ((len & 1) << 3);
             PermuteRoundsHX(SX, E, C);

@@ -97,10 +97,10 @@ public class PhotonBeetleTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-                if (map.get("Count").equals("133"))
-                {
-                    System.out.println("test");
-                }
+//                if (map.get("Count").equals("133"))
+//                {
+//                    System.out.println("test");
+//                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));
@@ -130,7 +130,7 @@ public class PhotonBeetleTest
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
                 PhotonBeetle.reset();
-                System.out.println(map.get("Count") + " pass");
+                //System.out.println(map.get("Count") + " pass");
                 map.clear();
 
             }
@@ -186,7 +186,7 @@ public class PhotonBeetleTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }

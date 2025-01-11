@@ -36,6 +36,11 @@ public class SparkleTest
     public void performTest()
         throws Exception
     {
+        testVectorsEngine_SCHWAEMM128_128();
+        testVectorsEngine_SCHWAEMM192_192();
+        testVectorsEngine_SCHWAEMM256_128();
+        testVectorsEngine_SCHWAEMM256_256();
+
         testBufferingEngine_SCHWAEMM128_128();
         testBufferingEngine_SCHWAEMM192_192();
         testBufferingEngine_SCHWAEMM256_128();
@@ -61,10 +66,6 @@ public class SparkleTest
         testVectorsDigest_ESCH256();
         testVectorsDigest_ESCH384();
 
-        testVectorsEngine_SCHWAEMM128_128();
-        testVectorsEngine_SCHWAEMM192_192();
-        testVectorsEngine_SCHWAEMM256_128();
-        testVectorsEngine_SCHWAEMM256_256();
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128));
         CipherTest.checkAEADParemeter(this, 24, 24, 24, 24, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192));
         CipherTest.checkAEADParemeter(this, 16, 32, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128));
@@ -374,7 +375,10 @@ public class SparkleTest
                 byte[] ad = Hex.decode(map.get("AD"));
                 byte[] pt = Hex.decode(map.get("PT"));
                 byte[] ct = Hex.decode(map.get("CT"));
-
+//                if (!map.get("Count").equals("17"))
+//                {
+//                    continue;
+//                }
                 CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
 
                 // Encrypt
@@ -410,7 +414,7 @@ public class SparkleTest
                         mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv);
                     }
                 }
-
+                System.out.println(map.get("Count") + " pass");
                 map.clear();
             }
             else
@@ -546,7 +550,7 @@ public class SparkleTest
             fail("mac should not match");
         }
         sparkle.init(true, params);
-        sparkle.processByte((byte)0, null, 0);
+        sparkle.processByte((byte)0, new byte[1], 0);
         try
         {
             sparkle.processAADByte((byte)0);
