@@ -27,7 +27,7 @@ public class FipsCipherSuitesEngineTestSuite
 
             public boolean isPermitted(String cipherSuite)
             {
-                return FipsCipherSuitesTestSuite.isFipsSupportedCipherSuite(cipherSuite);
+                return FipsTestUtils.isFipsCipherSuite(cipherSuite);
             }
         });
 

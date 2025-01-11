@@ -32,7 +32,8 @@ public class BouncyCastleJsseProvider
     private final Map<String, BcJsseService> serviceMap = new ConcurrentHashMap<String, BcJsseService>();
     private final Map<String, EngineCreator> creatorMap = new HashMap<String, EngineCreator>();
 
-    private final boolean isInFipsMode;
+    private final boolean configFipsMode;
+    private final JcaTlsCryptoProvider configCryptoProvider;
 
     public BouncyCastleJsseProvider()
     {
@@ -43,7 +44,10 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, new JcaTlsCryptoProvider());
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = new JcaTlsCryptoProvider();
+
+        configure();
     }
 
     public BouncyCastleJsseProvider(Provider provider)
@@ -55,7 +59,10 @@ public class BouncyCastleJsseProvider
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, new JcaTlsCryptoProvider().setProvider(provider));
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = new JcaTlsCryptoProvider().setProvider(provider);
+
+        configure();
     }
 
     public BouncyCastleJsseProvider(String config)
@@ -87,14 +94,20 @@ public class BouncyCastleJsseProvider
             throw new IllegalArgumentException("unable to set up JcaTlsCryptoProvider: " + e.getMessage(), e);
         }
 
-        this.isInFipsMode = configure(fipsMode, cryptoProvider);
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = cryptoProvider;
+
+        configure();
     }
 
-    public BouncyCastleJsseProvider(boolean fipsMode, JcaTlsCryptoProvider tlsCryptoProvider)
+    public BouncyCastleJsseProvider(boolean fipsMode, JcaTlsCryptoProvider cryptoProvider)
     {
         super(PROVIDER_NAME, PROVIDER_VERSION, PROVIDER_INFO);
 
-        this.isInFipsMode = configure(fipsMode, tlsCryptoProvider);
+        this.configFipsMode = fipsMode;
+        this.configCryptoProvider = cryptoProvider;
+
+        configure();
     }
 
     // for Java 11
@@ -150,8 +163,11 @@ public class BouncyCastleJsseProvider
         }
     }
 
-    private boolean configure(final boolean fipsMode, final JcaTlsCryptoProvider cryptoProvider)
+    private void configure()
     {
+        final boolean fipsMode = configFipsMode;
+        final JcaTlsCryptoProvider cryptoProvider = configCryptoProvider;
+
         // TODO[jsse]: should X.509 be an alias.
         addAlgorithmImplementation("KeyManagerFactory.X.509", "org.bouncycastle.jsse.provider.KeyManagerFactory", new EngineCreator()
         {
@@ -225,8 +241,6 @@ public class BouncyCastleJsseProvider
             });
         addAlias("Alg.Alias.SSLContext.SSL", "TLS");
         addAlias("Alg.Alias.SSLContext.SSLV3", "TLSV1");
-
-        return fipsMode;
     }
 
     void addAttribute(String key, String attributeName, String attributeValue)
@@ -372,7 +386,7 @@ public class BouncyCastleJsseProvider
 
     public boolean isFipsMode()
     {
-        return isInFipsMode;
+        return configFipsMode;
     }
 
     private static class BcJsseService

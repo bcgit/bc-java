@@ -56,7 +56,7 @@ class ProvX509KeyManager
 
     private final AtomicLong versions = new AtomicLong();
 
-    private final boolean isInFipsMode;
+    private final boolean fipsMode;
     private final JcaJceHelper helper;
     private final List<KeyStore.Builder> builders;
 
@@ -215,9 +215,9 @@ class ProvX509KeyManager
         return keyTypes;
     }
 
-    ProvX509KeyManager(boolean isInFipsMode, JcaJceHelper helper, List<KeyStore.Builder> builders)
+    ProvX509KeyManager(boolean fipsMode, JcaJceHelper helper, List<KeyStore.Builder> builders)
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
         this.builders = builders;
     }
@@ -510,7 +510,7 @@ class ProvX509KeyManager
                 forServer, chain);
             if (keyTypeIndex >= 0)
             {
-                MatchQuality quality = getKeyTypeQuality(isInFipsMode, helper, keyTypes, algorithmConstraints,
+                MatchQuality quality = getKeyTypeQuality(fipsMode, helper, keyTypes, algorithmConstraints,
                     forServer, atDate, requestedHostName, chain, keyTypeIndex);
                 if (MatchQuality.NONE != quality)
                 {
@@ -587,7 +587,7 @@ class ProvX509KeyManager
         return null;
     }
 
-    static MatchQuality getKeyTypeQuality(boolean isInFipsMode, JcaJceHelper helper, List<String> keyTypes,
+    static MatchQuality getKeyTypeQuality(boolean fipsMode, JcaJceHelper helper, List<String> keyTypes,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer, Date atDate, String requestedHostName,
         X509Certificate[] chain, int keyTypeIndex)
     {
@@ -595,7 +595,7 @@ class ProvX509KeyManager
 
         LOG.finer("EE cert potentially usable for key type: " + keyType);
 
-        if (!isSuitableChain(isInFipsMode, helper, chain, algorithmConstraints, forServer))
+        if (!isSuitableChain(fipsMode, helper, chain, algorithmConstraints, forServer))
         {
             LOG.finer("Unsuitable chain for key type: " + keyType);
             return MatchQuality.NONE;
@@ -795,7 +795,7 @@ class ProvX509KeyManager
         return -1;
     }
 
-    private static boolean isSuitableChain(boolean isInFipsMode, JcaJceHelper helper, X509Certificate[] chain,
+    private static boolean isSuitableChain(boolean fipsMode, JcaJceHelper helper, X509Certificate[] chain,
         BCAlgorithmConstraints algorithmConstraints, boolean forServer)
     {
         try
@@ -804,7 +804,7 @@ class ProvX509KeyManager
             KeyPurposeId ekuOID = getRequiredExtendedKeyUsage(forServer);
             int kuBit = -1; // i.e. no checks; we handle them in isSuitableEECert
 
-            ProvAlgorithmChecker.checkChain(isInFipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
+            ProvAlgorithmChecker.checkChain(fipsMode, helper, algorithmConstraints, trustedCerts, chain, ekuOID,
                 kuBit);
 
             return true;

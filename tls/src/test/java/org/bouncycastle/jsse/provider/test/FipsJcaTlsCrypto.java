@@ -15,8 +15,8 @@ public class FipsJcaTlsCrypto extends JcaTlsCrypto
     }
 
     @Override
-    protected AEADNonceGeneratorFactory getGCMNonceGeneratorFactory()
+    public AEADNonceGeneratorFactory getFipsGCMNonceGeneratorFactory()
     {
-        return FipsTestUtils.provAllowGCMCiphersIn12 ? TestAEADGeneratorFactory.INSTANCE : null;
+        return FipsTestUtils.enableGCMCiphersIn12 ? TestAEADGeneratorFactory.INSTANCE : null;
     }
 }

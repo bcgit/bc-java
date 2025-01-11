@@ -10,21 +10,14 @@ import org.bouncycastle.tls.SignatureScheme;
 
 abstract class FipsUtils
 {
-    /*
-     * This can only be set to true if the underlying provider is able to assert it is compliant with FIPS IG
-     * A.5 (when GCM is used in TLS 1.2) and a mechanism has been integrated into this API accordingly to
-     * ensure that is the case.
-     */
-    private static final boolean provAllowGCMCiphersIn12 = PropertyUtils
-        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowGCMCiphersIn12", false);
-
     private static final boolean provAllowRSAKeyExchange = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", false);
 
-    private static final Set<String> FIPS_SUPPORTED_CIPHERSUITES = createFipsSupportedCipherSuites();
-    private static final Set<String> FIPS_SUPPORTED_PROTOCOLS = createFipsSupportedProtocols();
+    private static final Set<String> FIPS_CIPHERSUITES = createFipsCipherSuites(false);
+    private static final Set<String> FIPS_CIPHERSUITES_GCM12 = createFipsCipherSuites(true);
+    private static final Set<String> FIPS_PROTOCOLS = createProtocols();
 
-    private static Set<String> createFipsSupportedCipherSuites()
+    private static Set<String> createFipsCipherSuites(boolean includeGCM12)
     {
         /*
          * Cipher suite list current as of NIST SP 800-52 Revision 2.
@@ -89,7 +82,7 @@ abstract class FipsUtils
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA");
         cs.add("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384");
 
-        if (provAllowGCMCiphersIn12)
+        if (includeGCM12)
         {
 //            cs.add("TLS_DH_DSS_WITH_AES_128_GCM_SHA256");
 //            cs.add("TLS_DH_DSS_WITH_AES_256_GCM_SHA384");
@@ -127,7 +120,7 @@ abstract class FipsUtils
             cs.add("TLS_RSA_WITH_AES_256_CCM");
             cs.add("TLS_RSA_WITH_AES_256_CCM_8");
 
-            if (provAllowGCMCiphersIn12)
+            if (includeGCM12)
             {
                 cs.add("TLS_RSA_WITH_AES_128_GCM_SHA256");
                 cs.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
@@ -137,7 +130,7 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
-    private static Set<String> createFipsSupportedProtocols()
+    private static Set<String> createProtocols()
     {
         final Set<String> ps = new HashSet<String>();
 
@@ -149,9 +142,14 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(ps);
     }
 
-    static boolean isFipsCipherSuite(String cipherSuite)
+    private static Set<String> getFipsCipherSuites(boolean includeGCM12)
     {
-        return cipherSuite != null && FIPS_SUPPORTED_CIPHERSUITES.contains(cipherSuite);
+        return includeGCM12 ? FIPS_CIPHERSUITES_GCM12 : FIPS_CIPHERSUITES;
+    }
+
+    static boolean isFipsCipherSuite(String cipherSuite, boolean includeGCM12)
+    {
+        return cipherSuite != null && getFipsCipherSuites(includeGCM12).contains(cipherSuite);
     }
 
     static boolean isFipsNamedGroup(int namedGroup)
@@ -181,7 +179,7 @@ abstract class FipsUtils
 
     static boolean isFipsProtocol(String protocol)
     {
-        return protocol != null && FIPS_SUPPORTED_PROTOCOLS.contains(protocol);
+        return protocol != null && FIPS_PROTOCOLS.contains(protocol);
     }
 
     static boolean isFipsSignatureScheme(int signatureScheme)
@@ -216,13 +214,13 @@ abstract class FipsUtils
         }
     }
 
-    static void removeNonFipsCipherSuites(Collection<String> cipherSuites)
+    static void removeNonFipsCipherSuites(Collection<String> cipherSuites, boolean includeGCM12)
     {
-        cipherSuites.retainAll(FIPS_SUPPORTED_CIPHERSUITES);
+        cipherSuites.retainAll(getFipsCipherSuites(includeGCM12));
     }
 
     static void removeNonFipsProtocols(Collection<String> protocols)
     {
-        protocols.retainAll(FIPS_SUPPORTED_PROTOCOLS);
+        protocols.retainAll(FIPS_PROTOCOLS);
     }
 }

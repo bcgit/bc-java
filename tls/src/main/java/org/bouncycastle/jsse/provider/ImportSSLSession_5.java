@@ -154,7 +154,7 @@ final class ImportSSLSession_5
         SSLSessionContext sessionContext = getSessionContext();
         if (sessionContext instanceof ProvSSLSessionContext)
         {
-            return ((ProvSSLSessionContext)sessionContext).getSSLContext().isFips();
+            return ((ProvSSLSessionContext)sessionContext).getContextData().isFipsMode();
         }
 
         return false;

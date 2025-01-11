@@ -58,6 +58,7 @@ import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.tls.crypto.TlsStreamVerifier;
+import org.bouncycastle.tls.crypto.impl.AEADNonceGenerator;
 import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
@@ -1243,7 +1244,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true),
             createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
+            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory());
     }
 
     private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1251,7 +1252,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, true),
             createAEADCipher("ARIA/GCM/NoPadding", "ARIA", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
+            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory());
     }
 
     private TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1260,7 +1261,7 @@ public class JcaTlsCrypto
         return new TlsAEADCipher(cryptoParams,
             createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, true),
             createAEADCipher("Camellia/GCM/NoPadding", "Camellia", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
+            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory());
     }
 
     protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, String algorithm, int cipherKeySize,
@@ -1290,12 +1291,27 @@ public class JcaTlsCrypto
         int cipherKeySize = 16, macSize = 16;
         return new TlsAEADCipher(cryptoParams, createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, true),
             createAEADCipher("SM4/GCM/NoPadding", "SM4", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM, getGCMNonceGeneratorFactory());
+            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory());
     }
 
-    protected AEADNonceGeneratorFactory getGCMNonceGeneratorFactory()
+    /**
+     * Optionally return an {@link AEADNonceGeneratorFactory} that creates {@link AEADNonceGenerator}
+     * instances suitable for generating TLS 1.2 GCM nonces in a FIPS approved way (or null). It is not needed
+     * or intended to be used in a non-FIPS context.
+     * <p/>
+     * Clients of this {@link JcaTlsCrypto} instance MAY assume from a non-null return value that the
+     * resulting {@link AEADNonceGenerator} implementation(s) are FIPS compliant; implementations that violate
+     * this assumption risk FIPS compliance failures.
+     * <p/>
+     * In particular, when BCJSSE is configured in FIPS mode, GCM cipher suites are enabled for TLS 1.2 if
+     * (and only if) a call to this method returns a non-null value. This can be achieved by configuring
+     * BCJSSE with a user-defined {@link JcaTlsCryptoProvider} subclass, which in turn creates instances of a
+     * {@link JcaTlsCrypto} subclass, with this method overridden to return a suitable
+     * {@link AEADNonceGeneratorFactory}.
+     */
+    public AEADNonceGeneratorFactory getFipsGCMNonceGeneratorFactory()
     {
-        return GCMUtil.getDefaultNonceGeneratorFactory();
+        return GCMUtil.getDefaultFipsGCMNonceGeneratorFactory();
     }
 
     String getDigestName(int cryptoHashAlgorithm)

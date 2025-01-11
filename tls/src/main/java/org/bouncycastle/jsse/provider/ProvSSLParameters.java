@@ -29,7 +29,7 @@ final class ProvSSLParameters
         return Collections.unmodifiableList(new ArrayList<T>(list));
     }
 
-    private final ProvSSLContextSpi context;
+    private final ContextData contextData;
 
     private String[] cipherSuites;
     private String[] protocols;
@@ -51,9 +51,9 @@ final class ProvSSLParameters
     private BCApplicationProtocolSelector<SSLSocket> socketAPSelector;
     private ProvSSLSession sessionToResume;
 
-    ProvSSLParameters(ProvSSLContextSpi context, String[] cipherSuites, String[] protocols)
+    ProvSSLParameters(ContextData contextData, String[] cipherSuites, String[] protocols)
     {
-        this.context = context;
+        this.contextData = contextData;
 
         this.cipherSuites = cipherSuites;
         this.protocols = protocols;
@@ -61,7 +61,7 @@ final class ProvSSLParameters
 
     ProvSSLParameters copy()
     {
-        ProvSSLParameters p = new ProvSSLParameters(context, cipherSuites, protocols);
+        ProvSSLParameters p = new ProvSSLParameters(contextData, cipherSuites, protocols);
         p.wantClientAuth = wantClientAuth;
         p.needClientAuth = needClientAuth;
         p.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
@@ -106,7 +106,7 @@ final class ProvSSLParameters
 
     public void setCipherSuites(String[] cipherSuites)
     {
-        this.cipherSuites = context.getSupportedCipherSuites(cipherSuites);
+        this.cipherSuites = contextData.getSupportedCipherSuites(cipherSuites);
     }
 
     void setCipherSuitesArray(String[] cipherSuites)
@@ -128,7 +128,7 @@ final class ProvSSLParameters
 
     public void setProtocols(String[] protocols)
     {
-        if (!context.isSupportedProtocols(protocols))
+        if (!contextData.isSupportedProtocols(protocols))
         {
             throw new IllegalArgumentException("'protocols' cannot be null, or contain unsupported protocols");
         }

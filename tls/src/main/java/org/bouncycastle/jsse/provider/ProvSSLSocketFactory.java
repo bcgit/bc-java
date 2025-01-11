@@ -67,12 +67,12 @@ class ProvSSLSocketFactory
     @Override
     public String[] getDefaultCipherSuites()
     {
-        return contextData.getContext().getDefaultCipherSuites(true);
+        return contextData.getDefaultCipherSuites(true);
     }
 
     @Override
     public String[] getSupportedCipherSuites()
     {
-        return contextData.getContext().getSupportedCipherSuites();
+        return contextData.getSupportedCipherSuites();
     }
 }
