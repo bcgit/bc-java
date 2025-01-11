@@ -46,12 +46,6 @@ import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
-import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
-import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentVerifierBuilderProvider;
@@ -68,7 +62,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 public class OperatorJcajceTest
     extends SimpleTest
@@ -510,7 +503,7 @@ public class OperatorJcajceTest
             byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
             byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
             byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
-            Assert.assertTrue(Arrays.areEqual(output1, output2));
+            isTrue(Arrays.areEqual(output1, output2));
         }
     }
 
