@@ -31,7 +31,7 @@ public abstract class SimpleTest
         }
     }
 
-    protected void isTrue(
+    public void isTrue(
         String message,
         boolean value)
     {
@@ -273,7 +273,7 @@ public abstract class SimpleTest
             throws Exception;
     }
 
-    protected Exception testException(String failMessage, String exceptionClass, TestExceptionOperation operation)
+    public Exception testException(String failMessage, String exceptionClass, TestExceptionOperation operation)
     {
         try
         {
@@ -286,7 +286,7 @@ public abstract class SimpleTest
             {
                 isTrue(e.getMessage(), e.getMessage().indexOf(failMessage) >= 0);
             }
-            isTrue(e.getClass().getName().indexOf(exceptionClass) >= 0);
+            isTrue(e.getMessage(),e.getClass().getName().indexOf(exceptionClass) >= 0);
             return e;
         }
         return null;
