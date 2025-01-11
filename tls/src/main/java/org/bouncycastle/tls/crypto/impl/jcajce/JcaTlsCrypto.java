@@ -1311,7 +1311,7 @@ public class JcaTlsCrypto
      */
     public AEADNonceGeneratorFactory getFipsGCMNonceGeneratorFactory()
     {
-        return GCMUtil.getDefaultFipsGCMNonceGeneratorFactory();
+        return GCMFipsUtil.getDefaultFipsGCMNonceGeneratorFactory();
     }
 
     String getDigestName(int cryptoHashAlgorithm)
