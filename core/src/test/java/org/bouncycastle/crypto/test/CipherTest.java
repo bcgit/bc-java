@@ -3,6 +3,8 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -253,7 +255,7 @@ public abstract class CipherTest
         }
     }
 
-    static void checkCipher(final BlockCipher pCipher, final int datalen)
+   void checkCipher(final BlockCipher pCipher, final int datalen)
         throws Exception
     {
         final SecureRandom random = new SecureRandom();
@@ -328,7 +330,7 @@ public abstract class CipherTest
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
-        isTrue(areEqual(ciphertext1, ciphertext2));
+        test.isTrue(test.areEqual(ciphertext1, ciphertext2));
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
         {
