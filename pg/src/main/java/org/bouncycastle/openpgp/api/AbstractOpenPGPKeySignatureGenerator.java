@@ -8,7 +8,10 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 
 public abstract class AbstractOpenPGPKeySignatureGenerator
 {
@@ -178,4 +181,14 @@ public abstract class AbstractOpenPGPKeySignatureGenerator
     {
         this.encryptionSubkeySubpackets = encryptionSubkeySubpackets;
     }
+
+    protected KeyPairGeneratorCallback generatePrimaryKey = new KeyPairGeneratorCallback()
+    {
+        @Override
+        public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                throws PGPException
+        {
+            return generator.generatePrimaryKey();
+        }
+    };
 }

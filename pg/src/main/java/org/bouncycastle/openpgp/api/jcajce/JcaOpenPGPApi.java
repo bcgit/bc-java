@@ -52,9 +52,9 @@ public class JcaOpenPGPApi
     }
 
     @Override
-    public OpenPGPV6KeyGenerator generateKey(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
+    public OpenPGPV6KeyGenerator generateKey(Date creationTime, boolean aeadProtection)
             throws PGPException
     {
-        return new JcaOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection, provider);
+        return new JcaOpenPGPV6KeyGenerator(creationTime, aeadProtection, provider);
     }
 }

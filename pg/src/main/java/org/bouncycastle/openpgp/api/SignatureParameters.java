@@ -109,7 +109,7 @@ public class SignatureParameters
         return this;
     }
 
-    public PGPSignatureSubpacketGenerator applyToHashedSubpackets(PGPSignatureSubpacketGenerator hashedSubpackets)
+    PGPSignatureSubpacketGenerator applyToHashedSubpackets(PGPSignatureSubpacketGenerator hashedSubpackets)
     {
         if (hashedSubpacketsFunction != null)
         {
@@ -124,7 +124,7 @@ public class SignatureParameters
         return this;
     }
 
-    public PGPSignatureSubpacketGenerator applyToUnhashedSubpackets(PGPSignatureSubpacketGenerator unhashedSubpackets)
+    PGPSignatureSubpacketGenerator applyToUnhashedSubpackets(PGPSignatureSubpacketGenerator unhashedSubpackets)
     {
         if (unhashedSubpacketsFunction != null)
         {
@@ -138,6 +138,18 @@ public class SignatureParameters
         default SignatureParameters apply(SignatureParameters parameters)
         {
             return parameters;
+        }
+
+        static Callback applyToHashedSubpackets(SignatureSubpacketsFunction function)
+        {
+            return new Callback()
+            {
+                @Override
+                public SignatureParameters apply(SignatureParameters parameters)
+                {
+                    return parameters.setHashedSubpacketsFunction(function);
+                }
+            };
         }
     }
 }

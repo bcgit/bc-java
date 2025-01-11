@@ -35,11 +35,10 @@ public class BcOpenPGPApi
     }
 
     @Override
-    public OpenPGPV6KeyGenerator generateKey(int signatureHashAlgorithm,
-                                             Date creationTime,
+    public OpenPGPV6KeyGenerator generateKey(Date creationTime,
                                              boolean aeadProtection)
             throws PGPException
     {
-        return new BcOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection);
+        return new BcOpenPGPV6KeyGenerator(creationTime, aeadProtection);
     }
 }

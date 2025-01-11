@@ -17,6 +17,7 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
@@ -807,7 +808,7 @@ public class OpenPGPCertificateTest
         OpenPGPKey key = gen.withPrimaryKey()
                 .addUserId("Old non-primary <non-primary@user.id>")
                 .addUserId("New primary <primary@user.id>",
-                        new SignatureSubpacketsFunction()
+                        SignatureParameters.Callback.applyToHashedSubpackets(new SignatureSubpacketsFunction()
                         {
                             @Override
                             public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
@@ -817,7 +818,7 @@ public class OpenPGPCertificateTest
                                 subpackets.setPrimaryUserID(false, true);
                                 return subpackets;
                             }
-                        })
+                        }))
                 .build(null);
         isEquals("Expect to find valid, explicit primary user ID",
                 key.getUserId("New primary <primary@user.id>"),

@@ -2,13 +2,16 @@ package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
-import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPImplementation;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPApi;
+import org.bouncycastle.openpgp.api.SignatureParameters;
+import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
@@ -22,6 +25,8 @@ import java.util.Iterator;
 public class BcOpenPGPV6KeyGeneratorTest
         extends AbstractPgpKeyPairTest
 {
+    private final OpenPGPApi api = new BcOpenPGPApi();
+
     @Override
     public String getName()
     {
@@ -36,21 +41,24 @@ public class BcOpenPGPV6KeyGeneratorTest
     }
 
     private void testGenerateMinimalKey()
-            throws PGPException, IOException {
+            throws PGPException, IOException
+    {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator gen = new OpenPGPV6KeyGenerator(
-                new BcOpenPGPImplementation(), HashAlgorithmTags.SHA3_512, false, creationTime);
+        OpenPGPV6KeyGenerator gen = api.generateKey(creationTime, false);
         OpenPGPKey key = gen.withPrimaryKey(
-                       PGPKeyPairGenerator::generateEd25519KeyPair,
-                        subpackets ->
+                        PGPKeyPairGenerator::generateEd25519KeyPair,
+                        SignatureParameters.Callback.applyToHashedSubpackets(new SignatureSubpacketsFunction()
                         {
-                            subpackets.addNotationData(false, true, "foo@bouncycastle.org", "bar");
-                            return subpackets;
-                        },
-                "hello".toCharArray())
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                            {
+                                subpackets.addNotationData(false, true, "foo@bouncycastle.org", "bar");
+                                return subpackets;
+                            }
+                        }))
                 .addUserId("Alice <alice@example.org>")
-                .addEncryptionSubkey((char[]) null)
-                .addSigningSubkey((char[]) null)
+                .addEncryptionSubkey()
+                .addSigningSubkey()
                 .build();
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 

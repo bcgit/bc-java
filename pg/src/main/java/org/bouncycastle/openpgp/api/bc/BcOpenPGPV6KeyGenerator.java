@@ -30,30 +30,18 @@ public class BcOpenPGPV6KeyGenerator
     public BcOpenPGPV6KeyGenerator(Date creationTime)
             throws PGPException
     {
-        this(DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime, true);
-    }
-
-    /**
-     * Create a new key generator for OpenPGP v6 keys.
-     * Signatures on the key will be generated using the specified {@code signatureHashAlgorithm}.
-     *
-     * @param signatureHashAlgorithm ID of the hash algorithm to be used for signature generation
-     */
-    public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm)
-            throws PGPException
-    {
-        this(signatureHashAlgorithm, new Date(), true);
+        this(creationTime, true);
     }
 
     /**
      * Create a new OpenPGP key generator for v6 keys.
      *
-     * @param signatureHashAlgorithm ID of the hash algorithm used for signatures on the key
      * @param creationTime           creation time of the key and signatures
+     * @param aeadProtection whether the key shall be protected using AEAD. If false, the key is protected using CFB.
      */
-    public BcOpenPGPV6KeyGenerator(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
+    public BcOpenPGPV6KeyGenerator(Date creationTime, boolean aeadProtection)
         throws PGPException
     {
-        super(new BcOpenPGPImplementation(), signatureHashAlgorithm, aeadProtection, creationTime);
+        super(new BcOpenPGPImplementation(), aeadProtection, creationTime);
     }
 }

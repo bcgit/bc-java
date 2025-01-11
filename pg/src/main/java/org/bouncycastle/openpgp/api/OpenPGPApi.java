@@ -31,8 +31,7 @@ public abstract class OpenPGPApi
     public abstract OpenPGPV6KeyGenerator generateKey(Date creationTime)
             throws PGPException;
 
-    public abstract OpenPGPV6KeyGenerator generateKey(int signatureHashAlgorithm,
-                                                      Date creationTime,
+    public abstract OpenPGPV6KeyGenerator generateKey(Date creationTime,
                                                       boolean aeadProtection)
             throws PGPException;
 

@@ -67,7 +67,8 @@ public class OpenPGPKeyEditorTest
             throws PGPException
     {
         OpenPGPKey key = api.generateKey()
-                .ed25519x25519Key("Alice <alice@example.com>", null);
+                .ed25519x25519Key("Alice <alice@example.com>")
+                .build();
         OpenPGPKey editedKey = api.editKey(key)
                 .done();
 
