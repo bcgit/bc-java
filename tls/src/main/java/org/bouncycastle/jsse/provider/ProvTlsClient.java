@@ -210,8 +210,7 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
-            getProtocolVersions());
+        return manager.getContextData().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
     }
 
     @Override
@@ -237,7 +236,7 @@ class ProvTlsClient
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
+        return manager.getContextData().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -552,8 +551,9 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        String selectedCipherSuiteName = manager.getContextData().getContext()
-            .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
+        final ContextData contextData = manager.getContextData();
+
+        String selectedCipherSuiteName = contextData.validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         if (LOG.isLoggable(Level.FINE))
         {
@@ -566,7 +566,7 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+        String serverVersionName = manager.getContextData().validateNegotiatedProtocol(sslParameters,
             serverVersion);
 
         if (LOG.isLoggable(Level.FINE))

@@ -63,7 +63,6 @@ import org.bouncycastle.tls.crypto.TlsSRP6Server;
 import org.bouncycastle.tls.crypto.TlsSRP6VerifierGenerator;
 import org.bouncycastle.tls.crypto.TlsSRPConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
-import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 import org.bouncycastle.tls.crypto.impl.AbstractTlsCrypto;
 import org.bouncycastle.tls.crypto.impl.TlsAEADCipher;
 import org.bouncycastle.tls.crypto.impl.TlsBlockCipher;
@@ -614,8 +613,7 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), true);
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), false);
 
-        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM,
-            getGCMNonceGeneratorFactory());
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM, null);
     }
 
     protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -624,8 +622,7 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_ARIA_GCM(), true);
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_ARIA_GCM(), false);
 
-        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM,
-            getGCMNonceGeneratorFactory());
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM, null);
     }
 
     protected TlsAEADCipher createCipher_Camellia_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -634,8 +631,7 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_Camellia_GCM(), true);
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_Camellia_GCM(), false);
 
-        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM,
-            getGCMNonceGeneratorFactory());
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM, null);
     }
 
     protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, int encryptionAlgorithm, int cipherKeySize,
@@ -665,8 +661,7 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_GCM(), true);
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_SM4_GCM(), false);
 
-        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, 16, 16, TlsAEADCipher.AEAD_GCM,
-            getGCMNonceGeneratorFactory());
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, 16, 16, TlsAEADCipher.AEAD_GCM, null);
     }
 
     protected TlsNullCipher createNullCipher(TlsCryptoParameters cryptoParams, int macAlgorithm)
@@ -745,11 +740,6 @@ public class BcTlsCrypto
     protected AEADBlockCipher createAEADBlockCipher_SM4_GCM()
     {
         return createGCMMode(createSM4Engine());
-    }
-
-    protected AEADNonceGeneratorFactory getGCMNonceGeneratorFactory()
-    {
-        return null;
     }
 
     public TlsHMAC createHMAC(int macAlgorithm)

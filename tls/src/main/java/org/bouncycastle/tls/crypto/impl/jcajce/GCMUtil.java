@@ -31,7 +31,7 @@ class GCMUtil
         });
     }
 
-    static AEADNonceGeneratorFactory getDefaultNonceGeneratorFactory()
+    static AEADNonceGeneratorFactory getDefaultFipsGCMNonceGeneratorFactory()
     {
         return null;
     }
