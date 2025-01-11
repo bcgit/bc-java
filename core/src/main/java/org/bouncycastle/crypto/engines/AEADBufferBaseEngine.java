@@ -310,7 +310,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    private void finishAAD(State nextState)
+    protected void finishAAD(State nextState)
     {
         // State indicates whether we ever received AAD
         switch (m_state)
