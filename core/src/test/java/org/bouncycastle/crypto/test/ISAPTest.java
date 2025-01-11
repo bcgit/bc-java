@@ -33,8 +33,8 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
-//        testVectors("isapa128av20", IsapType.ISAP_A_128A);
-//        testVectors("isapa128v20", IsapType.ISAP_A_128);
+        testVectors("isapa128av20", IsapType.ISAP_A_128A);
+        testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
         testVectors("isapk128v20", IsapType.ISAP_K_128);
         ISAPEngine ISAP = new ISAPEngine(IsapType.ISAP_K_128A);
@@ -109,7 +109,7 @@ public class ISAPTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("67"))
+//                if (!map.get("Count").equals("19"))
 //                {
 //                    continue;
 //                }
@@ -145,7 +145,7 @@ public class ISAPTest
                 {
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
-                System.out.println("Keystream " + map.get("Count") + " pass");
+                //System.out.println("Keystream " + map.get("Count") + " pass");
                 isap.reset();
                 map.clear();
 
@@ -382,7 +382,7 @@ public class ISAPTest
         }
         try
         {
-            aeadBlockCipher.processBytes(new byte[blocksize], 0, blocksize, new byte[blocksize], blocksize >> 1);
+            aeadBlockCipher.processBytes(new byte[blocksize + 1], 0, blocksize + 1, new byte[blocksize], blocksize >> 1);
             fail(aeadBlockCipher.getAlgorithmName() + ": output for processBytes is too short");
         }
         catch (OutputLengthException e)
