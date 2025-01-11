@@ -244,16 +244,13 @@ class ProvTlsServer
             sb.append(" found no selectable cipher suite among the ");
             sb.append(offered.length);
             sb.append(" offered: ");
-
-            ProvSSLContextSpi context = manager.getContextData().getContext();
-
             sb.append('[');
-            JsseUtils.appendCipherSuiteDetail(sb, context, offered[0]);
+            JsseUtils.appendCipherSuiteDetail(sb, offered[0]);
 
             for (int i = 1; i < offered.length; ++i)
             {
                 sb.append(", ");
-                JsseUtils.appendCipherSuiteDetail(sb, context, offered[i]);
+                JsseUtils.appendCipherSuiteDetail(sb, offered[i]);
             }
 
             sb.append(']');
@@ -283,7 +280,7 @@ class ProvTlsServer
 
         if (maxBitsResult.isDefaulted() &&
             !TlsUtils.isNullOrEmpty(provServerDefaultDHEParameters) &&
-            !manager.getContextData().getContext().isFips())
+            !manager.getContextData().isFipsMode())
         {
             DHGroup largest = provServerDefaultDHEParameters[provServerDefaultDHEParameters.length - 1];
             maxBits = Math.max(maxBits, largest.getP().bitLength());
@@ -301,14 +298,13 @@ class ProvTlsServer
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
-            getProtocolVersions());
+        return manager.getContextData().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
     }
 
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
+        return manager.getContextData().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -359,7 +355,7 @@ class ProvTlsServer
 
         if (namedGroupResult.isDefaulted() &&
             !TlsUtils.isNullOrEmpty(provServerDefaultDHEParameters) &&
-            !manager.getContextData().getContext().isFips())
+            !manager.getContextData().isFipsMode())
         {
             for (DHGroup dhGroup : provServerDefaultDHEParameters)
             {
@@ -671,8 +667,7 @@ class ProvTlsServer
 
         keyManagerMissCache = null;
 
-        String selectedCipherSuiteName = contextData.getContext().validateNegotiatedCipherSuite(sslParameters,
-            selectedCipherSuite);
+        String selectedCipherSuiteName = contextData.validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         if (LOG.isLoggable(Level.FINE))
         {
@@ -817,7 +812,7 @@ class ProvTlsServer
     {
         ProtocolVersion serverVersion = super.getServerVersion();
 
-        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+        String serverVersionName = manager.getContextData().validateNegotiatedProtocol(sslParameters,
             serverVersion);
 
         if (LOG.isLoggable(Level.FINE))

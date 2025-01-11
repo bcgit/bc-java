@@ -205,11 +205,10 @@ class TestUtils
             caKey, subject, "SHA256withRSA", extGen.generate(), intKey);
     }
 
-    public static X509Certificate generateEndEntityCert(PublicKey intKey, PrivateKey caKey, X509Certificate caCert)
+    public static X509Certificate generateEndEntityCert(PublicKey entityKey, PrivateKey caKey, X509Certificate caCert)
         throws Exception
     {
-        return generateEndEntityCert(
-            intKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
+        return generateEndEntityCert(entityKey, new X500Name("CN=Test End Certificate"), caKey, caCert);
     }
 
     public static X509Certificate generateEndEntityCert(PublicKey entityKey, X500Name subject, PrivateKey caKey, X509Certificate caCert)

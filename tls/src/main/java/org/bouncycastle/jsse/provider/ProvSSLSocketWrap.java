@@ -78,7 +78,7 @@ class ProvSSLSocketWrap
         this.consumed = consumed;
         this.autoClose = autoClose;
         this.useClientMode = false;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
 
         notifyConnected();
     }
@@ -92,7 +92,7 @@ class ProvSSLSocketWrap
         this.peerHost = host;
         this.autoClose = autoClose;
         this.useClientMode = true;
-        this.sslParameters = contextData.getContext().getDefaultSSLParameters(useClientMode);
+        this.sslParameters = contextData.getDefaultSSLParameters(useClientMode);
 
         notifyConnected();
     }
@@ -358,13 +358,13 @@ class ProvSSLSocketWrap
     @Override
     public synchronized String[] getSupportedCipherSuites()
     {
-        return contextData.getContext().getSupportedCipherSuites();
+        return contextData.getSupportedCipherSuites();
     }
 
     @Override
     public synchronized String[] getSupportedProtocols()
     {
-        return contextData.getContext().getSupportedProtocols();
+        return contextData.getSupportedProtocols();
     }
 
     @Override
@@ -553,7 +553,7 @@ class ProvSSLSocketWrap
 
         if (this.useClientMode != useClientMode)
         {
-            contextData.getContext().updateDefaultSSLParameters(sslParameters, useClientMode);
+            contextData.updateDefaultSSLParameters(sslParameters, useClientMode);
 
             this.useClientMode = useClientMode;
         }

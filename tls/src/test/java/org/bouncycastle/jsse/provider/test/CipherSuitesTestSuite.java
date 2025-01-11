@@ -7,6 +7,7 @@ import java.util.Arrays;
 
 import javax.net.ssl.SSLContext;
 
+import junit.extensions.TestSetup;
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -22,7 +23,9 @@ public class CipherSuitesTestSuite
     public static Test suite()
         throws Exception
     {
-        return createSuite(new CipherSuitesTestSuite(), null, false, new CipherSuitesFilter()
+        ProviderUtils.setupHighPriority(false);
+
+        TestSuite suite = createSuite(new CipherSuitesTestSuite(), null, false, new CipherSuitesFilter()
         {
             public boolean isIgnored(String cipherSuite)
             {
@@ -39,14 +42,20 @@ public class CipherSuitesTestSuite
                 return true;
             }
         });
+
+        return new TestSetup(suite)
+        {
+            @Override
+            protected void setUp() throws Exception
+            {
+                ProviderUtils.setupHighPriority(false);
+            }
+        };
     }
 
-    static Test createSuite(TestSuite testSuite, String category, boolean fips, CipherSuitesFilter filter)
+    static TestSuite createSuite(TestSuite testSuite, String category, boolean fips, CipherSuitesFilter filter)
         throws Exception
     {
-        // TODO Consider configuring BCJSSE with explicit crypto provider (maybe only when in fips mode?)
-        ProviderUtils.setupHighPriority(fips);
-
         char[] serverPassword = "serverPassword".toCharArray();
 
         KeyPair caKeyPairDSA = TestUtils.generateDSAKeyPair();
@@ -125,7 +134,6 @@ public class CipherSuitesTestSuite
                 config.category = category;
                 config.cipherSuite = cipherSuite;
                 config.clientTrustStore = ts;
-                config.fips = fips;
                 config.protocol = protocol;
                 config.serverKeyStore = ks;
                 config.serverPassword = serverPassword;

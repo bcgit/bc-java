@@ -34,7 +34,7 @@ class ProvX509KeyManagerSimple
 {
     private static final Logger LOG = Logger.getLogger(ProvX509KeyManagerSimple.class.getName());
 
-    private final boolean isInFipsMode;
+    private final boolean fipsMode;
     private final JcaJceHelper helper;
     private final Map<String, Credential> credentials;
 
@@ -73,10 +73,10 @@ class ProvX509KeyManagerSimple
         return Collections.unmodifiableMap(credentials);
     }
 
-    ProvX509KeyManagerSimple(boolean isInFipsMode, JcaJceHelper helper, KeyStore ks, char[] password)
+    ProvX509KeyManagerSimple(boolean fipsMode, JcaJceHelper helper, KeyStore ks, char[] password)
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
         this.credentials = loadCredentials(ks, password);
     }
@@ -287,7 +287,7 @@ class ProvX509KeyManagerSimple
             algorithmConstraints, forServer, chain);
         if (keyTypeIndex >= 0)
         {
-            MatchQuality quality = ProvX509KeyManager.getKeyTypeQuality(isInFipsMode, helper, keyTypes,
+            MatchQuality quality = ProvX509KeyManager.getKeyTypeQuality(fipsMode, helper, keyTypes,
                 algorithmConstraints, forServer, atDate, requestedHostName, chain, keyTypeIndex);
             if (MatchQuality.NONE != quality)
             {

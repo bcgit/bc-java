@@ -15,7 +15,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.TestFailedException;
-import org.junit.Assert;
 
 public abstract class CipherTest
     extends SimpleTest
@@ -252,6 +251,54 @@ public abstract class CipherTest
         {
             throw new TestFailedException(SimpleTestResult.failed(parent, "no message"));
         }
+    }
+
+    static void checkCipher(final BlockCipher pCipher, final int datalen)
+        throws Exception
+    {
+        final SecureRandom random = new SecureRandom();
+        /* Create the data */
+        final byte[] myData = new byte[datalen];
+        random.nextBytes(myData);
+
+        /* Create the Key parameters */
+        final CipherKeyGenerator myGenerator = new CipherKeyGenerator();
+        final KeyGenerationParameters myGenParams = new KeyGenerationParameters(random, 256);
+        myGenerator.init(myGenParams);
+        final byte[] myKey = myGenerator.generateKey();
+        final KeyParameter myKeyParams = new KeyParameter(myKey);
+
+        /* Create the IV */
+        final byte[] myIV = new byte[16];
+        random.nextBytes(myIV);
+
+        /* Create the initParams */
+        final ParametersWithIV myParams = new ParametersWithIV(myKeyParams, myIV);
+
+        /* Wrap Block Cipher with buffered BlockCipher */
+        final BufferedBlockCipher myCipher = new DefaultBufferedBlockCipher(pCipher);
+
+        /* Initialise the cipher for encryption */
+        myCipher.init(true, myParams);
+
+        /* Encipher the text */
+        final byte[] myOutput = new byte[myCipher.getOutputSize(datalen)];
+        int myOutLen = myCipher.processBytes(myData, 0, datalen, myOutput, 0);
+        myCipher.doFinal(myOutput, myOutLen);
+
+        /* Re-Encipher the text (after implicit reset) */
+        final byte[] myOutput2 = new byte[myCipher.getOutputSize(datalen)];
+        myOutLen = myCipher.processBytes(myData, 0, datalen, myOutput2, 0);
+        myCipher.doFinal(myOutput2, myOutLen);
+
+        myCipher.init(false, myParams);
+        final byte[] plaintext = new byte[myCipher.getOutputSize(myOutput.length)];
+        myOutLen = myCipher.processBytes(myOutput2, 0, datalen, plaintext, 0);
+        myCipher.doFinal(plaintext, myOutLen);
+
+        /* Check that the cipherTexts are identical */
+        Assert.assertArrayEquals(myOutput, myOutput2);
+        Assert.assertArrayEquals(myData, plaintext);
     }
 
     static void checkAEADParemeter(SimpleTest test, int keySize, int ivSize, final int macSize, int blockSize, final AEADCipher cipher)
