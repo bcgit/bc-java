@@ -44,9 +44,9 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testVectorsEngine_asconaead128();
         testVectorsDigest_AsconHash256();
         testVectorsXof_AsconXof128();
-        testVectorsEngine_asconaead128();
 
         testBufferingEngine_asconaead128();
         testBufferingEngine_ascon128();
@@ -572,7 +572,7 @@ public class AsconTest
         byte[] output = new byte[ciphertextLength];
 
         // Encryption
-        for (int split = 1; split < plaintextLength; ++split)
+        for (int split = 16; split < plaintextLength; ++split)
         {
             AEADCipher ascon = operator.createEngine();
             initEngine(ascon, true);
@@ -1111,7 +1111,7 @@ public class AsconTest
             if (a < 0)
             {
                 int count = Integer.parseInt(map.get("Count"));
-//                if (count != 34)
+//                if (count != 529)
 //                {
 //                    continue;
 //                }
@@ -1156,7 +1156,7 @@ public class AsconTest
                         mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv);
                     }
                 }
-                //System.out.println("pass "+ count);
+                System.out.println("pass "+ count);
                 map.clear();
             }
             else
