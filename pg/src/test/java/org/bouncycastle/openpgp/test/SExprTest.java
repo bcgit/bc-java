@@ -143,8 +143,17 @@ public class SExprTest
     }
 
     private void corruptStreamTest()
-        throws Exception
     {
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("12")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals("invalid input stream", e.getMessage());
+        }
+
         try
         {
             SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("2:3abc")), 2);
@@ -153,6 +162,26 @@ public class SExprTest
         catch (IOException e)
         {
             isEquals("invalid input stream at ':'", e.getMessage());
+        }
+
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("#3abc")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals(e.getMessage(), "invalid input stream at '#'", e.getMessage());
+        }
+
+        try
+        {
+            SExpression.parse(new ByteArrayInputStream(Strings.toByteArray("\"3abc")), 2);
+            fail("no exception");
+        }
+        catch (IOException e)
+        {
+            isEquals(e.getMessage(), "invalid input stream at '\"'", e.getMessage());
         }
     }
 
