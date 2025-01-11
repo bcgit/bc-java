@@ -297,8 +297,8 @@ public abstract class CipherTest
         myCipher.doFinal(plaintext, myOutLen);
 
         /* Check that the cipherTexts are identical */
-        Assert.assertArrayEquals(myOutput, myOutput2);
-        Assert.assertArrayEquals(myData, plaintext);
+        isTrue(areEqual(myOutput, myOutput2));
+        isTrue(areEqual(myData, plaintext));
     }
 
     static void checkAEADParemeter(SimpleTest test, int keySize, int ivSize, final int macSize, int blockSize, final AEADCipher cipher)
@@ -328,7 +328,7 @@ public abstract class CipherTest
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
-        Assert.assertArrayEquals(ciphertext1, ciphertext2);
+        isTrue(areEqual(ciphertext1, ciphertext2));
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
         {
