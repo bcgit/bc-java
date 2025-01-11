@@ -31,7 +31,7 @@ public abstract class SimpleTest
         }
     }
 
-    protected void isTrue(
+    public void isTrue(
         String message,
         boolean value)
     {

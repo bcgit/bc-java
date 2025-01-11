@@ -4,9 +4,9 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
-import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.modes.AEADCipher;
@@ -330,7 +330,7 @@ public abstract class CipherTest
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
-        test.isTrue(test.areEqual(ciphertext1, ciphertext2));
+        test.isTrue("cipher text check", Arrays.areEqual(ciphertext1, ciphertext2));
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
         {
