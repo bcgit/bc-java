@@ -19,11 +19,6 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECJPAKECurve
 {
     private final ECCurve.Fp curve;
-    private final BigInteger a;
-    private final BigInteger b;
-    private final BigInteger q;
-    private final BigInteger h;
-    private final BigInteger n;
     private final ECPoint g;
 
     /**
@@ -54,12 +49,66 @@ public class ECJPAKECurve
      * @throws NullPointerException     if any argument is null
      * @throws IllegalArgumentException if any of the above validations fail
      */
-    public ECJPAKECurve(BigInteger a, BigInteger b, BigInteger q, BigInteger h, BigInteger n, ECPoint g, ECCurve.Fp curve)
+    public ECJPAKECurve(BigInteger q, BigInteger a, BigInteger b, BigInteger n, BigInteger h, BigInteger g_x, BigInteger g_y)
     {
+        ECJPAKEUtil.validateNotNull(a, "a");
+        ECJPAKEUtil.validateNotNull(b, "b");
+        ECJPAKEUtil.validateNotNull(q, "q");
+        ECJPAKEUtil.validateNotNull(n, "n");
+        ECJPAKEUtil.validateNotNull(h, "h");
+        ECJPAKEUtil.validateNotNull(g_x, "g_x");
+        ECJPAKEUtil.validateNotNull(g_y, "g_y");
+
         /*
          * Don't skip the checks on user-specified groups.
          */
-        this(a, b, q, h, n, g, curve, false);
+        
+        /*
+         * Note that these checks do not guarantee that n and q are prime.
+         * We just have reasonable certainty that they are prime.
+         */
+        if (!q.isProbablePrime(20))
+        {
+            throw new IllegalArgumentException("Field size q must be prime");
+        }
+
+        if (a.compareTo(BigInteger.ZERO) < 0 || a.compareTo(q) >= 0)
+        {
+            throw new IllegalArgumentException("The parameter 'a' is not in the field [0, q-1]");
+        }
+
+        if (b.compareTo(BigInteger.ZERO) < 0 || b.compareTo(q) >= 0)
+        {
+            throw new IllegalArgumentException("The parameter 'b' is not in the field [0, q-1]");
+        }
+
+        BigInteger d = calculateDeterminant(q, a, b);
+        if (d.equals(BigInteger.ZERO))
+        {
+            throw new IllegalArgumentException("The curve is singular, i.e the discriminant is equal to 0 mod q.");
+        }
+
+        if (!n.isProbablePrime(20))
+        {
+            throw new IllegalArgumentException("The order n must be prime");
+        }
+
+        /*
+         * TODO It's expensive to calculate the actual total number of points. Probably the best that could be done is
+         * checking that the point count is within the Hasse bound?
+         */
+//        BigInteger totalPoints = n.multiply(h);
+
+        ECCurve.Fp curve = new ECCurve.Fp(q, a, b, n, h);
+        ECPoint g = curve.createPoint(g_x, g_y);
+
+        if (!g.isValid())
+        {
+            throw new IllegalArgumentException("The base point G does not lie on the curve.");
+        }
+
+        this.curve = curve;
+        this.g = g;
     }
 
     /**
@@ -67,97 +116,15 @@ public class ECJPAKECurve
      * groups in {@link ECJPAKECurves}.
      * These pre-approved curves can avoid the expensive checks.
      */
-    ECJPAKECurve(BigInteger a, BigInteger b, BigInteger q, BigInteger h, BigInteger n, ECPoint g, ECCurve.Fp curve, boolean skipChecks)
+    ECJPAKECurve(ECCurve.Fp curve, ECPoint g)
     {
-        ECJPAKEUtil.validateNotNull(a, "a");
-        ECJPAKEUtil.validateNotNull(b, "b");
-        ECJPAKEUtil.validateNotNull(q, "q");
-        ECJPAKEUtil.validateNotNull(h, "h");
-        ECJPAKEUtil.validateNotNull(n, "n");
-        ECJPAKEUtil.validateNotNull(g, "g");
         ECJPAKEUtil.validateNotNull(curve, "curve");
+        ECJPAKEUtil.validateNotNull(g, "g");
+        ECJPAKEUtil.validateNotNull(curve.getOrder(), "n");
+        ECJPAKEUtil.validateNotNull(curve.getCofactor(), "h");
 
-        if (!skipChecks)
-        {
-
-            /*
-             * Note that these checks do not guarantee that n and q are prime.
-             * We just have reasonable certainty that they are prime.
-             */
-            if (!q.isProbablePrime(20))
-            {
-                throw new IllegalArgumentException("Field size q must be prime");
-            }
-
-            if (!n.isProbablePrime(20))
-            {
-                throw new IllegalArgumentException("The order n must be prime");
-            }
-
-            if ((a.pow(3).multiply(BigInteger.valueOf(4)).add(b.pow(2).multiply(BigInteger.valueOf(27))).mod(q)) == BigInteger.valueOf(0))
-            {
-                throw new IllegalArgumentException("The curve is singular, i.e the discriminant is equal to 0 mod q.");
-            }
-
-            if (!g.isValid())
-            {
-                throw new IllegalArgumentException("The base point G does not lie on the curve.");
-            }
-
-            BigInteger totalPoints = n.multiply(h);
-            if (!totalPoints.equals(curve.getOrder()))
-            {
-                throw new IllegalArgumentException("n is not equal to the order of your curve");
-            }
-
-            if (a.compareTo(BigInteger.ZERO) == -1 || a.compareTo(q.subtract(BigInteger.ONE)) == 1)
-            {
-                throw new IllegalArgumentException("The parameter 'a' is not in the field [0, q-1]");
-            }
-
-            if (b.compareTo(BigInteger.ZERO) == -1 || b.compareTo(q.subtract(BigInteger.ONE)) == 1)
-            {
-                throw new IllegalArgumentException("The parameter 'b' is not in the field [0, q-1]");
-            }
-        }
-
-        this.a = a;
-        this.b = b;
-        this.h = h;
-        this.n = n;
-        this.q = q;
-        this.g = g;
         this.curve = curve;
-    }
-
-    public BigInteger getA()
-    {
-        return a;
-    }
-
-    public BigInteger getB()
-    {
-        return b;
-    }
-
-    public BigInteger getN()
-    {
-        return n;
-    }
-
-    public BigInteger getH()
-    {
-        return h;
-    }
-
-    public BigInteger getQ()
-    {
-        return q;
-    }
-
-    public ECPoint getG()
-    {
-        return g;
+        this.g = g;
     }
 
     public ECCurve.Fp getCurve()
@@ -165,5 +132,40 @@ public class ECJPAKECurve
         return curve;
     }
 
+    public ECPoint getG()
+    {
+        return g;
+    }
 
+    public BigInteger getA()
+    {
+        return curve.getA().toBigInteger();
+    }
+
+    public BigInteger getB()
+    {
+        return curve.getB().toBigInteger();
+    }
+
+    public BigInteger getN()
+    {
+        return curve.getOrder();
+    }
+
+    public BigInteger getH()
+    {
+        return curve.getCofactor();
+    }
+
+    public BigInteger getQ()
+    {
+        return curve.getQ();
+    }
+
+    private static BigInteger calculateDeterminant(BigInteger q, BigInteger a, BigInteger b)
+    {
+        BigInteger a3x4 = a.multiply(a).mod(q).multiply(a).mod(q).shiftLeft(2);
+        BigInteger b2x27 = b.multiply(b).mod(q).multiply(BigInteger.valueOf(27));
+        return a3x4.add(b2x27).mod(q);
+    }
 }

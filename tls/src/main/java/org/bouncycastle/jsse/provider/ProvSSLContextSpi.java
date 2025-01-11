@@ -4,16 +4,12 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,8 +29,6 @@ import javax.net.ssl.X509TrustManager;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jsse.BCX509ExtendedKeyManager;
 import org.bouncycastle.jsse.BCX509ExtendedTrustManager;
-import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
-import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsDHUtils;
@@ -53,21 +47,26 @@ class ProvSSLContextSpi
     private static final String PROPERTY_CLIENT_PROTOCOLS = "jdk.tls.client.protocols";
     private static final String PROPERTY_SERVER_PROTOCOLS = "jdk.tls.server.protocols";
 
-    private static final Set<BCCryptoPrimitive> TLS_CRYPTO_PRIMITIVES_BC = JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC;
-
     /*
      * TODO[jsse] Should separate this into "understood" cipher suite int<->String maps
      * and a Set of supported cipher suite values, so we can cover TLS_NULL_WITH_NULL_NULL and
      * the SCSV values.
      */
     private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP = createSupportedCipherSuiteMap();
-    private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS = createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP);
+    private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS =
+        createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP, false);
+    private static final Map<String, CipherSuiteInfo> SUPPORTED_CIPHERSUITE_MAP_FIPS_GCM12 =
+        createSupportedCipherSuiteMapFips(SUPPORTED_CIPHERSUITE_MAP, true);
 
     private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOL_MAP = createSupportedProtocolMap();
     private static final Map<String, ProtocolVersion> SUPPORTED_PROTOCOL_MAP_FIPS = createSupportedProtocolMapFips(SUPPORTED_PROTOCOL_MAP);
 
-    private static final List<String> DEFAULT_CIPHERSUITE_LIST = createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
-    private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS = createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST);
+    private static final List<String> DEFAULT_CIPHERSUITE_LIST =
+        createDefaultCipherSuiteList(SUPPORTED_CIPHERSUITE_MAP.keySet());
+    private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS =
+        createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST, false);
+    private static final List<String> DEFAULT_CIPHERSUITE_LIST_FIPS_GCM12 =
+        createDefaultCipherSuiteListFips(DEFAULT_CIPHERSUITE_LIST, true);
 
     private static final List<String> DEFAULT_PROTOCOL_LIST = createDefaultProtocolList(SUPPORTED_PROTOCOL_MAP.keySet());
     private static final List<String> DEFAULT_PROTOCOL_LIST_FIPS = createDefaultProtocolListFips(DEFAULT_PROTOCOL_LIST);
@@ -140,10 +139,11 @@ class ProvSSLContextSpi
         return Collections.unmodifiableList(cs);
     }
 
-    private static List<String> createDefaultCipherSuiteListFips(List<String> defaultCipherSuiteList)
+    private static List<String> createDefaultCipherSuiteListFips(List<String> defaultCipherSuiteList,
+        boolean includeGCM12)
     {
         ArrayList<String> cs = new ArrayList<String>(defaultCipherSuiteList);
-        FipsUtils.removeNonFipsCipherSuites(cs);
+        FipsUtils.removeNonFipsCipherSuites(cs, includeGCM12);
         cs.trimToSize();
         return Collections.unmodifiableList(cs);
     }
@@ -312,10 +312,10 @@ class ProvSSLContextSpi
     }
 
     private static Map<String, CipherSuiteInfo> createSupportedCipherSuiteMapFips(
-        Map<String, CipherSuiteInfo> supportedCipherSuiteMap)
+        Map<String, CipherSuiteInfo> supportedCipherSuiteMap, boolean includeGCM12)
     {
         final Map<String, CipherSuiteInfo> cs = new LinkedHashMap<String, CipherSuiteInfo>(supportedCipherSuiteMap);
-        FipsUtils.removeNonFipsCipherSuites(cs.keySet());
+        FipsUtils.removeNonFipsCipherSuites(cs.keySet(), includeGCM12);
         return Collections.unmodifiableMap(cs);
     }
 
@@ -358,7 +358,8 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!ProvAlgorithmConstraints.DEFAULT.permits(TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
+            if (!ProvAlgorithmConstraints.DEFAULT.permits(JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC, candidate,
+                null))
             {
                 continue;
             }
@@ -405,7 +406,8 @@ class ProvSSLContextSpi
             {
                 continue;
             }
-            if (!ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(TLS_CRYPTO_PRIMITIVES_BC, candidate, null))
+            if (!ProvAlgorithmConstraints.DEFAULT_TLS_ONLY.permits(JsseUtils.KEY_AGREEMENT_CRYPTO_PRIMITIVES_BC,
+                candidate, null))
             {
                 continue;
             }
@@ -491,16 +493,6 @@ class ProvSSLContextSpi
         return result;
     }
 
-    private static String[] getArray(Collection<String> c)
-    {
-        return c.toArray(new String[c.size()]);
-    }
-
-    private static String[] getKeysArray(Map<String, ?> m)
-    {
-        return getArray(m.keySet());
-    }
-
     static CipherSuiteInfo getCipherSuiteInfo(String cipherSuiteName)
     {
         return SUPPORTED_CIPHERSUITE_MAP.get(cipherSuiteName);
@@ -568,263 +560,17 @@ class ProvSSLContextSpi
         return "NONE";
     }
 
-    protected final boolean isInFipsMode;
+    protected final boolean fipsMode;
     protected final JcaTlsCryptoProvider cryptoProvider;
-
-    protected final Map<String, CipherSuiteInfo> supportedCipherSuites;
-    protected final Map<String, ProtocolVersion> supportedProtocols;
-    protected final String[] defaultCipherSuitesClient;
-    protected final String[] defaultCipherSuitesServer;
-    protected final String[] defaultProtocolsClient;
-    protected final String[] defaultProtocolsServer;
+    protected final List<String> specifiedProtocolsClient;
 
     private ContextData contextData = null;
 
-    ProvSSLContextSpi(boolean isInFipsMode, JcaTlsCryptoProvider cryptoProvider, List<String> specifiedProtocolsClient)
+    ProvSSLContextSpi(boolean fipsMode, JcaTlsCryptoProvider cryptoProvider, List<String> specifiedProtocolsClient)
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.cryptoProvider = cryptoProvider;
-
-        this.supportedCipherSuites = isInFipsMode ? SUPPORTED_CIPHERSUITE_MAP_FIPS : SUPPORTED_CIPHERSUITE_MAP;
-        this.supportedProtocols = isInFipsMode ? SUPPORTED_PROTOCOL_MAP_FIPS : SUPPORTED_PROTOCOL_MAP;
-
-        List<String> defaultCipherSuiteList = isInFipsMode ? DEFAULT_CIPHERSUITE_LIST_FIPS : DEFAULT_CIPHERSUITE_LIST;
-        List<String> defaultProtocolList = isInFipsMode ? DEFAULT_PROTOCOL_LIST_FIPS : DEFAULT_PROTOCOL_LIST;
-
-        this.defaultCipherSuitesClient = getDefaultEnabledCipherSuitesClient(supportedCipherSuites,
-            defaultCipherSuiteList);
-        this.defaultCipherSuitesServer = getDefaultEnabledCipherSuitesServer(supportedCipherSuites,
-            defaultCipherSuiteList);
-
-        this.defaultProtocolsClient = getDefaultEnabledProtocolsClient(supportedProtocols, defaultProtocolList,
-            specifiedProtocolsClient);
-        this.defaultProtocolsServer = getDefaultEnabledProtocolsServer(supportedProtocols, defaultProtocolList);
-    }
-
-    int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
-        ProtocolVersion[] activeProtocolVersions)
-    {
-        String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-
-        ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
-        ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
-
-        boolean post13Active = TlsUtils.isTLSv13(latest);
-        boolean pre13Active = !TlsUtils.isTLSv13(earliest);
-
-        int[] candidates = new int[enabledCipherSuites.length];
-
-        int count = 0;
-        for (String enabledCipherSuite : enabledCipherSuites)
-        {
-            CipherSuiteInfo candidate = supportedCipherSuites.get(enabledCipherSuite);
-            if (null == candidate)
-            {
-                continue;
-            }
-            if (candidate.isTLSv13())
-            {
-                if (!post13Active)
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                if (!pre13Active)
-                {
-                    continue;
-                }
-            }
-            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledCipherSuite, null))
-            {
-                continue;
-            }
-
-            /*
-             * TODO[jsse] SunJSSE also checks that the cipher suite is usable for at least one of
-             * the active protocol versions. Also, if the cipher suite involves a key exchange,
-             * there must be at least one suitable NamedGroup available.
-             */
-
-            candidates[count++] = candidate.getCipherSuite();
-        }
-
-        /*
-         * TODO Move cipher suite management into CipherSuiteInfo (PerConnection/PerContext pattern
-         * like NamedGroupInfo) to avoid unnecessary repetition of these sorts of checks.
-         */
-        int[] result = TlsUtils.getSupportedCipherSuites(crypto, candidates, 0, count);
-
-        if (result.length < 1)
-        {
-            // TODO[jsse] Refactor so that this can be an SSLHandshakeException?
-            throw new IllegalStateException("No usable cipher suites enabled");
-        }
-
-        return result;
-    }
-
-    ProtocolVersion[] getActiveProtocolVersions(ProvSSLParameters sslParameters)
-    {
-//        String[] enabledCipherSuites = sslParameters.getCipherSuitesArray();
-        String[] enabledProtocols = sslParameters.getProtocolsArray();
-        BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
-
-        SortedSet<ProtocolVersion> result = new TreeSet<ProtocolVersion>(new Comparator<ProtocolVersion>()
-        {
-            public int compare(ProtocolVersion o1, ProtocolVersion o2)
-            {
-                return o1.isLaterVersionOf(o2) ? -1 : o2.isLaterVersionOf(o1) ? 1 : 0;
-            }
-        });
-
-        for (String enabledProtocol : enabledProtocols)
-        {
-            ProtocolVersion candidate = supportedProtocols.get(enabledProtocol);
-            if (null == candidate)
-            {
-                continue;
-            }
-            if (!algorithmConstraints.permits(TLS_CRYPTO_PRIMITIVES_BC, enabledProtocol, null))
-            {
-                continue;
-            }
-
-            /*
-             * TODO[jsse] SunJSSE also checks that there is at least one "activatable" cipher suite
-             * that could be used for this protocol version.
-             */
-
-            result.add(candidate);
-        }
-
-        if (result.isEmpty())
-        {
-            // TODO[jsse] Refactor so that this can be an SSLHandshakeException?
-            throw new IllegalStateException("No usable protocols enabled");
-        }
-
-        return result.toArray(new ProtocolVersion[result.size()]);
-    }
-
-    String[] getDefaultCipherSuites(boolean isClient)
-    {
-        return implGetDefaultCipherSuites(isClient).clone();
-    }
-
-    String[] getDefaultProtocols(boolean isClient)
-    {
-        return implGetDefaultProtocols(isClient).clone();
-    }
-
-    ProvSSLParameters getDefaultSSLParameters(boolean isClient)
-    {
-        return new ProvSSLParameters(this, implGetDefaultCipherSuites(isClient), implGetDefaultProtocols(isClient));
-    }
-
-    String[] getSupportedCipherSuites()
-    {
-        return getKeysArray(supportedCipherSuites);
-    }
-
-    String[] getSupportedCipherSuites(String[] cipherSuites)
-    {
-        if (null == cipherSuites)
-        {
-            throw new NullPointerException("'cipherSuites' cannot be null");
-        }
-
-        ArrayList<String> result = new ArrayList<String>(cipherSuites.length);
-        for (String cipherSuite : cipherSuites)
-        {
-            if (TlsUtils.isNullOrEmpty(cipherSuite))
-            {
-                throw new IllegalArgumentException("'cipherSuites' cannot contain null or empty string elements");
-            }
-
-            if (supportedCipherSuites.containsKey(cipherSuite))
-            {
-                result.add(cipherSuite);
-            }
-        }
-
-        // NOTE: This method must always return a copy, so no fast path when all supported
-        return getArray(result);
-    }
-
-    String[] getSupportedProtocols()
-    {
-        return getKeysArray(supportedProtocols);
-    }
-
-    ProvSSLParameters getSupportedSSLParameters(boolean isClient)
-    {
-        return new ProvSSLParameters(this, getSupportedCipherSuites(), getSupportedProtocols());
-    }
-
-    boolean isFips()
-    {
-        return isInFipsMode;
-    }
-
-    boolean isSupportedProtocols(String[] protocols)
-    {
-        if (protocols == null)
-        {
-            return false;
-        }
-        for (String protocol : protocols)
-        {
-            if (protocol == null || !supportedProtocols.containsKey(protocol))
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    void updateDefaultSSLParameters(ProvSSLParameters sslParameters, boolean isClient)
-    {
-        if (sslParameters.getCipherSuitesArray() == implGetDefaultCipherSuites(!isClient))
-        {
-            sslParameters.setCipherSuitesArray(implGetDefaultCipherSuites(isClient));
-        }
-        if (sslParameters.getProtocolsArray() == implGetDefaultProtocols(!isClient))
-        {
-            sslParameters.setProtocolsArray(implGetDefaultProtocols(isClient));
-        }
-    }
-
-    String validateNegotiatedCipherSuite(ProvSSLParameters sslParameters, int cipherSuite)
-    {
-        // NOTE: The redundancy among these various checks is intentional
-        String name = getCipherSuiteName(cipherSuite);
-        if (null == name
-            || !JsseUtils.contains(sslParameters.getCipherSuitesArray(), name)
-            || !sslParameters.getAlgorithmConstraints().permits(TLS_CRYPTO_PRIMITIVES_BC, name, null)
-            || !supportedCipherSuites.containsKey(name)
-            || (isInFipsMode && !FipsUtils.isFipsCipherSuite(name)))
-        {
-            throw new IllegalStateException("SSL connection negotiated unsupported ciphersuite: " + cipherSuite);
-        }
-        return name;
-    }
-
-    String validateNegotiatedProtocol(ProvSSLParameters sslParameters, ProtocolVersion protocol)
-    {
-        // NOTE: The redundancy among these various checks is intentional
-        String name = getProtocolVersionName(protocol);
-        if (null == name
-            || !JsseUtils.contains(sslParameters.getProtocolsArray(), name)
-            || !sslParameters.getAlgorithmConstraints().permits(TLS_CRYPTO_PRIMITIVES_BC, name, null)
-            || !supportedProtocols.containsKey(name)
-            || (isInFipsMode && !FipsUtils.isFipsProtocol(name)))
-        {
-            throw new IllegalStateException("SSL connection negotiated unsupported protocol: " + protocol);
-        }
-        return name;
+        this.specifiedProtocolsClient = specifiedProtocolsClient;
     }
 
     @Override
@@ -866,21 +612,15 @@ class ProvSSLContextSpi
     // An SSLContextSpi method from JDK 6
     protected SSLParameters engineGetDefaultSSLParameters()
     {
-        // Fail if uninitialized
-        getContextData();
-
         // Implicitly for a client socket
-        return SSLParametersUtil.getSSLParameters(getDefaultSSLParameters(true));
+        return SSLParametersUtil.getSSLParameters(getContextData().getDefaultSSLParameters(true));
     }
 
     // An SSLContextSpi method from JDK 6
     protected SSLParameters engineGetSupportedSSLParameters()
     {
-        // Fail if uninitialized
-        getContextData();
-
         // Implicitly for a client socket
-        return SSLParametersUtil.getSSLParameters(getSupportedSSLParameters(true));
+        return SSLParametersUtil.getSSLParameters(getContextData().getSupportedSSLParameters(true));
     }
 
     @Override
@@ -897,7 +637,35 @@ class ProvSSLContextSpi
         // Trigger (possibly expensive) RNG initialization here to avoid timeout in an actual handshake
         crypto.getSecureRandom().nextInt();
 
-        this.contextData = new ContextData(this, crypto, x509KeyManager, x509TrustManager);
+        boolean includeGCM12 = crypto.getFipsGCMNonceGeneratorFactory() != null;
+
+        Map<String, CipherSuiteInfo> supportedCipherSuites =
+                !fipsMode       ?   SUPPORTED_CIPHERSUITE_MAP
+            :   !includeGCM12   ?   SUPPORTED_CIPHERSUITE_MAP_FIPS
+            :                       SUPPORTED_CIPHERSUITE_MAP_FIPS_GCM12;
+
+        Map<String, ProtocolVersion> supportedProtocols =
+            fipsMode ? SUPPORTED_PROTOCOL_MAP_FIPS : SUPPORTED_PROTOCOL_MAP;
+
+        List<String> defaultCipherSuiteList =
+                !fipsMode       ?   DEFAULT_CIPHERSUITE_LIST
+            :   !includeGCM12   ?   DEFAULT_CIPHERSUITE_LIST_FIPS
+            :                       DEFAULT_CIPHERSUITE_LIST_FIPS_GCM12;
+
+        String[] defaultCipherSuitesClient = getDefaultEnabledCipherSuitesClient(supportedCipherSuites,
+            defaultCipherSuiteList);
+        String[] defaultCipherSuitesServer = getDefaultEnabledCipherSuitesServer(supportedCipherSuites,
+            defaultCipherSuiteList);
+
+        List<String> defaultProtocolList = fipsMode ? DEFAULT_PROTOCOL_LIST_FIPS : DEFAULT_PROTOCOL_LIST;
+
+        String[] defaultProtocolsClient = getDefaultEnabledProtocolsClient(supportedProtocols, defaultProtocolList,
+            specifiedProtocolsClient);
+        String[] defaultProtocolsServer = getDefaultEnabledProtocolsServer(supportedProtocols, defaultProtocolList);
+
+        this.contextData = new ContextData(fipsMode, crypto, x509KeyManager, x509TrustManager, supportedCipherSuites,
+            supportedProtocols, defaultCipherSuitesClient, defaultCipherSuitesServer, defaultProtocolsClient,
+            defaultProtocolsServer);
     }
 
     protected synchronized ContextData getContextData()
@@ -952,20 +720,10 @@ class ProvSSLContextSpi
             {
                 if (tm instanceof X509TrustManager)
                 {
-                    return X509TrustManagerUtil.importX509TrustManager(isInFipsMode, helper, (X509TrustManager)tm);
+                    return X509TrustManagerUtil.importX509TrustManager(fipsMode, helper, (X509TrustManager)tm);
                 }
             }
         }
         return DummyX509TrustManager.INSTANCE;
-    }
-
-    private String[] implGetDefaultCipherSuites(boolean isClient)
-    {
-        return isClient ? defaultCipherSuitesClient : defaultCipherSuitesServer;
-    }
-
-    private String[] implGetDefaultProtocols(boolean isClient)
-    {
-        return isClient ? defaultProtocolsClient : defaultProtocolsServer;
     }
 }

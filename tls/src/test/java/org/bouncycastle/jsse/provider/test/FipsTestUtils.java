@@ -1,21 +1,24 @@
-package org.bouncycastle.jsse.provider;
+package org.bouncycastle.jsse.provider.test;
 
-import java.util.Collection;
+import java.security.Provider;
+import java.security.Security;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.SignatureScheme;
-
-abstract class FipsUtils
+abstract class FipsTestUtils
 {
-    private static final boolean provAllowRSAKeyExchange = PropertyUtils
-        .getBooleanSystemProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange", false);
+    /**
+     * In FIPS mode, GCM cipher suites (for TLS 1.2) are enabled if and only if the JcaTlsCrypto instance
+     * returns a non-null value from getFipsGCMNonceGeneratorFactory. This flag allows to enable/disable that
+     * support for the FIPS tests in this package.
+     */
+    static final boolean enableGCMCiphersIn12 = true;
 
-    private static final Set<String> FIPS_CIPHERSUITES = createFipsCipherSuites(false);
-    private static final Set<String> FIPS_CIPHERSUITES_GCM12 = createFipsCipherSuites(true);
-    private static final Set<String> FIPS_PROTOCOLS = createProtocols();
+    static final boolean provAllowRSAKeyExchange =
+        "true".equalsIgnoreCase(System.getProperty("org.bouncycastle.jsse.fips.allowRSAKeyExchange"));
+
+    private static final Set<String> FIPS_CIPHERSUITES = createFipsCipherSuites(enableGCMCiphersIn12);
 
     private static Set<String> createFipsCipherSuites(boolean includeGCM12)
     {
@@ -109,7 +112,7 @@ abstract class FipsUtils
             cs.add("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384");
         }
 
-        if (provAllowRSAKeyExchange)
+        if (FipsTestUtils.provAllowRSAKeyExchange)
         {
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA");
             cs.add("TLS_RSA_WITH_AES_128_CBC_SHA256");
@@ -130,97 +133,43 @@ abstract class FipsUtils
         return Collections.unmodifiableSet(cs);
     }
 
-    private static Set<String> createProtocols()
+    static boolean isFipsCipherSuite(String cipherSuite)
     {
-        final Set<String> ps = new HashSet<String>();
-
-        ps.add("TLSv1");
-        ps.add("TLSv1.1");
-        ps.add("TLSv1.2");
-        ps.add("TLSv1.3");
-
-        return Collections.unmodifiableSet(ps);
+        return FIPS_CIPHERSUITES.contains(cipherSuite);
     }
 
-    private static Set<String> getFipsCipherSuites(boolean includeGCM12)
+    static void setupFipsSuite()
     {
-        return includeGCM12 ? FIPS_CIPHERSUITES_GCM12 : FIPS_CIPHERSUITES;
-    }
-
-    static boolean isFipsCipherSuite(String cipherSuite, boolean includeGCM12)
-    {
-        return cipherSuite != null && getFipsCipherSuites(includeGCM12).contains(cipherSuite);
-    }
-
-    static boolean isFipsNamedGroup(int namedGroup)
-    {
-        /*
-         * NOTE: NIST SP 800-56A Revision 3 Appendix D lists several more SEC curves, however they
-         * are all obsolete as of TLS 1.3.
-         */
-        switch (namedGroup)
+        if (!enableGCMCiphersIn12)
         {
-        case NamedGroup.secp256r1:
-        case NamedGroup.secp384r1:
-        case NamedGroup.secp521r1:
-        case NamedGroup.ffdhe2048:
-        case NamedGroup.ffdhe3072:
-        case NamedGroup.ffdhe4096:
-        case NamedGroup.ffdhe6144:
-        case NamedGroup.ffdhe8192:
-            return true;
-
-        case NamedGroup.x25519:
-        case NamedGroup.x448:
-        default:
-            return false;
+            ProviderUtils.setupHighPriority(true);
+            return;
         }
-    }
 
-    static boolean isFipsProtocol(String protocol)
-    {
-        return protocol != null && FIPS_PROTOCOLS.contains(protocol);
-    }
+        Provider bc = ProviderUtils.getProviderBC();
 
-    static boolean isFipsSignatureScheme(int signatureScheme)
-    {
-        switch (signatureScheme)
+        if (bc == null)
         {
-        case SignatureSchemeInfo.historical_dsa_sha1:
-        case SignatureSchemeInfo.historical_dsa_sha224:
-        case SignatureSchemeInfo.historical_dsa_sha256:
-        case SignatureScheme.ecdsa_sha1:
-        case SignatureSchemeInfo.historical_ecdsa_sha224:
-        case SignatureScheme.ecdsa_secp256r1_sha256:
-        case SignatureScheme.ecdsa_secp384r1_sha384:
-        case SignatureScheme.ecdsa_secp521r1_sha512:
-        case SignatureScheme.rsa_pkcs1_sha1:
-        case SignatureSchemeInfo.historical_rsa_sha224:
-        case SignatureScheme.rsa_pkcs1_sha256:
-        case SignatureScheme.rsa_pkcs1_sha384:
-        case SignatureScheme.rsa_pkcs1_sha512:
-        case SignatureScheme.rsa_pss_pss_sha256:
-        case SignatureScheme.rsa_pss_pss_sha384:
-        case SignatureScheme.rsa_pss_pss_sha512:
-        case SignatureScheme.rsa_pss_rsae_sha256:
-        case SignatureScheme.rsa_pss_rsae_sha384:
-        case SignatureScheme.rsa_pss_rsae_sha512:
-            return true;
-
-        case SignatureScheme.ed25519:
-        case SignatureScheme.ed448:
-        default:
-            return false;
+            bc = ProviderUtils.createProviderBC();
         }
+        else
+        {
+            ProviderUtils.removeProviderBC();
+        }
+
+        ProviderUtils.removeProviderBCJSSE();
+
+        Provider bcjsse = ProviderUtils.createProviderBCJSSE(true, new FipsJcaTlsCryptoProvider().setProvider(bc));
+
+        Security.insertProviderAt(bc, 1);
+        Security.insertProviderAt(bcjsse, 2);
     }
 
-    static void removeNonFipsCipherSuites(Collection<String> cipherSuites, boolean includeGCM12)
+    static void teardownFipsSuite()
     {
-        cipherSuites.retainAll(getFipsCipherSuites(includeGCM12));
-    }
-
-    static void removeNonFipsProtocols(Collection<String> protocols)
-    {
-        protocols.retainAll(FIPS_PROTOCOLS);
+        if (enableGCMCiphersIn12)
+        {
+            ProviderUtils.removeProviderBCJSSE();
+        }
     }
 }

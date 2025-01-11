@@ -39,7 +39,7 @@ public class ECJPAKEExample
          */
         ECJPAKECurve curve = ECJPAKECurves.NIST_P256;
 
-        ECCurve ecCurve = curve.getCurve();
+//        ECCurve ecCurve = curve.getCurve();
         BigInteger a = curve.getA();
         BigInteger b = curve.getB();
         ECPoint g = curve.getG();

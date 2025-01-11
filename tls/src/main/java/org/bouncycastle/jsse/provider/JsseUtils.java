@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
@@ -111,7 +112,7 @@ abstract class JsseUtils
         return provTlsAllowLegacyResumption;
     }
 
-    static void appendCipherSuiteDetail(StringBuilder sb, ProvSSLContextSpi context, int cipherSuite)
+    static void appendCipherSuiteDetail(StringBuilder sb,  int cipherSuite)
     {
         // TODO Efficiency: precalculate "cipherSuiteID" and make context.getCipherSuiteName faster
 
@@ -132,6 +133,16 @@ abstract class JsseUtils
             sb.append(name);
             sb.append(')');
         }
+    }
+
+    static String[] getArray(Collection<String> c)
+    {
+        return c.toArray(new String[c.size()]);
+    }
+
+    static String[] getKeysArray(Map<String, ?> m)
+    {
+        return getArray(m.keySet());
     }
 
     static String getPeerID(String root, ProvTlsManager manager)
