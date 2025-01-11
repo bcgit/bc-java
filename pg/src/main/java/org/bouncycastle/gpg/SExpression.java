@@ -104,6 +104,10 @@ public class SExpression
 
                 if (c == ':')
                 {
+                    if (expr == null)
+                    {
+                        throw new IOException("invalid input stream at ':'");
+                    }
                     try
                     {
                         int len = Integer.parseInt(Strings.fromByteArray(accumulator.toByteArray()));
