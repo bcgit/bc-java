@@ -4,9 +4,11 @@ import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.GOST28147Engine;
 import org.bouncycastle.crypto.modes.CBCBlockCipher;
 import org.bouncycastle.crypto.modes.CFBBlockCipher;
+import org.bouncycastle.crypto.modes.GCFBBlockCipher;
 import org.bouncycastle.crypto.modes.GOFBBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -197,7 +199,8 @@ public class GOST28147Test
         throws Exception
     {
         super.performTest();
-
+        checkCipher(new GCFBBlockCipher(new GOST28147Engine()), 2049);
+        checkCipher(new GCFBBlockCipher(AESEngine.newInstance()), 2049);
         //advanced tests with GOST28147KeyGenerator:
         //encrypt on hesh message; ECB mode:
         byte[] in     = Hex.decode("4e6f77206973207468652074696d6520666f7220616c6c20");
