@@ -6,7 +6,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.security.spec.AlgorithmParameterSpec;
 
-import org.bouncycastle.tls.crypto.impl.AEADNonceGeneratorFactory;
 import org.bouncycastle.util.Integers;
 
 class GCMUtil
@@ -29,11 +28,6 @@ class GCMUtil
                 return gcmParameterSpec.newInstance(new Object[]{ Integers.valueOf(tLen), src });
             }
         });
-    }
-
-    static AEADNonceGeneratorFactory getDefaultFipsGCMNonceGeneratorFactory()
-    {
-        return null;
     }
 
     static boolean isGCMParameterSpecAvailable()
