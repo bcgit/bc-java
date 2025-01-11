@@ -16,4 +16,9 @@ class GCMUtil
     {
         return true;
     }
+
+    static AEADNonceGeneratorFactory getDefaultFipsGCMNonceGeneratorFactory()
+    {
+        return null;
+    }
 }
