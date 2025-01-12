@@ -130,18 +130,12 @@ public class XoodyakEngine
         Up(mac, MAC_SIZE, 0x40);
     }
 
-    @Override
-    public void reset()
+    protected void reset(boolean clearMac)
     {
         if (!initialised)
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-        reset(true);
-    }
-
-    protected void reset(boolean clearMac)
-    {
         Arrays.fill(state, (byte)0);
         aadFinished = false;
         encrypted = false;

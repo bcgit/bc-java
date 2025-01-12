@@ -185,19 +185,12 @@ public class PhotonBeetleEngine
         }
     }
 
-    @Override
-    public void reset()
+    protected void reset(boolean clearMac)
     {
         if (!initialised)
         {
             throw new IllegalArgumentException("Need call init function before encryption/decryption");
         }
-
-        reset(true);
-    }
-
-    protected void reset(boolean clearMac)
-    {
         bufferReset();
         input_empty = true;
         aadLen = 0;

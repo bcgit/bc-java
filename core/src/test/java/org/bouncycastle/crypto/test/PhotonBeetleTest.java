@@ -31,6 +31,8 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 16 , new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 16 , new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
@@ -97,7 +99,7 @@ public class PhotonBeetleTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (map.get("Count").equals("133"))
+//                if (map.get("Count").equals("298"))
 //                {
 //                    System.out.println("test");
 //                }
