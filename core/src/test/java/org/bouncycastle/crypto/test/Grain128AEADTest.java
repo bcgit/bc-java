@@ -26,6 +26,7 @@ public class Grain128AEADTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 16, new Grain128AEADEngine());
         testVectors();
         testSplitUpdate();
         testExceptions();
@@ -177,7 +178,7 @@ public class Grain128AEADTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("Grain-128AEAD init parameters must include an IV", e.getMessage());
+            isEquals("invalid parameters passed to Grain-128AEAD", e.getMessage());
         }
 
         try
@@ -201,7 +202,7 @@ public class Grain128AEADTest
         }
         catch (IllegalArgumentException e)
         {
-            isEquals("Grain-128AEAD key must be 128 bits long", e.getMessage());
+            isEquals("Grain-128AEAD key must be 16 bytes long", e.getMessage());
         }
     }
 

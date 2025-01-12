@@ -3,12 +3,11 @@ package org.bouncycastle.crypto.engines;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
     protected enum State
     {
@@ -25,11 +24,6 @@ abstract class AsconBaseEngine
 
 
     protected State m_state = State.Uninitialized;
-    protected String algorithmName;
-    protected byte[] mac;
-    protected byte[] initialAssociatedText;
-    protected int CRYPTO_KEYBYTES;
-    protected int CRYPTO_ABYTES;
     protected int nr;
     protected int ASCON_AEAD_RATE;
     protected long K0;
@@ -254,12 +248,6 @@ abstract class AsconBaseEngine
         m_bufPos = len;
     }
 
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
-    }
-
     public int processBytes(byte[] inBytes, int inOff, int len, byte[] outBytes, int outOff)
         throws DataLengthException
     {
@@ -356,25 +344,25 @@ abstract class AsconBaseEngine
         int resultLength;
         if (forEncryption)
         {
-            resultLength = m_bufPos + CRYPTO_ABYTES;
+            resultLength = m_bufPos + MAC_SIZE;
             if (outOff + resultLength > outBytes.length)
             {
                 throw new OutputLengthException("output buffer too short");
             }
             processFinalEncrypt(m_buf, m_bufPos, outBytes, outOff);
-            mac = new byte[CRYPTO_ABYTES];
+            mac = new byte[MAC_SIZE];
             setBytes(x3, mac, 0);
             setBytes(x4, mac, 8);
-            System.arraycopy(mac, 0, outBytes, outOff + m_bufPos, CRYPTO_ABYTES);
+            System.arraycopy(mac, 0, outBytes, outOff + m_bufPos, MAC_SIZE);
             reset(false);
         }
         else
         {
-            if (m_bufPos < CRYPTO_ABYTES)
+            if (m_bufPos < MAC_SIZE)
             {
                 throw new InvalidCipherTextException("data too short");
             }
-            m_bufPos -= CRYPTO_ABYTES;
+            m_bufPos -= MAC_SIZE;
             resultLength = m_bufPos;
             if (outOff + resultLength > outBytes.length)
             {
@@ -392,11 +380,6 @@ abstract class AsconBaseEngine
         return resultLength;
     }
 
-    public byte[] getMac()
-    {
-        return mac;
-    }
-
     public int getUpdateOutputSize(int len)
     {
         int total = Math.max(0, len);
@@ -404,11 +387,11 @@ abstract class AsconBaseEngine
         {
         case DecInit:
         case DecAad:
-            total = Math.max(0, total - CRYPTO_ABYTES);
+            total = Math.max(0, total - MAC_SIZE);
             break;
         case DecData:
         case DecFinal:
-            total = Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+            total = Math.max(0, total + m_bufPos - MAC_SIZE);
             break;
         case EncData:
         case EncFinal:
@@ -428,29 +411,21 @@ abstract class AsconBaseEngine
         {
         case DecInit:
         case DecAad:
-            return Math.max(0, total - CRYPTO_ABYTES);
+            return Math.max(0, total - MAC_SIZE);
         case DecData:
         case DecFinal:
-            return Math.max(0, total + m_bufPos - CRYPTO_ABYTES);
+            return Math.max(0, total + m_bufPos - MAC_SIZE);
         case EncData:
         case EncFinal:
-            return total + m_bufPos + CRYPTO_ABYTES;
+            return total + m_bufPos + MAC_SIZE;
         default:
-            return total + CRYPTO_ABYTES;
+            return total + MAC_SIZE;
         }
     }
 
-    public void reset()
-    {
-        reset(true);
-    }
 
     protected void reset(boolean clearMac)
     {
-        if (clearMac)
-        {
-            mac = null;
-        }
         Arrays.clear(m_buf);
         m_bufPos = 0;
 
@@ -473,28 +448,8 @@ abstract class AsconBaseEngine
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
         ascon_aeadinit();
-        if (initialAssociatedText != null)
-        {
-            processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
-        }
-    }
-
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_ABYTES;
-    }
-
-
-    public String getAlgorithmName()
-    {
-        return algorithmName;
+        super.reset(clearMac);
     }
 
     public abstract String getAlgorithmVersion();
-
 }
