@@ -1,11 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.params.AEADParameters;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -26,13 +21,14 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
-        CRYPTO_KEYBYTES = 16;
-        CRYPTO_ABYTES = 16;
+        KEY_SIZE = 16;
+        IV_SIZE = 16;
+        MAC_SIZE = 16;
         ASCON_AEAD_RATE = 16;
         ASCON_IV = 0x00001000808c0001L;
         algorithmName = "Ascon-AEAD128";
         nr = 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + CRYPTO_ABYTES;
+        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         dsep = -9223372036854775808L; //0x80L << 56
     }
@@ -69,6 +65,7 @@ public class AsconAEAD128
 
     protected void processFinalAadBlock()
     {
+        Arrays.fill(m_buf, m_bufPos, m_buf.length, (byte) 0);
         if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             x0 ^= Pack.littleEndianToLong(m_buf, 0);
@@ -141,57 +138,13 @@ public class AsconAEAD128
         m_state = nextState;
     }
 
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        KeyParameter key;
-        byte[] npub;
-        if (params instanceof AEADParameters)
-        {
-            AEADParameters aeadParameters = (AEADParameters)params;
-            key = aeadParameters.getKey();
-            npub = aeadParameters.getNonce();
-            initialAssociatedText = aeadParameters.getAssociatedText();
-
-            int macSizeBits = aeadParameters.getMacSize();
-            if (macSizeBits != CRYPTO_ABYTES * 8)
-            {
-                throw new IllegalArgumentException("Invalid value for MAC size: " + macSizeBits);
-            }
-        }
-        else if (params instanceof ParametersWithIV)
-        {
-            ParametersWithIV withIV = (ParametersWithIV)params;
-            key = (KeyParameter)withIV.getParameters();
-            npub = withIV.getIV();
-            initialAssociatedText = null;
-        }
-        else
-        {
-            throw new IllegalArgumentException("invalid parameters passed to Ascon");
-        }
-
-        if (key == null)
-        {
-            throw new IllegalArgumentException("Ascon Init parameters must include a key");
-        }
-        if (npub == null || npub.length != CRYPTO_ABYTES)
-        {
-            throw new IllegalArgumentException("Ascon-AEAD-128 requires exactly " + CRYPTO_ABYTES + " bytes of IV");
-        }
-
-        byte[] k = key.getKey();
-        if (k.length != CRYPTO_KEYBYTES)
-        {
-            throw new IllegalArgumentException("Ascon-AEAD-128 key must be " + CRYPTO_KEYBYTES + " bytes long");
-        }
-
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        K0 = Pack.littleEndianToLong(k, 0);
-        K1 = Pack.littleEndianToLong(k, 8);
-        N0 = Pack.littleEndianToLong(npub, 0);
-        N1 = Pack.littleEndianToLong(npub, 8);
+        K0 = Pack.littleEndianToLong(key, 0);
+        K1 = Pack.littleEndianToLong(key, 8);
+        N0 = Pack.littleEndianToLong(iv, 0);
+        N1 = Pack.littleEndianToLong(iv, 8);
 
         m_state = forEncryption ? State.EncInit : State.DecInit;
 
