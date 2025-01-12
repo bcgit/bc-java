@@ -255,7 +255,7 @@ public abstract class CipherTest
         }
     }
 
-   void checkCipher(final BlockCipher pCipher, final int datalen)
+    void checkCipher(final BlockCipher pCipher, final int datalen)
         throws Exception
     {
         final SecureRandom random = new SecureRandom();
@@ -346,6 +346,71 @@ public abstract class CipherTest
                 cipher.init(true, new AEADParameters(new KeyParameter(key), macSize2, iv, null));
             }
         });
+    }
 
+
+    /**
+     * @param DATALEN  Data length
+     * @param PARTLEN  Partial Data length. Must be greater than or equal to internal buffer length to exhibit problem.
+     * @param AEADLEN  AEAD length.
+     * @param NONCELEN Nonce length.
+     * */
+    static void checkAEADCipherMultipleBlocks(SimpleTest test, int DATALEN, int PARTLEN, int AEADLEN, int NONCELEN, final AEADCipher pCipher)
+        throws InvalidCipherTextException
+    {
+        /* Obtain some random data */
+        final byte[] myData = new byte[DATALEN];
+        final SecureRandom myRandom = new SecureRandom();
+        myRandom.nextBytes(myData);
+
+        /* Obtain some random AEAD */
+        final byte[] myAEAD = new byte[AEADLEN];
+        myRandom.nextBytes(myAEAD);
+
+        /* Create the Key parameters */
+        final CipherKeyGenerator myGenerator = new CipherKeyGenerator();
+        final KeyGenerationParameters myGenParams = new KeyGenerationParameters(myRandom, 128);
+        myGenerator.init(myGenParams);
+        final byte[] myKey = myGenerator.generateKey();
+        final KeyParameter myKeyParams = new KeyParameter(myKey);
+
+        /* Create the nonce */
+        final byte[] myNonce = new byte[NONCELEN];
+        myRandom.nextBytes(myNonce);
+        final ParametersWithIV myParams = new ParametersWithIV(myKeyParams, myNonce);
+
+        /* Initialise the cipher for encryption */
+        pCipher.init(true, myParams);
+        final int myExpectedOutLen = pCipher.getOutputSize(DATALEN);
+        final byte[] myEncrypted = new byte[myExpectedOutLen];
+        pCipher.processAADBytes(myAEAD, 0, AEADLEN);
+
+        /* Loop processing partial data */
+        int myOutLen = 0;
+        for (int myPos = 0; myPos < DATALEN; myPos += PARTLEN)
+        {
+            final int myLen = Math.min(PARTLEN, DATALEN - myPos);
+            myOutLen += pCipher.processBytes(myData, myPos, myLen, myEncrypted, myOutLen);
+        }
+
+        /* Finish the encryption */
+        myOutLen += pCipher.doFinal(myEncrypted, myOutLen);
+
+        /* Initialise the cipher for decryption */
+        pCipher.init(false, myParams);
+        final int myExpectedClearLen = pCipher.getOutputSize(myOutLen);
+        final byte[] myDecrypted = new byte[myExpectedClearLen];
+        pCipher.processAADBytes(myAEAD, 0, AEADLEN);
+        int myClearLen = 0;
+        for (int myPos = 0; myPos < myOutLen; myPos += PARTLEN)
+        {
+            final int myLen = Math.min(PARTLEN, myOutLen - myPos);
+            myClearLen += pCipher.processBytes(myEncrypted, myPos, myLen, myDecrypted, myClearLen);
+        }
+        myClearLen += pCipher.doFinal(myDecrypted, myClearLen);
+        final byte[] myResult = Arrays.copyOf(myDecrypted, myClearLen);
+
+        /* Check that we have the same result */
+        test.isTrue("cipher text check", Arrays.areEqual(myData, myResult));
     }
 }

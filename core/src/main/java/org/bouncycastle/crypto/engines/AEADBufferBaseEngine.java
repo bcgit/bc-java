@@ -135,31 +135,62 @@ abstract class AEADBufferBaseEngine
                 m_bufPos += len;
                 return 0;
             }
-
-            if (m_bufPos > BlockSize)
+            if (BlockSize >= MAC_SIZE)
             {
-                validateAndProcessBuffer(m_buf, 0, output, outOff);
-                m_bufPos -= BlockSize;
-                System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
-                resultLength = BlockSize;
-
-                available += BlockSize;
-                if (len <= available)
+                if (m_bufPos > BlockSize)
                 {
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                    m_bufPos += len;
-                    return resultLength;
+                    validateAndProcessBuffer(m_buf, 0, output, outOff);
+                    m_bufPos -= BlockSize;
+                    System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
+                    resultLength = BlockSize;
+
+                    available += BlockSize;
+                    if (len <= available)
+                    {
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                        m_bufPos += len;
+                        return resultLength;
+                    }
+                }
+
+                available = BlockSize - m_bufPos;
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+                validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
+                resultLength += BlockSize;
+                //m_bufPos = 0;
+            }
+            else
+            {
+                while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
+                {
+                    validateAndProcessBuffer(m_buf, resultLength, output, outOff);
+                    m_bufPos -= BlockSize;
+                    resultLength += BlockSize;
+                    outOff += BlockSize;
+                }
+                if (m_bufPos != 0)
+                {
+                    System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                    if (m_bufPos + len > BlockSize + MAC_SIZE)
+                    {
+                        available = Math.max(BlockSize - m_bufPos, 0);
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                        inOff += available;
+                        validateAndProcessBuffer(m_buf, 0, output, outOff);
+                        resultLength += BlockSize;
+                        len -= available;
+                        outOff += BlockSize;
+                    }
+                    else
+                    {
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                        m_bufPos += len;
+                        return resultLength;
+                    }
                 }
             }
-
-            available = BlockSize - m_bufPos;
-            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-            inOff += available;
-            len -= available;
-            validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
-            resultLength += BlockSize;
-            //m_bufPos = 0;
-
             while (len > BlockSize + MAC_SIZE)
             {
                 validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
