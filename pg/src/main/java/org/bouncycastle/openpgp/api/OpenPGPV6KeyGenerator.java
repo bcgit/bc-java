@@ -210,9 +210,9 @@ public class OpenPGPV6KeyGenerator
     public WithPrimaryKey signOnlyKey()
         throws PGPException
     {
-        WithPrimaryKey builder = withPrimaryKey(
+        return withPrimaryKey(
                 generatePrimaryKey,
-                SignatureParameters.Callback.applyToHashedSubpackets(new SignatureSubpacketsFunction()
+                SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                 {
                     @Override
                     public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
@@ -222,8 +222,6 @@ public class OpenPGPV6KeyGenerator
                         return subpackets;
                     }
                 }));
-        
-        return builder;
     }
 
     /**
@@ -275,45 +273,42 @@ public class OpenPGPV6KeyGenerator
             throw new PGPException("Primary key MUST use signing-capable algorithm.");
         }
 
-        SignatureParameters parameters = SignatureParameters.directKeySignatureParameters(
+        SignatureParameters parameters = SignatureParameters.directKeySignature(
                 implementationProvider.policy());
         if (preferenceSignatureCallback != null)
         {
             parameters = preferenceSignatureCallback.apply(parameters);
         }
 
-        if (parameters == null)
+        if (parameters != null)
         {
-            // Do not generate Direct-Key Signature for preferences
-            return new WithPrimaryKey(implementationProvider, configuration, primaryKeyPair);
+            PGPSignatureGenerator preferenceSigGen = new PGPSignatureGenerator(
+                    implementationProvider.pgpContentSignerBuilder(
+                            primaryKeyPair.getPublicKey().getAlgorithm(),
+                            parameters.getSignatureHashAlgorithmId()),
+                    primaryKeyPair.getPublicKey());
+            preferenceSigGen.init(parameters.getSignatureType(), primaryKeyPair.getPrivateKey());
+
+            // Hashed subpackets
+            PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+            hashedSubpackets.setIssuerFingerprint(true, primaryKeyPair.getPublicKey());
+            hashedSubpackets.setSignatureCreationTime(configuration.keyCreationTime);
+            hashedSubpackets = directKeySignatureSubpackets.apply(hashedSubpackets);
+            hashedSubpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
+            hashedSubpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
+            hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
+            preferenceSigGen.setHashedSubpackets(hashedSubpackets.generate());
+
+            // Unhashed subpackets
+            PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+            unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
+            preferenceSigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
+
+            PGPSignature dkSig = preferenceSigGen.generateCertification(primaryKeyPair.getPublicKey());
+            primaryKeyPair = new PGPKeyPair(
+                    PGPPublicKey.addCertification(primaryKeyPair.getPublicKey(), dkSig),
+                    primaryKeyPair.getPrivateKey());
         }
-
-        PGPSignatureGenerator preferenceSigGen = new PGPSignatureGenerator(
-                implementationProvider.pgpContentSignerBuilder(
-                        primaryKeyPair.getPublicKey().getAlgorithm(),
-                        parameters.getSignatureHashAlgorithmId()),
-                primaryKeyPair.getPublicKey());
-        preferenceSigGen.init(parameters.getSignatureType(), primaryKeyPair.getPrivateKey());
-
-        // Hashed subpackets
-        PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
-        hashedSubpackets.setIssuerFingerprint(true, primaryKeyPair.getPublicKey());
-        hashedSubpackets.setSignatureCreationTime(configuration.keyCreationTime);
-        hashedSubpackets = directKeySignatureSubpackets.apply(hashedSubpackets);
-        hashedSubpackets.setKeyFlags(true, KeyFlags.CERTIFY_OTHER);
-        hashedSubpackets.setKeyExpirationTime(false, 5 * SECONDS_PER_YEAR);
-        hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
-        preferenceSigGen.setHashedSubpackets(hashedSubpackets.generate());
-
-        // Unhashed subpackets
-        PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
-        unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
-        preferenceSigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
-
-        PGPSignature dkSig = preferenceSigGen.generateCertification(primaryKeyPair.getPublicKey());
-        primaryKeyPair = new PGPKeyPair(
-                PGPPublicKey.addCertification(primaryKeyPair.getPublicKey(), dkSig),
-                primaryKeyPair.getPrivateKey());
 
         return new WithPrimaryKey(implementationProvider, configuration, primaryKeyPair);
     }
@@ -374,32 +369,35 @@ public class OpenPGPV6KeyGenerator
                 throw new IllegalArgumentException("User-ID cannot be null or empty.");
             }
 
-            SignatureParameters parameters = SignatureParameters.certificationSignatureParameters(implementation.policy());
+            SignatureParameters parameters = SignatureParameters.certification(implementation.policy());
             if (signatureParameters != null)
             {
                 parameters = signatureParameters.apply(parameters);
             }
 
-            PGPSignatureGenerator uidSigGen = new PGPSignatureGenerator(
-                    implementation.pgpContentSignerBuilder(
-                            primaryKey.getPublicKey().getAlgorithm(),
-                            parameters.getSignatureHashAlgorithmId()),
-                primaryKey.getPublicKey());
-            uidSigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
+            if (parameters != null)
+            {
+                PGPSignatureGenerator uidSigGen = new PGPSignatureGenerator(
+                        implementation.pgpContentSignerBuilder(
+                                primaryKey.getPublicKey().getAlgorithm(),
+                                parameters.getSignatureHashAlgorithmId()),
+                        primaryKey.getPublicKey());
+                uidSigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
-            PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
-            hashedSubpackets.setIssuerFingerprint(true, primaryKey.getPublicKey());
-            hashedSubpackets.setSignatureCreationTime(configuration.keyCreationTime);
-            hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
-            uidSigGen.setHashedSubpackets(hashedSubpackets.generate());
+                PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+                hashedSubpackets.setIssuerFingerprint(true, primaryKey.getPublicKey());
+                hashedSubpackets.setSignatureCreationTime(configuration.keyCreationTime);
+                hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
+                uidSigGen.setHashedSubpackets(hashedSubpackets.generate());
 
-            PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
-            unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
-            uidSigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
+                PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+                unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
+                uidSigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
 
-            PGPSignature uidSig = uidSigGen.generateCertification(userId, primaryKey.getPublicKey());
-            PGPPublicKey pubKey = PGPPublicKey.addCertification(primaryKey.getPublicKey(), userId, uidSig);
-            primaryKey = new PGPKeyPair(pubKey, primaryKey.getPrivateKey());
+                PGPSignature uidSig = uidSigGen.generateCertification(userId, primaryKey.getPublicKey());
+                PGPPublicKey pubKey = PGPPublicKey.addCertification(primaryKey.getPublicKey(), userId, uidSig);
+                primaryKey = new PGPKeyPair(pubKey, primaryKey.getPrivateKey());
+            }
 
             return this;
         }
@@ -490,7 +488,7 @@ public class OpenPGPV6KeyGenerator
                 throw new PGPException("Encryption key MUST use encryption-capable algorithm.");
             }
 
-            SignatureParameters parameters = SignatureParameters.subkeyBindingSignatureParameters(
+            SignatureParameters parameters = SignatureParameters.subkeyBinding(
                     implementation.policy())
                     .setSignatureCreationTime(configuration.keyCreationTime);
             if (bindingSubpacketsCallback != null)
@@ -629,7 +627,7 @@ public class OpenPGPV6KeyGenerator
                 throw new PGPException("Signing key MUST use signing-capable algorithm.");
             }
 
-            SignatureParameters parameters = SignatureParameters.primaryKeyBindingSignatureParameters(
+            SignatureParameters parameters = SignatureParameters.primaryKeyBinding(
                     implementation.policy())
                     .setSignatureCreationTime(configuration.keyCreationTime);
             if (backSignatureCallback != null)
@@ -664,7 +662,7 @@ public class OpenPGPV6KeyGenerator
             }
 
 
-            parameters = SignatureParameters.subkeyBindingSignatureParameters(implementation.policy())
+            parameters = SignatureParameters.subkeyBinding(implementation.policy())
                     .setSignatureCreationTime(configuration.keyCreationTime);
             if (bindingSignatureCallback != null)
             {

@@ -808,7 +808,7 @@ public class OpenPGPCertificateTest
         OpenPGPKey key = gen.withPrimaryKey()
                 .addUserId("Old non-primary <non-primary@user.id>")
                 .addUserId("New primary <primary@user.id>",
-                        SignatureParameters.Callback.applyToHashedSubpackets(new SignatureSubpacketsFunction()
+                        SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                         {
                             @Override
                             public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)

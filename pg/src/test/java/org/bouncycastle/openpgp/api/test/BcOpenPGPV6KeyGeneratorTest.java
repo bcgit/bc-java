@@ -47,7 +47,7 @@ public class BcOpenPGPV6KeyGeneratorTest
         OpenPGPV6KeyGenerator gen = api.generateKey(creationTime, false);
         OpenPGPKey key = gen.withPrimaryKey(
                         PGPKeyPairGenerator::generateEd25519KeyPair,
-                        SignatureParameters.Callback.applyToHashedSubpackets(new SignatureSubpacketsFunction()
+                        SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                         {
                             @Override
                             public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)

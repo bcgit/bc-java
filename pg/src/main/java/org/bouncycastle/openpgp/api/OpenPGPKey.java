@@ -208,6 +208,11 @@ public class OpenPGPKey
             return pubKey;
         }
 
+        public OpenPGPKey getOpenPGPKey()
+        {
+            return (OpenPGPKey) getCertificate();
+        }
+
         @Override
         public String toDetailString()
         {

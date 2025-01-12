@@ -21,7 +21,7 @@ public class SignatureParameters
         this.allowedSignatureTypes = allowedSignatureTypes;
     }
 
-    public static SignatureParameters directKeySignatureParameters(OpenPGPPolicy policy)
+    public static SignatureParameters directKeySignature(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.DIRECT_KEY)
                 .setSignatureType(PGPSignature.DIRECT_KEY)
@@ -29,7 +29,7 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
-    public static SignatureParameters certificationSignatureParameters(OpenPGPPolicy policy)
+    public static SignatureParameters certification(OpenPGPPolicy policy)
     {
         return new SignatureParameters(
                 PGPSignature.DEFAULT_CERTIFICATION,
@@ -41,7 +41,7 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
-    public static SignatureParameters subkeyBindingSignatureParameters(OpenPGPPolicy policy)
+    public static SignatureParameters subkeyBinding(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.SUBKEY_BINDING)
                 .setSignatureType(PGPSignature.SUBKEY_BINDING)
@@ -49,7 +49,7 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
-    public static SignatureParameters primaryKeyBindingSignatureParameters(OpenPGPPolicy policy)
+    public static SignatureParameters primaryKeyBinding(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.PRIMARYKEY_BINDING)
                 .setSignatureType(PGPSignature.PRIMARYKEY_BINDING)
@@ -57,7 +57,7 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
-    public static SignatureParameters certificationRevocationSignatureParameters(OpenPGPPolicy policy)
+    public static SignatureParameters certificationRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.CERTIFICATION_REVOCATION)
                 .setSignatureType(PGPSignature.CERTIFICATION_REVOCATION)
@@ -140,7 +140,7 @@ public class SignatureParameters
             return parameters;
         }
 
-        static Callback applyToHashedSubpackets(SignatureSubpacketsFunction function)
+        static Callback modifyHashedSubpackets(SignatureSubpacketsFunction function)
         {
             return new Callback()
             {

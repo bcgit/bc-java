@@ -23,6 +23,7 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.api.exception.InvalidEncryptionKeyException;
+import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
@@ -96,11 +97,26 @@ public class OpenPGPMessageGenerator
                                                             SubkeySelector subkeySelector)
             throws InvalidEncryptionKeyException
     {
-        if (subkeySelector.select(recipientCertificate, config.policy).isEmpty())
+        List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys =
+                subkeySelector.select(recipientCertificate, config.policy);
+        if (encryptionKeys.isEmpty())
         {
-            throw new InvalidEncryptionKeyException("Key does not have valid encryption subkeys.");
+            throw new InvalidEncryptionKeyException("Certificate " + recipientCertificate.getKeyIdentifier() +
+                    " does not have valid encryption subkeys.");
         }
-        config.recipients.add(new Recipient(recipientCertificate, implementation.policy(), subkeySelector));
+        config.encryptionKeys.addAll(encryptionKeys);
+        return this;
+    }
+
+    public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate.OpenPGPComponentKey encryptionKey)
+            throws InvalidEncryptionKeyException
+    {
+        if (!encryptionKey.isEncryptionKey())
+        {
+            throw new InvalidEncryptionKeyException("Provided subkey " + encryptionKey.getKeyIdentifier() +
+                    " is not a valid encryption key.");
+        }
+        config.encryptionKeys.add(encryptionKey);
         return this;
     }
 
@@ -113,11 +129,12 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator addEncryptionPassphrase(char[] passphrase)
     {
-        config.passphrases.add(passphrase);
+        config.messagePassphrases.add(passphrase);
         return this;
     }
 
     public OpenPGPMessageGenerator addSigningKey(OpenPGPKey signingKey)
+            throws InvalidSigningKeyException
     {
         return addSigningKey(signingKey, key -> null);
     }
@@ -134,6 +151,7 @@ public class OpenPGPMessageGenerator
     public OpenPGPMessageGenerator addSigningKey(
             OpenPGPKey signingKey,
             SecretKeyPassphraseProvider signingKeyDecryptorProvider)
+            throws InvalidSigningKeyException
     {
         return addSigningKey(signingKey, signingKeyDecryptorProvider, config.signingKeySelector);
     }
@@ -150,8 +168,47 @@ public class OpenPGPMessageGenerator
             OpenPGPKey signingKey,
             SecretKeyPassphraseProvider signingKeyDecryptorProvider,
             SubkeySelector subkeySelector)
+            throws InvalidSigningKeyException
     {
-        config.signingKeys.add(new Signer(signingKey, implementation.policy(), signingKeyDecryptorProvider, subkeySelector));
+
+        List<OpenPGPCertificate.OpenPGPComponentKey> publicSigningKeys =
+                subkeySelector.select(signingKey, implementation.policy());
+
+        List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<>();
+        for (OpenPGPCertificate.OpenPGPComponentKey publicKey : publicSigningKeys)
+        {
+            OpenPGPKey.OpenPGPSecretKey secretKey = signingKey.getSecretKey(publicKey);
+            if (secretKey == null)
+            {
+                throw new InvalidSigningKeyException("Secret key " + publicKey.getKeyIdentifier() + " is missing from the OpenPGP key.");
+            }
+            signingKeys.add(secretKey);
+        }
+
+        if (signingKeys.isEmpty())
+        {
+            throw new InvalidSigningKeyException("OpenPGP key " + signingKey.getKeyIdentifier() + " does not have any valid signing subkeys.");
+        }
+
+        for (OpenPGPKey.OpenPGPSecretKey subkey : signingKeys)
+        {
+            config.signingKeys.add(new Signer(subkey, signingKeyDecryptorProvider, null));
+        }
+        return this;
+    }
+
+    public OpenPGPMessageGenerator addSigningKey(
+            OpenPGPKey.OpenPGPSecretKey signingKey,
+            SecretKeyPassphraseProvider signingKeyPassphraseProvider,
+            SignatureParameters.Callback signatureParameterCallback)
+            throws InvalidSigningKeyException
+    {
+        if (!signingKey.isSigningKey())
+        {
+            throw new InvalidSigningKeyException("Provided key " + signingKey.getKeyIdentifier() + " is not a valid signing key.");
+        }
+
+        config.signingKeys.add(new Signer(signingKey, signingKeyPassphraseProvider, signatureParameterCallback));
         return this;
     }
 
@@ -266,18 +323,15 @@ public class OpenPGPMessageGenerator
         encGen.setSessionKeyExtractionCallback(sessionKeyExtractionCallback);
 
         // Setup asymmetric message encryption
-        for (Recipient recipient : config.recipients)
+        for (OpenPGPCertificate.OpenPGPComponentKey encryptionSubkey : config.encryptionKeys)
         {
-            for (OpenPGPCertificate.OpenPGPComponentKey encryptionSubkey : recipient.encryptionSubkeys())
-            {
-                PublicKeyKeyEncryptionMethodGenerator method = implementation.publicKeyKeyEncryptionMethodGenerator(
-                        encryptionSubkey.getPGPPublicKey());
-                encGen.addMethod(method);
-            }
+            PublicKeyKeyEncryptionMethodGenerator method = implementation.publicKeyKeyEncryptionMethodGenerator(
+                    encryptionSubkey.getPGPPublicKey());
+            encGen.addMethod(method);
         }
 
         // Setup symmetric (password-based) message encryption
-        for (char[] passphrase : config.passphrases)
+        for (char[] passphrase : config.messagePassphrases)
         {
             PBEKeyEncryptionMethodGenerator skeskGen;
             switch (encryption.getMode())
@@ -331,19 +385,17 @@ public class OpenPGPMessageGenerator
             Stack<PGPSignatureGenerator> signatureGenerators = new Stack<>();
             for (Signer s : config.signingKeys)
             {
-                for (OpenPGPKey.OpenPGPSecretKey signingSubkey : s.signingSubkeys())
-                {
-                    int hashAlgorithm = config.negotiateHashAlgorithm(s.signingKey, signingSubkey);
-                    PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
-                            implementation.pgpContentSignerBuilder(
-                                    signingSubkey.getPGPSecretKey().getPublicKey().getAlgorithm(), hashAlgorithm),
-                            signingSubkey.getPGPSecretKey().getPublicKey());
-                    char[] passphrase = signingSubkey.isLocked() ? s.passphraseProvider.providePassphrase(signingSubkey) : null;
-                    PGPPrivateKey privateKey = signingSubkey.unlock(passphrase);
+                OpenPGPKey.OpenPGPSecretKey signingSubkey = s.signingKey;
+                int hashAlgorithm = config.negotiateHashAlgorithm(signingSubkey.getOpenPGPKey(), signingSubkey);
+                PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
+                        implementation.pgpContentSignerBuilder(
+                                signingSubkey.getPGPSecretKey().getPublicKey().getAlgorithm(), hashAlgorithm),
+                        signingSubkey.getPGPSecretKey().getPublicKey());
+                char[] passphrase = signingSubkey.isLocked() ? s.passphraseProvider.providePassphrase(signingSubkey) : null;
+                PGPPrivateKey privateKey = signingSubkey.unlock(passphrase);
 
-                    sigGen.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-                    signatureGenerators.push(sigGen);
-                }
+                sigGen.init(PGPSignature.BINARY_DOCUMENT, privateKey);
+                signatureGenerators.push(sigGen);
             }
 
             // One-Pass-Signatures
@@ -445,9 +497,9 @@ public class OpenPGPMessageGenerator
     {
         private boolean isArmored = true;
         public boolean isPadded = true;
-        private final List<Recipient> recipients = new ArrayList<>();
+        private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<>();
         private final List<Signer> signingKeys = new ArrayList<>();
-        private final List<char[]> passphrases = new ArrayList<>();
+        private final List<char[]> messagePassphrases = new ArrayList<>();
         private final OpenPGPPolicy policy;
 
         public Configuration(OpenPGPPolicy policy)
@@ -495,8 +547,9 @@ public class OpenPGPMessageGenerator
         // Encryption method negotiator for when public-key encryption is requested
         private OpenPGPEncryptionNegotiator publicKeyBasedEncryptionNegotiator = configuration ->
         {
-            List<OpenPGPCertificate> certificates = recipients.stream()
-                    .map(it -> it.certificate)
+            List<OpenPGPCertificate> certificates = encryptionKeys.stream()
+                    .map(OpenPGPCertificate.OpenPGPCertificateComponent::getCertificate)
+                    .distinct()
                     .collect(Collectors.toList());
 
             // Decide, if SEIPDv2 (OpenPGP v6-style AEAD) is supported by all recipients.
@@ -523,13 +576,13 @@ public class OpenPGPMessageGenerator
                 configuration ->
                 {
                     // No encryption methods provided -> Unencrypted message
-                    if (configuration.recipients.isEmpty() && configuration.passphrases.isEmpty())
+                    if (configuration.encryptionKeys.isEmpty() && configuration.messagePassphrases.isEmpty())
                     {
                         return MessageEncryptionMechanism.unencrypted();
                     }
 
                     // No public-key encryption requested -> password-based encryption
-                    else if (configuration.recipients.isEmpty())
+                    else if (configuration.encryptionKeys.isEmpty())
                     {
                         // delegate negotiation to pbe negotiator
                         return passwordBasedEncryptionNegotiator.negotiateEncryption(configuration);
@@ -728,29 +781,17 @@ public class OpenPGPMessageGenerator
      */
     static class Signer
     {
-        private final OpenPGPKey signingKey;
-        private final OpenPGPPolicy policy;
+        private final OpenPGPKey.OpenPGPSecretKey signingKey;
         private final SecretKeyPassphraseProvider passphraseProvider;
-        private final SubkeySelector subkeySelector;
+        private final SignatureParameters.Callback signatureParameters;
 
-        public Signer(OpenPGPKey signingKey,
-                      OpenPGPPolicy policy,
+        public Signer(OpenPGPKey.OpenPGPSecretKey signingKey,
                       SecretKeyPassphraseProvider passphraseProvider,
-                      SubkeySelector subkeySelector)
+                      SignatureParameters.Callback signatureParameters)
         {
             this.signingKey = signingKey;
-            this.policy = policy;
             this.passphraseProvider = passphraseProvider;
-            this.subkeySelector = subkeySelector;
-        }
-
-        public List<OpenPGPKey.OpenPGPSecretKey> signingSubkeys()
-        {
-            return subkeySelector.select(signingKey, policy)
-                    .stream()
-                    .map(signingKey::getSecretKey)
-                    .distinct()
-                    .collect(Collectors.toList());
+            this.signatureParameters = signatureParameters;
         }
     }
 
