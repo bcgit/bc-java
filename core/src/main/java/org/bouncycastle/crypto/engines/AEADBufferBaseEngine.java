@@ -165,10 +165,9 @@ abstract class AEADBufferBaseEngine
             {
                 while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
                 {
-                    validateAndProcessBuffer(m_buf, resultLength, output, outOff);
+                    validateAndProcessBuffer(m_buf, resultLength, output, outOff + resultLength);
                     m_bufPos -= BlockSize;
                     resultLength += BlockSize;
-                    outOff += BlockSize;
                 }
                 if (m_bufPos != 0)
                 {
@@ -178,10 +177,9 @@ abstract class AEADBufferBaseEngine
                         available = Math.max(BlockSize - m_bufPos, 0);
                         System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                         inOff += available;
-                        validateAndProcessBuffer(m_buf, 0, output, outOff);
+                        validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
                         resultLength += BlockSize;
                         len -= available;
-                        outOff += BlockSize;
                     }
                     else
                     {
