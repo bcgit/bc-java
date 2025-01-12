@@ -33,6 +33,7 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_A_128A));
         testVectors("isapa128av20", IsapType.ISAP_A_128A);
         testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
@@ -92,6 +93,10 @@ public class ISAPTest
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128A));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_K_128A));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_K_128));
+
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_A_128));
     }
 
     private void testVectors(String filename, IsapType isapType)

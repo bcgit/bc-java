@@ -355,7 +355,7 @@ public abstract class CipherTest
      * @param AEADLEN  AEAD length.
      * @param NONCELEN Nonce length.
      * */
-    static void checkAEADCipherMultipleBlocks(SimpleTest test, int DATALEN, int PARTLEN, int AEADLEN, int NONCELEN, final AEADCipher pCipher)
+    static void checkAEADCipherMultipleBlocks(SimpleTest test, int DATALEN, int PARTLEN, int AEADLEN, int strength, int NONCELEN, final AEADCipher pCipher)
         throws InvalidCipherTextException
     {
         /* Obtain some random data */
@@ -369,7 +369,7 @@ public abstract class CipherTest
 
         /* Create the Key parameters */
         final CipherKeyGenerator myGenerator = new CipherKeyGenerator();
-        final KeyGenerationParameters myGenParams = new KeyGenerationParameters(myRandom, 128);
+        final KeyGenerationParameters myGenParams = new KeyGenerationParameters(myRandom, strength);
         myGenerator.init(myGenParams);
         final byte[] myKey = myGenerator.generateKey();
         final KeyParameter myKeyParams = new KeyParameter(myKey);

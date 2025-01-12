@@ -33,7 +33,7 @@ public class XoodyakTest
     public void performTest()
         throws Exception
     {
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 18, 100, 16 , new XoodyakEngine());
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 18, 100, 128, 16, new XoodyakEngine());
         testVectors();
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {

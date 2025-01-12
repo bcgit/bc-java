@@ -31,8 +31,8 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 16 , new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 16 , new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
