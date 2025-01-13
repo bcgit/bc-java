@@ -188,7 +188,11 @@ public class SMIMEAuthEnvelopedGenerator
 
                 encrypted.close();
             }
-            catch (MessagingException | CMSException e)
+            catch (MessagingException e)
+            {
+                throw new WrappingIOException(e.toString(), e);
+            }
+            catch (CMSException e)
             {
                 throw new WrappingIOException(e.toString(), e);
             }

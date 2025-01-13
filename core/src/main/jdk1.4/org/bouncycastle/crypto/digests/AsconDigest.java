@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 
 /* ASCON v1.2 Digest, https://ascon.iaik.tugraz.at/ .
@@ -13,7 +14,7 @@ import org.bouncycastle.crypto.OutputLengthException;
  * ASCON v1.2 Digest with reference to C Reference Impl from: https://github.com/ascon/ascon-c .
  */
 public class AsconDigest
-    implements Digest
+    implements ExtendedDigest
 {
     public static class AsconParameters
     {
@@ -57,6 +58,7 @@ public class AsconDigest
     private long x3;
     private long x4;
     private final int CRYPTO_BYTES = 32;
+    protected final int ASCON_HASH_RATE = 8;
     private final int ASCON_PB_ROUNDS;
 
     private long ROR(long x, int n)
@@ -134,6 +136,11 @@ public class AsconDigest
     {
         return CRYPTO_BYTES;
     }
+
+    public int getByteLength()
+       {
+           return ASCON_HASH_RATE;
+       }
 
     @Override
     public void update(byte in)
