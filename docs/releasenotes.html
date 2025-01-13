@@ -38,10 +38,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>Support has been added for the direct construction of S/MIME AuthEnvelopedData objects, via the SMIMEAuthEnvelopedData class.</li>
 <li>An override "org.bouncycastle.asn1.allow_wrong_oid_enc" property has been added to disable new OID encoding checks (use with caution).</li>
 <li>Support has been added for the PBEParemeterSpec.getParameterSpec() method where supported by the JVM.</li>
-<li>The low-level TLS now provides some support for configuring GCM nonce-generation for TLS 1.2 (FIPS 140-2/3 requirement).</li>
 <li>ML-DSA/SLH-DSA now return null for Signature.getParameters() if no context is provided. This allows the algorithms to be used with the existing Java key tool.</li>
 <li>HQC has been updated to reflect the reference implementation released on 2024-10-30.</li>
 <li>Support has been added to the low-level APIs for the OASIS Shamir Secret Splitting algorithms.</li>
+<li>BCJSSE: System property "org.bouncycastle.jsse.fips.allowGCMCiphersIn12" no longer used. FIPS TLS 1.2 GCM suites enabled according to JcaTlsCrypto#getFipsGCMNonceGeneratorFactory (see JavaDoc for details).</li>
 </ul>
 
 <a id="r1rv79"><h3>2.2.1 Version</h3></a>
