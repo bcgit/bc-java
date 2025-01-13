@@ -19,7 +19,6 @@ import org.bouncycastle.crypto.digests.AsconXof;
 import org.bouncycastle.crypto.digests.AsconXof128;
 import org.bouncycastle.crypto.engines.AsconAEAD128;
 import org.bouncycastle.crypto.engines.AsconEngine;
-import org.bouncycastle.crypto.engines.ElephantEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -1115,7 +1114,7 @@ public class AsconTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-                int count = Integer.parseInt(map.get("Count"));
+                int count = Integer.parseInt((String)map.get("Count"));
 //                if (count != 34)
 //                {
 //                    continue;
