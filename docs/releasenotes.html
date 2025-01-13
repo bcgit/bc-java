@@ -20,7 +20,7 @@ to conform the algorithms to the JCE framework.
 
 <a id="r1rv80"><h3>2.1.1 Version</h3></a>
 Release: 1.80<br/>
-Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
+Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2025, 14th January.
 <h3>2.1.2 Defects Fixed</h3>
 <ul>
 <li>A splitting issue for ML-KEM lead to an incorrect size for kemct in KEMRecipientInfos. This has been fixed.</li>
@@ -28,6 +28,13 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>The SignerInfoGenerator copy constructor was ignoring the certHolder field. This has been fixed.</li>
 <li>The getAlgorithm() method return value for a CompositePrivateKey was not consistent with the corresponding getAlgorithm() return value for the CompositePrivateKey. This has been fixed.</li>
 <li>The international property files were missing from the bcjmail distribution. This has been fixed.</li>
+<li>Issues with ElephantEngine failing on processing large/multi-block messages have been addressed.</li>
+<li>GCFB mode now fully resets on a reset.</li>
+<li>The lightweight algorithm contestants: Elephant, ISAP, PhotonBeetle, Xoodyak now support the use of the AEADParameters class and provide accurate update/doFinal output lengths.</li>
+<li>An unnecessary downcast in CertPathValidatorUtilities was resulting in the ignoring of URLs for FTP based CRLs. This has been fixed.</li>
+<li>A regression in the OpenPGP API could cause NoSuchAlgorithmException to be thrown when attempting to use SHA-256 in some contexts. This has been fixed.</li>
+<li>EtsiTs1029411TypesAuthorization was missing an extension field. This has been added.</li>
+<li>Interoperability issues with single depth LMS keys have been addressed.</li>
 </ul>
 <h3>2.2.3 Additional Features and Functionality</h3>
 <ul>
@@ -41,7 +48,10 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TBD.
 <li>ML-DSA/SLH-DSA now return null for Signature.getParameters() if no context is provided. This allows the algorithms to be used with the existing Java key tool.</li>
 <li>HQC has been updated to reflect the reference implementation released on 2024-10-30.</li>
 <li>Support has been added to the low-level APIs for the OASIS Shamir Secret Splitting algorithms.</li>
-<li>BCJSSE: System property "org.bouncycastle.jsse.fips.allowGCMCiphersIn12" no longer used. FIPS TLS 1.2 GCM suites enabled according to JcaTlsCrypto#getFipsGCMNonceGeneratorFactory (see JavaDoc for details).</li>
+<li>BCJSSE: System property "org.bouncycastle.jsse.fips.allowGCMCiphersIn12" no longer used. FIPS TLS 1.2 GCM suites can now be enabled according to JcaTlsCrypto#getFipsGCMNonceGeneratorFactory (see JavaDoc for details) if done in alignment with FIPS requirements.</li>
+<li>Support has been added for OpenPGP V6 PKESK and message encryption.</li>
+<li>PGPSecretKey.copyWithNewPassword() now includes AEAD support.</li>
+<li>The ASCON family of algorithms have been updated in accordance with the published FIPS SP 800-232 draft.</li>
 </ul>
 
 <a id="r1rv79"><h3>2.2.1 Version</h3></a>
