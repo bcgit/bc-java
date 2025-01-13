@@ -10,9 +10,6 @@ sourceSets {
         java {
             srcDirs = ['build/src/main/java']
         }
-        resources {
-            srcDirs = ['build/src/main/resources']
-        }
     }
 
     java9 {
