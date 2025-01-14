@@ -38,6 +38,21 @@ import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+/**
+ * Generator for OpenPGP messages.
+ * This class can generate armored/unarmored, encrypted and/or signed OpenPGP message artifacts.
+ * By default, the generator will merely pack plaintext into an armored
+ * {@link org.bouncycastle.bcpg.LiteralDataPacket}.
+ * If however, the user provides one or more recipient certificates/keys
+ * ({@link #addEncryptionCertificate(OpenPGPCertificate)} /
+ * {@link #addEncryptionCertificate(OpenPGPCertificate.OpenPGPComponentKey)})
+ * or message passphrases {@link #addEncryptionPassphrase(char[])}, the message will be encrypted.
+ * The encryption mechanism is automatically decided, based on the provided recipient certificates, aiming to maximize
+ * interoperability.
+ * If the user provides one or more signing keys by calling {@link #addSigningKey(OpenPGPKey)} or
+ * {@link #addSigningKey(OpenPGPKey.OpenPGPSecretKey, SecretKeyPassphraseProvider, SignatureParameters.Callback)},
+ * the message will be signed.
+ */
 public class OpenPGPMessageGenerator
 {
     public static final int BUFFER_SIZE = 1024;
@@ -179,14 +194,16 @@ public class OpenPGPMessageGenerator
             OpenPGPKey.OpenPGPSecretKey secretKey = signingKey.getSecretKey(publicKey);
             if (secretKey == null)
             {
-                throw new InvalidSigningKeyException("Secret key " + publicKey.getKeyIdentifier() + " is missing from the OpenPGP key.");
+                throw new InvalidSigningKeyException("Secret key " + publicKey.getKeyIdentifier() +
+                        " is missing from the OpenPGP key.");
             }
             signingKeys.add(secretKey);
         }
 
         if (signingKeys.isEmpty())
         {
-            throw new InvalidSigningKeyException("OpenPGP key " + signingKey.getKeyIdentifier() + " does not have any valid signing subkeys.");
+            throw new InvalidSigningKeyException("OpenPGP key " + signingKey.getKeyIdentifier() +
+                    " does not have any valid signing subkeys.");
         }
 
         for (OpenPGPKey.OpenPGPSecretKey subkey : signingKeys)
@@ -217,7 +234,8 @@ public class OpenPGPMessageGenerator
     {
         if (!signingKey.isSigningKey())
         {
-            throw new InvalidSigningKeyException("Provided key " + signingKey.getKeyIdentifier() + " is not a valid signing key.");
+            throw new InvalidSigningKeyException("Provided key " + signingKey.getKeyIdentifier() +
+                    " is not a valid signing key.");
         }
 
         config.signingKeys.add(new Signer(signingKey, signingKeyPassphraseProvider, signatureParameterCallback));
@@ -368,7 +386,8 @@ public class OpenPGPMessageGenerator
 
                 case SEIPDv2:
                     // v6 uses symmetric-key encrypted session key packets version 6 (SKESKv6) using AEAD
-                    skeskGen = implementation.pbeKeyEncryptionMethodGenerator(passphrase, S2K.Argon2Params.memoryConstrainedParameters());
+                    skeskGen = implementation.pbeKeyEncryptionMethodGenerator(
+                            passphrase, S2K.Argon2Params.memoryConstrainedParameters());
                     break;
                 default: continue;
             }
@@ -430,7 +449,8 @@ public class OpenPGPMessageGenerator
                                 signingSubkey.getPGPSecretKey().getPublicKey().getAlgorithm(),
                                 parameters.getSignatureHashAlgorithmId()),
                         signingSubkey.getPGPSecretKey().getPublicKey());
-                char[] passphrase = signingSubkey.isLocked() ? s.passphraseProvider.providePassphrase(signingSubkey) : null;
+                char[] passphrase = signingSubkey.isLocked() ?
+                        s.passphraseProvider.providePassphrase(signingSubkey) : null;
                 PGPPrivateKey privateKey = signingSubkey.unlock(passphrase);
 
                 sigGen.init(parameters.getSignatureType(), privateKey);
@@ -538,7 +558,9 @@ public class OpenPGPMessageGenerator
 
     public interface HashAlgorithmNegotiator
     {
-        int negotiateHashAlgorithm(OpenPGPKey key, OpenPGPCertificate.OpenPGPComponentKey subkey, OpenPGPPolicy policy);
+        int negotiateHashAlgorithm(OpenPGPKey key,
+                                   OpenPGPCertificate.OpenPGPComponentKey subkey,
+                                   OpenPGPPolicy policy);
     }
 
     public static class Configuration
@@ -615,7 +637,8 @@ public class OpenPGPMessageGenerator
             else
             {
                 return MessageEncryptionMechanism.integrityProtected(
-                        OpenPGPEncryptionNegotiator.bestSymmetricKeyAlgorithmByWeight(certificates, configuration.policy));
+                        OpenPGPEncryptionNegotiator.bestSymmetricKeyAlgorithmByWeight(
+                                certificates, configuration.policy));
             }
         };
 
@@ -666,8 +689,8 @@ public class OpenPGPMessageGenerator
                 };
 
         /**
-         * Replace the default {@link OpenPGPEncryptionNegotiator} that gets to decide, which {@link MessageEncryptionMechanism} mode
-         * to use if only password-based encryption is used.
+         * Replace the default {@link OpenPGPEncryptionNegotiator} that gets to decide, which
+         * {@link MessageEncryptionMechanism} mode to use if only password-based encryption is used.
          *
          * @param pbeNegotiator custom PBE negotiator.
          * @return this
@@ -679,8 +702,8 @@ public class OpenPGPMessageGenerator
         }
 
         /**
-         * Replace the default {@link OpenPGPEncryptionNegotiator} that decides, which {@link MessageEncryptionMechanism}
-         * mode to use if public-key encryption is used.
+         * Replace the default {@link OpenPGPEncryptionNegotiator} that decides, which
+         * {@link MessageEncryptionMechanism} mode to use if public-key encryption is used.
          *
          * @param pkbeNegotiator custom encryption negotiator that gets to decide if PK-based encryption is used
          * @return this
