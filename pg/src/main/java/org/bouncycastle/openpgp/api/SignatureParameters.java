@@ -65,6 +65,14 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
+    public static SignatureParameters dataSignature(OpenPGPPolicy policy)
+    {
+        return new SignatureParameters(PGPSignature.BINARY_DOCUMENT, PGPSignature.CANONICAL_TEXT_DOCUMENT)
+                .setSignatureType(PGPSignature.BINARY_DOCUMENT)
+                .setSignatureHashAlgorithm(policy.getDefaultDocumentSignatureHashAlgorithm())
+                .setSignatureCreationTime(new Date());
+    }
+
     public SignatureParameters setSignatureType(int signatureType)
     {
         if (!Arrays.contains(allowedSignatureTypes, signatureType))

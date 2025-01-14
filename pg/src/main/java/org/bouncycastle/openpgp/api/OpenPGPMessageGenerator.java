@@ -18,10 +18,8 @@ import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPPadding;
 import org.bouncycastle.openpgp.PGPPrivateKey;
-import org.bouncycastle.openpgp.PGPPublicKey;
-import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.exception.InvalidEncryptionKeyException;
 import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
@@ -92,6 +90,7 @@ public class OpenPGPMessageGenerator
      * @param recipientCertificate recipient certificate (public key)
      * @param subkeySelector selector for encryption subkeys
      * @return this
+     * @throws InvalidEncryptionKeyException if the certificate is not capable of encryption
      */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate recipientCertificate,
                                                             SubkeySelector subkeySelector)
@@ -108,6 +107,14 @@ public class OpenPGPMessageGenerator
         return this;
     }
 
+    /**
+     * Add a (sub-)key to the set of recipient encryption keys.
+     * The recipient will be able to decrypt the message using their corresponding secret key.
+     *
+     * @param encryptionKey encryption capable subkey
+     * @return this
+     * @throws InvalidEncryptionKeyException if the key is not capable of encryption
+     */
     public OpenPGPMessageGenerator addEncryptionCertificate(OpenPGPCertificate.OpenPGPComponentKey encryptionKey)
             throws InvalidEncryptionKeyException
     {
@@ -133,6 +140,15 @@ public class OpenPGPMessageGenerator
         return this;
     }
 
+    /**
+     * Sign the message using a secret signing key.
+     * The signing subkey(s) will be selected by the default {@link SubkeySelector} which can be replaced by
+     * calling {@link Configuration#setSigningKeySelector(SubkeySelector)}.
+     *
+     * @param signingKey OpenPGP key
+     * @return this
+     * @throws InvalidSigningKeyException if the key is not capable of signing messages
+     */
     public OpenPGPMessageGenerator addSigningKey(OpenPGPKey signingKey)
             throws InvalidSigningKeyException
     {
@@ -147,32 +163,15 @@ public class OpenPGPMessageGenerator
      * @param signingKey OpenPGP key
      * @param signingKeyDecryptorProvider provider for decryptors to unlock the signing (sub-)keys.
      * @return this
+     * @throws InvalidSigningKeyException if the key is not capable of signing messages
      */
     public OpenPGPMessageGenerator addSigningKey(
             OpenPGPKey signingKey,
             SecretKeyPassphraseProvider signingKeyDecryptorProvider)
             throws InvalidSigningKeyException
     {
-        return addSigningKey(signingKey, signingKeyDecryptorProvider, config.signingKeySelector);
-    }
-
-    /**
-     * Sign the message using a secret signing key.
-     *
-     * @param signingKey OpenPGP key
-     * @param signingKeyDecryptorProvider provider for decryptors to unlock the signing (sub-)keys.
-     * @param subkeySelector selector for selecting signing subkey(s)
-     * @return this
-     */
-    public OpenPGPMessageGenerator addSigningKey(
-            OpenPGPKey signingKey,
-            SecretKeyPassphraseProvider signingKeyDecryptorProvider,
-            SubkeySelector subkeySelector)
-            throws InvalidSigningKeyException
-    {
-
         List<OpenPGPCertificate.OpenPGPComponentKey> publicSigningKeys =
-                subkeySelector.select(signingKey, implementation.policy());
+                config.signingKeySelector.select(signingKey, implementation.policy());
 
         List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<>();
         for (OpenPGPCertificate.OpenPGPComponentKey publicKey : publicSigningKeys)
@@ -197,6 +196,19 @@ public class OpenPGPMessageGenerator
         return this;
     }
 
+    /**
+     * Sign the message using a signing-capable (sub-)key.
+     * If the signing key is protected with a passphrase, the given {@link SecretKeyPassphraseProvider} can be
+     * used to unlock the key.
+     * The signature can be customized by providing a {@link SignatureParameters.Callback}, which can change
+     * the signature type, creation time and signature subpackets.
+     *
+     * @param signingKey signing-capable subkey
+     * @param signingKeyPassphraseProvider provider for key passphrases
+     * @param signatureParameterCallback callback to modify the signature
+     * @return this
+     * @throws InvalidSigningKeyException if the key cannot be used for signing
+     */
     public OpenPGPMessageGenerator addSigningKey(
             OpenPGPKey.OpenPGPSecretKey signingKey,
             SecretKeyPassphraseProvider signingKeyPassphraseProvider,
@@ -224,6 +236,11 @@ public class OpenPGPMessageGenerator
         return this;
     }
 
+    /**
+     * Set metadata (filename, modification date, binary format) from a file.
+     * @param file file
+     * @return this
+     */
     public OpenPGPMessageGenerator setFileMetadata(File file)
     {
         this.filename = file.getName();
@@ -232,6 +249,13 @@ public class OpenPGPMessageGenerator
         return this;
     }
 
+    /**
+     * Set a callback which fires once the session key for message encryption is known.
+     * This callback can be used to extract the session key, e.g. to emit it to the user (in case of SOP).
+     *
+     * @param callback callback
+     * @return this
+     */
     public OpenPGPMessageGenerator setSessionKeyExtractionCallback(
             PGPEncryptedDataGenerator.SessionKeyExtractionCallback callback)
     {
@@ -386,15 +410,39 @@ public class OpenPGPMessageGenerator
             for (Signer s : config.signingKeys)
             {
                 OpenPGPKey.OpenPGPSecretKey signingSubkey = s.signingKey;
-                int hashAlgorithm = config.negotiateHashAlgorithm(signingSubkey.getOpenPGPKey(), signingSubkey);
+
+                SignatureParameters parameters = SignatureParameters.dataSignature(config.policy)
+                        .setSignatureCreationTime(new Date())
+                        .setSignatureHashAlgorithm(
+                                config.negotiateHashAlgorithm(signingSubkey.getOpenPGPKey(), signingSubkey));
+                if (s.signatureParameters != null)
+                {
+                    parameters = s.signatureParameters.apply(parameters);
+                }
+
+                if (parameters == null)
+                {
+                    throw new IllegalStateException("SignatureParameters callback MUST NOT return null.");
+                }
+
                 PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
                         implementation.pgpContentSignerBuilder(
-                                signingSubkey.getPGPSecretKey().getPublicKey().getAlgorithm(), hashAlgorithm),
+                                signingSubkey.getPGPSecretKey().getPublicKey().getAlgorithm(),
+                                parameters.getSignatureHashAlgorithmId()),
                         signingSubkey.getPGPSecretKey().getPublicKey());
                 char[] passphrase = signingSubkey.isLocked() ? s.passphraseProvider.providePassphrase(signingSubkey) : null;
                 PGPPrivateKey privateKey = signingSubkey.unlock(passphrase);
 
-                sigGen.init(PGPSignature.BINARY_DOCUMENT, privateKey);
+                sigGen.init(parameters.getSignatureType(), privateKey);
+                PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+                hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
+                hashedSubpackets.setIssuerFingerprint(true, signingSubkey.getPGPSecretKey().getPublicKey());
+                sigGen.setHashedSubpackets(hashedSubpackets.generate());
+
+                PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+                unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
+                sigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
+
                 signatureGenerators.push(sigGen);
             }
 
@@ -732,47 +780,6 @@ public class OpenPGPMessageGenerator
         public MessageEncryptionMechanism negotiateEncryption()
         {
             return encryptionNegotiator.negotiateEncryption(this);
-        }
-    }
-
-    /**
-     * Tuple representing a recipients OpenPGP certificate.
-     */
-    static class Recipient
-    {
-        private final OpenPGPCertificate certificate;
-        private final OpenPGPPolicy policy;
-        private final SubkeySelector subkeySelector;
-
-        /**
-         * Create a {@link Recipient}.
-         *
-         * @param certificate OpenPGP certificate (public key)
-         * @param subkeySelector selector to select encryption-capable subkeys from the certificate
-         */
-        public Recipient(PGPPublicKeyRing certificate, SubkeySelector subkeySelector, OpenPGPImplementation implementation)
-        {
-            this(new OpenPGPCertificate(certificate, implementation), implementation.policy(), subkeySelector);
-        }
-
-        public Recipient(OpenPGPCertificate certificate, OpenPGPPolicy policy, SubkeySelector subkeySelector)
-        {
-            this.certificate = certificate;
-            this.policy = policy;
-            this.subkeySelector = subkeySelector;
-        }
-
-        /**
-         * Return a set of {@link PGPPublicKey subkeys} which will be used for message encryption.
-         *
-         * @return encryption capable subkeys for this recipient
-         */
-        public List<OpenPGPCertificate.OpenPGPComponentKey> encryptionSubkeys()
-        {
-            return subkeySelector.select(certificate, policy)
-                    .stream()
-                    .distinct()
-                    .collect(Collectors.toList());
         }
     }
 
