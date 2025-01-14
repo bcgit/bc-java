@@ -42,6 +42,7 @@ public class HPKE
     private final short aeadId;
     private final KEM kem;
     private final HKDF hkdf;
+    private final int encSize;
 
     short Nk;
 
@@ -67,7 +68,7 @@ public class HPKE
         {
             Nk = 32;
         }
-
+        this.encSize = kem.getEncryptionSize();
     }
 
     public HPKE(byte mode, short kemId, short kdfId, short aeadId, KEM kem, int encSize)
@@ -78,6 +79,7 @@ public class HPKE
         this.aeadId = aeadId;
         this.hkdf = new HKDF(kdfId);
         this.kem = kem;
+
         if (aeadId == aead_AES_GCM128)
         {
             Nk = 16;
@@ -86,13 +88,15 @@ public class HPKE
         {
             Nk = 32;
         }
+
         this.encSize = encSize;
     }
 
     public int getEncSize()
     {
-        return kem.getEncryptionSize();
+        return encSize;
     }
+
     public short getAeadId()
     {
         return aeadId;
