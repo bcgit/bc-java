@@ -247,7 +247,14 @@ public class OpenPGPV6KeyGenerator
         );
     }
 
-
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The primary key type can be decided using the {@link KeyPairGeneratorCallback}.
+     *
+     * @param keyGenCallback callback to decide the key type
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
         KeyPairGeneratorCallback keyGenCallback)
         throws PGPException
@@ -255,6 +262,19 @@ public class OpenPGPV6KeyGenerator
         return withPrimaryKey(keyGenCallback, null);
     }
 
+    /**
+     * Generate an OpenPGP key with a certification-capable primary key.
+     * The primary key type can be decided using the {@link KeyPairGeneratorCallback}.
+     * The {@link SignatureParameters.Callback} can be used to modify the preferences in the direct-key self signature.
+     * If the callback itself is null, the generator will create a default direct-key signature.
+     * If the result of {@link SignatureParameters.Callback#apply(SignatureParameters)} is null, no direct-key
+     * signature will be generated for the key.
+     *
+     * @param keyGenCallback callback to decide the key type
+     * @param preferenceSignatureCallback callback to modify the direct-key signature
+     * @return builder
+     * @throws PGPException if the key cannot be generated
+     */
     public WithPrimaryKey withPrimaryKey(
             KeyPairGeneratorCallback keyGenCallback,
             SignatureParameters.Callback preferenceSignatureCallback)
@@ -713,7 +733,7 @@ public class OpenPGPV6KeyGenerator
         }
 
         /**
-         * Build the {@link PGPSecretKeyRing OpenPGP key}, allowing individual passphrases for the subkeys.
+         * Build the {@link PGPSecretKeyRing OpenPGP key} without protecting the secret keys.
          *
          * @return OpenPGP key
          * @throws PGPException if the key cannot be generated
@@ -721,29 +741,7 @@ public class OpenPGPV6KeyGenerator
         public OpenPGPKey build()
             throws PGPException
         {
-            PGPSecretKey primarySecretKey = new PGPSecretKey(
-                primaryKey.getPrivateKey(),
-                primaryKey.getPublicKey(),
-                configuration.digestCalculatorProvider.get(HashAlgorithmTags.SHA1),
-                true,
-                null);
-            List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
-            keys.add(primarySecretKey);
-
-            for (Iterator it = subkeys.iterator(); it.hasNext();)
-            {
-                PGPKeyPair key = (PGPKeyPair)it.next();
-                PGPSecretKey subkey = new PGPSecretKey(
-                    key.getPrivateKey(),
-                    key.getPublicKey(),
-                    configuration.digestCalculatorProvider.get(HashAlgorithmTags.SHA1),
-                    false,
-                    null);
-                keys.add(subkey);
-            }
-
-            PGPSecretKeyRing secretKeys = new PGPSecretKeyRing(keys);
-            return new OpenPGPKey(secretKeys, implementation);
+            return build(null);
         }
 
         /**
