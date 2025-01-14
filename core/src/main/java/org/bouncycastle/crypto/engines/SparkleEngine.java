@@ -43,6 +43,7 @@ public class SparkleEngine
 
     public SparkleEngine(SparkleParameters sparkleParameters)
     {
+        super(ProcessingBufferType.Buffered);
         int SPARKLE_STATE;
         int SCHWAEMM_TAG_LEN;
         int SPARKLE_CAPACITY;

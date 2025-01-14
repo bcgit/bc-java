@@ -27,9 +27,6 @@ public class XoodyakDigest
     private final int Rhash = 16;
     private final int PhaseDown = 1;
     private final int PhaseUp = 2;
-//    private final int NLANES = 12;
-//    private final int NROWS = 3;
-//    private final int NCOLUMS = 4;
     private final int MAXROUNDS = 12;
     private final int TAGLEN = 16;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
