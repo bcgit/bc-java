@@ -11,7 +11,6 @@ import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
-import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageInputStream;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
@@ -35,8 +34,6 @@ public class OpenPGPMessageProcessorTest
         extends AbstractPacketTest
 {
     private static final byte[] PLAINTEXT = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
-
-    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
 
     private PGPSessionKey encryptionSessionKey;
 
@@ -252,7 +249,7 @@ public class OpenPGPMessageProcessorTest
             throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.addEncryptionCertificate(reader.parseCertificate(OpenPGPTestKeys.ALICE_CERT));
+        gen.addEncryptionCertificate(api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.ALICE_CERT));
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream enc = gen.open(bOut);

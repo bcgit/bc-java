@@ -4,6 +4,7 @@ import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 
 import java.io.IOException;
@@ -21,7 +22,9 @@ import java.util.List;
  * To use this class, instantiate it, optionally providing a concrete {@link OpenPGPImplementation} and
  * {@link OpenPGPPolicy} for algorithm policing.
  * Then, add the desired {@link OpenPGPKey} you want to use for signing the data via one or more
- * calls to {@link #addSigningKey(OpenPGPKey, char[])}.
+ * calls to {@link #addSigningKey(OpenPGPKey, KeyPassphraseProvider)}.
+ * You have fine-grained control over the signature by using the method
+ * {@link #addSigningKey(OpenPGPKey.OpenPGPSecretKey, KeyPassphraseProvider, SignatureParameters.Callback)}.
  * Lastly, retrieve a list of detached {@link OpenPGPSignature.OpenPGPDocumentSignature signatures} by calling
  * {@link #sign(InputStream)}, passing in an {@link InputStream} containing the data you want to sign.
  */
@@ -29,7 +32,6 @@ public class OpenPGPDetachedSignatureGenerator
 {
     private final OpenPGPImplementation implementation;
     private final OpenPGPPolicy policy;
-    private int signatureType = PGPSignature.BINARY_DOCUMENT;
 
     private final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<>();
     private final List<OpenPGPCertificate.OpenPGPComponentKey> signingKeys = new ArrayList<>();
@@ -65,47 +67,21 @@ public class OpenPGPDetachedSignatureGenerator
     }
 
     /**
-     * Set the type of generated signatures to {@link PGPSignature#BINARY_DOCUMENT}.
-     * Binary signatures are calculated over the plaintext as is.
-     * Binary signatures are the default.
-     *
-     * @return this
-     */
-    public OpenPGPDetachedSignatureGenerator setBinarySignature()
-    {
-        this.signatureType = PGPSignature.BINARY_DOCUMENT;
-        return this;
-    }
-
-    /**
-     * Set the type of generated signatures to {@link PGPSignature#CANONICAL_TEXT_DOCUMENT}.
-     * Text signatures are calculated over modified plaintext, which is first transformed by canonicalizing
-     * line endings to CR-LF (<pre>0x0D0A</pre>).
-     * This is useful, if the plaintext is transported via a channel that may not retain the original message
-     * encoding.
-     *
-     * @return this
-     */
-    public OpenPGPDetachedSignatureGenerator setCanonicalTextDocument()
-    {
-        this.signatureType = PGPSignature.CANONICAL_TEXT_DOCUMENT;
-        return this;
-    }
-
-    /**
      * Add an {@link OpenPGPKey} as signing key.
      * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
      * this method will throw an {@link InvalidSigningKeyException}.
      * Otherwise, all capable signing subkeys will be used to create detached signatures.
      *
      * @param key OpenPGP key
-     * @param passphrase passphrase to unlock the signing key
+     * @param passphraseProvider provides the passphrase to unlock the signing key
      * @return this
      *
      * @throws InvalidSigningKeyException if the OpenPGP key does not contain a usable signing subkey
      * @throws PGPException if signing fails
      */
-    public OpenPGPDetachedSignatureGenerator addSigningKey(OpenPGPKey key, char[] passphrase)
+    public OpenPGPDetachedSignatureGenerator addSigningKey(
+            OpenPGPKey key,
+            KeyPassphraseProvider passphraseProvider)
             throws PGPException
     {
         List<OpenPGPCertificate.OpenPGPComponentKey> signingSubkeys = key.getSigningKeys();
@@ -115,12 +91,51 @@ public class OpenPGPDetachedSignatureGenerator
         }
         OpenPGPKey.OpenPGPSecretKey signingKey = key.getSecretKey(signingSubkeys.get(0));
 
+        return addSigningKey(signingKey, passphraseProvider, null);
+    }
+
+    public OpenPGPDetachedSignatureGenerator addSigningKey(
+            OpenPGPKey.OpenPGPSecretKey signingKey,
+            KeyPassphraseProvider passphraseProvider,
+            SignatureParameters.Callback signatureCallback)
+            throws PGPException
+    {
+        SignatureParameters parameters = SignatureParameters.dataSignature(policy)
+                .setSignatureHashAlgorithm(getPreferredHashAlgorithm(signingKey));
+
+        if (signatureCallback != null)
+        {
+            parameters = signatureCallback.apply(parameters);
+        }
+
+        if(parameters == null)
+        {
+            throw new IllegalStateException("SignatureParameters Callback MUST NOT return null.");
+        }
+
+        if (!signingKey.isSigningKey(parameters.getSignatureCreationTime()))
+        {
+            throw new InvalidSigningKeyException("Provided key " + signingKey.getKeyIdentifier() +
+                    " is not capable of creating data signatures.");
+        }
+
         PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
                 implementation.pgpContentSignerBuilder(
                         signingKey.getPublicKey().getPGPPublicKey().getAlgorithm(),
-                        getPreferredHashAlgorithm(signingKey)),
+                        parameters.getSignatureHashAlgorithmId()),
                 signingKey.getPGPPublicKey());
-        sigGen.init(signatureType, signingKey.unlock(passphrase));
+
+        char[] passphrase = signingKey.isLocked() ? passphraseProvider.getKeyPassword(signingKey) : null;
+        sigGen.init(parameters.getSignatureType(), signingKey.unlock(passphrase));
+
+        PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+        hashedSubpackets.setIssuerFingerprint(true, signingKey.getPGPPublicKey());
+        hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
+        sigGen.setHashedSubpackets(hashedSubpackets.generate());
+
+        PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+        unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
+        sigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
 
         signatureGenerators.add(sigGen);
         signingKeys.add(signingKey);
