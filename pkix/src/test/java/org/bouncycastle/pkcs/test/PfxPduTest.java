@@ -69,9 +69,9 @@ import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProvider;
-import org.bouncycastle.pkcs.bc.BcPKCS12PBMac1CalculatorBuilderProvider;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEOutputEncryptorBuilder;
+import org.bouncycastle.pkcs.bc.BcPKCS12PBMac1CalculatorBuilderProvider;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS8EncryptedPrivateKeyInfoBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilder;
@@ -80,6 +80,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
+import org.junit.function.ThrowingRunnable;
 
 import static org.junit.Assert.assertThrows;
 
@@ -1138,7 +1139,7 @@ public class PfxPduTest
     public void testPfxPduPBMac1PBKdf2()
         throws Exception
     {
-        char[] password = "1234".toCharArray();
+        final char[] password = "1234".toCharArray();
         // valid test vectors
         for (byte[] test_vector : new byte[][]{pkcs12WithPBMac1PBKdf2_a1, pkcs12WithPBMac1PBKdf2_a2, pkcs12WithPBMac1PBKdf2_a3})
         {
@@ -1160,9 +1161,17 @@ public class PfxPduTest
         }
         
         // invalid test vector that throws exception
-        PKCS12PfxPdu pfx = new PKCS12PfxPdu(pkcs12WithPBMac1PBKdf2_a6);
+        final PKCS12PfxPdu pfx = new PKCS12PfxPdu(pkcs12WithPBMac1PBKdf2_a6);
         assertTrue(pfx.hasMac());
-        PKCSException thrown = assertThrows(PKCSException.class, () -> pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), password));
+        PKCSException thrown = assertThrows(PKCSException.class, new ThrowingRunnable()
+        {
+            @Override
+            public void run()
+                throws Throwable
+            {
+                pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), password);
+            }
+        });
         assertTrue(thrown.getMessage().contains("Key length must be present when using PBMAC1."));
     }
 
