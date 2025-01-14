@@ -78,42 +78,58 @@ public class XoodyakEngine
         }
     }
 
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
         processFinalAAD();
         encrypt(input, inOff, BlockSize, output, outOff);
     }
 
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        processFinalAAD();
+        decrypt(input, inOff, BlockSize, output, outOff);
+    }
+
     private void encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
-        int IOLen = len;
         int splitLen;
         byte[] P = new byte[BlockSize];
         int Cu = encrypted ? 0 : 0x80;
-        while (IOLen != 0 || !encrypted)
+        while (len != 0 || !encrypted)
         {
-            splitLen = Math.min(IOLen, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            if (forEncryption)
-            {
-                System.arraycopy(input, inOff, P, 0, splitLen);
-            }
+            splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
+            System.arraycopy(input, inOff, P, 0, splitLen);
             Up(null, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
             for (int i = 0; i < splitLen; i++)
             {
                 output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
             }
-            if (forEncryption)
-            {
-                Down(P, 0, splitLen, 0x00);
-            }
-            else
-            {
-                Down(output, outOff, splitLen, 0x00);
-            }
+            Down(P, 0, splitLen, 0x00);
             Cu = 0x00;
             outOff += splitLen;
-            IOLen -= splitLen;
+            len -= splitLen;
+            encrypted = true;
+        }
+    }
+
+    private void decrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
+    {
+        int splitLen;
+        int Cu = encrypted ? 0 : 0x80;
+        while (len != 0 || !encrypted)
+        {
+            splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
+            Up(null, 0, Cu); /* Up without extract */
+            /* Extract from Up and Add */
+            for (int i = 0; i < splitLen; i++)
+            {
+                output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
+            }
+            Down(output, outOff, splitLen, 0x00);
+            Cu = 0x00;
+            outOff += splitLen;
+            len -= splitLen;
             encrypted = true;
         }
     }
@@ -125,8 +141,12 @@ public class XoodyakEngine
         if (forEncryption)
         {
             Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
+            encrypt(m_buf, 0, m_bufPos, output, outOff);
         }
-        encrypt(m_buf, 0, m_bufPos, output, outOff);
+        else
+        {
+            decrypt(m_buf, 0, m_bufPos, output, outOff);
+        }
         mac = new byte[MAC_SIZE];
         Up(mac, MAC_SIZE, 0x40);
     }
