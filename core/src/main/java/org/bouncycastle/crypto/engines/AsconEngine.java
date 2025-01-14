@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -42,28 +41,30 @@ public class AsconEngine
         {
         case ascon80pq:
             KEY_SIZE = 20;
-            ASCON_AEAD_RATE = 8;
+            BlockSize = 8;
             ASCON_IV = 0xa0400c0600000000L;
             algorithmName = "Ascon-80pq AEAD";
             break;
         case ascon128a:
             KEY_SIZE = 16;
-            ASCON_AEAD_RATE = 16;
+            BlockSize = 16;
             ASCON_IV = 0x80800c0800000000L;
             algorithmName = "Ascon-128a AEAD";
             break;
         case ascon128:
             KEY_SIZE = 16;
-            ASCON_AEAD_RATE = 8;
+            BlockSize = 8;
             ASCON_IV = 0x80400c0600000000L;
             algorithmName = "Ascon-128 AEAD";
             break;
         default:
             throw new IllegalArgumentException("invalid parameter setting for ASCON AEAD");
         }
-        nr = (ASCON_AEAD_RATE == 8) ? 6 : 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
+        nr = (BlockSize == 8) ? 6 : 8;
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
+        AADBufferSize = BlockSize;
+        m_aad = new byte[BlockSize];
         dsep = 1L;
     }
 
