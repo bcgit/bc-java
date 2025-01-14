@@ -1,8 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseEngine
@@ -109,7 +106,17 @@ abstract class AsconBaseEngine
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-
+        if (forEncryption)
+        {
+            processFinalEncrypt(m_buf, m_bufPos, output, outOff);
+        }
+        else
+        {
+            processFinalDecrypt(m_buf, m_bufPos, output, outOff);
+        }
+        mac = new byte[MAC_SIZE];
+        setBytes(x3, mac, 0);
+        setBytes(x4, mac, 8);
     }
 
     @Override
@@ -119,25 +126,8 @@ abstract class AsconBaseEngine
         p(nr);
     }
 
-    @Override
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
-    {
-        if (forEncryption)
-        {
-            processBufferEncrypt(input, inOff, output, outOff);
-        }
-        else
-        {
-            processBufferDecrypt(input, inOff, output, outOff);
-        }
-    }
-
     protected void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-        if (outOff + BlockSize > output.length)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
         long t0 = loadBytes(buffer, bufOff);
         setBytes(x0 ^ t0, output, outOff);
         x0 = t0;
@@ -153,10 +143,6 @@ abstract class AsconBaseEngine
 
     protected void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-        if (outOff + BlockSize > output.length)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
         x0 ^= loadBytes(buffer, bufOff);
         setBytes(x0, output, outOff);
 
@@ -166,61 +152,6 @@ abstract class AsconBaseEngine
             setBytes(x1, output, outOff + 8);
         }
         p(nr);
-    }
-
-    public int doFinal(byte[] outBytes, int outOff)
-        throws IllegalStateException, InvalidCipherTextException, DataLengthException
-    {
-        boolean forEncryption = checkData();
-        int resultLength;
-        if (forEncryption)
-        {
-            resultLength = m_bufPos + MAC_SIZE;
-            if (outOff + resultLength > outBytes.length)
-            {
-                throw new OutputLengthException("output buffer too short");
-            }
-            if (m_bufPos == BlockSize)
-            {
-                processBufferEncrypt(m_buf, 0, outBytes, outOff);
-                m_bufPos -= BlockSize;
-                outOff += BlockSize;
-            }
-            processFinalEncrypt(m_buf, m_bufPos, outBytes, outOff);
-            mac = new byte[MAC_SIZE];
-            setBytes(x3, mac, 0);
-            setBytes(x4, mac, 8);
-            System.arraycopy(mac, 0, outBytes, outOff + m_bufPos, MAC_SIZE);
-            reset(false);
-        }
-        else
-        {
-            if (m_bufPos < MAC_SIZE)
-            {
-                throw new InvalidCipherTextException("data too short");
-            }
-            m_bufPos -= MAC_SIZE;
-            resultLength = m_bufPos;
-            if (outOff + resultLength > outBytes.length)
-            {
-                throw new OutputLengthException("output buffer too short");
-            }
-            if (m_bufPos == BlockSize)
-            {
-                processBufferDecrypt(m_buf, 0, outBytes, outOff);
-                m_bufPos -= BlockSize;
-                outOff += BlockSize;
-            }
-            processFinalDecrypt(m_buf, m_bufPos, outBytes, outOff);
-            x3 ^= loadBytes(m_buf, resultLength);
-            x4 ^= loadBytes(m_buf, resultLength + 8);
-            if ((x3 | x4) != 0L)
-            {
-                throw new InvalidCipherTextException("mac check in " + getAlgorithmName() + " failed");
-            }
-            reset(true);
-        }
-        return resultLength;
     }
 
     protected void reset(boolean clearMac)

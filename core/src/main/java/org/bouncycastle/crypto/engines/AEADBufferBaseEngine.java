@@ -114,6 +114,7 @@ abstract class AEADBufferBaseEngine
 
             if (forEncryption)
             {
+                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - 1) * BlockSize / BlockSize);
                 if (m_bufPos > 0)
                 {
                     int available = BlockSize - m_bufPos;
@@ -123,19 +124,18 @@ abstract class AEADBufferBaseEngine
                         m_bufPos += len;
                         return 0;
                     }
-
                     System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                     inOff += available;
                     len -= available;
 
-                    validateAndProcessBuffer(m_buf, 0, output, outOff);
+                    processBufferEncrypt(m_buf, 0, output, outOff);
                     resultLength = BlockSize;
                     //m_bufPos = 0;
                 }
 
                 while (len > BlockSize)
                 {
-                    validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
+                    processBufferEncrypt(input, inOff, output, outOff + resultLength);
                     inOff += BlockSize;
                     len -= BlockSize;
                     resultLength += BlockSize;
@@ -150,11 +150,12 @@ abstract class AEADBufferBaseEngine
                     m_bufPos += len;
                     return 0;
                 }
+                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE - 1) * BlockSize / BlockSize);
                 if (BlockSize >= MAC_SIZE)
                 {
                     if (m_bufPos > BlockSize)
                     {
-                        validateAndProcessBuffer(m_buf, 0, output, outOff);
+                        processBufferDecrypt(m_buf, 0, output, outOff);
                         m_bufPos -= BlockSize;
                         System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
                         resultLength = BlockSize;
@@ -172,7 +173,7 @@ abstract class AEADBufferBaseEngine
                     System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                     inOff += available;
                     len -= available;
-                    validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
+                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                     resultLength += BlockSize;
                     //m_bufPos = 0;
                 }
@@ -180,7 +181,7 @@ abstract class AEADBufferBaseEngine
                 {
                     while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
                     {
-                        validateAndProcessBuffer(m_buf, resultLength, output, outOff + resultLength);
+                        processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
                         m_bufPos -= BlockSize;
                         resultLength += BlockSize;
                     }
@@ -192,7 +193,7 @@ abstract class AEADBufferBaseEngine
                             available = Math.max(BlockSize - m_bufPos, 0);
                             System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                             inOff += available;
-                            validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
+                            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                             resultLength += BlockSize;
                             len -= available;
                         }
@@ -206,7 +207,7 @@ abstract class AEADBufferBaseEngine
                 }
                 while (len > m_buf.length)
                 {
-                    validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
+                    processBufferDecrypt(input, inOff, output, outOff + resultLength);
                     inOff += BlockSize;
                     len -= BlockSize;
                     resultLength += BlockSize;
@@ -294,6 +295,7 @@ abstract class AEADBufferBaseEngine
 
             if (forEncryption)
             {
+                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos) * BlockSize / BlockSize);
                 if (m_bufPos > 0)
                 {
                     int available = BlockSize - m_bufPos;
@@ -308,14 +310,14 @@ abstract class AEADBufferBaseEngine
                     inOff += available;
                     len -= available;
 
-                    validateAndProcessBuffer(m_buf, 0, output, outOff);
+                    processBufferEncrypt(m_buf, 0, output, outOff);
                     resultLength = BlockSize;
                     //m_bufPos = 0;
                 }
 
                 while (len >= BlockSize)
                 {
-                    validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
+                    processBufferEncrypt(input, inOff, output, outOff + resultLength);
                     inOff += BlockSize;
                     len -= BlockSize;
                     resultLength += BlockSize;
@@ -323,6 +325,7 @@ abstract class AEADBufferBaseEngine
             }
             else
             {
+                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE) * BlockSize / BlockSize);
                 int available = BlockSize + MAC_SIZE - m_bufPos;
                 if (len < available)
                 {
@@ -334,13 +337,13 @@ abstract class AEADBufferBaseEngine
                 {
                     if (m_bufPos >= BlockSize)
                     {
-                        validateAndProcessBuffer(m_buf, 0, output, outOff);
+                        processBufferDecrypt(m_buf, 0, output, outOff);
                         m_bufPos -= BlockSize;
                         System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
                         resultLength = BlockSize;
 
                         available += BlockSize;
-                        if (len <= available)
+                        if (len < available)
                         {
                             System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                             m_bufPos += len;
@@ -352,7 +355,7 @@ abstract class AEADBufferBaseEngine
                     System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                     inOff += available;
                     len -= available;
-                    validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
+                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                     resultLength += BlockSize;
                     //m_bufPos = 0;
                 }
@@ -360,7 +363,7 @@ abstract class AEADBufferBaseEngine
                 {
                     while (m_bufPos >= BlockSize && len + m_bufPos >= BlockSize + MAC_SIZE)
                     {
-                        validateAndProcessBuffer(m_buf, resultLength, output, outOff + resultLength);
+                        processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
                         m_bufPos -= BlockSize;
                         resultLength += BlockSize;
                     }
@@ -372,7 +375,7 @@ abstract class AEADBufferBaseEngine
                             available = Math.max(BlockSize - m_bufPos, 0);
                             System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                             inOff += available;
-                            validateAndProcessBuffer(m_buf, 0, output, outOff + resultLength);
+                            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                             resultLength += BlockSize;
                             len -= available;
                         }
@@ -386,7 +389,7 @@ abstract class AEADBufferBaseEngine
                 }
                 while (len >= m_buf.length)
                 {
-                    validateAndProcessBuffer(input, inOff, output, outOff + resultLength);
+                    processBufferDecrypt(input, inOff, output, outOff + resultLength);
                     inOff += BlockSize;
                     len -= BlockSize;
                     resultLength += BlockSize;
@@ -399,7 +402,6 @@ abstract class AEADBufferBaseEngine
 
         public int getUpdateOutputSize(int len)
         {
-            // The -1 is to account for the lazy processing of a full buffer
             int total = Math.max(0, len);
 
             switch (m_state)
@@ -615,13 +617,12 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected void validateAndProcessBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    protected void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
     {
-        if (outOff > output.length - BlockSize)
+        if (len >= BlockSize && outOff + len > output.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
-        processBuffer(input, inOff, output, outOff);
     }
 
     protected void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
@@ -638,5 +639,7 @@ abstract class AEADBufferBaseEngine
 
     protected abstract void processFinalAAD();
 
-    protected abstract void processBuffer(byte[] input, int inOff, byte[] output, int outOff);
+    protected abstract void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff);
+
+    protected abstract void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff);
 }

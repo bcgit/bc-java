@@ -102,10 +102,18 @@ public class PhotonBeetleEngine
         XOR(input, inOff, BlockSize);
     }
 
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
         PHOTON_Permutation();
         rhoohr(output, outOff, input, inOff, BlockSize);
+        XOR(input, inOff, BlockSize);
+    }
+
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        PHOTON_Permutation();
+        rhoohr(output, outOff, input, inOff, BlockSize);
+        XOR(output, outOff, BlockSize);
     }
 
     @Override
@@ -147,7 +155,15 @@ public class PhotonBeetleEngine
             {
                 PHOTON_Permutation();
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
-                if(bufferLen < BlockSize)
+                if (forEncryption)
+                {
+                    XOR(m_buf, 0, bufferLen);
+                }
+                else
+                {
+                    XOR(output, outOff, bufferLen);
+                }
+                if (bufferLen < BlockSize)
                 {
                     state[bufferLen] ^= 0x01; // ozs
                 }
@@ -306,14 +322,6 @@ public class PhotonBeetleEngine
         while (i < DBlen_inbytes)
         {
             ciphertext[i + outOff] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
-        }
-        if (forEncryption)
-        {
-            XOR(plaintext, inOff, DBlen_inbytes);
-        }
-        else
-        {
-            XOR(ciphertext, outOff, DBlen_inbytes);
         }
     }
 

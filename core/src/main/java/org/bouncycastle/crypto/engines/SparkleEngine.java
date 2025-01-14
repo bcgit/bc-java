@@ -213,9 +213,8 @@ public class SparkleEngine
         sparkle_opt(state, SPARKLE_STEPS_SLIM);
     }
 
-    private void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
+    protected void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-//        assert bufOff <= buffer.length - RATE_BYTES;
 
         for (int i = 0; i < RATE_WORDS / 2; ++i)
         {
@@ -239,20 +238,7 @@ public class SparkleEngine
         encrypted = true;
     }
 
-    @Override
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
-    {
-        if (forEncryption)
-        {
-            processBufferEncrypt(input, inOff, output, outOff);
-        }
-        else
-        {
-            processBufferDecrypt(input, inOff, output, outOff);
-        }
-    }
-
-    private void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
 //      assert bufOff <= buffer.length - RATE_BYTES;
 

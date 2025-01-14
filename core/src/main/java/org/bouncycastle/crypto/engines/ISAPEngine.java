@@ -143,12 +143,10 @@ public class ISAPEngine
 
         public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
         {
-
             for (int i = 0; i < len; ++i)
             {
                 x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
             }
-
             x0 ^= 0x80L << ((7 - len) << 3);
             P12();
             // Derive K*
@@ -816,19 +814,21 @@ public class ISAPEngine
         }
     }
 
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
         processFinalAAD();
         ISAPAEAD.processEncBlock(input, inOff, output, outOff);
         ISAPAEAD.swapInternalState();
-        if (forEncryption)
-        {
-            ISAPAEAD.absorbMacBlock(output, outOff);
-        }
-        else
-        {
-            ISAPAEAD.absorbMacBlock(input, inOff);
-        }
+        ISAPAEAD.absorbMacBlock(output, outOff);
+        ISAPAEAD.swapInternalState();
+    }
+
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        processFinalAAD();
+        ISAPAEAD.processEncBlock(input, inOff, output, outOff);
+        ISAPAEAD.swapInternalState();
+        ISAPAEAD.absorbMacBlock(input, inOff);
         ISAPAEAD.swapInternalState();
     }
 
