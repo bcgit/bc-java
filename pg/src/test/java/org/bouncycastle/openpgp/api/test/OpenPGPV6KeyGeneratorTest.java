@@ -61,6 +61,7 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException, IOException
     {
         testGenerateCustomKey(api);
+        testGenerateMinimalKey(api);
 
         testGenerateSignOnlyKeyBaseCase(api);
         testGenerateAEADProtectedSignOnlyKey(api);
@@ -471,6 +472,45 @@ public class OpenPGPV6KeyGeneratorTest
             signingSubkey.extractPrivateKey(keyDecryptorBuilder.build("signing-key-passphrase".toCharArray())));
         isNotNull("Could not decrypt encryption subkey using correct passphrase",
             encryptionSubkey.extractPrivateKey(keyDecryptorBuilder.build("encryption-key-passphrase".toCharArray())));
+    }
+
+    private void testGenerateMinimalKey(OpenPGPApi api)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        OpenPGPV6KeyGenerator gen = api.generateKey(creationTime, false);
+        OpenPGPKey key = gen.withPrimaryKey(
+                        PGPKeyPairGenerator::generateEd25519KeyPair,
+                        SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                        {
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                            {
+                                subpackets.addNotationData(false, true, "foo@bouncycastle.org", "bar");
+                                return subpackets;
+                            }
+                        }))
+                .addUserId("Alice <alice@example.org>")
+                .addEncryptionSubkey()
+                .addSigningSubkey()
+                .build();
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
+
+        // Test creation time
+        for (PGPPublicKey k : secretKeys.toCertificate())
+        {
+            isEquals(creationTime, k.getCreationTime());
+            for (Iterator<PGPSignature> it = k.getSignatures(); it.hasNext(); ) {
+                PGPSignature sig = it.next();
+                isEquals(creationTime, sig.getCreationTime());
+            }
+        }
+
+        PGPPublicKey primaryKey = secretKeys.getPublicKey();
+        // Test UIDs
+        Iterator<String> uids = primaryKey.getUserIDs();
+        isEquals("Alice <alice@example.org>", uids.next());
+        isFalse(uids.hasNext());
     }
 
     private void testEnforcesPrimaryOrSubkeyType(final OpenPGPApi api)

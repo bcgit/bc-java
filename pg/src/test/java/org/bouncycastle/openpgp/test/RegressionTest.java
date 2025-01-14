@@ -7,7 +7,6 @@ import org.bouncycastle.openpgp.api.test.OpenPGPMessageGeneratorTest;
 import org.bouncycastle.openpgp.api.test.OpenPGPMessageProcessorTest;
 import org.bouncycastle.openpgp.api.test.OpenPGPV6KeyGeneratorTest;
 import org.bouncycastle.openpgp.api.test.StaticV6OpenPGPMessageGeneratorTest;
-import org.bouncycastle.openpgp.api.test.BcOpenPGPV6KeyGeneratorTest;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
@@ -93,7 +92,6 @@ public class RegressionTest
         new PGPKeyPairGeneratorTest(),
         new OpenPGPV6KeyGeneratorTest(),
         new PGPKeyRingGeneratorTest(),
-        new BcOpenPGPV6KeyGeneratorTest(),
 
         new OpenPGPMessageGeneratorTest(),
         new OpenPGPMessageProcessorTest(),
