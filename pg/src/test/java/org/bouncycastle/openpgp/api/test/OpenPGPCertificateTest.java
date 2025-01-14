@@ -7,19 +7,21 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
+import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 
@@ -32,7 +34,6 @@ import java.util.List;
 public class OpenPGPCertificateTest
         extends AbstractPacketTest
 {
-    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
 
     @Override
     public String getName()
@@ -44,20 +45,27 @@ public class OpenPGPCertificateTest
     public void performTest()
             throws Exception
     {
-        testOpenPGPv6Key();
-
-        testBaseCasePrimaryKeySigns();
-        testBaseCaseSubkeySigns();
-        testPKSignsPKRevokedNoSubpacket();
-        testSKSignsPKRevokedNoSubpacket();
-        testPKSignsPKRevocationSuperseded();
-        testGetPrimaryUserId();
+        performTestsWith(new BcOpenPGPApi());
+        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
     }
 
-    private void testOpenPGPv6Key()
+    private void performTestsWith(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        testOpenPGPv6Key(api);
+
+        testBaseCasePrimaryKeySigns(api);
+        testBaseCaseSubkeySigns(api);
+        testPKSignsPKRevokedNoSubpacket(api);
+        testSKSignsPKRevokedNoSubpacket(api);
+        testPKSignsPKRevocationSuperseded(api);
+        testGetPrimaryUserId(api);
+    }
+
+    private void testOpenPGPv6Key(OpenPGPApi api)
             throws IOException
     {
-        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
 
         isTrue("Test key has no identities", key.getIdentities().isEmpty());
 
@@ -105,7 +113,7 @@ public class OpenPGPCertificateTest
                 encryptionKeyFeatures.getFeatures());
     }
 
-    private void testBaseCasePrimaryKeySigns()
+    private void testBaseCasePrimaryKeySigns(OpenPGPApi api)
             throws IOException
     {
         // https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Key_revocation_test__primary_key_signs_and_is_not_revoked__base_case_
@@ -231,10 +239,10 @@ public class OpenPGPCertificateTest
                 "=5KMU\n" +
                 "-----END PGP SIGNATURE-----\n", true);
 
-        signatureValidityTest(cert, t0, t1, t2, t3);
+        signatureValidityTest(api, cert, t0, t1, t2, t3);
     }
 
-    private void testBaseCaseSubkeySigns()
+    private void testBaseCaseSubkeySigns(OpenPGPApi api)
             throws IOException
     {
         // https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Key_revocation_test__subkey_signs__primary_key_is_not_revoked__base_case_
@@ -360,10 +368,10 @@ public class OpenPGPCertificateTest
                 "=CIl0\n" +
                 "-----END PGP SIGNATURE-----\n", true);
 
-        signatureValidityTest(cert, t0, t1, t2, t3);
+        signatureValidityTest(api, cert, t0, t1, t2, t3);
     }
 
-    private void testPKSignsPKRevokedNoSubpacket()
+    private void testPKSignsPKRevokedNoSubpacket(OpenPGPApi api)
             throws IOException
     {
         String cert = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
@@ -496,10 +504,10 @@ public class OpenPGPCertificateTest
                 "=5KMU\n" +
                 "-----END PGP SIGNATURE-----\n", false, "Hard revocations invalidate key at all times");
 
-        signatureValidityTest(cert, t0, t1, t2, t3);
+        signatureValidityTest(api, cert, t0, t1, t2, t3);
     }
 
-    private void testSKSignsPKRevokedNoSubpacket()
+    private void testSKSignsPKRevokedNoSubpacket(OpenPGPApi api)
             throws IOException
     {
         // https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Key_revocation_test__subkey_signs__primary_key_is_revoked__revoked__no_subpacket
@@ -633,10 +641,10 @@ public class OpenPGPCertificateTest
                 "=CIl0\n" +
                 "-----END PGP SIGNATURE-----\n", false, "Hard revocations invalidate key at all times");
 
-        signatureValidityTest(cert, t0, t1, t2, t3);
+        signatureValidityTest(api, cert, t0, t1, t2, t3);
     }
 
-    private void testPKSignsPKRevocationSuperseded()
+    private void testPKSignsPKRevocationSuperseded(OpenPGPApi api)
             throws IOException
     {
         // https://sequoia-pgp.gitlab.io/openpgp-interoperability-test-suite/results.html#Key_revocation_test__primary_key_signs_and_is_revoked__revoked__superseded
@@ -770,13 +778,13 @@ public class OpenPGPCertificateTest
                 "=5KMU\n" +
                 "-----END PGP SIGNATURE-----\n", true);
 
-        signatureValidityTest(CERT, t0, t1, t2, t3);
+        signatureValidityTest(api, CERT, t0, t1, t2, t3);
     }
 
-    private void signatureValidityTest(String cert, TestSignature... testSignatures)
+    private void signatureValidityTest(OpenPGPApi api, String cert, TestSignature... testSignatures)
             throws IOException
     {
-        OpenPGPCertificate certificate = reader.parseCertificate(cert);
+        OpenPGPCertificate certificate = api.readKeyOrCertificate().parseCertificate(cert);
 
         for (TestSignature test : testSignatures)
         {
@@ -798,13 +806,13 @@ public class OpenPGPCertificateTest
         }
     }
 
-    private void testGetPrimaryUserId()
+    private void testGetPrimaryUserId(OpenPGPApi api)
             throws PGPException
     {
         Date now = new Date((new Date().getTime() / 1000) * 1000);
         Date oneHourAgo = new Date(now.getTime() - 1000 * 60 * 60);
 
-        OpenPGPV6KeyGenerator gen = new BcOpenPGPV6KeyGenerator(oneHourAgo);
+        OpenPGPV6KeyGenerator gen = api.generateKey(oneHourAgo);
         OpenPGPKey key = gen.withPrimaryKey()
                 .addUserId("Old non-primary <non-primary@user.id>")
                 .addUserId("New primary <primary@user.id>",
