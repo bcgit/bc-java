@@ -34,6 +34,7 @@ public class XoodyakEngine
 
     public XoodyakEngine()
     {
+        super(ProcessingBufferType.Buffered);
         algorithmName = "Xoodyak AEAD";
         KEY_SIZE = 16;
         IV_SIZE = 16;

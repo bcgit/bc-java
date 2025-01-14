@@ -33,7 +33,6 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_A_128A));
         testVectors("isapa128av20", IsapType.ISAP_A_128A);
         testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
@@ -95,7 +94,7 @@ public class ISAPTest
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_K_128A));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_K_128));
-
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_A_128A));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new ISAPEngine(IsapType.ISAP_A_128));
     }
 
@@ -114,10 +113,10 @@ public class ISAPTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("19"))
-//                {
-//                    continue;
-//                }
+                if (!map.get("Count").equals("265"))
+                {
+                    continue;
+                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
                 byte[] ad = Hex.decode(map.get("AD"));

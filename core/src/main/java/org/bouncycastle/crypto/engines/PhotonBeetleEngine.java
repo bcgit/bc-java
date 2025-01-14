@@ -55,6 +55,7 @@ public class PhotonBeetleEngine
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
+        super(ProcessingBufferType.Buffered);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
