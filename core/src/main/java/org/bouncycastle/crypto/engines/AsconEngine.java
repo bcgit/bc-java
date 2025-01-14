@@ -107,15 +107,15 @@ public class AsconEngine
 
     protected void processFinalAadBlock()
     {
-        m_buf[m_bufPos] = (byte)0x80;
-        if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
+        m_aad[m_aadPos] = (byte)0x80;
+        if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.bigEndianToLong(m_buf, 0);
-            x1 ^= Pack.bigEndianToLong(m_buf, 8) & (-1L << (56 - ((m_bufPos - 8) << 3)));
+            x0 ^= Pack.bigEndianToLong(m_aad, 0);
+            x1 ^= Pack.bigEndianToLong(m_aad, 8) & (-1L << (56 - ((m_aadPos - 8) << 3)));
         }
         else
         {
-            x0 ^= Pack.bigEndianToLong(m_buf, 0) & (-1L << (56 - (m_bufPos << 3)));
+            x0 ^= Pack.bigEndianToLong(m_aad, 0) & (-1L << (56 - (m_aadPos << 3)));
         }
     }
 
@@ -183,7 +183,7 @@ public class AsconEngine
         finishData(State.EncFinal);
     }
 
-    private void finishData(State nextState)
+    protected void finishData(State nextState)
     {
         switch (asconParameters)
         {
