@@ -16,6 +16,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
@@ -74,6 +75,7 @@ public class OpenPGPV6KeyGeneratorTest
         testGenerateEd448x448Key(api);
 
         testEnforcesPrimaryOrSubkeyType(api);
+        testGenerateKeyWithoutSignatures(api);
     }
 
     private void testGenerateSignOnlyKeyBaseCase(OpenPGPApi api)
@@ -577,6 +579,90 @@ public class OpenPGPV6KeyGeneratorTest
                 }
             }
         ));
+    }
+
+    private void testGenerateKeyWithoutSignatures(OpenPGPApi api)
+            throws PGPException
+    {
+        OpenPGPKey key = api.generateKey()
+                .withPrimaryKey(
+                        new KeyPairGeneratorCallback()
+                        {
+                            @Override
+                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                    throws PGPException
+                            {
+                                return generator.generatePrimaryKey();
+                            }
+                        },
+                        // No direct-key sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters) {
+                                return null;
+                            }
+                        })
+                .addSigningSubkey(
+                        new KeyPairGeneratorCallback()
+                        {
+                            @Override
+                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                    throws PGPException
+                            {
+                                return generator.generateSigningSubkey();
+                            }
+                        },
+                        // No subkey binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        },
+                        // No primary key binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        })
+                .addEncryptionSubkey(
+                        new KeyPairGeneratorCallback()
+                        {
+                            @Override
+                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                    throws PGPException
+                            {
+                                return generator.generateEncryptionSubkey();
+                            }
+                        },
+                        // No subkey binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        })
+                .build();
+
+        PGPPublicKeyRing publicKeys = key.getPGPPublicKeyRing();
+        Iterator<PGPPublicKey> it = publicKeys.getPublicKeys();
+
+        PGPPublicKey primaryKey = it.next();
+        isFalse(primaryKey.getSignatures().hasNext());
+
+        PGPPublicKey signingSubkey = it.next();
+        isFalse(signingSubkey.getSignatures().hasNext());
+
+        PGPPublicKey encryptionSubkey = it.next();
+        isFalse(encryptionSubkey.getSignatures().hasNext());
     }
 
     public static void main(String[] args)
