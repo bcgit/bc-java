@@ -2,13 +2,16 @@ package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
+import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
+import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
@@ -19,7 +22,6 @@ import java.nio.charset.StandardCharsets;
 public class OpenPGPMessageGeneratorTest
         extends AbstractPacketTest
 {
-    private final OpenPGPKeyReader reader = new OpenPGPKeyReader();
 
     @Override
     public String getName()
@@ -31,22 +33,29 @@ public class OpenPGPMessageGeneratorTest
     public void performTest()
             throws Exception
     {
-        armoredLiteralDataPacket();
-        unarmoredLiteralDataPacket();
-
-        armoredCompressedLiteralDataPacket();
-        unarmoredCompressedLiteralDataPacket();
-
-        seipd1EncryptedMessage();
-        seipd2EncryptedMessage();
-
-        seipd2EncryptedSignedMessage();
+        performTestsWith(new BcOpenPGPApi());
+        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
     }
 
-    private void armoredLiteralDataPacket()
+    private void performTestsWith(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        armoredLiteralDataPacket(api);
+        unarmoredLiteralDataPacket(api);
+
+        armoredCompressedLiteralDataPacket(api);
+        unarmoredCompressedLiteralDataPacket(api);
+
+        seipd1EncryptedMessage(api);
+        seipd2EncryptedMessage(api);
+
+        seipd2EncryptedSignedMessage(api);
+    }
+
+    private void armoredLiteralDataPacket(OpenPGPApi api)
+            throws PGPException, IOException
+    {
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.setIsPadded(false);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
@@ -64,10 +73,10 @@ public class OpenPGPMessageGeneratorTest
                 bOut.toString());
     }
 
-    private void unarmoredLiteralDataPacket()
+    private void unarmoredLiteralDataPacket(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.setArmored(false); // disable ASCII armor
         gen.setIsPadded(false); // disable padding
 
@@ -82,10 +91,10 @@ public class OpenPGPMessageGeneratorTest
         isEncodingEqual(Hex.decode("cb1362000000000048656c6c6f2c20576f726c6421"), bOut.toByteArray());
     }
 
-    private void armoredCompressedLiteralDataPacket()
+    private void armoredCompressedLiteralDataPacket(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.setIsPadded(false);
         OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
         configuration.setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
@@ -105,10 +114,10 @@ public class OpenPGPMessageGeneratorTest
                 bOut.toString());
     }
 
-    private void unarmoredCompressedLiteralDataPacket()
+    private void unarmoredCompressedLiteralDataPacket(OpenPGPApi api)
             throws IOException, PGPException
     {
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.setArmored(false); // no armor
         gen.setIsPadded(false);
         OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
@@ -125,12 +134,12 @@ public class OpenPGPMessageGeneratorTest
         isEncodingEqual(Hex.decode("c815013b2d9cc400021ea93939f93a0ae1f94539298a00"), bOut.toByteArray());
     }
 
-    private void seipd2EncryptedMessage()
+    private void seipd2EncryptedMessage(OpenPGPApi api)
             throws IOException, PGPException
     {
-        OpenPGPCertificate cert = reader.parseCertificate(OpenPGPTestKeys.V6_CERT);
+        OpenPGPCertificate cert = api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.V6_CERT);
 
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.addEncryptionCertificate(cert);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -141,12 +150,12 @@ public class OpenPGPMessageGeneratorTest
         System.out.println(bOut);
     }
 
-    private void seipd1EncryptedMessage()
+    private void seipd1EncryptedMessage(OpenPGPApi api)
             throws IOException, PGPException
     {
-        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.BOB_KEY);
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.BOB_KEY);
 
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
         gen.addEncryptionCertificate(key);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -157,12 +166,12 @@ public class OpenPGPMessageGeneratorTest
         System.out.println(bOut);
     }
 
-    private void seipd2EncryptedSignedMessage()
+    private void seipd2EncryptedSignedMessage(OpenPGPApi api)
             throws IOException, PGPException
     {
-        OpenPGPKey key = reader.parseKey(OpenPGPTestKeys.V6_KEY);
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
 
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .setIsPadded(true)
                 .setArmored(true)
                 .addSigningKey(key)
