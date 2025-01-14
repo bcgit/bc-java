@@ -59,6 +59,8 @@ abstract class AEADBufferBaseEngine
         void processAADBytes(byte[] input, int inOff, int len);
 
         int processBytes(boolean forEncryption, byte[] input, int inOff, int len, byte[] output, int outOff);
+
+        int getUpdateOutputSize(int len);
     }
 
     private class BufferedAADProcessor
@@ -214,6 +216,32 @@ abstract class AEADBufferBaseEngine
             m_bufPos = len;
             return resultLength;
         }
+
+        @Override
+        public int getUpdateOutputSize(int len)
+        {
+            // The -1 is to account for the lazy processing of a full buffer
+            int total = Math.max(0, len) - 1;
+
+            switch (m_state)
+            {
+            case DecInit:
+            case DecAad:
+                total = Math.max(0, total - MAC_SIZE);
+                break;
+            case DecData:
+            case DecFinal:
+                total = Math.max(0, total + m_bufPos - MAC_SIZE);
+                break;
+            case EncData:
+            case EncFinal:
+                total = Math.max(0, total + m_bufPos);
+                break;
+            default:
+                break;
+            }
+            return total - total % BlockSize;
+        }
     }
 
     private class ImmediateAADProcessor
@@ -368,6 +396,31 @@ abstract class AEADBufferBaseEngine
             m_bufPos = len;
             return resultLength;
         }
+
+        public int getUpdateOutputSize(int len)
+        {
+            // The -1 is to account for the lazy processing of a full buffer
+            int total = Math.max(0, len);
+
+            switch (m_state)
+            {
+            case DecInit:
+            case DecAad:
+                total = Math.max(0, total - MAC_SIZE);
+                break;
+            case DecData:
+            case DecFinal:
+                total = Math.max(0, total + m_bufPos - MAC_SIZE);
+                break;
+            case EncData:
+            case EncFinal:
+                total = Math.max(0, total + m_bufPos);
+                break;
+            default:
+                break;
+            }
+            return total - total % BlockSize;
+        }
     }
 
     @Override
@@ -451,27 +504,7 @@ abstract class AEADBufferBaseEngine
 
     public int getUpdateOutputSize(int len)
     {
-        // The -1 is to account for the lazy processing of a full buffer
-        int total = Math.max(0, len) - 1;
-
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            total = Math.max(0, total - MAC_SIZE);
-            break;
-        case DecData:
-        case DecFinal:
-            total = Math.max(0, total + m_bufPos - MAC_SIZE);
-            break;
-        case EncData:
-        case EncFinal:
-            total = Math.max(0, total + m_bufPos);
-            break;
-        default:
-            break;
-        }
-        return total - total % BlockSize;
+        return processor.getUpdateOutputSize(len);
     }
 
     public int getOutputSize(int len)
