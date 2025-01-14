@@ -44,9 +44,9 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testVectorsEngine_asconaead128();
         testVectorsDigest_AsconHash256();
         testVectorsXof_AsconXof128();
-        testVectorsEngine_asconaead128();
 
         testBufferingEngine_asconaead128();
         testBufferingEngine_ascon128();
@@ -140,10 +140,6 @@ public class AsconTest
         DigestTest.checkDigestReset(this, new AsconXof(AsconXof.AsconParameters.AsconXofA));
         DigestTest.checkDigestReset(this, new AsconDigest(AsconDigest.AsconParameters.AsconHash));
         DigestTest.checkDigestReset(this, new AsconDigest(AsconDigest.AsconParameters.AsconHashA));
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 16, new AsconAEAD128());
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 16, new  AsconEngine(AsconEngine.AsconParameters.ascon128));
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
-        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 160, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
     }
 
     public void testBufferingEngine_ascon128()

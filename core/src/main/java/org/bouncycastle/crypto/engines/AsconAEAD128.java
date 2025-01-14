@@ -24,12 +24,13 @@ public class AsconAEAD128
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
-        ASCON_AEAD_RATE = 16;
+        AADBufferSize = BlockSize = 16;
         ASCON_IV = 0x00001000808c0001L;
         algorithmName = "Ascon-AEAD128";
         nr = 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
+        m_aad = new byte[BlockSize];
         dsep = -9223372036854775808L; //0x80L << 56
     }
 
@@ -65,15 +66,25 @@ public class AsconAEAD128
 
     protected void processFinalAadBlock()
     {
-        Arrays.fill(m_buf, m_bufPos, m_buf.length, (byte) 0);
-        if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
+        if (m_aadPos == BlockSize)
         {
-            x0 ^= Pack.littleEndianToLong(m_buf, 0);
-            x1 ^= Pack.littleEndianToLong(m_buf, 8) ^ pad(m_bufPos);
+            x0 ^= loadBytes(m_aad, 0);
+            if (BlockSize == 16)
+            {
+                x1 ^= loadBytes(m_aad, 8 );
+            }
+            m_aadPos -= BlockSize;
+            p(nr);
+        }
+        Arrays.fill(m_aad, m_aadPos, AADBufferSize, (byte)0);
+        if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
+        {
+            x0 ^= Pack.littleEndianToLong(m_aad, 0);
+            x1 ^= Pack.littleEndianToLong(m_aad, 8) ^ pad(m_aadPos);
         }
         else
         {
-            x0 ^= Pack.littleEndianToLong(m_buf, 0) ^ pad(m_bufPos);
+            x0 ^= Pack.littleEndianToLong(m_aad, 0) ^ pad(m_aadPos);
         }
     }
 
