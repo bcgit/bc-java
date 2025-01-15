@@ -302,6 +302,7 @@
                  <include name="org/bouncycastle/util/**/*.java" />
                  <include name="org/bouncycastle/asn1/**/*.java" />
                  <include name="org/bouncycastle/internal/**/*.java" />
+                 <exclude name="org/bouncycastle/test/AllTests.java" />
                  <include name="org/bouncycastle/test/*.java" />
                  <include name="org/bouncycastle/pqc/legacy/**/*.java" />
                  <include name="org/bouncycastle/pqc/crypto/**/*.java" />

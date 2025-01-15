@@ -73,6 +73,8 @@
 
         </copy>
         <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="prov/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="prov/src/test/jdk1.5" includes="**/*.java" />
             <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />

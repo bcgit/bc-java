@@ -153,6 +153,7 @@
 		<exclude name="**/MailGeneralTest.java"/>
 		<exclude name="**/SignedMailValidatorTest.java"/>
 		<exclude name="**/DummyCertPathReviewer.java"/>
+                <exclude name="**/NewSMIMEAuthEnvelopedTest.java"/>
 	    </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java"/>
