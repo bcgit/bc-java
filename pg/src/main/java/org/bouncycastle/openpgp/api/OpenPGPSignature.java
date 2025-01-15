@@ -1,6 +1,9 @@
 package org.bouncycastle.openpgp.api;
 
+import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -14,6 +17,8 @@ import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -408,6 +413,20 @@ public abstract class OpenPGPSignature
             default:
                 return "UNKNOWN (" + signature.getSignatureType() + ")";
         }
+    }
+
+    public String toAsciiArmoredString()
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        ArmoredOutputStream aOut = ArmoredOutputStream.builder()
+                .clearHeaders()
+                .build(bOut);
+        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+        getSignature().encode(pOut);
+        pOut.close();
+        aOut.close();
+        return bOut.toString();
     }
 
     /**
