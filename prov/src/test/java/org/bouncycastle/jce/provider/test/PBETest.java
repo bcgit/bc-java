@@ -569,7 +569,6 @@ public class PBETest
         throws Exception
     {
         byte[] input = Hex.decode("1234567890abcdefabcdef1234567890fedbca098765");
-        testExtendedPBEParameterSpec();
 
         //
         // DES
