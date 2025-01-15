@@ -187,7 +187,7 @@ public class XoodyakTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }

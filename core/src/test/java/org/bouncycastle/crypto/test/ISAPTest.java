@@ -345,6 +345,7 @@ public class ISAPTest
             fail(aeadBlockCipher.getAlgorithmName() + ": mac should not match");
         }
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processBytes(new byte[16], 0, 16, new byte[16], 0);
 //        try
 //        {
@@ -386,6 +387,7 @@ public class ISAPTest
         }
         try
         {
+            aeadBlockCipher.init(true, params);
             aeadBlockCipher.processBytes(new byte[blocksize + 1], 0, blocksize + 1, new byte[blocksize], blocksize >> 1);
             fail(aeadBlockCipher.getAlgorithmName() + ": output for processBytes is too short");
         }
