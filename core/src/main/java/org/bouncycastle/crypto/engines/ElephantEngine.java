@@ -67,7 +67,7 @@ public class ElephantEngine
         current_mask = new byte[BlockSize];
         next_mask = new byte[BlockSize];
         buffer = new byte[BlockSize];
-        m_buf = new byte[BlockSize * 2 + MAC_SIZE];
+        m_buf = new byte[BlockSize + MAC_SIZE];
         previous_outputMessage = new byte[BlockSize];
         reset(false);
     }
