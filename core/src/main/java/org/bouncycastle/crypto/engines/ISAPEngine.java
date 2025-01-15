@@ -24,7 +24,8 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
-        super(ProcessingBufferType.Immediate);
+        super(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
+            ProcessingBufferType.ImmediateLargeMac);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
