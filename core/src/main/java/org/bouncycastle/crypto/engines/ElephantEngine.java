@@ -69,7 +69,6 @@ public class ElephantEngine
         buffer = new byte[BlockSize];
         m_buf = new byte[BlockSize * 2 + MAC_SIZE];
         previous_outputMessage = new byte[BlockSize];
-        initialised = false;
         reset(false);
     }
 
@@ -306,7 +305,6 @@ public class ElephantEngine
         expanded_key = new byte[BlockSize];
         System.arraycopy(k, 0, expanded_key, 0, KEY_SIZE);
         instance.permutation(expanded_key);
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }

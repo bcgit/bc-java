@@ -125,7 +125,6 @@ public class SparkleEngine
     {
         Pack.littleEndianToInt(key, 0, k);
         Pack.littleEndianToInt(iv, 0, npub);
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
 
         reset();

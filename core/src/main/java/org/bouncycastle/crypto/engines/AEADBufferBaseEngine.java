@@ -32,7 +32,6 @@ abstract class AEADBufferBaseEngine
     protected int m_bufPos;
     protected int m_aadPos;
     protected boolean aadFinished;
-    protected boolean initialised = false;
     protected int AADBufferSize;
     protected int BlockSize;
     protected State m_state = State.Uninitialized;
@@ -366,6 +365,7 @@ abstract class AEADBufferBaseEngine
                 }
                 else
                 {
+                    //ISAP: ISAP_A_128A, ISAP_A_128
                     while (m_bufPos >= BlockSize && len + m_bufPos >= BlockSize + MAC_SIZE)
                     {
                         processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
@@ -635,6 +635,14 @@ abstract class AEADBufferBaseEngine
         if (inOff + len > input.length)
         {
             throw new DataLengthException("input buffer too short");
+        }
+    }
+
+    protected void ensureInitialized()
+    {
+        if (m_state == State.Uninitialized)
+        {
+            throw new IllegalStateException("Need to call init function before operation");
         }
     }
 

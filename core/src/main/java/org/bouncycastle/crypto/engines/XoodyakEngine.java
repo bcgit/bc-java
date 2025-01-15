@@ -53,7 +53,6 @@ public class XoodyakEngine
         state = new byte[48];
         mac = new byte[MAC_SIZE];
         m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
@@ -153,10 +152,8 @@ public class XoodyakEngine
 
     protected void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
+        ensureInitialized();
+        super.reset(clearMac);
         Arrays.fill(state, (byte)0);
         aadFinished = false;
         encrypted = false;
@@ -175,7 +172,6 @@ public class XoodyakEngine
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
         AbsorbAny(KID, 0, KLen + IDLen + 1, 0x02);
-        super.reset(clearMac);
     }
 
     private void AbsorbAny(byte[] X, int Xoff, int XLen, int Cd)

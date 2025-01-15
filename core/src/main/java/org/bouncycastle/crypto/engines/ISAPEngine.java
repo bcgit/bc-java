@@ -793,7 +793,6 @@ public class ISAPEngine
         k = key;
         m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         ISAPAEAD.init();
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
@@ -852,15 +851,9 @@ public class ISAPEngine
 
     protected void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalStateException("Need call init function before encryption/decryption");
-        }
-        Arrays.fill(m_buf, (byte)0);
-        Arrays.fill(m_aad, (byte)0);
+        ensureInitialized();
+        bufferReset();
         ISAPAEAD.reset();
-        m_bufPos = 0;
-        m_aadPos = 0;
         aadFinished = false;
         super.reset(clearMac);
     }
