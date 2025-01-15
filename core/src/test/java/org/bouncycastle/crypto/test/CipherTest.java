@@ -354,7 +354,7 @@ public abstract class CipherTest
      * @param PARTLEN  Partial Data length. Must be greater than or equal to internal buffer length to exhibit problem.
      * @param AEADLEN  AEAD length.
      * @param NONCELEN Nonce length.
-     * */
+     */
     static void checkAEADCipherMultipleBlocks(SimpleTest test, int DATALEN, int PARTLEN, int AEADLEN, int strength, int NONCELEN, final AEADCipher pCipher)
         throws InvalidCipherTextException
     {

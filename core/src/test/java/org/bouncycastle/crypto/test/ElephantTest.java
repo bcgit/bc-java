@@ -8,6 +8,7 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.ElephantEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
@@ -27,6 +28,10 @@ public class ElephantTest
     public void performTest()
         throws Exception
     {
+        testVectors(ElephantEngine.ElephantParameters.elephant200, "v200");
+        testVectors(ElephantEngine.ElephantParameters.elephant160, "v160");
+        testVectors(ElephantEngine.ElephantParameters.elephant176, "v176");
+
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 12, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 12, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 41, 10, 128, 12, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));
@@ -61,9 +66,7 @@ public class ElephantTest
                 return new ElephantEngine(ElephantEngine.ElephantParameters.elephant200);
             }
         });
-        testVectors(ElephantEngine.ElephantParameters.elephant200, "v200");
-        testVectors(ElephantEngine.ElephantParameters.elephant160, "v160");
-        testVectors(ElephantEngine.ElephantParameters.elephant176, "v176");
+
 
 
         elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant160);
@@ -92,7 +95,7 @@ public class ElephantTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("34"))
+//                if (!map.get("Count").equals("689"))
 //                {
 //                    continue;
 //                }
@@ -185,7 +188,7 @@ public class ElephantTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -197,7 +200,7 @@ public class ElephantTest
 //            aeadBlockCipher.getOutputSize(0);
 //            aeadBlockCipher.getUpdateOutputSize(0);
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
             fail(aeadBlockCipher.getAlgorithmName() + " functions can be called before initialisation");
@@ -370,7 +373,7 @@ public class ElephantTest
             aeadBlockCipher.doFinal(m4, offset);
             fail(aeadBlockCipher.getAlgorithmName() + ": The decryption should fail");
         }
-        catch (IllegalArgumentException e)
+        catch (InvalidCipherTextException e)
         {
             //expected;
         }
