@@ -356,10 +356,6 @@ abstract class AEADBufferBaseEngine
                         }
 
                         available = Math.max(BlockSize - m_bufPos, 0);
-                        if (available == -1)
-                        {
-                            System.out.println();
-                        }
                         System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                         inOff += available;
                         len -= available;
