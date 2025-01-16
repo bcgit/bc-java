@@ -150,16 +150,13 @@ public class XoodyakEngine
 
     protected void reset(boolean clearMac)
     {
+        bufferReset();
         ensureInitialized();
         super.reset(clearMac);
         Arrays.fill(state, (byte)0);
         aadFinished = false;
         encrypted = false;
         phase = PhaseUp;
-        Arrays.fill(m_buf, (byte)0);
-        Arrays.fill(m_aad, (byte)0);
-        m_bufPos = 0;
-        m_aadPos = 0;
         aadcd = (byte)0x03;
         //Absorb key
         int KLen = K.length;
