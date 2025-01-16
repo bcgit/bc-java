@@ -30,6 +30,7 @@ public class PhotonBeetleEngine
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
     private final int D = 8;
+    private boolean aadFinished;
     private final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},

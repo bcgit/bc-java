@@ -25,6 +25,7 @@ public class XoodyakEngine
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean encrypted;
     private byte aadcd;
+    private boolean aadFinished;
 
     enum MODE
     {
@@ -66,10 +67,6 @@ public class XoodyakEngine
 
     protected void processFinalAAD()
     {
-        if (mode != MODE.ModeKeyed)
-        {
-            throw new IllegalArgumentException("Xoodyak has not been initialised");
-        }
         if (!aadFinished)
         {
             AbsorbAny(m_aad, 0, m_aadPos, aadcd);
