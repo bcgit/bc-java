@@ -72,13 +72,8 @@ public class OpenPGPDefaultPolicy
         acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.RSA_ENCRYPT, 2000);
         acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.RSA_SIGN, 2000);
 
-        acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT, 2000);
-        acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.ELGAMAL_GENERAL, 2000);
-
-        acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.DSA, 2000);
         acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.ECDSA, 250);
         acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.EDDSA_LEGACY, 250);
-        acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.DIFFIE_HELLMAN, 2000);
         acceptPublicKeyAlgorithmWithMinimalStrength(PublicKeyAlgorithmTags.ECDH, 250);
 
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.X25519);
