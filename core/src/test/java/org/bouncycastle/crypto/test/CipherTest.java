@@ -1,10 +1,16 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Random;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -13,7 +19,9 @@ import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.TestFailedException;
@@ -412,5 +420,80 @@ public abstract class CipherTest
 
         /* Check that we have the same result */
         test.isTrue("cipher text check", Arrays.areEqual(myData, myResult));
+    }
+
+    static void implTestVectorsEngine(AEADCipher cipher, String path, String filename, SimpleTest test)
+        throws Exception
+    {
+        Random random = new Random();
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                int count = Integer.parseInt((String)map.get("Count"));
+//                if (count != 34)
+//                {
+//                    continue;
+//                }
+                byte[] key = Hex.decode((String)map.get("Key"));
+                byte[] nonce = Hex.decode((String)map.get("Nonce"));
+                byte[] ad = Hex.decode((String)map.get("AD"));
+                byte[] pt = Hex.decode((String)map.get("PT"));
+                byte[] ct = Hex.decode((String)map.get("CT"));
+
+                CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
+
+                // Encrypt
+                {
+                    cipher.init(true, parameters);
+
+                    byte[] rv = new byte[cipher.getOutputSize(pt.length)];
+                    random.nextBytes(rv); // should overwrite any existing data
+
+                    cipher.processAADBytes(ad, 0, ad.length);
+                    int len = cipher.processBytes(pt, 0, pt.length, rv, 0);
+                    len += cipher.doFinal(rv, len);
+
+                    if (!test.areEqual(rv, 0, len, ct, 0, ct.length))
+                    {
+                        mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv, test);
+                    }
+                }
+
+                // Decrypt
+                {
+                    cipher.init(false, parameters);
+
+                    byte[] rv = new byte[cipher.getOutputSize(ct.length)];
+                    random.nextBytes(rv); // should overwrite any existing data
+
+                    cipher.processAADBytes(ad, 0, ad.length);
+                    int len = cipher.processBytes(ct, 0, ct.length, rv, 0);
+                    len += cipher.doFinal(rv, len);
+
+                    if (!test.areEqual(rv, 0, len, pt, 0, pt.length))
+                    {
+                        mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv, test);
+                    }
+                }
+                //System.out.println("pass "+ count);
+                map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    static void mismatch(String name, String expected, byte[] found, SimpleTest test)
+        throws Exception
+    {
+        test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
     }
 }
