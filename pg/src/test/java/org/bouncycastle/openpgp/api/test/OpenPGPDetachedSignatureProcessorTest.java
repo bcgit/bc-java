@@ -56,7 +56,8 @@ public class OpenPGPDetachedSignatureProcessorTest
         missingPassphraseThrows(api);
         wrongPassphraseThrows(api);
 
-        noSigningSubkeyFails(api);
+        withoutSigningSubkeyFails(api);
+        nonSigningSubkeyFails(api);
     }
 
     private void createVerifyV4Signature(OpenPGPApi api)
@@ -193,7 +194,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         isEquals(1, signatures.size());
     }
 
-    private void noSigningSubkeyFails(OpenPGPApi api)
+    private void withoutSigningSubkeyFails(OpenPGPApi api)
             throws PGPException
     {
         OpenPGPKey noSigningKey = api.generateKey()
@@ -231,6 +232,49 @@ public class OpenPGPDetachedSignatureProcessorTest
                     {
                         api.createDetachedSignature()
                                 .addSigningKey(noSigningKey)
+                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                    }
+                }));
+    }
+
+    private void nonSigningSubkeyFails(OpenPGPApi api)
+            throws PGPException
+    {
+        OpenPGPKey noSigningKey = api.generateKey()
+                .withPrimaryKey(
+                        new KeyPairGeneratorCallback() {
+                            @Override
+                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                    throws PGPException {
+                                return generator.generatePrimaryKey();
+                            }
+                        },
+                        SignatureParameters.Callback.modifyHashedSubpackets(
+                                new SignatureSubpacketsFunction()
+                                {
+                                    @Override
+                                    public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                                    {
+                                        subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+                                        // No SIGN_DATA key flag
+                                        subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER);
+                                        return subpackets;
+                                    }
+                                }
+                        )
+                ).build();
+
+        isNotNull(testException(
+                "Subkey cannot sign.",
+                "InvalidSigningKeyException",
+                new TestExceptionOperation()
+                {
+                    @Override
+                    public void operation()
+                            throws Exception
+                    {
+                        api.createDetachedSignature()
+                                .addSigningKey(noSigningKey.getPrimarySecretKey(), (char[])null, null)
                                 .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
                     }
                 }));
