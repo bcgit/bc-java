@@ -11,6 +11,7 @@ abstract class AEADBufferBaseEngine
     protected enum ProcessingBufferType
     {
         Buffered,
+        BufferedLargeMac,
         Immediate,
         ImmediateLargeMac,
     }
@@ -46,11 +47,15 @@ abstract class AEADBufferBaseEngine
         case Buffered:
             processor = new BufferedAADProcessor();
             break;
+        case BufferedLargeMac:
+            processor = new BufferedLargeMacAADProcessor();
+            break;
         case Immediate:
             processor = new ImmediateAADProcessor();
             break;
         case ImmediateLargeMac:
             processor = new ImmediateLargeMacAADProcessor();
+            break;
         }
     }
 
@@ -67,7 +72,7 @@ abstract class AEADBufferBaseEngine
         int getUpdateOutputSize(int len);
     }
 
-    private class BufferedAADProcessor
+    private abstract class BufferedBaseAADProcessor
         implements AADProcessingBuffer
     {
         public void processAADByte(byte input)
@@ -98,7 +103,7 @@ abstract class AEADBufferBaseEngine
                 len -= available;
 
                 processBufferAAD(m_aad, 0);
-                m_aadPos = 0;
+
             }
             while (len > AADBufferSize)
             {
@@ -106,8 +111,8 @@ abstract class AEADBufferBaseEngine
                 inOff += AADBufferSize;
                 len -= AADBufferSize;
             }
-            System.arraycopy(input, inOff, m_aad, m_aadPos, len);
-            m_aadPos += len;
+            System.arraycopy(input, inOff, m_aad, 0, len);
+            m_aadPos = len;
         }
 
         @Override
@@ -253,6 +258,120 @@ abstract class AEADBufferBaseEngine
         }
     }
 
+    private class BufferedAADProcessor
+        extends BufferedBaseAADProcessor
+    {
+        @Override
+        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            int resultLength = 0;
+
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len <= available)
+            {
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE - 1) * BlockSize / BlockSize);
+
+            if (m_bufPos > 0)
+            {
+                if (m_bufPos > BlockSize)
+                {
+                    processBufferDecrypt(m_buf, 0, output, outOff);
+                    m_bufPos -= BlockSize;
+                    System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
+                    resultLength = BlockSize;
+
+                    available += BlockSize;
+                    if (len <= available)
+                    {
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                        m_bufPos += len;
+                        return resultLength;
+                    }
+                }
+
+                available = BlockSize - m_bufPos;
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                resultLength += BlockSize;
+            }
+
+            while (len > m_buf.length)
+            {
+                processBufferDecrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+
+            System.arraycopy(input, inOff, m_buf, 0, len);
+            m_bufPos = len;
+            return resultLength;
+        }
+    }
+
+    private class BufferedLargeMacAADProcessor
+        extends BufferedBaseAADProcessor
+    {
+        @Override
+        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            int resultLength = 0;
+
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len <= available)
+            {
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE - 1) * BlockSize / BlockSize);
+
+            while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
+            {
+                processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                m_bufPos -= BlockSize;
+                resultLength += BlockSize;
+            }
+            if (m_bufPos != 0)
+            {
+                System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                if (m_bufPos + len > BlockSize + MAC_SIZE)
+                {
+                    available = Math.max(BlockSize - m_bufPos, 0);
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                    inOff += available;
+                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                    resultLength += BlockSize;
+                    len -= available;
+                }
+                else
+                {
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return resultLength;
+                }
+            }
+
+            while (len > m_buf.length)
+            {
+                processBufferDecrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+
+            System.arraycopy(input, inOff, m_buf, 0, len);
+            m_bufPos = len;
+            return resultLength;
+        }
+    }
+
     private abstract class ImmediateBaseAADProcessor
         implements AADProcessingBuffer
     {
@@ -284,7 +403,6 @@ abstract class AEADBufferBaseEngine
                 len -= available;
 
                 processBufferAAD(m_aad, 0);
-                m_aadPos = 0;
             }
             while (len >= AADBufferSize)
             {
@@ -292,8 +410,8 @@ abstract class AEADBufferBaseEngine
                 inOff += AADBufferSize;
                 len -= AADBufferSize;
             }
-            System.arraycopy(input, inOff, m_aad, m_aadPos, len);
-            m_aadPos += len;
+            System.arraycopy(input, inOff, m_aad, 0, len);
+            m_aadPos = len;
         }
 
         public int getUpdateOutputSize(int len)
@@ -437,7 +555,7 @@ abstract class AEADBufferBaseEngine
                 m_bufPos -= BlockSize;
                 resultLength += BlockSize;
             }
-            if (m_bufPos != 0)
+            if (m_bufPos > 0)
             {
                 System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
                 if (m_bufPos + len >= BlockSize + MAC_SIZE)
