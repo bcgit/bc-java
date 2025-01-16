@@ -25,9 +25,9 @@ abstract class AsconBaseEngine
 
     protected abstract void setBytes(long n, byte[] bs, int off);
 
-    protected AsconBaseEngine()
+    protected AsconBaseEngine(ProcessingBufferType type)
     {
-        super(ProcessingBufferType.Immediate);
+        super(type);
     }
 
     private void round(long C)
