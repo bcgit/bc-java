@@ -301,6 +301,7 @@ public class XoodyakTest
         }
 
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         try
         {
             aeadBlockCipher.processAADBytes(new byte[]{0}, 1, 1);
