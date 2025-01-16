@@ -7,13 +7,16 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPDetachedSignatureGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPDetachedSignatureProcessor;
+import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.List;
 
 public class OpenPGPDetachedSignatureProcessorTest
@@ -38,6 +41,12 @@ public class OpenPGPDetachedSignatureProcessorTest
     {
         createVerifyV4Signature(api);
         createVerifyV6Signature(api);
+
+        keyPassphrasesArePairedUpProperly_keyAddedFirst(api);
+        keyPassphrasesArePairedUpProperly_passphraseAddedFirst(api);
+
+        missingPassphraseThrows(api);
+        wrongPassphraseThrows(api);
     }
 
     private void createVerifyV4Signature(OpenPGPApi api)
@@ -45,8 +54,7 @@ public class OpenPGPDetachedSignatureProcessorTest
     {
         OpenPGPDetachedSignatureGenerator gen = api.createDetachedSignature();
         gen.addSigningKey(
-                api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY),
-                null);
+                api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY));
 
         byte[] plaintext = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream plaintextIn = new ByteArrayInputStream(plaintext);
@@ -73,8 +81,7 @@ public class OpenPGPDetachedSignatureProcessorTest
     {
         OpenPGPDetachedSignatureGenerator gen = api.createDetachedSignature();
         gen.addSigningKey(
-                api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY),
-                null);
+                api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY));
 
         byte[] plaintext = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
         ByteArrayInputStream plaintextIn = new ByteArrayInputStream(plaintext);
@@ -94,6 +101,86 @@ public class OpenPGPDetachedSignatureProcessorTest
         List<OpenPGPSignature.OpenPGPDocumentSignature> verified = processor.process(new ByteArrayInputStream(plaintext));
         isEquals(1, verified.size());
         isTrue(verified.get(0).isValid());
+    }
+
+    private void missingPassphraseThrows(OpenPGPApi api)
+    {
+        isNotNull(testException(
+                "Cannot unlock secret key",
+                "KeyPassphraseException",
+                new TestExceptionOperation()
+                {
+            @Override
+            public void operation()
+                    throws Exception
+            {
+                api.createDetachedSignature()
+                        .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
+                        .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+            }
+        }));
+    }
+
+    private void wrongPassphraseThrows(OpenPGPApi api)
+    {
+        isNotNull(testException(
+                "Cannot unlock secret key",
+                "KeyPassphraseException",
+                new TestExceptionOperation()
+                {
+            @Override
+            public void operation()
+                    throws Exception
+            {
+                api.createDetachedSignature()
+                        .addKeyPassphrase("thisIsWrong".toCharArray())
+                        .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
+                        .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+            }
+        }));
+    }
+
+    private void keyPassphrasesArePairedUpProperly_keyAddedFirst(OpenPGPApi api)
+            throws PGPException, IOException
+    {
+        OpenPGPKey key = api.generateKey(new Date(), false)
+                .signOnlyKey()
+                .build("password".toCharArray());
+
+        OpenPGPDetachedSignatureGenerator gen = api.createDetachedSignature();
+        gen.addSigningKey(key);
+
+        gen.addKeyPassphrase("penguin".toCharArray());
+        gen.addKeyPassphrase("password".toCharArray());
+        gen.addKeyPassphrase("beluga".toCharArray());
+
+        byte[] plaintext = "arctic\ndeep sea\nice field\n".getBytes(StandardCharsets.UTF_8);
+        InputStream plaintextIn = new ByteArrayInputStream(plaintext);
+
+        List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
+        isEquals(1, signatures.size());
+    }
+
+    private void keyPassphrasesArePairedUpProperly_passphraseAddedFirst(OpenPGPApi api)
+            throws PGPException, IOException
+    {
+        OpenPGPKey key = api.generateKey(new Date(), false)
+                .signOnlyKey()
+                .build("password".toCharArray());
+
+        OpenPGPDetachedSignatureGenerator gen = api.createDetachedSignature();
+
+        gen.addKeyPassphrase("sloth".toCharArray());
+        gen.addKeyPassphrase("password".toCharArray());
+        gen.addKeyPassphrase("tapir".toCharArray());
+
+        gen.addSigningKey(key);
+
+        byte[] plaintext = "jungle\ntropics\nswamp\n".getBytes(StandardCharsets.UTF_8);
+        InputStream plaintextIn = new ByteArrayInputStream(plaintext);
+
+        List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
+        isEquals(1, signatures.size());
     }
 
     public static void main(String[] args)

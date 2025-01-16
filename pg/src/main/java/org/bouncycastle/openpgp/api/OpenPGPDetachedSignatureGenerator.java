@@ -24,7 +24,7 @@ import java.util.List;
  * Then, add the desired {@link OpenPGPKey} you want to use for signing the data via one or more
  * calls to {@link #addSigningKey(OpenPGPKey, KeyPassphraseProvider)}.
  * You have fine-grained control over the signature by using the method
- * {@link #addSigningKey(OpenPGPKey.OpenPGPSecretKey, KeyPassphraseProvider, SignatureParameters.Callback)}.
+ * {@link #addSigningKey(OpenPGPKey.OpenPGPSecretKey, char[], SignatureParameters.Callback)}.
  * Lastly, retrieve a list of detached {@link OpenPGPSignature.OpenPGPDocumentSignature signatures} by calling
  * {@link #sign(InputStream)}, passing in an {@link InputStream} containing the data you want to sign.
  */
@@ -33,8 +33,14 @@ public class OpenPGPDetachedSignatureGenerator
     private final OpenPGPImplementation implementation;
     private final OpenPGPPolicy policy;
 
+    // Below lists all use the same indexing
     private final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<>();
-    private final List<OpenPGPCertificate.OpenPGPComponentKey> signingKeys = new ArrayList<>();
+    private final List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<>();
+    private final List<SignatureParameters.Callback> signatureCallbacks = new ArrayList<>();
+    private final List<KeyPassphraseProvider> signingKeyPassphraseProviders = new ArrayList<>();
+
+    private final KeyPassphraseProvider.DefaultKeyPassphraseProvider defaultKeyPassphraseProvider =
+            new KeyPassphraseProvider.DefaultKeyPassphraseProvider();
 
     /**
      * Instantiate a signature generator using the default {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
@@ -64,6 +70,19 @@ public class OpenPGPDetachedSignatureGenerator
     {
         this.implementation = implementation;
         this.policy = policy;
+    }
+
+    public OpenPGPDetachedSignatureGenerator addKeyPassphrase(char[] passphrase)
+    {
+        defaultKeyPassphraseProvider.addPassphrase(passphrase);
+        return this;
+    }
+
+    public OpenPGPDetachedSignatureGenerator addSigningKey(
+            OpenPGPKey key)
+        throws PGPException
+    {
+        return addSigningKey(key, defaultKeyPassphraseProvider);
     }
 
     /**
@@ -96,9 +115,38 @@ public class OpenPGPDetachedSignatureGenerator
 
     public OpenPGPDetachedSignatureGenerator addSigningKey(
             OpenPGPKey.OpenPGPSecretKey signingKey,
+            char[] passphrase,
+            SignatureParameters.Callback signatureCallback)
+            throws PGPException
+    {
+        return addSigningKey(
+                signingKey,
+                defaultKeyPassphraseProvider.addPassphrase(signingKey, passphrase),
+                signatureCallback);
+    }
+
+    public OpenPGPDetachedSignatureGenerator addSigningKey(
+            OpenPGPKey.OpenPGPSecretKey signingKey,
             KeyPassphraseProvider passphraseProvider,
             SignatureParameters.Callback signatureCallback)
             throws PGPException
+    {
+        if (!signingKey.isSigningKey())
+        {
+            throw new InvalidSigningKeyException("Subkey cannot sign.");
+        }
+
+        signingKeys.add(signingKey);
+        signingKeyPassphraseProviders.add(passphraseProvider);
+        signatureCallbacks.add(signatureCallback);
+        return this;
+    }
+
+    private PGPSignatureGenerator initSignatureGenerator(
+            OpenPGPKey.OpenPGPSecretKey signingKey,
+            KeyPassphraseProvider passphraseProvider,
+            SignatureParameters.Callback signatureCallback)
+        throws PGPException
     {
         SignatureParameters parameters = SignatureParameters.dataSignature(policy)
                 .setSignatureHashAlgorithm(getPreferredHashAlgorithm(signingKey));
@@ -108,7 +156,7 @@ public class OpenPGPDetachedSignatureGenerator
             parameters = signatureCallback.apply(parameters);
         }
 
-        if(parameters == null)
+        if (parameters == null)
         {
             throw new IllegalStateException("SignatureParameters Callback MUST NOT return null.");
         }
@@ -125,7 +173,7 @@ public class OpenPGPDetachedSignatureGenerator
                         parameters.getSignatureHashAlgorithmId()),
                 signingKey.getPGPPublicKey());
 
-        char[] passphrase = signingKey.isLocked() ? passphraseProvider.getKeyPassword(signingKey) : null;
+        char[] passphrase = passphraseProvider.getKeyPassword(signingKey);
         sigGen.init(parameters.getSignatureType(), signingKey.unlock(passphrase));
 
         PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -137,10 +185,7 @@ public class OpenPGPDetachedSignatureGenerator
         unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
         sigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
 
-        signatureGenerators.add(sigGen);
-        signingKeys.add(signingKey);
-
-        return this;
+        return sigGen;
     }
 
     private int getPreferredHashAlgorithm(OpenPGPCertificate.OpenPGPComponentKey key)
@@ -173,6 +218,16 @@ public class OpenPGPDetachedSignatureGenerator
     public List<OpenPGPSignature.OpenPGPDocumentSignature> sign(InputStream inputStream)
             throws IOException, PGPException
     {
+        for (int i = 0; i < signingKeys.size(); i++)
+        {
+            OpenPGPKey.OpenPGPSecretKey signingKey = signingKeys.get(i);
+            KeyPassphraseProvider passphraseProvider = signingKeyPassphraseProviders.get(i);
+            SignatureParameters.Callback signatureCallback = signatureCallbacks.get(i);
+            PGPSignatureGenerator signatureGenerator =
+                    initSignatureGenerator(signingKey, passphraseProvider, signatureCallback);
+            signatureGenerators.add(signatureGenerator);
+        }
+
         byte[] buf = new byte[2048];
         int r;
         while ((r = inputStream.read(buf)) != -1)
