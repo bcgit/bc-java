@@ -27,8 +27,6 @@ public class SparkleEngine
     private final int[] k;
     private final int[] npub;
     private boolean encrypted;
-    private final int m_bufferSizeDecrypt;
-
     private final int SPARKLE_STEPS_SLIM;
     private final int SPARKLE_STEPS_BIG;
     private final int KEY_WORDS;

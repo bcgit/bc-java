@@ -48,6 +48,7 @@ public class ISAPEngine
             algorithmName = "ISAP-K-128 AEAD";
             break;
         }
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         AADBufferSize = BlockSize;
         m_aad = new byte[AADBufferSize];
     }

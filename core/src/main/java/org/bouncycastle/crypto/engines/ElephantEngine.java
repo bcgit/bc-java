@@ -62,6 +62,7 @@ public class ElephantEngine
         default:
             throw new IllegalArgumentException("Invalid parameter settings for Elephant");
         }
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         tag_buffer = new byte[BlockSize];
         previous_mask = new byte[BlockSize];
         current_mask = new byte[BlockSize];
