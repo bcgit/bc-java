@@ -21,6 +21,7 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
+        super(ProcessingBufferType.Immediate);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;

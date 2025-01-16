@@ -16,6 +16,7 @@ import org.bouncycastle.util.Pack;
  * ASCON C Reference Implementation (NIST Round 2)
  * </a>.
  * </p>
+ *
  * @deprecated Now superseded. Please refer to {@code AsconAEAD128Engine} for future implementations.
  */
 
@@ -34,6 +35,7 @@ public class AsconEngine
 
     public AsconEngine(AsconParameters asconParameters)
     {
+        super(asconParameters == AsconParameters.ascon128a ? ProcessingBufferType.Immediate : ProcessingBufferType.ImmediateLargeMac);
         this.asconParameters = asconParameters;
         IV_SIZE = 16;
         MAC_SIZE = 16;
@@ -84,6 +86,7 @@ public class AsconEngine
     {
         Pack.longToBigEndian(n, bs, off);
     }
+
     protected void ascon_aeadinit()
     {
         /* initialize */

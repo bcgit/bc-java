@@ -60,7 +60,9 @@ abstract class AEADBufferBaseEngine
 
         void processAADBytes(byte[] input, int inOff, int len);
 
-        int processBytes(boolean forEncryption, byte[] input, int inOff, int len, byte[] output, int outOff);
+        int processEncryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
+
+        int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
 
         int getUpdateOutputSize(int len);
     }
@@ -106,117 +108,119 @@ abstract class AEADBufferBaseEngine
             }
             System.arraycopy(input, inOff, m_aad, m_aadPos, len);
             m_aadPos += len;
-
         }
 
         @Override
-        public int processBytes(boolean forEncryption, byte[] input, int inOff, int len, byte[] output, int outOff)
+        public int processEncryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
             int resultLength = 0;
-
-            if (forEncryption)
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - 1) * BlockSize / BlockSize);
+            if (m_bufPos > 0)
             {
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - 1) * BlockSize / BlockSize);
-                if (m_bufPos > 0)
-                {
-                    int available = BlockSize - m_bufPos;
-                    if (len <= available)
-                    {
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                        m_bufPos += len;
-                        return 0;
-                    }
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                    inOff += available;
-                    len -= available;
-
-                    processBufferEncrypt(m_buf, 0, output, outOff);
-                    resultLength = BlockSize;
-                    //m_bufPos = 0;
-                }
-
-                while (len > BlockSize)
-                {
-                    processBufferEncrypt(input, inOff, output, outOff + resultLength);
-                    inOff += BlockSize;
-                    len -= BlockSize;
-                    resultLength += BlockSize;
-                }
-            }
-            else
-            {
-                int available = BlockSize + MAC_SIZE - m_bufPos;
+                int available = BlockSize - m_bufPos;
                 if (len <= available)
                 {
                     System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                     m_bufPos += len;
                     return 0;
                 }
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE - 1) * BlockSize / BlockSize);
-                if (BlockSize >= MAC_SIZE)
-                {
-                    if (m_bufPos > 0)
-                    {
-                        if (m_bufPos > BlockSize)
-                        {
-                            processBufferDecrypt(m_buf, 0, output, outOff);
-                            m_bufPos -= BlockSize;
-                            System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
-                            resultLength = BlockSize;
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
 
-                            available += BlockSize;
-                            if (len <= available)
-                            {
-                                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                                m_bufPos += len;
-                                return resultLength;
-                            }
-                        }
+                processBufferEncrypt(m_buf, 0, output, outOff);
+                resultLength = BlockSize;
+                //m_bufPos = 0;
+            }
+            while (len > BlockSize)
+            {
+                processBufferEncrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+            System.arraycopy(input, inOff, m_buf, 0, len);
+            m_bufPos = len;
+            return resultLength;
+        }
 
-                        available = BlockSize - m_bufPos;
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                        inOff += available;
-                        len -= available;
-                        processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-                        resultLength += BlockSize;
-                    }
-                }
-                else
+        @Override
+        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            int resultLength = 0;
+
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len <= available)
+            {
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE - 1) * BlockSize / BlockSize);
+            if (BlockSize >= MAC_SIZE)
+            {
+                if (m_bufPos > 0)
                 {
-                    while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
+                    if (m_bufPos > BlockSize)
                     {
-                        processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                        processBufferDecrypt(m_buf, 0, output, outOff);
                         m_bufPos -= BlockSize;
-                        resultLength += BlockSize;
-                    }
-                    if (m_bufPos != 0)
-                    {
-                        System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
-                        if (m_bufPos + len > BlockSize + MAC_SIZE)
-                        {
-                            available = Math.max(BlockSize - m_bufPos, 0);
-                            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                            inOff += available;
-                            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-                            resultLength += BlockSize;
-                            len -= available;
-                        }
-                        else
+                        System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
+                        resultLength = BlockSize;
+
+                        available += BlockSize;
+                        if (len <= available)
                         {
                             System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                             m_bufPos += len;
                             return resultLength;
                         }
                     }
-                }
-                while (len > m_buf.length)
-                {
-                    processBufferDecrypt(input, inOff, output, outOff + resultLength);
-                    inOff += BlockSize;
-                    len -= BlockSize;
+
+                    available = BlockSize - m_bufPos;
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                    inOff += available;
+                    len -= available;
+                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                     resultLength += BlockSize;
                 }
             }
+            else
+            {
+                while (m_bufPos > BlockSize && len + m_bufPos > BlockSize + MAC_SIZE)
+                {
+                    processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                    m_bufPos -= BlockSize;
+                    resultLength += BlockSize;
+                }
+                if (m_bufPos != 0)
+                {
+                    System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                    if (m_bufPos + len > BlockSize + MAC_SIZE)
+                    {
+                        available = Math.max(BlockSize - m_bufPos, 0);
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                        inOff += available;
+                        processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                        resultLength += BlockSize;
+                        len -= available;
+                    }
+                    else
+                    {
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                        m_bufPos += len;
+                        return resultLength;
+                    }
+                }
+            }
+            while (len > m_buf.length)
+            {
+                processBufferDecrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+
             System.arraycopy(input, inOff, m_buf, 0, len);
             m_bufPos = len;
             return resultLength;
@@ -315,50 +319,15 @@ abstract class AEADBufferBaseEngine
             }
             return total - total % BlockSize;
         }
-    }
 
-    private class ImmediateAADProcessor
-        extends ImmediateBaseAADProcessor
-    {
         @Override
-        public int processBytes(boolean forEncryption, byte[] input, int inOff, int len, byte[] output, int outOff)
+        public int processEncryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
             int resultLength = 0;
-
-            if (forEncryption)
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos) * BlockSize / BlockSize);
+            if (m_bufPos > 0)
             {
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos) * BlockSize / BlockSize);
-                if (m_bufPos > 0)
-                {
-                    int available = BlockSize - m_bufPos;
-                    if (len < available)
-                    {
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                        m_bufPos += len;
-                        return 0;
-                    }
-
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                    inOff += available;
-                    len -= available;
-
-                    processBufferEncrypt(m_buf, 0, output, outOff);
-                    resultLength = BlockSize;
-                    //m_bufPos = 0;
-                }
-
-                while (len >= BlockSize)
-                {
-                    processBufferEncrypt(input, inOff, output, outOff + resultLength);
-                    inOff += BlockSize;
-                    len -= BlockSize;
-                    resultLength += BlockSize;
-                }
-            }
-            else
-            {
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE) * BlockSize / BlockSize);
-                int available = BlockSize + MAC_SIZE - m_bufPos;
+                int available = BlockSize - m_bufPos;
                 if (len < available)
                 {
                     System.arraycopy(input, inOff, m_buf, m_bufPos, len);
@@ -366,41 +335,80 @@ abstract class AEADBufferBaseEngine
                     return 0;
                 }
 
-                if (m_bufPos > 0)
-                {
-                    if (m_bufPos >= BlockSize)
-                    {
-                        processBufferDecrypt(m_buf, 0, output, outOff);
-                        m_bufPos -= BlockSize;
-                        System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
-                        resultLength = BlockSize;
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
 
-                        available += BlockSize;
-                        if (len < available)
-                        {
-                            System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                            m_bufPos += len;
-                            return resultLength;
-                        }
-                    }
-
-                    available = Math.max(BlockSize - m_bufPos, 0);
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                    inOff += available;
-                    len -= available;
-                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-                    resultLength += BlockSize;
-                }
+                processBufferEncrypt(m_buf, 0, output, outOff);
+                resultLength = BlockSize;
                 //m_bufPos = 0;
-
-                while (len >= BlockSize + MAC_SIZE)
-                {
-                    processBufferDecrypt(input, inOff, output, outOff + resultLength);
-                    inOff += BlockSize;
-                    len -= BlockSize;
-                    resultLength += BlockSize;
-                }
             }
+
+            while (len >= BlockSize)
+            {
+                processBufferEncrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+
+            System.arraycopy(input, inOff, m_buf, 0, len);
+            m_bufPos = len;
+            return resultLength;
+        }
+    }
+
+    private class ImmediateAADProcessor
+        extends ImmediateBaseAADProcessor
+    {
+        @Override
+        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            int resultLength = 0;
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE) * BlockSize / BlockSize);
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len < available)
+            {
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+
+            if (m_bufPos > 0)
+            {
+                if (m_bufPos >= BlockSize)
+                {
+                    processBufferDecrypt(m_buf, 0, output, outOff);
+                    m_bufPos -= BlockSize;
+                    System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
+                    resultLength = BlockSize;
+
+                    available += BlockSize;
+                    if (len < available)
+                    {
+                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                        m_bufPos += len;
+                        return resultLength;
+                    }
+                }
+
+                available = Math.max(BlockSize - m_bufPos, 0);
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                resultLength += BlockSize;
+            }
+            //m_bufPos = 0;
+
+            while (len >= BlockSize + MAC_SIZE)
+            {
+                processBufferDecrypt(input, inOff, output, outOff + resultLength);
+                inOff += BlockSize;
+                len -= BlockSize;
+                resultLength += BlockSize;
+            }
+
             System.arraycopy(input, inOff, m_buf, 0, len);
             m_bufPos = len;
             return resultLength;
@@ -411,77 +419,44 @@ abstract class AEADBufferBaseEngine
         extends ImmediateBaseAADProcessor
     {
         @Override
-        public int processBytes(boolean forEncryption, byte[] input, int inOff, int len, byte[] output, int outOff)
+        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
             int resultLength = 0;
-
-            if (forEncryption)
+            ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE) * BlockSize / BlockSize);
+            int available = BlockSize + MAC_SIZE - m_bufPos;
+            if (len < available)
             {
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos) * BlockSize / BlockSize);
-                if (m_bufPos > 0)
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return 0;
+            }
+            //ISAP: ISAP_A_128A, ISAP_A_128
+            while (m_bufPos >= BlockSize && len + m_bufPos >= BlockSize + MAC_SIZE)
+            {
+                processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                m_bufPos -= BlockSize;
+                resultLength += BlockSize;
+            }
+            if (m_bufPos != 0)
+            {
+                System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                if (m_bufPos + len >= BlockSize + MAC_SIZE)
                 {
-                    int available = BlockSize - m_bufPos;
-                    if (len < available)
-                    {
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                        m_bufPos += len;
-                        return 0;
-                    }
-
+                    available = Math.max(BlockSize - m_bufPos, 0);
                     System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                     inOff += available;
-                    len -= available;
-
-                    processBufferEncrypt(m_buf, 0, output, outOff);
-                    resultLength = BlockSize;
-                    //m_bufPos = 0;
-                }
-
-                while (len >= BlockSize)
-                {
-                    processBufferEncrypt(input, inOff, output, outOff + resultLength);
-                    inOff += BlockSize;
-                    len -= BlockSize;
+                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
                     resultLength += BlockSize;
+                    len -= available;
                 }
-            }
-            else
-            {
-                ensureSufficientOutputBuffer(output, outOff, (len + m_bufPos - MAC_SIZE) * BlockSize / BlockSize);
-                int available = BlockSize + MAC_SIZE - m_bufPos;
-                if (len < available)
+                else
                 {
                     System.arraycopy(input, inOff, m_buf, m_bufPos, len);
                     m_bufPos += len;
-                    return 0;
-                }
-                //ISAP: ISAP_A_128A, ISAP_A_128
-                while (m_bufPos >= BlockSize && len + m_bufPos >= BlockSize + MAC_SIZE)
-                {
-                    processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
-                    m_bufPos -= BlockSize;
-                    resultLength += BlockSize;
-                }
-                if (m_bufPos != 0)
-                {
-                    System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
-                    if (m_bufPos + len >= BlockSize + MAC_SIZE)
-                    {
-                        available = Math.max(BlockSize - m_bufPos, 0);
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                        inOff += available;
-                        processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-                        resultLength += BlockSize;
-                        len -= available;
-                    }
-                    else
-                    {
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                        m_bufPos += len;
-                        return resultLength;
-                    }
+                    return resultLength;
                 }
             }
+
             while (len >= BlockSize + MAC_SIZE)
             {
                 processBufferDecrypt(input, inOff, output, outOff + resultLength);
@@ -523,9 +498,14 @@ abstract class AEADBufferBaseEngine
     {
         ensureSufficientInputBuffer(input, inOff, len);
 
-        boolean forEncryption = checkData();
-
-        return processor.processBytes(forEncryption, input, inOff, len, output, outOff);
+        if (checkData())
+        {
+            return processor.processEncryptBytes(input, inOff, len, output, outOff);
+        }
+        else
+        {
+            return processor.processDecryptBytes(input, inOff, len, output, outOff);
+        }
     }
 
     @Override
