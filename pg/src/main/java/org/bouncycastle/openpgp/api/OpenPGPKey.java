@@ -4,8 +4,11 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
+import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyValidationException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -259,6 +262,7 @@ public class OpenPGPKey
         public PGPPrivateKey unlock(char[] passphrase)
                 throws PGPException
         {
+            sanitizeProtectionMode();
             PBESecretKeyDecryptor decryptor = null;
             try
             {
@@ -271,6 +275,39 @@ public class OpenPGPKey
             catch (PGPException e)
             {
                 throw new KeyPassphraseException(e);
+            }
+        }
+
+        private void sanitizeProtectionMode()
+                throws PGPException
+        {
+            if (!isLocked())
+            {
+                return;
+            }
+
+            PGPSecretKey secretKey = getPGPSecretKey();
+            S2K s2k = secretKey.getS2K();
+            if (s2k == null)
+            {
+                throw new PGPKeyValidationException("Legacy CFB using MD5 is not allowed.");
+            }
+
+            if (s2k.getType() == S2K.ARGON_2 && secretKey.getS2KUsage() != SecretKeyPacket.USAGE_AEAD)
+            {
+                throw new PGPKeyValidationException("Argon2 without AEAD is not allowed.");
+            }
+
+            if (getVersion() == PublicKeyPacket.VERSION_6)
+            {
+                if (secretKey.getS2KUsage() == SecretKeyPacket.USAGE_CHECKSUM)
+                {
+                    throw new PGPKeyValidationException("Version 6 keys MUST NOT use malleable CFB.");
+                }
+                if (s2k.getType() == S2K.SIMPLE)
+                {
+                    throw new PGPKeyValidationException("Version 6 keys MUST NOT use SIMPLE S2K.");
+                }
             }
         }
 

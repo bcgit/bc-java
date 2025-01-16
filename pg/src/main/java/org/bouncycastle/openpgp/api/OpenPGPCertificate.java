@@ -1059,6 +1059,11 @@ public class OpenPGPCertificate
             return rawPubkey.getKeyIdentifier();
         }
 
+        public int getVersion()
+        {
+            return getPGPPublicKey().getVersion();
+        }
+
         /**
          * Return the creation time of this key.
          *
