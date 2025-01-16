@@ -320,7 +320,7 @@ abstract class AEADBufferBaseEngine
         return inOff;
     }
 
-    int processDecryptionWithSmallMacSize(byte[] input, int inOff, int len, byte[] output, int outOff)
+    private int processDecryptionWithSmallMacSize(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
         int resultLength = 0, available = m_bufferSizeDecrypt - m_bufPos;
         if (m_bufPos > 0)
