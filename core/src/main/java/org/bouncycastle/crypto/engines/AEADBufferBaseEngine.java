@@ -33,7 +33,6 @@ abstract class AEADBufferBaseEngine
     protected byte[] m_aad;
     protected int m_bufPos;
     protected int m_aadPos;
-    protected boolean aadFinished;
     protected int AADBufferSize;
     protected int BlockSize;
     protected State m_state = State.Uninitialized;
@@ -689,7 +688,7 @@ abstract class AEADBufferBaseEngine
         case DecAad:
         case DecData:
         case DecFinal:
-            m_state = State.DecInit;
+            m_state = State.DecFinal;
             break;
         case EncAad:
         case EncData:

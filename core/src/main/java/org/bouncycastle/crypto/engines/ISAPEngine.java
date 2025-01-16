@@ -57,6 +57,7 @@ public class ISAPEngine
     private byte[] k;
     private byte[] npub;
     private int ISAP_rH;
+    private boolean aadFinished;
     private ISAP_AEAD ISAPAEAD;
 
     private interface ISAP_AEAD
