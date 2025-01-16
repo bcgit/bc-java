@@ -22,8 +22,8 @@ public interface KeyPassphraseProvider
     class DefaultKeyPassphraseProvider
             implements KeyPassphraseProvider
     {
-        private final Map<OpenPGPCertificate.OpenPGPComponentKey, char[]> passphraseMap = new HashMap<>();
-        private final List<char[]> unassociatedPassphrases = new ArrayList<>();
+        private final Map<OpenPGPKey.OpenPGPSecretKey, char[]> passphraseMap = new HashMap<>();
+        private final List<char[]> allPassphrases = new ArrayList<>();
         private KeyPassphraseProvider callback;
 
         public DefaultKeyPassphraseProvider()
@@ -33,6 +33,7 @@ public interface KeyPassphraseProvider
 
         public DefaultKeyPassphraseProvider(OpenPGPKey key, char[] passphrase)
         {
+            allPassphrases.add(passphrase);
             for (OpenPGPKey.OpenPGPSecretKey subkey : key.getSecretKeys().values())
             {
                 passphraseMap.put(subkey, passphrase);
@@ -42,48 +43,46 @@ public interface KeyPassphraseProvider
         @Override
         public char[] getKeyPassword(OpenPGPKey.OpenPGPSecretKey key)
         {
-            if (key.isLocked())
+            if (!key.isLocked())
             {
-                char[] passphrase = passphraseMap.get(key);
-                if (passphrase != null)
-                {
-                    return passphrase;
-                }
-
-                for (char[] unassociatedPassphrase : unassociatedPassphrases)
-                {
-                    passphrase = unassociatedPassphrase;
-                    if (key.isPassphraseCorrect(passphrase))
-                    {
-                        addPassphrase(key, passphrase);
-                        return passphrase;
-                    }
-                }
-
-                if (callback != null)
-                {
-                    passphrase = callback.getKeyPassword(key);
-                    addPassphrase(key, passphrase);
-                }
-                return passphrase;
-            }
-            else
-            {
+                passphraseMap.put(key, null);
                 return null;
             }
+
+            char[] passphrase = passphraseMap.get(key);
+            if (passphrase != null)
+            {
+                return passphrase;
+            }
+
+            for (char[] knownPassphrase : allPassphrases)
+            {
+                if (key.isPassphraseCorrect(knownPassphrase))
+                {
+                    addPassphrase(key, knownPassphrase);
+                    return knownPassphrase;
+                }
+            }
+
+            if (callback != null)
+            {
+                passphrase = callback.getKeyPassword(key);
+                addPassphrase(key, passphrase);
+            }
+            return passphrase;
         }
 
         public DefaultKeyPassphraseProvider addPassphrase(char[] passphrase)
         {
             boolean found = false;
-            for (char[] existing : unassociatedPassphrases)
+            for (char[] existing : allPassphrases)
             {
                 found |= (Arrays.areEqual(existing, passphrase));
             }
 
             if (!found)
             {
-                unassociatedPassphrases.add(passphrase);
+                allPassphrases.add(passphrase);
             }
             return this;
         }
@@ -92,14 +91,31 @@ public interface KeyPassphraseProvider
         {
             for (OpenPGPKey.OpenPGPSecretKey subkey : key.getSecretKeys().values())
             {
-                addPassphrase(subkey, passphrase);
+                if (!subkey.isLocked())
+                {
+                    passphraseMap.put(subkey, null);
+                    continue;
+                }
+
+                char[] existentPassphrase = passphraseMap.get(subkey);
+                if (existentPassphrase == null || !subkey.isPassphraseCorrect(existentPassphrase))
+                {
+                    passphraseMap.put(subkey, passphrase);
+                }
             }
             return this;
         }
 
         public DefaultKeyPassphraseProvider addPassphrase(OpenPGPKey.OpenPGPSecretKey key, char[] passphrase)
         {
+            if (!key.isLocked())
+            {
+                passphraseMap.put(key, null);
+                return this;
+            }
+
             passphraseMap.put(key, passphrase);
+
             return this;
         }
 
