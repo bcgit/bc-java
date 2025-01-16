@@ -20,7 +20,7 @@ public interface OpenPGPEncryptionNegotiator
      * @param configuration message generator configuration
      * @return negotiated encryption mode and algorithms
      */
-    MessageEncryptionMechanism negotiateEncryption(OpenPGPMessageGenerator.Configuration configuration);
+    MessageEncryptionMechanism negotiateEncryption(OpenPGPMessageGenerator configuration);
 
     static PreferredAEADCiphersuites negotiateAEADCiphersuite(List<OpenPGPCertificate> certificates, OpenPGPPolicy policy)
     {

@@ -10,6 +10,7 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Stack;
 
 /**
@@ -355,9 +356,9 @@ public class OpenPGPMessageOutputStream
     {
 
         private final OutputStream out;
-        private final Stack<PGPSignatureGenerator> signatureGenerators;
+        private final List<PGPSignatureGenerator> signatureGenerators;
 
-        public SignatureGeneratorOutputStream(OutputStream out, Stack<PGPSignatureGenerator> signatureGenerators)
+        public SignatureGeneratorOutputStream(OutputStream out, List<PGPSignatureGenerator> signatureGenerators)
         {
             this.out = out;
             this.signatureGenerators = signatureGenerators;
@@ -397,9 +398,9 @@ public class OpenPGPMessageOutputStream
         public void close()
                 throws IOException
         {
-            while (!signatureGenerators.isEmpty())
+            for (int i = signatureGenerators.size() - 1; i >= 0; i--)
             {
-                PGPSignatureGenerator gen = signatureGenerators.pop();
+                PGPSignatureGenerator gen = signatureGenerators.get(i);
                 PGPSignature sig = null;
                 try
                 {

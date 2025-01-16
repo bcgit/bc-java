@@ -10,6 +10,7 @@ import org.bouncycastle.openpgp.api.OpenPGPKeyReader;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
+import org.bouncycastle.openpgp.api.SubkeySelector;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
@@ -82,21 +83,21 @@ public class StaticV6OpenPGPMessageGeneratorTest
      */
     public OpenPGPMessageGenerator getStaticGenerator()
     {
-        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator();
-
-        gen.getConfiguration()
+        OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
+                .setSigningKeySelector(new SubkeySelector()
+                {
+                    @Override
+                    public List<OpenPGPCertificate.OpenPGPComponentKey> select(
+                            OpenPGPCertificate certificate, OpenPGPPolicy policy)
+                    {
+                        return Collections.singletonList(certificate.getKey(signingKeyIdentifier));
+                    }
+                })
                 .setEncryptionKeySelector(
-                        new OpenPGPMessageGenerator.SubkeySelector() {
+                        new SubkeySelector() {
                             @Override
                             public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
                                 return Collections.singletonList(certificate.getKey(encryptionKeyIdentifier));
-                            }
-                        })
-                .setSigningKeySelector(
-                        new OpenPGPMessageGenerator.SubkeySelector() {
-                            @Override
-                            public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
-                                return Collections.singletonList(certificate.getKey(signingKeyIdentifier));
                             }
                         });
 

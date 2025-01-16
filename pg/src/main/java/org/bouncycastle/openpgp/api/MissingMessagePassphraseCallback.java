@@ -1,6 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
-public interface MissingPassphraseCallback
+public interface MissingMessagePassphraseCallback
 {
     /**
      * Return a passphrase for message decryption.
@@ -8,6 +8,6 @@ public interface MissingPassphraseCallback
      *
      * @return passphrase
      */
-    char[] getPassphrase();
+    char[] getMessagePassphrase();
 
 }

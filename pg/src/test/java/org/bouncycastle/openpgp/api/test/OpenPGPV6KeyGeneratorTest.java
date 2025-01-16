@@ -586,15 +586,7 @@ public class OpenPGPV6KeyGeneratorTest
     {
         OpenPGPKey key = api.generateKey()
                 .withPrimaryKey(
-                        new KeyPairGeneratorCallback()
-                        {
-                            @Override
-                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                                    throws PGPException
-                            {
-                                return generator.generatePrimaryKey();
-                            }
-                        },
+                        KeyPairGeneratorCallback.primaryKey(),
                         // No direct-key sig
                         new SignatureParameters.Callback()
                         {
@@ -604,15 +596,7 @@ public class OpenPGPV6KeyGeneratorTest
                             }
                         })
                 .addSigningSubkey(
-                        new KeyPairGeneratorCallback()
-                        {
-                            @Override
-                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                                    throws PGPException
-                            {
-                                return generator.generateSigningSubkey();
-                            }
-                        },
+                        KeyPairGeneratorCallback.signingKey(),
                         // No subkey binding sig
                         new SignatureParameters.Callback()
                         {
@@ -632,15 +616,7 @@ public class OpenPGPV6KeyGeneratorTest
                             }
                         })
                 .addEncryptionSubkey(
-                        new KeyPairGeneratorCallback()
-                        {
-                            @Override
-                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                                    throws PGPException
-                            {
-                                return generator.generateEncryptionSubkey();
-                            }
-                        },
+                        KeyPairGeneratorCallback.encryptionKey(),
                         // No subkey binding sig
                         new SignatureParameters.Callback()
                         {

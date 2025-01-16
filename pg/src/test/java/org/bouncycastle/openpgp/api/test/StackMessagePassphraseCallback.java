@@ -1,33 +1,33 @@
 package org.bouncycastle.openpgp.api.test;
 
-import org.bouncycastle.openpgp.api.MissingPassphraseCallback;
+import org.bouncycastle.openpgp.api.MissingMessagePassphraseCallback;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Stack;
 
 /**
- * Test implementation of {@link MissingPassphraseCallback} which provides passphrases by popping
+ * Test implementation of {@link MissingMessagePassphraseCallback} which provides passphrases by popping
  * them from a provided {@link Stack}.
  */
-public class StackPassphraseCallback
-        implements MissingPassphraseCallback
+public class StackMessagePassphraseCallback
+        implements MissingMessagePassphraseCallback
 {
     private final Stack<char[]> passphases;
 
-    public StackPassphraseCallback(char[] passphrase)
+    public StackMessagePassphraseCallback(char[] passphrase)
     {
         this(Collections.singleton(passphrase));
     }
 
-    public StackPassphraseCallback(Collection<char[]> passphrases)
+    public StackMessagePassphraseCallback(Collection<char[]> passphrases)
     {
         this.passphases = new Stack<>();
         this.passphases.addAll(passphrases);
     }
 
     @Override
-    public char[] getPassphrase()
+    public char[] getMessagePassphrase()
     {
         if (passphases.isEmpty())
         {

@@ -211,7 +211,7 @@ public class OpenPGPV6KeyGenerator
         throws PGPException
     {
         return withPrimaryKey(
-                generatePrimaryKey,
+                KeyPairGeneratorCallback.primaryKey(),
                 SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                 {
                     @Override
@@ -234,17 +234,7 @@ public class OpenPGPV6KeyGenerator
     public WithPrimaryKey withPrimaryKey()
         throws PGPException
     {
-        return withPrimaryKey(
-                new KeyPairGeneratorCallback()
-                {
-                    @Override
-                    public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                            throws PGPException
-                    {
-                        return generator.generatePrimaryKey();
-                    }
-                }
-        );
+        return withPrimaryKey(KeyPairGeneratorCallback.primaryKey());
     }
 
     /**
@@ -432,14 +422,7 @@ public class OpenPGPV6KeyGenerator
         public WithPrimaryKey addEncryptionSubkey()
             throws PGPException
         {
-            return addEncryptionSubkey(new KeyPairGeneratorCallback()
-            {
-                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                    throws PGPException
-                {
-                    return generator.generateEncryptionSubkey();
-                }
-            });
+            return addEncryptionSubkey(KeyPairGeneratorCallback.encryptionKey());
         }
 
         /**
@@ -559,14 +542,7 @@ public class OpenPGPV6KeyGenerator
         public WithPrimaryKey addSigningSubkey()
             throws PGPException
         {
-            return addSigningSubkey(new KeyPairGeneratorCallback()
-            {
-                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                    throws PGPException
-                {
-                    return generator.generateSigningSubkey();
-                }
-            });
+            return addSigningSubkey(KeyPairGeneratorCallback.signingKey());
         }
 
         /**

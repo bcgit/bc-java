@@ -88,10 +88,8 @@ public class OpenPGPMessageProcessorTest
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .setArmored(false)
-                .setIsPadded(false);
-
-        gen.getConfiguration().setCompressionNegotiator(
-                (conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
+                .setAllowPadding(false)
+                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -114,9 +112,8 @@ public class OpenPGPMessageProcessorTest
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .setArmored(true)
-                .setIsPadded(false);
-        gen.getConfiguration().setCompressionNegotiator(
-                (conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
+                .setAllowPadding(false)
+                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -140,9 +137,8 @@ public class OpenPGPMessageProcessorTest
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .setArmored(true)
-                .setIsPadded(false);
-        gen.getConfiguration().setCompressionNegotiator(
-                (conf, neg) -> CompressionAlgorithmTags.ZIP);
+                .setAllowPadding(false)
+                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -168,8 +164,7 @@ public class OpenPGPMessageProcessorTest
                 .setSessionKeyExtractionCallback(
                         sk -> this.encryptionSessionKey = sk
                 )
-                .setIsPadded(false);
-        gen.getConfiguration()
+                .setAllowPadding(false)
                 .setPasswordBasedEncryptionNegotiator(conf ->
                         MessageEncryptionMechanism.integrityProtected(SymmetricKeyAlgorithmTags.AES_256))
                 .setCompressionNegotiator(
@@ -203,9 +198,9 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .addEncryptionPassphrase("orange".toCharArray())
                 .addEncryptionPassphrase("violet".toCharArray())
-                .setSessionKeyExtractionCallback(sk -> this.encryptionSessionKey = sk);
-        gen.getConfiguration().setPasswordBasedEncryptionNegotiator(configuration ->
-                MessageEncryptionMechanism.aead(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB));
+                .setSessionKeyExtractionCallback(sk -> this.encryptionSessionKey = sk)
+                .setPasswordBasedEncryptionNegotiator(configuration ->
+                        MessageEncryptionMechanism.aead(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB));
 
         OutputStream encOut = gen.open(bOut);
         encOut.write(PLAINTEXT);
@@ -232,7 +227,7 @@ public class OpenPGPMessageProcessorTest
         bOut = new ByteArrayOutputStream();
         bIn = new ByteArrayInputStream(ciphertext);
         processor = api.decryptAndOrVerifyMessage();
-        decIn = processor.setMissingMessagePassphraseCallback(new StackPassphraseCallback("orange".toCharArray()))
+        decIn = processor.setMissingMessagePassphraseCallback(new StackMessagePassphraseCallback("orange".toCharArray()))
                 // wrong passphrase, so missing callback is invoked
                 .addMessagePassphrase("yellow".toCharArray())
                 .process(bIn);
@@ -330,7 +325,7 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
                 .setArmored(true)
                 .addEncryptionCertificate(key)
-                .setIsPadded(false);
+                .setAllowPadding(false);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);

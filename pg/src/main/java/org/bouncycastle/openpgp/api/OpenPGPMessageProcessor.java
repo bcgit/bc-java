@@ -186,14 +186,14 @@ public class OpenPGPMessageProcessor
     }
 
     /**
-     * Set a {@link MissingPassphraseCallback} which will be invoked if the message is encrypted using a passphrase,
+     * Set a {@link MissingMessagePassphraseCallback} which will be invoked if the message is encrypted using a passphrase,
      * but no working passphrase was provided.
      *
      * @param callback callback
      * @return this
      */
     public OpenPGPMessageProcessor setMissingMessagePassphraseCallback(
-            MissingPassphraseCallback callback)
+            MissingMessagePassphraseCallback callback)
     {
         this.configuration.missingMessagePassphraseCallback = callback;
         return this;
@@ -383,7 +383,7 @@ public class OpenPGPMessageProcessor
         if (!skesks.isEmpty() && configuration.missingMessagePassphraseCallback != null)
         {
             char[] passphrase;
-            while ((passphrase = configuration.missingMessagePassphraseCallback.getPassphrase()) != null)
+            while ((passphrase = configuration.missingMessagePassphraseCallback.getMessagePassphrase()) != null)
             {
                 for (PGPPBEEncryptedData skesk : skesks)
                 {
@@ -491,7 +491,7 @@ public class OpenPGPMessageProcessor
         private final OpenPGPKeyMaterialPool.OpenPGPKeyPool keyPool;
         private final KeyPassphraseProvider.DefaultKeyPassphraseProvider keyPassphraseProvider;
         public final List<char[]> messagePassphrases = new ArrayList<>();
-        private MissingPassphraseCallback missingMessagePassphraseCallback;
+        private MissingMessagePassphraseCallback missingMessagePassphraseCallback;
         private PGPExceptionCallback exceptionCallback = null;
         private PGPSessionKey sessionKey;
         private Date verifyNotAfter = new Date();       // now

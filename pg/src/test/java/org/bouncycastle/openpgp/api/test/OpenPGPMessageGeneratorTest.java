@@ -55,8 +55,8 @@ public class OpenPGPMessageGeneratorTest
     private void armoredLiteralDataPacket(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.setIsPadded(false);
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
+                .setAllowPadding(false);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
@@ -76,9 +76,9 @@ public class OpenPGPMessageGeneratorTest
     private void unarmoredLiteralDataPacket(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.setArmored(false); // disable ASCII armor
-        gen.setIsPadded(false); // disable padding
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
+                .setArmored(false) // disable ASCII armor
+                .setAllowPadding(false); // disable padding
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
@@ -94,10 +94,9 @@ public class OpenPGPMessageGeneratorTest
     private void armoredCompressedLiteralDataPacket(OpenPGPApi api)
             throws PGPException, IOException
     {
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.setIsPadded(false);
-        OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
-        configuration.setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
+                .setAllowPadding(false)
+                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
@@ -117,11 +116,10 @@ public class OpenPGPMessageGeneratorTest
     private void unarmoredCompressedLiteralDataPacket(OpenPGPApi api)
             throws IOException, PGPException
     {
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.setArmored(false); // no armor
-        gen.setIsPadded(false);
-        OpenPGPMessageGenerator.Configuration configuration = gen.getConfiguration();
-        configuration.setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
+        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
+                .setArmored(false) // no armor
+                .setAllowPadding(false)
+                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
@@ -172,7 +170,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
 
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setIsPadded(true)
+                .setAllowPadding(true)
                 .setArmored(true)
                 .addSigningKey(key)
                 .addEncryptionCertificate(key);

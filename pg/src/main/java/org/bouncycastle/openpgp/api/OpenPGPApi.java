@@ -59,4 +59,9 @@ public abstract class OpenPGPApi
     {
         return new OpenPGPKeyEditor(key, implementation, policy);
     }
+
+    public OpenPGPImplementation getImplementation()
+    {
+        return implementation;
+    }
 }
