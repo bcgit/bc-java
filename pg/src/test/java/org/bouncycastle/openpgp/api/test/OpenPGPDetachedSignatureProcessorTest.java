@@ -1,16 +1,24 @@
 package org.bouncycastle.openpgp.api.test;
 
+import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.test.AbstractPacketTest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.api.KeyPairGeneratorCallback;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPDetachedSignatureGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPDetachedSignatureProcessor;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
+import org.bouncycastle.openpgp.api.SignatureParameters;
+import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,6 +55,8 @@ public class OpenPGPDetachedSignatureProcessorTest
 
         missingPassphraseThrows(api);
         wrongPassphraseThrows(api);
+
+        noSigningSubkeyFails(api);
     }
 
     private void createVerifyV4Signature(OpenPGPApi api)
@@ -110,15 +120,15 @@ public class OpenPGPDetachedSignatureProcessorTest
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
-            @Override
-            public void operation()
-                    throws Exception
-            {
-                api.createDetachedSignature()
-                        .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
-                        .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
-            }
-        }));
+                    @Override
+                    public void operation()
+                            throws Exception
+                    {
+                        api.createDetachedSignature()
+                                .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
+                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                    }
+                }));
     }
 
     private void wrongPassphraseThrows(OpenPGPApi api)
@@ -128,16 +138,16 @@ public class OpenPGPDetachedSignatureProcessorTest
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
-            @Override
-            public void operation()
-                    throws Exception
-            {
-                api.createDetachedSignature()
-                        .addKeyPassphrase("thisIsWrong".toCharArray())
-                        .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
-                        .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
-            }
-        }));
+                    @Override
+                    public void operation()
+                            throws Exception
+                    {
+                        api.createDetachedSignature()
+                                .addKeyPassphrase("thisIsWrong".toCharArray())
+                                .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
+                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                    }
+                }));
     }
 
     private void keyPassphrasesArePairedUpProperly_keyAddedFirst(OpenPGPApi api)
@@ -181,6 +191,49 @@ public class OpenPGPDetachedSignatureProcessorTest
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
         isEquals(1, signatures.size());
+    }
+
+    private void noSigningSubkeyFails(OpenPGPApi api)
+            throws PGPException
+    {
+        OpenPGPKey noSigningKey = api.generateKey()
+                .withPrimaryKey(
+                        new KeyPairGeneratorCallback() {
+                            @Override
+                            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                    throws PGPException {
+                                return generator.generatePrimaryKey();
+                            }
+                        },
+                        SignatureParameters.Callback.modifyHashedSubpackets(
+                                new SignatureSubpacketsFunction()
+                                {
+                                    @Override
+                                    public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                                    {
+                                        subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+                                        // No SIGN_DATA key flag
+                                        subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER);
+                                        return subpackets;
+                                    }
+                                }
+                        )
+                ).build();
+
+        isNotNull(testException(
+                "Key " + noSigningKey.getPrettyFingerprint() + " cannot sign.",
+                "InvalidSigningKeyException",
+                new TestExceptionOperation()
+                {
+                    @Override
+                    public void operation()
+                            throws Exception
+                    {
+                        api.createDetachedSignature()
+                                .addSigningKey(noSigningKey)
+                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                    }
+                }));
     }
 
     public static void main(String[] args)
