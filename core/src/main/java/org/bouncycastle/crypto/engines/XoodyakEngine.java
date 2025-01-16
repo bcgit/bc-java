@@ -41,6 +41,8 @@ public class XoodyakEngine
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
+        m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
     }
 
@@ -52,7 +54,6 @@ public class XoodyakEngine
         this.iv = iv;
         state = new byte[48];
         mac = new byte[MAC_SIZE];
-        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }

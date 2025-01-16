@@ -16,7 +16,6 @@ abstract class AsconBaseEngine
     protected long x2;
     protected long x3;
     protected long x4;
-    protected int m_bufferSizeDecrypt;
     protected long dsep; //domain separation
 
     protected abstract long pad(int i);

@@ -77,6 +77,8 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         algorithmName = "Photon-Beetle AEAD";
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
+        m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
     }
 
@@ -89,7 +91,6 @@ public class PhotonBeetleEngine
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
         mac = new byte[MAC_SIZE];
-        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }
