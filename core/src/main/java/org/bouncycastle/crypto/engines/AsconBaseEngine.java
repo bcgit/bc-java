@@ -67,7 +67,7 @@ abstract class AsconBaseEngine
 
     protected abstract void ascon_aeadinit();
 
-    protected void finishAAD(State nextState)
+    protected void finishAAD(State nextState, boolean isDofinal)
     {
         // State indicates whether we ever received AAD
         switch (m_state)

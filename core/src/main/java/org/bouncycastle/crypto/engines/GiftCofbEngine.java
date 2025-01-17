@@ -1,17 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.BlockCipher;
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 
 /**
  * GIFT-COFB v1.1, based on the current round 3 submission, https://www.isical.ac.in/~lightweight/COFB/
@@ -20,20 +9,15 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  */
 
 public class GiftCofbEngine
-    implements AEADBlockCipher
+    extends AEADBufferBaseEngine
 {
-    private final int CRYPTO_ABYTES = 16;
-    private boolean forEncryption;
-    private boolean initialised = false;
     private byte[] npub;
     private byte[] k;
     private byte[] Y;
-    private byte[] mac;
     private byte[] input;
     private byte[] offset;
-    private boolean encrypted;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
+    private int aadLen;
+    private int messageLen;
     /*Round constants*/
     private final byte[] GIFT_RC = {
         (byte)0x01, (byte)0x03, (byte)0x07, (byte)0x0F, (byte)0x1F, (byte)0x3E, (byte)0x3D, (byte)0x3B, (byte)0x37, (byte)0x2F,
@@ -41,6 +25,38 @@ public class GiftCofbEngine
         (byte)0x16, (byte)0x2C, (byte)0x18, (byte)0x30, (byte)0x21, (byte)0x02, (byte)0x05, (byte)0x0B, (byte)0x17, (byte)0x2E,
         (byte)0x1C, (byte)0x38, (byte)0x31, (byte)0x23, (byte)0x06, (byte)0x0D, (byte)0x1B, (byte)0x36, (byte)0x2D, (byte)0x1A
     };
+
+    public GiftCofbEngine()
+    {
+        super(ProcessingBufferType.Buffered);
+        AADBufferSize = BlockSize = MAC_SIZE = IV_SIZE = KEY_SIZE = 16;
+        algorithmName = "GIFT-COFB AEAD";
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
+        m_buf = new byte[m_bufferSizeDecrypt];
+        m_aad = new byte[AADBufferSize];
+    }
+
+    @Override
+    public void processAADByte(byte input)
+    {
+        aadLen++;
+        super.processAADByte(input);
+    }
+
+    @Override
+    public void processAADBytes(byte[] input, int inOff, int len)
+    {
+        aadLen += len;
+        super.processAADBytes(input, inOff, len);
+    }
+
+    @Override
+    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        throws DataLengthException
+    {
+        messageLen += len;
+        return super.processBytes(input, inOff, len, output, outOff);
+    }
 
     private int rowperm(int S, int B0_pos, int B1_pos, int B2_pos, int B3_pos)
     {
@@ -210,226 +226,90 @@ public class GiftCofbEngine
         pho1(X, Y, M, mOff, no_of_bytes);
     }
 
-    private void processAAD(boolean emptyM)
+    @Override
+    protected void processBufferAAD(byte[] in, int inOff)
     {
-        byte[] a = aadData.toByteArray();
-        int alen = aadData.size();
-        int aOff = 0;
-        boolean emptyA = (alen == 0);
-        /*Process AD*/
-        /*non-empty A*/
-        /*full blocks*/
-        while (alen > 16)
+
+        pho1(input, Y, in, inOff, 16);
+        /* offset = 2*offset */
+        double_half_block(offset, offset);
+        xor_topbar_block(input, input, offset);
+        /* Y[i] = E(X[i]) */
+        giftb128(input, k, Y);
+    }
+
+    //@Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
         {
-            /* X[i] = (A[i] + G(Y[i-1])) + offset */
-            pho1(input, Y, a, aOff, 16);
-            /* offset = 2*offset */
-            double_half_block(offset, offset);
-            xor_topbar_block(input, input, offset);
-            /* Y[i] = E(X[i]) */
-            giftb128(input, k, Y);
-            aOff += 16;
-            alen -= 16;
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && messageLen <= MAC_SIZE)
+            {
+                //m_state = State.DecData;
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
         }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
+    @Override
+    protected void processFinalAAD()
+    {
+        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
         /* last byte[] */
         /* full byte[]: offset = 3*offset */
         /* partial byte[]: offset = 3^2*offset */
         triple_half_block(offset, offset);
-        if (((alen & 15) != 0) || emptyA)
+        if (((aadLen & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
         {
             triple_half_block(offset, offset);
         }
-        if (emptyM)
+        if (len == 0)
         {
             /* empty M: offset = 3^2*offset */
             triple_half_block(offset, offset);
             triple_half_block(offset, offset);
         }
         /* X[i] = (pad(A[i]) + G(Y[i-1])) + offset */
-        pho1(input, Y, a, aOff, alen);
+        pho1(input, Y, m_aad, 0, m_aadPos);
         xor_topbar_block(input, input, offset);
         /* Y[a] = E(X[a]) */
         giftb128(input, k, Y);
     }
 
-    private int cofb_crypt(byte[] output, int outOff, byte[] k, byte[] intputM, int inOff, int inlen)
-    {
-        int rv = 0;
-        /* Process M */
-        /* full byte[]s */
-        while (inlen > 16)
-        {
-            double_half_block(offset, offset);
-            /* C[i] = Y[i+a-1] + M[i]*/
-            /* X[i] = M[i] + G(Y[i+a-1]) + offset */
-            if (forEncryption)
-            {
-                pho(Y, intputM, inOff, input, output, outOff, 16);
-            }
-            else
-            {
-                phoprime(Y, intputM, inOff, input, output, outOff, 16);
-            }
-            xor_topbar_block(input, input, offset);
-            /* Y[i] = E(X[i+a]) */
-            giftb128(input, k, Y);
-            inOff += 16;
-            outOff += 16;
-            inlen -= 16;
-            rv += 16;
-            encrypted = true;
-        }
-        return rv;
-    }
-
     @Override
-    public BlockCipher getUnderlyingCipher()
+    protected void init(byte[] key, byte[] iv)
     {
-        return null;
-    }
-
-    @Override
-    public void init(boolean forEncryption, CipherParameters params)
-        throws IllegalArgumentException
-    {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException("Gift-Cofb init parameters must include an IV");
-        }
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-        npub = ivParams.getIV();
-        if (npub == null || npub.length != 16)
-        {
-            throw new IllegalArgumentException("Gift-Cofb requires exactly 16 bytes of IV");
-        }
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException("Gift-Cofb init parameters must include a key");
-        }
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        k = key.getKey();
-        if (k.length != 16)
-        {
-            throw new IllegalArgumentException("Gift-Cofb key must be 128 bits long");
-        }
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-        /*Mask-Gen*/
-        Y = new byte[CRYPTO_ABYTES];
+        npub = iv;
+        k = key;
+        Y = new byte[BlockSize];
         input = new byte[16];
         offset = new byte[8];
-        initialised = true;
+        m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }
 
-    @Override
-    public String getAlgorithmName()
-    {
-        return "GIFT-COFB AEAD";
-    }
 
     @Override
-    public void processAADByte(byte in)
+    protected void processFinalBlock(byte[] output, int outOff)
     {
-        if (encrypted)
-        {
-            throw new IllegalArgumentException("Gift-Cofb: AAD cannot be added after reading a full block(" +
-                CRYPTO_ABYTES + " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
-        }
-        aadData.write(in);
-    }
-
-    @Override
-    public void processAADBytes(byte[] in, int inOff, int len)
-    {
-        if (encrypted)
-        {
-            throw new IllegalArgumentException("Gift-Cofb: AAD cannot be added after reading a full block(" +
-                CRYPTO_ABYTES + " bytes) of input for " + (forEncryption ? "encryption" : "decryption"));
-        }
-        if (inOff + len > in.length)
-        {
-            throw new DataLengthException("Gift-Cofb input buffer too short");
-        }
-        aadData.write(in, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb needs call init function before processByte");
-        }
-        message.write(in);
-        return 0;
-    }
-
-    @Override
-    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb  needs call init function before processBytes");
-        }
-        if (inOff + len > in.length)
-        {
-            throw new DataLengthException("Gift-Cofb input buffer too short");
-        }
-        message.write(in, inOff, len);
-        int inlen = message.size() - (forEncryption ? 0 : 16);
-        int rv = inlen - (inlen & 15);
-        if (outOff + rv > out.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-        rv = 0;
-        if (inlen > 16)
-        {
-            processAAD(false);
-            encrypted = true;
-            byte[] input = message.toByteArray();
-            rv = cofb_crypt(out, outOff, k, input, 0, inlen);
-            if (rv < inlen)
-            {
-                message.reset();
-                message.write(input, rv, inlen - rv + (forEncryption ? 0 : 16));
-            }
-        }
-        return rv;
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb needs call init function before doFinal");
-        }
-        int inlen = message.size() - (forEncryption ? 0 : CRYPTO_ABYTES);
-        if ((forEncryption && inlen + CRYPTO_ABYTES + outOff > output.length) ||
-            (!forEncryption && inlen + outOff > output.length))
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-
-        if (!encrypted)
-        {
-            processAAD(inlen == 0);
-        }
         int inOff = 0;
-        byte[] intputM = message.toByteArray();
-
-        if (encrypted || inlen != 0)
+        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        if (len != 0)
         {
             /* full block: offset = 3*offset */
             /* empty data / partial block: offset = 3^2*offset */
             triple_half_block(offset, offset);
-            if ((inlen & 15) != 0)
+            if ((len & 15) != 0)
             {
                 triple_half_block(offset, offset);
             }
@@ -438,101 +318,58 @@ public class GiftCofbEngine
             /* X[a+m] = M[m] + G(Y[m+a-1]) + offset */
             if (forEncryption)
             {
-                pho(Y, intputM, inOff, input, output, outOff, inlen);
-                outOff += inlen;
+                pho(Y, m_buf, inOff, input, output, outOff, m_bufPos);
             }
             else
             {
-                phoprime(Y, intputM, inOff, input, output, outOff, inlen);
-                inOff += inlen;
+                phoprime(Y, m_buf, inOff, input, output, outOff, m_bufPos);
             }
             xor_topbar_block(input, input, offset);
             /* T = E(X[m+a]) */
             giftb128(input, k, Y);
         }
-        if (forEncryption)
-        {
-            System.arraycopy(Y, 0, output, outOff, CRYPTO_ABYTES);
-            mac = new byte[CRYPTO_ABYTES];
-            System.arraycopy(Y, 0, mac, 0, CRYPTO_ABYTES);
-            inlen += CRYPTO_ABYTES;
-        }
-        else
-        {
-            for (int i = 0; i < CRYPTO_ABYTES; ++i)
-            {
-                if (Y[i] != intputM[inOff + i])
-                {
-                    throw new InvalidCipherTextException("mac check in Gift-Cofb failed");
-                }
-            }
-        }
-        reset(false);
-        return inlen;
+        mac = new byte[BlockSize];
+        System.arraycopy(Y, 0, mac, 0, BlockSize);
+    }
+
+
+    @Override
+    protected void processBufferEncrypt(byte[] inputM, int inOff, byte[] output, int outOff)
+    {
+        /* Process M */
+        /* full byte[]s */
+        double_half_block(offset, offset);
+        /* C[i] = Y[i+a-1] + M[i]*/
+        /* X[i] = M[i] + G(Y[i+a-1]) + offset */
+        pho(Y, inputM, inOff, input, output, outOff, BlockSize);
+        xor_topbar_block(input, input, offset);
+        /* Y[i] = E(X[i+a]) */
+        giftb128(input, k, Y);
     }
 
     @Override
-    public byte[] getMac()
+    protected void processBufferDecrypt(byte[] inputM, int inOff, byte[] output, int outOff)
     {
-        return mac;
+        /* Process M */
+        /* full byte[]s */
+        double_half_block(offset, offset);
+        /* C[i] = Y[i+a-1] + M[i]*/
+        /* X[i] = M[i] + G(Y[i+a-1]) + offset */
+        phoprime(Y, inputM, inOff, input, output, outOff, BlockSize);
+        xor_topbar_block(input, input, offset);
+        /* Y[i] = E(X[i+a]) */
+        giftb128(input, k, Y);
     }
 
-    @Override
-    public int getUpdateOutputSize(int len)
+    protected void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb needs call init function before getUpdateOutputSize");
-        }
-        int totalData = message.size() + len;
-        if (!forEncryption)
-        {
-            if (totalData < CRYPTO_ABYTES)
-            {
-                return 0;
-            }
-            totalData -= CRYPTO_ABYTES;
-        }
-        return totalData - totalData % CRYPTO_ABYTES;
-    }
-
-    @Override
-    public int getOutputSize(int len)
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb needs call init function before getOutputSize");
-        }
-        int totalData = message.size() + len;
-        if (forEncryption)
-        {
-            return totalData + CRYPTO_ABYTES;
-        }
-        return Math.max(0, totalData - CRYPTO_ABYTES);
-    }
-
-    @Override
-    public void reset()
-    {
-        reset(true);
-    }
-
-    private void reset(boolean clearMac)
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Gift-Cofb needs call init function before reset");
-        }
-        if (clearMac)
-        {
-            mac = null;
-        }
+        bufferReset();
+        super.reset(clearMac);
         /*nonce is 128-bit*/
-        System.arraycopy(npub, 0, input, 0, 16);
+        System.arraycopy(npub, 0, input, 0, IV_SIZE);
         giftb128(input, k, Y);
         System.arraycopy(Y, 0, offset, 0, 8);
-        aadData.reset();
-        message.reset();
-        encrypted = false;
+        aadLen = 0;
+        messageLen = 0;
     }
 }

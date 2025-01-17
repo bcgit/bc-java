@@ -227,7 +227,7 @@ abstract class AEADBufferBaseEngine
     {
         ensureSufficientInputBuffer(input, inOff, len);
         int available, resultLength;
-        if (checkData())
+        if (checkData(false))
         {
             resultLength = 0;
             available = processor.getUpdateOutputSize(len) + m_bufPos;
@@ -351,7 +351,7 @@ abstract class AEADBufferBaseEngine
     public int doFinal(byte[] output, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
-        boolean forEncryption = checkData();
+        boolean forEncryption = checkData(true);
         int resultLength;
         if (forEncryption)
         {
@@ -401,8 +401,6 @@ abstract class AEADBufferBaseEngine
         {
         case DecInit:
         case DecAad:
-            total = Math.max(0, total - MAC_SIZE);
-            break;
         case DecData:
         case DecFinal:
             total = Math.max(0, total + m_bufPos - MAC_SIZE);
@@ -425,7 +423,7 @@ abstract class AEADBufferBaseEngine
         {
         case DecInit:
         case DecAad:
-            return Math.max(0, total - MAC_SIZE);
+//            return Math.max(0, total + m_bufPos- MAC_SIZE);
         case DecData:
         case DecFinal:
             return Math.max(0, total + m_bufPos - MAC_SIZE);
@@ -457,17 +455,17 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected boolean checkData()
+    protected boolean checkData(boolean isDoFinal)
     {
         switch (m_state)
         {
         case DecInit:
         case DecAad:
-            finishAAD(State.DecData);
+            finishAAD(State.DecData, isDoFinal);
             return false;
         case EncInit:
         case EncAad:
-            finishAAD(State.EncData);
+            finishAAD(State.EncData, isDoFinal);
             return true;
         case DecData:
             return false;
@@ -480,7 +478,8 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected void finishAAD(State nextState)
+    //TODO: override this for aadFinished
+    protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
         switch (m_state)

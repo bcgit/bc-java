@@ -16,7 +16,7 @@ public abstract class SimpleTest
         return SimpleTestResult.successful(this, "Okay");
     }
 
-    protected void fail(
+    public void fail(
         String message)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message));
