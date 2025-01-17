@@ -526,7 +526,7 @@ public class ElephantEngine
         }
     }
 
-    protected boolean checkData()
+    protected boolean checkData(boolean isDofinal)
     {
         switch (m_state)
         {

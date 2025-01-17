@@ -49,7 +49,6 @@ public class SparkleTest
         testExceptionsDigest_ESCH256();
         testExceptionsDigest_ESCH384();
         ;
-
         testExceptionsEngine_SCHWAEMM128_128();
         testExceptionsEngine_SCHWAEMM192_192();
         testExceptionsEngine_SCHWAEMM256_128();
