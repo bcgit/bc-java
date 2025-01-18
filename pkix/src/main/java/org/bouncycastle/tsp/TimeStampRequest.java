@@ -152,6 +152,11 @@ public class TimeStampRequest
         policies = convert(policies);
         extensions = convert(extensions);
 
+        if (algorithms == null)
+        {
+            throw new TSPValidationException("no algorithms associated with request", PKIFailureInfo.badAlg);
+        }
+
         if (!algorithms.contains(this.getMessageImprintAlgOID()))
         {
             throw new TSPValidationException("request contains unknown algorithm", PKIFailureInfo.badAlg);
