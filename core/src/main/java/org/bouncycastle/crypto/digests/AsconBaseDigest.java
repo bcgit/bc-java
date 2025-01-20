@@ -127,7 +127,9 @@ abstract class AsconBaseDigest
     @Override
     public int doFinal(byte[] output, int outOff)
     {
-        return hash(output, outOff, CRYPTO_BYTES);
+        int rv = hash(output, outOff, CRYPTO_BYTES);
+        reset();
+        return rv;
     }
 
     protected void padAndAbsorb()
@@ -149,7 +151,7 @@ abstract class AsconBaseDigest
         }
         /* squeeze final output block */
         setBytes(x0, output, outOff, len);
-        reset();
+        p(ASCON_PB_ROUNDS);
     }
 
     protected int hash(byte[] output, int outOff, int outLen)
