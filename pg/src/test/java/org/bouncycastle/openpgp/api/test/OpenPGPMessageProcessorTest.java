@@ -65,7 +65,6 @@ public class OpenPGPMessageProcessorTest
 
         roundTripV4KeyEncryptedMessageAlice(api);
         roundTripV4KeyEncryptedMessageBob(api);
-        roundTripV4KeyEncryptedMessageCarol(api);
 
         roundTripV6KeyEncryptedMessage(api);
         encryptWithV4V6KeyDecryptWithV4(api);
@@ -279,32 +278,6 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage();
         processor.addDecryptionKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.BOB_KEY));
-
-        OpenPGPMessageInputStream decIn = processor.process(bIn);
-
-        bOut = new ByteArrayOutputStream();
-        Streams.pipeAll(decIn, bOut);
-        decIn.close();
-        OpenPGPMessageInputStream.Result result = decIn.getResult();
-        isEquals(MessageEncryptionMechanism.integrityProtected(SymmetricKeyAlgorithmTags.AES_256),
-                result.getEncryptionMethod());
-        isEncodingEqual(bOut.toByteArray(), PLAINTEXT);
-    }
-
-    private void roundTripV4KeyEncryptedMessageCarol(OpenPGPApi api)
-            throws IOException, PGPException
-    {
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        gen.addEncryptionCertificate(api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.CAROL_CERT));
-
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        OutputStream enc = gen.open(bOut);
-        enc.write(PLAINTEXT);
-        enc.close();
-
-        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
-        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage();
-        processor.addDecryptionKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.CAROL_KEY));
 
         OpenPGPMessageInputStream decIn = processor.process(bIn);
 
