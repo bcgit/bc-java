@@ -195,6 +195,9 @@ public abstract class TlsCryptoTest
         case SignatureScheme.ecdsa_secp384r1_sha384:
         case SignatureScheme.ecdsa_secp521r1_sha512:
         case SignatureScheme.sm2sig_sm3:
+        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.DRAFT_mldsa87:
 
         default:
             return null;
@@ -593,7 +596,8 @@ public abstract class TlsCryptoTest
             SignatureScheme.ecdsa_secp521r1_sha512, SignatureScheme.ed25519, SignatureScheme.ed448,
             SignatureScheme.rsa_pss_pss_sha256, SignatureScheme.rsa_pss_pss_sha384, SignatureScheme.rsa_pss_pss_sha512,
             SignatureScheme.rsa_pss_rsae_sha256, SignatureScheme.rsa_pss_rsae_sha384,
-            SignatureScheme.rsa_pss_rsae_sha512, SignatureScheme.sm2sig_sm3,
+            SignatureScheme.rsa_pss_rsae_sha512, SignatureScheme.sm2sig_sm3, SignatureScheme.DRAFT_mldsa44,
+            SignatureScheme.DRAFT_mldsa65, SignatureScheme.DRAFT_mldsa87,
             // These are only used for certs in 1.3 (cert verification is not done by TlsCrypto)
 //            SignatureScheme.ecdsa_sha1, SignatureScheme.rsa_pkcs1_sha1, SignatureScheme.rsa_pkcs1_sha256,
 //            SignatureScheme.rsa_pkcs1_sha384, SignatureScheme.rsa_pkcs1_sha512,
