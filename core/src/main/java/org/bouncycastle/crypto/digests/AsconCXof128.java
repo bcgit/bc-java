@@ -1,8 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -17,10 +15,8 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class AsconCXof128
-    extends AsconBaseDigest
-    implements Xof
+    extends AsconXof128
 {
-    private boolean m_squeezing = false;
     private final long z0, z1, z2, z3, z4;
 
     public AsconCXof128()
@@ -35,6 +31,7 @@ public class AsconCXof128
 
     public AsconCXof128(byte[] s, int off, int len)
     {
+        super(false);
         if ((off + len) > s.length)
         {
             throw new DataLengthException("input buffer too short");
@@ -53,89 +50,17 @@ public class AsconCXof128
     }
 
     @Override
-    public void update(byte in)
-    {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
-        super.update(in);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
-        super.update(input, inOff, len);
-    }
-
-    protected long pad(int i)
-    {
-        return 0x01L << (i << 3);
-    }
-
-    protected long loadBytes(final byte[] bytes, int inOff)
-    {
-        return Pack.littleEndianToLong(bytes, inOff);
-    }
-
-    protected long loadBytes(final byte[] bytes, int inOff, int n)
-    {
-        return Pack.littleEndianToLong(bytes, inOff, n);
-    }
-
-    protected void setBytes(long w, byte[] bytes, int inOff)
-    {
-        Pack.longToLittleEndian(w, bytes, inOff);
-    }
-
-    protected void setBytes(long w, byte[] bytes, int inOff, int n)
-    {
-        Pack.longToLittleEndian(w, bytes, inOff, n);
-    }
-
-    protected void padAndAbsorb()
-    {
-        m_squeezing = true;
-        super.padAndAbsorb();
-    }
-
-    @Override
     public String getAlgorithmName()
     {
         return "Ascon-CXOF128";
     }
 
     @Override
-    public int doOutput(byte[] output, int outOff, int outLen)
-    {
-        if (CRYPTO_BYTES + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-        padAndAbsorb();
-        /* squeeze full output blocks */
-        squeeze(output, outOff, outLen);
-        return outLen;
-    }
-
-
-    @Override
-    public int doFinal(byte[] output, int outOff, int outLen)
-    {
-        int rlt = doOutput(output, outOff, outLen);
-        reset();
-        return rlt;
-    }
-
-    @Override
     public void reset()
     {
-        super.reset();
+        baseReset();
         m_squeezing = false;
+        bytesInBuffer = 0;
         /* initialize */
         x0 = z0;
         x1 = z1;
@@ -157,6 +82,6 @@ public class AsconCXof128
         update(z, zOff, zLen);
         padAndAbsorb();
         m_squeezing = false;
+        bytesInBuffer = 0;
     }
 }
-

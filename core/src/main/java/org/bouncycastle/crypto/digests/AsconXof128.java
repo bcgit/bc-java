@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
@@ -18,11 +19,22 @@ public class AsconXof128
     extends AsconBaseDigest
     implements Xof
 {
-    private boolean m_squeezing = false;
+    protected boolean m_squeezing = false;
+
+    private final byte[] buffer = new byte[ASCON_HASH_RATE];
+    protected int bytesInBuffer;
 
     public AsconXof128()
     {
-        reset();
+        this(true);
+    }
+
+    protected AsconXof128(final boolean doReset)
+    {
+        if (doReset)
+        {
+            reset();
+        }
     }
 
     protected long pad(int i)
@@ -52,8 +64,11 @@ public class AsconXof128
 
     protected void padAndAbsorb()
     {
-        m_squeezing = true;
-        super.padAndAbsorb();
+        if (!m_squeezing)
+        {
+            m_squeezing = true;
+            super.padAndAbsorb();
+        }
     }
 
     @Override
@@ -85,7 +100,45 @@ public class AsconXof128
     @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
-        return hash(output, outOff, outLen);
+        if (outLen + outOff > output.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
+
+        /* Use buffered output first */
+        int bytesOutput = 0;
+        if (bytesInBuffer != 0)
+        {
+            int startPos = ASCON_HASH_RATE - bytesInBuffer;
+            int bytesToOutput = Math.min(outLen, bytesInBuffer);
+            System.arraycopy(buffer, startPos, output, outOff, bytesToOutput);
+            bytesInBuffer -= bytesToOutput;
+            bytesOutput += bytesToOutput;
+        }
+
+        /* If we still need to output data */
+        if (outLen - bytesOutput >= ASCON_HASH_RATE)
+        {
+            /* Output full blocks */
+            int bytesToOutput = ASCON_HASH_RATE * ((outLen - bytesOutput) / ASCON_HASH_RATE);
+            bytesOutput += hash(output, outOff + bytesOutput, bytesToOutput);
+        }
+
+        /* If we need to output a partial buffer */
+        if (bytesOutput < outLen)
+        {
+            /* Access the next buffer's worth of data */
+            hash(buffer, 0, ASCON_HASH_RATE);
+
+            /* Copy required length of data */
+            int bytesToOutput = outLen - bytesOutput;
+            System.arraycopy(buffer, 0, output, outOff + bytesOutput, bytesToOutput);
+            bytesInBuffer = buffer.length - bytesToOutput;
+            bytesOutput += bytesToOutput;
+        }
+
+        /* return the length of data output */
+        return bytesOutput;
     }
 
     @Override
@@ -106,6 +159,7 @@ public class AsconXof128
     public void reset()
     {
         m_squeezing = false;
+        bytesInBuffer = 0;
         super.reset();
         /* initialize */
         x0 = -2701369817892108309L;
@@ -114,5 +168,9 @@ public class AsconXof128
         x3 = 1072114354614917324L;
         x4 = -2282070310009238562L;
     }
-}
 
+    protected void baseReset()
+    {
+        super.reset();
+    }
+}
