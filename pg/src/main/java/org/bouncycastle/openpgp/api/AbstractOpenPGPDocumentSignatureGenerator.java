@@ -92,6 +92,23 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
             KeyPassphraseProvider passphraseProvider)
             throws InvalidSigningKeyException
     {
+        return addSigningKey(key, passphraseProvider, null);
+    }
+
+    public T addSigningKey(
+            OpenPGPKey key,
+            SignatureParameters.Callback signatureCallback)
+            throws InvalidSigningKeyException
+    {
+        return addSigningKey(key, defaultKeyPassphraseProvider, signatureCallback);
+    }
+
+    public T addSigningKey(
+            OpenPGPKey key,
+            KeyPassphraseProvider passphraseProvider,
+            SignatureParameters.Callback signatureCallback)
+            throws InvalidSigningKeyException
+    {
         List<OpenPGPCertificate.OpenPGPComponentKey> signingSubkeys = signingKeySelector.select(key, policy);
         if (signingSubkeys.isEmpty())
         {
@@ -101,7 +118,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         for (OpenPGPCertificate.OpenPGPComponentKey subkey : signingSubkeys)
         {
             OpenPGPKey.OpenPGPSecretKey signingKey = key.getSecretKey(subkey);
-            addSigningKey(signingKey, passphraseProvider, null);
+            addSigningKey(signingKey, passphraseProvider, signatureCallback);
         }
 
         return (T) this;

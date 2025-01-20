@@ -107,6 +107,14 @@ public class OpenPGPDetachedSignatureGenerator
         return super.addSigningKey(signingKey, passphraseProvider, signatureCallback);
     }
 
+    public OpenPGPDetachedSignatureGenerator addSigningKey(
+            OpenPGPKey signingKey,
+            SignatureParameters.Callback signatureCallback)
+            throws InvalidSigningKeyException
+    {
+        return super.addSigningKey(signingKey, defaultKeyPassphraseProvider, signatureCallback);
+    }
+
     /**
      * Pass in an {@link InputStream} containing the data that shall be signed and return a list of detached
      * signatures.
