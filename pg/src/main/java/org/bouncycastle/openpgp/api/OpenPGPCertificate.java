@@ -7,6 +7,7 @@ import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
@@ -232,6 +233,11 @@ public class OpenPGPCertificate
         return keyRing;
     }
 
+    /**
+     * Return the underlying {@link PGPPublicKeyRing}.
+     *
+     * @return public keys
+     */
     public PGPPublicKeyRing getPGPPublicKeyRing()
     {
         if (keyRing instanceof PGPPublicKeyRing)
@@ -247,6 +253,11 @@ public class OpenPGPCertificate
         return new PGPPublicKeyRing(list);
     }
 
+    /**
+     * Return the {@link KeyIdentifier} of the certificates primary key.
+     *
+     * @return primary key identifier
+     */
     public KeyIdentifier getKeyIdentifier()
     {
         return primaryKey.getKeyIdentifier();
@@ -294,7 +305,7 @@ public class OpenPGPCertificate
 
             else if (next instanceof PGPSecretKeyRing)
             {
-
+                throw new IllegalArgumentException("Joining with a secret key is not supported.");
             }
 
             else if (next instanceof PGPSignatureList)
@@ -324,16 +335,32 @@ public class OpenPGPCertificate
         return new OpenPGPCertificate(joined, certificate.implementation);
     }
 
+    /**
+     * Return the primary keys fingerprint in binary format.
+     *
+     * @return primary key fingerprint
+     */
     public byte[] getFingerprint()
     {
         return primaryKey.getPGPPublicKey().getFingerprint();
     }
 
+    /**
+     * Return the primary keys fingerprint as a pretty-printed {@link String}.
+     *
+     * @return pretty-printed primary key fingerprint
+     */
     public String getPrettyFingerprint()
     {
         return FingerprintUtil.prettifyFingerprint(getFingerprint());
     }
 
+    /**
+     * Return an ASCII armored {@link String} containing the certificate.
+     *
+     * @return armored certificate
+     * @throws IOException if the cert cannot be encoded
+     */
     public String toAsciiArmoredString()
             throws IOException
     {
@@ -637,21 +664,43 @@ public class OpenPGPCertificate
         return uidBindings.isEmpty() ? null : uidBindings.get(0);
     }
 
+    /**
+     * Return all identities ({@link OpenPGPUserId User IDs}, {@link OpenPGPUserAttribute User Attributes}
+     * of the certificate.
+     *
+     * @return identities
+     */
     public List<OpenPGPIdentityComponent> getIdentities()
     {
         return new ArrayList<>(primaryKey.identityComponents);
     }
 
+    /**
+     * Return the current primary {@link OpenPGPUserId} of the certificate.
+     *
+     * @return primary user id
+     */
     public OpenPGPUserId getPrimaryUserId()
     {
         return getPrimaryUserId(new Date());
     }
 
+    /**
+     * Return the {@link OpenPGPUserId} that is considered primary at the given evaluation time.
+     *
+     * @param evaluationTime evaluation time
+     * @return primary user-id at evaluation time
+     */
     public OpenPGPUserId getPrimaryUserId(Date evaluationTime)
     {
         return primaryKey.getExplicitOrImplicitPrimaryUserId(evaluationTime);
     }
 
+    /**
+     * Return the {@link OpenPGPUserId} object matching the given user-id {@link String}.
+     * @param userId user-id
+     * @return user-id
+     */
     public OpenPGPUserId getUserId(String userId)
     {
         for (OpenPGPUserId uid : primaryKey.getUserIDs())
@@ -694,6 +743,11 @@ public class OpenPGPCertificate
          */
         public abstract String toDetailString();
 
+        /**
+         * Return true, if the component is currently validly bound to the certificate.
+         *
+         * @return true if bound
+         */
         public boolean isBound()
         {
             return isBoundAt(new Date());
@@ -982,7 +1036,7 @@ public class OpenPGPCertificate
             backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
         }
 
-        public void verifyKeySignature(OpenPGPComponentKey issuer,
+        protected void verifyKeySignature(OpenPGPComponentKey issuer,
                                        OpenPGPComponentKey target,
                                        PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
                 throws PGPSignatureException
@@ -1018,7 +1072,7 @@ public class OpenPGPCertificate
             }
         }
 
-        public void verifyUserIdSignature(OpenPGPComponentKey issuer,
+        protected void verifyUserIdSignature(OpenPGPComponentKey issuer,
                                           OpenPGPUserId target,
                                           PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
                 throws PGPSignatureException
@@ -1040,7 +1094,7 @@ public class OpenPGPCertificate
             }
         }
 
-        public void verifyUserAttributeSignature(OpenPGPComponentKey issuer,
+        protected void verifyUserAttributeSignature(OpenPGPComponentKey issuer,
                                                  OpenPGPUserAttribute target,
                                                  PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
                 throws PGPSignatureException
@@ -1091,6 +1145,11 @@ public class OpenPGPCertificate
             this.rawPubkey = rawPubkey;
         }
 
+        /**
+         * Return the underlying {@link PGPPublicKey} of this {@link OpenPGPComponentKey}.
+         *
+         * @return public key
+         */
         public PGPPublicKey getPGPPublicKey()
         {
             return rawPubkey;
@@ -1106,6 +1165,11 @@ public class OpenPGPCertificate
             return rawPubkey.getKeyIdentifier();
         }
 
+        /**
+         * Return the public key version.
+         *
+         * @return key version
+         */
         public int getVersion()
         {
             return getPGPPublicKey().getVersion();
@@ -1175,14 +1239,7 @@ public class OpenPGPCertificate
         public boolean isSigningKey(Date evaluationTime)
         {
             // TODO: Replace with https://github.com/bcgit/bc-java/pull/1857/files#diff-36f593d586240aec2546daad96d16b5debd3463202a3d5d82c0b2694572c8426R14-R30
-            int alg = rawPubkey.getAlgorithm();
-            if (alg != PublicKeyAlgorithmTags.RSA_GENERAL &&
-                    alg != PublicKeyAlgorithmTags.RSA_SIGN &&
-                    alg != PublicKeyAlgorithmTags.DSA &&
-                    alg != PublicKeyAlgorithmTags.ECDSA &&
-                    alg != PublicKeyAlgorithmTags.EDDSA_LEGACY &&
-                    alg != PublicKeyAlgorithmTags.Ed25519 &&
-                    alg != PublicKeyAlgorithmTags.Ed448)
+            if (!PublicKeyUtils.isSigningAlgorithm(rawPubkey.getAlgorithm()))
             {
                 // Key is not signing-capable by algorithm
                 return false;
@@ -1191,9 +1248,11 @@ public class OpenPGPCertificate
             KeyFlags keyFlags = getKeyFlags(evaluationTime);
             if (keyFlags == null)
             {
+                // Key has no applicable key-flags
                 return false;
             }
 
+            // Check if key is marked as signing-capable by key-flags
             int flags = keyFlags.getFlags();
             return (flags & KeyFlags.SIGN_DATA) == KeyFlags.SIGN_DATA;
         }
@@ -1290,11 +1349,24 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the {@link PreferredAEADCiphersuites} that apply to this (sub-)key.
+         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
+         *
+         * @return AEAD algorithm preferences
+         */
         public PreferredAEADCiphersuites getAEADCipherSuitePreferences()
         {
             return getAEADCipherSuitePreferences(new Date());
         }
 
+        /**
+         * Return the {@link PreferredAEADCiphersuites} that - at evaluation time - apply to this (sub-)key.
+         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
+         *
+         * @param evaluationTime evaluation time
+         * @return AEAD algorithm preferences at evaluation time
+         */
         public PreferredAEADCiphersuites getAEADCipherSuitePreferences(Date evaluationTime)
         {
             OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime,
@@ -1306,11 +1378,22 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the current symmetric encryption algorithm preferences of this (sub-)key.
+         *
+         * @return current preferred symmetric-key algorithm preferences
+         */
         public PreferredAlgorithms getSymmetricCipherPreferences()
         {
             return getSymmetricCipherPreferences(new Date());
         }
 
+        /**
+         * Return the symmetric encryption algorithm preferences of this (sub-)key at evaluation time.
+         *
+         * @param evaluationTime evaluation time
+         * @return current preferred symmetric-key algorithm preferences
+         */
         public PreferredAlgorithms getSymmetricCipherPreferences(Date evaluationTime)
         {
             OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_SYM_ALGS);
@@ -1321,11 +1404,22 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the current signature hash algorithm preferences of this (sub-)key.
+         *
+         * @return hash algorithm preferences
+         */
         public PreferredAlgorithms getHashAlgorithmPreferences()
         {
             return getHashAlgorithmPreferences(new Date());
         }
 
+        /**
+         * Return the signature hash algorithm preferences of this (sub-)key at evaluation time.
+         *
+         * @param evaluationTime evaluation time
+         * @return hash algorithm preferences
+         */
         public PreferredAlgorithms getHashAlgorithmPreferences(Date evaluationTime)
         {
             OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_HASH_ALGS);
@@ -1336,11 +1430,22 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the {@link Date}, at which the key expires.
+         *
+         * @return key expiration time
+         */
         public Date getKeyExpirationDate()
         {
             return getKeyExpirationDateAt(new Date());
         }
 
+        /**
+         * Return the {@link Date}, at which the key - at evaluation time - expires.
+         *
+         * @param evaluationTime evaluation time
+         * @return key expiration time
+         */
         public Date getKeyExpirationDateAt(Date evaluationTime)
         {
             OpenPGPSignature.OpenPGPSignatureSubpacket subpacket =
@@ -1421,6 +1526,12 @@ public class OpenPGPCertificate
             return userIds;
         }
 
+        /**
+         * Return the {@link OpenPGPUserId}, which is - at evaluation time - explicitly marked as primary.
+         *
+         * @param evaluationTime evaluation time
+         * @return explicit primary userid
+         */
         public OpenPGPUserId getExplicitPrimaryUserId(Date evaluationTime)
         {
             // Return the latest, valid, explicitly marked as primary UserID
@@ -1454,6 +1565,14 @@ public class OpenPGPCertificate
             return latestUid;
         }
 
+        /**
+         * Return the {@link OpenPGPUserId}, which is - at evaluation time - considered primary,
+         * either because it is explicitly marked as primary userid, or because it is implicitly primary
+         * (e.g. because it is the sole user-id on the key).
+         *
+         * @param evaluationTime evaluation time
+         * @return primary user-id
+         */
         public OpenPGPUserId getExplicitOrImplicitPrimaryUserId(Date evaluationTime)
         {
             OpenPGPUserId explicitPrimaryUserId = getExplicitPrimaryUserId(evaluationTime);
@@ -1505,6 +1624,11 @@ public class OpenPGPCertificate
             return userAttributes;
         }
 
+        /**
+         * Return all direct-key and key-revocation signatures on the primary key.
+         *
+         * @return key signatures
+         */
         protected List<OpenPGPComponentSignature> getKeySignatures()
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignatures();
@@ -1526,6 +1650,12 @@ public class OpenPGPCertificate
             return list;
         }
 
+        /**
+         * Return all signatures on the given {@link OpenPGPUserId}.
+         *
+         * @param identity user-id
+         * @return list of user-id signatures
+         */
         protected List<OpenPGPComponentSignature> getUserIdSignatures(OpenPGPUserId identity)
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignaturesForID(identity.getUserId());
@@ -1542,6 +1672,12 @@ public class OpenPGPCertificate
             return list;
         }
 
+        /**
+         * Return all signatures on the given {@link OpenPGPUserAttribute}.
+         *
+         * @param identity user-attribute
+         * @return list of user-attribute signatures
+         */
         protected List<OpenPGPComponentSignature> getUserAttributeSignatures(OpenPGPUserAttribute identity)
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignaturesForUserAttribute(identity.getUserAttribute());
@@ -1582,6 +1718,11 @@ public class OpenPGPCertificate
             return "Subkey[" + getKeyIdentifier() + "] (" + UTCUtil.format(getCreationTime()) + ")";
         }
 
+        /**
+         * Return all subkey-binding and -revocation signatures on the subkey.
+         *
+         * @return subkey signatures
+         */
         protected List<OpenPGPComponentSignature> getKeySignatures()
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignatures();
@@ -1619,6 +1760,11 @@ public class OpenPGPCertificate
             this.primaryKey = primaryKey;
         }
 
+        /**
+         * Return the primary key, which this identity belongs to.
+         *
+         * @return primary key
+         */
         public OpenPGPPrimaryKey getPrimaryKey()
         {
             return primaryKey;
@@ -1645,6 +1791,11 @@ public class OpenPGPCertificate
             this.userId = userId;
         }
 
+        /**
+         * Return the {@link String} representation of the {@link OpenPGPUserId}.
+         *
+         * @return user-id
+         */
         public String getUserId()
         {
             return userId;
@@ -1697,6 +1848,11 @@ public class OpenPGPCertificate
             this.userAttribute = userAttribute;
         }
 
+        /**
+         * Return the underlying {@link PGPUserAttributeSubpacketVector} representing this {@link OpenPGPUserAttribute}.
+         *
+         * @return user attribute subpacket vector
+         */
         public PGPUserAttributeSubpacketVector getUserAttribute()
         {
             return userAttribute;
