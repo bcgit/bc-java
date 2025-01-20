@@ -28,6 +28,7 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
+import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -898,7 +899,7 @@ public class OpenPGPCertificate
             sanitize(issuer, policy);
 
             // Direct-Key signature
-            if (target == issuer)
+            if (signature.getSignatureType() == PGPSignature.DIRECT_KEY)
             {
                 verifyKeySignature(
                         issuer,
@@ -907,12 +908,15 @@ public class OpenPGPCertificate
             }
 
             // Subkey binding signature
-            else if (target instanceof OpenPGPSubkey)
+            else if (signature.getSignatureType() == PGPSignature.SUBKEY_BINDING)
             {
                 verifyKeySignature(
                         issuer,
                         (OpenPGPSubkey) target,
                         contentVerifierBuilderProvider);
+
+                // For signing-capable subkeys, check the embedded primary key binding signature
+                verifyEmbeddedPrimaryKeyBinding(contentVerifierBuilderProvider, policy);
             }
 
             // User-ID binding
@@ -939,6 +943,45 @@ public class OpenPGPCertificate
             }
         }
 
+        private void verifyEmbeddedPrimaryKeyBinding(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
+                                                     OpenPGPPolicy policy)
+                throws PGPSignatureException
+        {
+            int keyFlags = signature.getHashedSubPackets().getKeyFlags();
+            if ((keyFlags & KeyFlags.SIGN_DATA) != KeyFlags.SIGN_DATA)
+            {
+                // Non-signing key - no embedded primary key binding sig required
+                return;
+            }
+
+            OpenPGPComponentKey subkey = getTargetKeyComponent();
+            // Signing subkey needs embedded primary key binding signature
+            PGPSignatureList embeddedSignatures;
+            try
+            {
+                embeddedSignatures = signature.getHashedSubPackets().getEmbeddedSignatures();
+            }
+            catch (PGPException e)
+            {
+                throw new PGPSignatureException("Cannot extract embedded signature.", e);
+            }
+
+            if (embeddedSignatures.isEmpty())
+            {
+                throw new MalformedPGPSignatureException(
+                        "Signing key SubkeyBindingSignature MUST contain embedded PrimaryKeyBindingSignature.");
+            }
+            PGPSignature primaryKeyBinding = embeddedSignatures.get(0);
+            OpenPGPCertificate.OpenPGPComponentSignature backSig =
+                    new OpenPGPCertificate.OpenPGPComponentSignature(
+                            primaryKeyBinding,
+                            subkey,
+                            issuer);
+
+            backSig.sanitize(subkey, policy);
+            backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
+        }
+
         public void verifyKeySignature(OpenPGPComponentKey issuer,
                                        OpenPGPComponentKey target,
                                        PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
@@ -952,6 +995,10 @@ public class OpenPGPCertificate
                 {
                     // Direct-Key Signature
                     isCorrect = signature.verifyCertification(target.getPGPPublicKey());
+                }
+                else if (signature.getSignatureType() == PGPSignature.PRIMARYKEY_BINDING)
+                {
+                    isCorrect = signature.verifyCertification(target.getPGPPublicKey(), issuer.getPGPPublicKey());
                 }
                 else
                 {
