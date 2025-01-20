@@ -46,6 +46,13 @@ public class SignatureScheme
     public static final int sm2sig_sm3 = 0x0708;
 
     /*
+     * draft-tls-westerbaan-mldsa-00
+     */
+    public static final int DRAFT_mldsa44 = 0x0904;
+    public static final int DRAFT_mldsa65 = 0x0905;
+    public static final int DRAFT_mldsa87 = 0x0906;
+
+    /*
      * RFC 8446 reserved for private use (0xFE00..0xFFFF)
      */
 
@@ -70,6 +77,9 @@ public class SignatureScheme
         {
         case ed25519:
         case ed448:
+        case DRAFT_mldsa44:
+        case DRAFT_mldsa65:
+        case DRAFT_mldsa87:
             return -1;
         case ecdsa_brainpoolP256r1tls13_sha256:
         case rsa_pss_pss_sha256:
@@ -146,6 +156,12 @@ public class SignatureScheme
             return "ecdsa_brainpoolP512r1tls13_sha512";
         case sm2sig_sm3:
             return "sm2sig_sm3";
+        case DRAFT_mldsa44:
+            return "DRAFT_mldsa44";
+        case DRAFT_mldsa65:
+            return "DRAFT_mldsa65";
+        case DRAFT_mldsa87:
+            return "DRAFT_mldsa87";
         default:
             return "UNKNOWN";
         }
@@ -235,6 +251,19 @@ public class SignatureScheme
             return true;
         default:
             return SignatureAlgorithm.ecdsa == getSignatureAlgorithm(signatureScheme);
+        }
+    }
+
+    public static boolean isMLDSA(int signatureScheme)
+    {
+        switch (signatureScheme)
+        {
+        case DRAFT_mldsa44:
+        case DRAFT_mldsa65:
+        case DRAFT_mldsa87:
+            return true;
+        default:
+            return false;
         }
     }
 
