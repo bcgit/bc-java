@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -90,7 +91,10 @@ public class OpenPGPKeyReader
         // TODO: Is it dangerous, if we don't explicitly fail upon encountering secret key material here?
         //  Could it lead to a situation where we need to be cautious with the certificate API design to
         //  prevent the user from doing dangerous things like accidentally publishing their private key?
-
+        while (object instanceof PGPMarker)
+        {
+            object = objectFactory.nextObject();
+        }
         if (object instanceof PGPSecretKeyRing)
         {
             return new OpenPGPKey((PGPSecretKeyRing) object, implementation, policy);
@@ -126,6 +130,10 @@ public class OpenPGPKeyReader
         PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
 
         Object object = objectFactory.nextObject();
+        while (object instanceof PGPMarker)
+        {
+            object = objectFactory.nextObject();
+        }
         if (!(object instanceof PGPSecretKeyRing))
         {
             throw new IOException("Not a secret key.");
