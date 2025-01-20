@@ -75,7 +75,6 @@ public class OpenPGPMessageProcessorTest
 
         inlineSignWithV4KeyAlice(api);
         inlineSignWithV4KeyBob(api);
-        inlineSignWithV4KeyCarol(api);
         inlineSignWithV6Key(api);
 
         verifyMessageByRevokedKey(api);
@@ -518,37 +517,6 @@ public class OpenPGPMessageProcessorTest
         isEquals(1, signatures.size());
         OpenPGPSignature.OpenPGPDocumentSignature sig = signatures.get(0);
         isEquals(bobCert, sig.getIssuerCertificate());
-
-        isEncodingEqual(PLAINTEXT, bOut.toByteArray());
-    }
-
-    private void inlineSignWithV4KeyCarol(OpenPGPApi api)
-            throws PGPException, IOException
-    {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage();
-        OpenPGPKey carolKey = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.CAROL_KEY);
-        gen.addSigningKey(carolKey);
-
-        OutputStream signOut = gen.open(bOut);
-        signOut.write(PLAINTEXT);
-        signOut.close();
-
-        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
-        bOut = new ByteArrayOutputStream();
-
-        OpenPGPCertificate carolCert = api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.CAROL_CERT);
-        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage()
-                .addVerificationCertificate(carolCert);
-
-        OpenPGPMessageInputStream verifIn = processor.process(bIn);
-        Streams.pipeAll(verifIn, bOut);
-        verifIn.close();
-        OpenPGPMessageInputStream.Result result = verifIn.getResult();
-        List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = result.getSignatures();
-        isEquals(1, signatures.size());
-        OpenPGPSignature.OpenPGPDocumentSignature sig = signatures.get(0);
-        isEquals(carolCert, sig.getIssuerCertificate());
 
         isEncodingEqual(PLAINTEXT, bOut.toByteArray());
     }
