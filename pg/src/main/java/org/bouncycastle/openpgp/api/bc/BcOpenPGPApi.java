@@ -3,7 +3,7 @@ package org.bouncycastle.openpgp.api.bc;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
-import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 
 import java.util.Date;
 
@@ -21,24 +21,26 @@ public class BcOpenPGPApi
     }
 
     @Override
-    public OpenPGPV6KeyGenerator generateKey()
+    public OpenPGPKeyGenerator generateKey(int version)
             throws PGPException
     {
-        return new BcOpenPGPV6KeyGenerator();
+        return new BcOpenPGPKeyGenerator(version);
     }
 
     @Override
-    public OpenPGPV6KeyGenerator generateKey(Date creationTime)
+    public OpenPGPKeyGenerator generateKey(int version,
+                                           Date creationTime)
             throws PGPException
     {
-        return new BcOpenPGPV6KeyGenerator(creationTime);
+        return new BcOpenPGPKeyGenerator(version, creationTime);
     }
 
     @Override
-    public OpenPGPV6KeyGenerator generateKey(Date creationTime,
-                                             boolean aeadProtection)
+    public OpenPGPKeyGenerator generateKey(int version,
+                                           Date creationTime,
+                                           boolean aeadProtection)
             throws PGPException
     {
-        return new BcOpenPGPV6KeyGenerator(creationTime, aeadProtection);
+        return new BcOpenPGPKeyGenerator(version, creationTime, aeadProtection);
     }
 }

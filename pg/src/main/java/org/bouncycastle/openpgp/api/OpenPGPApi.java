@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
 
 import java.util.Date;
@@ -25,14 +26,34 @@ public abstract class OpenPGPApi
         return new OpenPGPKeyReader(implementation, policy);
     }
 
-    public abstract OpenPGPV6KeyGenerator generateKey()
+    public OpenPGPKeyGenerator generateKey()
+            throws PGPException
+    {
+        return generateKey(PublicKeyPacket.VERSION_6);
+    }
+
+    public abstract OpenPGPKeyGenerator generateKey(int version)
             throws PGPException;
 
-    public abstract OpenPGPV6KeyGenerator generateKey(Date creationTime)
+    public OpenPGPKeyGenerator generateKey(Date creationTime)
+            throws PGPException
+    {
+        return generateKey(PublicKeyPacket.VERSION_6, creationTime);
+    }
+
+    public abstract OpenPGPKeyGenerator generateKey(int version,
+                                                    Date creationTime)
             throws PGPException;
 
-    public abstract OpenPGPV6KeyGenerator generateKey(Date creationTime,
-                                                      boolean aeadProtection)
+    public OpenPGPKeyGenerator generateKey(Date creationTime, boolean aeadProtection)
+            throws PGPException
+    {
+        return generateKey(PublicKeyPacket.VERSION_6, creationTime, aeadProtection);
+    }
+
+    public abstract OpenPGPKeyGenerator generateKey(int version,
+                                                    Date creationTime,
+                                                    boolean aeadProtection)
             throws PGPException;
 
     public OpenPGPMessageGenerator signAndOrEncryptMessage()

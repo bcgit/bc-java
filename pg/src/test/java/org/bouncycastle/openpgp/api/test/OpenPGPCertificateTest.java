@@ -17,7 +17,7 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
@@ -812,7 +812,7 @@ public class OpenPGPCertificateTest
         Date now = new Date((new Date().getTime() / 1000) * 1000);
         Date oneHourAgo = new Date(now.getTime() - 1000 * 60 * 60);
 
-        OpenPGPV6KeyGenerator gen = api.generateKey(oneHourAgo);
+        OpenPGPKeyGenerator gen = api.generateKey(oneHourAgo);
         OpenPGPKey key = gen.withPrimaryKey()
                 .addUserId("Old non-primary <non-primary@user.id>")
                 .addUserId("New primary <primary@user.id>",

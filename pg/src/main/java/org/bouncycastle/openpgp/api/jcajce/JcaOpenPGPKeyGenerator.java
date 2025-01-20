@@ -1,26 +1,26 @@
 package org.bouncycastle.openpgp.api.jcajce;
 
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Date;
 
-public class JcaOpenPGPV6KeyGenerator
-    extends OpenPGPV6KeyGenerator
+public class JcaOpenPGPKeyGenerator
+    extends OpenPGPKeyGenerator
 {
 
-    public JcaOpenPGPV6KeyGenerator(Provider provider)
+    public JcaOpenPGPKeyGenerator(int version, Provider provider)
         throws PGPException
     {
-        this(new Date(), provider);
+        this(version, new Date(), provider);
     }
 
-    public JcaOpenPGPV6KeyGenerator(Date creationTime, Provider provider)
+    public JcaOpenPGPKeyGenerator(int version, Date creationTime, Provider provider)
         throws PGPException
     {
-        this(creationTime, true, provider);
+        this(version, creationTime, true, provider);
     }
 
     /**
@@ -28,11 +28,12 @@ public class JcaOpenPGPV6KeyGenerator
      *
      * @param creationTime           creation time of the key and signatures
      */
-    public JcaOpenPGPV6KeyGenerator(Date creationTime, boolean aeadProtection, Provider provider)
+    public JcaOpenPGPKeyGenerator(int version, Date creationTime, boolean aeadProtection, Provider provider)
         throws PGPException
     {
         super(
                 new JcaOpenPGPImplementation(provider, new SecureRandom()),
+                version,
                 aeadProtection,
                 creationTime);
     }

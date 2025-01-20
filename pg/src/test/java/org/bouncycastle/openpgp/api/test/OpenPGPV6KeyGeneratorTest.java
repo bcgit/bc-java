@@ -26,7 +26,7 @@ import org.bouncycastle.openpgp.api.KeyPairGeneratorCallback;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
@@ -81,7 +81,7 @@ public class OpenPGPV6KeyGeneratorTest
     private void testGenerateSignOnlyKeyBaseCase(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = api.generateKey();
+        OpenPGPKeyGenerator generator = api.generateKey();
         OpenPGPKey key = generator.signOnlyKey().build();
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
@@ -109,7 +109,7 @@ public class OpenPGPV6KeyGeneratorTest
     private void testGenerateAEADProtectedSignOnlyKey(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = api.generateKey(new Date(), true);
+        OpenPGPKeyGenerator generator = api.generateKey(new Date(), true);
         OpenPGPKey key = generator.signOnlyKey().build("passphrase".toCharArray());
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
@@ -127,7 +127,7 @@ public class OpenPGPV6KeyGeneratorTest
     private void testGenerateCFBProtectedSignOnlyKey(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = api.generateKey(new Date(), false);
+        OpenPGPKeyGenerator generator = api.generateKey(new Date(), false);
         OpenPGPKey key = generator.signOnlyKey().build("passphrase".toCharArray());
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
@@ -146,7 +146,7 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = api.generateKey(creationTime);
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime);
         OpenPGPKey key = generator
             .classicKey("Alice <alice@example.com>").build();
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
@@ -207,7 +207,7 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = api.generateKey(creationTime);
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime);
         OpenPGPKey key = generator
             .classicKey("Alice <alice@example.com>").build("passphrase".toCharArray());
         PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
@@ -243,7 +243,7 @@ public class OpenPGPV6KeyGeneratorTest
     {
         Date currentTime = currentTimeRounded();
         String userId = "Foo <bar@baz>";
-        OpenPGPV6KeyGenerator generator = api.generateKey(currentTime);
+        OpenPGPKeyGenerator generator = api.generateKey(currentTime);
 
         OpenPGPKey key = generator.ed25519x25519Key(userId).build();
         PGPSecretKeyRing secretKey = key.getPGPKeyRing();
@@ -291,7 +291,7 @@ public class OpenPGPV6KeyGeneratorTest
     {
         Date currentTime = currentTimeRounded();
         String userId = "Foo <bar@baz>";
-        OpenPGPV6KeyGenerator generator = api.generateKey(currentTime);
+        OpenPGPKeyGenerator generator = api.generateKey(currentTime);
 
         OpenPGPKey key = generator.ed448x448Key(userId).build();
         PGPSecretKeyRing secretKey = key.getPGPKeyRing();
@@ -338,7 +338,7 @@ public class OpenPGPV6KeyGeneratorTest
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = api.generateKey(creationTime, false);
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime, false);
 
         OpenPGPKey key = generator
             .withPrimaryKey(
@@ -480,7 +480,7 @@ public class OpenPGPV6KeyGeneratorTest
             throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator gen = api.generateKey(creationTime, false);
+        OpenPGPKeyGenerator gen = api.generateKey(creationTime, false);
         OpenPGPKey key = gen.withPrimaryKey(
                         PGPKeyPairGenerator::generateEd25519KeyPair,
                         SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()

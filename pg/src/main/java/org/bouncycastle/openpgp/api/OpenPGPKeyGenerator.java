@@ -32,7 +32,7 @@ import org.bouncycastle.util.Arrays;
 /**
  * High-level generator class for OpenPGP v6 keys.
  */
-public class OpenPGPV6KeyGenerator
+public class OpenPGPKeyGenerator
     extends AbstractOpenPGPKeySignatureGenerator
 {
     // SECONDS
@@ -41,17 +41,27 @@ public class OpenPGPV6KeyGenerator
     private static final long SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
     private static final long SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY;
 
-
+    private final int keyVersion;
     private final OpenPGPImplementation implementationProvider;
     private final Configuration configuration; // contains BC or JCA/JCE implementations
 
-    public OpenPGPV6KeyGenerator(OpenPGPImplementation implementationProvider,
-                                 boolean aead,
-                                 Date creationTime)
+    public OpenPGPKeyGenerator(OpenPGPImplementation implementation,
+                               boolean aead,
+                               Date creationTime)
+            throws PGPException
+    {
+        this(implementation, PublicKeyPacket.VERSION_6, aead, creationTime);
+    }
+
+    public OpenPGPKeyGenerator(OpenPGPImplementation implementationProvider,
+                               int version,
+                               boolean aead,
+                               Date creationTime)
             throws PGPException
     {
         this(
                 implementationProvider,
+                version,
                 implementationProvider.pgpKeyPairGeneratorProvider(),
                 implementationProvider.pgpDigestCalculatorProvider(),
                 implementationProvider.pbeSecretKeyEncryptorFactory(aead),
@@ -69,15 +79,24 @@ public class OpenPGPV6KeyGenerator
      * @param keyFingerPrintCalculator     calculator for key fingerprints
      * @param creationTime                 key creation time
      */
-    public OpenPGPV6KeyGenerator(
+    public OpenPGPKeyGenerator(
         OpenPGPImplementation implementationProvider,
+        int keyVersion,
         PGPKeyPairGeneratorProvider kpGenProvider,
         PGPDigestCalculatorProvider digestCalculatorProvider,
         PBESecretKeyEncryptorFactory keyEncryptionBuilderProvider,
         KeyFingerPrintCalculator keyFingerPrintCalculator,
         Date creationTime)
     {
+        if (keyVersion != PublicKeyPacket.VERSION_4 &&
+                keyVersion != PublicKeyPacket.LIBREPGP_5 &&
+                keyVersion != PublicKeyPacket.VERSION_6)
+        {
+            throw new IllegalArgumentException("Generating keys of version " + keyVersion + " is not supported.");
+        }
+
         this.implementationProvider = implementationProvider;
+        this.keyVersion = keyVersion;
         this.configuration = new Configuration(creationTime, kpGenProvider, digestCalculatorProvider, keyEncryptionBuilderProvider, keyFingerPrintCalculator);
     }
 
@@ -270,8 +289,8 @@ public class OpenPGPV6KeyGenerator
             SignatureParameters.Callback preferenceSignatureCallback)
         throws PGPException
     {
-        PGPKeyPair primaryKeyPair = keyGenCallback.generateFrom(
-                configuration.kpGenProvider.get(PublicKeyPacket.VERSION_6, configuration.keyCreationTime));
+        PGPKeyPair primaryKeyPair = keyGenCallback.generateFrom(configuration.kpGenProvider.get(
+                keyVersion, configuration.keyCreationTime));
 
         if (primaryKeyPair.getPublicKey().getPublicKeyPacket() instanceof PublicSubkeyPacket)
         {
@@ -455,8 +474,7 @@ public class OpenPGPV6KeyGenerator
             throws PGPException
         {
             PGPKeyPairGenerator generator = configuration.kpGenProvider.get(
-                primaryKey.getPublicKey().getVersion(),
-                configuration.keyCreationTime
+                keyVersion, configuration.keyCreationTime
             );
             PGPKeyPair subkey = generatorCallback.generateFrom(generator);
             subkey = subkey.asSubkey(implementation.keyFingerPrintCalculator());
@@ -586,7 +604,8 @@ public class OpenPGPV6KeyGenerator
                                                SignatureParameters.Callback backSignatureCallback)
             throws PGPException
         {
-            PGPKeyPair subkey = keyGenCallback.generateFrom(configuration.kpGenProvider.get(PublicKeyPacket.VERSION_6, configuration.keyCreationTime));
+            PGPKeyPair subkey = keyGenCallback.generateFrom(configuration.kpGenProvider.get(
+                    keyVersion, configuration.keyCreationTime));
             subkey = subkey.asSubkey(configuration.keyFingerprintCalculator);
             return addSigningSubkey(subkey, bindingSignatureCallback, backSignatureCallback);
         }
