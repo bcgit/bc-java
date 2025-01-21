@@ -438,11 +438,11 @@ public class PublicKeyFactory
             throws IOException
         {
             byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-            byte[] data = Utils.readOctetString(keyEnc);
+            ASN1OctetString data = (ASN1OctetString)Utils.parseData(keyEnc);
 
             if (data != null)
             {
-                return getLmsKeyParameters(data);
+                return getLmsKeyParameters(data.getOctets());
             }
 
             return getLmsKeyParameters(keyEnc);
@@ -567,11 +567,11 @@ public class PublicKeyFactory
             throws IOException
         {
             byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-            byte[] data = Utils.readOctetString(keyEnc);
+            ASN1OctetString data = Utils.parseOctetData(keyEnc);
 
             if (data != null)
             {
-                return getNtruPublicKeyParameters(keyInfo, data);
+                return getNtruPublicKeyParameters(keyInfo, data.getOctets());
             }
 
             return getNtruPublicKeyParameters(keyInfo, keyEnc);

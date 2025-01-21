@@ -3,9 +3,11 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -32,7 +34,6 @@ import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
@@ -246,16 +247,18 @@ public class PrivateKeyInfoFactory
             MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
             
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
-
-            byte[] seed = params.getSeed();
-            if (seed == null)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-            }
-            else
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
-            }
+                                                  
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
+//            byte[] seed = params.getSeed();
+//
+//            if (seed == null)
+//            {
+//                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
+//            }
+//            else
+//            {
+//                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+//            }
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -294,19 +297,20 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
-            byte[] seed = params.getSeed();
-            if (seed == null)
-            {
-                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-
-                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, pubParams.getEncoded());
-            }
-            else
-            {
-                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-
-                return new PrivateKeyInfo(algorithmIdentifier, params.getSeed(), attributes);
-            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
+//            byte[] seed = params.getSeed();
+//            if (seed == null)
+//            {
+//                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
+//
+//                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, pubParams.getEncoded());
+//            }
+//            else
+//            {
+//                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
+//
+//                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes, pubParams.getEncoded());
+//            }
         }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {
@@ -393,6 +397,23 @@ public class PrivateKeyInfoFactory
         {
             return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
         }
+    }
+
+    private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
+        
+        if (seed != null)
+        {
+            v.add(new DEROctetString(seed));
+        }
+
+        if (expanded != null)
+        {
+            v.add(new DERTaggedObject(false, 1, new DEROctetString(expanded)));
+        }
+
+        return new DERSequence(v);
     }
 
     private static XMSSMTPrivateKey xmssmtCreateKeyStructure(XMSSMTPrivateKeyParameters keyParams)

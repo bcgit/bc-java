@@ -123,6 +123,7 @@ public class MLKEMTest
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM", "BC");
         kpg.initialize(MLKEMParameterSpec.ml_kem_512, new SecureRandom());
 
+        kpg.generateKeyPair().getPrivate().getEncoded();
         performKEMScipher(kpg.generateKeyPair(), "ML-KEM", new KTSParameterSpec.Builder("Camellia", 128).withNoKdf().build());
         performKEMScipher(kpg.generateKeyPair(), "ML-KEM", new KTSParameterSpec.Builder("Camellia-KWP", 128).withNoKdf().build());
     }
