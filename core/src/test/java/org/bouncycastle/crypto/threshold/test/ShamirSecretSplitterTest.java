@@ -19,7 +19,12 @@ public class ShamirSecretSplitterTest
         throws IOException
     {
         ShamirSecretSplitterTest test = new ShamirSecretSplitterTest();
+        for (int i = 0; i < 1000; ++i)
+        {
+            test.testShamirSecretMultipleDivide();
+        }
         test.performTest();
+        System.out.println("OK");
     }
 
     public void performTest()
@@ -77,7 +82,7 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecret splitSecret1 = new ShamirSplitSecret(algorithm, mode, secretShares1);
         byte[] secret1 = splitSecret1.getSecret();
 
-        int mul = random.nextInt(255);
+        int mul = random.nextInt(254) + 1;
         splitSecret.multiple(mul);
         secretShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
         ShamirSplitSecretShare[] secretShares4 = new ShamirSplitSecretShare[]{secretShares[1], secretShares[2], secretShares[5]};
@@ -89,7 +94,6 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecretShare[] secretShares2 = new ShamirSplitSecretShare[]{secretShares[4], secretShares[7], secretShares[8]};
         ShamirSplitSecret splitSecret2 = new ShamirSplitSecret(algorithm, mode, secretShares2);
         byte[] secret2 = splitSecret2.getSecret();
-
         assertTrue(Arrays.areEqual(secret1, secret2));
 
 
@@ -966,7 +970,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Table, l,  random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Mode.Table, l, random);
             }
 
             @Override
@@ -996,7 +1000,7 @@ public class ShamirSecretSplitterTest
             @Override
             public ShamirSecretSplitter newInstance(int l, int m, int n, SecureRandom random)
             {
-                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Table, l,random);
+                return new ShamirSecretSplitter(ShamirSecretSplitter.Algorithm.RSA, ShamirSecretSplitter.Mode.Table, l, random);
             }
 
             @Override
