@@ -2509,6 +2509,9 @@ public class PKCS12StoreTest
         // valid test vectors
         for (byte[] test_vector : new byte[][]{pkcs12WithPBMac1PBKdf2_a1, pkcs12WithPBMac1PBKdf2_a2, pkcs12WithPBMac1PBKdf2_a3})
         {
+            //
+            // load test
+            //
             stream = new ByteArrayInputStream(test_vector);
             store.load(stream, password);
             
@@ -2518,6 +2521,24 @@ public class PKCS12StoreTest
                 fail("no exception");
             }
             catch (IOException ignored) {}
+
+            //
+            // save test
+            //
+            ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+            store.store(bOut, passwd);
+            stream = new ByteArrayInputStream(bOut.toByteArray());
+            store.load(stream, passwd);
+
+            //
+            // save test using LoadStoreParameter
+            //
+            bOut = new ByteArrayOutputStream();
+            PKCS12StoreParameter storeParam = new PKCS12StoreParameter(bOut, passwd, true);
+            store.store(storeParam);
+            byte[] data = bOut.toByteArray();
+            stream = new ByteArrayInputStream(data);
+            store.load(stream, passwd);
         }
         // invalid test vectors
         for (byte[] test_vector : new byte[][]{pkcs12WithPBMac1PBKdf2_a4, pkcs12WithPBMac1PBKdf2_a5})
