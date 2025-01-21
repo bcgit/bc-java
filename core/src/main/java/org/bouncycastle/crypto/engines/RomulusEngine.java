@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.util.Arrays;
@@ -23,17 +21,13 @@ public class RomulusEngine
         RomulusT,
     }
 
-    private boolean initialised;
-    private final RomulusParameters romulusParameters;
-    private int offset;
     private byte[] k;
     private byte[] npub;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
     private final int AD_BLK_LEN_HALF = 16;
     private int messegeLen;
     private int aadLen;
     private Instance instance;
+    private final byte[] CNT;
 
     // Packing of data is done as follows (state[i][j] stands for row i and column j):
     // 0  1  2  3
@@ -88,12 +82,9 @@ public class RomulusEngine
 
     public RomulusEngine(RomulusParameters romulusParameters)
     {
-        super(romulusParameters == RomulusParameters.RomulusN ? ProcessingBufferType.Buffered : ProcessingBufferType.Immediate);
+        super(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered);
         KEY_SIZE = IV_SIZE = MAC_SIZE = BlockSize = AADBufferSize = 16;
-        m_bufferSizeDecrypt = MAC_SIZE + BlockSize;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[AADBufferSize];
-        this.romulusParameters = romulusParameters;
+        CNT = new byte[7];
         switch (romulusParameters)
         {
         case RomulusM:
@@ -106,11 +97,13 @@ public class RomulusEngine
             break;
         case RomulusT:
             algorithmName = "Romulus-T";
+            AADBufferSize = 32;
             instance = new RomulusT();
             break;
         }
-        initialised = false;
-
+        m_bufferSizeDecrypt = MAC_SIZE + BlockSize;
+        m_buf = new byte[m_bufferSizeDecrypt];
+        m_aad = new byte[AADBufferSize];
     }
 
     private interface Instance
@@ -197,7 +190,6 @@ public class RomulusEngine
         @Override
         public void processBufferAAD(byte[] input, int inOff)
         {
-            byte[] T = new byte[16];
             byte[] mp = new byte[16];
             // Rho(S,A) pads an A block and XORs it to the internal state.
             pad(input, inOff, mp, 16, 16);
@@ -233,6 +225,7 @@ public class RomulusEngine
                     lfsr_gf56(CNT);
                 }
             }
+            m_aadPos = 0;
         }
 
         @Override
@@ -313,13 +306,11 @@ public class RomulusEngine
         implements Instance
     {
         private final byte[] s;
-        private final byte[] CNT;
         boolean twist;
 
         public RomulusN()
         {
             s = new byte[AD_BLK_LEN_HALF];
-            CNT = new byte[7];
             twist = true;
         }
 
@@ -439,41 +430,194 @@ public class RomulusEngine
     private class RomulusT
         implements Instance
     {
+        private final byte[] h = new byte[16];
+        private final byte[] g = new byte[16];
+        byte[] Z = new byte[16];
+        byte[] CNT_Z = new byte[7];
+        byte[] LR = new byte[32];
+        byte[] T = new byte[16];
+        // Initialization function: KDF
+        byte[] S = new byte[16];
 
         @Override
         public void processFinalBlock(byte[] output, int outOff)
         {
+            int n = 16;
+            messegeLen -= (forEncryption ? 0 : MAC_SIZE);
+            if (m_bufPos != 0)
+            {
+                int len8 = Math.min(m_bufPos, 16);
+                System.arraycopy(npub, 0, S, 0, 16);
+                block_cipher(S, Z, T, 0, CNT, (byte)64);
+                for (int i = 0; i < len8; i++)
+                {
+                    output[i + outOff] = (byte)((m_buf[i]) ^ S[i]);
+                }
+                System.arraycopy(npub, 0, S, 0, 16);
 
+                lfsr_gf56(CNT);
+
+                byte[] macIn;
+                int macInOff;
+                if (forEncryption)
+                {
+                    macIn = output;
+                    macInOff = outOff;
+                }
+                else
+                {
+                    macIn = m_buf;
+                    macInOff = 0;
+                }
+                System.arraycopy(macIn, macInOff, m_aad, m_aadPos, m_bufPos);
+                Arrays.fill(m_aad, m_aadPos + m_bufPos, AADBufferSize - 1, (byte)0);
+                m_aad[m_aadPos + BlockSize - 1] = (byte)(m_bufPos & 0xf);
+                if (m_aadPos == 0)
+                {
+                    System.arraycopy(npub, 0, m_aad, BlockSize, BlockSize);
+                    n = 0;
+                }
+                hirose_128_128_256(h, g, m_aad, 0);
+                lfsr_gf56(CNT_Z);
+            }
+            else if (m_aadPos != 0)
+            {
+                if (messegeLen > 0)
+                {
+                    Arrays.fill(m_aad, BlockSize, AADBufferSize, (byte)0);
+                }
+                else if (aadLen != 0)
+                {
+                    System.arraycopy(npub, 0, m_aad, m_aadPos, 16);
+                    n = 0;
+                    m_aadPos = 0;
+                }
+                hirose_128_128_256(h, g, m_aad, 0);
+            }
+            else if (messegeLen > 0)
+            {
+                Arrays.fill(m_aad, 0, BlockSize, (byte)0);
+                System.arraycopy(npub, 0, m_aad, BlockSize, BlockSize);
+                n = 0;
+                hirose_128_128_256(h, g, m_aad, 0);
+            }
+
+            if (n == 16)
+            {
+                // Pad the nonce and counter
+                System.arraycopy(npub, 0, m_aad, 0, 16);
+                System.arraycopy(CNT, 0, m_aad, 16, 7);
+                ipad_256(m_aad, m_aad, 23);
+            }
+            else
+            {
+                ipad_256(CNT_Z, m_aad, 7);
+            }
+            h[0] ^= 2;
+            hirose_128_128_256(h, g, m_aad, 0);
+            // Assign the output tag
+            System.arraycopy(h, 0, LR, 0, 16);
+            System.arraycopy(g, 0, LR, 16, 16);
+            Arrays.clear(CNT_Z);
+            block_cipher(LR, k, LR, 16, CNT_Z, (byte)68);
+            mac = new byte[MAC_SIZE];
+            System.arraycopy(LR, 0, mac, 0, MAC_SIZE);
         }
 
         @Override
         public void processBufferAAD(byte[] input, int inOff)
         {
-
+            hirose_128_128_256(h, g, input, inOff);
         }
 
         @Override
         public void processFinalAAD()
         {
-
+            // Partial block (or in case there is no partial block we add a 0^2n block
+            Arrays.fill(m_aad, m_aadPos, AADBufferSize - 1, (byte)0);
+            if (m_aadPos >= 16)
+            {
+                m_aad[AADBufferSize - 1] = (byte)(m_aadPos & 0xf);
+                hirose_128_128_256(h, g, m_aad, 0);
+                m_aadPos = 0;
+            }
+            else if ((m_aadPos >= 0) && (aadLen != 0))
+            {
+                m_aad[BlockSize - 1] = (byte)(m_aadPos & 0xf);
+                m_aadPos = BlockSize;
+            }
         }
 
         @Override
         public void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
         {
-
+            System.arraycopy(npub, 0, S, 0, 16);
+            block_cipher(S, Z, T, 0, CNT, (byte)64);
+            for (int i = 0; i < AD_BLK_LEN_HALF; i++)
+            {
+                output[i + outOff] = (byte)((input[i + inOff]) ^ S[i]);
+            }
+            System.arraycopy(npub, 0, S, 0, 16);
+            block_cipher(S, Z, T, 0, CNT, (byte)65);
+            System.arraycopy(S, 0, Z, 0, 16);
+            lfsr_gf56(CNT);
+            // ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT
+            System.arraycopy(output, outOff, m_aad, m_aadPos, BlockSize);
+            if (m_aadPos == BlockSize)
+            {
+                hirose_128_128_256(h, g, m_aad, 0);
+                m_aadPos = 0;
+                lfsr_gf56(CNT_Z);
+            }
+            else
+            {
+                m_aadPos = BlockSize;
+                lfsr_gf56(CNT_Z);
+            }
         }
 
         @Override
         public void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
         {
-
+            System.arraycopy(npub, 0, S, 0, 16);
+            block_cipher(S, Z, T, 0, CNT, (byte)64);
+            for (int i = 0; i < AD_BLK_LEN_HALF; i++)
+            {
+                output[i + outOff] = (byte)((input[i + inOff]) ^ S[i]);
+            }
+            System.arraycopy(npub, 0, S, 0, 16);
+            block_cipher(S, Z, T, 0, CNT, (byte)65);
+            System.arraycopy(S, 0, Z, 0, 16);
+            lfsr_gf56(CNT);
+            // ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT
+            System.arraycopy(input, inOff, m_aad, m_aadPos, BlockSize);
+            if (m_aadPos == BlockSize)
+            {
+                hirose_128_128_256(h, g, m_aad, 0);
+                m_aadPos = 0;
+                lfsr_gf56(CNT_Z);
+            }
+            else
+            {
+                m_aadPos = BlockSize;
+                lfsr_gf56(CNT_Z);
+            }
         }
 
         @Override
         public void reset()
         {
-
+            Arrays.clear(Z);
+            Arrays.clear(h);
+            Arrays.clear(g);
+            Arrays.clear(LR);
+            Arrays.clear(CNT_Z);
+            Arrays.clear(T);
+            Arrays.clear(S);
+            reset_lfsr_gf56(CNT);
+            System.arraycopy(npub, 0, Z, 0, 16);
+            block_cipher(Z, k, T, 0, CNT_Z, (byte)66);
+            reset_lfsr_gf56(CNT_Z);
         }
     }
 
@@ -685,35 +829,6 @@ public class RomulusEngine
         block_cipher(s, k, T, 0, CNT, D);
     }
 
-    // Absorbs the AD blocks.
-    int ad_encryption(byte[] A, int AOff, byte[] s, byte[] k, int adlen, byte[] CNT, byte D)
-    {
-        byte[] T = new byte[16];
-        byte[] mp = new byte[16];
-        int n = 16;
-        int i, len8;
-        len8 = Math.min(adlen, n);
-        adlen -= len8;
-        // Rho(S,A) pads an A block and XORs it to the internal state.
-        pad(A, AOff, mp, n, len8);
-        for (i = 0; i < n; i++)
-        {
-            s[i] = (byte)(s[i] ^ mp[i]);
-        }
-        offset = AOff += len8;
-        lfsr_gf56(CNT);
-        if (adlen != 0)
-        {
-            len8 = Math.min(adlen, n);
-            adlen -= len8;
-            pad(A, AOff, T, n, len8);
-            offset = AOff + len8;
-            block_cipher(s, k, T, 0, CNT, D);
-            lfsr_gf56(CNT);
-        }
-        return adlen;
-    }
-
     private void reset_lfsr_gf56(byte[] CNT)
     {
         CNT[0] = 0x01;
@@ -725,396 +840,6 @@ public class RomulusEngine
         CNT[6] = 0x00;
     }
 
-    private void romulus_m_encrypt(byte[] c, byte[] m, int mlen, byte[] ad, int adlen, byte[] N, byte[] k)
-    {
-        byte[] s = new byte[16];
-        byte[] CNT = new byte[7];
-        mac = new byte[16];
-        int xlen, cOff = 0, mOff = 0, adOff = 0, mauth = 0;
-        byte w;
-        xlen = mlen;
-        reset_lfsr_gf56(CNT);
-        // Calculating the domain separation bits for the last block MAC TBC call depending on the length of M and AD
-        w = 48;
-        if ((adlen & 31) == 0 && adlen != 0)
-        {
-            w ^= 8;
-        }
-        else if ((adlen & 31) < AD_BLK_LEN_HALF)
-        {
-            w ^= 2;
-        }
-        else if ((adlen & 31) != AD_BLK_LEN_HALF)
-        {
-            w ^= 10;
-        }
-        if ((xlen & 31) == 0 && xlen != 0)
-        {
-            w ^= 4;
-        }
-        else if ((xlen & 31) < AD_BLK_LEN_HALF)
-        {
-            w ^= 1;
-        }
-        else if ((xlen & 31) != AD_BLK_LEN_HALF)
-        {
-            w ^= 5;
-        }
-        if (forEncryption)
-        {
-            if (adlen == 0)
-            { // AD is an empty string
-                lfsr_gf56(CNT);
-            }
-            else
-            {
-                while (adlen > 0)
-                {
-                    offset = adOff;
-                    adlen = ad_encryption(ad, adOff, s, k, adlen, CNT, (byte)40);
-                    adOff = offset;
-                }
-            }
-            mOff = 0;
-            if ((w & 8) == 0)
-            {
-                byte[] Temp = new byte[16];
-                int len8 = Math.min(xlen, AD_BLK_LEN_HALF);
-                xlen -= len8;
-                pad(m, mOff, Temp, AD_BLK_LEN_HALF, len8);
-                block_cipher(s, k, Temp, 0, CNT, (byte)44);
-                lfsr_gf56(CNT);
-                mOff += len8;
-            }
-            else if (mlen == 0)
-            {
-                lfsr_gf56(CNT);
-            }
-            while (xlen > 0)
-            {
-                offset = mOff;
-                xlen = ad_encryption(m, mOff, s, k, xlen, CNT, (byte)44);
-                mOff = offset;
-            }
-            nonce_encryption(N, CNT, s, k, w);
-            // Tag generation
-            g8A(s, mac, 0);
-            mOff -= mlen;
-        }
-        else
-        {
-            System.arraycopy(m, mlen, mac, 0, MAC_SIZE);
-        }
-        reset_lfsr_gf56(CNT);
-        System.arraycopy(mac, 0, s, 0, AD_BLK_LEN_HALF);
-        if (mlen > 0)
-        {
-            nonce_encryption(N, CNT, s, k, (byte)36);
-            while (mlen > AD_BLK_LEN_HALF)
-            {
-                mlen = mlen - AD_BLK_LEN_HALF;
-                rho(m, mOff, c, cOff, s, AD_BLK_LEN_HALF);
-                cOff += AD_BLK_LEN_HALF;
-                mOff += AD_BLK_LEN_HALF;
-                lfsr_gf56(CNT);
-                nonce_encryption(N, CNT, s, k, (byte)36);
-            }
-            rho(m, mOff, c, cOff, s, mlen);
-        }
-        if (!forEncryption)
-        {
-            Arrays.fill(s, (byte)0);
-            reset_lfsr_gf56(CNT);
-            if (adlen == 0)
-            { // AD is an empty string
-                lfsr_gf56(CNT);
-            }
-            else
-            {
-                while (adlen > 0)
-                {
-                    offset = adOff;
-                    adlen = ad_encryption(ad, adOff, s, k, adlen, CNT, (byte)40);
-                    adOff = offset;
-                }
-            }
-            if ((w & 8) == 0)
-            {
-                byte[] Temp = new byte[16];
-                int len8 = Math.min(xlen, AD_BLK_LEN_HALF);
-                xlen -= len8;
-                pad(c, mauth, Temp, AD_BLK_LEN_HALF, len8);
-                block_cipher(s, k, Temp, 0, CNT, (byte)44);
-                lfsr_gf56(CNT);
-                mauth += len8;
-                mOff += len8;
-            }
-            else if (mlen == 0)
-            {
-                lfsr_gf56(CNT);
-            }
-            while (xlen > 0)
-            {
-                offset = mauth;
-                xlen = ad_encryption(c, mauth, s, k, xlen, CNT, (byte)44);
-                mauth = offset;
-            }
-            nonce_encryption(N, CNT, s, k, w);
-            // Tag generation
-            g8A(s, mac, 0);
-        }
-    }
-
-    private void romulus_n(byte[] c, byte[] I, int mlen, byte[] A, int adlen, byte[] N, byte[] k)
-    {
-        byte[] s = new byte[16];
-        byte[] CNT = new byte[7];
-        int mOff = 0, cOff = 0;
-        reset_lfsr_gf56(CNT);
-        if (adlen == 0)
-        { // AD is an empty string
-            lfsr_gf56(CNT);
-            nonce_encryption(N, CNT, s, k, (byte)0x1a);
-        }
-        else
-        {
-            while (adlen > 0)
-            {
-                if (adlen < AD_BLK_LEN_HALF)
-                { // The last block of AD is odd and incomplete
-                    adlen = ad_encryption(A, 0, s, k, adlen, CNT, (byte)0x08);
-                    nonce_encryption(N, CNT, s, k, (byte)0x1a);
-                }
-                else if (adlen == AD_BLK_LEN_HALF)
-                { // The last block of AD is odd and complete
-                    adlen = ad_encryption(A, 0, s, k, adlen, CNT, (byte)0x08);
-                    nonce_encryption(N, CNT, s, k, (byte)0x18);
-                }
-                else if (adlen < (AD_BLK_LEN_HALF + AD_BLK_LEN_HALF))
-                { // The last block of AD is even and incomplete
-                    adlen = ad_encryption(A, 0, s, k, adlen, CNT, (byte)0x08);
-                    nonce_encryption(N, CNT, s, k, (byte)0x1a);
-                }
-                else if (adlen == (AD_BLK_LEN_HALF + AD_BLK_LEN_HALF))
-                { // The last block of AD is even and complete
-                    adlen = ad_encryption(A, 0, s, k, adlen, CNT, (byte)0x08);
-                    nonce_encryption(N, CNT, s, k, (byte)0x18);
-                }
-                else
-                { // A normal full pair of blocks of AD
-                    adlen = ad_encryption(A, 0, s, k, adlen, CNT, (byte)0x08);
-                }
-            }
-        }
-        reset_lfsr_gf56(CNT);
-        if (mlen == 0)
-        { // M is an empty string
-            lfsr_gf56(CNT);
-            nonce_encryption(N, CNT, s, k, (byte)0x15);
-        }
-        else
-        {
-            int tmp;
-            while (mlen > 0)
-            {
-                if (mlen < AD_BLK_LEN_HALF)
-                { // The last block of M is incomplete
-                    tmp = mlen;
-                    mlen = msg_encryption(I, mOff, c, cOff, N, CNT, s, k, (byte)0x15, mlen);
-                }
-                else if (mlen == AD_BLK_LEN_HALF)
-                { // The last block of M is complete
-                    tmp = AD_BLK_LEN_HALF;
-                    mlen = msg_encryption(I, mOff, c, cOff, N, CNT, s, k, (byte)0x14, mlen);
-                }
-                else
-                { // A normal full message block
-                    tmp = AD_BLK_LEN_HALF;
-                    mlen = msg_encryption(I, mOff, c, cOff, N, CNT, s, k, (byte)0x04, mlen);
-                }
-                mOff += tmp;
-                cOff += tmp;
-            }
-        }
-        // Tag generation
-        mac = new byte[16];
-        g8A(s, mac, 0);
-    }
-
-    // Absorbs and encrypts the message blocks.
-    int msg_encryption(byte[] m, int mOff, byte[] c, int cOff, byte[] N, byte[] CNT, byte[] s, byte[] k, byte D, int mlen)
-    {
-        int len8 = Math.min(mlen, AD_BLK_LEN_HALF);
-        mlen -= len8;
-        rho(m, mOff, c, cOff, s, len8);
-        lfsr_gf56(CNT);
-        nonce_encryption(N, CNT, s, k, D);
-        return mlen;
-    }
-
-    private void romulus_t_encrypt(byte[] c, byte[] m, int mlen, byte[] A, int adlen, byte[] N, byte[] k)
-        throws InvalidCipherTextException
-    {
-        byte[] Z = new byte[16];
-        byte[] CNT = new byte[7];
-        byte[] CNT_Z = new byte[7];
-        int mlen_int;
-        byte[] LR = new byte[32];
-        int i;
-        int mOff = 0, cOff = 0;
-        reset_lfsr_gf56(CNT);
-        // Initialization function: KDF
-        byte[] S = new byte[16];
-        mlen_int = mlen;
-        if (!forEncryption)
-        {
-            // T = hash(ipad*(A)||ipad*(C)||N||CNT)
-            mac = new byte[16];
-            crypto_hash_vector(LR, A, adlen, m, mOff, mlen_int, N, CNT);
-            // Generates the tag T from the final state S by applying the Tag Generation Function (TGF).
-            block_cipher(LR, k, LR, 16, CNT_Z, (byte)68);
-            System.arraycopy(LR, 0, mac, 0, 16);
-            reset_lfsr_gf56(CNT);
-            tagVerification(m, mlen_int);
-        }
-        mac = new byte[16];
-        System.arraycopy(N, 0, Z, 0, 16);
-        block_cipher(Z, k, mac, 0, CNT_Z, (byte)66);
-        while (mlen != 0)
-        {
-            int len8 = Math.min(mlen, 16);
-            mlen -= len8;
-            System.arraycopy(N, 0, S, 0, 16);
-            block_cipher(S, Z, mac, 0, CNT, (byte)64);
-            for (i = 0; i < len8 && i + cOff < c.length; i++)
-            {
-                c[i + cOff] = (byte)((m[i + mOff]) ^ S[i]);
-            }
-            cOff += len8;
-            mOff += len8;
-            System.arraycopy(N, 0, S, 0, 16);
-            if (mlen != 0)
-            {
-                block_cipher(S, Z, mac, 0, CNT, (byte)65);
-                System.arraycopy(S, 0, Z, 0, 16);
-            }
-            lfsr_gf56(CNT);
-        }
-        if (forEncryption)
-        {
-            // T = hash(A||N||M)
-            // We need to first pad A, N and C
-            cOff -= mlen_int;
-            crypto_hash_vector(LR, A, adlen, c, cOff, mlen_int, N, CNT);
-            // Generates the tag T from the final state S by applying the Tag Generation Function (TGF).
-            block_cipher(LR, k, LR, 16, CNT_Z, (byte)68);
-            System.arraycopy(LR, 0, mac, 0, 16);
-        }
-    }
-
-    // This function is required for Romulus-T. It assumes that the input comes in three parts that can
-// be stored in different locations in the memory. It processes these inputs sequentially.
-// The padding is ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT )
-// A and C are of variable length, while N is of 16 bytes and CNT is of 7 bytes
-    private void crypto_hash_vector(byte[] out, byte[] A, int adlen, byte[] C, int cOff, int clen, byte[] N, byte[] CNT)
-    {
-        byte[] h = new byte[16];
-        byte[] g = new byte[16];
-        byte[] p = new byte[32];
-        int aOff = 0;
-        int n = 16;
-        byte adempty = (byte)((adlen == 0) ? 1 : 0);
-        byte cempty = (byte)(clen == 0 ? 1 : 0);
-        reset_lfsr_gf56(CNT);
-        while (adlen >= 32)
-        { // AD Normal loop
-            hirose_128_128_256(h, g, A, aOff);
-            aOff += 32;
-            adlen -= 32;
-        }
-        // Partial block (or in case there is no partial block we add a 0^2n block
-        if (adlen >= 16)
-        {
-            ipad_128(A, aOff, p, 0, 32, adlen);
-            hirose_128_128_256(h, g, p, 0);
-        }
-        else if ((adlen >= 0) && (adempty == 0))
-        {
-            ipad_128(A, aOff, p, 0, 16, adlen);
-            if (clen >= 16)
-            {
-                System.arraycopy(C, cOff, p, 16, 16);
-                hirose_128_128_256(h, g, p, 0);
-                lfsr_gf56(CNT);
-                clen -= 16;
-                cOff += 16;
-            }
-            else if (clen > 0)
-            {
-                ipad_128(C, cOff, p, 16, 16, clen);
-                hirose_128_128_256(h, g, p, 0);
-                clen = 0;
-                cempty = 1;
-                cOff += 16;
-                lfsr_gf56(CNT);
-            }
-            else
-            {
-                System.arraycopy(N, 0, p, 16, 16);
-                hirose_128_128_256(h, g, p, 0);
-                n = 0;
-            }
-        }
-        while (clen >= 32)
-        { // C Normal loop
-            hirose_128_128_256(h, g, C, cOff);
-            cOff += 32;
-            clen -= 32;
-            lfsr_gf56(CNT);
-            lfsr_gf56(CNT);
-        }
-        if (clen > 16)
-        {
-            ipad_128(C, cOff, p, 0, 32, clen);
-            hirose_128_128_256(h, g, p, 0);
-            lfsr_gf56(CNT);
-            lfsr_gf56(CNT);
-        }
-        else if (clen == 16)
-        {
-            ipad_128(C, cOff, p, 0, 32, clen);
-            hirose_128_128_256(h, g, p, 0);
-            lfsr_gf56(CNT);
-        }
-        else if ((clen >= 0) && (cempty == 0))
-        {
-            ipad_128(C, cOff, p, 0, 16, clen);
-            if (clen > 0)
-            {
-                lfsr_gf56(CNT);
-            }
-            // Pad the nonce
-            System.arraycopy(N, 0, p, 16, 16);
-            hirose_128_128_256(h, g, p, 0);
-            n = 0;
-        }
-        if (n == 16)
-        {
-            // Pad the nonce and counter
-            System.arraycopy(N, 0, p, 0, 16);
-            System.arraycopy(CNT, 0, p, 16, 7);
-            ipad_256(p, p, 23);
-        }
-        else
-        {
-            ipad_256(CNT, p, 7);
-        }
-        h[0] ^= 2;
-        hirose_128_128_256(h, g, p, 0);
-        // Assign the output tag
-        System.arraycopy(h, 0, out, 0, 16);
-        System.arraycopy(g, 0, out, 16, 16);
-    }
 
     // Padding function: pads the byte length of the message mod 32 to the last incomplete block.
 // For complete blocks it returns the same block. For an empty block it returns a 0^2n string.
@@ -1125,17 +850,6 @@ public class RomulusEngine
         System.arraycopy(m, 0, mp, 0, len8);
         Arrays.fill(mp, len8, 31, (byte)0);
         mp[31] = (byte)(len8 & 0x1f);
-    }
-
-    // Padding function: pads the byte length of the message mod 32 to the last incomplete block.
-// For complete blocks it returns the same block. For an empty block it returns a 0^2n string.
-// The function is called for full block messages to add a 0^2n block. This and the modulus are
-// the only differences compared to the use in Romulus-N
-    void ipad_128(byte[] m, int mOff, byte[] mp, int mpOff, int l, int len8)
-    {
-        System.arraycopy(m, mOff, mp, mpOff, len8);
-        Arrays.fill(mp, len8 + mpOff, l - 1 + mpOff, (byte)0);
-        mp[mpOff + l - 1] = (byte)(len8 & 0xf);
     }
 
     // The hirose double-block length (DBL) compression function.
@@ -1166,7 +880,6 @@ public class RomulusEngine
     {
         npub = iv;
         k = key;
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }
@@ -1176,29 +889,14 @@ public class RomulusEngine
     {
         aadLen++;
         super.processAADByte(in);
-//        aadData.write(in);
     }
 
-    //
     @Override
     public void processAADBytes(byte[] in, int inOff, int len)
     {
-//        if (inOff + len > in.length)
-//        {
-//            throw new DataLengthException(algorithmName + " input buffer too short");
-//        }
         aadLen += len;
         super.processAADBytes(in, inOff, len);
-        //aadData.write(in, inOff, len);
     }
-//
-//    @Override
-//    public int processByte(byte in, byte[] out, int outOff)
-//        throws DataLengthException
-//    {
-//        message.write(in);
-//        return 0;
-//    }
 
     @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] out, int outOff)
@@ -1206,76 +904,7 @@ public class RomulusEngine
     {
         messegeLen += len;
         return super.processBytes(input, inOff, len, out, outOff);
-//        if (inOff + len > input.length)
-//        {
-//            throw new DataLengthException(algorithmName + " input buffer too short");
-//        }
-//        message.write(input, inOff, len);
-//        return 0;
     }
-
-//    @Override
-//    public int doFinal(byte[] out, int outOff)
-//        throws IllegalStateException, InvalidCipherTextException
-//    {
-//        if (!initialised)
-//        {
-//            throw new IllegalArgumentException(algorithmName + " needs call init function before dofinal");
-//        }
-//        int len = message.size(), inOff = 0;
-//        if ((forEncryption && len + KEY_SIZE + outOff > out.length) ||
-//            (!forEncryption && len - KEY_SIZE + outOff > out.length))
-//        {
-//            throw new OutputLengthException("output buffer is too short");
-//        }
-//        byte[] ad = aadData.toByteArray();
-//        int adlen = ad.length;
-//        byte[] input = message.toByteArray();
-//
-//        if ((ad.length & 7) != 0)
-//        {
-//            byte[] tmp = new byte[((ad.length >> 3) << 3) + 16];
-//            System.arraycopy(ad, 0, tmp, 0, adlen);
-//            ad = tmp;
-//        }
-//        if ((len & 7) != 0)
-//        {
-//            byte[] tmp = new byte[((len >> 3) << 3) + 16];
-//            System.arraycopy(input, inOff, tmp, 0, len);
-//            input = tmp;
-//        }
-//        byte[] out_tmp = new byte[((len >> 3) << 3) + 16];
-//        len -= (forEncryption ? 0 : 16);
-//        switch (romulusParameters)
-//        {
-//        case RomulusM:
-//            romulus_m_encrypt(out_tmp, input, len, ad, adlen, npub, k);
-//            break;
-//        case RomulusN:
-//            romulus_n(out_tmp, input, len, ad, adlen, npub, k);
-//            break;
-//        case RomulusT:
-//            romulus_t_encrypt(out_tmp, input, len, ad, adlen, npub, k);
-//            break;
-//        }
-//        System.arraycopy(out_tmp, 0, out, outOff, len);
-//        outOff += len;
-//        if (forEncryption)
-//        {
-//            System.arraycopy(mac, 0, out, outOff, KEY_SIZE);
-//            len += KEY_SIZE;
-//        }
-//        else
-//        {
-//            if (romulusParameters != RomulusParameters.RomulusT)
-//            {
-//                tagVerification(input, len);
-//            }
-//        }
-//        reset(false);
-//        return len;
-//    }
-
 
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
@@ -1293,8 +922,6 @@ public class RomulusEngine
         default:
             break;
         }
-
-        m_aadPos = 0;
         m_state = nextState;
     }
 
@@ -1328,26 +955,12 @@ public class RomulusEngine
         instance.processBufferDecrypt(input, inOff, output, outOff);
     }
 
-    private void tagVerification(byte[] input, int inOff)
-        throws InvalidCipherTextException
-    {
-        for (int i = 0; i < 16; ++i)
-        {
-            if (mac[i] != input[inOff + i])
-            {
-                throw new InvalidCipherTextException("mac check in " + algorithmName + " failed");
-            }
-        }
-    }
-
     protected void reset(boolean clearMac)
     {
         aadLen = 0;
         messegeLen = 0;
         instance.reset();
         bufferReset();
-        aadData.reset();
-        message.reset();
         super.reset(clearMac);
     }
 }
