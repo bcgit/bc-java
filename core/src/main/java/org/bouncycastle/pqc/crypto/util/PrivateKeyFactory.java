@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -228,10 +229,28 @@ public class PrivateKeyFactory
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
                 algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
-            ASN1OctetString mlkemKey = parseOctetString(keyInfo.getPrivateKey(), 64);
+            ASN1Primitive mlkemKey = parsePrimitiveString(keyInfo.getPrivateKey(), 64);
             MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
 
-            return new MLKEMPrivateKeyParameters(mlkemParams, mlkemKey.getOctets());
+            if (mlkemKey instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = ASN1Sequence.getInstance(mlkemKey);
+
+                if (keySeq.getObjectAt(0) instanceof ASN1OctetString)
+                {
+                    return new MLKEMPrivateKeyParameters(mlkemParams, ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets());
+                }
+                else
+                {
+                    return new MLKEMPrivateKeyParameters(mlkemParams, ASN1OctetString.getInstance((ASN1TaggedObject)keySeq.getObjectAt(0), false).getOctets());
+                }
+            }
+            else if (mlkemKey instanceof ASN1OctetString)
+            {
+                return new MLKEMPrivateKeyParameters(mlkemParams, ASN1OctetString.getInstance(mlkemKey).getOctets());
+            }
+
+            throw new IllegalArgumentException("unknown key format");
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
@@ -260,18 +279,33 @@ public class PrivateKeyFactory
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {
-            ASN1Encodable keyObj = parseOctetString(keyInfo.getPrivateKey(), 32);
+            ASN1Encodable keyObj = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
             MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
 
-            if (keyObj instanceof DEROctetString)
+            MLDSAPublicKeyParameters pubParams = null;
+            if (keyInfo.getPublicKeyData() != null)
+            {
+                pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+            }
+
+            if (keyObj instanceof ASN1OctetString)
             {
                 byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
-                if (keyInfo.getPublicKeyData() != null)
+
+                return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
+            }
+            else if (keyObj instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = ASN1Sequence.getInstance(keyObj);
+
+                if (keySeq.getObjectAt(0) instanceof ASN1OctetString)
                 {
-                    MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
-                    return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
+                    return new MLDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(), pubParams);
                 }
-                return new MLDSAPrivateKeyParameters(spParams, data);
+                else
+                {
+                    return new MLDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance((ASN1TaggedObject)keySeq.getObjectAt(0), false).getOctets(), pubParams);
+                }
             }
             else
             {
@@ -464,15 +498,49 @@ public class PrivateKeyFactory
 
         //
         // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
-        data = Utils.readOctetString(data);
-        if (data != null)
+        ASN1OctetString obj = Utils.parseOctetData(data);
+
+        if (obj != null)
         {
-            return new DEROctetString(data);
+            return ASN1OctetString.getInstance(obj);
         }
 
         return octStr;
     }
-    
+
+    /**
+     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
+     * and in this case there may also be SEQUENCE.
+     */
+    private static ASN1Primitive parsePrimitiveString(ASN1OctetString octStr, int expectedLength)
+        throws IOException
+    {
+        byte[] data = octStr.getOctets();
+        //
+        // it's the right length for a RAW encoding, just return it.
+        //
+        if (data.length == expectedLength)
+        {
+            return octStr;
+        }
+
+        //
+        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
+        // or possible SEQUENCE
+        ASN1Encodable obj = Utils.parseData(data);
+      
+        if (obj instanceof ASN1OctetString)
+        {
+            return ASN1OctetString.getInstance(obj);
+        }
+        if (obj instanceof ASN1Sequence)
+        {
+            return ASN1Sequence.getInstance(obj);
+        }
+
+        return octStr;
+    }
+
     private static short[] convert(byte[] octets)
     {
         short[] rv = new short[octets.length / 2];

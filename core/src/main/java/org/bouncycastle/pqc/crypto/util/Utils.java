@@ -1,11 +1,13 @@
 package org.bouncycastle.pqc.crypto.util;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -38,7 +40,6 @@ import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLASecurityCategory;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.io.Streams;
 
 class Utils
 {
@@ -783,18 +784,48 @@ class Utils
         return (RainbowParameters)rainbowParams.get(oid);
     }
 
-    static byte[] readOctetString(byte[] data)
-        throws IOException
+    private static boolean isRaw(byte[] data)
     {
-        if (data[0] == BERTags.OCTET_STRING)
-        {
-            ByteArrayInputStream bIn = new ByteArrayInputStream(data);
+        // check well-formed first
+        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
 
-            int tag = bIn.read();
-            int len = readLen(bIn);
-            if (len == bIn.available())
+        int tag = bIn.read();
+        int len = readLen(bIn);
+        if (len != bIn.available())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    static ASN1OctetString parseOctetData(byte[] data)
+    {
+        // check well-formed first
+        if (!isRaw(data))
+        {
+            if (data[0] == BERTags.OCTET_STRING)
             {
-                return Streams.readAll(bIn);
+                return ASN1OctetString.getInstance(data);
+            }
+        }
+
+        return null;
+    }
+
+    static ASN1Primitive parseData(byte[] data)
+    {
+        // check well-formed first
+        if (!isRaw(data))
+        {
+            if (data[0] == (BERTags.SEQUENCE | BERTags.CONSTRUCTED))
+            {
+                return ASN1Sequence.getInstance(data);
+            }
+
+            if (data[0] == BERTags.OCTET_STRING)
+            {
+                return ASN1OctetString.getInstance(data);
             }
         }
 

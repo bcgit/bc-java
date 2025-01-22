@@ -274,6 +274,10 @@ public class JcaTlsCertificate
         // TODO[RFC 8998]
 //        case SignatureScheme.sm2sig_sm3:
 
+        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.DRAFT_mldsa87:
+
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
