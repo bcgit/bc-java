@@ -209,7 +209,6 @@ abstract class AEADBufferBaseEngine
             len -= available;
 
             processBufferAAD(m_aad, 0);
-
         }
         while (processor.isLengthExceedingBlockSize(len, AADBufferSize))
         {
@@ -423,7 +422,6 @@ abstract class AEADBufferBaseEngine
         {
         case DecInit:
         case DecAad:
-//            return Math.max(0, total + m_bufPos- MAC_SIZE);
         case DecData:
         case DecFinal:
             return Math.max(0, total + m_bufPos - MAC_SIZE);

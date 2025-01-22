@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -344,10 +345,7 @@ public class Grain128AEADEngine
                 tmp >>>= 8;
             }
         }
-        for (int i = 0; i < len; ++i)
-        {
-            ader[1 + aderlen + i] = input[i];
-        }
+        System.arraycopy(input, 0, ader, 1 + aderlen, len);
 
         for (int i = 0; i < ader.length; ++i)
         {
