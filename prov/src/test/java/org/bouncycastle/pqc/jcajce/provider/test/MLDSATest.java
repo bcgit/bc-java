@@ -20,6 +20,7 @@ import java.security.spec.X509EncodedKeySpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -83,7 +84,7 @@ public class MLDSATest
             assertEquals(names[i], MLDSAParameterSpec.fromName(names[i]).getName());
         }
     }
-
+    
     public void testKeyFactory()
         throws Exception
     {
@@ -344,7 +345,7 @@ public class MLDSATest
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1OctetString seq = privInfo.getPrivateKey();
 
-        assertTrue(Arrays.areEqual(seq.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(ASN1Sequence.getInstance(seq.getOctets()).getObjectAt(0)).getOctets(), seed));
 
         Signature sig = Signature.getInstance("ML-DSA", "BC");
 
@@ -408,7 +409,7 @@ public class MLDSATest
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1OctetString seq = privInfo.getPrivateKey();
 
-        assertTrue(Arrays.areEqual(seq.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(ASN1Sequence.getInstance(seq.getOctets()).getObjectAt(0)).getOctets(), seed));
 
         Signature sig = Signature.getInstance("ML-DSA", "BC");
 
@@ -492,7 +493,7 @@ public class MLDSATest
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1OctetString seq = privInfo.getPrivateKey();
 
-        assertTrue(Arrays.areEqual(seq.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(ASN1Sequence.getInstance(seq.getOctets()).getObjectAt(0)).getOctets(), seed));
 
         Signature sig = Signature.getInstance("HASH-ML-DSA", "BC");
 
@@ -587,7 +588,7 @@ public class MLDSATest
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded());
         ASN1OctetString seq = privInfo.getPrivateKey();
 
-        assertTrue(Arrays.areEqual(seq.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(ASN1Sequence.getInstance(seq.getOctets()).getObjectAt(0)).getOctets(), seed));
 
         Signature sig = Signature.getInstance("HASH-ML-DSA", "BC");
 

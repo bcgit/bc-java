@@ -477,9 +477,9 @@ class ProvTlsClient
     {
         super.notifyConnectionClosed();
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
         }
     }
 
@@ -488,9 +488,9 @@ class ProvTlsClient
     {
         super.notifyHandshakeBeginning();
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
         }
 
         ContextData contextData = manager.getContextData();
@@ -509,9 +509,9 @@ class ProvTlsClient
 
         this.handshakeComplete = true;
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
         }
 
         TlsSession connectionTlsSession = context.getSession();

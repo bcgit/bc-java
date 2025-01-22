@@ -26,6 +26,9 @@ import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.HashAlgorithm;
 import org.bouncycastle.tls.SignatureAlgorithm;
@@ -39,6 +42,7 @@ import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.impl.LegacyTls13Verifier;
+import org.bouncycastle.tls.crypto.impl.PQCUtil;
 import org.bouncycastle.tls.crypto.impl.RSAUtil;
 
 /**
@@ -247,6 +251,27 @@ public class BcTlsRawKeyCertificate
 //            return new BcTls13Verifier(verifier);
 //        }
 
+        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.DRAFT_mldsa87:
+        {
+            ASN1ObjectIdentifier algorithm = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
+            validateMLDSA(algorithm);
+
+            MLDSAPublicKeyParameters publicKey = getPubKeyMLDSA();
+            MLDSAParameters parameters = publicKey.getParameters();
+            if (!PQCUtil.getMLDSAObjectidentifier(parameters).equals(algorithm))
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "ML-DSA public key not for " + SignatureScheme.getText(signatureScheme));
+            }
+
+            MLDSASigner verifier = new MLDSASigner();
+            verifier.init(false, publicKey);
+
+            return new BcTls13Verifier(verifier);
+        }
+
         default:
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
@@ -387,6 +412,18 @@ public class BcTlsRawKeyCertificate
         }
     }
 
+    public MLDSAPublicKeyParameters getPubKeyMLDSA() throws IOException
+    {
+        try
+        {
+            return (MLDSAPublicKeyParameters)getPublicKey();
+        }
+        catch (ClassCastException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "Public key not ML-DSA", e);
+        }
+    }
+
     public RSAKeyParameters getPubKeyRSA() throws IOException
     {
         try
@@ -446,6 +483,12 @@ public class BcTlsRawKeyCertificate
     protected boolean supportsKeyUsage(int keyUsageBit)
     {
         return true;
+    }
+
+    protected boolean supportsMLDSA(ASN1ObjectIdentifier algorithm)
+    {
+        AlgorithmIdentifier pubKeyAlgID = keyInfo.getAlgorithm();
+        return PQCUtil.supportsMLDSA(pubKeyAlgID, algorithm);
     }
 
     protected boolean supportsRSA_PKCS1()
@@ -536,6 +579,15 @@ public class BcTlsRawKeyCertificate
             default:
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
+        }
+    }
+
+    protected void validateMLDSA(ASN1ObjectIdentifier algorithm)
+        throws IOException
+    {
+        if (!supportsMLDSA(algorithm))
+        {
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for ML-DSA signature scheme");
         }
     }
 

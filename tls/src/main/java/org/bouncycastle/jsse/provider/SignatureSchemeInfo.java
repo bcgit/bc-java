@@ -71,6 +71,11 @@ class SignatureSchemeInfo
 
         sm2sig_sm3(SignatureScheme.sm2sig_sm3, "SM3withSM2", "EC"),
 
+        // TODO[tls] Need mechanism for restricting signature schemes to TLS 1.3+ before adding
+//        DRAFT_mldsa44(SignatureScheme.DRAFT_mldsa44, "ML-DSA-44", "ML-DSA-44"),
+//        DRAFT_mldsa65(SignatureScheme.DRAFT_mldsa65, "ML-DSA-65", "ML-DSA-65"),
+//        DRAFT_mldsa87(SignatureScheme.DRAFT_mldsa87, "ML-DSA-87", "ML-DSA-87"),
+
         /*
          * Legacy/Historical: mostly not supported in 1.3, except ecdsa_sha1 and rsa_pkcs1_sha1 are
          * still permitted as a last resort for certs.

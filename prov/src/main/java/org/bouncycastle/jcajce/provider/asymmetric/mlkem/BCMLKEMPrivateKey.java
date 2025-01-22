@@ -42,7 +42,7 @@ public class BCMLKEMPrivateKey
     private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        this.attributes = keyInfo.getAttributes();;
+        this.attributes = keyInfo.getAttributes();
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
