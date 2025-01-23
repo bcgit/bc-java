@@ -339,6 +339,11 @@ public abstract class CipherTest
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
+        cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+        byte[] ciphertext3 = new byte[cipher.getOutputSize(plaintext.length)];
+        cipher.processAADBytes(aad, 0, aad.length);
+        len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext3, 0);
+        len += cipher.doFinal(ciphertext3, len);
         test.isTrue("cipher text check", Arrays.areEqual(ciphertext1, ciphertext2));
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
@@ -482,7 +487,7 @@ public abstract class CipherTest
                         mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv, test);
                     }
                 }
-                System.out.println("pass "+ count);
+                System.out.println("pass " + count);
                 map.clear();
             }
             else
@@ -845,7 +850,7 @@ public abstract class CipherTest
     }
 
     static void implTestExceptionsGetUpdateOutputSize(AEADCipher cipher, boolean forEncryption,
-                                                       CipherParameters parameters, int maxInputSize, SimpleTest test)
+                                                      CipherParameters parameters, int maxInputSize, SimpleTest test)
     {
         cipher.init(forEncryption, parameters);
 

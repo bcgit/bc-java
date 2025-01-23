@@ -70,6 +70,7 @@ public class ElephantEngine
         buffer = new byte[BlockSize];
         m_buf = new byte[BlockSize + MAC_SIZE];
         previous_outputMessage = new byte[BlockSize];
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream);
         reset(false);
     }
 
@@ -310,19 +311,6 @@ public class ElephantEngine
         reset(false);
     }
 
-    @Override
-    public void processAADByte(byte input)
-    {
-        aadData.write(input);
-    }
-
-    @Override
-    public void processAADBytes(byte[] input, int inOff, int len)
-    {
-        ensureSufficientInputBuffer(input, inOff, len);
-        aadData.write(input, inOff, len);
-    }
-
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
         processBuffer(input, inOff, output, outOff, State.EncData);
@@ -333,7 +321,7 @@ public class ElephantEngine
     {
         if (m_state == State.DecInit || m_state == State.EncInit)
         {
-            processAADBytes();
+            processFinalAAD();
         }
         // Compute mask for the next message
         lfsr_step();
@@ -410,7 +398,7 @@ public class ElephantEngine
     {
         int len = m_bufPos;
         int mlen = len + messageLen;
-        processAADBytes();
+        processFinalAAD();
         int nblocks_c = 1 + mlen / BlockSize;
         int nblocks_m = (mlen % BlockSize) != 0 ? nblocks_c : nblocks_c - 1;
         int nblocks_ad = 1 + (IV_SIZE + adlen) / BlockSize;
@@ -426,13 +414,6 @@ public class ElephantEngine
     @Override
     protected void processBufferAAD(byte[] input, int inOff)
     {
-
-    }
-
-    @Override
-    protected void processFinalAAD()
-    {
-
     }
 
     @Override
@@ -481,14 +462,16 @@ public class ElephantEngine
         return Math.max(0, len + m_bufPos - MAC_SIZE);
     }
 
-    private void processAADBytes()
+
+    @Override
+    protected void processFinalAAD()
     {
         if (adOff == -1)
         {
-            ad = aadData.toByteArray();
+            ad = ((StreamAADOperator)aadOperator).getBytes();
             adOff = 0;
-            adlen = ad.length;
-            aadData.reset();
+            adlen = aadOperator.getAadLen();
+            aadOperator.reset();
         }
         switch (m_state)
         {
@@ -501,7 +484,6 @@ public class ElephantEngine
 
     protected void reset(boolean clearMac)
     {
-        aadData.reset();
         Arrays.fill(tag_buffer, (byte)0);
         Arrays.fill(previous_outputMessage, (byte)0);
         m_bufPos = 0;

@@ -24,7 +24,6 @@ public class PhotonBeetleEngine
     private byte[] N;
     private byte[] state;
     private byte[][] state_2d;
-    private int aadLen;
     private int messageLen;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
@@ -81,6 +80,8 @@ public class PhotonBeetleEngine
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
+        setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
+            AADOperatorType.Counter);
     }
 
     @Override
@@ -96,10 +97,35 @@ public class PhotonBeetleEngine
         reset(false);
     }
 
+
     protected void processBufferAAD(byte[] input, int inOff)
     {
         PHOTON_Permutation();
         XOR(input, inOff, BlockSize);
+    }
+
+    public void processFinalAAD()
+    {
+        if (!aadFinished)
+        {
+            int aadLen = aadOperator.getAadLen();
+            if (aadLen != 0)
+            {
+                if (m_aadPos != 0)
+                {
+                    PHOTON_Permutation();
+                    XOR(m_aad, 0, m_aadPos);
+                    if (m_aadPos < BlockSize)
+                    {
+                        state[m_aadPos] ^= 0x01; // ozs
+                    }
+                }
+                state[STATE_INBYTES - 1] ^= select(messageLen - (forEncryption ? 0 : MAC_SIZE) > 0,
+                    ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
+            }
+            m_aadPos = 0;
+            aadFinished = true;
+        }
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -117,20 +143,6 @@ public class PhotonBeetleEngine
     }
 
     @Override
-    public void processAADByte(byte input)
-    {
-        aadLen++;
-        super.processAADByte(input);
-    }
-
-    @Override
-    public void processAADBytes(byte[] input, int inOff, int len)
-    {
-        aadLen += len;
-        super.processAADBytes(input, inOff, len);
-    }
-
-    @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
@@ -143,6 +155,7 @@ public class PhotonBeetleEngine
     {
         int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
         int bufferLen = m_bufPos;// - (forEncryption ? 0 : MAC_SIZE);
+        int aadLen = aadOperator.getAadLen();
         if (aadLen != 0 || len != 0)
         {
             input_empty = false;
@@ -179,35 +192,11 @@ public class PhotonBeetleEngine
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
     }
 
-    protected void processFinalAAD()
-    {
-        if (!aadFinished)
-        {
-            if (aadLen != 0)
-            {
-                if (m_aadPos != 0)
-                {
-                    PHOTON_Permutation();
-                    XOR(m_aad, 0, m_aadPos);
-                    if (m_aadPos < BlockSize)
-                    {
-                        state[m_aadPos] ^= 0x01; // ozs
-                    }
-                }
-                state[STATE_INBYTES - 1] ^= select(messageLen - (forEncryption ? 0 : MAC_SIZE) > 0,
-                    ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
-            }
-            m_aadPos = 0;
-            aadFinished = true;
-        }
-    }
-
     protected void reset(boolean clearMac)
     {
         ensureInitialized();
         bufferReset();
         input_empty = true;
-        aadLen = 0;
         aadFinished = false;
         messageLen = 0;
         System.arraycopy(K, 0, state, 0, K.length);
