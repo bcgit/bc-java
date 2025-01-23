@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+/**
+ * Utility class for parsing and formatting UTC timestamps.
+ */
 public class UTCUtil
 {
     private static SimpleDateFormat utc()
