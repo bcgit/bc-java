@@ -16,7 +16,6 @@ import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPPadding;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.api.exception.InvalidEncryptionKeyException;
-import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
@@ -146,70 +145,6 @@ public class OpenPGPMessageGenerator
     {
         messagePassphrases.add(passphrase);
         return this;
-    }
-
-    /**
-     * Sign the message using a secret signing key.
-     * The signing subkey(s) will be selected by the default {@link SubkeySelector} which can be replaced by
-     * calling {@link #setSigningKeySelector(SubkeySelector)}.
-     *
-     * @param signingKey OpenPGP key
-     * @return this
-     * @throws InvalidSigningKeyException if the key is not capable of signing messages
-     */
-    public OpenPGPMessageGenerator addSigningKey(OpenPGPKey signingKey)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey);
-    }
-
-    /**
-     * Sign the message using a secret signing key.
-     * The signing subkey(s) will be selected by the default {@link SubkeySelector} which can be replaced by
-     * calling {@link #setSigningKeySelector(SubkeySelector)}.
-     *
-     * @param signingKey OpenPGP key
-     * @param signingKeyDecryptorProvider provider for decryptors to unlock the signing (sub-)keys.
-     * @return this
-     * @throws InvalidSigningKeyException if the key is not capable of signing messages
-     */
-    public OpenPGPMessageGenerator addSigningKey(
-            OpenPGPKey signingKey,
-            KeyPassphraseProvider signingKeyDecryptorProvider)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, signingKeyDecryptorProvider);
-    }
-
-    public OpenPGPMessageGenerator addSigningKey(
-            OpenPGPKey.OpenPGPSecretKey signingKey,
-            char[] passphrase,
-            SignatureParameters.Callback signatureCallback)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, passphrase, signatureCallback);
-    }
-
-    /**
-     * Sign the message using a signing-capable (sub-)key.
-     * If the signing key is protected with a passphrase, the given {@link KeyPassphraseProvider} can be
-     * used to unlock the key.
-     * The signature can be customized by providing a {@link SignatureParameters.Callback}, which can change
-     * the signature type, creation time and signature subpackets.
-     *
-     * @param signingKey signing-capable subkey
-     * @param signingKeyPassphraseProvider provider for key passphrases
-     * @param signatureParameterCallback callback to modify the signature
-     * @return this
-     * @throws InvalidSigningKeyException if the key cannot be used for signing
-     */
-    public OpenPGPMessageGenerator addSigningKey(
-            OpenPGPKey.OpenPGPSecretKey signingKey,
-            KeyPassphraseProvider signingKeyPassphraseProvider,
-            SignatureParameters.Callback signatureParameterCallback)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, signingKeyPassphraseProvider, signatureParameterCallback);
     }
 
     /**

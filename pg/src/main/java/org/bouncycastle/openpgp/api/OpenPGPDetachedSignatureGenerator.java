@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
-import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,65 +53,6 @@ public class OpenPGPDetachedSignatureGenerator
     public OpenPGPDetachedSignatureGenerator(OpenPGPImplementation implementation, OpenPGPPolicy policy)
     {
         super(implementation, policy);
-    }
-
-    public OpenPGPDetachedSignatureGenerator addKeyPassphrase(char[] passphrase)
-    {
-        return super.addKeyPassphrase(passphrase);
-    }
-
-    public OpenPGPDetachedSignatureGenerator addSigningKey(
-            OpenPGPKey key)
-        throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(key);
-    }
-
-    /**
-     * Add an {@link OpenPGPKey} as signing key.
-     * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
-     * this method will throw an {@link InvalidSigningKeyException}.
-     * Otherwise, all capable signing subkeys will be used to create detached signatures.
-     *
-     * @param key OpenPGP key
-     * @param passphraseProvider provides the passphrase to unlock the signing key
-     * @return this
-     *
-     * @throws InvalidSigningKeyException if the OpenPGP key does not contain a usable signing subkey
-     * @throws InvalidSigningKeyException if the key cannot sign
-     */
-    public OpenPGPDetachedSignatureGenerator addSigningKey(
-            OpenPGPKey key,
-            KeyPassphraseProvider passphraseProvider)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(key, passphraseProvider);
-    }
-
-    public OpenPGPDetachedSignatureGenerator addSigningKey(
-            OpenPGPKey.OpenPGPSecretKey signingKey,
-            char[] passphrase,
-            SignatureParameters.Callback signatureCallback)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, passphrase, signatureCallback);
-    }
-
-    public OpenPGPDetachedSignatureGenerator addSigningKey(
-            OpenPGPKey.OpenPGPSecretKey signingKey,
-            KeyPassphraseProvider passphraseProvider,
-            SignatureParameters.Callback signatureCallback)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, passphraseProvider, signatureCallback);
-    }
-
-    public OpenPGPDetachedSignatureGenerator addSigningKey(
-            OpenPGPKey signingKey,
-            SignatureParameters.Callback signatureCallback)
-            throws InvalidSigningKeyException
-    {
-        return super.addSigningKey(signingKey, defaultKeyPassphraseProvider, signatureCallback);
     }
 
     /**
