@@ -81,7 +81,7 @@ public class PhotonBeetleEngine
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
         setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
-            AADOperatorType.Counter);
+            AADOperatorType.Counter, DataOperatorType.Default);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class PhotonBeetleEngine
     {
         if (!aadFinished)
         {
-            int aadLen = aadOperator.getAadLen();
+            int aadLen = aadOperator.getLen();
             if (aadLen != 0)
             {
                 if (m_aadPos != 0)
@@ -155,7 +155,7 @@ public class PhotonBeetleEngine
     {
         int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
         int bufferLen = m_bufPos;// - (forEncryption ? 0 : MAC_SIZE);
-        int aadLen = aadOperator.getAadLen();
+        int aadLen = aadOperator.getLen();
         if (aadLen != 0 || len != 0)
         {
             input_empty = false;

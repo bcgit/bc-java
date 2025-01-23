@@ -52,7 +52,7 @@ public class ISAPEngine
         AADBufferSize = BlockSize;
         m_aad = new byte[AADBufferSize];
         setInnerMembers(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
-            ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default);
+            ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     final int ISAP_STATE_SZ = 40;

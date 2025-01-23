@@ -25,6 +25,13 @@ abstract class AEADBufferBaseEngine
         Stream
     }
 
+    protected enum DataOperatorType
+    {
+        Default,
+        Counter,
+        Stream
+    }
+
     protected enum State
     {
         Uninitialized,
@@ -48,6 +55,7 @@ abstract class AEADBufferBaseEngine
     protected int m_bufferSizeDecrypt;
     protected AADProcessingBuffer processor;
     protected AADOperator aadOperator;
+    protected DataOperator dataOperator;
 
     protected AEADBufferBaseEngine(ProcessingBufferType type)
     {
@@ -96,6 +104,51 @@ abstract class AEADBufferBaseEngine
             break;
         case Stream:
             aadOperator = new StreamAADOperator();
+            break;
+        }
+    }
+
+    protected void setInnerMembers(ProcessingBufferType type, AADOperatorType aadOperatorType, DataOperatorType dataOperatorType)
+    {
+//        switch (type)
+//        {
+//        case Buffered:
+//            processor = new BufferedAADProcessor();
+//            break;
+//        case BufferedLargeMac:
+//            processor = new BufferedLargeMacAADProcessor();
+//            break;
+//        case Immediate:
+//            processor = new ImmediateAADProcessor();
+//            break;
+//        case ImmediateLargeMac:
+//            processor = new ImmediateLargeMacAADProcessor();
+//            break;
+//        }
+
+        switch (aadOperatorType)
+        {
+        case Default:
+            aadOperator = new DefaultAADOperator();
+            break;
+        case Counter:
+            aadOperator = new CounterAADOperator();
+            break;
+        case Stream:
+            aadOperator = new StreamAADOperator();
+            break;
+        }
+
+        switch (dataOperatorType)
+        {
+        case Default:
+            dataOperator = new DefaultDataOperator();
+            break;
+        case Counter:
+            dataOperator = new CounterDataOperator();
+            break;
+        case Stream:
+            dataOperator = new StreamDataOperator();
             break;
         }
     }
@@ -226,7 +279,7 @@ abstract class AEADBufferBaseEngine
 
         void reset();
 
-        int getAadLen();
+        int getLen();
     }
 
     protected class DefaultAADOperator
@@ -241,39 +294,15 @@ abstract class AEADBufferBaseEngine
         @Override
         public void processAADBytes(byte[] input, int inOff, int len)
         {
-            if (m_aadPos > 0)
-            {
-                int available = AADBufferSize - m_aadPos;
-                if (processor.isLengthWithinAvailableSpace(len, available))
-                {
-                    System.arraycopy(input, inOff, m_aad, m_aadPos, len);
-                    m_aadPos += len;
-                    return;
-                }
-
-                System.arraycopy(input, inOff, m_aad, m_aadPos, available);
-                inOff += available;
-                len -= available;
-
-                processBufferAAD(m_aad, 0);
-            }
-            while (processor.isLengthExceedingBlockSize(len, AADBufferSize))
-            {
-                processBufferAAD(input, inOff);
-                inOff += AADBufferSize;
-                len -= AADBufferSize;
-            }
-            System.arraycopy(input, inOff, m_aad, 0, len);
-            m_aadPos = len;
+            processAadBytes(input, inOff, len);
         }
 
         public void reset()
         {
-
         }
 
         @Override
-        public int getAadLen()
+        public int getLen()
         {
             return m_aadPos;
         }
@@ -295,33 +324,10 @@ abstract class AEADBufferBaseEngine
         public void processAADBytes(byte[] input, int inOff, int len)
         {
             aadLen += len;
-            if (m_aadPos > 0)
-            {
-                int available = AADBufferSize - m_aadPos;
-                if (processor.isLengthWithinAvailableSpace(len, available))
-                {
-                    System.arraycopy(input, inOff, m_aad, m_aadPos, len);
-                    m_aadPos += len;
-                    return;
-                }
-
-                System.arraycopy(input, inOff, m_aad, m_aadPos, available);
-                inOff += available;
-                len -= available;
-
-                processBufferAAD(m_aad, 0);
-            }
-            while (processor.isLengthExceedingBlockSize(len, AADBufferSize))
-            {
-                processBufferAAD(input, inOff);
-                inOff += AADBufferSize;
-                len -= AADBufferSize;
-            }
-            System.arraycopy(input, inOff, m_aad, 0, len);
-            m_aadPos = len;
+            processAadBytes(input, inOff, len);
         }
 
-        public int getAadLen()
+        public int getLen()
         {
             return aadLen;
         }
@@ -332,10 +338,10 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected class StreamAADOperator
+    protected static class StreamAADOperator
         implements AADOperator
     {
-        private ErasableOutputStream stream = new ErasableOutputStream();
+        private final ErasableOutputStream stream = new ErasableOutputStream();
 
         @Override
         public void processAADByte(byte input)
@@ -361,9 +367,93 @@ abstract class AEADBufferBaseEngine
         }
 
         @Override
-        public int getAadLen()
+        public int getLen()
         {
             return stream.size();
+        }
+    }
+
+    protected interface DataOperator
+    {
+        int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
+
+        int getLen();
+
+        void reset();
+    }
+
+    protected class DefaultDataOperator
+        implements DataOperator
+    {
+        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            return processEncDecBytes(input, inOff, len, output, outOff);
+        }
+
+        @Override
+        public int getLen()
+        {
+            return m_bufPos;
+        }
+
+        @Override
+        public void reset()
+        {
+
+        }
+    }
+
+    protected class CounterDataOperator
+        implements DataOperator
+    {
+        private int messegeLen;
+
+        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            messegeLen += len;
+            return processEncDecBytes(input, inOff, len, output, outOff);
+        }
+
+        @Override
+        public int getLen()
+        {
+            return messegeLen;
+        }
+
+        @Override
+        public void reset()
+        {
+            messegeLen = 0;
+        }
+    }
+
+    protected class StreamDataOperator
+        implements DataOperator
+    {
+        private ErasableOutputStream stream = new ErasableOutputStream();
+
+        @Override
+        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            stream.write(input, inOff, len);
+            return 0;
+        }
+
+        public byte[] getBytes()
+        {
+            return stream.getBuf();
+        }
+
+        @Override
+        public int getLen()
+        {
+            return stream.size();
+        }
+
+        @Override
+        public void reset()
+        {
+            stream.reset();
         }
     }
 
@@ -401,11 +491,44 @@ abstract class AEADBufferBaseEngine
         aadOperator.processAADBytes(input, inOff, len);
     }
 
+    private void processAadBytes(byte[] input, int inOff, int len)
+    {
+        if (m_aadPos > 0)
+        {
+            int available = AADBufferSize - m_aadPos;
+            if (processor.isLengthWithinAvailableSpace(len, available))
+            {
+                System.arraycopy(input, inOff, m_aad, m_aadPos, len);
+                m_aadPos += len;
+                return;
+            }
+
+            System.arraycopy(input, inOff, m_aad, m_aadPos, available);
+            inOff += available;
+            len -= available;
+
+            processBufferAAD(m_aad, 0);
+        }
+        while (processor.isLengthExceedingBlockSize(len, AADBufferSize))
+        {
+            processBufferAAD(input, inOff);
+            inOff += AADBufferSize;
+            len -= AADBufferSize;
+        }
+        System.arraycopy(input, inOff, m_aad, 0, len);
+        m_aadPos = len;
+    }
+
     @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
         ensureSufficientInputBuffer(input, inOff, len);
+        return dataOperator.processBytes(input, inOff, len, output, outOff);
+    }
+
+    protected int processEncDecBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+    {
         int available, resultLength;
         if (checkData(false))
         {
@@ -702,6 +825,7 @@ abstract class AEADBufferBaseEngine
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
         }
         aadOperator.reset();
+        dataOperator.reset();
     }
 
     protected void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)

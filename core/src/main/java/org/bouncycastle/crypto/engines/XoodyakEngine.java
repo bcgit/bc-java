@@ -45,7 +45,7 @@ public class XoodyakEngine
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     @Override

@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
-
 /**
  * GIFT-COFB v1.1, based on the current round 3 submission, https://www.isical.ac.in/~lightweight/COFB/
  * Reference C implementation: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-submissions/elephant.zip
@@ -16,7 +14,6 @@ public class GiftCofbEngine
     private byte[] Y;
     private byte[] input;
     private byte[] offset;
-    private int messageLen;
     /*Round constants*/
     private final byte[] GIFT_RC = {
         (byte)0x01, (byte)0x03, (byte)0x07, (byte)0x0F, (byte)0x1F, (byte)0x3E, (byte)0x3D, (byte)0x3B, (byte)0x37, (byte)0x2F,
@@ -33,15 +30,7 @@ public class GiftCofbEngine
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter);
-    }
-
-    @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        messageLen += len;
-        return super.processBytes(input, inOff, len, output, outOff);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter, DataOperatorType.Counter);
     }
 
     private int rowperm(int S, int B0_pos, int B1_pos, int B2_pos, int B3_pos)
@@ -226,12 +215,12 @@ public class GiftCofbEngine
     @Override
     protected void processFinalAAD()
     {
-        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        int len = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         /* last byte[] */
         /* full byte[]: offset = 3*offset */
         /* partial byte[]: offset = 3^2*offset */
         triple_half_block(offset, offset);
-        int aadLen = aadOperator.getAadLen();
+        int aadLen = aadOperator.getLen();
         if (((aadLen & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
         {
             triple_half_block(offset, offset);
@@ -257,7 +246,7 @@ public class GiftCofbEngine
         {
         case DecInit:
         case DecAad:
-            if (!isDoFinal && messageLen <= MAC_SIZE)
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
             {
                 //m_state = State.DecData;
                 return;
@@ -289,7 +278,7 @@ public class GiftCofbEngine
     protected void processFinalBlock(byte[] output, int outOff)
     {
         int inOff = 0;
-        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        int len = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         if (len != 0)
         {
             /* full block: offset = 3*offset */
@@ -355,6 +344,5 @@ public class GiftCofbEngine
         System.arraycopy(npub, 0, input, 0, IV_SIZE);
         giftb128(input, k, Y);
         System.arraycopy(Y, 0, offset, 0, 8);
-        messageLen = 0;
     }
 }

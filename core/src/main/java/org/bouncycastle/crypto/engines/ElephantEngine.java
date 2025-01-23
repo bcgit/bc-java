@@ -70,7 +70,7 @@ public class ElephantEngine
         buffer = new byte[BlockSize];
         m_buf = new byte[BlockSize + MAC_SIZE];
         previous_outputMessage = new byte[BlockSize];
-        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream);
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream, DataOperatorType.Default);
         reset(false);
     }
 
@@ -470,7 +470,7 @@ public class ElephantEngine
         {
             ad = ((StreamAADOperator)aadOperator).getBytes();
             adOff = 0;
-            adlen = aadOperator.getAadLen();
+            adlen = aadOperator.getLen();
             aadOperator.reset();
         }
         switch (m_state)
