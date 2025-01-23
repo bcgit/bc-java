@@ -41,7 +41,6 @@ public class SparkleEngine
 
     public SparkleEngine(SparkleParameters sparkleParameters)
     {
-        super(ProcessingBufferType.Buffered);
         int SPARKLE_STATE;
         int SCHWAEMM_TAG_LEN;
         int SPARKLE_CAPACITY;
@@ -110,9 +109,6 @@ public class SparkleEngine
         k = new int[KEY_WORDS];
         npub = new int[RATE_WORDS];
         AADBufferSize = BlockSize = IV_SIZE;
-        m_bufferSizeDecrypt = IV_SIZE + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[BlockSize];
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
 
         // Relied on by processBytes method for decryption

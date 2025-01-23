@@ -57,7 +57,7 @@ abstract class AEADBufferBaseEngine
     protected AADOperator aadOperator;
     protected DataOperator dataOperator;
 
-    protected AEADBufferBaseEngine(ProcessingBufferType type)
+    protected void setInnerMembers(ProcessingBufferType type, AADOperatorType aadOperatorType, DataOperatorType dataOperatorType)
     {
         switch (type)
         {
@@ -74,64 +74,17 @@ abstract class AEADBufferBaseEngine
             processor = new ImmediateLargeMacAADProcessor();
             break;
         }
-    }
 
-    protected void setInnerMembers(ProcessingBufferType type, AADOperatorType aadOperatorType)
-    {
-//        switch (type)
-//        {
-//        case Buffered:
-//            processor = new BufferedAADProcessor();
-//            break;
-//        case BufferedLargeMac:
-//            processor = new BufferedLargeMacAADProcessor();
-//            break;
-//        case Immediate:
-//            processor = new ImmediateAADProcessor();
-//            break;
-//        case ImmediateLargeMac:
-//            processor = new ImmediateLargeMacAADProcessor();
-//            break;
-//        }
+        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
 
         switch (aadOperatorType)
         {
         case Default:
+            m_aad = new byte[AADBufferSize];
             aadOperator = new DefaultAADOperator();
             break;
         case Counter:
-            aadOperator = new CounterAADOperator();
-            break;
-        case Stream:
-            aadOperator = new StreamAADOperator();
-            break;
-        }
-    }
-
-    protected void setInnerMembers(ProcessingBufferType type, AADOperatorType aadOperatorType, DataOperatorType dataOperatorType)
-    {
-//        switch (type)
-//        {
-//        case Buffered:
-//            processor = new BufferedAADProcessor();
-//            break;
-//        case BufferedLargeMac:
-//            processor = new BufferedLargeMacAADProcessor();
-//            break;
-//        case Immediate:
-//            processor = new ImmediateAADProcessor();
-//            break;
-//        case ImmediateLargeMac:
-//            processor = new ImmediateLargeMacAADProcessor();
-//            break;
-//        }
-
-        switch (aadOperatorType)
-        {
-        case Default:
-            aadOperator = new DefaultAADOperator();
-            break;
-        case Counter:
+            m_aad = new byte[AADBufferSize];
             aadOperator = new CounterAADOperator();
             break;
         case Stream:
@@ -142,9 +95,11 @@ abstract class AEADBufferBaseEngine
         switch (dataOperatorType)
         {
         case Default:
+            m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new DefaultDataOperator();
             break;
         case Counter:
+            m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new CounterDataOperator();
             break;
         case Stream:
@@ -802,10 +757,16 @@ abstract class AEADBufferBaseEngine
 
     protected void bufferReset()
     {
-        Arrays.fill(m_buf, (byte)0);
-        Arrays.fill(m_aad, (byte)0);
-        m_bufPos = 0;
-        m_aadPos = 0;
+        if (m_buf != null)
+        {
+            Arrays.fill(m_buf, (byte)0);
+            m_bufPos = 0;
+        }
+        if (m_aad != null)
+        {
+            Arrays.fill(m_aad, (byte)0);
+            m_aadPos = 0;
+        }
         switch (m_state)
         {
         case DecInit:

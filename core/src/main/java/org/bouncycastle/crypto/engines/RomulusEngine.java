@@ -78,7 +78,6 @@ public class RomulusEngine
 
     public RomulusEngine(RomulusParameters romulusParameters)
     {
-        super(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered);
         KEY_SIZE = IV_SIZE = MAC_SIZE = BlockSize = AADBufferSize = 16;
         CNT = new byte[7];
         switch (romulusParameters)
@@ -97,9 +96,6 @@ public class RomulusEngine
             instance = new RomulusT();
             break;
         }
-        m_bufferSizeDecrypt = MAC_SIZE + BlockSize;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[AADBufferSize];
         setInnerMembers(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered,
             AADOperatorType.Counter,
             romulusParameters == RomulusParameters.RomulusM ? DataOperatorType.Stream : DataOperatorType.Counter);

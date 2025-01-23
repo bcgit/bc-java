@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.ElephantEngine;
+import org.bouncycastle.crypto.engines.GiftCofbEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
@@ -44,7 +45,7 @@ public class ElephantTest
 //        //testVectors(ElephantEngine.ElephantParameters.elephant160, "v160_2");
         ElephantEngine elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant200);
         testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
-        testParameters(elephant, 16, 12, 16);
+        implTestParametersEngine(elephant, 16, 12, 16);
         CipherTest.checkCipher(10, 12, 40, 128, new CipherTest.Instance()
         {
             public AEADCipher createInstance()
@@ -71,10 +72,10 @@ public class ElephantTest
 
         elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant160);
         testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
-        testParameters(elephant, 16, 12, 8);
+        implTestParametersEngine(elephant, 16, 12, 8);
         elephant = new ElephantEngine(ElephantEngine.ElephantParameters.elephant176);
         testExceptions(elephant, elephant.getKeyBytesSize(), elephant.getIVBytesSize(), elephant.getBlockSize());
-        testParameters(elephant, 16, 12, 8);
+        implTestParametersEngine(elephant, 16, 12, 8);
 
     }
 
@@ -309,6 +310,7 @@ public class ElephantTest
 //        }
         try
         {
+            aeadBlockCipher.init(true, params);
             aeadBlockCipher.doFinal(new byte[2], 2);
             fail(aeadBlockCipher.getAlgorithmName() + ": output for dofinal is too short");
         }
@@ -331,15 +333,14 @@ public class ElephantTest
             fail(aeadBlockCipher.getAlgorithmName() + ": mac should match for the same AAD with different ways of inputing");
         }
 
-        byte[] c2 = new byte[aeadBlockCipher.getOutputSize(10)];
-        byte[] c3 = new byte[aeadBlockCipher.getOutputSize(10) + 2];
-
         byte[] aad2 = {0, 1, 2, 3, 4};
         byte[] aad3 = {0, 0, 1, 2, 3, 4, 5};
         byte[] m2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         byte[] m4 = new byte[m2.length];
         aeadBlockCipher.init(true, params);
+        byte[] c2 = new byte[aeadBlockCipher.getOutputSize(10)];
+        byte[] c3 = new byte[aeadBlockCipher.getOutputSize(10) + 2];
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
         aeadBlockCipher.doFinal(c2, offset);
@@ -414,21 +415,31 @@ public class ElephantTest
         // System.out.println(aeadBlockCipher.getAlgorithmName() + " test Exceptions pass");
     }
 
-    private void testParameters(ElephantEngine isap, int keySize, int ivSize, int macSize)
+    private void implTestParametersEngine(ElephantEngine cipher, int keySize, int ivSize,
+                                          int macSize)
     {
-        if (isap.getKeyBytesSize() != keySize)
+        if (cipher.getKeyBytesSize() != keySize)
         {
-            fail(isap.getAlgorithmName() + ": key bytes of " + isap.getAlgorithmName() + " is not correct");
+            fail("key bytes of " + cipher.getAlgorithmName() + " is not correct");
         }
-        if (isap.getIVBytesSize() != ivSize)
+        if (cipher.getIVBytesSize() != ivSize)
         {
-            fail(isap.getAlgorithmName() + ": iv bytes of " + isap.getAlgorithmName() + " is not correct");
+            fail("iv bytes of " + cipher.getAlgorithmName() + " is not correct");
         }
-        if (isap.getOutputSize(0) != macSize)
+
+        CipherParameters parameters = new ParametersWithIV(new KeyParameter(new byte[keySize]), new byte[ivSize]);
+
+        cipher.init(true, parameters);
+        if (cipher.getOutputSize(0) != macSize)
         {
-            fail(isap.getAlgorithmName() + ": mac bytes of " + isap.getAlgorithmName() + " is not correct");
+            fail("getOutputSize of " + cipher.getAlgorithmName() + " is incorrect for encryption");
         }
-        // System.out.println(isap.getAlgorithmName() + " test Parameters pass");
+
+        cipher.init(false, parameters);
+        if (cipher.getOutputSize(macSize) != 0)
+        {
+            fail("getOutputSize of " + cipher.getAlgorithmName() + " is incorrect for decryption");
+        }
     }
 
 

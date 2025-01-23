@@ -35,7 +35,6 @@ public class AsconEngine
 
     public AsconEngine(AsconParameters asconParameters)
     {
-        super(asconParameters == AsconParameters.ascon128a ? ProcessingBufferType.Immediate : ProcessingBufferType.ImmediateLargeMac);
         this.asconParameters = asconParameters;
         IV_SIZE = 16;
         MAC_SIZE = 16;
@@ -68,6 +67,7 @@ public class AsconEngine
         AADBufferSize = BlockSize;
         m_aad = new byte[BlockSize];
         dsep = 1L;
+        setInnerMembers(asconParameters == AsconParameters.ascon128a ? ProcessingBufferType.Immediate : ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     protected long pad(int i)
