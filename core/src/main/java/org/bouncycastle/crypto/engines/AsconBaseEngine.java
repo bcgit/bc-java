@@ -24,12 +24,6 @@ abstract class AsconBaseEngine
 
     protected abstract void setBytes(long n, byte[] bs, int off);
 
-    protected AsconBaseEngine(ProcessingBufferType type)
-    {
-        super(type);
-        setInnerMembers(type, AADOperatorType.Default, DataOperatorType.Default);
-    }
-
     private void round(long C)
     {
         long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));

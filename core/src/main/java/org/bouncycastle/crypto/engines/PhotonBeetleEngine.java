@@ -55,7 +55,6 @@ public class PhotonBeetleEngine
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
-        super(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
@@ -77,9 +76,6 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         algorithmName = "Photon-Beetle AEAD";
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[AADBufferSize];
         setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
             AADOperatorType.Counter, DataOperatorType.Default);
     }

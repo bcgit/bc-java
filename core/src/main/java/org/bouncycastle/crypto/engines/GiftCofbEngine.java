@@ -24,12 +24,8 @@ public class GiftCofbEngine
 
     public GiftCofbEngine()
     {
-        super(ProcessingBufferType.Buffered);
         AADBufferSize = BlockSize = MAC_SIZE = IV_SIZE = KEY_SIZE = 16;
         algorithmName = "GIFT-COFB AEAD";
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[AADBufferSize];
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter, DataOperatorType.Counter);
     }
 

@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 /**
@@ -30,13 +29,10 @@ public class ElephantEngine
     private byte[] next_mask;
     private final byte[] buffer;
     private final byte[] previous_outputMessage;
-    private final ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private int messageLen;
     private final Permutation instance;
 
     public ElephantEngine(ElephantParameters parameters)
     {
-        super(ProcessingBufferType.Immediate);
         KEY_SIZE = 16;
         IV_SIZE = 12;
         switch (parameters)
@@ -62,16 +58,13 @@ public class ElephantEngine
         default:
             throw new IllegalArgumentException("Invalid parameter settings for Elephant");
         }
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         tag_buffer = new byte[BlockSize];
         previous_mask = new byte[BlockSize];
         current_mask = new byte[BlockSize];
         next_mask = new byte[BlockSize];
         buffer = new byte[BlockSize];
-        m_buf = new byte[BlockSize + MAC_SIZE];
         previous_outputMessage = new byte[BlockSize];
-        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream, DataOperatorType.Default);
-        reset(false);
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream, DataOperatorType.Counter);
     }
 
     private interface Permutation
@@ -344,7 +337,6 @@ public class ElephantEngine
         // Value of next_mask will be computed in the next iteration
         swapMasks();
         nb_its++;
-        messageLen += BlockSize;
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -396,8 +388,7 @@ public class ElephantEngine
 
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        int len = m_bufPos;
-        int mlen = len + messageLen;
+        int mlen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         processFinalAAD();
         int nblocks_c = 1 + mlen / BlockSize;
         int nblocks_m = (mlen % BlockSize) != 0 ? nblocks_c : nblocks_c - 1;
@@ -486,11 +477,10 @@ public class ElephantEngine
     {
         Arrays.fill(tag_buffer, (byte)0);
         Arrays.fill(previous_outputMessage, (byte)0);
-        m_bufPos = 0;
         nb_its = 0;
         adOff = -1;
-        messageLen = 0;
         super.reset(clearMac);
+        bufferReset();
     }
 
     protected void checkAAD()

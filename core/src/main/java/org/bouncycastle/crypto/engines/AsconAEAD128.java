@@ -21,7 +21,6 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
-        super(ProcessingBufferType.Immediate);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
@@ -33,6 +32,7 @@ public class AsconAEAD128
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[BlockSize];
         dsep = -9223372036854775808L; //0x80L << 56
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     protected long pad(int i)

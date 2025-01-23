@@ -35,16 +35,12 @@ public class XoodyakEngine
 
     public XoodyakEngine()
     {
-        super(ProcessingBufferType.Buffered);
         algorithmName = "Xoodyak AEAD";
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[AADBufferSize];
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
     }
 

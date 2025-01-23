@@ -24,8 +24,6 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
-        super(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
-            ProcessingBufferType.ImmediateLargeMac);
         KEY_SIZE = 16;
         IV_SIZE = 16;
         MAC_SIZE = 16;
@@ -48,9 +46,7 @@ public class ISAPEngine
             algorithmName = "ISAP-K-128 AEAD";
             break;
         }
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         AADBufferSize = BlockSize;
-        m_aad = new byte[AADBufferSize];
         setInnerMembers(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
             ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
     }
