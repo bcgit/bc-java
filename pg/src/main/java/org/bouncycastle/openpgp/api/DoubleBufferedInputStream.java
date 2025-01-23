@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Implementation of {@link InputStream} double-buffers data from an underlying input stream.
+ * Implementation of an {@link InputStream} that double-buffers data from an underlying input stream.
  * Upon reaching the end of the underlying data stream, the underlying data stream is
  * automatically closed.
  * Any exceptions while reading from the underlying input stream cause the {@link DoubleBufferedInputStream}
@@ -27,28 +27,49 @@ public class DoubleBufferedInputStream<I extends InputStream>
     private final I in;
     private boolean closed = false;
 
+    /**
+     * Create a {@link DoubleBufferedInputStream}, which buffers twice 32MiB.
+     *
+     * @param in input stream
+     */
     public DoubleBufferedInputStream(I in)
     {
         this(in, BUFFER_SIZE);
     }
 
+    /**
+     * Create a {@link DoubleBufferedInputStream}, which buffers twice the given buffer size in bytes.
+     *
+     * @param in input stream
+     * @param bufferSize buffer size
+     */
     public DoubleBufferedInputStream(I in, int bufferSize)
     {
         if (bufferSize <= 0)
         {
-            throw new IllegalArgumentException("Buffer size cannot be null nor negative.");
+            throw new IllegalArgumentException("Buffer size cannot be zero nor negative.");
         }
         this.buf1 = new byte[bufferSize];
         this.buf2 = new byte[bufferSize];
         this.in = in;
-        b1Pos = -1;
+        b1Pos = -1; // indicate to fill() that we need to initialize
     }
 
+    /**
+     * Return the underlying {@link InputStream}.
+     *
+     * @return underlying input stream
+     */
     public I getInputStream()
     {
         return in;
     }
 
+    /**
+     * Buffer some data from the underlying {@link InputStream}.
+     *
+     * @throws IOException re-throw exceptions from the underlying input stream
+     */
     private void fill()
             throws IOException
     {
@@ -106,8 +127,12 @@ public class DoubleBufferedInputStream<I extends InputStream>
             }
             catch (IOException e)
             {
+                // set buffer max's to -1 to indicate to stop emitting data immediately
                 b1Max = -1;
                 b2Max = -1;
+                close();
+
+                throw e;
             }
 
             // EOF
@@ -122,6 +147,7 @@ public class DoubleBufferedInputStream<I extends InputStream>
     public void close()
             throws IOException
     {
+        // close the inner stream only once
         if (!closed)
         {
             closed = true;
@@ -136,12 +162,14 @@ public class DoubleBufferedInputStream<I extends InputStream>
         // fill the buffer(s)
         fill();
 
-        // EOF
+        // EOF / exception?
         if (b1Max == -1)
         {
             close();
             return -1;
         }
+
+        // return byte from the buffer
         int i = buf1[b1Pos];
         b1Pos++;
         return i;
@@ -154,21 +182,19 @@ public class DoubleBufferedInputStream<I extends InputStream>
         // Fill the buffer(s)
         fill();
 
-        // EOF
+        // EOF / exception?
         if (b1Max == -1)
         {
             close();
             return -1;
         }
+
         // available bytes in b1
         int avail = b1Max - b1Pos;
-
         // math.min(avail, len)
         int ret = avail < len ? avail : len;
-
-        // emit data
+        // emit data from the buffer
         System.arraycopy(buf1, b1Pos, b, off, ret);
-
         b1Pos += ret;
         return ret;
     }
