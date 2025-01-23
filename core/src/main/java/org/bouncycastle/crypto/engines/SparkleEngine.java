@@ -113,7 +113,7 @@ public class SparkleEngine
         m_bufferSizeDecrypt = IV_SIZE + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[BlockSize];
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
 
         // Relied on by processBytes method for decryption
 //        assert RATE_BYTES >= TAG_BYTES;

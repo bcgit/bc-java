@@ -27,7 +27,7 @@ abstract class AsconBaseEngine
     protected AsconBaseEngine(ProcessingBufferType type)
     {
         super(type);
-        setInnerMembers(type, AADOperatorType.Default);
+        setInnerMembers(type, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     private void round(long C)

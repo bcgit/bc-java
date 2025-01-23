@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
 
 
@@ -23,8 +22,6 @@ public class RomulusEngine
     private byte[] k;
     private byte[] npub;
     private final int AD_BLK_LEN_HALF = 16;
-    private int messegeLen;
-    private int aadLen;
     private Instance instance;
     private final byte[] CNT;
 
@@ -103,7 +100,9 @@ public class RomulusEngine
         m_bufferSizeDecrypt = MAC_SIZE + BlockSize;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
-        setInnerMembers(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered, AADOperatorType.Counter);
+        setInnerMembers(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered,
+            AADOperatorType.Counter,
+            romulusParameters == RomulusParameters.RomulusM ? DataOperatorType.Stream : DataOperatorType.Counter);
     }
 
     private interface Instance
@@ -317,7 +316,7 @@ public class RomulusEngine
         @Override
         public void processFinalBlock(byte[] output, int outOff)
         {
-            messegeLen -= (forEncryption ? 0 : MAC_SIZE);
+            int messegeLen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
             if (messegeLen == 0)
             {
                 lfsr_gf56(CNT);
@@ -373,7 +372,7 @@ public class RomulusEngine
                 }
                 lfsr_gf56(CNT);
             }
-            if (aadOperator.getAadLen() == 0)
+            if (aadOperator.getLen() == 0)
             {
                 lfsr_gf56(CNT);
                 nonce_encryption(npub, CNT, s, k, (byte)0x1a);
@@ -442,7 +441,7 @@ public class RomulusEngine
         public void processFinalBlock(byte[] output, int outOff)
         {
             int n = 16;
-            messegeLen -= (forEncryption ? 0 : MAC_SIZE);
+            int messegeLen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
             if (m_bufPos != 0)
             {
                 int len8 = Math.min(m_bufPos, 16);
@@ -485,7 +484,7 @@ public class RomulusEngine
                 {
                     Arrays.fill(m_aad, BlockSize, AADBufferSize, (byte)0);
                 }
-                else if (aadOperator.getAadLen() != 0)
+                else if (aadOperator.getLen() != 0)
                 {
                     System.arraycopy(npub, 0, m_aad, m_aadPos, 16);
                     n = 0;
@@ -540,7 +539,7 @@ public class RomulusEngine
                 hirose_128_128_256(h, g, m_aad, 0);
                 m_aadPos = 0;
             }
-            else if ((m_aadPos >= 0) && (aadOperator.getAadLen() != 0))
+            else if ((m_aadPos >= 0) && (aadOperator.getLen() != 0))
             {
                 m_aad[BlockSize - 1] = (byte)(m_aadPos & 0xf);
                 m_aadPos = BlockSize;
@@ -883,14 +882,6 @@ public class RomulusEngine
         reset(false);
     }
 
-    @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        messegeLen += len;
-        return super.processBytes(input, inOff, len, out, outOff);
-    }
-
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
@@ -940,7 +931,6 @@ public class RomulusEngine
 
     protected void reset(boolean clearMac)
     {
-        messegeLen = 0;
         bufferReset();
         instance.reset();
         super.reset(clearMac);
