@@ -382,10 +382,10 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected class StreamDataOperator
+    protected static class StreamDataOperator
         implements DataOperator
     {
-        private ErasableOutputStream stream = new ErasableOutputStream();
+        private final ErasableOutputStream stream = new ErasableOutputStream();
 
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)

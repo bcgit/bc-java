@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.util.Arrays;
 
-
 /**
  * Romulus v1.3, based on the current round 3 submission, https://romulusae.github.io/romulus/
  * Reference C implementation: https://github.com/romulusae/romulus

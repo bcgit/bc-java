@@ -1,7 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
-
 /**
  * Photon-Beetle, <a href="https://www.isical.ac.in/~lightweight/beetle/"></a>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
@@ -24,7 +22,6 @@ public class PhotonBeetleEngine
     private byte[] N;
     private byte[] state;
     private byte[][] state_2d;
-    private int messageLen;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
@@ -77,7 +74,7 @@ public class PhotonBeetleEngine
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         algorithmName = "Photon-Beetle AEAD";
         setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
-            AADOperatorType.Counter, DataOperatorType.Default);
+            AADOperatorType.Counter, DataOperatorType.Counter);
     }
 
     @Override
@@ -116,7 +113,7 @@ public class PhotonBeetleEngine
                         state[m_aadPos] ^= 0x01; // ozs
                     }
                 }
-                state[STATE_INBYTES - 1] ^= select(messageLen - (forEncryption ? 0 : MAC_SIZE) > 0,
+                state[STATE_INBYTES - 1] ^= select(dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE) > 0,
                     ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
             }
             m_aadPos = 0;
@@ -139,17 +136,9 @@ public class PhotonBeetleEngine
     }
 
     @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        messageLen += len;
-        return super.processBytes(input, inOff, len, output, outOff);
-    }
-
-    @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        int len = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         int bufferLen = m_bufPos;// - (forEncryption ? 0 : MAC_SIZE);
         int aadLen = aadOperator.getLen();
         if (aadLen != 0 || len != 0)
@@ -194,7 +183,6 @@ public class PhotonBeetleEngine
         bufferReset();
         input_empty = true;
         aadFinished = false;
-        messageLen = 0;
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
         super.reset(clearMac);
