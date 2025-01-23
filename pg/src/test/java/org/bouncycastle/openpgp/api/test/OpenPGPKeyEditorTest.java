@@ -157,7 +157,7 @@ public class OpenPGPKeyEditorTest
     }
 
     private void changePassphraseUnprotectedToCFBTest(OpenPGPApi api)
-            throws IOException
+            throws IOException, PGPException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
         isFalse(key.getPrimarySecretKey().isLocked());
@@ -173,7 +173,7 @@ public class OpenPGPKeyEditorTest
     }
 
     private void changePassphraseUnprotectedToAEADTest(OpenPGPApi api)
-            throws IOException
+            throws IOException, PGPException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
         isFalse("Expect key to be unprotected", key.getPrimarySecretKey().isLocked());
