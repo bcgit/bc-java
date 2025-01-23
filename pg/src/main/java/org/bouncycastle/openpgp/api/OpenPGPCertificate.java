@@ -28,8 +28,8 @@ import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.bouncycastle.openpgp.api.exception.IncorrectPGPSignatureException;
-import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
+import org.bouncycastle.openpgp.api.exception.IncorrectOpenPGPSignatureException;
+import org.bouncycastle.openpgp.api.exception.MalformedOpenPGPSignatureException;
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
@@ -947,7 +947,7 @@ public class OpenPGPCertificate
             if (issuer == null)
             {
                 // No issuer available
-                throw new MissingIssuerCertException("Issuer certificate unavailable.");
+                throw new MissingIssuerCertException(this, "Issuer certificate unavailable.");
             }
 
             sanitize(issuer, policy);
@@ -1022,7 +1022,8 @@ public class OpenPGPCertificate
 
             if (embeddedSignatures.isEmpty())
             {
-                throw new MalformedPGPSignatureException(
+                throw new MalformedOpenPGPSignatureException(
+                        this,
                         "Signing key SubkeyBindingSignature MUST contain embedded PrimaryKeyBindingSignature.");
             }
             PGPSignature primaryKeyBinding = embeddedSignatures.get(0);
@@ -1036,9 +1037,10 @@ public class OpenPGPCertificate
             backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
         }
 
-        protected void verifyKeySignature(OpenPGPComponentKey issuer,
-                                       OpenPGPComponentKey target,
-                                       PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
+        protected void verifyKeySignature(
+                OpenPGPComponentKey issuer,
+                OpenPGPComponentKey target,
+                PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
                 throws PGPSignatureException
         {
             this.isTested = true;
@@ -1062,7 +1064,7 @@ public class OpenPGPCertificate
 
                 if (!isCorrect)
                 {
-                    throw new IncorrectPGPSignatureException("Key Signature is not correct.");
+                    throw new IncorrectOpenPGPSignatureException(this, "Key Signature is not correct.");
                 }
             }
             catch (PGPException e)
@@ -1084,7 +1086,7 @@ public class OpenPGPCertificate
                 isCorrect = signature.verifyCertification(target.getUserId(), target.getPrimaryKey().getPGPPublicKey());
                 if (!isCorrect)
                 {
-                    throw new IncorrectPGPSignatureException("UserID Signature is not correct.");
+                    throw new IncorrectOpenPGPSignatureException(this, "UserID Signature is not correct.");
                 }
             }
             catch (PGPException e)
@@ -1106,7 +1108,7 @@ public class OpenPGPCertificate
                 isCorrect = signature.verifyCertification(target.getUserAttribute(), target.getPrimaryKey().getPGPPublicKey());
                 if (!isCorrect)
                 {
-                    throw new IncorrectPGPSignatureException("UserAttribute Signature is not correct.");
+                    throw new IncorrectOpenPGPSignatureException(this, "UserAttribute Signature is not correct.");
                 }
             }
             catch (PGPException e)

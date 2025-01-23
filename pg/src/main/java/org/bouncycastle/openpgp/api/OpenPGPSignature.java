@@ -13,7 +13,7 @@ import org.bouncycastle.openpgp.PGPOnePassSignature;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureException;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
-import org.bouncycastle.openpgp.api.exception.MalformedPGPSignatureException;
+import org.bouncycastle.openpgp.api.exception.MalformedOpenPGPSignatureException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -249,7 +249,7 @@ public abstract class OpenPGPSignature
      * Check certain requirements for OpenPGP signatures.
      *
      * @param issuer signature issuer
-     * @throws MalformedPGPSignatureException if the signature is malformed
+     * @throws MalformedOpenPGPSignatureException if the signature is malformed
      */
     void sanitize(OpenPGPCertificate.OpenPGPComponentKey issuer,
                   OpenPGPPolicy policy)
@@ -267,26 +267,30 @@ public abstract class OpenPGPSignature
         PGPSignatureSubpacketVector hashed = signature.getHashedSubPackets();
         if (hashed == null)
         {
-            throw new MalformedPGPSignatureException("Missing hashed signature subpacket area.");
+            throw new MalformedOpenPGPSignatureException(
+                    this, "Missing hashed signature subpacket area.");
         }
         PGPSignatureSubpacketVector unhashed = signature.getUnhashedSubPackets();
 
         if (hashed.getSignatureCreationTime() == null)
         {
             // Signatures MUST have hashed creation time subpacket
-            throw new MalformedPGPSignatureException("Signature does not have a hashed SignatureCreationTime subpacket.");
+            throw new MalformedOpenPGPSignatureException(
+                    this, "Signature does not have a hashed SignatureCreationTime subpacket.");
         }
 
         if (hashed.getSignatureCreationTime().before(issuer.getCreationTime()))
         {
-            throw new MalformedPGPSignatureException("Signature predates issuer key creation time.");
+            throw new MalformedOpenPGPSignatureException(
+                    this, "Signature predates issuer key creation time.");
         }
 
         for (NotationData notation : hashed.getNotationDataOccurrences())
         {
             if (notation.isCritical())
             {
-                throw new MalformedPGPSignatureException("Critical unknown NotationData encountered: " + notation.getNotationName());
+                throw new MalformedOpenPGPSignatureException(
+                        this, "Critical unknown NotationData encountered: " + notation.getNotationName());
             }
         }
 
@@ -296,8 +300,8 @@ public abstract class OpenPGPSignature
             if (unknownSubpacket.isCritical() &&
                     unknownSubpacket.getClass().equals(SignatureSubpacket.class))
             {
-                throw new MalformedPGPSignatureException("Critical hashed unknown SignatureSubpacket encountered: "
-                        + unknownSubpacket.getType());
+                throw new MalformedOpenPGPSignatureException(
+                        this, "Critical hashed unknown SignatureSubpacket encountered: " + unknownSubpacket.getType());
             }
         }
 
@@ -309,7 +313,8 @@ public abstract class OpenPGPSignature
                         hashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) == null &&
                         unhashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) == null)
                 {
-                    throw new MalformedPGPSignatureException("Missing IssuerKeyID and IssuerFingerprint subpacket.");
+                    throw new MalformedOpenPGPSignatureException(
+                            this, "Missing IssuerKeyID and IssuerFingerprint subpacket.");
                 }
                 break;
 
@@ -320,11 +325,13 @@ public abstract class OpenPGPSignature
             case SignaturePacket.VERSION_6:
                 if (hashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) != null)
                 {
-                    throw new MalformedPGPSignatureException("v6 signature MUST NOT contain IssuerKeyID subpacket.");
+                    throw new MalformedOpenPGPSignatureException(
+                            this, "v6 signature MUST NOT contain IssuerKeyID subpacket.");
                 }
                 if (hashed.getIssuerFingerprint() == null && unhashed.getIssuerFingerprint() == null)
                 {
-                    throw new MalformedPGPSignatureException("v6 signature MUST contain IssuerFingerprint subpacket.");
+                    throw new MalformedOpenPGPSignatureException(
+                            this, "v6 signature MUST contain IssuerFingerprint subpacket.");
                 }
                 break;
 

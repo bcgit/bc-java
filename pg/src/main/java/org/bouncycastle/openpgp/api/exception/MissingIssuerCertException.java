@@ -1,15 +1,15 @@
 package org.bouncycastle.openpgp.api.exception;
 
-import org.bouncycastle.openpgp.PGPSignatureException;
+import org.bouncycastle.openpgp.api.OpenPGPSignature;
 
 /**
  * The OpenPGP certificate (public key) required to verify a signature is not available.
  */
 public class MissingIssuerCertException
-        extends PGPSignatureException
+        extends OpenPGPSignatureException
 {
-    public MissingIssuerCertException(String message)
+    public MissingIssuerCertException(OpenPGPSignature signature, String message)
     {
-        super(message);
+        super(signature, message);
     }
 }
