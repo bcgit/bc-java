@@ -103,6 +103,7 @@ public class RomulusEngine
         m_bufferSizeDecrypt = MAC_SIZE + BlockSize;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
+        setInnerMembers(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered, AADOperatorType.Counter);
     }
 
     private interface Instance
@@ -372,9 +373,8 @@ public class RomulusEngine
                 }
                 lfsr_gf56(CNT);
             }
-            if (aadLen == 0)
+            if (aadOperator.getAadLen() == 0)
             {
-
                 lfsr_gf56(CNT);
                 nonce_encryption(npub, CNT, s, k, (byte)0x1a);
             }
@@ -485,7 +485,7 @@ public class RomulusEngine
                 {
                     Arrays.fill(m_aad, BlockSize, AADBufferSize, (byte)0);
                 }
-                else if (aadLen != 0)
+                else if (aadOperator.getAadLen() != 0)
                 {
                     System.arraycopy(npub, 0, m_aad, m_aadPos, 16);
                     n = 0;
@@ -540,7 +540,7 @@ public class RomulusEngine
                 hirose_128_128_256(h, g, m_aad, 0);
                 m_aadPos = 0;
             }
-            else if ((m_aadPos >= 0) && (aadLen != 0))
+            else if ((m_aadPos >= 0) && (aadOperator.getAadLen() != 0))
             {
                 m_aad[BlockSize - 1] = (byte)(m_aadPos & 0xf);
                 m_aadPos = BlockSize;
@@ -884,20 +884,6 @@ public class RomulusEngine
     }
 
     @Override
-    public void processAADByte(byte in)
-    {
-        aadLen++;
-        super.processAADByte(in);
-    }
-
-    @Override
-    public void processAADBytes(byte[] in, int inOff, int len)
-    {
-        aadLen += len;
-        super.processAADBytes(in, inOff, len);
-    }
-
-    @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
@@ -924,22 +910,20 @@ public class RomulusEngine
         m_state = nextState;
     }
 
-    @Override
-    protected void processFinalBlock(byte[] output, int outOff)
-    {
-        instance.processFinalBlock(output, outOff);
-    }
-
-    @Override
     protected void processBufferAAD(byte[] input, int inOff)
     {
         instance.processBufferAAD(input, inOff);
     }
 
-    @Override
     protected void processFinalAAD()
     {
         instance.processFinalAAD();
+    }
+
+    @Override
+    protected void processFinalBlock(byte[] output, int outOff)
+    {
+        instance.processFinalBlock(output, outOff);
     }
 
     @Override
@@ -956,7 +940,6 @@ public class RomulusEngine
 
     protected void reset(boolean clearMac)
     {
-        aadLen = 0;
         messegeLen = 0;
         bufferReset();
         instance.reset();

@@ -16,7 +16,6 @@ public class GiftCofbEngine
     private byte[] Y;
     private byte[] input;
     private byte[] offset;
-    private int aadLen;
     private int messageLen;
     /*Round constants*/
     private final byte[] GIFT_RC = {
@@ -34,20 +33,7 @@ public class GiftCofbEngine
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         m_buf = new byte[m_bufferSizeDecrypt];
         m_aad = new byte[AADBufferSize];
-    }
-
-    @Override
-    public void processAADByte(byte input)
-    {
-        aadLen++;
-        super.processAADByte(input);
-    }
-
-    @Override
-    public void processAADBytes(byte[] input, int inOff, int len)
-    {
-        aadLen += len;
-        super.processAADBytes(input, inOff, len);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter);
     }
 
     @Override
@@ -229,7 +215,6 @@ public class GiftCofbEngine
     @Override
     protected void processBufferAAD(byte[] in, int inOff)
     {
-
         pho1(input, Y, in, inOff, 16);
         /* offset = 2*offset */
         double_half_block(offset, offset);
@@ -238,7 +223,33 @@ public class GiftCofbEngine
         giftb128(input, k, Y);
     }
 
-    //@Override
+    @Override
+    protected void processFinalAAD()
+    {
+        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        /* last byte[] */
+        /* full byte[]: offset = 3*offset */
+        /* partial byte[]: offset = 3^2*offset */
+        triple_half_block(offset, offset);
+        int aadLen = aadOperator.getAadLen();
+        if (((aadLen & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
+        {
+            triple_half_block(offset, offset);
+        }
+        if (len == 0)
+        {
+            /* empty M: offset = 3^2*offset */
+            triple_half_block(offset, offset);
+            triple_half_block(offset, offset);
+        }
+        /* X[i] = (pad(A[i]) + G(Y[i-1])) + offset */
+        pho1(input, Y, m_aad, 0, m_aadPos);
+        xor_topbar_block(input, input, offset);
+        /* Y[a] = E(X[a]) */
+        giftb128(input, k, Y);
+    }
+
+    @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
@@ -259,31 +270,6 @@ public class GiftCofbEngine
 
         m_aadPos = 0;
         m_state = nextState;
-    }
-
-    @Override
-    protected void processFinalAAD()
-    {
-        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
-        /* last byte[] */
-        /* full byte[]: offset = 3*offset */
-        /* partial byte[]: offset = 3^2*offset */
-        triple_half_block(offset, offset);
-        if (((aadLen & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
-        {
-            triple_half_block(offset, offset);
-        }
-        if (len == 0)
-        {
-            /* empty M: offset = 3^2*offset */
-            triple_half_block(offset, offset);
-            triple_half_block(offset, offset);
-        }
-        /* X[i] = (pad(A[i]) + G(Y[i-1])) + offset */
-        pho1(input, Y, m_aad, 0, m_aadPos);
-        xor_topbar_block(input, input, offset);
-        /* Y[a] = E(X[a]) */
-        giftb128(input, k, Y);
     }
 
     @Override
@@ -369,7 +355,6 @@ public class GiftCofbEngine
         System.arraycopy(npub, 0, input, 0, IV_SIZE);
         giftb128(input, k, Y);
         System.arraycopy(Y, 0, offset, 0, 8);
-        aadLen = 0;
         messageLen = 0;
     }
 }

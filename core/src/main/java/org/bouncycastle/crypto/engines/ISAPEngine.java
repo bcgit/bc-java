@@ -51,6 +51,8 @@ public class ISAPEngine
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         AADBufferSize = BlockSize;
         m_aad = new byte[AADBufferSize];
+        setInnerMembers(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
+            ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default);
     }
 
     final int ISAP_STATE_SZ = 40;
@@ -799,6 +801,7 @@ public class ISAPEngine
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
+
 
     protected void processBufferAAD(byte[] input, int inOff)
     {

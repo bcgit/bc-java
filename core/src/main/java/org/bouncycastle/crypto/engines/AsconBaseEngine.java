@@ -27,6 +27,7 @@ abstract class AsconBaseEngine
     protected AsconBaseEngine(ProcessingBufferType type)
     {
         super(type);
+        setInnerMembers(type, AADOperatorType.Default);
     }
 
     private void round(long C)
@@ -92,6 +93,7 @@ abstract class AsconBaseEngine
 
     protected abstract void processFinalEncrypt(byte[] input, int inLen, byte[] output, int outOff);
 
+
     protected void processBufferAAD(byte[] buffer, int inOff)
     {
         x0 ^= loadBytes(buffer, inOff);
@@ -99,6 +101,12 @@ abstract class AsconBaseEngine
         {
             x1 ^= loadBytes(buffer, 8 + inOff);
         }
+        p(nr);
+    }
+
+    protected void processFinalAAD()
+    {
+        processFinalAadBlock();
         p(nr);
     }
 
@@ -116,13 +124,6 @@ abstract class AsconBaseEngine
         mac = new byte[MAC_SIZE];
         setBytes(x3, mac, 0);
         setBytes(x4, mac, 8);
-    }
-
-    @Override
-    protected void processFinalAAD()
-    {
-        processFinalAadBlock();
-        p(nr);
     }
 
     protected void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
