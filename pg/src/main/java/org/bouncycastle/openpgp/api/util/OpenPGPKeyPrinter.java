@@ -25,7 +25,9 @@ public class OpenPGPKeyPrinter
 
         if (args.length == 0)
         {
+            // -DM System.err.println
             System.err.println("Usage: OpenPGPKeyPrinter path/to/file...");
+            // -DM System.exit
             System.exit(1);
         }
 
@@ -34,7 +36,9 @@ public class OpenPGPKeyPrinter
             File file = new File(path);
             if (!file.exists() || !file.isFile())
             {
+                // -DM System.err.println
                 System.err.println("Error: " + path + " is not a file or does not exist.");
+                // -DM System.exit
                 System.exit(1);
             }
 
