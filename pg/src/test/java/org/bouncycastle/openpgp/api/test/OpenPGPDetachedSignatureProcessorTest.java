@@ -117,7 +117,7 @@ public class OpenPGPDetachedSignatureProcessorTest
     private void missingPassphraseThrows(OpenPGPApi api)
     {
         isNotNull(testException(
-                "Cannot unlock secret key",
+                "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
@@ -135,7 +135,7 @@ public class OpenPGPDetachedSignatureProcessorTest
     private void wrongPassphraseThrows(OpenPGPApi api)
     {
         isNotNull(testException(
-                "Cannot unlock secret key",
+                "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
@@ -222,7 +222,7 @@ public class OpenPGPDetachedSignatureProcessorTest
                 ).build();
 
         isNotNull(testException(
-                "Key " + noSigningKey.getPrettyFingerprint() + " cannot sign.",
+                "The key " + noSigningKey.getKeyIdentifier() + " does not contain any usable component keys capable of signing.",
                 "InvalidSigningKeyException",
                 new TestExceptionOperation()
                 {
@@ -265,7 +265,7 @@ public class OpenPGPDetachedSignatureProcessorTest
                 ).build();
 
         isNotNull(testException(
-                "Subkey cannot sign.",
+                "The primary key " + noSigningKey.getPrimaryKey().getKeyIdentifier() + " is not usable for signing.",
                 "InvalidSigningKeyException",
                 new TestExceptionOperation()
                 {

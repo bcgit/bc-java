@@ -274,7 +274,7 @@ public class OpenPGPKey
             }
             catch (PGPException e)
             {
-                throw new KeyPassphraseException(e);
+                throw new KeyPassphraseException(this, e);
             }
         }
 

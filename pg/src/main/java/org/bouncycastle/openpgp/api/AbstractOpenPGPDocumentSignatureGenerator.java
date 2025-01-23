@@ -34,6 +34,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
                                                                    OpenPGPPolicy policy)
         {
+            // Sign with all acceptable signing subkeys of the given key
             return certificate.getSigningKeys()
                     .stream()
                     .filter(key -> policy.isAcceptablePublicKey(key.getPGPPublicKey()))
@@ -60,13 +61,28 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         return (T) this;
     }
 
-
+    /**
+     * Add a passphrase for unlocking signing keys to the set of available passphrases.
+     *
+     * @param passphrase passphrase
+     * @return this
+     */
     public T addKeyPassphrase(char[] passphrase)
     {
         defaultKeyPassphraseProvider.addPassphrase(passphrase);
         return (T) this;
     }
 
+    /**
+     * Add an {@link OpenPGPKey} for message signing.
+     * The {@link #signingKeySelector} is responsible for selecting one or more subkeys of the key to sign with.
+     * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
+     * this method will throw an {@link InvalidSigningKeyException}.
+     *
+     * @param key OpenPGP key
+     * @return this
+     * @throws InvalidSigningKeyException if the key is not capable of signing
+     */
     public T addSigningKey(
             OpenPGPKey key)
             throws InvalidSigningKeyException
@@ -75,17 +91,17 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
     }
 
     /**
-     * Add an {@link OpenPGPKey} as signing key.
+     * Add an {@link OpenPGPKey} for message signing, using the provided {@link KeyPassphraseProvider} to
+     * unlock protected subkeys.
+     * The {@link #signingKeySelector} is responsible for selecting one or more subkeys of the key to sign with.
      * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
      * this method will throw an {@link InvalidSigningKeyException}.
-     * Otherwise, all capable signing subkeys will be used to create detached signatures.
      *
      * @param key OpenPGP key
      * @param passphraseProvider provides the passphrase to unlock the signing key
      * @return this
      *
      * @throws InvalidSigningKeyException if the OpenPGP key does not contain a usable signing subkey
-     * @throws PGPException if signing fails
      */
     public T addSigningKey(
             OpenPGPKey key,
@@ -95,6 +111,18 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         return addSigningKey(key, passphraseProvider, null);
     }
 
+    /**
+     * Add an {@link OpenPGPKey} for message signing, using the {@link SignatureParameters.Callback} to
+     * allow modification of the signature contents.
+     * The {@link #signingKeySelector} is responsible for selecting one or more subkeys of the key to sign with.
+     * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
+     * this method will throw an {@link InvalidSigningKeyException}.
+     *
+     * @param key OpenPGP key
+     * @param signatureCallback optional callback to modify the signature contents with
+     * @return this
+     * @throws InvalidSigningKeyException if the OpenPGP key does not contain a usable signing subkey
+     */
     public T addSigningKey(
             OpenPGPKey key,
             SignatureParameters.Callback signatureCallback)
@@ -103,6 +131,20 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         return addSigningKey(key, defaultKeyPassphraseProvider, signatureCallback);
     }
 
+    /**
+     * Add an {@link OpenPGPKey} for message signing, using the given {@link KeyPassphraseProvider}
+     * for unlocking protected subkeys and using the {@link SignatureParameters.Callback} to allow
+     * modification of the signature contents.
+     * The {@link #signingKeySelector} is responsible for selecting one or more subkeys of the key to sign with.
+     * If no (sub-)key in the signing key is capable of creating signatures, or if the key is expired or revoked,
+     * this method will throw an {@link InvalidSigningKeyException}.
+     *
+     * @param key OpenPGP key
+     * @param passphraseProvider key passphrase provider
+     * @param signatureCallback optional callback to modify the signature contents with
+     * @return this
+     * @throws InvalidSigningKeyException if the OpenPGP key does not contain a usable signing subkey
+     */
     public T addSigningKey(
             OpenPGPKey key,
             KeyPassphraseProvider passphraseProvider,
@@ -112,7 +154,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         List<OpenPGPCertificate.OpenPGPComponentKey> signingSubkeys = signingKeySelector.select(key, policy);
         if (signingSubkeys.isEmpty())
         {
-            throw new InvalidSigningKeyException("Key " + key.getPrettyFingerprint() + " cannot sign.");
+            throw new InvalidSigningKeyException(key);
         }
 
         for (OpenPGPCertificate.OpenPGPComponentKey subkey : signingSubkeys)
@@ -124,6 +166,17 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         return (T) this;
     }
 
+    /**
+     * Add the given signing (sub-)key for message signing, using the optional passphrase to unlock the
+     * key in case its locked, and using the given {@link SignatureParameters.Callback} to allow
+     * modification of the signature contents.
+     *
+     * @param signingKey signing (sub-)key
+     * @param passphrase optional subkey passphrase
+     * @param signatureCallback optional callback to modify the signature contents
+     * @return this
+     * @throws InvalidSigningKeyException if the subkey is not signing-capable
+     */
     public T addSigningKey(
             OpenPGPKey.OpenPGPSecretKey signingKey,
             char[] passphrase,
@@ -136,6 +189,17 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
                 signatureCallback);
     }
 
+    /**
+     * Add the given signing (sub-)key for message signing, using the passphrase provider to unlock the
+     * key in case its locked, and using the given {@link SignatureParameters.Callback} to allow
+     * modification of the signature contents.
+     *
+     * @param signingKey signing (sub-)key
+     * @param passphraseProvider passphrase provider for unlocking the subkey
+     * @param signatureCallback optional callback to modify the signature contents
+     * @return this
+     * @throws InvalidSigningKeyException if the subkey is not signing-capable
+     */
     public T addSigningKey(
             OpenPGPKey.OpenPGPSecretKey signingKey,
             KeyPassphraseProvider passphraseProvider,
@@ -144,7 +208,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
     {
         if (!signingKey.isSigningKey())
         {
-            throw new InvalidSigningKeyException("Subkey cannot sign.");
+            throw new InvalidSigningKeyException(signingKey);
         }
 
         signingKeys.add(signingKey);
@@ -174,8 +238,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
 
         if (!signingKey.isSigningKey(parameters.getSignatureCreationTime()))
         {
-            throw new InvalidSigningKeyException("Provided key " + signingKey.getKeyIdentifier() +
-                    " is not capable of creating data signatures.");
+            throw new InvalidSigningKeyException(signingKey);
         }
 
         PGPSignatureGenerator sigGen = new PGPSignatureGenerator(
@@ -201,6 +264,8 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
 
     private int getPreferredHashAlgorithm(OpenPGPCertificate.OpenPGPComponentKey key)
     {
+        // Determine the Hash Algorithm to use by inspecting the signing key's hash algorithm preferences
+        // TODO: Instead inspect the hash algorithm preferences of recipient certificates?
         PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
         if (hashPreferences != null)
         {
@@ -216,6 +281,13 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         return policy.getDefaultDocumentSignatureHashAlgorithm();
     }
 
+    /**
+     * Set a callback that will be fired, if a passphrase for a protected signing key is missing.
+     * This can be used for example to implement interactive on-demand passphrase prompting.
+     *
+     * @param callback passphrase provider
+     * @return builder
+     */
     public T setMissingKeyPassphraseCallback(KeyPassphraseProvider callback)
     {
         defaultKeyPassphraseProvider.setMissingPassphraseCallback(callback);

@@ -110,8 +110,7 @@ public class OpenPGPMessageGenerator
                 subkeySelector.select(recipientCertificate, policy);
         if (subkeys.isEmpty())
         {
-            throw new InvalidEncryptionKeyException("Certificate " + recipientCertificate.getKeyIdentifier() +
-                    " does not have valid encryption subkeys.");
+            throw new InvalidEncryptionKeyException(recipientCertificate);
         }
         this.encryptionKeys.addAll(subkeys);
         return this;
@@ -130,8 +129,7 @@ public class OpenPGPMessageGenerator
     {
         if (!encryptionKey.isEncryptionKey())
         {
-            throw new InvalidEncryptionKeyException("Provided subkey " + encryptionKey.getKeyIdentifier() +
-                    " is not a valid encryption key.");
+            throw new InvalidEncryptionKeyException(encryptionKey);
         }
         encryptionKeys.add(encryptionKey);
         return this;
