@@ -1984,36 +1984,21 @@ public class PKCS12KeyStoreSpi
         if (cert instanceof X509Certificate)
         {
             TBSCertificate tbsCert = TBSCertificate.getInstance(((X509Certificate)cert).getTBSCertificate());
-            Extensions exts = tbsCert.getExtensions();
-            if (exts != null)
+
+            ASN1OctetString eku = Extensions.getExtensionValue(tbsCert.getExtensions(),
+                Extension.extendedKeyUsage);
+
+            DERSet attrValue;
+            if (eku != null)
             {
-                Extension extUsage = exts.getExtension(Extension.extendedKeyUsage);
-                if (extUsage != null)
-                {
-                    ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                    // oracle trusted key usage OID.
-                    fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
-                    fSeq.add(new DERSet(ExtendedKeyUsage.getInstance(extUsage.getParsedValue()).getUsages()));
-                    fName.add(new DERSequence(fSeq));
-                }
-                else
-                {
-                    ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                    fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
-                    fSeq.add(new DERSet(KeyPurposeId.anyExtendedKeyUsage));
-                    fName.add(new DERSequence(fSeq));
-                }
+                attrValue = new DERSet(ExtendedKeyUsage.getInstance(eku.getOctets()).getUsages());
             }
             else
             {
-                ASN1EncodableVector fSeq = new ASN1EncodableVector();
-
-                fSeq.add(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage);
-                fSeq.add(new DERSet(KeyPurposeId.anyExtendedKeyUsage));
-                fName.add(new DERSequence(fSeq));
+                attrValue = new DERSet(KeyPurposeId.anyExtendedKeyUsage);
             }
+
+            fName.add(new DERSequence(MiscObjectIdentifiers.id_oracle_pkcs12_trusted_key_usage, attrValue));
         }
 
         return new SafeBag(certBag, cBag.toASN1Primitive(), new DERSet(fName));
