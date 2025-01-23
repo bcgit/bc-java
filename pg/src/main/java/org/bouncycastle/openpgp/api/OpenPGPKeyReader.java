@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Reader for {@link OpenPGPKey OpenPGPKeys} or {@link OpenPGPCertificate OpenPGPCertificates}.
+ */
 public class OpenPGPKeyReader
 {
     private final OpenPGPImplementation implementation;
@@ -34,6 +37,13 @@ public class OpenPGPKeyReader
         this.policy = policy;
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} from an ASCII armored string.
+     *
+     * @param armored ASCII armored string
+     * @return parsed certificate
+     * @throws IOException if the parsed object is a secret key or if the cert cannot be parsed
+     */
     public OpenPGPCertificate parseCertificate(String armored)
             throws IOException
     {
@@ -45,6 +55,13 @@ public class OpenPGPKeyReader
         return certificate;
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} from an {@link InputStream}.
+     *
+     * @param inputStream ASCII armored or binary input stream
+     * @return parsed certificate
+     * @throws IOException if the parsed object is a secret key or if the cert cannot be parsed
+     */
     public OpenPGPCertificate parseCertificate(InputStream inputStream)
             throws IOException
     {
@@ -56,6 +73,13 @@ public class OpenPGPKeyReader
         return certificate;
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} from bytes.
+     *
+     * @param bytes ASCII armored or binary bytes
+     * @return parsed certificate
+     * @throws IOException if the parsed object is a secret key or if the cert cannot be parsed
+     */
     public OpenPGPCertificate parseCertificate(byte[] bytes)
             throws IOException
     {
@@ -67,18 +91,39 @@ public class OpenPGPKeyReader
         return certificate;
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} or {@link OpenPGPKey} from an ASCII armored string.
+     *
+     * @param armored ASCII armored string
+     * @return parsed certificate or key
+     * @throws IOException if the key or certificate cannot be parsed
+     */
     public OpenPGPCertificate parseCertificateOrKey(String armored)
             throws IOException
     {
         return parseCertificateOrKey(armored.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} or {@link OpenPGPKey} from an {@link InputStream}.
+     *
+     * @param inputStream input stream containing the ASCII armored or binary key or certificate
+     * @return parsed certificate or key
+     * @throws IOException if the key or certificate cannot be parsed
+     */
     public OpenPGPCertificate parseCertificateOrKey(InputStream inputStream)
             throws IOException
     {
         return parseCertificateOrKey(Streams.readAll(inputStream));
     }
 
+    /**
+     * Parse a single {@link OpenPGPCertificate} or {@link OpenPGPKey} from bytes.
+     *
+     * @param bytes ASCII armored or binary key or certificate
+     * @return parsed certificate or key
+     * @throws IOException if the key or certificate cannot be parsed
+     */
     public OpenPGPCertificate parseCertificateOrKey(byte[] bytes)
             throws IOException
     {
@@ -109,18 +154,39 @@ public class OpenPGPKeyReader
         }
     }
 
+    /**
+     * Parse an {@link OpenPGPKey} from an ASCII armored string.
+     *
+     * @param armored ASCII armored string
+     * @return parsed key
+     * @throws IOException if the key cannot be parsed.
+     */
     public OpenPGPKey parseKey(String armored)
             throws IOException
     {
         return parseKey(armored.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Parse an {@link OpenPGPKey} from an {@link InputStream}
+     *
+     * @param inputStream containing the ASCII armored or binary key
+     * @return parsed key
+     * @throws IOException if the key cannot be parsed.
+     */
     public OpenPGPKey parseKey(InputStream inputStream)
             throws IOException
     {
         return parseKey(Streams.readAll(inputStream));
     }
 
+    /**
+     * Parse an {@link OpenPGPKey} from bytes.
+     *
+     * @param bytes ASCII armored or binary key
+     * @return parsed key
+     * @throws IOException if the key cannot be parsed.
+     */
     public OpenPGPKey parseKey(byte[] bytes)
             throws IOException
     {
