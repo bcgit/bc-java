@@ -30,6 +30,18 @@ public abstract class X25519
         return !Arrays.areAllZeroes(r, rOff, POINT_SIZE);
     }
 
+    public static void clampPrivateKey(byte[] k)
+    {
+        if (k.length != SCALAR_SIZE)
+        {
+            throw new IllegalArgumentException("k");
+        }
+
+        k[0] &= 0xF8;
+        k[SCALAR_SIZE - 1] &= 0x7F;
+        k[SCALAR_SIZE - 1] |= 0x40;
+    }
+
     private static int decode32(byte[] bs, int off)
     {
         int n = bs[off] & 0xFF;
@@ -60,9 +72,7 @@ public abstract class X25519
 
         random.nextBytes(k);
 
-        k[0] &= 0xF8;
-        k[SCALAR_SIZE - 1] &= 0x7F;
-        k[SCALAR_SIZE - 1] |= 0x40;
+        clampPrivateKey(k);
     }
 
     public static void generatePublicKey(byte[] k, int kOff, byte[] r, int rOff)
