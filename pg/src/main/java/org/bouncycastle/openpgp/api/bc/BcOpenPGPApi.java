@@ -2,22 +2,36 @@ package org.bouncycastle.openpgp.api.bc;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
+import org.bouncycastle.openpgp.api.OpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 
 import java.util.Date;
 
+/**
+ * Implementation of {@link OpenPGPApi} using Bouncy Castles implementation of OpenPGP classes.
+ */
 public class BcOpenPGPApi
         extends OpenPGPApi
 {
     public BcOpenPGPApi()
     {
-        super(new BcOpenPGPImplementation());
+        this(new BcOpenPGPImplementation());
+    }
+
+    public BcOpenPGPApi(OpenPGPImplementation implementation)
+    {
+        super(implementation);
     }
 
     public BcOpenPGPApi(OpenPGPPolicy policy)
     {
-        super(new BcOpenPGPImplementation(), policy);
+        this(new BcOpenPGPImplementation(), policy);
+    }
+
+    public BcOpenPGPApi(OpenPGPImplementation implementation, OpenPGPPolicy policy)
+    {
+        super(implementation, policy);
     }
 
     @Override

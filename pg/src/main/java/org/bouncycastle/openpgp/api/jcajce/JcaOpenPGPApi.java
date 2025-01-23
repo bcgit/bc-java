@@ -10,6 +10,9 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Date;
 
+/**
+ * Implementation of {@link OpenPGPApi} using the JCA/JCE implementation of OpenPGP classes.
+ */
 public class JcaOpenPGPApi
         extends OpenPGPApi
 {

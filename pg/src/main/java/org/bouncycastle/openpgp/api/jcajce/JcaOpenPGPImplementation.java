@@ -44,6 +44,9 @@ import java.io.InputStream;
 import java.security.Provider;
 import java.security.SecureRandom;
 
+/**
+ * Implementation of {@link OpenPGPImplementation} using the JCA/JCE implementation of OpenPGP classes.
+ */
 public class JcaOpenPGPImplementation
         extends OpenPGPImplementation
 {

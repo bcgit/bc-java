@@ -40,6 +40,9 @@ import org.bouncycastle.openpgp.operator.bc.BcSessionKeyDataDecryptorFactory;
 
 import java.io.InputStream;
 
+/**
+ * Implementation of {@link OpenPGPImplementation} using Bouncy Castles implementation of OpenPGP classes.
+ */
 public class BcOpenPGPImplementation
         extends OpenPGPImplementation
 {

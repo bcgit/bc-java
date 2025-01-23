@@ -7,6 +7,9 @@ import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Date;
 
+/**
+ * JCA/JCE implementation of the {@link OpenPGPKeyGenerator}.
+ */
 public class JcaOpenPGPKeyGenerator
     extends OpenPGPKeyGenerator
 {
