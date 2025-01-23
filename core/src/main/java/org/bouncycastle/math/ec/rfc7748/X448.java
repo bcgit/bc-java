@@ -31,6 +31,17 @@ public abstract class X448
         return !Arrays.areAllZeroes(r, rOff, POINT_SIZE);
     }
 
+    public static void clampPrivateKey(byte[] k)
+    {
+        if (k.length != SCALAR_SIZE)
+        {
+            throw new IllegalArgumentException("k");
+        }
+
+        k[0] &= 0xFC;
+        k[SCALAR_SIZE - 1] |= 0x80;
+    }
+
     private static int decode32(byte[] bs, int off)
     {
         int n = bs[  off] & 0xFF;
@@ -60,8 +71,7 @@ public abstract class X448
 
         random.nextBytes(k);
 
-        k[0] &= 0xFC;
-        k[SCALAR_SIZE - 1] |= 0x80;
+        clampPrivateKey(k);
     }
 
     public static void generatePublicKey(byte[] k, int kOff, byte[] r, int rOff)

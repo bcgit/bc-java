@@ -5,10 +5,12 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
-import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.RawAgreement;
+import org.bouncycastle.crypto.agreement.BasicRawAgreement;
 import org.bouncycastle.crypto.agreement.ECDHCBasicAgreement;
-import org.bouncycastle.crypto.agreement.XDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.X25519Agreement;
+import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
@@ -27,6 +29,8 @@ import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.math.ec.WNafUtil;
+import org.bouncycastle.math.ec.rfc7748.X25519;
+import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Pack;
@@ -37,7 +41,7 @@ class DHKEM
 {
     private AsymmetricCipherKeyPairGenerator kpGen;
 
-    private BasicAgreement agreement;
+    private RawAgreement rawAgreement;
 
     // kem ids
     private final short kemId;
@@ -59,7 +63,7 @@ class DHKEM
         case HPKE.kem_P256_SHA256:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
             domainParams = getDomainParameters("P-256");
-            this.agreement = new ECDHCBasicAgreement();
+            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
             bitmask = (byte)0xff;
             Nsk = 32;
             Nsecret = 32;
@@ -72,7 +76,7 @@ class DHKEM
         case HPKE.kem_P384_SHA348:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA384);
             domainParams = getDomainParameters("P-384");
-            this.agreement = new ECDHCBasicAgreement();
+            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
             bitmask = (byte)0xff;
             Nsk = 48;
             Nsecret = 48;
@@ -85,7 +89,7 @@ class DHKEM
         case HPKE.kem_P521_SHA512:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
             domainParams = getDomainParameters("P-521");
-            this.agreement = new ECDHCBasicAgreement();
+            rawAgreement = new BasicRawAgreement(new ECDHCBasicAgreement());
             bitmask = 0x01;
             Nsk = 66;
             Nsecret = 64;
@@ -97,7 +101,7 @@ class DHKEM
             break;
         case HPKE.kem_X25519_SHA256:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA256);
-            this.agreement = new XDHBasicAgreement();
+            rawAgreement = new X25519Agreement();
             Nsecret = 32;
             Nsk = 32;
             Nenc = 32;
@@ -108,7 +112,7 @@ class DHKEM
             break;
         case HPKE.kem_X448_SHA512:
             this.hkdf = new HKDF(HPKE.kdf_HKDF_SHA512);
-            this.agreement = new XDHBasicAgreement();
+            rawAgreement = new X448Agreement();
             Nsecret = 64;
             Nsk = 56;
             Nenc = 56;
@@ -129,6 +133,10 @@ class DHKEM
         case HPKE.kem_P256_SHA256:
         case HPKE.kem_P384_SHA348:
         case HPKE.kem_P521_SHA512:
+            /*
+             * RFC 9180 7.1.1. For P-256, P-384, and P-521, the SerializePublicKey() function of the KEM performs
+             * the uncompressed Elliptic-Curve-Point-to-Octet-String conversion according to [SECG].
+             */
             return ((ECPublicKeyParameters)key).getQ().getEncoded(false);
         case HPKE.kem_X448_SHA512:
             return ((X448PublicKeyParameters)key).getEncoded();
@@ -146,30 +154,74 @@ class DHKEM
         case HPKE.kem_P256_SHA256:
         case HPKE.kem_P384_SHA348:
         case HPKE.kem_P521_SHA512:
+        {
+            /*
+             * RFC 9180 7.1.2. For P-256, P-384, and P-521, the SerializePrivateKey() function of the KEM
+             * performs the Field-Element-to-Octet-String conversion according to [SECG].
+             */
             return BigIntegers.asUnsignedByteArray(Nsk, ((ECPrivateKeyParameters)key).getD());
+        }
         case HPKE.kem_X448_SHA512:
-            return ((X448PrivateKeyParameters)key).getEncoded();
+        {
+            /*
+             * RFC 9180 7.1.2. For [..] X448 [..]. The SerializePrivateKey() function MUST clamp its output
+             * [..].
+             * 
+             * NOTE: Our X448 implementation clamps generated keys, but de-serialized keys are preserved as is
+             * (clamping applied only during usage).
+             */
+            byte[] encoded = ((X448PrivateKeyParameters)key).getEncoded();
+            X448.clampPrivateKey(encoded);
+            return encoded;
+        }
         case HPKE.kem_X25519_SHA256:
-            return ((X25519PrivateKeyParameters)key).getEncoded();
+        {
+            /*
+             * RFC 9180 7.1.2. For X25519 [..]. The SerializePrivateKey() function MUST clamp its output [..].
+             * 
+             * NOTE: Our X25519 implementation clamps generated keys, but de-serialized keys are preserved as
+             * is (clamping applied only during usage).
+             */
+            byte[] encoded = ((X25519PrivateKeyParameters)key).getEncoded();
+            X25519.clampPrivateKey(encoded);
+            return encoded;
+        }
         default:
             throw new IllegalStateException("invalid kem id");
         }
     }
 
-    public AsymmetricKeyParameter DeserializePublicKey(byte[] encoded)
+    public AsymmetricKeyParameter DeserializePublicKey(byte[] pkEncoded)
     {
+        if (pkEncoded == null)
+        {
+            throw new NullPointerException("'pkEncoded' cannot be null");
+        }
+        if (pkEncoded.length != Nenc)
+        {
+            throw new IllegalArgumentException("'pkEncoded' has invalid length");
+        }
+
         switch (kemId)
         {
         case HPKE.kem_P256_SHA256:
         case HPKE.kem_P384_SHA348:
         case HPKE.kem_P521_SHA512:
-            // TODO Does the encoding have to be uncompressed? (i.e. encoded.length MUST be Nenc?)
-            ECPoint G = domainParams.getCurve().decodePoint(encoded);
+            /*
+             * RFC 9180 7.1.1. For P-256, P-384, and P-521 [..]. DeserializePublicKey() performs the
+             * uncompressed Octet-String-to-Elliptic-Curve-Point conversion.
+             */
+            if (pkEncoded[0] != 0x04) // "0x04" is the marker for an uncompressed encoding
+            {
+                throw new IllegalArgumentException("'pkEncoded' has invalid format");
+            }
+
+            ECPoint G = domainParams.getCurve().decodePoint(pkEncoded);
             return new ECPublicKeyParameters(G, domainParams);
         case HPKE.kem_X448_SHA512:
-            return new X448PublicKeyParameters(encoded);
+            return new X448PublicKeyParameters(pkEncoded);
         case HPKE.kem_X25519_SHA256:
-            return new X25519PublicKeyParameters(encoded);
+            return new X25519PublicKeyParameters(pkEncoded);
         default:
             throw new IllegalStateException("invalid kem id");
         }
@@ -198,6 +250,10 @@ class DHKEM
         case HPKE.kem_P256_SHA256:
         case HPKE.kem_P384_SHA348:
         case HPKE.kem_P521_SHA512:
+            /*
+             * RFC 9180 7.1.2. For P-256, P-384, and P-521 [..]. DeserializePrivateKey() performs the Octet-
+             * String-to-Field-Element conversion according to [SECG].
+             */
             BigInteger d = new BigInteger(1, skEncoded);
             ECPrivateKeyParameters ec = new ECPrivateKeyParameters(d, domainParams);
 
@@ -317,7 +373,7 @@ class DHKEM
         byte[][] output = new byte[2][];
 
         // DH
-        byte[] secret = calculateAgreement(agreement, kpE.getPrivate(), pkR);
+        byte[] secret = calculateRawAgreement(rawAgreement, kpE.getPrivate(), pkR);
 
         byte[] enc = SerializePublicKey(kpE.getPublic());
         byte[] pkRm = SerializePublicKey(pkR);
@@ -335,7 +391,7 @@ class DHKEM
         AsymmetricKeyParameter pkE = DeserializePublicKey(enc);
 
         // DH
-        byte[] secret = calculateAgreement(agreement, kpR.getPrivate(), pkE);
+        byte[] secret = calculateRawAgreement(rawAgreement, kpR.getPrivate(), pkE);
 
         byte[] pkRm = SerializePublicKey(kpR.getPublic());
         byte[] KEMContext = Arrays.concatenate(enc, pkRm);
@@ -350,12 +406,22 @@ class DHKEM
         AsymmetricCipherKeyPair kpE = kpGen.generateKeyPair(); // todo: can be replaced with deriveKeyPair(random)
 
         // DH(skE, pkR)
-        byte[] secret1 = calculateAgreement(agreement, kpE.getPrivate(), pkR);
+        rawAgreement.init(kpE.getPrivate());
+        int agreementSize = rawAgreement.getAgreementSize();
+
+        byte[] secret = new byte[agreementSize * 2];
+
+        rawAgreement.calculateAgreement(pkR, secret, 0);
 
         // DH(skS, pkR)
-        byte[] secret2 = calculateAgreement(agreement, kpS.getPrivate(), pkR);
+        rawAgreement.init(kpS.getPrivate());
+        if (agreementSize != rawAgreement.getAgreementSize())
+        {
+            throw new IllegalStateException();
+        }
 
-        byte[] secret = Arrays.concatenate(secret1, secret2);
+        rawAgreement.calculateAgreement(pkR, secret, agreementSize);
+
         byte[] enc = SerializePublicKey(kpE.getPublic());
 
         byte[] pkRm = SerializePublicKey(pkR);
@@ -373,13 +439,16 @@ class DHKEM
     {
         AsymmetricKeyParameter pkE = DeserializePublicKey(enc);
 
+        rawAgreement.init(kpR.getPrivate());
+
+        int agreementSize = rawAgreement.getAgreementSize();
+        byte[] secret = new byte[agreementSize * 2];
+
         // DH(skR, pkE)
-        byte[] secret1 = calculateAgreement(agreement, kpR.getPrivate(), pkE);
+        rawAgreement.calculateAgreement(pkE, secret, 0);
 
         // DH(skR, pkS)
-        byte[] secret2 = calculateAgreement(agreement, kpR.getPrivate(), pkS);
-
-        byte[] secret = Arrays.concatenate(secret1, secret2);
+        rawAgreement.calculateAgreement(pkS, secret, agreementSize);
 
         byte[] pkRm = SerializePublicKey(kpR.getPublic());
         byte[] pkSm = SerializePublicKey(pkS);
@@ -397,12 +466,13 @@ class DHKEM
         return hkdf.LabeledExpand(eae_prk, suiteID, "shared_secret", kemContext, Nsecret);
     }
 
-    private static byte[] calculateAgreement(BasicAgreement agreement, AsymmetricKeyParameter privateKey,
+    private static byte[] calculateRawAgreement(RawAgreement rawAgreement, AsymmetricKeyParameter privateKey,
         AsymmetricKeyParameter publicKey)
     {
-        agreement.init(privateKey);
-        BigInteger z = agreement.calculateAgreement(publicKey);
-        return BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), z);
+        rawAgreement.init(privateKey);
+        byte[] z = new byte[rawAgreement.getAgreementSize()];
+        rawAgreement.calculateAgreement(publicKey, z, 0);
+        return z;
     }
 
     private static ECDomainParameters getDomainParameters(String curveName)
