@@ -43,13 +43,12 @@ public class PhotonBeetleDigest
 
     public PhotonBeetleDigest()
     {
+        super(ProcessingBufferType.Buffered, 4);
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
         DigestSize = 32;
         algorithmName = "Photon-Beetle Hash";
-        BlockSize = 4;
         blockCount = 0;
-        m_buf = new byte[BlockSize];
     }
 
     @Override
@@ -93,7 +92,7 @@ public class PhotonBeetleDigest
             {
                 state[m_bufPos] ^= 0x01; // ozs
             }
-            state[STATE_INBYTES - 1] ^= (m_bufPos == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
+            state[STATE_INBYTES - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
         PHOTON_Permutation();
         int SQUEEZE_RATE_INBYTES = 16;

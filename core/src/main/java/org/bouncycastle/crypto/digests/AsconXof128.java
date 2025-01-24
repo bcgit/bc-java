@@ -18,7 +18,7 @@ public class AsconXof128
     extends AsconBaseDigest
     implements Xof
 {
-    private boolean m_squeezing = false;
+    private boolean m_squeezing;
 
     public AsconXof128()
     {
@@ -94,12 +94,6 @@ public class AsconXof128
         int rlt = doOutput(output, outOff, outLen);
         reset();
         return rlt;
-    }
-
-    @Override
-    public int getByteLength()
-    {
-        return 8;
     }
 
     @Override
