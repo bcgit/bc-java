@@ -2,8 +2,6 @@ package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.sig.RevocationReasonTags;
-import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
@@ -12,14 +10,12 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 
 import java.io.IOException;
 import java.util.Date;
 
 public class OpenPGPKeyEditorTest
-    extends AbstractPacketTest
+    extends APITest
 {
 
     @Override
@@ -28,18 +24,7 @@ public class OpenPGPKeyEditorTest
         return "OpenPGPKeyEditorTest";
     }
 
-    @Override
-    public void performTest()
-            throws Exception
-    {
-        OpenPGPApi api = new BcOpenPGPApi();
-        performTestWith(api);
-
-        api = new JcaOpenPGPApi(new BouncyCastleProvider());
-        performTestWith(api);
-    }
-
-    private void performTestWith(OpenPGPApi api)
+    protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
         doNothingTest(api);
@@ -94,8 +79,8 @@ public class OpenPGPKeyEditorTest
     {
         OpenPGPKey key = api.readKeyOrCertificate()
                 .parseKey(OpenPGPTestKeys.ALICE_KEY);
-        Date now = new Date();
-        Date oneHourAgo = new Date(new Date().getTime() - (1000 * 60 * 60));
+        Date now = currentTimeRounded();
+        Date oneHourAgo = new Date(now.getTime() - (1000 * 60 * 60));
         OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
         isNotNull(userId);
         isTrue(userId.isBound());
@@ -130,8 +115,8 @@ public class OpenPGPKeyEditorTest
     {
         OpenPGPKey key = api.readKeyOrCertificate()
                 .parseKey(OpenPGPTestKeys.ALICE_KEY);
-        Date now = new Date();
-        Date oneHourAgo = new Date(new Date().getTime() - (1000 * 60 * 60));
+        Date now = currentTimeRounded();
+        Date oneHourAgo = new Date(now.getTime() - (1000 * 60 * 60));
         OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
         isNotNull(userId);
         isTrue(userId.isBound());
@@ -210,7 +195,7 @@ public class OpenPGPKeyEditorTest
     private void extendExpirationTimeTest(OpenPGPApi api)
             throws PGPException
     {
-        Date n0 = new Date((new Date().getTime() / 1000) * 1000);
+        Date n0 = currentTimeRounded();
         OpenPGPKey key = api.generateKey(n0, false)
                 .classicKey(null)
                 .build();

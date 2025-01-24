@@ -6,8 +6,6 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
@@ -20,8 +18,6 @@ import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 
@@ -32,7 +28,7 @@ import java.util.Date;
 import java.util.List;
 
 public class OpenPGPCertificateTest
-        extends AbstractPacketTest
+        extends APITest
 {
 
     @Override
@@ -42,14 +38,7 @@ public class OpenPGPCertificateTest
     }
 
     @Override
-    public void performTest()
-            throws Exception
-    {
-        performTestsWith(new BcOpenPGPApi());
-        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
-    }
-
-    private void performTestsWith(OpenPGPApi api)
+    protected void performTestWith(OpenPGPApi api)
             throws IOException, PGPException
     {
         testOpenPGPv6Key(api);

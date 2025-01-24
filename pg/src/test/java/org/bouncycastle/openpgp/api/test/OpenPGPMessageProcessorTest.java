@@ -3,8 +3,6 @@ package org.bouncycastle.openpgp.api.test;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
-import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
@@ -17,8 +15,6 @@ import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
@@ -31,7 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class OpenPGPMessageProcessorTest
-        extends AbstractPacketTest
+        extends APITest
 {
     private static final byte[] PLAINTEXT = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
 
@@ -43,16 +39,8 @@ public class OpenPGPMessageProcessorTest
         return "OpenPGPMessageProcessorTest";
     }
 
-    @Override
-    public void performTest()
-            throws Exception
-    {
-        performTestsWith(new BcOpenPGPApi());
-        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
-    }
-
-    private void performTestsWith(OpenPGPApi api)
-            throws Exception
+    protected void performTestWith(OpenPGPApi api)
+            throws PGPException, IOException
     {
         testVerificationOfSEIPD1MessageWithTamperedCiphertext(api);
 

@@ -1,8 +1,6 @@
 package org.bouncycastle.openpgp.api.test;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
-import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
@@ -10,8 +8,6 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
@@ -20,7 +16,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class OpenPGPMessageGeneratorTest
-        extends AbstractPacketTest
+        extends APITest
 {
 
     @Override
@@ -29,15 +25,7 @@ public class OpenPGPMessageGeneratorTest
         return "OpenPGPMessageGeneratorTest";
     }
 
-    @Override
-    public void performTest()
-            throws Exception
-    {
-        performTestsWith(new BcOpenPGPApi());
-        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
-    }
-
-    private void performTestsWith(OpenPGPApi api)
+    protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
         armoredLiteralDataPacket(api);

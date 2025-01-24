@@ -12,7 +12,6 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -29,17 +28,14 @@ import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPApi;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
-import org.bouncycastle.openpgp.test.AbstractPgpKeyPairTest;
 
 public class OpenPGPV6KeyGeneratorTest
-    extends AbstractPgpKeyPairTest
+    extends APITest
 {
     @Override
     public String getName()
@@ -48,17 +44,7 @@ public class OpenPGPV6KeyGeneratorTest
     }
 
     @Override
-    public void performTest()
-        throws Exception
-    {
-        // Run tests using the BC implementation
-        performTestsWith(new BcOpenPGPApi());
-
-        // Run tests using the JCA/JCE implementation
-        performTestsWith(new JcaOpenPGPApi(new BouncyCastleProvider()));
-    }
-
-    private void performTestsWith(OpenPGPApi api)
+    protected void performTestWith(OpenPGPApi api)
         throws PGPException, IOException
     {
         testGenerateCustomKey(api);
