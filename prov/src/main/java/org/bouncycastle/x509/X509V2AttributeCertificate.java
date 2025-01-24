@@ -265,12 +265,12 @@ public class X509V2AttributeCertificate
     {
         return getExtensionOIDs(true);
     }
-    
+
     public boolean hasUnsupportedCriticalExtension()
     {
-        Set  extensions = getCriticalExtensionOIDs();
+        Extensions extensions = cert.getAcinfo().getExtensions();
 
-        return extensions != null && !extensions.isEmpty();
+        return extensions != null && extensions.hasAnyCriticalExtensions();
     }
 
     public X509Attribute[] getAttributes()
