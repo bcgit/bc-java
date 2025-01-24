@@ -1,24 +1,25 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
 abstract class AsconBaseDigest
-    implements ExtendedDigest
+    extends BufferBaseDigest
 {
     protected long x0;
     protected long x1;
     protected long x2;
     protected long x3;
     protected long x4;
-    protected final int DigestSize = 32;
-    protected final int BlockSize = 8;
     protected int ASCON_PB_ROUNDS = 12;
-    protected final byte[] m_buf = new byte[BlockSize];
-    protected int m_bufPos = 0;
+
+    protected AsconBaseDigest()
+    {
+        DigestSize = 32;
+        BlockSize = 8;
+        m_buf = new byte[BlockSize];
+    }
 
     private void round(long C)
     {
@@ -66,67 +67,17 @@ abstract class AsconBaseDigest
 
     protected abstract void setBytes(long w, byte[] bytes, int inOff, int n);
 
-    @Override
-    public int getDigestSize()
+    protected void processBytes(byte[] input, int inOff)
     {
-        return DigestSize;
+        x0 ^= loadBytes(input, inOff);
+        p(ASCON_PB_ROUNDS);
     }
 
-    @Override
-    public int getByteLength()
+    protected void finish(byte[] output, int outOff)
     {
-        return BlockSize;
-    }
-
-    @Override
-    public void update(byte in)
-    {
-        m_buf[m_bufPos] = in;
-        if (++m_bufPos == BlockSize)
-        {
-            x0 ^= loadBytes(m_buf, 0);
-            p(ASCON_PB_ROUNDS);
-            m_bufPos = 0;
-        }
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-        int available = 8 - m_bufPos;
-        if (len < available)
-        {
-            System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-            m_bufPos += len;
-            return;
-        }
-        int inPos = 0;
-        if (m_bufPos > 0)
-        {
-            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-            inPos += available;
-            x0 ^= loadBytes(m_buf, 0);
-            p(ASCON_PB_ROUNDS);
-        }
-        int remaining;
-        while ((remaining = len - inPos) >= 8)
-        {
-            x0 ^= loadBytes(input, inOff + inPos);
-            p(ASCON_PB_ROUNDS);
-            inPos += 8;
-        }
-        System.arraycopy(input, inOff + inPos, m_buf, 0, remaining);
-        m_bufPos = remaining;
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-    {
-        return hash(output, outOff, DigestSize);
+        padAndAbsorb();
+        /* squeeze full output blocks */
+        squeeze(output, outOff, DigestSize);
     }
 
     protected void padAndAbsorb()
