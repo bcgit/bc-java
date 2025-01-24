@@ -487,7 +487,7 @@ public abstract class CipherTest
                         mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv, test);
                     }
                 }
-                System.out.println("pass " + count);
+                //System.out.println("pass " + count);
                 map.clear();
             }
             else
@@ -536,7 +536,7 @@ public abstract class CipherTest
 
             if (0 != cipher.getUpdateOutputSize(0))
             {
-                test.fail("");
+                test.fail("fail in implTestBufferingEngine encryption");
             }
 
             length += cipher.processBytes(plaintext, split, plaintextLength - split, output, length);
@@ -560,7 +560,7 @@ public abstract class CipherTest
 
             if (0 != cipher.getUpdateOutputSize(0))
             {
-                test.fail("");
+                test.fail("fail in implTestBufferingEngine decryption");
             }
 
             length += cipher.processBytes(ciphertext, split, ciphertextLength - split, output, length);
@@ -702,7 +702,11 @@ public abstract class CipherTest
         try
         {
             cipher.processAADByte((byte)0);
-            test.fail("processAADByte(s) cannot be called after encryption/decryption");
+            // Romuls-M stores message into Stream, so the procssAADbyte(s) is allowed
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("processAADByte(s) cannot be called after encryption/decryption");
+            }
         }
         catch (IllegalStateException e)
         {
@@ -711,7 +715,10 @@ public abstract class CipherTest
         try
         {
             cipher.processAADBytes(new byte[]{0}, 0, 1);
-            test.fail("processAADByte(s) cannot be called once only");
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("processAADByte(s) cannot be called once only");
+            }
         }
         catch (IllegalStateException e)
         {
@@ -742,7 +749,10 @@ public abstract class CipherTest
         {
             int need = cipher.getUpdateOutputSize(64);
             cipher.processBytes(new byte[64], 0, 64, new byte[need], 1);
-            test.fail("output for processBytes is too short");
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("output for processBytes is too short");
+            }
         }
         catch (OutputLengthException e)
         {

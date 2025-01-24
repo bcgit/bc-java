@@ -27,10 +27,19 @@ public class RomulusTest
     public void performTest()
         throws Exception
     {
-        //CipherTest.implTestVectorsEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM), "crypto/romulus", "m_LWC_AEAD_KAT_128_128.txt", this);
+        CipherTest.implTestVectorsEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM), "crypto/romulus", "m_LWC_AEAD_KAT_128_128.txt", this);
         CipherTest.implTestVectorsEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT), "crypto/romulus", "t_LWC_AEAD_KAT_128_128.txt", this);
         CipherTest.implTestVectorsEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN), "crypto/romulus", "n_LWC_AEAD_KAT_128_128.txt", this);
 
+        //TODO: StreamDataOperator does not suit for implTestBufferingEngine
+//        CipherTest.implTestBufferingEngine(16, 16, 128, this, new CipherTest.Instance()
+//        {
+//            @Override
+//            public AEADCipher createInstance()
+//            {
+//                return new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM);
+//            }
+//        });
         CipherTest.implTestBufferingEngine(16, 16, 128, this, new CipherTest.Instance()
         {
             @Override
@@ -47,6 +56,15 @@ public class RomulusTest
                 return new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN);
             }
         });
+        //TODO: StreamDataOperator does not suit for implTestExceptionsEngine
+//        CipherTest.implTestExceptionsEngine(16, 16, this, new CipherTest.Instance()
+//        {
+//            @Override
+//            public AEADCipher createInstance()
+//            {
+//                return new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM);
+//            }
+//        });
         CipherTest.implTestExceptionsEngine(16, 16, this, new CipherTest.Instance()
         {
             @Override
@@ -63,13 +81,23 @@ public class RomulusTest
                 return new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN);
             }
         });
+        implTestParametersEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM), 16, 16, 16);
         implTestParametersEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT), 16, 16, 16);
         implTestParametersEngine(new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN), 16, 16, 16);
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));
 
+        CipherTest.checkCipher(16, 16, 40, 128, new CipherTest.Instance()
+        {
+            public AEADCipher createInstance()
+            {
+                return new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM);
+            }
+        });
         CipherTest.checkCipher(16, 16, 40, 128, new CipherTest.Instance()
         {
             public AEADCipher createInstance()

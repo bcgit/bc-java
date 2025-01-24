@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**

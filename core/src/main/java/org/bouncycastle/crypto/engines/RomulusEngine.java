@@ -81,10 +81,10 @@ public class RomulusEngine
         CNT = new byte[7];
         switch (romulusParameters)
         {
-//        case RomulusM:
-//            algorithmName = "Romulus-M";
-//            instance = new RomulusM();
-//            break;
+        case RomulusM:
+            algorithmName = "Romulus-M";
+            instance = new RomulusM();
+            break;
         case RomulusN:
             algorithmName = "Romulus-N";
             instance = new RomulusN();
@@ -95,7 +95,7 @@ public class RomulusEngine
             instance = new RomulusT();
             break;
         }
-        setInnerMembers(romulusParameters == RomulusParameters.RomulusT ? ProcessingBufferType.Immediate : ProcessingBufferType.Buffered,
+        setInnerMembers(romulusParameters == RomulusParameters.RomulusN ? ProcessingBufferType.Buffered : ProcessingBufferType.Immediate,
             AADOperatorType.Counter,
             romulusParameters == RomulusParameters.RomulusM ? DataOperatorType.Stream : DataOperatorType.Counter);
     }
@@ -115,186 +115,227 @@ public class RomulusEngine
         void reset();
     }
 
-//    private class RomulusM
-//        implements Instance
-//    {
-//        byte[] mac_s = new byte[16];
-//        byte[] mac_CNT = new byte[7];
-//
-//        byte[] s = new byte[16];
-//        byte[] CNT = new byte[7];
-//        boolean isfirstblock;
-//
-//
-//        public RomulusM()
-//        {
-//            mac = new byte[16];
-//            reset_lfsr_gf56(mac_CNT);
-//            isfirstblock = true;
-//        }
-//
-//        @Override
-//        public void processFinalBlock(byte[] output, int outOff)
-//        {
-//            byte w = 48;
-//            if ((aadLen & 31) == 0 && aadLen != 0)
-//            {
-//                w ^= 8;
-//            }
-//            else if ((aadLen & 31) < AD_BLK_LEN_HALF)
-//            {
-//                w ^= 2;
-//            }
-//            else if ((aadLen & 31) != AD_BLK_LEN_HALF)
-//            {
-//                w ^= 10;
-//            }
-//            if ((messegeLen & 31) == 0 && messegeLen != 0)
-//            {
-//                w ^= 4;
-//            }
-//            else if ((messegeLen & 31) < AD_BLK_LEN_HALF)
-//            {
-//                w ^= 1;
-//            }
-//            else if ((messegeLen & 31) != AD_BLK_LEN_HALF)
-//            {
-//                w ^= 5;
-//            }
-//            if (forEncryption)
-//            {
-//                if ((w & 8) == 0 && isfirstblock)
-//                {
-//                    byte[] Temp = new byte[16];
-//                    int len8 = Math.min(messegeLen, AD_BLK_LEN_HALF);
-//                    pad(m_buf, 0, Temp, AD_BLK_LEN_HALF, len8);
-//                    block_cipher(mac_s, k, Temp, 0, mac_CNT, (byte)44);
-//                    lfsr_gf56(mac_CNT);
-//                }
-//                else if (messegeLen == 0)
-//                {
-//                    lfsr_gf56(mac_CNT);
-//                }
-//            }
-//            nonce_encryption(npub, mac_CNT, mac_s, k, w);
-//            // Tag generation
-//            g8A(mac_s, mac, 0);
-//        }
-//
-//        @Override
-//        public void processBufferAAD(byte[] input, int inOff)
-//        {
-//            byte[] mp = new byte[16];
-//            // Rho(S,A) pads an A block and XORs it to the internal state.
-//            pad(input, inOff, mp, 16, 16);
-//            for (int i = 0; i < 16; i++)
-//            {
-//                mac_s[i] = (byte)(mac_s[i] ^ input[inOff + i]);
-//            }
-//            lfsr_gf56(mac_CNT);
-//            inOff += 16;
-//            block_cipher(mac_s, k, input, inOff, CNT, (byte)40);
-//            lfsr_gf56(mac_CNT);
-//        }
-//
-//        @Override
-//        public void processFinalAAD()
-//        {
-//            if (aadLen == 0)
-//            {
-//                // AD is an empty string
-//                lfsr_gf56(mac_CNT);
-//            }
-//            else if (m_aadPos != 0)
-//            {
-//                byte[] T = new byte[16];
-//                pad(m_aad, 0, T, 16, m_aadPos);
-//                block_cipher(mac_s, k, T, 0, mac_CNT, (byte)40);
-//                lfsr_gf56(mac_CNT);
-//                if (m_aadPos > 16)
-//                {
-//                    int len8 = Math.min(m_aadPos - 16, 16);
-//                    pad(m_aad, 16, T, 16, len8);
-//                    block_cipher(s, k, T, 0, CNT, (byte)40);
-//                    lfsr_gf56(CNT);
-//                }
-//            }
-//            m_aadPos = 0;
-//        }
-//
-//        @Override
-//        public void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
-//        {
-//            if ((aadLen == 0 || ((aadLen & 31) > 0 && (aadLen & 31) < 15)))
-//            {
-//                block_cipher(mac_s, k, input, inOff, mac_CNT, (byte)44);
-//                lfsr_gf56(mac_CNT);
-//                for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-//                {
-//                    mac_s[i] = (byte)(mac_s[i] ^ input[inOff + 16 + i]);
-//                }
-//                lfsr_gf56(mac_CNT);
-//            }
-//            else
-//            {
-//                for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-//                {
-//                    mac_s[i] = (byte)(mac_s[i] ^ input[inOff + i]);
-//                }
-//                lfsr_gf56(mac_CNT);
-//                block_cipher(mac_s, k, input, inOff + AD_BLK_LEN_HALF, mac_CNT, (byte)44);
-//                lfsr_gf56(mac_CNT);
-//            }
-//            if (isfirstblock)
-//            {
-//                isfirstblock = false;
-//                nonce_encryption(npub, CNT, s, k, (byte)36);
-//            }
-//            rho(input, inOff, output, outOff, s, AD_BLK_LEN_HALF);
-//            lfsr_gf56(CNT);
-//        }
-//
-//        @Override
-//        public void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
-//        {
-//            if (isfirstblock)
-//            {
-//                isfirstblock = false;
-//                nonce_encryption(npub, CNT, s, k, (byte)36);
-//            }
-//            rho(input, inOff, output, outOff, s, AD_BLK_LEN_HALF);
-//            lfsr_gf56(CNT);
-//            if ((aadLen == 0 || ((aadLen & 31) > 0 && (aadLen & 31) < 15)))
-//            {
-//                block_cipher(mac_s, k, output, outOff, mac_CNT, (byte)44);
-//                lfsr_gf56(mac_CNT);
-//                for (int i = 0; i < 16; i++)
-//                {
-//                    mac_s[i] = (byte)(mac_s[i] ^ output[outOff + AD_BLK_LEN_HALF + i]);
-//                }
-//                lfsr_gf56(mac_CNT);
-//            }
-//            else
-//            {
-//                for (int i = 0; i < 16; i++)
-//                {
-//                    mac_s[i] = (byte)(mac_s[i] ^ output[outOff + i]);
-//                }
-//                lfsr_gf56(mac_CNT);
-//                block_cipher(mac_s, k, output, outOff + AD_BLK_LEN_HALF, mac_CNT, (byte)44);
-//                lfsr_gf56(mac_CNT);
-//            }
-//        }
-//
-//        @Override
-//        public void reset()
-//        {
-//            Arrays.clear(s);
-//            Arrays.clear(CNT);
-//            Arrays.clear(mac_s);
-//            Arrays.clear(mac_CNT);
-//        }
-//    }
+    private class RomulusM
+        implements Instance
+    {
+        byte[] mac_s = new byte[16];
+        byte[] mac_CNT = new byte[7];
+
+        byte[] s = new byte[16];
+        byte[] CNT = new byte[7];
+        int offset;
+        boolean twist = true;
+
+        public RomulusM()
+        {
+        }
+
+        @Override
+        public void processFinalBlock(byte[] output, int outOff)
+        {
+            byte w = 48;
+            int adlen = aadOperator.getLen();
+            int mlen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
+            byte[] m = ((StreamDataOperator)dataOperator).getBytes();
+            mac = new byte[MAC_SIZE];
+            int xlen, mOff = 0, mauth = 0;
+            xlen = mlen;
+            if ((adlen & 31) == 0 && adlen != 0)
+            {
+                w ^= 8;
+            }
+            else if ((adlen & 31) < AD_BLK_LEN_HALF)
+            {
+                w ^= 2;
+            }
+            else if ((adlen & 31) != AD_BLK_LEN_HALF)
+            {
+                w ^= 10;
+            }
+            if ((mlen & 31) == 0 && mlen != 0)
+            {
+                w ^= 4;
+            }
+            else if ((mlen & 31) < AD_BLK_LEN_HALF)
+            {
+                w ^= 1;
+            }
+            else if ((mlen & 31) != AD_BLK_LEN_HALF)
+            {
+                w ^= 5;
+            }
+            if (forEncryption)
+            {
+                if ((w & 8) == 0)
+                {
+                    byte[] Temp = new byte[16];
+                    int len8 = Math.min(xlen, AD_BLK_LEN_HALF);
+                    xlen -= len8;
+                    pad(m, mOff, Temp, AD_BLK_LEN_HALF, len8);
+                    block_cipher(mac_s, k, Temp, 0, mac_CNT, (byte)44);
+                    lfsr_gf56(mac_CNT);
+                    mOff += len8;
+                }
+                else if (mlen == 0)
+                {
+                    lfsr_gf56(mac_CNT);
+                }
+                while (xlen > 0)
+                {
+                    offset = mOff;
+                    xlen = ad_encryption(m, mOff, mac_s, k, xlen, mac_CNT, (byte)44);
+                    mOff = offset;
+                }
+                nonce_encryption(npub, mac_CNT, mac_s, k, w);
+                // Tag generation
+                g8A(mac_s, mac, 0);
+                mOff -= mlen;
+            }
+            else
+            {
+                System.arraycopy(m, mlen, mac, 0, MAC_SIZE);
+            }
+            reset_lfsr_gf56(CNT);
+            System.arraycopy(mac, 0, s, 0, AD_BLK_LEN_HALF);
+            if (mlen > 0)
+            {
+                nonce_encryption(npub, CNT, s, k, (byte)36);
+                while (mlen > AD_BLK_LEN_HALF)
+                {
+                    mlen = mlen - AD_BLK_LEN_HALF;
+                    rho(m, mOff, output, outOff, s, AD_BLK_LEN_HALF);
+                    outOff += AD_BLK_LEN_HALF;
+                    mOff += AD_BLK_LEN_HALF;
+                    lfsr_gf56(CNT);
+                    nonce_encryption(npub, CNT, s, k, (byte)36);
+                }
+                rho(m, mOff, output, outOff, s, mlen);
+            }
+            if (!forEncryption)
+            {
+                if ((w & 8) == 0)
+                {
+                    byte[] Temp = new byte[16];
+                    int len8 = Math.min(xlen, AD_BLK_LEN_HALF);
+                    xlen -= len8;
+                    pad(output, mauth, Temp, AD_BLK_LEN_HALF, len8);
+                    block_cipher(mac_s, k, Temp, 0, mac_CNT, (byte)44);
+                    lfsr_gf56(mac_CNT);
+                    mauth += len8;
+                }
+                else if (mlen == 0)
+                {
+                    lfsr_gf56(mac_CNT);
+                }
+                while (xlen > 0)
+                {
+                    offset = mauth;
+                    xlen = ad_encryption(output, mauth, mac_s, k, xlen, mac_CNT, (byte)44);
+                    mauth = offset;
+                }
+                nonce_encryption(npub, mac_CNT, mac_s, k, w);
+                // Tag generation
+                g8A(mac_s, mac, 0);
+                System.arraycopy(m, dataOperator.getLen() - MAC_SIZE, m_buf, 0, MAC_SIZE);
+                m_bufPos = 0;
+            }
+        }
+
+        int ad_encryption(byte[] A, int AOff, byte[] s, byte[] k, int adlen, byte[] CNT, byte D)
+        {
+            byte[] T = new byte[16];
+            byte[] mp = new byte[16];
+            int n = 16;
+            int i, len8;
+            len8 = Math.min(adlen, n);
+            adlen -= len8;
+            // Rho(S,A) pads an A block and XORs it to the internal state.
+            pad(A, AOff, mp, n, len8);
+            for (i = 0; i < n; i++)
+            {
+                s[i] = (byte)(s[i] ^ mp[i]);
+            }
+            offset = AOff += len8;
+            lfsr_gf56(CNT);
+            if (adlen != 0)
+            {
+                len8 = Math.min(adlen, n);
+                adlen -= len8;
+                pad(A, AOff, T, n, len8);
+                offset = AOff + len8;
+                block_cipher(s, k, T, 0, CNT, D);
+                lfsr_gf56(CNT);
+            }
+            return adlen;
+        }
+
+        @Override
+        public void processBufferAAD(byte[] input, int inOff)
+        {
+            if (twist)
+            {
+                for (int i = 0; i < 16; i++)
+                {
+                    mac_s[i] = (byte)(mac_s[i] ^ input[inOff + i]);
+                }
+            }
+            else
+            {
+                block_cipher(mac_s, k, input, inOff, mac_CNT, (byte)40);
+            }
+            twist = !twist;
+            lfsr_gf56(mac_CNT);
+        }
+
+        @Override
+        public void processFinalAAD()
+        {
+            if (aadOperator.getLen() == 0)
+            {
+                // AD is an empty string
+                lfsr_gf56(mac_CNT);
+            }
+            else if (m_aadPos != 0)
+            {
+                Arrays.fill(m_aad, m_aadPos, BlockSize - 1, (byte)0);
+                m_aad[BlockSize - 1] = (byte)(m_aadPos & 0x0f);
+                if (twist)
+                {
+                    for (int i = 0; i < BlockSize; i++)
+                    {
+                        mac_s[i] = (byte)(mac_s[i] ^ m_aad[i]);
+                    }
+                }
+                else
+                {
+                    block_cipher(mac_s, k, m_aad, 0, mac_CNT, (byte)40);
+                }
+                lfsr_gf56(mac_CNT);
+            }
+            m_aadPos = 0;
+            m_bufPos = dataOperator.getLen();
+        }
+
+        @Override
+        public void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+        {
+        }
+
+        @Override
+        public void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+        {
+        }
+
+        @Override
+        public void reset()
+        {
+            Arrays.clear(s);
+            Arrays.clear(mac_s);
+            reset_lfsr_gf56(mac_CNT);
+            reset_lfsr_gf56(CNT);
+            twist = true;
+        }
+    }
 
     private class RomulusN
         implements Instance
