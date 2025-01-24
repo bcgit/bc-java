@@ -29,7 +29,8 @@ abstract class AEADBufferBaseEngine
     {
         Default,
         Counter,
-        Stream
+        Stream,
+        //StreamCipher
     }
 
     protected enum State
@@ -103,8 +104,12 @@ abstract class AEADBufferBaseEngine
             dataOperator = new CounterDataOperator();
             break;
         case Stream:
+            m_buf = new byte[MAC_SIZE];
             dataOperator = new StreamDataOperator();
             break;
+//        case StreamCipher:
+//            dataOperator = new StreamCipherOperator();
+//            break;
         }
     }
 
@@ -382,7 +387,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected static class StreamDataOperator
+    protected class StreamDataOperator
         implements DataOperator
     {
         private final ErasableOutputStream stream = new ErasableOutputStream();
@@ -390,7 +395,9 @@ abstract class AEADBufferBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
+            ensureInitialized();
             stream.write(input, inOff, len);
+            m_bufPos = stream.size();
             return 0;
         }
 
@@ -411,6 +418,31 @@ abstract class AEADBufferBaseEngine
             stream.reset();
         }
     }
+
+//    protected class StreamCipherOperator
+//        implements DataOperator
+//    {
+//        private int len;
+//        @Override
+//        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+//        {
+//            this.len = len;
+//            processBufferEncrypt(input, inOff, output, outOff);
+//            return len;
+//        }
+//
+//        @Override
+//        public int getLen()
+//        {
+//            return 0;
+//        }
+//
+//        @Override
+//        public void reset()
+//        {
+//
+//        }
+//    }
 
     protected static final class ErasableOutputStream
         extends ByteArrayOutputStream
