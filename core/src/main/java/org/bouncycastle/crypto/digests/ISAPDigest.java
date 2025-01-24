@@ -100,6 +100,7 @@ public class ISAPDigest
     @Override
     public void reset()
     {
+        super.reset();
         t0 = t1 = t2 = t3 = t4 = 0;
         /* init state */
         x0 = -1255492011513352131L;
@@ -107,7 +108,5 @@ public class ISAPDigest
         x2 = -5437372128236807582L;
         x3 = 4834782570098516968L;
         x4 = 3787428097924915520L;
-        Arrays.clear(m_buf);
-        m_bufPos = 0;
     }
 }

@@ -69,6 +69,7 @@ public class RomulusDigest
     {
         super(ProcessingBufferType.Immediate, 32);
         DigestSize = 32;
+        algorithmName = "Romulus Hash";
     }
 
     void skinny_128_384_plus_enc(byte[] input, byte[] userkey)
@@ -215,12 +216,6 @@ public class RomulusDigest
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return "Romulus Hash";
-    }
-
-    @Override
     protected void processBytes(byte[] input, int inOff)
     {
         hirose_128_128_256(h, g, input, inOff);
@@ -241,8 +236,7 @@ public class RomulusDigest
     @Override
     public void reset()
     {
-        Arrays.clear(m_buf);
-        m_bufPos = 0;
+        super.reset();
         Arrays.clear(h);
         Arrays.clear(g);
     }

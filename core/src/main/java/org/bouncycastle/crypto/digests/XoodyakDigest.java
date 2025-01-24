@@ -69,11 +69,10 @@ public class XoodyakDigest
     @Override
     public void reset()
     {
+        super.reset();
         Arrays.fill(state, (byte)0);
         phase = PhaseUp;
         mode = MODE.ModeHash;
-        Arrays.clear(m_buf);
-        m_bufPos = 0;
         Cd = 0x03;
     }
 

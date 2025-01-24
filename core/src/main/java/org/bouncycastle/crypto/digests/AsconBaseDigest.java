@@ -112,10 +112,4 @@ abstract class AsconBaseDigest
         squeeze(output, outOff, outLen);
         return outLen;
     }
-
-    public void reset()
-    {
-        Arrays.clear(m_buf);
-        m_bufPos = 0;
-    }
 }

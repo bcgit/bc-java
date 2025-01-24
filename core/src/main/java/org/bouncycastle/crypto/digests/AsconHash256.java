@@ -18,6 +18,7 @@ public class AsconHash256
 {
     public AsconHash256()
     {
+        algorithmName = "Ascon-Hash256";
         reset();
     }
 
@@ -44,12 +45,6 @@ public class AsconHash256
     protected void setBytes(long w, byte[] bytes, int inOff, int n)
     {
         Pack.longToLittleEndian(w, bytes, inOff, n);
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return "Ascon-Hash256";
     }
 
     @Override

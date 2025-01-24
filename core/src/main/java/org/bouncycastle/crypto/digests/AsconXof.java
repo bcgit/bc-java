@@ -98,12 +98,6 @@ public class AsconXof
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
-    }
-
-    @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
         return hash(output, outOff, outLen);

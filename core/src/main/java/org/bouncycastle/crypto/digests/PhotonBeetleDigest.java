@@ -104,10 +104,9 @@ public class PhotonBeetleDigest
     @Override
     public void reset()
     {
+        super.reset();
         Arrays.fill(state, (byte)0);
         blockCount = 0;
-        Arrays.clear(m_buf);
-        m_bufPos = 0;
     }
 
     void PHOTON_Permutation()
