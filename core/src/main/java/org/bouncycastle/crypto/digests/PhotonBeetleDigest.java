@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
+import org.bouncycastle.crypto.engines.PhotonBeetleEngine;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 
@@ -13,33 +14,16 @@ import org.bouncycastle.util.Bytes;
 public class PhotonBeetleDigest
     extends BufferBaseDigest
 {
+    public static class Friend
+    {
+        private static final Friend INSTANCE = new Friend();
+        private Friend() {}
+    }
     private final byte[] state;
     private final byte[][] state_2d;
     private final int STATE_INBYTES = 32;
-    private final int D = 8;
+    private static final int D = 8;
     private int blockCount;
-    private static final byte[][] RC = {//[D][12]
-        {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
-        {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
-        {2, 0, 4, 13, 14, 8, 5, 15, 10, 1, 6, 9},
-        {6, 4, 0, 9, 10, 12, 1, 11, 14, 5, 2, 13},
-        {14, 12, 8, 1, 2, 4, 9, 3, 6, 13, 10, 5},
-        {15, 13, 9, 0, 3, 5, 8, 2, 7, 12, 11, 4},
-        {13, 15, 11, 2, 1, 7, 10, 0, 5, 14, 9, 6},
-        {9, 11, 15, 6, 5, 3, 14, 4, 1, 10, 13, 2}
-    };
-    private static final byte[][] MixColMatrix = { //[D][D]
-        {2, 4, 2, 11, 2, 8, 5, 6},
-        {12, 9, 8, 13, 7, 7, 5, 2},
-        {4, 4, 13, 13, 9, 4, 13, 9},
-        {1, 6, 5, 1, 12, 13, 15, 14},
-        {15, 12, 9, 13, 14, 5, 14, 13},
-        {9, 14, 5, 15, 4, 12, 9, 6},
-        {12, 2, 2, 10, 3, 1, 1, 14},
-        {15, 1, 13, 10, 5, 10, 2, 3}
-    };
-
-    private static final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
 
     public PhotonBeetleDigest()
     {
@@ -60,7 +44,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PHOTON_Permutation();
+            PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
             Bytes.xorTo(BlockSize, input, inOff, state, 0);
         }
         blockCount++;
@@ -86,7 +70,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PHOTON_Permutation();
+            PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
             Bytes.xorTo(m_bufPos, m_buf, 0, state, 0);
             if (m_bufPos < BlockSize)
             {
@@ -94,10 +78,10 @@ public class PhotonBeetleDigest
             }
             state[STATE_INBYTES - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
-        PHOTON_Permutation();
+        PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
         int SQUEEZE_RATE_INBYTES = 16;
         System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
-        PHOTON_Permutation();
+        PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
         System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, DigestSize - SQUEEZE_RATE_INBYTES);
     }
 
@@ -107,75 +91,5 @@ public class PhotonBeetleDigest
         super.reset();
         Arrays.fill(state, (byte)0);
         blockCount = 0;
-    }
-
-    void PHOTON_Permutation()
-    {
-        int i, j, k;
-        int DSquare = 64;
-        int dr = 7;
-        int dq = 3;
-        for (i = 0; i < DSquare; i++)
-        {
-            state_2d[i >>> dq][i & dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
-        }
-        int ROUND = 12;
-        for (int round = 0; round < ROUND; round++)
-        {
-            //AddKey
-            for (i = 0; i < D; i++)
-            {
-                state_2d[i][0] ^= RC[i][round];
-            }
-            //SubCell
-            for (i = 0; i < D; i++)
-            {
-                for (j = 0; j < D; j++)
-                {
-                    state_2d[i][j] = sbox[state_2d[i][j]];
-                }
-            }
-            //ShiftRow
-            for (i = 1; i < D; i++)
-            {
-                System.arraycopy(state_2d[i], 0, state, 0, D);
-                System.arraycopy(state, i, state_2d[i], 0, D - i);
-                System.arraycopy(state, 0, state_2d[i], D - i, i);
-            }
-            //MixColumn
-            for (j = 0; j < D; j++)
-            {
-                for (i = 0; i < D; i++)
-                {
-                    int sum = 0;
-
-                    for (k = 0; k < D; k++)
-                    {
-                        int x = MixColMatrix[i][k], b = state_2d[k][j];
-
-                        sum ^= x * (b & 1);
-                        sum ^= x * (b & 2);
-                        sum ^= x * (b & 4);
-                        sum ^= x * (b & 8);
-                    }
-
-                    int t0 = sum >>> 4;
-                    sum = (sum & 15) ^ t0 ^ (t0 << 1);
-
-                    int t1 = sum >>> 4;
-                    sum = (sum & 15) ^ t1 ^ (t1 << 1);
-
-                    state[i] = (byte)sum;
-                }
-                for (i = 0; i < D; i++)
-                {
-                    state_2d[i][j] = state[i];
-                }
-            }
-        }
-        for (i = 0; i < DSquare; i += 2)
-        {
-            state[i >>> 1] = (byte)(((state_2d[i >>> dq][i & dr] & 0xf)) | ((state_2d[i >>> dq][(i + 1) & dr] & 0xf) << 4));
-        }
     }
 }
