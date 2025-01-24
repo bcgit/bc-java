@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.digests.PhotonBeetleDigest;
+
 /**
  * Photon-Beetle, <a href="https://www.isical.ac.in/~lightweight/beetle/"></a>
  * https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/photon-beetle-spec-final.pdf
@@ -25,9 +27,9 @@ public class PhotonBeetleEngine
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
-    private final int D = 8;
+    private static final int D = 8;
     private boolean aadFinished;
-    private final byte[][] RC = {
+    private static final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
         {2, 0, 4, 13, 14, 8, 5, 15, 10, 1, 6, 9},
@@ -37,7 +39,7 @@ public class PhotonBeetleEngine
         {13, 15, 11, 2, 1, 7, 10, 0, 5, 14, 9, 6},
         {9, 11, 15, 6, 5, 3, 14, 4, 1, 10, 13, 2}
     };
-    private final byte[][] MixColMatrix = {
+    private static final byte[][] MixColMatrix = {
         {2, 4, 2, 11, 2, 8, 5, 6},
         {12, 9, 8, 13, 7, 7, 5, 2},
         {4, 4, 13, 13, 9, 4, 13, 9},
@@ -48,7 +50,7 @@ public class PhotonBeetleEngine
         {15, 1, 13, 10, 5, 10, 2, 3}
     };
 
-    private final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
+    private static final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
@@ -93,7 +95,7 @@ public class PhotonBeetleEngine
 
     protected void processBufferAAD(byte[] input, int inOff)
     {
-        PHOTON_Permutation();
+        PhotonPermutation(state_2d, state);
         XOR(input, inOff, BlockSize);
     }
 
@@ -106,7 +108,7 @@ public class PhotonBeetleEngine
             {
                 if (m_aadPos != 0)
                 {
-                    PHOTON_Permutation();
+                    PhotonPermutation(state_2d, state);
                     XOR(m_aad, 0, m_aadPos);
                     if (m_aadPos < BlockSize)
                     {
@@ -123,14 +125,14 @@ public class PhotonBeetleEngine
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        PHOTON_Permutation();
+        PhotonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
         XOR(input, inOff, BlockSize);
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        PHOTON_Permutation();
+        PhotonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
         XOR(output, outOff, BlockSize);
     }
@@ -151,7 +153,7 @@ public class PhotonBeetleEngine
         {
             if (bufferLen != 0)
             {
-                PHOTON_Permutation();
+                PhotonPermutation(state_2d, state);
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
                 if (forEncryption)
                 {
@@ -172,7 +174,7 @@ public class PhotonBeetleEngine
         {
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
-        PHOTON_Permutation();
+        PhotonPermutation(state_2d, state);
         mac = new byte[MAC_SIZE];
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
     }
@@ -188,7 +190,7 @@ public class PhotonBeetleEngine
         super.reset(clearMac);
     }
 
-    private void PHOTON_Permutation()
+    private static void PhotonPermutation(byte[][] state_2d, byte[] state)
     {
         int i, j, k;
         int dq = 3;
@@ -301,5 +303,15 @@ public class PhotonBeetleEngine
         {
             state[i] ^= in_right[rOff++];
         }
+    }
+
+    public static void PhotonPermutation(PhotonBeetleDigest.Friend friend, byte[][] state_2d, byte[] state)
+    {
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by PhotonBeetleDigest");
+        }
+
+        PhotonPermutation(state_2d, state);
     }
 }
