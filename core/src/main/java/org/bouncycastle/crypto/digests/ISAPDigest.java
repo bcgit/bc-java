@@ -19,9 +19,8 @@ public class ISAPDigest
 
     public ISAPDigest()
     {
+        super(ProcessingBufferType.Immediate, 8);
         DigestSize = 32;
-        BlockSize = 8;
-        m_buf = new byte[BlockSize];
         algorithmName = "ISAP Hash";
         reset();
     }

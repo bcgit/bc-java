@@ -16,9 +16,8 @@ abstract class AsconBaseDigest
 
     protected AsconBaseDigest()
     {
+        super(ProcessingBufferType.Immediate, 8);
         DigestSize = 32;
-        BlockSize = 8;
-        m_buf = new byte[BlockSize];
     }
 
     private void round(long C)

@@ -31,10 +31,9 @@ public class XoodyakDigest
 
     public XoodyakDigest()
     {
+        super(ProcessingBufferType.Immediate, 16);
         DigestSize = 32;
         state = new byte[48];
-        BlockSize = 16;
-        m_buf = new byte[BlockSize];
         algorithmName = "Xoodyak Hash";
         reset();
     }
