@@ -22,6 +22,7 @@ public class AsconXof128
 
     public AsconXof128()
     {
+        algorithmName = "Ascon-XOF-128";
         reset();
     }
 
@@ -54,12 +55,6 @@ public class AsconXof128
     {
         m_squeezing = true;
         super.padAndAbsorb();
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return "Ascon-XOF-128";
     }
 
     @Override

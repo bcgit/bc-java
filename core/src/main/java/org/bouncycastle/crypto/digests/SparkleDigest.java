@@ -102,9 +102,8 @@ public class SparkleDigest
     @Override
     public void reset()
     {
+        super.reset();
         Arrays.fill(state, 0);
-        Arrays.fill(m_buf, (byte)0);
-        m_bufPos = 0;
     }
 
     private void processBlock(byte[] buf, int off, int steps)

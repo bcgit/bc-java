@@ -69,12 +69,6 @@ public class AsconDigest
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
-    }
-
-    @Override
     public void reset()
     {
         super.reset();

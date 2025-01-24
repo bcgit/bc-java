@@ -35,6 +35,7 @@ public class AsconCXof128
 
     public AsconCXof128(byte[] s, int off, int len)
     {
+        algorithmName = "Ascon-CXOF128";
         if ((off + len) > s.length)
         {
             throw new DataLengthException("input buffer too short");
@@ -101,12 +102,6 @@ public class AsconCXof128
     {
         m_squeezing = true;
         super.padAndAbsorb();
-    }
-
-    @Override
-    public String getAlgorithmName()
-    {
-        return "Ascon-CXOF128";
     }
 
     @Override

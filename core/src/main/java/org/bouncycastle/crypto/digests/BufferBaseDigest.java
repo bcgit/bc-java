@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.digests;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 
 public abstract class BufferBaseDigest
     implements ExtendedDigest
@@ -161,6 +162,12 @@ public abstract class BufferBaseDigest
         finish(output, outOff);
         reset();
         return DigestSize;
+    }
+
+    public void reset()
+    {
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
     }
 
     protected abstract void processBytes(byte[] input, int inOff);
