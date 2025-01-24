@@ -325,11 +325,11 @@ public abstract class DigestTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-                int count = Integer.parseInt(map.get("Count"));
-                if (count != 6)
-                {
-                    continue;
-                }
+                //int count = Integer.parseInt(map.get("Count"));
+//                if (count != 17)
+//                {
+//                    continue;
+//                }
                 byte[] ptByte = Hex.decode((String)map.get("Msg"));
                 byte[] expected = Hex.decode((String)map.get("MD"));
 

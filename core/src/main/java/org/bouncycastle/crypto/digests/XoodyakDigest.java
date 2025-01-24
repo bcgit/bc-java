@@ -1,10 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -17,21 +12,16 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakDigest
-    implements Digest
+    extends BufferBaseDigest
 {
-    private byte[] state;
+    private final byte[] state;
     private int phase;
     private MODE mode;
-    private int Rabsorb;
     private final int f_bPrime = 48;
-    private final int Rhash = 16;
-    private final int PhaseDown = 1;
     private final int PhaseUp = 2;
-    private final int MAXROUNDS = 12;
-    private final int TAGLEN = 16;
+    private int Cd;
     private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
-    private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     enum MODE
     {
@@ -41,69 +31,40 @@ public class XoodyakDigest
 
     public XoodyakDigest()
     {
+        DigestSize = 32;
         state = new byte[48];
+        BlockSize = 16;
+        m_buf = new byte[BlockSize];
+        algorithmName = "Xoodyak Hash";
         reset();
     }
 
     @Override
-    public String getAlgorithmName()
+    protected void processBytes(byte[] input, int inOff)
     {
-        return "Xoodyak Hash";
-    }
-
-    @Override
-    public int getDigestSize()
-    {
-        return 32;
-    }
-
-    @Override
-    public void update(byte input)
-    {
-        buffer.write(input);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        if ((inOff + len) > input.length)
+        if (phase != PhaseUp)
         {
-            throw new DataLengthException("input buffer too short");
+            Up(null, 0, 0, 0);
         }
-        buffer.write(input, inOff, len);
-
+        Down(input, inOff, BlockSize, Cd);
+        Cd = 0;
     }
 
     @Override
-    public int doFinal(byte[] output, int outOff)
+    protected void finish(byte[] output, int outOff)
     {
-        if (32 + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-        byte[] input = buffer.toByteArray();
-        int inOff = 0;
-        int len = buffer.size();
-        int Cd = 0x03;
-        int splitLen;
-        do
+        if (m_bufPos != 0)
         {
             if (phase != PhaseUp)
             {
                 Up(null, 0, 0, 0);
             }
-            splitLen = Math.min(len, Rabsorb);
-            Down(input, inOff, splitLen, Cd);
-            Cd = 0;
-            inOff += splitLen;
-            len -= splitLen;
+            Down(m_buf, 0, m_bufPos, Cd);
         }
-        while (len != 0);
+        int TAGLEN = 16;
         Up(output, outOff, TAGLEN, 0x40);
         Down(null, 0, 0, 0);
         Up(output, outOff + TAGLEN, TAGLEN, 0);
-        reset();
-        return 32;
     }
 
     @Override
@@ -112,8 +73,9 @@ public class XoodyakDigest
         Arrays.fill(state, (byte)0);
         phase = PhaseUp;
         mode = MODE.ModeHash;
-        Rabsorb = Rhash;
-        buffer.reset();
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
+        Cd = 0x03;
     }
 
     private void Up(byte[] Yi, int YiOff, int YiLen, int Cu)
@@ -136,6 +98,7 @@ public class XoodyakDigest
         int a10 = Pack.littleEndianToInt(state, 40);
         int a11 = Pack.littleEndianToInt(state, 44);
 
+        int MAXROUNDS = 12;
         for (int i = 0; i < MAXROUNDS; ++i)
         {
             /* Theta: Column Parity Mixer */
@@ -164,7 +127,7 @@ public class XoodyakDigest
             a3 ^= e3;
             a7 ^= e3;
             a11 ^= e3;
-            
+
             /* Rho-west: plane shift */
             int b0 = a0;
             int b1 = a1;
@@ -183,7 +146,7 @@ public class XoodyakDigest
 
             /* Iota: round ant */
             b0 ^= RC[i];
-            
+
             /* Chi: non linear layer */
             a0 = b0 ^ (~b4 & b8);
             a1 = b1 ^ (~b5 & b9);
@@ -199,7 +162,7 @@ public class XoodyakDigest
             b9 ^= (~b1 & b5);
             b10 ^= (~b2 & b6);
             b11 ^= (~b3 & b7);
-            
+
             /* Rho-east: plane shift */
             a4 = Integers.rotateLeft(a4, 1);
             a5 = Integers.rotateLeft(a5, 1);
@@ -240,6 +203,6 @@ public class XoodyakDigest
         }
         state[XiLen] ^= 0x01;
         state[f_bPrime - 1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
-        phase = PhaseDown;
+        phase = 1;
     }
 }
