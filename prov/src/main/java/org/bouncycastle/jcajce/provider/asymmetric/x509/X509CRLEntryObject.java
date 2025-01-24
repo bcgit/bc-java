@@ -15,6 +15,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLReason;
@@ -78,9 +79,9 @@ class X509CRLEntryObject extends X509CRLEntry
      */
     public boolean hasUnsupportedCriticalExtension()
     {
-        Set extns = getCriticalExtensionOIDs();
+        Extensions extensions = c.getExtensions();
 
-        return extns != null && !extns.isEmpty();
+        return extensions != null && extensions.hasAnyCriticalExtensions();
     }
 
     private X500Name loadCertificateIssuer(boolean isIndirect, X500Name previousCertificateIssuer)
@@ -90,15 +91,15 @@ class X509CRLEntryObject extends X509CRLEntry
             return null;
         }
 
-        Extension ext = getExtension(Extension.certificateIssuer);
-        if (ext == null)
+        ASN1OctetString extValue = Extensions.getExtensionValue(c.getExtensions(), Extension.certificateIssuer);
+        if (extValue == null)
         {
             return previousCertificateIssuer;
         }
 
         try
         {
-            GeneralName[] names = GeneralNames.getInstance(ext.getParsedValue()).getNames();
+            GeneralName[] names = GeneralNames.getInstance(extValue.getOctets()).getNames();
             for (int i = 0; i < names.length; i++)
             {
                 if (names[i].getTagNo() == GeneralName.directoryName)
@@ -166,35 +167,9 @@ class X509CRLEntryObject extends X509CRLEntry
         return getExtensionOIDs(false);
     }
 
-    private Extension getExtension(ASN1ObjectIdentifier oid)
-    {
-        Extensions exts = c.getExtensions();
-
-        if (exts != null)
-        {
-            return exts.getExtension(oid);
-        }
-
-        return null;
-    }
-
     public byte[] getExtensionValue(String oid)
     {
-        Extension ext = getExtension(new ASN1ObjectIdentifier(oid));
-
-        if (ext != null)
-        {
-            try
-            {
-                return ext.getExtnValue().getEncoded();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("Exception encoding: " + e.toString());
-            }
-        }
-
-        return null;
+        return X509SignatureUtil.getExtensionValue(c.getExtensions(), oid);
     }
 
     /**

@@ -17,12 +17,14 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -39,6 +41,30 @@ class X509SignatureUtil
         algNames.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1withDSA");
     }
 
+    static byte[] getExtensionValue(Extensions extensions, String oid) 
+    {
+        if (oid != null)
+        {
+            ASN1ObjectIdentifier asn1Oid = ASN1ObjectIdentifier.tryFromID(oid);
+            if (asn1Oid != null)
+            {
+                ASN1OctetString extValue = Extensions.getExtensionValue(extensions, asn1Oid);
+                if (null != extValue)
+                {
+                    try
+                    {
+                        return extValue.getEncoded();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IllegalStateException("error parsing " + e.toString());
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
     private static boolean isAbsentOrEmptyParameters(ASN1Encodable parameters)
     {
         return parameters == null || DERNull.INSTANCE.equals(parameters);
