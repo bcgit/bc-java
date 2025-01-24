@@ -34,6 +34,7 @@ public class ISAPTest
     {
         DigestTest.implTestVectorsDigest(this, new ISAPDigest(), "crypto/isap", "LWC_HASH_KAT_256.txt");
         DigestTest.checkDigestReset(this, new ISAPDigest());
+        DigestTest.implTestExceptionsAndParametersDigest(this, new ISAPDigest(), 32);
         testVectors("isapa128av20", IsapType.ISAP_A_128A);
         testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
@@ -50,7 +51,6 @@ public class ISAPTest
         ISAP = new ISAPEngine(IsapType.ISAP_A_128);
         testExceptions(ISAP, ISAP.getKeyBytesSize(), ISAP.getIVBytesSize(), ISAP.getBlockSize());
         testParameters(ISAP, 16, 16, 16);
-        DigestTest.implTestExceptionsAndParametersDigest(this, new ISAPDigest(), 32);
 
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
