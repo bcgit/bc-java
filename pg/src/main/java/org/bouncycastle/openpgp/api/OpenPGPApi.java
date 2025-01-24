@@ -193,15 +193,39 @@ public abstract class OpenPGPApi
         return new OpenPGPDetachedSignatureProcessor(implementation, policy);
     }
 
+    public OpenPGPKeyEditor editKey(OpenPGPKey key)
+            throws PGPException
+    {
+        return editKey(key, (char[]) null);
+    }
+
+    public OpenPGPKeyEditor editKey(OpenPGPKey key, char[] primaryKeyPassphrase)
+            throws PGPException
+    {
+        return new OpenPGPKeyEditor(
+                key,
+                new KeyPassphraseProvider()
+                {
+                    @Override
+                    public char[] getKeyPassword(OpenPGPKey.OpenPGPSecretKey key)
+                    {
+                        return primaryKeyPassphrase;
+                    }
+                },
+                implementation,
+                policy);
+    }
+
     /**
      * Modify an {@link OpenPGPKey}.
      *
      * @param key OpenPGP key
      * @return key editor
      */
-    public OpenPGPKeyEditor editKey(OpenPGPKey key)
+    public OpenPGPKeyEditor editKey(OpenPGPKey key, KeyPassphraseProvider primaryKeyPassphraseProvider)
+            throws PGPException
     {
-        return new OpenPGPKeyEditor(key, implementation, policy);
+        return new OpenPGPKeyEditor(key, primaryKeyPassphraseProvider, implementation, policy);
     }
 
     /**

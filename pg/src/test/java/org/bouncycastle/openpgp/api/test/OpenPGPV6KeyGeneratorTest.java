@@ -401,7 +401,7 @@ public class OpenPGPV6KeyGeneratorTest
             .build("primary-key-passphrase".toCharArray());
         OpenPGPCertificate.OpenPGPComponentKey encryptionKey = key.getEncryptionKeys().get(0);
         OpenPGPCertificate.OpenPGPComponentKey signingKey = key.getSigningKeys().get(0);
-        key = api.editKey(key)
+        key = api.editKey(key, "primary-key-passphrase".toCharArray())
                 .changePassphrase(encryptionKey,
                         "primary-key-passphrase".toCharArray(),
                         "encryption-key-passphrase".toCharArray(),

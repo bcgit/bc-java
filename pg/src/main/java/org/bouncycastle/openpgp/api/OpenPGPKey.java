@@ -251,6 +251,16 @@ public class OpenPGPKey
             return getPGPSecretKey().getS2KUsage() != SecretKeyPacket.USAGE_NONE;
         }
 
+        public PGPPrivateKey unlock(KeyPassphraseProvider passphraseProvider)
+                throws PGPException
+        {
+            if (!isLocked())
+            {
+                return unlock((char[]) null);
+            }
+            return unlock(passphraseProvider.getKeyPassword(this));
+        }
+
         /**
          * Access the {@link PGPPrivateKey} by unlocking the potentially locked secret key using the provided
          * passphrase. Note: If the key is not locked, it is sufficient to pass null as passphrase.

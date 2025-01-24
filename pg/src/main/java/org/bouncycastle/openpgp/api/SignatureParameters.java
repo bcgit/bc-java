@@ -38,6 +38,14 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
+    public static SignatureParameters keyRevocation(OpenPGPPolicy policy)
+    {
+        return new SignatureParameters(PGPSignature.KEY_REVOCATION)
+                .setSignatureType(PGPSignature.KEY_REVOCATION)
+                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+                .setSignatureCreationTime(new Date());
+    }
+
     /**
      * Create a default signature parameters object for a certification signature.
      * The default signature type is {@link PGPSignature#POSITIVE_CERTIFICATION}, but can be changed to
@@ -69,6 +77,14 @@ public class SignatureParameters
     {
         return new SignatureParameters(PGPSignature.SUBKEY_BINDING)
                 .setSignatureType(PGPSignature.SUBKEY_BINDING)
+                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+                .setSignatureCreationTime(new Date());
+    }
+
+    public static SignatureParameters subkeyRevocation(OpenPGPPolicy policy)
+    {
+        return new SignatureParameters(PGPSignature.SUBKEY_REVOCATION)
+                .setSignatureType(PGPSignature.SUBKEY_REVOCATION)
                 .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
                 .setSignatureCreationTime(new Date());
     }

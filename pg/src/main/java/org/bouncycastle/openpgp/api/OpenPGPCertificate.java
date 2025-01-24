@@ -713,6 +713,16 @@ public class OpenPGPCertificate
         return null;
     }
 
+    public Date getExpirationTime()
+    {
+        return getExpirationTime(new Date());
+    }
+
+    public Date getExpirationTime(Date evaluationTime)
+    {
+        return getPrimaryKey().getKeyExpirationDateAt(evaluationTime);
+    }
+
     /**
      * Component on an OpenPGP certificate.
      * Components can either be {@link OpenPGPComponentKey keys} or {@link OpenPGPIdentityComponent identities}.

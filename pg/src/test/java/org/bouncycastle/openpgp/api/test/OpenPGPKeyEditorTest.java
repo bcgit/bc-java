@@ -47,7 +47,7 @@ public class OpenPGPKeyEditorTest
         addUserIdTest(api);
         softRevokeUserIdTest(api);
         hardRevokeUserIdTest(api);
-        /*
+
         addEncryptionSubkeyTest(api);
         revokeEncryptionSubkeyTest(api);
 
@@ -57,8 +57,6 @@ public class OpenPGPKeyEditorTest
         extendExpirationTimeTest(api);
         revokeCertificateTest(api);
 
-
-         */
         changePassphraseUnprotectedToCFBTest(api);
         changePassphraseUnprotectedToAEADTest(api);
     }
@@ -84,7 +82,7 @@ public class OpenPGPKeyEditorTest
         isNull("Expect primary user-id to be null", key.getPrimaryUserId());
 
         key = api.editKey(key)
-                .addUserId("Alice <alice@example.com>", null)
+                .addUserId("Alice <alice@example.com>")
                 .done();
 
         isEquals("Expect the new user-id to be primary now",
@@ -104,7 +102,7 @@ public class OpenPGPKeyEditorTest
         isEquals("Alice Lovelace <alice@openpgp.example>", userId.getUserId());
 
         key = api.editKey(key)
-                .revokeUserId(userId, null, new SignatureParameters.Callback()
+                .revokeIdentity(userId, new SignatureParameters.Callback()
                 {
                     @Override
                     public SignatureParameters apply(SignatureParameters parameters)
@@ -127,7 +125,6 @@ public class OpenPGPKeyEditorTest
         isFalse(key.getPrimaryUserId().isBoundAt(now));
     }
 
-
     private void hardRevokeUserIdTest(OpenPGPApi api)
             throws IOException, PGPException
     {
@@ -141,7 +138,7 @@ public class OpenPGPKeyEditorTest
         isEquals("Alice Lovelace <alice@openpgp.example>", userId.getUserId());
 
         key = api.editKey(key)
-                .revokeUserId(userId, null, new SignatureParameters.Callback()
+                .revokeIdentity(userId, new SignatureParameters.Callback()
                 {
                     @Override
                     public SignatureParameters apply(SignatureParameters parameters)
@@ -154,6 +151,108 @@ public class OpenPGPKeyEditorTest
                 .done();
         isFalse(key.getPrimaryUserId().isBoundAt(oneHourAgo));
         isFalse(key.getPrimaryUserId().isBoundAt(now));
+    }
+
+    private void addEncryptionSubkeyTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+        isEquals(1, key.getEncryptionKeys().size());
+
+        key = api.editKey(key)
+                .addEncryptionSubkey()
+                .done();
+
+        isEquals(2, key.getEncryptionKeys().size());
+    }
+
+    private void revokeEncryptionSubkeyTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+        OpenPGPCertificate.OpenPGPComponentKey encryptionSubkey = key.getEncryptionKeys().get(0);
+
+        key = api.editKey(key)
+                .revokeComponentKey(encryptionSubkey)
+                .done();
+
+        isEquals(0, key.getEncryptionKeys().size());
+    }
+
+    private void addSigningSubkeyTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+        isEquals(1, key.getSigningKeys().size());
+
+        key = api.editKey(key)
+                .addSigningSubkey()
+                .done();
+
+        isEquals(2, key.getSigningKeys().size());
+    }
+
+    private void revokeSigningSubkeyTest(OpenPGPApi api)
+            throws PGPException
+    {
+        OpenPGPKey key = api.generateKey()
+                .classicKey(null)
+                .build();
+        isEquals(1, key.getSigningKeys().size());
+
+        OpenPGPCertificate.OpenPGPComponentKey signingKey = key.getSigningKeys().get(0);
+        key = api.editKey(key)
+                .revokeComponentKey(signingKey)
+                .done();
+        isEquals(0, key.getSigningKeys().size());
+    }
+
+    private void extendExpirationTimeTest(OpenPGPApi api)
+            throws PGPException
+    {
+        Date n0 = new Date((new Date().getTime() / 1000) * 1000);
+        OpenPGPKey key = api.generateKey(n0, false)
+                .classicKey(null)
+                .build();
+        isEquals("Default key generation MUST set expiration time of +5years",
+                key.getExpirationTime().getTime(), n0.getTime() + 5L * 31536000 * 1000);
+
+        Date n1 = new Date(n0.getTime() + 1000); // 1 sec later
+
+        key = api.editKey(key)
+                .addDirectKeySignature(new SignatureParameters.Callback()
+                {
+                    @Override
+                    public SignatureParameters apply(SignatureParameters parameters)
+                    {
+                        parameters.setSignatureCreationTime(n1);
+                        parameters.setHashedSubpacketsFunction(new SignatureSubpacketsFunction()
+                        {
+                            @Override
+                            public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets) {
+                                subpackets.setKeyExpirationTime(8L * 31536000);
+                                return subpackets;
+                            }
+                        });
+                        return parameters;
+                    }
+                })
+                .done();
+
+        isEquals("At n1, the expiration time of the key MUST have changed to n0+8years",
+                key.getExpirationTime(n1).getTime(), n0.getTime() + 8L * 31536000 * 1000);
+    }
+
+    private void revokeCertificateTest(OpenPGPApi api)
+            throws IOException, PGPException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+
+        key = api.editKey(key)
+                .revokeKey()
+                .done();
+
+        isEquals(0, key.getEncryptionKeys().size());
     }
 
     private void changePassphraseUnprotectedToCFBTest(OpenPGPApi api)
