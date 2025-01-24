@@ -1,9 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -13,10 +9,10 @@ import org.bouncycastle.util.Arrays;
  */
 
 public class RomulusDigest
-    implements Digest
+    extends BufferBaseDigest
 {
-    private final int CRYPTO_BYTES = 32;
-
+    byte[] h = new byte[16];
+    byte[] g = new byte[16];
     /*
      * This file includes only the encryption function of SKINNY-128-384+ as required by Romulus-v1.3
      */
@@ -68,6 +64,12 @@ public class RomulusDigest
         (byte)0x1E, (byte)0x3C, (byte)0x39, (byte)0x33, (byte)0x27, (byte)0x0E, (byte)0x1D, (byte)0x3A, (byte)0x35, (byte)0x2B,
         (byte)0x16, (byte)0x2C, (byte)0x18, (byte)0x30, (byte)0x21, (byte)0x02, (byte)0x05, (byte)0x0B, (byte)0x17, (byte)0x2E,
         (byte)0x1C, (byte)0x38, (byte)0x31, (byte)0x23, (byte)0x06, (byte)0x0D, (byte)0x1B, (byte)0x36, (byte)0x2D, (byte)0x1A};
+
+    public RomulusDigest()
+    {
+        super(ProcessingBufferType.Immediate, 32);
+        DigestSize = 32;
+    }
 
     void skinny_128_384_plus_enc(byte[] input, byte[] userkey)
     {
@@ -212,31 +214,6 @@ public class RomulusDigest
         mp[31] = (byte)(len8 & 0x1f);
     }
 
-    private void crypto_hash(byte[] out, int outOff, byte[] input, int inlen)
-    {
-        byte[] h = new byte[16];
-        byte[] g = new byte[16];
-        int mlen;
-        byte[] p = new byte[32];
-        mlen = inlen;
-        int inOff = 0;
-        while (mlen >= 32)
-        { // Normal loop
-            hirose_128_128_256(h, g, input, inOff);
-            inOff += 32;
-            mlen -= 32;
-        }
-        // Partial block (or in case there is no partial block we add a 0^2n block
-        ipad_256(input, inOff, p, mlen);
-        h[0] ^= 2;
-        hirose_128_128_256(h, g, p, 0);
-        // Assign the output tag
-        System.arraycopy(h, 0, out, outOff, 16);
-        System.arraycopy(g, 0, out, 16 + outOff, 16);
-    }
-
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
-
     @Override
     public String getAlgorithmName()
     {
@@ -244,43 +221,29 @@ public class RomulusDigest
     }
 
     @Override
-    public int getDigestSize()
+    protected void processBytes(byte[] input, int inOff)
     {
-        return CRYPTO_BYTES;
+        hirose_128_128_256(h, g, input, inOff);
     }
 
     @Override
-    public void update(byte input)
+    protected void finish(byte[] output, int outOff)
     {
-        message.write(input);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        if (inOff + len > input.length)
-        {
-            throw new DataLengthException(" input buffer too short");
-        }
-        message.write(input, inOff, len);
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-    {
-        if (outOff + 32 > output.length)
-        {
-            throw new DataLengthException(" output buffer too short");
-        }
-        byte[] input = message.toByteArray();
-        int inlen = input.length;
-        crypto_hash(output, outOff, input, inlen);
-        return CRYPTO_BYTES;
+        byte[] p = new byte[32];
+        ipad_256(m_buf, 0, p, m_bufPos);
+        h[0] ^= 2;
+        hirose_128_128_256(h, g, p, 0);
+        // Assign the output tag
+        System.arraycopy(h, 0, output, outOff, 16);
+        System.arraycopy(g, 0, output, 16 + outOff, 16);
     }
 
     @Override
     public void reset()
     {
-        message.reset();
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
+        Arrays.clear(h);
+        Arrays.clear(g);
     }
 }
