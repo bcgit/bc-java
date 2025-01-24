@@ -67,7 +67,7 @@ public abstract class BufferBaseDigest
         while ((remaining = len - inPos) >= BlockSize)
         {
             processBytes(input, inOff + inPos);
-            inPos += 8;
+            inPos += BlockSize;
         }
         System.arraycopy(input, inOff + inPos, m_buf, 0, remaining);
         m_bufPos = remaining;
