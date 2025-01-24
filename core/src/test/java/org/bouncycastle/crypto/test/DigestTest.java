@@ -1,9 +1,18 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Random;
 
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.EncodableDigest;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
@@ -273,5 +282,84 @@ public abstract class DigestTest
         {
             throw new TestFailedException(SimpleTestResult.failed(test,"Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
         }
+    }
+
+    static void implTestExceptionsAndParametersDigest(final SimpleTest test, final Digest pDigest, final int digestsize)
+    {
+        if (pDigest.getDigestSize() != digestsize)
+        {
+            test.fail(pDigest.getAlgorithmName() + ": digest size is not correct");
+        }
+
+        try
+        {
+            pDigest.update(new byte[1], 1, 1);
+            test.fail(pDigest.getAlgorithmName() + ": input for update is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            pDigest.doFinal(new byte[pDigest.getDigestSize() - 1], 2);
+            test.fail(pDigest.getAlgorithmName() + ": output for dofinal is too short");
+        }
+        catch (OutputLengthException e)
+        {
+            //expected
+        }
+    }
+
+    static void implTestVectorsDigest(SimpleTest test, ExtendedDigest digest, String path, String filename)
+        throws Exception
+    {
+        Random random = new Random();
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                byte[] ptByte = Hex.decode((String)map.get("Msg"));
+                byte[] expected = Hex.decode((String)map.get("MD"));
+
+                byte[] hash = new byte[digest.getDigestSize()];
+
+                digest.update(ptByte, 0, ptByte.length);
+                digest.doFinal(hash, 0);
+                if (!Arrays.areEqual(hash, expected))
+                {
+                    mismatch(test,"Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    digest.update(ptByte, 0, split);
+                    digest.update(ptByte, split, ptByte.length - split);
+                    digest.doFinal(hash, 0);
+                    if (!Arrays.areEqual(hash, expected))
+                    {
+                        mismatch(test,"Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
+                }
+
+                map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    private static void mismatch(SimpleTest test, String name, String expected, byte[] found)
+    {
+        test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
     }
 }

@@ -1,10 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -16,11 +12,19 @@ import org.bouncycastle.util.Pack;
  */
 
 public class ISAPDigest
-    implements Digest
+    extends BufferBaseDigest
 {
     private long x0, x1, x2, x3, x4;
     private long t0, t1, t2, t3, t4;
-    private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+
+    public ISAPDigest()
+    {
+        DigestSize = 32;
+        BlockSize = 8;
+        m_buf = new byte[BlockSize];
+        algorithmName = "ISAP Hash";
+        reset();
+    }
 
     private void ROUND(long C)
     {
@@ -64,64 +68,22 @@ public class ISAPDigest
     }
 
     @Override
-    public String getAlgorithmName()
+    protected void processBytes(byte[] input, int inOff)
     {
-        return "ISAP Hash";
-    }
-
-    @Override
-    public int getDigestSize()
-    {
-        return 32;
-    }
-
-    @Override
-    public void update(byte input)
-    {
-        buffer.write(input);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-        buffer.write(input, inOff, len);
-    }
-
-    @Override
-    public int doFinal(byte[] out, int outOff)
-    {
-        if (32 + outOff > out.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
-        t0 = t1 = t2 = t3 = t4 = 0;
-        /* init state */
-        x0 = -1255492011513352131L;
-        x1 = -8380609354527731710L;
-        x2 = -5437372128236807582L;
-        x3 = 4834782570098516968L;
-        x4 = 3787428097924915520L;
         /* absorb */
-        byte[] input = buffer.toByteArray();
-        int len = input.length;
-        long[] in64 = new long[len >> 3];
-        Pack.littleEndianToLong(input, 0, in64, 0, in64.length);
-        int idx = 0;
-        while (len >= 8)
-        {
-            x0 ^= U64BIG(in64[idx++]);
-            P12();
-            len -= 8;
-        }
+        x0 ^= Pack.bigEndianToLong(input, inOff);
+        P12();
+    }
+
+    @Override
+    protected void finish(byte[] output, int outOff)
+    {
         /* absorb final input block */
-        x0 ^= 0x80L << ((7 - len) << 3);
-        while (len > 0)
+        int idx;
+        x0 ^= 0x80L << ((7 - m_bufPos) << 3);
+        while (m_bufPos > 0)
         {
-            x0 ^= (input[(idx << 3) + --len] & 0xFFL) << ((7 - len) << 3);
+            x0 ^= (m_buf[--m_bufPos] & 0xFFL) << ((7 - m_bufPos) << 3);
         }
         P12();
         // squeeze
@@ -133,14 +95,20 @@ public class ISAPDigest
         }
         /* squeeze final output block */
         out64[idx] = U64BIG(x0);
-        Pack.longToLittleEndian(out64, out, outOff);
-        buffer.reset();
-        return 32;
+        Pack.longToLittleEndian(out64, output, outOff);
     }
 
     @Override
     public void reset()
     {
-        buffer.reset();
+        t0 = t1 = t2 = t3 = t4 = 0;
+        /* init state */
+        x0 = -1255492011513352131L;
+        x1 = -8380609354527731710L;
+        x2 = -5437372128236807582L;
+        x3 = 4834782570098516968L;
+        x4 = 3787428097924915520L;
+        Arrays.clear(m_buf);
+        m_bufPos = 0;
     }
 }

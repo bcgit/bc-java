@@ -14,12 +14,11 @@ abstract class AsconBaseDigest
     protected long x2;
     protected long x3;
     protected long x4;
-    protected final int CRYPTO_BYTES = 32;
-    protected final int ASCON_HASH_RATE = 8;
+    protected final int DigestSize = 32;
+    protected final int BlockSize = 8;
     protected int ASCON_PB_ROUNDS = 12;
-    protected final byte[] m_buf = new byte[ASCON_HASH_RATE];
+    protected final byte[] m_buf = new byte[BlockSize];
     protected int m_bufPos = 0;
-
 
     private void round(long C)
     {
@@ -70,20 +69,20 @@ abstract class AsconBaseDigest
     @Override
     public int getDigestSize()
     {
-        return CRYPTO_BYTES;
+        return DigestSize;
     }
 
     @Override
     public int getByteLength()
     {
-        return ASCON_HASH_RATE;
+        return BlockSize;
     }
 
     @Override
     public void update(byte in)
     {
         m_buf[m_bufPos] = in;
-        if (++m_bufPos == ASCON_HASH_RATE)
+        if (++m_bufPos == BlockSize)
         {
             x0 ^= loadBytes(m_buf, 0);
             p(ASCON_PB_ROUNDS);
@@ -127,7 +126,7 @@ abstract class AsconBaseDigest
     @Override
     public int doFinal(byte[] output, int outOff)
     {
-        return hash(output, outOff, CRYPTO_BYTES);
+        return hash(output, outOff, DigestSize);
     }
 
     protected void padAndAbsorb()
@@ -140,12 +139,12 @@ abstract class AsconBaseDigest
     protected void squeeze(byte[] output, int outOff, int len)
     {
         /* squeeze full output blocks */
-        while (len > ASCON_HASH_RATE)
+        while (len > BlockSize)
         {
             setBytes(x0, output, outOff);
             p(ASCON_PB_ROUNDS);
-            outOff += ASCON_HASH_RATE;
-            len -= ASCON_HASH_RATE;
+            outOff += BlockSize;
+            len -= BlockSize;
         }
         /* squeeze final output block */
         setBytes(x0, output, outOff, len);
@@ -154,7 +153,7 @@ abstract class AsconBaseDigest
 
     protected int hash(byte[] output, int outOff, int outLen)
     {
-        if (CRYPTO_BYTES + outOff > output.length)
+        if (DigestSize + outOff > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
         }

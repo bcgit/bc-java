@@ -52,8 +52,6 @@ public class AsconHash256
         return "Ascon-Hash256";
     }
 
-
-
     @Override
     public void reset()
     {

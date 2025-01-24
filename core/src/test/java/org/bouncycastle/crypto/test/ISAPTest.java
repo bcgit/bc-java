@@ -8,7 +8,6 @@ import java.util.Random;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.ISAPDigest;
@@ -33,6 +32,8 @@ public class ISAPTest
     public void performTest()
         throws Exception
     {
+        DigestTest.implTestVectorsDigest(this, new ISAPDigest(), "crypto/isap", "LWC_HASH_KAT_256.txt");
+        DigestTest.checkDigestReset(this, new ISAPDigest());
         testVectors("isapa128av20", IsapType.ISAP_A_128A);
         testVectors("isapa128v20", IsapType.ISAP_A_128);
         testVectors("isapk128av20", IsapType.ISAP_K_128A);
@@ -49,9 +50,8 @@ public class ISAPTest
         ISAP = new ISAPEngine(IsapType.ISAP_A_128);
         testExceptions(ISAP, ISAP.getKeyBytesSize(), ISAP.getIVBytesSize(), ISAP.getBlockSize());
         testParameters(ISAP, 16, 16, 16);
-        testExceptions(new ISAPDigest(), 32);
+        DigestTest.implTestExceptionsAndParametersDigest(this, new ISAPDigest(), 32);
 
-        testVectors();
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
             @Override
@@ -162,74 +162,6 @@ public class ISAPTest
         //System.out.print.println(filename + " pass");
     }
 
-    private void testVectors()
-        throws Exception
-    {
-        ISAPDigest isap = new ISAPDigest();
-        InputStream src = TestResourceFinder.findTestResource("crypto/isap", "LWC_HASH_KAT_256.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        byte[] ptByte;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
-//                if (!map.get("Count").equals("10"))
-//                {
-//                    continue;
-//                }
-                ptByte = Hex.decode((String)map.get("Msg"));
-                isap.update(ptByte, 0, ptByte.length);
-                byte[] hash = new byte[32];
-                isap.doFinal(hash, 0);
-                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
-                {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
-                }
-//                else
-//                {
-//                    System.out.println(map.get("Count") + " pass");
-//                }
-                map.clear();
-                isap.reset();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
-        //System.out.print.println("ISAP Hash pass");
-    }
-
-    private void testExceptions(Digest digest, int digestsize)
-    {
-        if (digest.getDigestSize() != digestsize)
-        {
-            fail(digest.getAlgorithmName() + ": digest size is not correct");
-        }
-
-        try
-        {
-            digest.update(new byte[1], 1, 1);
-            fail(digest.getAlgorithmName() + ": input for update is too short");
-        }
-        catch (DataLengthException e)
-        {
-            //expected
-        }
-        try
-        {
-            digest.doFinal(new byte[digest.getDigestSize() - 1], 2);
-            fail(digest.getAlgorithmName() + ": output for dofinal is too short");
-        }
-        catch (DataLengthException e)
-        {
-            //expected
-        }
-        //System.out.print.println(digest.getAlgorithmName() + " test Exceptions pass");
-    }
 
     private void testExceptions(AEADCipher aeadBlockCipher, int keysize, int ivsize, int blocksize)
         throws Exception
