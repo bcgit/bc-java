@@ -401,11 +401,11 @@ public class OpenPGPCertificate
         OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component);
         if (component == getPrimaryKey() && chainsForComponent.isEmpty())
         {
-            // If cert has no direct-key signatures, consider UID bindings instead
-            // TODO: Only consider current primary user id?
-            for (OpenPGPIdentityComponent identity : getPrimaryKey().identityComponents)
+            // If cert has no direct-key signatures, consider primary UID bindings instead
+            OpenPGPUserId primaryUserId = getPrimaryUserId(evaluationDate);
+            if (primaryUserId != null)
             {
-                chainsForComponent.addAll(getAllSignatureChainsFor(identity));
+                chainsForComponent.addAll(getAllSignatureChainsFor(primaryUserId));
             }
         }
 
