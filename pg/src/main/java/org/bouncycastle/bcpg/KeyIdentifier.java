@@ -250,4 +250,17 @@ public class KeyIdentifier
         // -DM Hex.toHexString
         return Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault());
     }
+
+    public String toPrettyPrint()
+    {
+        if (isWildcard())
+        {
+            return "*";
+        }
+        if (fingerprint == null)
+        {
+            return "0x" + Long.toHexString(keyId).toUpperCase(Locale.getDefault());
+        }
+        return FingerprintUtil.prettifyFingerprint(fingerprint);
+    }
 }
