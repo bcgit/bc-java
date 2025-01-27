@@ -419,6 +419,14 @@ public abstract class OpenPGPSignature
         }
     }
 
+    /**
+     * Return an ASCII armored String representation of the signature.
+     * If the signature contains issuer information, the fingerprint or key-id of the issuer will be added
+     * to the ASCII armor as a comment header.
+     *
+     * @return ASCII armored signature
+     * @throws IOException if the signature cannot be encoded
+     */
     public String toAsciiArmoredString()
             throws IOException
     {
@@ -678,6 +686,14 @@ public abstract class OpenPGPSignature
                     issuer.isSigningKey(date);
         }
 
+        /**
+         * Check, if the creation time of the signature is within the interval
+         * <pre>notBefore <= creationTime <= notAfter</pre>
+         *
+         * @param notBefore earliest accepted creation time
+         * @param notAfter latest accepted creation time
+         * @return true if sig was created in bounds, false otherwise
+         */
         public boolean createdInBounds(Date notBefore, Date notAfter)
         {
             return !getCreationTime().before(notBefore) && !getCreationTime().after(notAfter);
