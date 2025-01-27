@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.digests.PhotonBeetleDigest;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Photon-Beetle, <a href="https://www.isical.ac.in/~lightweight/beetle/"></a>
@@ -96,7 +97,7 @@ public class PhotonBeetleEngine
     protected void processBufferAAD(byte[] input, int inOff)
     {
         PhotonPermutation(state_2d, state);
-        XOR(input, inOff, BlockSize);
+        Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
     public void processFinalAAD()
@@ -109,7 +110,7 @@ public class PhotonBeetleEngine
                 if (m_aadPos != 0)
                 {
                     PhotonPermutation(state_2d, state);
-                    XOR(m_aad, 0, m_aadPos);
+                    Bytes.xorTo(m_aadPos, m_aad, state);
                     if (m_aadPos < BlockSize)
                     {
                         state[m_aadPos] ^= 0x01; // ozs
@@ -127,14 +128,14 @@ public class PhotonBeetleEngine
     {
         PhotonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
-        XOR(input, inOff, BlockSize);
+        Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
         PhotonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
-        XOR(output, outOff, BlockSize);
+        Bytes.xorTo(BlockSize, output, outOff, state);
     }
 
     @Override
@@ -157,11 +158,11 @@ public class PhotonBeetleEngine
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
                 if (forEncryption)
                 {
-                    XOR(m_buf, 0, bufferLen);
+                    Bytes.xorTo(bufferLen, m_buf, state);
                 }
                 else
                 {
-                    XOR(output, outOff, bufferLen);
+                    Bytes.xorTo(bufferLen, output, outOff, state);
                 }
                 if (bufferLen < BlockSize)
                 {
@@ -294,14 +295,6 @@ public class PhotonBeetleEngine
         while (i < DBlen_inbytes)
         {
             ciphertext[i + outOff] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
-        }
-    }
-
-    private void XOR(byte[] in_right, int rOff, int iolen_inbytes)
-    {
-        for (int i = 0; i < iolen_inbytes; i++)
-        {
-            state[i] ^= in_right[rOff++];
         }
     }
 

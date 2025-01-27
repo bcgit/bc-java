@@ -17,11 +17,15 @@ public class PhotonBeetleDigest
     public static class Friend
     {
         private static final Friend INSTANCE = new Friend();
-        private Friend() {}
+
+        private Friend()
+        {
+        }
     }
+
     private final byte[] state;
     private final byte[][] state_2d;
-    private final int STATE_INBYTES = 32;
+    private static final int STATE_INBYTES = 32;
     private static final int D = 8;
     private int blockCount;
 
@@ -45,7 +49,7 @@ public class PhotonBeetleDigest
         else
         {
             PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
-            Bytes.xorTo(BlockSize, input, inOff, state, 0);
+            Bytes.xorTo(BlockSize, input, inOff, state);
         }
         blockCount++;
     }
@@ -71,7 +75,7 @@ public class PhotonBeetleDigest
         else
         {
             PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
-            Bytes.xorTo(m_bufPos, m_buf, 0, state, 0);
+            Bytes.xorTo(m_bufPos, m_buf, state);
             if (m_bufPos < BlockSize)
             {
                 state[m_bufPos] ^= 0x01; // ozs

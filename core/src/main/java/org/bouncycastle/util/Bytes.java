@@ -32,6 +32,14 @@ public class Bytes
         }
     }
 
+    public static void xorTo(int len, byte[] x, int xOff, byte[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[xOff++];
+        }
+    }
+
     public static void xorTo(int len, byte[] x, int xOff, byte[] z, int zOff)
     {
         for (int i = 0; i < len; ++i)
