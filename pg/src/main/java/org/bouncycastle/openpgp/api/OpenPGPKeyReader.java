@@ -133,9 +133,6 @@ public class OpenPGPKeyReader
         PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
         Object object = objectFactory.nextObject();
 
-        // TODO: Is it dangerous, if we don't explicitly fail upon encountering secret key material here?
-        //  Could it lead to a situation where we need to be cautious with the certificate API design to
-        //  prevent the user from doing dangerous things like accidentally publishing their private key?
         while (object instanceof PGPMarker)
         {
             object = objectFactory.nextObject();

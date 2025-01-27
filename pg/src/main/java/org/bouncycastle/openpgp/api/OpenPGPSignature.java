@@ -308,6 +308,7 @@ public abstract class OpenPGPSignature
         switch (signature.getVersion())
         {
             case SignaturePacket.VERSION_4:
+            case SignaturePacket.VERSION_5:
                 if (hashed.getIssuerFingerprint() == null &&
                         unhashed.getIssuerFingerprint() == null &&
                         hashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) == null &&
@@ -316,10 +317,6 @@ public abstract class OpenPGPSignature
                     throw new MalformedOpenPGPSignatureException(
                             this, "Missing IssuerKeyID and IssuerFingerprint subpacket.");
                 }
-                break;
-
-            case SignaturePacket.VERSION_5:
-                // TODO: Implement
                 break;
 
             case SignaturePacket.VERSION_6:

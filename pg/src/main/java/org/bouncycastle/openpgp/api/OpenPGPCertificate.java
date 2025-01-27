@@ -6,7 +6,6 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
-import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -310,8 +309,9 @@ public class OpenPGPCertificate
 
             else if (next instanceof PGPSignatureList)
             {
-                // assume there to be primary key (self) signatures
-                // TODO: Allow consumption of 3rd-party sigs
+                // parse and join delegations / revocations
+                // those are signatures of type DIRECT_KEY or KEY_REVOCATION issued either by the primary key itself
+                // (self-signatures) or by a 3rd party (delegations / delegation revocations)
                 PGPSignatureList signatures = (PGPSignatureList) next;
 
                 PGPPublicKeyRing publicKeys = certificate.getPGPPublicKeyRing();
@@ -1250,7 +1250,6 @@ public class OpenPGPCertificate
          */
         public boolean isSigningKey(Date evaluationTime)
         {
-            // TODO: Replace with https://github.com/bcgit/bc-java/pull/1857/files#diff-36f593d586240aec2546daad96d16b5debd3463202a3d5d82c0b2694572c8426R14-R30
             if (!PublicKeyUtils.isSigningAlgorithm(rawPubkey.getAlgorithm()))
             {
                 // Key is not signing-capable by algorithm
@@ -1288,15 +1287,7 @@ public class OpenPGPCertificate
          */
         public boolean isCertificationKey(Date evaluationTime)
         {
-            // TODO: Replace with https://github.com/bcgit/bc-java/pull/1857/files#diff-36f593d586240aec2546daad96d16b5debd3463202a3d5d82c0b2694572c8426R14-R30
-            int alg = rawPubkey.getAlgorithm();
-            if (alg != PublicKeyAlgorithmTags.RSA_GENERAL &&
-                    alg != PublicKeyAlgorithmTags.RSA_SIGN &&
-                    alg != PublicKeyAlgorithmTags.DSA &&
-                    alg != PublicKeyAlgorithmTags.ECDSA &&
-                    alg != PublicKeyAlgorithmTags.EDDSA_LEGACY &&
-                    alg != PublicKeyAlgorithmTags.Ed25519 &&
-                    alg != PublicKeyAlgorithmTags.Ed448)
+            if (!PublicKeyUtils.isSigningAlgorithm(rawPubkey.getAlgorithm()))
             {
                 // Key is not signing-capable by algorithm
                 return false;
