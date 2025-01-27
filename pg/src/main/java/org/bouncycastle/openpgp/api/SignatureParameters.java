@@ -26,9 +26,15 @@ public class SignatureParameters
 
     /**
      * Create default signature parameters object for a direct-key signature.
+     * When issued as a self-signature, direct-key signatures can be used to store algorithm preferences
+     * on the key, which apply to the entire certificate (including all subkeys).
+     * When issued as a third-party signature, direct-key signatures act as delegations, with which for example the
+     * web-of-trust can be built.
      *
      * @param policy algorithm policy
      * @return parameters
+     * @see <a href="https://sequoia-pgp.gitlab.io/sequoia-wot/#name-certifications-and-delegati">
+     *     OpenPGP Web-of-Trust</a>
      */
     public static SignatureParameters directKeySignature(OpenPGPPolicy policy)
     {
@@ -38,6 +44,16 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
+    /**
+     * Create default signature parameters for a key revocation signature.
+     * When issued as a self-signature, key revocation signatures can be used to revoke an entire certificate.
+     * To revoke only individual subkeys, see {@link #subkeyRevocation(OpenPGPPolicy)} instead.
+     * When issued as a third-party signature, key revocation signatures are used to revoke earlier delegation
+     * signatures.
+     *
+     * @param policy algorithm policy
+     * @return parameters
+     */
     public static SignatureParameters keyRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.KEY_REVOCATION)
@@ -51,6 +67,9 @@ public class SignatureParameters
      * The default signature type is {@link PGPSignature#POSITIVE_CERTIFICATION}, but can be changed to
      * {@link PGPSignature#DEFAULT_CERTIFICATION}, {@link PGPSignature#NO_CERTIFICATION},
      * {@link PGPSignature#CASUAL_CERTIFICATION}.
+     * When issued as a self-signature, certifications can be used to bind user-ids to the certificate.
+     * When issued as third-party signatures, certificates act as a statement, expressing that the issuer
+     * is convinced that the user-id "belongs to" the certificate.
      *
      * @param policy algorithm policy
      * @return parameters
@@ -81,6 +100,12 @@ public class SignatureParameters
                 .setSignatureCreationTime(new Date());
     }
 
+    /**
+     * Create default signature parameters for a subkey revocation signature.
+     *
+     * @param policy algorithm policy
+     * @return parameters
+     */
     public static SignatureParameters subkeyRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.SUBKEY_REVOCATION)
