@@ -423,9 +423,13 @@ public abstract class OpenPGPSignature
             throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ArmoredOutputStream aOut = ArmoredOutputStream.builder()
-                .clearHeaders()
-                .build(bOut);
+        ArmoredOutputStream.Builder aBuilder = ArmoredOutputStream.builder()
+                .clearHeaders();
+        if (getKeyIdentifier() != null)
+        {
+            aBuilder.addSplitMultilineComment(getKeyIdentifier().toPrettyPrint());
+        }
+        ArmoredOutputStream aOut = aBuilder.build(bOut);
         BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
         getSignature().encode(pOut);
         pOut.close();
