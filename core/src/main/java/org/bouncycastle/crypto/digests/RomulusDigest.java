@@ -21,8 +21,8 @@ public class RomulusDigest
         }
     }
 
-    byte[] h = new byte[16];
-    byte[] g = new byte[16];
+    private final byte[] h = new byte[16];
+    private final byte[] g = new byte[16];
     /*
      * This file includes only the encryption function of SKINNY-128-384+ as required by Romulus-v1.3
      */

@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.digests.XoodyakDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
@@ -17,22 +18,18 @@ public class XoodyakEngine
 {
     private byte[] state;
     private int phase;
-    private MODE mode;
-    private final int f_bPrime_1 = 47;
+    private int mode;
+    private static final int f_bPrime_1 = 47;
     private byte[] K;
     private byte[] iv;
-    private final int PhaseUp = 2;
-    private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
+    private static final int PhaseUp = 2;
+    private static final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean encrypted;
     private byte aadcd;
     private boolean aadFinished;
-
-    enum MODE
-    {
-        ModeHash,
-        ModeKeyed
-    }
+    private static final int ModeKeyed = 0;
+    private static final int ModeHash = 1;
 
     public XoodyakEngine()
     {
@@ -52,7 +49,6 @@ public class XoodyakEngine
         K = key;
         this.iv = iv;
         state = new byte[48];
-        mac = new byte[MAC_SIZE];
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
@@ -94,11 +90,11 @@ public class XoodyakEngine
         {
             splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             System.arraycopy(input, inOff, P, 0, splitLen);
-            Up(null, 0, Cu); /* Up without extract */
+            phase = up(mode, state, null, 0, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
             Bytes.xor(splitLen, state, input, inOff, output, outOff);
             inOff += splitLen;
-            Down(P, 0, splitLen, 0x00);
+            phase = down(mode, state, P, 0, splitLen, 0x00);
             Cu = 0x00;
             outOff += splitLen;
             len -= splitLen;
@@ -113,11 +109,11 @@ public class XoodyakEngine
         while (len != 0 || !encrypted)
         {
             splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            Up(null, 0, Cu); /* Up without extract */
+            phase = up(mode, state, null, 0, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
             Bytes.xor(splitLen, state, input, inOff, output, outOff);
             inOff += splitLen;
-            Down(output, outOff, splitLen, 0x00);
+            phase = down(mode, state, output, outOff, splitLen, 0x00);
             Cu = 0x00;
             outOff += splitLen;
             len -= splitLen;
@@ -138,7 +134,7 @@ public class XoodyakEngine
         {
             decrypt(m_buf, 0, m_bufPos, output, outOff);
         }
-        Up(mac, MAC_SIZE, 0x40);
+        phase = up(mode, state, mac, 0, MAC_SIZE, 0x40);
     }
 
     protected void reset(boolean clearMac)
@@ -155,7 +151,7 @@ public class XoodyakEngine
         int KLen = K.length;
         int IDLen = iv.length;
         byte[] KID = new byte[AADBufferSize];
-        mode = MODE.ModeKeyed;
+        mode = ModeKeyed;
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
@@ -169,10 +165,10 @@ public class XoodyakEngine
         {
             if (phase != PhaseUp)
             {
-                Up(null, 0, 0);
+                phase = up(mode, state, null, 0, 0, 0);
             }
             splitLen = Math.min(XLen, AADBufferSize);
-            Down(X, Xoff, splitLen, Cd);
+            phase = down(mode, state, X, Xoff, splitLen, Cd);
             Cd = 0;
             Xoff += splitLen;
             XLen -= splitLen;
@@ -180,9 +176,18 @@ public class XoodyakEngine
         while (XLen != 0);
     }
 
-    private void Up(byte[] Yi, int YiLen, int Cu)
+    public static int up(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Yi, int YiOff, int YiLen, int Cu)
     {
-        if (mode != MODE.ModeHash)
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by XoodyakDigest");
+        }
+        return up(mode, state, Yi, YiOff, YiLen, Cu);
+    }
+
+    private static int up(int mode, byte[] state, byte[] Yi, int YiOff, int YiLen, int Cu)
+    {
+        if (mode != ModeHash)
         {
             state[f_bPrime_1] ^= Cu;
         }
@@ -289,21 +294,27 @@ public class XoodyakEngine
         Pack.intToLittleEndian(a10, state, 40);
         Pack.intToLittleEndian(a11, state, 44);
 
-        phase = PhaseUp;
         if (Yi != null)
         {
-            System.arraycopy(state, 0, Yi, 0, YiLen);
+            System.arraycopy(state, 0, Yi, YiOff, YiLen);
         }
+        return PhaseUp;
     }
 
-    void Down(byte[] Xi, int XiOff, int XiLen, int Cd)
+    public static int down(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
     {
-        for (int i = 0; i < XiLen; i++)
+        if (null == friend)
         {
-            state[i] ^= Xi[XiOff++];
+            throw new NullPointerException("This method is only for use by XoodyakDigest");
         }
+        return down(mode, state, Xi, XiOff, XiLen, Cd);
+    }
+
+    private static int down(int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
+    {
+        Bytes.xorTo(XiLen, Xi, XiOff, state);
         state[XiLen] ^= 0x01;
-        state[f_bPrime_1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
-        phase = 1;
+        state[f_bPrime_1] ^= (mode == ModeHash) ? (Cd & 0x01) : Cd;
+        return 1;
     }
 }

@@ -739,7 +739,6 @@ public class ISAPEngine
     {
         npub = iv;
         k = key;
-        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         ISAPAEAD.init();
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
