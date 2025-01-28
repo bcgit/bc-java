@@ -27,7 +27,7 @@ abstract class AsconBaseEngine
         {
         case DecAad:
         case EncAad:
-            processFinalAadBlock();
+            this.processFinalAAD();
             p.p(nr);
             break;
         default:
@@ -39,12 +39,9 @@ abstract class AsconBaseEngine
         m_state = nextState;
     }
 
-    protected abstract void processFinalAadBlock();
-
     protected abstract void processFinalDecrypt(byte[] input, int inLen, byte[] output, int outOff);
 
     protected abstract void processFinalEncrypt(byte[] input, int inLen, byte[] output, int outOff);
-
 
     protected void processBufferAAD(byte[] buffer, int inOff)
     {
@@ -53,12 +50,6 @@ abstract class AsconBaseEngine
         {
             p.x1 ^= loadBytes(buffer, 8 + inOff);
         }
-        p.p(nr);
-    }
-
-    protected void processFinalAAD()
-    {
-        processFinalAadBlock();
         p.p(nr);
     }
 

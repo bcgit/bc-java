@@ -21,16 +21,10 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
-        AADBufferSize = BlockSize = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = AADBufferSize = BlockSize = 16;
         ASCON_IV = 0x00001000808c0001L;
         algorithmName = "Ascon-AEAD128";
         nr = 8;
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[BlockSize];
         dsep = -9223372036854775808L; //0x80L << 56
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
     }
@@ -65,7 +59,7 @@ public class AsconAEAD128
         p.x4 ^= K1;
     }
 
-    protected void processFinalAadBlock()
+    protected void processFinalAAD()
     {
         if (m_aadPos == BlockSize)
         {
@@ -165,4 +159,3 @@ public class AsconAEAD128
         return "v1.3";
     }
 }
-
