@@ -49,11 +49,7 @@ public class AsconAEAD128
     protected void ascon_aeadinit()
     {
         /* initialize */
-        p.x0 = ASCON_IV;
-        p.x1 = K0;
-        p.x2 = K1;
-        p.x3 = N0;
-        p.x4 = N1;
+        p.set(ASCON_IV, K0, K1, N0, N1);
         p.p(12);
         p.x3 ^= K0;
         p.x4 ^= K1;

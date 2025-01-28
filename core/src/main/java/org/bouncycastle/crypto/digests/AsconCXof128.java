@@ -131,20 +131,12 @@ public class AsconCXof128
         super.reset();
         m_squeezing = false;
         /* initialize */
-        p.x0 = z0;
-        p.x1 = z1;
-        p.x2 = z2;
-        p.x3 = z3;
-        p.x4 = z4;
+        p.set(z0, z1, z2, z3, z4);
     }
 
     private void initState(byte[] z, int zOff, int zLen)
     {
-        p.x0 = 7445901275803737603L;
-        p.x1 = 4886737088792722364L;
-        p.x2 = -1616759365661982283L;
-        p.x3 = 3076320316797452470L;
-        p.x4 = -8124743304765850554L;
+        p.set(7445901275803737603L, 4886737088792722364L, -1616759365661982283L, 3076320316797452470L, -8124743304765850554L);
         long bitLength = ((long)zLen) << 3;
         Pack.longToLittleEndian(bitLength, m_buf, 0);
         p.p(12);

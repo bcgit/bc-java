@@ -26,6 +26,7 @@ public class AsconXof
 
     public AsconXof(AsconXof.AsconParameters parameters)
     {
+        BlockSize = 8;
         this.asconParameters = parameters;
         switch (parameters)
         {
@@ -42,6 +43,7 @@ public class AsconXof
         }
         reset();
     }
+
     private boolean m_squeezing = false;
 
     @Override
@@ -110,12 +112,6 @@ public class AsconXof
     }
 
     @Override
-    public int getByteLength()
-    {
-        return 8;
-    }
-
-    @Override
     public void reset()
     {
         super.reset();
@@ -124,18 +120,10 @@ public class AsconXof
         switch (asconParameters)
         {
         case AsconXof:
-            p.x0 = -5368810569253202922L;
-            p.x1 = 3121280575360345120L;
-            p.x2 = 7395939140700676632L;
-            p.x3 = 6533890155656471820L;
-            p.x4 = 5710016986865767350L;
+            p.set(-5368810569253202922L, 3121280575360345120L, 7395939140700676632L, 6533890155656471820L, 5710016986865767350L);
             break;
         case AsconXofA:
-            p.x0 = 4940560291654768690L;
-            p.x1 = -3635129828240960206L;
-            p.x2 = -597534922722107095L;
-            p.x3 = 2623493988082852443L;
-            p.x4 = -6283826724160825537L;
+            p.set(4940560291654768690L, -3635129828240960206L, -597534922722107095L, 2623493988082852443L, -6283826724160825537L);
             break;
         }
     }

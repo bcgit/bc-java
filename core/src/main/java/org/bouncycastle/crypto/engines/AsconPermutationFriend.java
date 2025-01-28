@@ -61,5 +61,14 @@ public class AsconPermutationFriend
             round(0x5aL);
             round(0x4bL);
         }
+
+        public void set(long x0, long x1, long x2, long x3, long x4)
+        {
+            this.x0 = x0;
+            this.x1 = x1;
+            this.x2 = x2;
+            this.x3 = x3;
+            this.x4 = x4;
+        }
     }
 }

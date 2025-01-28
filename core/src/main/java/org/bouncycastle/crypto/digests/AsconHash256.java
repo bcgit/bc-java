@@ -10,7 +10,7 @@ import org.bouncycastle.util.Pack;
  * <a href="https://csrc.nist.gov/pubs/sp/800/232/ipd">NIST SP 800-232 (Initial Public Draft)</a>.
  * For reference source code and implementation details, please see:
  * <a href="https://github.com/ascon/ascon-c">Reference, highly optimized, masked C and
- *  ASM implementations of Ascon (NIST SP 800-232)</a>.
+ * ASM implementations of Ascon (NIST SP 800-232)</a>.
  * </p>
  */
 public class AsconHash256
@@ -52,10 +52,6 @@ public class AsconHash256
     {
         super.reset();
         /* initialize */
-        p.x0 = -7269279749984954751L;
-        p.x1 = 5459383224871899602L;
-        p.x2 = -5880230600644446182L;
-        p.x3 = 4359436768738168243L;
-        p.x4 = 1899470422303676269L;
+        p.set(-7269279749984954751L, 5459383224871899602L, -5880230600644446182L, 4359436768738168243L, 1899470422303676269L);
     }
 }
