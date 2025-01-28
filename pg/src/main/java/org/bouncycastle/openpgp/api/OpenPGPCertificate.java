@@ -79,7 +79,7 @@ public class OpenPGPCertificate
     private final Map<OpenPGPCertificateComponent, OpenPGPSignatureChains> componentSignatureChains;
 
     /**
-     * Instantiate an {@link OpenPGPCertificate} from a parksed {@link PGPKeyRing} using the default
+     * Instantiate an {@link OpenPGPCertificate} from a passed {@link PGPKeyRing} using the default
      * {@link OpenPGPImplementation} and its {@link OpenPGPPolicy}.
      *
      * @param keyRing key ring
