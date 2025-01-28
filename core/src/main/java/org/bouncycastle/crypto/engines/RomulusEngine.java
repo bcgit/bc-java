@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.digests.RomulusDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 
@@ -525,11 +526,14 @@ public class RomulusEngine
                 // Pad the nonce and counter
                 System.arraycopy(npub, 0, m_aad, 0, 16);
                 System.arraycopy(CNT, 0, m_aad, 16, 7);
-                ipad_256(m_aad, m_aad, 23);
+                Arrays.fill(m_aad, 23, 31, (byte)0);
+                m_aad[31] = (byte)(23 & 0x1f);
             }
             else
             {
-                ipad_256(CNT_Z, m_aad, 7);
+                System.arraycopy(CNT_Z, 0, m_aad, 0, 7);
+                Arrays.fill(m_aad, 7, 31, (byte)0);
+                m_aad[31] = (byte)(7 & 0x1f);
             }
             h[0] ^= 2;
             hirose_128_128_256(h, g, m_aad, 0);
@@ -850,20 +854,17 @@ public class RomulusEngine
         CNT[6] = 0x00;
     }
 
-
-    // Padding function: pads the byte length of the message mod 32 to the last incomplete block.
-// For complete blocks it returns the same block. For an empty block it returns a 0^2n string.
-// The function is called for full block messages to add a 0^2n block. This and the modulus are
-// the only differences compared to the use in Romulus-N
-    void ipad_256(byte[] m, byte[] mp, int len8)
+    public static void hirose_128_128_256(RomulusDigest.Friend friend, byte[] h, byte[] g, byte[] m, int mOff)
     {
-        System.arraycopy(m, 0, mp, 0, len8);
-        Arrays.fill(mp, len8, 31, (byte)0);
-        mp[31] = (byte)(len8 & 0x1f);
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by RomulusDigest");
+        }
+        hirose_128_128_256(h, g, m, mOff);
     }
 
     // The hirose double-block length (DBL) compression function.
-    void hirose_128_128_256(byte[] h, byte[] g, byte[] m, int mOff)
+    static void hirose_128_128_256(byte[] h, byte[] g, byte[] m, int mOff)
     {
         byte[] key = new byte[48];
         byte[] hh = new byte[16];
