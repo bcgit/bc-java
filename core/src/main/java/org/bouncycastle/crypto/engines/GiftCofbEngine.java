@@ -288,7 +288,6 @@ public class GiftCofbEngine
             /* T = E(X[m+a]) */
             giftb128(input, k, Y);
         }
-        mac = new byte[BlockSize];
         System.arraycopy(Y, 0, mac, 0, BlockSize);
     }
 

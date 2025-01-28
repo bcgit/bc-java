@@ -389,7 +389,6 @@ public class ElephantEngine
         int nblocks_ad = 1 + (IV_SIZE + adlen) / BlockSize;
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
         processBytes(m_buf, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad);
-        mac = new byte[MAC_SIZE];
         Bytes.xorTo(BlockSize, expanded_key, tag_buffer);
         instance.permutation(tag_buffer);
         Bytes.xorTo(BlockSize, expanded_key, tag_buffer);

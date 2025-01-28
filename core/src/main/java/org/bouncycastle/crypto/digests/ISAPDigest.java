@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.engines.AsconPermutationFriend;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -43,15 +44,10 @@ public class ISAPDigest
         reset();
     }
 
-    private long ROTR(long x, long n)
-    {
-        return (x >>> n) | (x << (64 - n));
-    }
-
     protected long U64BIG(long x)
     {
-        return ((ROTR(x, 8) & (0xFF000000FF000000L)) | (ROTR(x, 24) & (0x00FF000000FF0000L)) |
-            (ROTR(x, 40) & (0x0000FF000000FF00L)) | (ROTR(x, 56) & (0x000000FF000000FFL)));
+        return ((Longs.rotateRight(x, 8) & (0xFF000000FF000000L)) | (Longs.rotateRight(x, 24) & (0x00FF000000FF0000L)) |
+            (Longs.rotateRight(x, 40) & (0x0000FF000000FF00L)) | (Longs.rotateRight(x, 56) & (0x000000FF000000FFL)));
     }
 
     @Override

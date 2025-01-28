@@ -785,7 +785,6 @@ public class ISAPEngine
     {
         processFinalAAD();
         int len = m_bufPos;
-        mac = new byte[MAC_SIZE];
         ISAPAEAD.processEncFinalBlock(output, outOff);
         ISAPAEAD.swapInternalState();
         if (forEncryption)
