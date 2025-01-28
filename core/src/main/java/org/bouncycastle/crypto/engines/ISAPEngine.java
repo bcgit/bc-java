@@ -148,10 +148,7 @@ public class ISAPEngine
         private void isap_rk(AsconPermutationFriend.AsconPermutation p, long iv64, byte[] y, int ylen)
         {
             // Init state
-            p.x0 = k64[0];
-            p.x1 = k64[1];
-            p.x2 = iv64;
-            p.x3 = p.x4 = 0;
+            p.set(k64[0], k64[1], iv64, 0L, 0L);
             p.p(12);
             // Absorb Y
             for (int i = 0; i < (ylen << 3) - 1; i++)
@@ -187,10 +184,7 @@ public class ISAPEngine
             p.x4 = npub64[1];
             PX1(p);
             // Init State for mac
-            mac.x0 = npub64[0];
-            mac.x1 = npub64[1];
-            mac.x2 = ISAP_IV1_64;
-            mac.x3 = mac.x4 = 0;
+            mac.set(npub64[0], npub64[1], ISAP_IV1_64, 0L, 0L);
             mac.p(12);
         }
 

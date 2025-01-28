@@ -9,7 +9,10 @@ abstract class AsconBaseDigest
     public static class Friend
     {
         private static final Friend INSTANCE = new Friend();
-        private Friend() {}
+
+        private Friend()
+        {
+        }
     }
 
 
@@ -49,8 +52,7 @@ abstract class AsconBaseDigest
 
     protected void padAndAbsorb()
     {
-        p.x0 ^= loadBytes(m_buf, 0, m_bufPos);
-        p.x0 ^= pad(m_bufPos);
+        p.x0 ^= loadBytes(m_buf, 0, m_bufPos) ^ pad(m_bufPos);
         p.p(12);
     }
 

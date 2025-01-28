@@ -87,15 +87,11 @@ public class AsconEngine
     protected void ascon_aeadinit()
     {
         /* initialize */
-        p.x0 = ASCON_IV;
+        p.set(ASCON_IV, K1, K2, N0, N1);
         if (KEY_SIZE == 20)
         {
             p.x0 ^= K0;
         }
-        p.x1 = K1;
-        p.x2 = K2;
-        p.x3 = N0;
-        p.x4 = N1;
         p.p(12);
         if (KEY_SIZE == 20)
         {

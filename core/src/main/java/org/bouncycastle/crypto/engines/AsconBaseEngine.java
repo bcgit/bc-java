@@ -9,7 +9,7 @@ abstract class AsconBaseEngine
     protected long N0;
     protected long N1;
     protected long ASCON_IV;
-    AsconPermutationFriend.AsconPermutation p;
+    AsconPermutationFriend.AsconPermutation p = new AsconPermutationFriend.AsconPermutation();
     protected long dsep; //domain separation
 
     protected abstract long pad(int i);
@@ -98,7 +98,6 @@ abstract class AsconBaseEngine
 
     protected void reset(boolean clearMac)
     {
-        p = new AsconPermutationFriend.AsconPermutation();
         bufferReset();
         ascon_aeadinit();
         super.reset(clearMac);
