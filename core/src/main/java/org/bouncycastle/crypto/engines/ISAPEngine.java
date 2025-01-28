@@ -26,9 +26,7 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         switch (isapType)
         {
         case ISAP_A_128A:
@@ -53,7 +51,7 @@ public class ISAPEngine
             ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
     }
 
-    final int ISAP_STATE_SZ = 40;
+    private static final int ISAP_STATE_SZ = 40;
     private byte[] k;
     private byte[] npub;
     private int ISAP_rH;
@@ -740,15 +738,14 @@ public class ISAPEngine
     protected void processFinalBlock(byte[] output, int outOff)
     {
         processFinalAAD();
-        int len = m_bufPos;
         ISAPAEAD.processEncFinalBlock(output, outOff);
         if (forEncryption)
         {
-            ISAPAEAD.processMACFinal(output, outOff, len, mac);
+            ISAPAEAD.processMACFinal(output, outOff, m_bufPos, mac);
         }
         else
         {
-            ISAPAEAD.processMACFinal(m_buf, 0, len, mac);
+            ISAPAEAD.processMACFinal(m_buf, 0, m_bufPos, mac);
         }
     }
 

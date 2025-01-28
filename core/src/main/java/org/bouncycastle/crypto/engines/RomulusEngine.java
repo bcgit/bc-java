@@ -22,7 +22,7 @@ public class RomulusEngine
 
     private byte[] k;
     private byte[] npub;
-    private final int AD_BLK_LEN_HALF = 16;
+    private static final int AD_BLK_LEN_HALF = 16;
     private Instance instance;
     private final byte[] CNT;
 
@@ -120,11 +120,11 @@ public class RomulusEngine
     private class RomulusM
         implements Instance
     {
-        byte[] mac_s = new byte[16];
-        byte[] mac_CNT = new byte[7];
+        private final byte[] mac_s = new byte[16];
+        private final byte[] mac_CNT = new byte[7];
 
-        byte[] s = new byte[16];
-        byte[] CNT = new byte[7];
+        private final byte[] s = new byte[16];
+        private final byte[] CNT = new byte[7];
         int offset;
         boolean twist = true;
 
@@ -626,7 +626,6 @@ public class RomulusEngine
             Arrays.clear(h);
             Arrays.clear(g);
             Arrays.clear(LR);
-            Arrays.clear(CNT_Z);
             Arrays.clear(T);
             Arrays.clear(S);
             reset_lfsr_gf56(CNT);

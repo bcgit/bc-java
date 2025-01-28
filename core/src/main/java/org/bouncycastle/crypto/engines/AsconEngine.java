@@ -36,8 +36,7 @@ public class AsconEngine
     public AsconEngine(AsconParameters asconParameters)
     {
         this.asconParameters = asconParameters;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        IV_SIZE = MAC_SIZE = 16;
         switch (asconParameters)
         {
         case ascon80pq:
@@ -63,9 +62,7 @@ public class AsconEngine
         }
         nr = (BlockSize == 8) ? 6 : 8;
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
         AADBufferSize = BlockSize;
-        m_aad = new byte[BlockSize];
         dsep = 1L;
         setInnerMembers(asconParameters == AsconParameters.ascon128a ? ProcessingBufferType.Immediate : ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
     }
@@ -108,7 +105,7 @@ public class AsconEngine
         p.x4 ^= K2;
     }
 
-    protected void processFinalAadBlock()
+    protected void processFinalAAD()
     {
         m_aad[m_aadPos] = (byte)0x80;
         if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
