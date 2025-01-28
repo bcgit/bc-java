@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.digests.ISAPDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 

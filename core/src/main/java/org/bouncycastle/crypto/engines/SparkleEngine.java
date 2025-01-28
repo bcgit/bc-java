@@ -184,7 +184,6 @@ public class SparkleEngine
         {
             state[RATE_WORDS + i] ^= k[i];
         }
-        mac = new byte[MAC_SIZE];
         Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, mac, 0);
 
     }

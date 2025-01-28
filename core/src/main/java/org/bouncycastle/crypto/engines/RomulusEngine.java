@@ -32,7 +32,7 @@ public class RomulusEngine
     //12 13 14 15
 
     // 8-bit Sbox
-    private final byte[] sbox_8 =
+    private static final byte[] sbox_8 =
         {
             (byte)0x65, (byte)0x4c, (byte)0x6a, (byte)0x42, (byte)0x4b, (byte)0x63, (byte)0x43, (byte)0x6b, (byte)0x55,
             (byte)0x75, (byte)0x5a, (byte)0x7a, (byte)0x53, (byte)0x73, (byte)0x5b, (byte)0x7b, (byte)0x35, (byte)0x8c,
@@ -66,10 +66,10 @@ public class RomulusEngine
         };
 
     // Tweakey permutation
-    private final byte[] TWEAKEY_P = {9, 15, 8, 13, 10, 14, 12, 11, 0, 1, 2, 3, 4, 5, 6, 7};
+    private static final byte[] TWEAKEY_P = {9, 15, 8, 13, 10, 14, 12, 11, 0, 1, 2, 3, 4, 5, 6, 7};
 
     // round constants
-    private final byte[] RC = {
+    private static final byte[] RC = {
         0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3E, 0x3D, 0x3B, 0x37, 0x2F,
         0x1E, 0x3C, 0x39, 0x33, 0x27, 0x0E, 0x1D, 0x3A, 0x35, 0x2B,
         0x16, 0x2C, 0x18, 0x30, 0x21, 0x02, 0x05, 0x0B, 0x17, 0x2E,
@@ -138,7 +138,6 @@ public class RomulusEngine
             int adlen = aadOperator.getLen();
             int mlen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
             byte[] m = ((StreamDataOperator)dataOperator).getBytes();
-            mac = new byte[MAC_SIZE];
             int xlen, mOff = 0, mauth = 0;
             xlen = mlen;
             if ((adlen & 31) == 0 && adlen != 0)
@@ -360,7 +359,6 @@ public class RomulusEngine
                 lfsr_gf56(CNT);
                 nonce_encryption(npub, CNT, s, k, m_bufPos == AD_BLK_LEN_HALF ? (byte)0x14 : (byte)0x15);
             }
-            mac = new byte[MAC_SIZE];
             g8A(s, mac, 0);
         }
 
@@ -540,7 +538,6 @@ public class RomulusEngine
             System.arraycopy(g, 0, LR, 16, 16);
             Arrays.clear(CNT_Z);
             block_cipher(LR, k, LR, 16, CNT_Z, (byte)68);
-            mac = new byte[MAC_SIZE];
             System.arraycopy(LR, 0, mac, 0, MAC_SIZE);
         }
 
@@ -635,8 +632,7 @@ public class RomulusEngine
         }
     }
 
-
-    private void skinny_128_384_plus_enc(byte[] input, byte[] userkey)
+    private static void skinny_128_384_plus_enc(byte[] input, byte[] userkey)
     {
         byte[][] state = new byte[4][4];
         byte[][][] keyCells = new byte[3][4][4];

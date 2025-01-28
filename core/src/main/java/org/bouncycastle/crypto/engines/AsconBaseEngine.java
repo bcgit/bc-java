@@ -73,7 +73,6 @@ abstract class AsconBaseEngine
         {
             processFinalDecrypt(m_buf, m_bufPos, output, outOff);
         }
-        mac = new byte[MAC_SIZE];
         setBytes(p.x3, mac, 0);
         setBytes(p.x4, mac, 8);
     }

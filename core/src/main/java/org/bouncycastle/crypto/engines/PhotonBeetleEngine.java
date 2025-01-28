@@ -176,7 +176,6 @@ public class PhotonBeetleEngine
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
         PhotonPermutation(state_2d, state);
-        mac = new byte[MAC_SIZE];
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
     }
 

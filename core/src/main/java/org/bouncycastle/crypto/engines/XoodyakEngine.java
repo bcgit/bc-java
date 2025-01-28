@@ -138,7 +138,6 @@ public class XoodyakEngine
         {
             decrypt(m_buf, 0, m_bufPos, output, outOff);
         }
-        mac = new byte[MAC_SIZE];
         Up(mac, MAC_SIZE, 0x40);
     }
 

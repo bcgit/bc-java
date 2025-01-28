@@ -663,6 +663,7 @@ abstract class AEADBufferBaseEngine
         {
             throw new OutputLengthException("output buffer too short");
         }
+        mac = new byte[MAC_SIZE];
         processFinalBlock(output, outOff);
         if (forEncryption)
         {
@@ -767,7 +768,6 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    //TODO: override this for aadFinished
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
