@@ -442,7 +442,6 @@ public class RomulusEngine
         @Override
         public void reset()
         {
-            Arrays.clear(CNT);
             Arrays.clear(s);
             reset_lfsr_gf56(CNT);
             twist = true;
@@ -622,7 +621,6 @@ public class RomulusEngine
         @Override
         public void reset()
         {
-            Arrays.clear(Z);
             Arrays.clear(h);
             Arrays.clear(g);
             Arrays.clear(LR);
@@ -630,7 +628,7 @@ public class RomulusEngine
             Arrays.clear(S);
             Arrays.clear(CNT_Z);
             reset_lfsr_gf56(CNT);
-            System.arraycopy(npub, 0, Z, 0, 16);
+            System.arraycopy(npub, 0, Z, 0, IV_SIZE);
             block_cipher(Z, k, T, 0, CNT_Z, (byte)66);
             reset_lfsr_gf56(CNT_Z);
         }

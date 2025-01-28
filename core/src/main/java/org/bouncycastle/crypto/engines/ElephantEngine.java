@@ -343,11 +343,9 @@ public class ElephantEngine
     {
         System.arraycopy(npub, 0, buffer, 0, IV_SIZE);
         Arrays.fill(buffer, IV_SIZE, BlockSize, (byte)0);
-        Bytes.xorTo(BlockSize, current_mask, buffer);
-        Bytes.xorTo(BlockSize, next_mask, buffer);
+        xorTo(BlockSize, current_mask, next_mask, buffer);
         instance.permutation(buffer);
-        Bytes.xorTo(BlockSize, current_mask, buffer);
-        Bytes.xorTo(BlockSize, next_mask, buffer);
+        xorTo(BlockSize, current_mask, next_mask, buffer);
 
         Bytes.xorTo(blockSize, input, inOff, buffer);
         System.arraycopy(buffer, 0, output, outOff, blockSize);
@@ -372,11 +370,9 @@ public class ElephantEngine
 
     private void absorbCiphertext()
     {
-        Bytes.xorTo(BlockSize, previous_mask, buffer);
-        Bytes.xorTo(BlockSize, next_mask, buffer);
+        xorTo(BlockSize, previous_mask, next_mask, buffer);
         instance.permutation(buffer);
-        Bytes.xorTo(BlockSize, previous_mask, buffer);
-        Bytes.xorTo(BlockSize, next_mask, buffer);
+        xorTo(BlockSize, previous_mask, next_mask, buffer);
         Bytes.xorTo(BlockSize, buffer, tag_buffer);
     }
 
@@ -601,7 +597,7 @@ public class ElephantEngine
                 // If clen is divisible by BLOCK_SIZE, add an additional padding block
                 if (block_offset == mlen)
                 {
-                    Arrays.fill(buffer, 0, BlockSize, (byte)0);
+                    Arrays.fill(buffer, 1, BlockSize, (byte)0);
                     buffer[0] = 0x01;
                 }
                 else
@@ -636,5 +632,13 @@ public class ElephantEngine
             System.arraycopy(outputMessage, 0, previous_outputMessage, 0, BlockSize);
         }
         nb_its = i;
+    }
+
+    public static void xorTo(int len, byte[] x, byte[] y, byte[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[i] ^ y[i];
+        }
     }
 }

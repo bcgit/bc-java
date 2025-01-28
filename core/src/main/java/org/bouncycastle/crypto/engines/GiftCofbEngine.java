@@ -17,7 +17,7 @@ public class GiftCofbEngine
     private byte[] input;
     private byte[] offset;
     /*Round constants*/
-    private final byte[] GIFT_RC = {
+    private static final byte[] GIFT_RC = {
         (byte)0x01, (byte)0x03, (byte)0x07, (byte)0x0F, (byte)0x1F, (byte)0x3E, (byte)0x3D, (byte)0x3B, (byte)0x37, (byte)0x2F,
         (byte)0x1E, (byte)0x3C, (byte)0x39, (byte)0x33, (byte)0x27, (byte)0x0E, (byte)0x1D, (byte)0x3A, (byte)0x35, (byte)0x2B,
         (byte)0x16, (byte)0x2C, (byte)0x18, (byte)0x30, (byte)0x21, (byte)0x02, (byte)0x05, (byte)0x0B, (byte)0x17, (byte)0x2E,
@@ -28,7 +28,7 @@ public class GiftCofbEngine
     {
         AADBufferSize = BlockSize = MAC_SIZE = IV_SIZE = KEY_SIZE = 16;
         algorithmName = "GIFT-COFB AEAD";
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter, DataOperatorType.Counter);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     private int rowperm(int S, int B0_pos, int B1_pos, int B2_pos, int B3_pos)
@@ -205,8 +205,7 @@ public class GiftCofbEngine
         /* full byte[]: offset = 3*offset */
         /* partial byte[]: offset = 3^2*offset */
         triple_half_block(offset, offset);
-        int aadLen = aadOperator.getLen();
-        if (((aadLen & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
+        if (((m_aadPos & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
         {
             triple_half_block(offset, offset);
         }
