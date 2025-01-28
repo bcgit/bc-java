@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.engines;
 
 import java.util.Arrays;
 
+import org.bouncycastle.util.Bytes;
+
 /**
  * Elephant AEAD v2, based on the current round 3 submission, https://www.esat.kuleuven.be/cosic/elephant/
  * Reference C implementation: https://github.com/TimBeyne/Elephant
@@ -283,14 +285,6 @@ public class ElephantEngine
         System.arraycopy(current_mask, 1, next_mask, 0, BlockSize - 1);
     }
 
-    private void xor_block(byte[] state, byte[] block, int bOff, int size)
-    {
-        for (int i = 0; i < size; ++i)
-        {
-            state[i] ^= block[i + bOff];
-        }
-    }
-
     @Override
     protected void init(byte[] k, byte[] iv)
         throws IllegalArgumentException
@@ -349,13 +343,13 @@ public class ElephantEngine
     {
         System.arraycopy(npub, 0, buffer, 0, IV_SIZE);
         Arrays.fill(buffer, IV_SIZE, BlockSize, (byte)0);
-        xor_block(buffer, current_mask, 0, BlockSize);
-        xor_block(buffer, next_mask, 0, BlockSize);
+        Bytes.xorTo(BlockSize, current_mask, buffer);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
         instance.permutation(buffer);
-        xor_block(buffer, current_mask, 0, BlockSize);
-        xor_block(buffer, next_mask, 0, BlockSize);
+        Bytes.xorTo(BlockSize, current_mask, buffer);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
 
-        xor_block(buffer, input, inOff, blockSize);
+        Bytes.xorTo(blockSize, input, inOff, buffer);
         System.arraycopy(buffer, 0, output, outOff, blockSize);
     }
 
@@ -370,20 +364,20 @@ public class ElephantEngine
     private void absorbAAD()
     {
         processAADBytes(buffer);
-        xor_block(buffer, next_mask, 0, BlockSize);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
         instance.permutation(buffer);
-        xor_block(buffer, next_mask, 0, BlockSize);
-        xor_block(tag_buffer, buffer, 0, BlockSize);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
+        Bytes.xorTo(BlockSize, buffer, tag_buffer);
     }
 
     private void absorbCiphertext()
     {
-        xor_block(buffer, previous_mask, 0, BlockSize);
-        xor_block(buffer, next_mask, 0, BlockSize);
+        Bytes.xorTo(BlockSize, previous_mask, buffer);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
         instance.permutation(buffer);
-        xor_block(buffer, previous_mask, 0, BlockSize);
-        xor_block(buffer, next_mask, 0, BlockSize);
-        xor_block(tag_buffer, buffer, 0, BlockSize);
+        Bytes.xorTo(BlockSize, previous_mask, buffer);
+        Bytes.xorTo(BlockSize, next_mask, buffer);
+        Bytes.xorTo(BlockSize, buffer, tag_buffer);
     }
 
     protected void processFinalBlock(byte[] output, int outOff)
@@ -396,9 +390,9 @@ public class ElephantEngine
         int nb_it = Math.max(nblocks_c + 1, nblocks_ad - 1);
         processBytes(m_buf, output, outOff, nb_it, nblocks_m, nblocks_c, mlen, nblocks_ad);
         mac = new byte[MAC_SIZE];
-        xor_block(tag_buffer, expanded_key, 0, BlockSize);
+        Bytes.xorTo(BlockSize, expanded_key, tag_buffer);
         instance.permutation(tag_buffer);
-        xor_block(tag_buffer, expanded_key, 0, BlockSize);
+        Bytes.xorTo(BlockSize, expanded_key, tag_buffer);
         System.arraycopy(tag_buffer, 0, mac, 0, MAC_SIZE);
     }
 

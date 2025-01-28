@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.digests.SparkleDigest;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
