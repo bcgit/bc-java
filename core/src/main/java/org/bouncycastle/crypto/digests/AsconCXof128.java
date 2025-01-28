@@ -46,11 +46,11 @@ public class AsconCXof128
         }
         initState(s, off, len);
         // NOTE: Cache the initialized state
-        z0 = x0;
-        z1 = x1;
-        z2 = x2;
-        z3 = x3;
-        z4 = x4;
+        z0 = p.x0;
+        z1 = p.x1;
+        z2 = p.x2;
+        z3 = p.x3;
+        z4 = p.x4;
     }
 
     @Override
@@ -131,23 +131,23 @@ public class AsconCXof128
         super.reset();
         m_squeezing = false;
         /* initialize */
-        x0 = z0;
-        x1 = z1;
-        x2 = z2;
-        x3 = z3;
-        x4 = z4;
+        p.x0 = z0;
+        p.x1 = z1;
+        p.x2 = z2;
+        p.x3 = z3;
+        p.x4 = z4;
     }
 
     private void initState(byte[] z, int zOff, int zLen)
     {
-        x0 = 7445901275803737603L;
-        x1 = 4886737088792722364L;
-        x2 = -1616759365661982283L;
-        x3 = 3076320316797452470L;
-        x4 = -8124743304765850554L;
+        p.x0 = 7445901275803737603L;
+        p.x1 = 4886737088792722364L;
+        p.x2 = -1616759365661982283L;
+        p.x3 = 3076320316797452470L;
+        p.x4 = -8124743304765850554L;
         long bitLength = ((long)zLen) << 3;
         Pack.longToLittleEndian(bitLength, m_buf, 0);
-        p(12);
+        p.p(12);
         update(z, zOff, zLen);
         padAndAbsorb();
         m_squeezing = false;

@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.digests.ISAPDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -55,37 +56,34 @@ public class AsconAEAD128
     protected void ascon_aeadinit()
     {
         /* initialize */
-        x0 = ASCON_IV;
-        x1 = K0;
-        x2 = K1;
-        x3 = N0;
-        x4 = N1;
-        p(12);
-        x3 ^= K0;
-        x4 ^= K1;
+        p.x0 = ASCON_IV;
+        p.x1 = K0;
+        p.x2 = K1;
+        p.x3 = N0;
+        p.x4 = N1;
+        p.p(12);
+        p.x3 ^= K0;
+        p.x4 ^= K1;
     }
 
     protected void processFinalAadBlock()
     {
         if (m_aadPos == BlockSize)
         {
-            x0 ^= loadBytes(m_aad, 0);
-            if (BlockSize == 16)
-            {
-                x1 ^= loadBytes(m_aad, 8 );
-            }
+            p.x0 ^= loadBytes(m_aad, 0);
+            p.x1 ^= loadBytes(m_aad, 8);
             m_aadPos -= BlockSize;
-            p(nr);
+            p.p(nr);
         }
         Arrays.fill(m_aad, m_aadPos, AADBufferSize, (byte)0);
         if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.littleEndianToLong(m_aad, 0);
-            x1 ^= Pack.littleEndianToLong(m_aad, 8) ^ pad(m_aadPos);
+            p.x0 ^= Pack.littleEndianToLong(m_aad, 0);
+            p.x1 ^= Pack.littleEndianToLong(m_aad, 8) ^ pad(m_aadPos);
         }
         else
         {
-            x0 ^= Pack.littleEndianToLong(m_aad, 0) ^ pad(m_aadPos);
+            p.x0 ^= Pack.littleEndianToLong(m_aad, 0) ^ pad(m_aadPos);
         }
     }
 
@@ -96,23 +94,23 @@ public class AsconAEAD128
             long c0 = Pack.littleEndianToLong(input, 0);
             inLen -= 8;
             long c1 = Pack.littleEndianToLong(input, 8, inLen);
-            Pack.longToLittleEndian(x0 ^ c0, output, outOff);
-            Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen);
-            x0 = c0;
-            x1 &= -(1L << (inLen << 3));
-            x1 |= c1;
-            x1 ^= pad(inLen);
+            Pack.longToLittleEndian(p.x0 ^ c0, output, outOff);
+            Pack.longToLittleEndian(p.x1 ^ c1, output, outOff + 8, inLen);
+            p.x0 = c0;
+            p.x1 &= -(1L << (inLen << 3));
+            p.x1 |= c1;
+            p.x1 ^= pad(inLen);
         }
         else
         {
             if (inLen != 0)
             {
                 long c0 = Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(x0 ^ c0, output, outOff, inLen);
-                x0 &= -(1L << (inLen << 3));
-                x0 |= c0;
+                Pack.longToLittleEndian(p.x0 ^ c0, output, outOff, inLen);
+                p.x0 &= -(1L << (inLen << 3));
+                p.x0 |= c0;
             }
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
         }
         finishData(State.DecFinal);
     }
@@ -121,32 +119,32 @@ public class AsconAEAD128
     {
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.littleEndianToLong(input, 0);
+            p.x0 ^= Pack.littleEndianToLong(input, 0);
             inLen -= 8;
-            x1 ^= Pack.littleEndianToLong(input, 8, inLen);
-            Pack.longToLittleEndian(x0, output, outOff);
-            Pack.longToLittleEndian(x1, output, outOff + 8);
-            x1 ^= pad(inLen);
+            p.x1 ^= Pack.littleEndianToLong(input, 8, inLen);
+            Pack.longToLittleEndian(p.x0, output, outOff);
+            Pack.longToLittleEndian(p.x1, output, outOff + 8);
+            p.x1 ^= pad(inLen);
         }
         else
         {
             if (inLen != 0)
             {
-                x0 ^= Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(x0, output, outOff, inLen);
+                p.x0 ^= Pack.littleEndianToLong(input, 0, inLen);
+                Pack.longToLittleEndian(p.x0, output, outOff, inLen);
             }
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
         }
         finishData(State.EncFinal);
     }
 
     private void finishData(State nextState)
     {
-        x2 ^= K0;
-        x3 ^= K1;
-        p(12);
-        x3 ^= K0;
-        x4 ^= K1;
+        p.x2 ^= K0;
+        p.x3 ^= K1;
+        p.p(12);
+        p.x3 ^= K0;
+        p.x4 ^= K1;
         m_state = nextState;
     }
 
