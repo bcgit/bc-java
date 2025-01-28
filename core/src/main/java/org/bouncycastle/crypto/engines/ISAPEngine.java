@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -85,12 +86,14 @@ public class ISAPEngine
         protected long ISAP_IV1_64;
         protected long ISAP_IV2_64;
         protected long ISAP_IV3_64;
-        protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4, macx0, macx1, macx2, macx3, macx4;
+        AsconPermutationFriend.AsconPermutation p;
+        protected long t0, t1, t2, t3, t4, macx0, macx1, macx2, macx3, macx4;
 
         public ISAPAEAD_A()
         {
             ISAP_rH = 64;
             BlockSize = (ISAP_rH + 7) >> 3;
+            p = new AsconPermutationFriend.AsconPermutation();
         }
 
         public void init()
@@ -108,16 +111,16 @@ public class ISAPEngine
 
         public void swapInternalState()
         {
-            t0 = x0;
-            t1 = x1;
-            t2 = x2;
-            t3 = x3;
-            t4 = x4;
-            x0 = macx0;
-            x1 = macx1;
-            x2 = macx2;
-            x3 = macx3;
-            x4 = macx4;
+            t0 = p.x0;
+            t1 = p.x1;
+            t2 = p.x2;
+            t3 = p.x3;
+            t4 = p.x4;
+            p.x0 = macx0;
+            p.x1 = macx1;
+            p.x2 = macx2;
+            p.x3 = macx3;
+            p.x4 = macx4;
             macx0 = t0;
             macx1 = t1;
             macx2 = t2;
@@ -127,65 +130,65 @@ public class ISAPEngine
 
         public void absorbMacBlock(byte[] input, int inOff)
         {
-            x0 ^= Pack.bigEndianToLong(input, inOff);
-            P12();
+            p.x0 ^= Pack.bigEndianToLong(input, inOff);
+            p.p(12);
         }
 
         public void absorbFinalAADBlock()
         {
             for (int i = 0; i < m_aadPos; ++i)
             {
-                x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
+                p.x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
             }
-            x0 ^= 0x80L << ((7 - m_aadPos) << 3);
-            P12();
-            x4 ^= 1L;
+            p.x0 ^= 0x80L << ((7 - m_aadPos) << 3);
+            p.p(12);
+            p.x4 ^= 1L;
         }
 
         public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
         {
             for (int i = 0; i < len; ++i)
             {
-                x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
+                p.x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
             }
-            x0 ^= 0x80L << ((7 - len) << 3);
-            P12();
+            p.x0 ^= 0x80L << ((7 - len) << 3);
+            p.p(12);
             // Derive K*
-            Pack.longToBigEndian(x0, tag, 0);
-            Pack.longToBigEndian(x1, tag, 8);
-            long tmp_x2 = x2, tmp_x3 = x3, tmp_x4 = x4;
+            Pack.longToBigEndian(p.x0, tag, 0);
+            Pack.longToBigEndian(p.x1, tag, 8);
+            long tmp_x2 = p.x2, tmp_x3 = p.x3, tmp_x4 = p.x4;
             isap_rk(ISAP_IV2_64, tag, KEY_SIZE);
-            x2 = tmp_x2;
-            x3 = tmp_x3;
-            x4 = tmp_x4;
+            p.x2 = tmp_x2;
+            p.x3 = tmp_x3;
+            p.x4 = tmp_x4;
             // Squeeze tag
-            P12();
-            Pack.longToBigEndian(x0, tag, 0);
-            Pack.longToBigEndian(x1, tag, 8);
+            p.p(12);
+            Pack.longToBigEndian(p.x0, tag, 0);
+            Pack.longToBigEndian(p.x1, tag, 8);
         }
 
         public void isap_rk(long iv64, byte[] y, int ylen)
         {
             // Init state
-            x0 = k64[0];
-            x1 = k64[1];
-            x2 = iv64;
-            x3 = x4 = 0;
-            P12();
+            p.x0 = k64[0];
+            p.x1 = k64[1];
+            p.x2 = iv64;
+            p.x3 = p.x4 = 0;
+            p.p(12);
             // Absorb Y
             for (int i = 0; i < (ylen << 3) - 1; i++)
             {
-                x0 ^= ((((y[i >>> 3] >>> (7 - (i & 7))) & 0x01) << 7) & 0xFFL) << 56;
+                p.x0 ^= ((((y[i >>> 3] >>> (7 - (i & 7))) & 0x01) << 7) & 0xFFL) << 56;
                 PX2();
             }
-            x0 ^= (((y[ylen - 1]) & 0x01L) << 7) << 56;
-            P12();
+            p.x0 ^= (((y[ylen - 1]) & 0x01L) << 7) << 56;
+            p.p(12);
         }
 
         public void processEncBlock(byte[] input, int inOff, byte[] output, int outOff)
         {
             long m64 = Pack.littleEndianToLong(input, inOff);
-            long c64 = U64BIG(x0) ^ m64;
+            long c64 = U64BIG(p.x0) ^ m64;
             PX1();
             Pack.longToLittleEndian(c64, output, outOff);
         }
@@ -193,7 +196,7 @@ public class ISAPEngine
         public void processEncFinalBlock(byte[] output, int outOff)
         {
             /* Encrypt final m block */
-            byte[] xo = Pack.longToLittleEndian(x0);
+            byte[] xo = Pack.longToLittleEndian(p.x0);
             int mlen = m_bufPos;
             while (mlen > 0)
             {
@@ -205,67 +208,27 @@ public class ISAPEngine
         {
             // Init state
             isap_rk(ISAP_IV3_64, npub, IV_SIZE);
-            x3 = npub64[0];
-            x4 = npub64[1];
+            p.x3 = npub64[0];
+            p.x4 = npub64[1];
             PX1();
             swapInternalState();
             // Init State for mac
-            x0 = npub64[0];
-            x1 = npub64[1];
-            x2 = ISAP_IV1_64;
-            x3 = x4 = 0;
-            P12();
+            p.x0 = npub64[0];
+            p.x1 = npub64[1];
+            p.x2 = ISAP_IV1_64;
+            p.x3 = p.x4 = 0;
+            p.p(12);
         }
 
         private int getLongSize(int x)
         {
-            return (x >>> 3) + ((x & 7) != 0 ? 1 : 0);
-        }
-
-        private long ROTR(long x, long n)
-        {
-            return (x >>> n) | (x << (64 - n));
+            return ((x + 7) >>> 3);
         }
 
         protected long U64BIG(long x)
         {
-            return ((ROTR(x, 8) & (0xFF000000FF000000L)) | (ROTR(x, 24) & (0x00FF000000FF0000L)) |
-                (ROTR(x, 40) & (0x0000FF000000FF00L)) | (ROTR(x, 56) & (0x000000FF000000FFL)));
-        }
-
-        protected void ROUND(long C)
-        {
-            t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
-            t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
-            t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
-            t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
-            t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
-            x0 = t0 ^ ROTR(t0, 19) ^ ROTR(t0, 28);
-            x1 = t1 ^ ROTR(t1, 39) ^ ROTR(t1, 61);
-            x2 = ~(t2 ^ ROTR(t2, 1) ^ ROTR(t2, 6));
-            x3 = t3 ^ ROTR(t3, 10) ^ ROTR(t3, 17);
-            x4 = t4 ^ ROTR(t4, 7) ^ ROTR(t4, 41);
-        }
-
-        public void P12()
-        {
-            ROUND(0xf0);
-            ROUND(0xe1);
-            ROUND(0xd2);
-            ROUND(0xc3);
-            ROUND(0xb4);
-            ROUND(0xa5);
-            P6();
-        }
-
-        protected void P6()
-        {
-            ROUND(0x96);
-            ROUND(0x87);
-            ROUND(0x78);
-            ROUND(0x69);
-            ROUND(0x5a);
-            ROUND(0x4b);
+            return ((Longs.rotateRight(x, 8) & (0xFF000000FF000000L)) | (Longs.rotateRight(x, 24) & (0x00FF000000FF0000L)) |
+                (Longs.rotateRight(x, 40) & (0x0000FF000000FF00L)) | (Longs.rotateRight(x, 56) & (0x000000FF000000FFL)));
         }
     }
 
@@ -281,12 +244,12 @@ public class ISAPEngine
 
         protected void PX1()
         {
-            P6();
+            p.p(6);
         }
 
         protected void PX2()
         {
-            ROUND(0x4b);
+            p.round(0x4bL);
         }
     }
 
@@ -302,12 +265,12 @@ public class ISAPEngine
 
         protected void PX1()
         {
-            P12();
+            p.p(12);
         }
 
         protected void PX2()
         {
-            P12();
+            p.p(12);
         }
     }
 

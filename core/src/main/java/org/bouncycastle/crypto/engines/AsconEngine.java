@@ -90,22 +90,22 @@ public class AsconEngine
     protected void ascon_aeadinit()
     {
         /* initialize */
-        x0 = ASCON_IV;
+        p.x0 = ASCON_IV;
         if (KEY_SIZE == 20)
         {
-            x0 ^= K0;
+            p.x0 ^= K0;
         }
-        x1 = K1;
-        x2 = K2;
-        x3 = N0;
-        x4 = N1;
-        p(12);
+        p.x1 = K1;
+        p.x2 = K2;
+        p.x3 = N0;
+        p.x4 = N1;
+        p.p(12);
         if (KEY_SIZE == 20)
         {
-            x2 ^= K0;
+            p.x2 ^= K0;
         }
-        x3 ^= K1;
-        x4 ^= K2;
+        p.x3 ^= K1;
+        p.x4 ^= K2;
     }
 
     protected void processFinalAadBlock()
@@ -113,12 +113,12 @@ public class AsconEngine
         m_aad[m_aadPos] = (byte)0x80;
         if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.bigEndianToLong(m_aad, 0);
-            x1 ^= Pack.bigEndianToLong(m_aad, 8) & (-1L << (56 - ((m_aadPos - 8) << 3)));
+            p.x0 ^= Pack.bigEndianToLong(m_aad, 0);
+            p.x1 ^= Pack.bigEndianToLong(m_aad, 8) & (-1L << (56 - ((m_aadPos - 8) << 3)));
         }
         else
         {
-            x0 ^= Pack.bigEndianToLong(m_aad, 0) & (-1L << (56 - (m_aadPos << 3)));
+            p.x0 ^= Pack.bigEndianToLong(m_aad, 0) & (-1L << (56 - (m_aadPos << 3)));
         }
     }
 
@@ -127,32 +127,32 @@ public class AsconEngine
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
             long c0 = Pack.bigEndianToLong(input, 0);
-            x0 ^= c0;
-            Pack.longToBigEndian(x0, output, outOff);
-            x0 = c0;
+            p.x0 ^= c0;
+            Pack.longToBigEndian(p.x0, output, outOff);
+            p.x0 = c0;
 
             outOff += 8;
             inLen -= 8;
-            x1 ^= pad(inLen);
+            p.x1 ^= pad(inLen);
             if (inLen != 0)
             {
                 long c1 = Pack.littleEndianToLong_High(input, 8, inLen);
-                x1 ^= c1;
-                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
-                x1 &= -1L >>> (inLen << 3);
-                x1 ^= c1;
+                p.x1 ^= c1;
+                Pack.longToLittleEndian_High(p.x1, output, outOff, inLen);
+                p.x1 &= -1L >>> (inLen << 3);
+                p.x1 ^= c1;
             }
         }
         else
         {
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
             if (inLen != 0)
             {
                 long c0 = Pack.littleEndianToLong_High(input, 0, inLen);
-                x0 ^= c0;
-                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
-                x0 &= -1L >>> (inLen << 3);
-                x0 ^= c0;
+                p.x0 ^= c0;
+                Pack.longToLittleEndian_High(p.x0, output, outOff, inLen);
+                p.x0 &= -1L >>> (inLen << 3);
+                p.x0 ^= c0;
             }
         }
 
@@ -163,24 +163,24 @@ public class AsconEngine
     {
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.bigEndianToLong(input, 0);
-            Pack.longToBigEndian(x0, output, outOff);
+            p.x0 ^= Pack.bigEndianToLong(input, 0);
+            Pack.longToBigEndian(p.x0, output, outOff);
             outOff += 8;
             inLen -= 8;
-            x1 ^= pad(inLen);
+            p.x1 ^= pad(inLen);
             if (inLen != 0)
             {
-                x1 ^= Pack.littleEndianToLong_High(input, 8, inLen);
-                Pack.longToLittleEndian_High(x1, output, outOff, inLen);
+                p.x1 ^= Pack.littleEndianToLong_High(input, 8, inLen);
+                Pack.longToLittleEndian_High(p.x1, output, outOff, inLen);
             }
         }
         else
         {
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
             if (inLen != 0)
             {
-                x0 ^= Pack.littleEndianToLong_High(input, 0, inLen);
-                Pack.longToLittleEndian_High(x0, output, outOff, inLen);
+                p.x0 ^= Pack.littleEndianToLong_High(input, 0, inLen);
+                Pack.longToLittleEndian_High(p.x0, output, outOff, inLen);
             }
         }
         finishData(State.EncFinal);
@@ -191,24 +191,24 @@ public class AsconEngine
         switch (asconParameters)
         {
         case ascon128:
-            x1 ^= K1;
-            x2 ^= K2;
+            p.x1 ^= K1;
+            p.x2 ^= K2;
             break;
         case ascon128a:
-            x2 ^= K1;
-            x3 ^= K2;
+            p.x2 ^= K1;
+            p.x3 ^= K2;
             break;
         case ascon80pq:
-            x1 ^= (K0 << 32 | K1 >> 32);
-            x2 ^= (K1 << 32 | K2 >> 32);
-            x3 ^= K2 << 32;
+            p.x1 ^= (K0 << 32 | K1 >> 32);
+            p.x2 ^= (K1 << 32 | K2 >> 32);
+            p.x3 ^= K2 << 32;
             break;
         default:
             throw new IllegalStateException();
         }
-        p(12);
-        x3 ^= K1;
-        x4 ^= K2;
+        p.p(12);
+        p.x3 ^= K1;
+        p.x4 ^= K2;
 
         m_state = nextState;
     }
