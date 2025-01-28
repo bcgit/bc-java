@@ -62,22 +62,19 @@ public class ISAPDigest
     protected void finish(byte[] output, int outOff)
     {
         /* absorb final input block */
-        int idx;
         p.x0 ^= 0x80L << ((7 - m_bufPos) << 3);
         while (m_bufPos > 0)
         {
             p.x0 ^= (m_buf[--m_bufPos] & 0xFFL) << ((7 - m_bufPos) << 3);
         }
-        p.p(12);
         // squeeze
         long[] out64 = new long[4];
-        for (idx = 0; idx < 3; ++idx)
+        for (int i = 0; i < 4; ++i)
         {
-            out64[idx] = U64BIG(p.x0);
             p.p(12);
+            out64[i] = U64BIG(p.x0);
         }
         /* squeeze final output block */
-        out64[idx] = U64BIG(p.x0);
         Pack.longToLittleEndian(out64, output, outOff);
     }
 

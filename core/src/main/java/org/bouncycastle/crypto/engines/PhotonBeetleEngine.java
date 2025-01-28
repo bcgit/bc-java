@@ -88,7 +88,6 @@ public class PhotonBeetleEngine
         N = iv;
         state = new byte[STATE_INBYTES];
         state_2d = new byte[D][D];
-        mac = new byte[MAC_SIZE];
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }
