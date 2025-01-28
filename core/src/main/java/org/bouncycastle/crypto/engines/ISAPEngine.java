@@ -338,9 +338,9 @@ public class ISAPEngine
         public void init()
         {
             k16 = new short[k.length >> 1];
-            byteToShort(k, k16, k16.length);
+            Pack.littleEndianToShort(k, 0, k16, 0, k16.length);
             iv16 = new short[npub.length >> 1];
-            byteToShort(npub, iv16, iv16.length);
+            Pack.littleEndianToShort(npub, 0, iv16, 0, iv16.length);
             //reset();
         }
 
@@ -428,11 +428,11 @@ public class ISAPEngine
             SX[len >> 1] ^= 0x80 << ((len & 1) << 3);
             PermuteRoundsHX(SX, E, C);
             // Derive K*
-            shortToByte(SX, tag);
+            Pack.shortToLittleEndian(SX, 0, 8, tag, 0);
             isap_rk(ISAP_IV2_16, tag, KEY_SIZE, SX, KEY_SIZE, C);
             // Squeeze tag
             PermuteRoundsHX(SX, E, C);
-            shortToByte(SX, tag);
+            Pack.shortToLittleEndian(SX, 0, 8, tag, 0);
         }
 
         public void processEncBlock(byte[] input, int inOff, byte[] output, int outOff)
@@ -459,22 +459,6 @@ public class ISAPEngine
             for (int i = 0; i < outLen; ++i)
             {
                 output[i] ^= Pack.littleEndianToShort(input, inOff + (i << 1));
-            }
-        }
-
-        private void byteToShort(byte[] input, short[] output, int outLen)
-        {
-            for (int i = 0; i < outLen; ++i)
-            {
-                output[i] = Pack.littleEndianToShort(input, (i << 1));
-            }
-        }
-
-        private void shortToByte(short[] input, byte[] output)
-        {
-            for (int i = 0; i < 8; ++i)
-            {
-                Pack.shortToLittleEndian(input[i], output, (i << 1));
             }
         }
 

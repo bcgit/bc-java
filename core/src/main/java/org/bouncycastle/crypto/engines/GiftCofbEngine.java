@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.util.Bytes;
+
 /**
  * GIFT-COFB v1.1, based on the current round 3 submission, https://www.isical.ac.in/~lightweight/COFB/
  * Reference C implementation: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-submissions/elephant.zip
@@ -114,20 +116,9 @@ public class GiftCofbEngine
         C[15] = (byte)(S[3]);
     }
 
-    private void xor_block(byte[] d, int dOff, byte[] s1, byte[] s2, int s2Off, int no_of_bytes)
-    {
-        for (int i = 0; i < no_of_bytes; i++)
-        {
-            d[i + dOff] = (byte)(s1[i] ^ s2[i + s2Off]);
-        }
-    }
-
     private void xor_topbar_block(byte[] d, byte[] s1, byte[] s2)
     {
-        for (int i = 0; i < 8; i++)
-        {
-            d[i] = (byte)(s1[i] ^ s2[i]);
-        }
+        Bytes.xor(8, s1, s2, d);
         System.arraycopy(s1, 8, d, 8, 8);
     }
 
@@ -148,10 +139,7 @@ public class GiftCofbEngine
     {
         byte[] tmp = new byte[8];
         double_half_block(tmp, s);
-        for (int i = 0; i < 8; i++)
-        {
-            d[i] = (byte)(s[i] ^ tmp[i]);
-        }
+        Bytes.xor(8, s, tmp, d);
     }
 
     private void pho1(byte[] d, byte[] Y, byte[] M, int mOff, int no_of_bytes)
@@ -182,18 +170,19 @@ public class GiftCofbEngine
         }
         tmp[15] = (byte)((Y[7] & 0xFF) << 1 | (Y[0] & 0xFF) >>> 7);
         System.arraycopy(tmp, 0, Y, 0, 16);
-        xor_block(d, 0, Y, tmpM, 0, 16);
+        Bytes.xor(16, Y, tmpM, d);
     }
 
     private void pho(byte[] Y, byte[] M, int mOff, byte[] X, byte[] C, int cOff, int no_of_bytes)
     {
-        xor_block(C, cOff, Y, M, mOff, no_of_bytes);
+        Bytes.xor(no_of_bytes, Y, M, mOff, C, cOff);
         pho1(X, Y, M, mOff, no_of_bytes);
     }
 
     private void phoprime(byte[] Y, byte[] C, int cOff, byte[] X, byte[] M, int mOff, int no_of_bytes)
     {
-        xor_block(M, mOff, Y, C, cOff, no_of_bytes);
+        Bytes.xor(no_of_bytes, Y, C, cOff, M, mOff);
+        //xor_block(M, mOff, Y, C, cOff, no_of_bytes);
         pho1(X, Y, M, mOff, no_of_bytes);
     }
 

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Romulus v1.3, based on the current round 3 submission, https://romulusae.github.io/romulus/
@@ -274,10 +275,7 @@ public class RomulusEngine
         {
             if (twist)
             {
-                for (int i = 0; i < 16; i++)
-                {
-                    mac_s[i] = (byte)(mac_s[i] ^ input[inOff + i]);
-                }
+                Bytes.xorTo(MAC_SIZE, input, inOff, mac_s);
             }
             else
             {
@@ -301,10 +299,7 @@ public class RomulusEngine
                 m_aad[BlockSize - 1] = (byte)(m_aadPos & 0x0f);
                 if (twist)
                 {
-                    for (int i = 0; i < BlockSize; i++)
-                    {
-                        mac_s[i] = (byte)(mac_s[i] ^ m_aad[i]);
-                    }
+                    Bytes.xorTo(BlockSize, m_aad, mac_s);
                 }
                 else
                 {
@@ -374,10 +369,7 @@ public class RomulusEngine
         {
             if (twist)
             {
-                for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-                {
-                    s[i] = (byte)(s[i] ^ input[inOff + i]);
-                }
+                Bytes.xorTo(AD_BLK_LEN_HALF, input, inOff, s);
             }
             else
             {
@@ -397,10 +389,7 @@ public class RomulusEngine
                 pad(m_aad, 0, mp, AD_BLK_LEN_HALF, len8);
                 if (twist)
                 {
-                    for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-                    {
-                        s[i] = (byte)(s[i] ^ mp[i]);
-                    }
+                    Bytes.xorTo(AD_BLK_LEN_HALF, mp, s);
                 }
                 else
                 {
@@ -483,10 +472,7 @@ public class RomulusEngine
                 int len8 = Math.min(m_bufPos, 16);
                 System.arraycopy(npub, 0, S, 0, 16);
                 block_cipher(S, Z, T, 0, CNT, (byte)64);
-                for (int i = 0; i < len8; i++)
-                {
-                    output[i + outOff] = (byte)((m_buf[i]) ^ S[i]);
-                }
+                Bytes.xor(len8, m_buf, S, output, outOff);
                 System.arraycopy(npub, 0, S, 0, 16);
 
                 lfsr_gf56(CNT);
@@ -587,10 +573,7 @@ public class RomulusEngine
         {
             System.arraycopy(npub, 0, S, 0, 16);
             block_cipher(S, Z, T, 0, CNT, (byte)64);
-            for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-            {
-                output[i + outOff] = (byte)((input[i + inOff]) ^ S[i]);
-            }
+            Bytes.xor(AD_BLK_LEN_HALF, S, input, inOff, output, outOff);
             System.arraycopy(npub, 0, S, 0, 16);
             block_cipher(S, Z, T, 0, CNT, (byte)65);
             System.arraycopy(S, 0, Z, 0, 16);
@@ -615,10 +598,7 @@ public class RomulusEngine
         {
             System.arraycopy(npub, 0, S, 0, 16);
             block_cipher(S, Z, T, 0, CNT, (byte)64);
-            for (int i = 0; i < AD_BLK_LEN_HALF; i++)
-            {
-                output[i + outOff] = (byte)((input[i + inOff]) ^ S[i]);
-            }
+            Bytes.xor(AD_BLK_LEN_HALF, S, input, inOff, output, outOff);
             System.arraycopy(npub, 0, S, 0, 16);
             block_cipher(S, Z, T, 0, CNT, (byte)65);
             System.arraycopy(S, 0, Z, 0, 16);

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
@@ -95,10 +96,8 @@ public class XoodyakEngine
             System.arraycopy(input, inOff, P, 0, splitLen);
             Up(null, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
-            for (int i = 0; i < splitLen; i++)
-            {
-                output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
-            }
+            Bytes.xor(splitLen, state, input, inOff, output, outOff);
+            inOff += splitLen;
             Down(P, 0, splitLen, 0x00);
             Cu = 0x00;
             outOff += splitLen;
@@ -116,10 +115,8 @@ public class XoodyakEngine
             splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             Up(null, 0, Cu); /* Up without extract */
             /* Extract from Up and Add */
-            for (int i = 0; i < splitLen; i++)
-            {
-                output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
-            }
+            Bytes.xor(splitLen, state, input, inOff, output, outOff);
+            inOff += splitLen;
             Down(output, outOff, splitLen, 0x00);
             Cu = 0x00;
             outOff += splitLen;
