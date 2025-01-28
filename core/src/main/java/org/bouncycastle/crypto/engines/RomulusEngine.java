@@ -628,6 +628,7 @@ public class RomulusEngine
             Arrays.clear(LR);
             Arrays.clear(T);
             Arrays.clear(S);
+            Arrays.clear(CNT_Z);
             reset_lfsr_gf56(CNT);
             System.arraycopy(npub, 0, Z, 0, 16);
             block_cipher(Z, k, T, 0, CNT_Z, (byte)66);
