@@ -15,7 +15,6 @@ abstract class AsconBaseDigest
         }
     }
 
-
     AsconPermutationFriend.AsconPermutation p;
     protected int ASCON_PB_ROUNDS = 12;
 
@@ -73,13 +72,26 @@ abstract class AsconBaseDigest
 
     protected int hash(byte[] output, int outOff, int outLen)
     {
-        if (DigestSize + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff, outLen);
         padAndAbsorb();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
         return outLen;
+    }
+
+    protected void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
+    {
+        if (outOff + len > output.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
+    }
+
+    protected void ensureNoAbsorbWhileSqueezing(boolean m_squeezing)
+    {
+        if (m_squeezing)
+        {
+            throw new IllegalArgumentException("attempt to absorb while squeezing");
+        }
     }
 }

@@ -49,20 +49,14 @@ public class AsconXof
     @Override
     public void update(byte in)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(in);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(input, inOff, len);
     }
 

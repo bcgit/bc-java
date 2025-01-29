@@ -23,6 +23,7 @@ public class XoodyakEngine
     private byte[] K;
     private byte[] iv;
     private static final int PhaseUp = 2;
+    private static final int PhaseDown = 1;
     private static final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean encrypted;
@@ -105,11 +106,12 @@ public class XoodyakEngine
         {
             splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
             System.arraycopy(input, inOff, P, 0, splitLen);
-            phase = up(mode, state, null, 0, 0, Cu); /* Up without extract */
+            up(mode, state, Cu); /* Up without extract */
             /* Extract from Up and Add */
             Bytes.xor(splitLen, state, input, inOff, output, outOff);
             inOff += splitLen;
-            phase = down(mode, state, P, 0, splitLen, 0x00);
+            down(mode, state, P, 0, splitLen, 0x00);
+            phase = PhaseDown;
             Cu = 0x00;
             outOff += splitLen;
             len -= splitLen;
@@ -124,11 +126,12 @@ public class XoodyakEngine
         while (len != 0 || !encrypted)
         {
             splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            phase = up(mode, state, null, 0, 0, Cu); /* Up without extract */
+            up(mode, state, Cu); /* Up without extract */
             /* Extract from Up and Add */
             Bytes.xor(splitLen, state, input, inOff, output, outOff);
             inOff += splitLen;
-            phase = down(mode, state, output, outOff, splitLen, 0x00);
+            down(mode, state, output, outOff, splitLen, 0x00);
+            phase = PhaseDown;
             Cu = 0x00;
             outOff += splitLen;
             len -= splitLen;
@@ -148,7 +151,9 @@ public class XoodyakEngine
         {
             decrypt(m_buf, 0, m_bufPos, output, outOff);
         }
-        phase = up(mode, state, mac, 0, MAC_SIZE, 0x40);
+        up(mode, state, 0x40);
+        System.arraycopy(state, 0, mac, 0, MAC_SIZE);
+        phase = PhaseUp;
     }
 
     protected void reset(boolean clearMac)
@@ -178,10 +183,11 @@ public class XoodyakEngine
         {
             if (phase != PhaseUp)
             {
-                phase = up(mode, state, null, 0, 0, 0);
+                up(mode, state, 0);
             }
             splitLen = Math.min(XLen, AADBufferSize);
-            phase = down(mode, state, X, Xoff, splitLen, Cd);
+            down(mode, state, X, Xoff, splitLen, Cd);
+            phase = PhaseDown;
             Cd = 0;
             Xoff += splitLen;
             XLen -= splitLen;
@@ -189,16 +195,16 @@ public class XoodyakEngine
         while (XLen != 0);
     }
 
-    public static int up(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Yi, int YiOff, int YiLen, int Cu)
+    public static void up(XoodyakDigest.Friend friend, int mode, byte[] state, int Cu)
     {
         if (null == friend)
         {
             throw new NullPointerException("This method is only for use by XoodyakDigest");
         }
-        return up(mode, state, Yi, YiOff, YiLen, Cu);
+        up(mode, state, Cu);
     }
 
-    private static int up(int mode, byte[] state, byte[] Yi, int YiOff, int YiLen, int Cu)
+    private static void up(int mode, byte[] state, int Cu)
     {
         if (mode != ModeHash)
         {
@@ -306,28 +312,21 @@ public class XoodyakEngine
         Pack.intToLittleEndian(a9, state, 36);
         Pack.intToLittleEndian(a10, state, 40);
         Pack.intToLittleEndian(a11, state, 44);
-
-        if (Yi != null)
-        {
-            System.arraycopy(state, 0, Yi, YiOff, YiLen);
-        }
-        return PhaseUp;
     }
 
-    public static int down(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
+    public static void down(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
     {
         if (null == friend)
         {
             throw new NullPointerException("This method is only for use by XoodyakDigest");
         }
-        return down(mode, state, Xi, XiOff, XiLen, Cd);
+        down(mode, state, Xi, XiOff, XiLen, Cd);
     }
 
-    private static int down(int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
+    private static void down(int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
     {
         Bytes.xorTo(XiLen, Xi, XiOff, state);
         state[XiLen] ^= 0x01;
         state[f_bPrime_1] ^= (mode == ModeHash) ? (Cd & 0x01) : Cd;
-        return 1;
     }
 }

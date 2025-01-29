@@ -16,7 +16,10 @@ public class SparkleDigest
     public static class Friend
     {
         private static final Friend INSTANCE = new Friend();
-        private Friend() {}
+
+        private Friend()
+        {
+        }
     }
 
     public enum SparkleParameters
@@ -24,6 +27,7 @@ public class SparkleDigest
         ESCH256,
         ESCH384
     }
+
     private static final int RATE_WORDS = 4;
     private final int[] state;
     private final int SPARKLE_STEPS_SLIM;
@@ -71,10 +75,7 @@ public class SparkleDigest
 
             // padding
             m_buf[m_bufPos] = (byte)0x80;
-            while(++m_bufPos < BlockSize)
-            {
-                m_buf[m_bufPos] = 0x00;
-            }
+            Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
         }
         else
         {
@@ -108,9 +109,9 @@ public class SparkleDigest
 
     private void processBlock(byte[] buf, int off, int steps)
     {
-        int t0 = Pack.littleEndianToInt(buf, off     );
-        int t1 = Pack.littleEndianToInt(buf, off +  4);
-        int t2 = Pack.littleEndianToInt(buf, off +  8);
+        int t0 = Pack.littleEndianToInt(buf, off);
+        int t1 = Pack.littleEndianToInt(buf, off + 4);
+        int t2 = Pack.littleEndianToInt(buf, off + 8);
         int t3 = Pack.littleEndianToInt(buf, off + 12);
 
         // addition of a buffer block to the state
