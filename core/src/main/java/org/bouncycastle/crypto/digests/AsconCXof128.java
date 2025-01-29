@@ -36,10 +36,7 @@ public class AsconCXof128
     public AsconCXof128(byte[] s, int off, int len)
     {
         algorithmName = "Ascon-CXOF128";
-        if ((off + len) > s.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
+        ensureSufficientInputBuffer(s, off, len);
         if (len > 256)
         {
             throw new DataLengthException("customized string is too long");
@@ -56,20 +53,14 @@ public class AsconCXof128
     @Override
     public void update(byte in)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(in);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(input, inOff, len);
     }
 
@@ -107,10 +98,7 @@ public class AsconCXof128
     @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
-        if (DigestSize + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff, outLen);
         padAndAbsorb();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);

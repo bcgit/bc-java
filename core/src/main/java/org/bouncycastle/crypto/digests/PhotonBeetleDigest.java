@@ -25,16 +25,16 @@ public class PhotonBeetleDigest
 
     private final byte[] state;
     private final byte[][] state_2d;
-    private static final int STATE_INBYTES = 32;
+    private static final int SQUEEZE_RATE_INBYTES = 16;
     private static final int D = 8;
     private int blockCount;
 
     public PhotonBeetleDigest()
     {
         super(ProcessingBufferType.Buffered, 4);
-        state = new byte[STATE_INBYTES];
-        state_2d = new byte[D][D];
         DigestSize = 32;
+        state = new byte[DigestSize];
+        state_2d = new byte[D][D];
         algorithmName = "Photon-Beetle Hash";
         blockCount = 0;
     }
@@ -60,17 +60,17 @@ public class PhotonBeetleDigest
         int LAST_THREE_BITS_OFFSET = 5;
         if (m_bufPos == 0 && blockCount == 0)
         {
-            state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
+            state[DigestSize - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
         else if (blockCount < 4)
         {
             System.arraycopy(m_buf, 0, state, blockCount << 2, m_bufPos);
             state[(blockCount << 2) + m_bufPos] ^= 0x01; // ozs
-            state[STATE_INBYTES - 1] ^= (byte)1 << LAST_THREE_BITS_OFFSET;
+            state[DigestSize - 1] ^= (byte)1 << LAST_THREE_BITS_OFFSET;
         }
         else if (blockCount == 4 && m_bufPos == 0)
         {
-            state[STATE_INBYTES - 1] ^= (byte)2 << LAST_THREE_BITS_OFFSET;
+            state[DigestSize - 1] ^= (byte)2 << LAST_THREE_BITS_OFFSET;
         }
         else
         {
@@ -80,13 +80,12 @@ public class PhotonBeetleDigest
             {
                 state[m_bufPos] ^= 0x01; // ozs
             }
-            state[STATE_INBYTES - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
+            state[DigestSize - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
         PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
-        int SQUEEZE_RATE_INBYTES = 16;
         System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
         PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
-        System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, DigestSize - SQUEEZE_RATE_INBYTES);
+        System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, SQUEEZE_RATE_INBYTES);
     }
 
     @Override

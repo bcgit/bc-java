@@ -124,10 +124,7 @@ public abstract class BufferBaseDigest
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
+        ensureSufficientInputBuffer(input, inOff, len);
         int available = BlockSize - m_bufPos;
         if (processor.isLengthWithinAvailableSpace(len, available))
         {
@@ -155,10 +152,7 @@ public abstract class BufferBaseDigest
     @Override
     public int doFinal(byte[] output, int outOff)
     {
-        if (DigestSize + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff);
         finish(output, outOff);
         reset();
         return DigestSize;
@@ -168,6 +162,22 @@ public abstract class BufferBaseDigest
     {
         Arrays.clear(m_buf);
         m_bufPos = 0;
+    }
+
+    protected void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
+    {
+        if (inOff + len > input.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+    }
+
+    protected void ensureSufficientOutputBuffer(byte[] output, int outOff)
+    {
+        if (DigestSize + outOff > output.length)
+        {
+            throw new OutputLengthException("output buffer is too short");
+        }
     }
 
     protected abstract void processBytes(byte[] input, int inOff);

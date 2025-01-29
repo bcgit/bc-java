@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.engines.AsconPermutationFriend;
-import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -44,12 +43,6 @@ public class ISAPDigest
         reset();
     }
 
-    protected long U64BIG(long x)
-    {
-        return ((Longs.rotateRight(x, 8) & (0xFF000000FF000000L)) | (Longs.rotateRight(x, 24) & (0x00FF000000FF0000L)) |
-            (Longs.rotateRight(x, 40) & (0x0000FF000000FF00L)) | (Longs.rotateRight(x, 56) & (0x000000FF000000FFL)));
-    }
-
     @Override
     protected void processBytes(byte[] input, int inOff)
     {
@@ -68,14 +61,12 @@ public class ISAPDigest
             p.x0 ^= (m_buf[--m_bufPos] & 0xFFL) << ((7 - m_bufPos) << 3);
         }
         // squeeze
-        long[] out64 = new long[4];
         for (int i = 0; i < 4; ++i)
         {
             p.p(12);
-            out64[i] = U64BIG(p.x0);
+            Pack.longToBigEndian(p.x0, output, outOff);
+            outOff += 8;
         }
-        /* squeeze final output block */
-        Pack.longToLittleEndian(out64, output, outOff);
     }
 
     @Override

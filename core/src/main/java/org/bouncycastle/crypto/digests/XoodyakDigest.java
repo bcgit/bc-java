@@ -26,6 +26,7 @@ public class XoodyakDigest
     private int phase;
     private static final int mode = 1; // set as ModeHash
     private static final int PhaseUp = 2;
+    private static final int PhaseDown = 1;
     private static final int TAGLEN = 16;
     private int Cd;
 
@@ -43,9 +44,10 @@ public class XoodyakDigest
     {
         if (phase != PhaseUp)
         {
-            phase = XoodyakEngine.up(Friend.INSTANCE, mode, state, null, 0, 0, 0);
+            XoodyakEngine.up(Friend.INSTANCE, mode, state, 0);
         }
-        phase = XoodyakEngine.down(Friend.INSTANCE, mode, state, input, inOff, BlockSize, Cd);
+        XoodyakEngine.down(Friend.INSTANCE, mode, state, input, inOff, BlockSize, Cd);
+        phase = PhaseDown;
         Cd = 0;
     }
 
@@ -56,13 +58,16 @@ public class XoodyakDigest
         {
             if (phase != PhaseUp)
             {
-                phase = XoodyakEngine.up(Friend.INSTANCE, mode, state, null, 0, 0, 0);
+                XoodyakEngine.up(Friend.INSTANCE, mode, state, 0);
             }
-            phase = XoodyakEngine.down(Friend.INSTANCE, mode, state, m_buf, 0, m_bufPos, Cd);
+            XoodyakEngine.down(Friend.INSTANCE, mode, state, m_buf, 0, m_bufPos, Cd);
         }
-        phase = XoodyakEngine.up(Friend.INSTANCE, mode, state, output, outOff, TAGLEN, 0x40);
-        phase = XoodyakEngine.down(Friend.INSTANCE, mode, state, null, 0, 0, 0);
-        phase = XoodyakEngine.up(Friend.INSTANCE, mode, state, output, outOff + TAGLEN, TAGLEN, 0);
+        XoodyakEngine.up(Friend.INSTANCE, mode, state, 0x40);
+        System.arraycopy(state, 0, output, outOff, TAGLEN);
+        XoodyakEngine.down(Friend.INSTANCE, mode, state, null, 0, 0, 0);
+        XoodyakEngine.up(Friend.INSTANCE, mode, state, 0);
+        System.arraycopy(state, 0, output, outOff + TAGLEN, TAGLEN);
+        phase = PhaseDown;
     }
 
     @Override

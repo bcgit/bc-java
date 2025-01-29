@@ -149,7 +149,6 @@ public class ElephantEngine
     private class Dumbo
         extends Spongent
     {
-
         public Dumbo()
         {
             super(160, 20, 80, (byte)0x75);
@@ -166,7 +165,6 @@ public class ElephantEngine
     private class Jumbo
         extends Spongent
     {
-
         public Jumbo()
         {
             super(176, 22, 90, (byte)0x45);
