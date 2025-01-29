@@ -167,18 +167,15 @@ public class ISAPEngine
 
         public void processEncBlock(byte[] input, int inOff, byte[] output, int outOff)
         {
-            long m64 = Pack.littleEndianToLong(input, inOff);
-            long c64 = U64BIG(p.x0) ^ m64;
+            Pack.longToBigEndian(Pack.bigEndianToLong(input, inOff) ^ p.x0, output, outOff);
             PX1(p);
-            Pack.longToLittleEndian(c64, output, outOff);
         }
 
         public void processEncFinalBlock(byte[] output, int outOff)
         {
             /* Encrypt final m block */
             byte[] xo = Pack.longToLittleEndian(p.x0);
-            int mlen = m_bufPos;
-            Bytes.xor(mlen, xo, BlockSize - mlen, m_buf, 0, output, outOff);
+            Bytes.xor(m_bufPos, xo, BlockSize - m_bufPos, m_buf, 0, output, outOff);
         }
 
         public void reset()
@@ -196,12 +193,6 @@ public class ISAPEngine
         private int getLongSize(int x)
         {
             return ((x + 7) >>> 3);
-        }
-
-        protected long U64BIG(long x)
-        {
-            return ((Longs.rotateRight(x, 8) & (0xFF000000FF000000L)) | (Longs.rotateRight(x, 24) & (0x00FF000000FF0000L)) |
-                (Longs.rotateRight(x, 40) & (0x0000FF000000FF00L)) | (Longs.rotateRight(x, 56) & (0x000000FF000000FFL)));
         }
     }
 
@@ -250,7 +241,7 @@ public class ISAPEngine
     private abstract class ISAPAEAD_K
         implements ISAP_AEAD
     {
-        final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
+        protected final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
         protected short[] ISAP_IV1_16;
         protected short[] ISAP_IV2_16;
         protected short[] ISAP_IV3_16;

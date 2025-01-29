@@ -24,7 +24,6 @@ public class PhotonBeetleDigest
     }
 
     private final byte[] state;
-    private final byte[][] state_2d;
     private static final int SQUEEZE_RATE_INBYTES = 16;
     private static final int D = 8;
     private int blockCount;
@@ -34,7 +33,6 @@ public class PhotonBeetleDigest
         super(ProcessingBufferType.Buffered, 4);
         DigestSize = 32;
         state = new byte[DigestSize];
-        state_2d = new byte[D][D];
         algorithmName = "Photon-Beetle Hash";
         blockCount = 0;
     }
@@ -48,7 +46,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
+            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state);
             Bytes.xorTo(BlockSize, input, inOff, state);
         }
         blockCount++;
@@ -74,7 +72,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
+            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state);
             Bytes.xorTo(m_bufPos, m_buf, state);
             if (m_bufPos < BlockSize)
             {
@@ -82,9 +80,9 @@ public class PhotonBeetleDigest
             }
             state[DigestSize - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
-        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
+        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state);
         System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
-        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
+        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state);
         System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, SQUEEZE_RATE_INBYTES);
     }
 
