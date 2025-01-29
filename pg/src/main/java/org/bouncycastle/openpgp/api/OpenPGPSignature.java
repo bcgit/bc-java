@@ -688,7 +688,7 @@ public abstract class OpenPGPSignature
 
         /**
          * Check, if the creation time of the signature is within the interval
-         * <pre>notBefore <= creationTime <= notAfter</pre>
+         * <pre>notBefore &lt;= creationTime &lt;= notAfter</pre>
          *
          * @param notBefore earliest accepted creation time
          * @param notAfter latest accepted creation time
