@@ -133,6 +133,14 @@ public class OpenPGPCertificate
         }
     }
 
+    public Map<KeyIdentifier, OpenPGPComponentKey> getPublicKeys()
+    {
+        Map<KeyIdentifier, OpenPGPComponentKey> keys = new HashMap<>();
+        keys.put(primaryKey.getKeyIdentifier(), primaryKey);
+        keys.putAll(subkeys);
+        return keys;
+    }
+
     /**
      * Return the primary key of the certificate.
      *

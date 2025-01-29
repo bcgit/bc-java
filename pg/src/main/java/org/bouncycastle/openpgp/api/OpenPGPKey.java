@@ -83,6 +83,16 @@ public class OpenPGPKey
         }
     }
 
+    /**
+     * Return the {@link OpenPGPCertificate} of this {@link OpenPGPKey}.
+     *
+     * @return certificate
+     */
+    public OpenPGPCertificate toCertificate()
+    {
+        return new OpenPGPCertificate(getPGPPublicKeyRing(), implementation, policy);
+    }
+
     @Override
     public List<OpenPGPCertificateComponent> getComponents()
     {
@@ -147,6 +157,11 @@ public class OpenPGPKey
 
     @Override
     public PGPSecretKeyRing getPGPKeyRing()
+    {
+        return getPGPSecretKeyRing();
+    }
+
+    public PGPSecretKeyRing getPGPSecretKeyRing()
     {
         return (PGPSecretKeyRing) super.getPGPKeyRing();
     }
