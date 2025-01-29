@@ -126,6 +126,25 @@ public class SparkleEngine
         reset();
     }
 
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
@@ -209,7 +228,6 @@ public class SparkleEngine
 
     protected void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-
         for (int i = 0; i < RATE_WORDS / 2; ++i)
         {
             int j = i + (RATE_WORDS / 2);
@@ -234,8 +252,6 @@ public class SparkleEngine
 
     protected void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-//      assert bufOff <= buffer.length - RATE_BYTES;
-
         for (int i = 0; i < RATE_WORDS / 2; ++i)
         {
             int j = i + (RATE_WORDS / 2);

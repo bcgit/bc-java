@@ -179,12 +179,12 @@ public class XoodyakEngine
     private void AbsorbAny(byte[] X, int Xoff, int XLen, int Cd)
     {
         int splitLen;
+        if (phase != PhaseUp)
+        {
+            up(mode, state, 0);
+        }
         do
         {
-            if (phase != PhaseUp)
-            {
-                up(mode, state, 0);
-            }
             splitLen = Math.min(XLen, AADBufferSize);
             down(mode, state, X, Xoff, splitLen, Cd);
             phase = PhaseDown;

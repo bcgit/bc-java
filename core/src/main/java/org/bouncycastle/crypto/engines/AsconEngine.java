@@ -61,7 +61,6 @@ public class AsconEngine
             throw new IllegalArgumentException("invalid parameter setting for ASCON AEAD");
         }
         nr = (BlockSize == 8) ? 6 : 8;
-        m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
         AADBufferSize = BlockSize;
         dsep = 1L;
         setInnerMembers(asconParameters == AsconParameters.ascon128a ? ProcessingBufferType.Immediate : ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
