@@ -74,7 +74,7 @@ public class SparkleDigest
             state[(STATE_WORDS >> 1) - 1] ^= 1 << 24;
 
             // padding
-            m_buf[m_bufPos] = (byte)0x80;
+            m_buf[m_bufPos++] = (byte)0x80;
             Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
         }
         else
