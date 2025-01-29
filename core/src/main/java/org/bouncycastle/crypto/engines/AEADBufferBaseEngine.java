@@ -12,17 +12,17 @@ abstract class AEADBufferBaseEngine
 {
     protected enum ProcessingBufferType
     {
-        Buffered,
-        BufferedLargeMac,
-        Immediate,
-        ImmediateLargeMac,
+        Buffered, // Store a (aad) block size of input and process after the input size exceeds the buffer size
+        BufferedLargeMac, // handle the situation when mac size is larger than the block size, used for pb128
+        Immediate, //process the input immediately when the input size is equal or greater than the block size
+        ImmediateLargeMac, // handle the situation when mac size is larger than the block size, used for ascon80pq, ascon128, ISAP_A_128(A)
     }
 
     protected enum AADOperatorType
     {
         Default,
-        Counter,
-        Stream
+        Counter,//add a counter to count the size of AAD
+        Stream //process AAD data during the process data, used for elephant
     }
 
     protected enum DataOperatorType
@@ -30,7 +30,7 @@ abstract class AEADBufferBaseEngine
         Default,
         Counter,
         Stream,
-        //StreamCipher
+        //StreamCipher //TODO: add for Grain 128 AEAD
     }
 
     protected enum State
@@ -525,6 +525,7 @@ abstract class AEADBufferBaseEngine
             if (m_bufPos > 0)
             {
                 available = BlockSize - m_bufPos;
+                // The function is just an operator < or <=
                 if (processor.isLengthWithinAvailableSpace(len, available))
                 {
                     System.arraycopy(input, inOff, m_buf, m_bufPos, len);
@@ -538,6 +539,7 @@ abstract class AEADBufferBaseEngine
                 processBufferEncrypt(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
             }
+            // The function is just an operator >= or >
             while (processor.isLengthExceedingBlockSize(len, BlockSize))
             {
                 processBufferEncrypt(input, inOff, output, outOff + resultLength);
@@ -583,6 +585,8 @@ abstract class AEADBufferBaseEngine
     private int processDecryptionWithLargeMacSize(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
         int resultLength = 0, available;
+        // If the mac size is greater than the block size, process the data in m_buf in the loop until
+        // there is nearly mac_size data left
         while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
             && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
         {
