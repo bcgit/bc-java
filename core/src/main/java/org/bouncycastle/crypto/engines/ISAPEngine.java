@@ -277,7 +277,6 @@ public class ISAPEngine
             Pack.littleEndianToShort(k, 0, k16, 0, k16.length);
             iv16 = new short[npub.length >> 1];
             Pack.littleEndianToShort(npub, 0, iv16, 0, iv16.length);
-            //reset();
         }
 
         public void reset()
@@ -369,8 +368,7 @@ public class ISAPEngine
         public void processEncFinalBlock(byte[] output, int outOff)
         {
             // Squeeze full or partial lane and stop
-            int len = m_bufPos;
-            for (int i = 0; i < len; ++i)
+            for (int i = 0; i < m_bufPos; ++i)
             {
                 output[outOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m_buf[i]);
             }

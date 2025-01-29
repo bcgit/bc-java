@@ -312,7 +312,7 @@ public class ElephantEngine
         lfsr_step();
 
         // Compute ciphertext block
-        computerCipherBlock(input, inOff, BlockSize, output, outOff);
+        computeCipherBlock(input, inOff, BlockSize, output, outOff);
 
         if (nb_its > 0)
         {
@@ -337,7 +337,7 @@ public class ElephantEngine
         System.arraycopy(input, inOff, previous_outputMessage, 0, BlockSize);
     }
 
-    private void computerCipherBlock(byte[] input, int inOff, int blockSize, byte[] output, int outOff)
+    private void computeCipherBlock(byte[] input, int inOff, int blockSize, byte[] output, int outOff)
     {
         System.arraycopy(npub, 0, buffer, 0, IV_SIZE);
         Arrays.fill(buffer, IV_SIZE, BlockSize, (byte)0);
@@ -440,6 +440,24 @@ public class ElephantEngine
         return Math.max(0, len + m_bufPos - MAC_SIZE);
     }
 
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
 
     @Override
     protected void processFinalAAD()
@@ -575,7 +593,7 @@ public class ElephantEngine
             if (i < nblocks_m)
             {
                 // Compute ciphertext block
-                computerCipherBlock(m, rv, r_size, output, outOff);
+                computeCipherBlock(m, rv, r_size, output, outOff);
                 if (forEncryption)
                 {
                     System.arraycopy(buffer, 0, outputMessage, 0, r_size);

@@ -122,9 +122,7 @@ public class RomulusEngine
     {
         private final byte[] mac_s = new byte[16];
         private final byte[] mac_CNT = new byte[7];
-
         private final byte[] s = new byte[16];
-        private final byte[] CNT = new byte[7];
         int offset;
         boolean twist = true;
 
@@ -844,12 +842,7 @@ public class RomulusEngine
     private void reset_lfsr_gf56(byte[] CNT)
     {
         CNT[0] = 0x01;
-        CNT[1] = 0x00;
-        CNT[2] = 0x00;
-        CNT[3] = 0x00;
-        CNT[4] = 0x00;
-        CNT[5] = 0x00;
-        CNT[6] = 0x00;
+        Arrays.fill(CNT, 1, 7, (byte) 0);
     }
 
     public static void hirose_128_128_256(RomulusDigest.Friend friend, byte[] h, byte[] g, byte[] m, int mOff)

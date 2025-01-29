@@ -54,9 +54,7 @@ public class PhotonBeetleEngine
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         int CAPACITY_INBITS = 0, RATE_INBITS = 0;
         switch (pbp)
         {
@@ -94,7 +92,7 @@ public class PhotonBeetleEngine
 
     protected void processBufferAAD(byte[] input, int inOff)
     {
-        PhotonPermutation(state_2d, state);
+        photonPermutation(state_2d, state);
         Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
@@ -128,7 +126,7 @@ public class PhotonBeetleEngine
         {
             if (m_aadPos != 0)
             {
-                PhotonPermutation(state_2d, state);
+                photonPermutation(state_2d, state);
                 Bytes.xorTo(m_aadPos, m_aad, state);
                 if (m_aadPos < BlockSize)
                 {
@@ -142,14 +140,14 @@ public class PhotonBeetleEngine
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        PhotonPermutation(state_2d, state);
+        photonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
         Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        PhotonPermutation(state_2d, state);
+        photonPermutation(state_2d, state);
         rhoohr(output, outOff, input, inOff, BlockSize);
         Bytes.xorTo(BlockSize, output, outOff, state);
     }
@@ -170,7 +168,7 @@ public class PhotonBeetleEngine
         {
             if (bufferLen != 0)
             {
-                PhotonPermutation(state_2d, state);
+                photonPermutation(state_2d, state);
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
                 if (forEncryption)
                 {
@@ -191,7 +189,7 @@ public class PhotonBeetleEngine
         {
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
-        PhotonPermutation(state_2d, state);
+        photonPermutation(state_2d, state);
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
     }
 
@@ -205,7 +203,7 @@ public class PhotonBeetleEngine
         super.reset(clearMac);
     }
 
-    private static void PhotonPermutation(byte[][] state_2d, byte[] state)
+    private static void photonPermutation(byte[][] state_2d, byte[] state)
     {
         int i, j, k;
         int dq = 3;
@@ -312,13 +310,13 @@ public class PhotonBeetleEngine
         }
     }
 
-    public static void PhotonPermutation(PhotonBeetleDigest.Friend friend, byte[][] state_2d, byte[] state)
+    public static void photonPermutation(PhotonBeetleDigest.Friend friend, byte[][] state_2d, byte[] state)
     {
         if (null == friend)
         {
             throw new NullPointerException("This method is only for use by PhotonBeetleDigest");
         }
 
-        PhotonPermutation(state_2d, state);
+        photonPermutation(state_2d, state);
     }
 }

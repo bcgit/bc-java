@@ -48,7 +48,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
+            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
             Bytes.xorTo(BlockSize, input, inOff, state);
         }
         blockCount++;
@@ -74,7 +74,7 @@ public class PhotonBeetleDigest
         }
         else
         {
-            PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
+            PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
             Bytes.xorTo(m_bufPos, m_buf, state);
             if (m_bufPos < BlockSize)
             {
@@ -82,9 +82,9 @@ public class PhotonBeetleDigest
             }
             state[DigestSize - 1] ^= (m_bufPos % BlockSize == 0 ? (byte)1 : (byte)2) << LAST_THREE_BITS_OFFSET;
         }
-        PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
+        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
         System.arraycopy(state, 0, output, outOff, SQUEEZE_RATE_INBYTES);
-        PhotonBeetleEngine.PhotonPermutation(Friend.INSTANCE, state_2d, state);
+        PhotonBeetleEngine.photonPermutation(Friend.INSTANCE, state_2d, state);
         System.arraycopy(state, 0, output, outOff + SQUEEZE_RATE_INBYTES, SQUEEZE_RATE_INBYTES);
     }
 
