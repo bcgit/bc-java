@@ -2,19 +2,11 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 class PolyVecL
 {
-    Poly[] vec;
-    private MLDSAEngine engine;
-    private int mode;
-    private int polyVecBytes;
-    private int dilithiumL;
-    private int dilithiumK;
+    private final Poly[] vec;
 
-    public PolyVecL(MLDSAEngine engine)
+    PolyVecL(MLDSAEngine engine)
     {
-        this.engine = engine;
-        this.mode = engine.getDilithiumMode();
-        this.dilithiumL = engine.getDilithiumL();
-        this.dilithiumK = engine.getDilithiumK();
+        int dilithiumL = engine.getDilithiumL();
 
         this.vec = new Poly[dilithiumL];
         for (int i = 0; i < dilithiumL; i++)
@@ -34,12 +26,11 @@ class PolyVecL
         return vec[i];
     }
 
-    public void expandMatrix(byte[] rho, int i)
+    void uniformBlocks(byte[] rho, int t)
     {
-        int j;
-        for (j = 0; j < dilithiumL; j++)
+        for (int i = 0; i < vec.length; ++i)
         {
-            vec[j].uniformBlocks(rho, (short)((i << 8) + j));
+            vec[i].uniformBlocks(rho, (short)(t + i));
         }
     }
 
@@ -47,28 +38,24 @@ class PolyVecL
     {
         int i;
         short n = nonce;
-        for (i = 0; i < dilithiumL; ++i)
+        for (i = 0; i < vec.length; ++i)
         {
             getVectorIndex(i).uniformEta(seed, n++);
         }
 
     }
 
-    public void copyPolyVecL(PolyVecL outPoly)
+    void copyTo(PolyVecL z)
     {
-        for (int i = 0; i < dilithiumL; i++)
+        for (int i = 0; i < vec.length; i++)
         {
-            for (int j = 0; j < MLDSAEngine.DilithiumN; j++)
-            {
-                outPoly.getVectorIndex(i).setCoeffIndex(j, this.getVectorIndex(i).getCoeffIndex(j));
-            }
+            vec[i].copyTo(z.vec[i]);
         }
     }
 
     public void polyVecNtt()
     {
-        int i;
-        for (i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             this.vec[i].polyNtt();
         }
@@ -76,17 +63,15 @@ class PolyVecL
 
     public void uniformGamma1(byte[] seed, short nonce)
     {
-        int i;
-        for (i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
-            this.getVectorIndex(i).uniformGamma1(seed, (short)(dilithiumL * nonce + i));
+            this.getVectorIndex(i).uniformGamma1(seed, (short)(vec.length * nonce + i));
         }
-
     }
 
     public void pointwisePolyMontgomery(Poly a, PolyVecL v)
     {
-        for (int i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             this.getVectorIndex(i).pointwiseMontgomery(a, v.getVectorIndex(i));
         }
@@ -94,7 +79,7 @@ class PolyVecL
 
     public void invNttToMont()
     {
-        for (int i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             this.getVectorIndex(i).invNttToMont();
         }
@@ -102,7 +87,7 @@ class PolyVecL
 
     public void addPolyVecL(PolyVecL v)
     {
-        for (int i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             this.getVectorIndex(i).addPoly(v.getVectorIndex(i));
         }
@@ -110,7 +95,7 @@ class PolyVecL
 
     public void reduce()
     {
-        for (int i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             this.getVectorIndex(i).reduce();
         }
@@ -118,7 +103,7 @@ class PolyVecL
 
     public boolean checkNorm(int bound)
     {
-        for (int i = 0; i < dilithiumL; ++i)
+        for (int i = 0; i < vec.length; ++i)
         {
             if (this.getVectorIndex(i).checkNorm(bound))
             {
@@ -132,10 +117,10 @@ class PolyVecL
     public String toString()
     {
         String out = "\n[";
-        for (int i = 0; i < dilithiumL; i++)
+        for (int i = 0; i < vec.length; i++)
         {
             out += "Inner Matrix " + i + " " + this.getVectorIndex(i).toString();
-            if (i == dilithiumL - 1)
+            if (i == vec.length - 1)
             {
                 continue;
             }
