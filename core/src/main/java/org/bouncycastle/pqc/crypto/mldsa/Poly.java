@@ -4,21 +4,25 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class Poly
 {
+    private final static int DilithiumN = MLDSAEngine.DilithiumN;
+
     private final int polyUniformNBlocks;
     private int[] coeffs;
     private final MLDSAEngine engine;
-    private final int dilithiumN;
 
     private final Symmetric symmetric;
 
-
     public Poly(MLDSAEngine engine)
     {
-        this.dilithiumN = MLDSAEngine.DilithiumN;
-        this.coeffs = new int[dilithiumN];
+        this.coeffs = new int[DilithiumN];
         this.engine = engine;
         this.symmetric = engine.GetSymmetric();
         this.polyUniformNBlocks = (768 + symmetric.stream128BlockBytes - 1) / symmetric.stream128BlockBytes;
+    }
+
+    void copyTo(Poly z)
+    {
+        System.arraycopy(coeffs, 0, z.coeffs, 0, DilithiumN);
     }
 
     public int getCoeffIndex(int i)
@@ -51,11 +55,11 @@ class Poly
 
         symmetric.stream128squeezeBlocks(buf, 0, buflen);
 
-        ctr = rejectUniform(this, 0, dilithiumN, buf, buflen);
+        ctr = rejectUniform(this, 0, DilithiumN, buf, buflen);
 
         // ctr can be less than N
 
-        while (ctr < dilithiumN)
+        while (ctr < DilithiumN)
         {
             off = buflen % 3;
             for (i = 0; i < off; ++i)
@@ -64,7 +68,7 @@ class Poly
             }
             symmetric.stream128squeezeBlocks(buf, off, symmetric.stream128BlockBytes);
             buflen = symmetric.stream128BlockBytes + off;
-            ctr += rejectUniform(this, ctr, dilithiumN - ctr, buf, buflen);
+            ctr += rejectUniform(this, ctr, DilithiumN - ctr, buf, buflen);
         }
 
     }
@@ -117,12 +121,12 @@ class Poly
         symmetric.stream256init(seed, nonce);
         symmetric.stream256squeezeBlocks(buf, 0, buflen);
 
-        ctr = rejectEta(this, 0, dilithiumN, buf, buflen, eta);
+        ctr = rejectEta(this, 0, DilithiumN, buf, buflen, eta);
 
         while (ctr < MLDSAEngine.DilithiumN)
         {
             symmetric.stream256squeezeBlocks(buf, 0, symmetric.stream256BlockBytes);
-            ctr += rejectEta(this, ctr, dilithiumN - ctr, buf, symmetric.stream256BlockBytes, eta);
+            ctr += rejectEta(this, ctr, DilithiumN - ctr, buf, symmetric.stream256BlockBytes, eta);
         }
 
     }
@@ -179,7 +183,7 @@ class Poly
     public void pointwiseMontgomery(Poly v, Poly w)
     {
         int i;
-        for (i = 0; i < dilithiumN; ++i)
+        for (i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, Reduce.montgomeryReduce((long)((long)v.getCoeffIndex(i) * (long)w.getCoeffIndex(i))));
         }
@@ -204,7 +208,7 @@ class Poly
     public void addPoly(Poly a)
     {
         int i;
-        for (i = 0; i < dilithiumN; i++)
+        for (i = 0; i < DilithiumN; i++)
         {
             this.setCoeffIndex(i, this.getCoeffIndex(i) + a.getCoeffIndex(i));
         }
@@ -213,7 +217,7 @@ class Poly
 
     public void reduce()
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, Reduce.reduce32(this.getCoeffIndex(i)));
         }
@@ -226,7 +230,7 @@ class Poly
 
     public void conditionalAddQ()
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, Reduce.conditionalAddQ(this.getCoeffIndex(i)));
         }
@@ -234,7 +238,7 @@ class Poly
 
     public void power2Round(Poly a)
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             int[] p2r = Rounding.power2Round(this.getCoeffIndex(i));
             this.setCoeffIndex(i, p2r[0]);
@@ -246,7 +250,7 @@ class Poly
     {
         byte[] out = new byte[MLDSAEngine.DilithiumPolyT1PackedBytes];
 
-        for (int i = 0; i < dilithiumN / 4; ++i)
+        for (int i = 0; i < DilithiumN / 4; ++i)
         {
             out[5 * i + 0] = (byte)(this.coeffs[4 * i + 0] >> 0);
             out[5 * i + 1] = (byte)((this.coeffs[4 * i + 0] >> 8) | (this.coeffs[4 * i + 1] << 2));
@@ -261,7 +265,7 @@ class Poly
     {
         int i;
 
-        for (i = 0; i < dilithiumN / 4; ++i)
+        for (i = 0; i < DilithiumN / 4; ++i)
         {
             this.setCoeffIndex(4 * i + 0, (((a[5 * i + 0] & 0xFF) >> 0) | ((int)(a[5 * i + 1] & 0xFF) << 8)) & 0x3FF);
             this.setCoeffIndex(4 * i + 1, (((a[5 * i + 1] & 0xFF) >> 2) | ((int)(a[5 * i + 2] & 0xFF) << 6)) & 0x3FF);
@@ -277,7 +281,7 @@ class Poly
 
         if (engine.getDilithiumEta() == 2)
         {
-            for (i = 0; i < dilithiumN / 8; ++i)
+            for (i = 0; i < DilithiumN / 8; ++i)
             {
                 t[0] = (byte)(engine.getDilithiumEta() - this.getCoeffIndex(8 * i + 0));
                 t[1] = (byte)(engine.getDilithiumEta() - this.getCoeffIndex(8 * i + 1));
@@ -295,7 +299,7 @@ class Poly
         }
         else if (engine.getDilithiumEta() == 4)
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (i = 0; i < DilithiumN / 2; ++i)
             {
                 t[0] = (byte)(engine.getDilithiumEta() - this.getCoeffIndex(2 * i + 0));
                 t[1] = (byte)(engine.getDilithiumEta() - this.getCoeffIndex(2 * i + 1));
@@ -315,7 +319,7 @@ class Poly
 
         if (engine.getDilithiumEta() == 2)
         {
-            for (i = 0; i < dilithiumN / 8; ++i)
+            for (i = 0; i < DilithiumN / 8; ++i)
             {
                 int base = aOff + 3 * i;
                 this.setCoeffIndex(8 * i + 0, (((a[base + 0] & 0xFF) >> 0)) & 7);
@@ -339,7 +343,7 @@ class Poly
         }
         else if (engine.getDilithiumEta() == 4)
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (i = 0; i < DilithiumN / 2; ++i)
             {
                 this.setCoeffIndex(2 * i + 0, a[aOff + i] & 0x0F);
                 this.setCoeffIndex(2 * i + 1, (a[aOff + i] & 0xFF) >> 4);
@@ -354,7 +358,7 @@ class Poly
         int i;
         int[] t = new int[8];
 
-        for (i = 0; i < dilithiumN / 8; ++i)
+        for (i = 0; i < DilithiumN / 8; ++i)
         {
             t[0] = (1 << (MLDSAEngine.DilithiumD - 1)) - this.getCoeffIndex(8 * i + 0);
             t[1] = (1 << (MLDSAEngine.DilithiumD - 1)) - this.getCoeffIndex(8 * i + 1);
@@ -393,7 +397,7 @@ class Poly
     public void polyt0Unpack(byte[] a, int aOff)
     {
         int i;
-        for (i = 0; i < dilithiumN / 8; ++i)
+        for (i = 0; i < DilithiumN / 8; ++i)
         {
             int base = aOff + 13 * i;
             this.setCoeffIndex(8 * i + 0,
@@ -472,10 +476,10 @@ class Poly
 
     private void unpackZ(byte[] a)
     {
-        int i;
-        if (engine.getDilithiumGamma1() == (1 << 17))
+        int gamma1 = engine.getDilithiumGamma1();
+        if (gamma1 == (1 << 17))
         {
-            for (i = 0; i < dilithiumN / 4; ++i)
+            for (int i = 0; i < DilithiumN / 4; ++i)
             {
                 this.setCoeffIndex(4 * i + 0,
                     (
@@ -503,15 +507,15 @@ class Poly
                     ) & 0x3FFFF);
 
 
-                this.setCoeffIndex(4 * i + 0, engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 0));
-                this.setCoeffIndex(4 * i + 1, engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 1));
-                this.setCoeffIndex(4 * i + 2, engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 2));
-                this.setCoeffIndex(4 * i + 3, engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 3));
+                this.setCoeffIndex(4 * i + 0, gamma1 - this.getCoeffIndex(4 * i + 0));
+                this.setCoeffIndex(4 * i + 1, gamma1 - this.getCoeffIndex(4 * i + 1));
+                this.setCoeffIndex(4 * i + 2, gamma1 - this.getCoeffIndex(4 * i + 2));
+                this.setCoeffIndex(4 * i + 3, gamma1 - this.getCoeffIndex(4 * i + 3));
             }
         }
-        else if (engine.getDilithiumGamma1() == (1 << 19))
+        else if (gamma1 == (1 << 19))
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (int i = 0; i < DilithiumN / 2; ++i)
             {
                 this.setCoeffIndex(2 * i + 0,
                     (
@@ -526,8 +530,8 @@ class Poly
                             ((a[5 * i + 4] & 0xFF) << 12)
                     ) & 0xFFFFF);
 
-                this.setCoeffIndex(2 * i + 0, engine.getDilithiumGamma1() - this.getCoeffIndex(2 * i + 0));
-                this.setCoeffIndex(2 * i + 1, engine.getDilithiumGamma1() - this.getCoeffIndex(2 * i + 1));
+                this.setCoeffIndex(2 * i + 0, gamma1 - this.getCoeffIndex(2 * i + 0));
+                this.setCoeffIndex(2 * i + 1, gamma1 - this.getCoeffIndex(2 * i + 1));
             }
         }
         else
@@ -538,49 +542,46 @@ class Poly
 
     public void decompose(Poly a)
     {
-        int i;
-        for (i = 0; i < dilithiumN; ++i)
+        int gamma2 = engine.getDilithiumGamma2();        
+        for (int i = 0; i < DilithiumN; ++i)
         {
-            int[] decomp = Rounding.decompose(this.getCoeffIndex(i), engine.getDilithiumGamma2());
+            int[] decomp = Rounding.decompose(this.getCoeffIndex(i), gamma2);
             this.setCoeffIndex(i, decomp[1]);
             a.setCoeffIndex(i, decomp[0]);
         }
     }
 
-    public byte[] w1Pack()
+    void packW1(byte[] r, int rOff)
     {
-        int i;
+//        byte[] out = new byte[engine.getDilithiumPolyW1PackedBytes()];
 
-        byte[] out = new byte[engine.getDilithiumPolyW1PackedBytes()];
-
-        if (engine.getDilithiumGamma2() == (MLDSAEngine.DilithiumQ - 1) / 88)
+        int gamma2 = engine.getDilithiumGamma2();
+        if (gamma2 == (MLDSAEngine.DilithiumQ - 1) / 88)
         {
-            for (i = 0; i < dilithiumN / 4; ++i)
+            for (int i = 0; i < DilithiumN / 4; ++i)
             {
-                out[3 * i + 0] = (byte)(((byte)this.getCoeffIndex(4 * i + 0)) | (this.getCoeffIndex(4 * i + 1) << 6));
-                out[3 * i + 1] = (byte)((byte)(this.getCoeffIndex(4 * i + 1) >> 2) | (this.getCoeffIndex(4 * i + 2) << 4));
-                out[3 * i + 2] = (byte)((byte)(this.getCoeffIndex(4 * i + 2) >> 4) | (this.getCoeffIndex(4 * i + 3) << 2));
+                r[rOff + 3 * i + 0] = (byte)(((byte)getCoeffIndex(4 * i + 0)) | (getCoeffIndex(4 * i + 1) << 6));
+                r[rOff + 3 * i + 1] = (byte)((byte)(getCoeffIndex(4 * i + 1) >> 2) | (getCoeffIndex(4 * i + 2) << 4));
+                r[rOff + 3 * i + 2] = (byte)((byte)(getCoeffIndex(4 * i + 2) >> 4) | (getCoeffIndex(4 * i + 3) << 2));
             }
         }
         else if (engine.getDilithiumGamma2() == (MLDSAEngine.DilithiumQ - 1) / 32)
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (int i = 0; i < DilithiumN / 2; ++i)
             {
-                out[i] = (byte)(this.getCoeffIndex(2 * i + 0) | (this.getCoeffIndex(2 * i + 1) << 4));
+                r[rOff + i] = (byte)(getCoeffIndex(2 * i + 0) | (getCoeffIndex(2 * i + 1) << 4));
             }
         }
-
-        return out;
     }
 
-    public void challenge(byte[] seed)
+    public void challenge(byte[] seed, int seedOff, int seedLen)
     {
         int i, b = 0, pos;
         long signs;
         byte[] buf = new byte[symmetric.stream256BlockBytes];
 
         SHAKEDigest shake256Digest = new SHAKEDigest(256);
-        shake256Digest.update(seed, 0, engine.getDilithiumCTilde());
+        shake256Digest.update(seed, seedOff, seedLen);
         shake256Digest.doOutput(buf, 0, symmetric.stream256BlockBytes);
 
         signs = (long)0;
@@ -591,11 +592,11 @@ class Poly
 
         pos = 8;
 
-        for (i = 0; i < dilithiumN; ++i)
+        for (i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, 0);
         }
-        for (i = dilithiumN - engine.getDilithiumTau(); i < dilithiumN; ++i)
+        for (i = DilithiumN - engine.getDilithiumTau(); i < DilithiumN; ++i)
         {
             do
             {
@@ -623,7 +624,7 @@ class Poly
             return true;
         }
 
-        for (i = 0; i < dilithiumN; ++i)
+        for (i = 0; i < DilithiumN; ++i)
         {
             t = this.getCoeffIndex(i) >> 31;
             t = this.getCoeffIndex(i) - (t & 2 * this.getCoeffIndex(i));
@@ -638,7 +639,7 @@ class Poly
 
     public void subtract(Poly inpPoly)
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, this.getCoeffIndex(i) - inpPoly.getCoeffIndex(i));
         }
@@ -648,7 +649,7 @@ class Poly
     {
         int i, s = 0;
 
-        for (i = 0; i < dilithiumN; ++i)
+        for (i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, Rounding.makeHint(a0.getCoeffIndex(i), a1.getCoeffIndex(i), engine));
             s += this.getCoeffIndex(i);
@@ -658,57 +659,53 @@ class Poly
 
     public void polyUseHint(Poly a, Poly h)
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, Rounding.useHint(a.getCoeffIndex(i), h.getCoeffIndex(i), engine.getDilithiumGamma2()));
         }
     }
 
-    public byte[] zPack()
+    public void zPack(byte[] z, int zOff)
     {
-        byte[] outBytes = new byte[engine.getDilithiumPolyZPackedBytes()];
-        int i;
-        int[] t = new int[4];
-        if (engine.getDilithiumGamma1() == (1 << 17))
+        int gamma1 = engine.getDilithiumGamma1();
+        if (gamma1 == (1 << 17))
         {
-            for (i = 0; i < dilithiumN / 4; ++i)
+            for (int i = 0; i < DilithiumN / 4; ++i)
             {
-                t[0] = engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 0);
-                t[1] = engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 1);
-                t[2] = engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 2);
-                t[3] = engine.getDilithiumGamma1() - this.getCoeffIndex(4 * i + 3);
+                int t0 = gamma1 - getCoeffIndex(4 * i + 0);
+                int t1 = gamma1 - getCoeffIndex(4 * i + 1);
+                int t2 = gamma1 - getCoeffIndex(4 * i + 2);
+                int t3 = gamma1 - getCoeffIndex(4 * i + 3);
 
-                outBytes[9 * i + 0] = (byte)t[0];
-                outBytes[9 * i + 1] = (byte)(t[0] >> 8);
-                outBytes[9 * i + 2] = (byte)((byte)(t[0] >> 16) | (t[1] << 2));
-                outBytes[9 * i + 3] = (byte)(t[1] >> 6);
-                outBytes[9 * i + 4] = (byte)((byte)(t[1] >> 14) | (t[2] << 4));
-                outBytes[9 * i + 5] = (byte)(t[2] >> 4);
-                outBytes[9 * i + 6] = (byte)((byte)(t[2] >> 12) | (t[3] << 6));
-                outBytes[9 * i + 7] = (byte)(t[3] >> 2);
-                outBytes[9 * i + 8] = (byte)(t[3] >> 10);
+                z[zOff + 9 * i + 0] = (byte)t0;
+                z[zOff + 9 * i + 1] = (byte)(t0 >> 8);
+                z[zOff + 9 * i + 2] = (byte)((byte)(t0 >> 16) | (t1 << 2));
+                z[zOff + 9 * i + 3] = (byte)(t1 >> 6);
+                z[zOff + 9 * i + 4] = (byte)((byte)(t1 >> 14) | (t2 << 4));
+                z[zOff + 9 * i + 5] = (byte)(t2 >> 4);
+                z[zOff + 9 * i + 6] = (byte)((byte)(t2 >> 12) | (t3 << 6));
+                z[zOff + 9 * i + 7] = (byte)(t3 >> 2);
+                z[zOff + 9 * i + 8] = (byte)(t3 >> 10);
             }
         }
-        else if (engine.getDilithiumGamma1() == (1 << 19))
+        else if (gamma1 == (1 << 19))
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (int i = 0; i < DilithiumN / 2; ++i)
             {
-                t[0] = engine.getDilithiumGamma1() - this.getCoeffIndex(2 * i + 0);
-                t[1] = engine.getDilithiumGamma1() - this.getCoeffIndex(2 * i + 1);
+                int t0 = gamma1 - getCoeffIndex(2 * i + 0);
+                int t1 = gamma1 - getCoeffIndex(2 * i + 1);
 
-                outBytes[5 * i + 0] = (byte)t[0];
-                outBytes[5 * i + 1] = (byte)(t[0] >> 8);
-                outBytes[5 * i + 2] = (byte)((byte)(t[0] >> 16) | (t[1] << 4));
-                outBytes[5 * i + 3] = (byte)(t[1] >> 4);
-                outBytes[5 * i + 4] = (byte)(t[1] >> 12);
-
+                z[zOff + 5 * i + 0] = (byte)t0;
+                z[zOff + 5 * i + 1] = (byte)(t0 >> 8);
+                z[zOff + 5 * i + 2] = (byte)((byte)(t0 >> 16) | (t1 << 4));
+                z[zOff + 5 * i + 3] = (byte)(t1 >> 4);
+                z[zOff + 5 * i + 4] = (byte)(t1 >> 12);
             }
         }
         else
         {
             throw new RuntimeException("Wrong Dilithium Gamma1!");
         }
-        return outBytes;
     }
 
     void zUnpack(byte[] a)
@@ -716,7 +713,7 @@ class Poly
         int i;
         if (engine.getDilithiumGamma1() == (1 << 17))
         {
-            for (i = 0; i < dilithiumN / 4; ++i)
+            for (i = 0; i < DilithiumN / 4; ++i)
             {
                 this.setCoeffIndex(4 * i + 0,
                     (((int)(a[9 * i + 0] & 0xFF)
@@ -750,7 +747,7 @@ class Poly
         }
         else if (engine.getDilithiumGamma1() == (1 << 19))
         {
-            for (i = 0; i < dilithiumN / 2; ++i)
+            for (i = 0; i < DilithiumN / 2; ++i)
             {
                 this.setCoeffIndex(2 * i + 0,
                     (int)(((((int)(a[5 * i + 0] & 0xFF))
@@ -778,7 +775,7 @@ class Poly
 
     public void shiftLeft()
     {
-        for (int i = 0; i < dilithiumN; ++i)
+        for (int i = 0; i < DilithiumN; ++i)
         {
             this.setCoeffIndex(i, this.getCoeffIndex(i) << MLDSAEngine.DilithiumD);
         }
