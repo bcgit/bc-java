@@ -88,8 +88,7 @@ public class XoodyakEngine
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        int Cu = encrypted ? 0 : 0x80;
-        up(mode, state, Cu); /* Up without extract */
+        up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
         /* Extract from Up and Add */
         Bytes.xor(BlockSize, state, input, inOff, output, outOff);
         down(mode, state, input, inOff, BlockSize, 0x00);
@@ -99,8 +98,7 @@ public class XoodyakEngine
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        int Cu = encrypted ? 0 : 0x80;
-        up(mode, state, Cu); /* Up without extract */
+        up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
         /* Extract from Up and Add */
         Bytes.xor(BlockSize, state, input, inOff, output, outOff);
         down(mode, state, output, outOff, BlockSize, 0x00);
@@ -111,10 +109,9 @@ public class XoodyakEngine
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        int Cu = encrypted ? 0 : 0x80;
         if (m_bufPos != 0 || !encrypted)
         {
-            up(mode, state, Cu); /* Up without extract */
+            up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
             /* Extract from Up and Add */
             Bytes.xor(m_bufPos, state, m_buf, 0, output, outOff);
             if (forEncryption)

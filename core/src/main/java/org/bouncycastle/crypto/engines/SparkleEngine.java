@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.digests.SparkleDigest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
@@ -282,11 +283,8 @@ public class SparkleEngine
             state[STATE_WORDS - 1] ^= _A0;
 
             // padding
-            m_aad[m_aadPos] = (byte)0x80;
-            while (++m_aadPos < BlockSize)
-            {
-                m_aad[m_aadPos] = 0x00;
-            }
+            m_aad[m_aadPos++] = (byte)0x80;
+            Arrays.fill(m_aad, m_aadPos, BlockSize, (byte)0);
         }
         else
         {

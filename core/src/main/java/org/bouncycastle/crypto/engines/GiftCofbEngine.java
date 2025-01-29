@@ -116,36 +116,32 @@ public class GiftCofbEngine
         C[15] = (byte)(S[3]);
     }
 
-    private void xor_topbar_block(byte[] d, byte[] s1, byte[] s2)
+    private void double_half_block(byte[] s)
     {
-        Bytes.xor(8, s1, s2, d);
-        System.arraycopy(s1, 8, d, 8, 8);
+        int mask = ((s[0] & 0xFF) >>> 7) * 27;
+        /*x^{64} + x^4 + x^3 + x + 1*/
+        for (int i = 0; i < 7; i++)
+        {
+            s[i] = (byte)(((s[i] & 0xFF) << 1) | ((s[i + 1] & 0xFF) >>> 7));
+        }
+        s[7] = (byte)(((s[7] & 0xFF) << 1) ^ mask);
     }
 
-    private void double_half_block(byte[] d, byte[] s)
+    private void triple_half_block(byte[] s)
     {
-        int i;
         byte[] tmp = new byte[8];
         /*x^{64} + x^4 + x^3 + x + 1*/
-        for (i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++)
         {
             tmp[i] = (byte)(((s[i] & 0xFF) << 1) | ((s[i + 1] & 0xFF) >>> 7));
         }
         tmp[7] = (byte)(((s[7] & 0xFF) << 1) ^ (((s[0] & 0xFF) >>> 7) * 27));
-        System.arraycopy(tmp, 0, d, 0, 8);
-    }
-
-    private void triple_half_block(byte[] d, byte[] s)
-    {
-        byte[] tmp = new byte[8];
-        double_half_block(tmp, s);
-        Bytes.xor(8, s, tmp, d);
+        Bytes.xorTo(8, tmp, s);
     }
 
     private void pho1(byte[] d, byte[] Y, byte[] M, int mOff, int no_of_bytes)
     {
         byte[] tmpM = new byte[16];
-        //padding(tmpM, M, mOff, no_of_bytes);
         byte[] tmp = new byte[16];
         if (no_of_bytes == 0)
         {
@@ -160,11 +156,10 @@ public class GiftCofbEngine
         {
             System.arraycopy(M, mOff, tmpM, 0, no_of_bytes);
         }
-        int i;
         //G(Y, Y);
         /*Y[1],Y[2] -> Y[2],Y[1]<<<1*/
         System.arraycopy(Y, 8, tmp, 0, 8);
-        for (i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++)
         {
             tmp[i + 8] = (byte)((Y[i] & 0xFF) << 1 | (Y[i + 1] & 0xFF) >>> 7);
         }
@@ -173,25 +168,13 @@ public class GiftCofbEngine
         Bytes.xor(16, Y, tmpM, d);
     }
 
-    private void pho(byte[] Y, byte[] M, int mOff, byte[] X, byte[] C, int cOff, int no_of_bytes)
-    {
-        Bytes.xor(no_of_bytes, Y, M, mOff, C, cOff);
-        pho1(X, Y, M, mOff, no_of_bytes);
-    }
-
-    private void phoprime(byte[] Y, byte[] C, int cOff, byte[] X, byte[] M, int mOff, int no_of_bytes)
-    {
-        Bytes.xor(no_of_bytes, Y, C, cOff, M, mOff);
-        pho1(X, Y, M, mOff, no_of_bytes);
-    }
-
     @Override
     protected void processBufferAAD(byte[] in, int inOff)
     {
         pho1(input, Y, in, inOff, 16);
         /* offset = 2*offset */
-        double_half_block(offset, offset);
-        xor_topbar_block(input, input, offset);
+        double_half_block(offset);
+        Bytes.xorTo(8, offset, input);
         /* Y[i] = E(X[i]) */
         giftb128(input, k, Y);
     }
@@ -203,20 +186,20 @@ public class GiftCofbEngine
         /* last byte[] */
         /* full byte[]: offset = 3*offset */
         /* partial byte[]: offset = 3^2*offset */
-        triple_half_block(offset, offset);
+        triple_half_block(offset);
         if (((m_aadPos & 15) != 0) || m_state == State.DecInit || m_state == State.EncInit)
         {
-            triple_half_block(offset, offset);
+            triple_half_block(offset);
         }
         if (len == 0)
         {
             /* empty M: offset = 3^2*offset */
-            triple_half_block(offset, offset);
-            triple_half_block(offset, offset);
+            triple_half_block(offset);
+            triple_half_block(offset);
         }
         /* X[i] = (pad(A[i]) + G(Y[i-1])) + offset */
         pho1(input, Y, m_aad, 0, m_aadPos);
-        xor_topbar_block(input, input, offset);
+        Bytes.xorTo(8, offset, input);
         /* Y[a] = E(X[a]) */
         giftb128(input, k, Y);
     }
@@ -255,50 +238,49 @@ public class GiftCofbEngine
         reset(false);
     }
 
-
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        int inOff = 0;
         int len = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         if (len != 0)
         {
             /* full block: offset = 3*offset */
             /* empty data / partial block: offset = 3^2*offset */
-            triple_half_block(offset, offset);
+            triple_half_block(offset);
             if ((len & 15) != 0)
             {
-                triple_half_block(offset, offset);
+                triple_half_block(offset);
             }
             /* last block */
             /* C[m] = Y[m+a-1] + M[m]*/
             /* X[a+m] = M[m] + G(Y[m+a-1]) + offset */
+            Bytes.xor(m_bufPos, Y, m_buf, 0, output, outOff);
             if (forEncryption)
             {
-                pho(Y, m_buf, inOff, input, output, outOff, m_bufPos);
+                pho1(input, Y, m_buf, 0, m_bufPos);
             }
             else
             {
-                phoprime(Y, m_buf, inOff, input, output, outOff, m_bufPos);
+                pho1(input, Y, output, outOff, m_bufPos);
             }
-            xor_topbar_block(input, input, offset);
+            Bytes.xorTo(8, offset, input);
             /* T = E(X[m+a]) */
             giftb128(input, k, Y);
         }
         System.arraycopy(Y, 0, mac, 0, BlockSize);
     }
 
-
     @Override
     protected void processBufferEncrypt(byte[] inputM, int inOff, byte[] output, int outOff)
     {
         /* Process M */
         /* full byte[]s */
-        double_half_block(offset, offset);
+        double_half_block(offset);
         /* C[i] = Y[i+a-1] + M[i]*/
         /* X[i] = M[i] + G(Y[i+a-1]) + offset */
-        pho(Y, inputM, inOff, input, output, outOff, BlockSize);
-        xor_topbar_block(input, input, offset);
+        Bytes.xor(BlockSize, Y, inputM, inOff, output, outOff);
+        pho1(input, Y, inputM, inOff, BlockSize);
+        Bytes.xorTo(8, offset, input);
         /* Y[i] = E(X[i+a]) */
         giftb128(input, k, Y);
     }
@@ -308,11 +290,12 @@ public class GiftCofbEngine
     {
         /* Process M */
         /* full byte[]s */
-        double_half_block(offset, offset);
+        double_half_block(offset);
         /* C[i] = Y[i+a-1] + M[i]*/
         /* X[i] = M[i] + G(Y[i+a-1]) + offset */
-        phoprime(Y, inputM, inOff, input, output, outOff, BlockSize);
-        xor_topbar_block(input, input, offset);
+        Bytes.xor(BlockSize, Y, inputM, inOff, output, outOff);
+        pho1(input, Y, output, outOff, BlockSize);
+        Bytes.xorTo(8, offset, input);
         /* Y[i] = E(X[i+a]) */
         giftb128(input, k, Y);
     }

@@ -123,8 +123,8 @@ public class RomulusEngine
         private final byte[] mac_s = new byte[16];
         private final byte[] mac_CNT = new byte[7];
         private final byte[] s = new byte[16];
-        int offset;
-        boolean twist = true;
+        private int offset;
+        private boolean twist = true;
 
         public RomulusM()
         {
@@ -339,7 +339,6 @@ public class RomulusEngine
         public RomulusN()
         {
             s = new byte[AD_BLK_LEN_HALF];
-            twist = true;
         }
 
         @Override
@@ -825,7 +824,6 @@ public class RomulusEngine
         // Combines the secret key, counter and domain bits to form the full 384-bit tweakey
         System.arraycopy(CNT, 0, KT, 0, 7);
         KT[7] = D;
-        Arrays.fill(KT, 8, 16, (byte)0x00);
         System.arraycopy(T, tOff, KT, 16, 16);
         System.arraycopy(K, 0, KT, 32, 16);
         skinny_128_384_plus_enc(s, KT);
