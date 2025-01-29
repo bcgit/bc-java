@@ -245,15 +245,12 @@ public class RomulusEngine
             byte[] T = new byte[16];
             byte[] mp = new byte[16];
             int n = 16;
-            int i, len8;
+            int len8;
             len8 = Math.min(adlen, n);
             adlen -= len8;
             // Rho(S,A) pads an A block and XORs it to the internal state.
             pad(A, AOff, mp, n, len8);
-            for (i = 0; i < n; i++)
-            {
-                s[i] = (byte)(s[i] ^ mp[i]);
-            }
+            Bytes.xorTo(n, mp, s);
             offset = AOff += len8;
             lfsr_gf56(CNT);
             if (adlen != 0)
@@ -793,7 +790,6 @@ public class RomulusEngine
                 }
             }
         }
-
     }
 
     // Applies CNT'=2 * CNT (mod GF(2^56)), where GF(2^56) is defined using the irreducible polynomial

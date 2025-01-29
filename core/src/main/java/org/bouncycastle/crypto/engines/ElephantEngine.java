@@ -260,7 +260,7 @@ public class ElephantEngine
 
         private byte ROL8(byte a, int offset)
         {
-            return (byte)((offset != 0) ? (((a & 0xFF) << offset) ^ ((a & 0xFF) >>> (8 - offset))) : a);
+            return (byte)(((a & 0xff) << offset) | ((a & 0xff) >> (8 - offset)));
         }
 
         private int index(int x, int y)
@@ -273,7 +273,6 @@ public class ElephantEngine
     {
         return (byte)(((b & 0xFF) << 1) | ((b & 0xFF) >>> 7));
     }
-
 
     // State should be BLOCK_SIZE bytes long
     // Note: input may be equal to output
