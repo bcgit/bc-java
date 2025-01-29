@@ -27,36 +27,41 @@ public class ISAPEngine
     public ISAPEngine(IsapType isapType)
     {
         KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
+        ProcessingBufferType bufferType;
         switch (isapType)
         {
         case ISAP_A_128A:
             ISAPAEAD = new ISAPAEAD_A_128A();
             algorithmName = "ISAP-A-128A AEAD";
+            bufferType = ProcessingBufferType.ImmediateLargeMac;
             break;
         case ISAP_K_128A:
             ISAPAEAD = new ISAPAEAD_K_128A();
             algorithmName = "ISAP-K-128A AEAD";
+            bufferType = ProcessingBufferType.Immediate;
             break;
         case ISAP_A_128:
             ISAPAEAD = new ISAPAEAD_A_128();
             algorithmName = "ISAP-A-128 AEAD";
+            bufferType = ProcessingBufferType.ImmediateLargeMac;
             break;
         case ISAP_K_128:
             ISAPAEAD = new ISAPAEAD_K_128();
             algorithmName = "ISAP-K-128 AEAD";
+            bufferType = ProcessingBufferType.Immediate;
             break;
+        default:
+            throw new IllegalArgumentException("Incorrect ISAP parameter");
         }
         AADBufferSize = BlockSize;
-        setInnerMembers(isapType == IsapType.ISAP_K_128A || isapType == IsapType.ISAP_K_128 ? ProcessingBufferType.Immediate :
-            ProcessingBufferType.ImmediateLargeMac, AADOperatorType.Default, DataOperatorType.Default);
+        setInnerMembers(bufferType, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     private static final int ISAP_STATE_SZ = 40;
     private byte[] k;
     private byte[] npub;
     private int ISAP_rH;
-    private boolean aadFinished;
-    private ISAP_AEAD ISAPAEAD;
+    private final ISAP_AEAD ISAPAEAD;
 
     private interface ISAP_AEAD
     {
@@ -706,24 +711,39 @@ public class ISAPEngine
 
     protected void processFinalAAD()
     {
-        if (!aadFinished)
+        ISAPAEAD.absorbFinalAADBlock();
+    }
+
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
         {
-            ISAPAEAD.absorbFinalAADBlock();
-            m_aadPos = 0;
-            aadFinished = true;
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
         }
+
+        m_aadPos = 0;
+        m_state = nextState;
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        processFinalAAD();
         ISAPAEAD.processEncBlock(input, inOff, output, outOff);
         ISAPAEAD.absorbMacBlock(output, outOff);
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        processFinalAAD();
         ISAPAEAD.processEncBlock(input, inOff, output, outOff);
         ISAPAEAD.absorbMacBlock(input, inOff);
     }
@@ -731,7 +751,6 @@ public class ISAPEngine
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        processFinalAAD();
         ISAPAEAD.processEncFinalBlock(output, outOff);
         if (forEncryption)
         {
@@ -748,7 +767,6 @@ public class ISAPEngine
         ensureInitialized();
         bufferReset();
         ISAPAEAD.reset();
-        aadFinished = false;
         super.reset(clearMac);
     }
 }

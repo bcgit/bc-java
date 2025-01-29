@@ -182,7 +182,6 @@ public class GiftCofbEngine
     private void phoprime(byte[] Y, byte[] C, int cOff, byte[] X, byte[] M, int mOff, int no_of_bytes)
     {
         Bytes.xor(no_of_bytes, Y, C, cOff, M, mOff);
-        //xor_block(M, mOff, Y, C, cOff, no_of_bytes);
         pho1(X, Y, M, mOff, no_of_bytes);
     }
 
@@ -232,7 +231,6 @@ public class GiftCofbEngine
         case DecAad:
             if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
             {
-                //m_state = State.DecData;
                 return;
             }
         case EncInit:
