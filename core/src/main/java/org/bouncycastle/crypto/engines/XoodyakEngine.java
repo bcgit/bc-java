@@ -27,7 +27,6 @@ public class XoodyakEngine
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean encrypted;
     private byte aadcd;
-    private boolean aadFinished;
     private static final int ModeKeyed = 0;
     private static final int ModeHash = 1;
 
@@ -39,7 +38,7 @@ public class XoodyakEngine
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     @Override
@@ -61,23 +60,39 @@ public class XoodyakEngine
 
     protected void processFinalAAD()
     {
-        if (!aadFinished)
+        AbsorbAny(m_aad, 0, m_aadPos, aadcd);
+        m_aadPos = 0;
+    }
+
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
         {
-            AbsorbAny(m_aad, 0, m_aadPos, aadcd);
-            aadFinished = true;
-            m_aadPos = 0;
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
         }
+
+        m_aadPos = 0;
+        m_state = nextState;
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        processFinalAAD();
         encrypt(input, inOff, BlockSize, output, outOff);
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        processFinalAAD();
         decrypt(input, inOff, BlockSize, output, outOff);
     }
 
@@ -124,7 +139,6 @@ public class XoodyakEngine
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        processFinalAAD();
         if (forEncryption)
         {
             Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
@@ -143,7 +157,6 @@ public class XoodyakEngine
         ensureInitialized();
         super.reset(clearMac);
         Arrays.fill(state, (byte)0);
-        aadFinished = false;
         encrypted = false;
         phase = PhaseUp;
         aadcd = (byte)0x03;

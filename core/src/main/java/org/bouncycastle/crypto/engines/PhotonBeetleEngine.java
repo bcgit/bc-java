@@ -29,7 +29,6 @@ public class PhotonBeetleEngine
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
     private static final int D = 8;
-    private boolean aadFinished;
     private static final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
@@ -99,27 +98,45 @@ public class PhotonBeetleEngine
         Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                //m_state = State.DecData;
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
     public void processFinalAAD()
     {
-        if (!aadFinished)
+        int aadLen = aadOperator.getLen();
+        if (aadLen != 0)
         {
-            int aadLen = aadOperator.getLen();
-            if (aadLen != 0)
+            if (m_aadPos != 0)
             {
-                if (m_aadPos != 0)
+                PhotonPermutation(state_2d, state);
+                Bytes.xorTo(m_aadPos, m_aad, state);
+                if (m_aadPos < BlockSize)
                 {
-                    PhotonPermutation(state_2d, state);
-                    Bytes.xorTo(m_aadPos, m_aad, state);
-                    if (m_aadPos < BlockSize)
-                    {
-                        state[m_aadPos] ^= 0x01; // ozs
-                    }
+                    state[m_aadPos] ^= 0x01; // ozs
                 }
-                state[STATE_INBYTES - 1] ^= select(dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE) > 0,
-                    ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
             }
-            m_aadPos = 0;
-            aadFinished = true;
+            state[STATE_INBYTES - 1] ^= select(dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE) > 0,
+                ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
         }
     }
 
@@ -183,7 +200,6 @@ public class PhotonBeetleEngine
         ensureInitialized();
         bufferReset();
         input_empty = true;
-        aadFinished = false;
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
         super.reset(clearMac);
