@@ -23,23 +23,6 @@ public class PQCUtil
         }
     }
 
-    public static ASN1ObjectIdentifier getMLDSAObjectidentifier(MLDSAParameters parameters)
-    {
-        if (MLDSAParameters.ml_dsa_44 == parameters)
-        {
-            return NISTObjectIdentifiers.id_ml_dsa_44;
-        }
-        if (MLDSAParameters.ml_dsa_65 == parameters)
-        {
-            return NISTObjectIdentifiers.id_ml_dsa_65;
-        }
-        if (MLDSAParameters.ml_dsa_87 == parameters)
-        {
-            return NISTObjectIdentifiers.id_ml_dsa_87;
-        }
-        throw new IllegalArgumentException();
-    }
-
     public static int getMLDSASignatureScheme(MLDSAParameters parameters)
     {
         if (MLDSAParameters.ml_dsa_44 == parameters)
@@ -57,9 +40,9 @@ public class PQCUtil
         throw new IllegalArgumentException();
     }
 
-    public static boolean supportsMLDSA(AlgorithmIdentifier pubKeyAlgID, ASN1ObjectIdentifier algorithm)
+    public static boolean supportsMLDSA(AlgorithmIdentifier pubKeyAlgID, ASN1ObjectIdentifier mlDsaAlgOid)
     {
-        return pubKeyAlgID.getAlgorithm().equals(algorithm)
+        return pubKeyAlgID.getAlgorithm().equals(mlDsaAlgOid)
             && pubKeyAlgID.getParameters() == null;
     }
 }
