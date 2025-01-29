@@ -2,7 +2,6 @@ package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
-import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 /**
