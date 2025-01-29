@@ -182,10 +182,10 @@ public class RomulusEngine
                 while (xlen > 0)
                 {
                     offset = mOff;
-                    xlen = ad_encryption(m, mOff, mac_s, k, xlen, mac_CNT, (byte)44);
+                    xlen = ad_encryption(m, mOff, mac_s, k, xlen, mac_CNT);
                     mOff = offset;
                 }
-                nonce_encryption(npub, mac_CNT, mac_s, k, w);
+                block_cipher(mac_s, k, npub, 0, mac_CNT, w);
                 // Tag generation
                 g8A(mac_s, mac, 0);
                 mOff -= mlen;
@@ -198,7 +198,7 @@ public class RomulusEngine
             System.arraycopy(mac, 0, s, 0, AD_BLK_LEN_HALF);
             if (mlen > 0)
             {
-                nonce_encryption(npub, CNT, s, k, (byte)36);
+                block_cipher(s, k, npub, 0, CNT, (byte)36);
                 while (mlen > AD_BLK_LEN_HALF)
                 {
                     mlen = mlen - AD_BLK_LEN_HALF;
@@ -206,7 +206,7 @@ public class RomulusEngine
                     outOff += AD_BLK_LEN_HALF;
                     mOff += AD_BLK_LEN_HALF;
                     lfsr_gf56(CNT);
-                    nonce_encryption(npub, CNT, s, k, (byte)36);
+                    block_cipher(s, k, npub, 0, CNT, (byte)36);
                 }
                 rho(m, mOff, output, outOff, s, mlen);
             }
@@ -229,10 +229,10 @@ public class RomulusEngine
                 while (xlen > 0)
                 {
                     offset = mauth;
-                    xlen = ad_encryption(output, mauth, mac_s, k, xlen, mac_CNT, (byte)44);
+                    xlen = ad_encryption(output, mauth, mac_s, k, xlen, mac_CNT);
                     mauth = offset;
                 }
-                nonce_encryption(npub, mac_CNT, mac_s, k, w);
+                block_cipher(mac_s, k, npub, 0, mac_CNT, w);
                 // Tag generation
                 g8A(mac_s, mac, 0);
                 System.arraycopy(m, dataOperator.getLen() - MAC_SIZE, m_buf, 0, MAC_SIZE);
@@ -240,7 +240,7 @@ public class RomulusEngine
             }
         }
 
-        int ad_encryption(byte[] A, int AOff, byte[] s, byte[] k, int adlen, byte[] CNT, byte D)
+        int ad_encryption(byte[] A, int AOff, byte[] s, byte[] k, int adlen, byte[] CNT)
         {
             byte[] T = new byte[16];
             byte[] mp = new byte[16];
@@ -259,7 +259,7 @@ public class RomulusEngine
                 adlen -= len8;
                 pad(A, AOff, T, n, len8);
                 offset = AOff + len8;
-                block_cipher(s, k, T, 0, CNT, D);
+                block_cipher(s, k, T, 0, CNT, (byte)44);
                 lfsr_gf56(CNT);
             }
             return adlen;
@@ -345,14 +345,14 @@ public class RomulusEngine
             if (messegeLen == 0)
             {
                 lfsr_gf56(CNT);
-                nonce_encryption(npub, CNT, s, k, (byte)0x15);
+                block_cipher(s, k, npub, 0, CNT, (byte)0x15);
             }
             else if (m_bufPos != 0)
             {
                 int len8 = Math.min(m_bufPos, AD_BLK_LEN_HALF);
                 rho(m_buf, 0, output, outOff, s, len8);
                 lfsr_gf56(CNT);
-                nonce_encryption(npub, CNT, s, k, m_bufPos == AD_BLK_LEN_HALF ? (byte)0x14 : (byte)0x15);
+                block_cipher(s, k, npub, 0, CNT, m_bufPos == AD_BLK_LEN_HALF ? (byte)0x14 : (byte)0x15);
             }
             g8A(s, mac, 0);
         }
@@ -393,15 +393,15 @@ public class RomulusEngine
             if (aadOperator.getLen() == 0)
             {
                 lfsr_gf56(CNT);
-                nonce_encryption(npub, CNT, s, k, (byte)0x1a);
+                block_cipher(s, k, npub, 0, CNT, (byte)0x1a);
             }
             else if ((m_aadPos & 15) != 0)
             {
-                nonce_encryption(npub, CNT, s, k, (byte)0x1a);
+                block_cipher(s, k, npub, 0, CNT, (byte)0x1a);
             }
             else
             {
-                nonce_encryption(npub, CNT, s, k, (byte)0x18);
+                block_cipher(s, k, npub, 0, CNT, (byte)0x18);
             }
             reset_lfsr_gf56(CNT);
         }
@@ -416,7 +416,7 @@ public class RomulusEngine
                 output[i + outOff] ^= input[i + inOff];
             }
             lfsr_gf56(CNT);
-            nonce_encryption(npub, CNT, s, k, (byte)0x04);
+            block_cipher(s, k, npub, 0, CNT, (byte)0x04);
         }
 
         @Override
@@ -425,12 +425,11 @@ public class RomulusEngine
             g8A(s, output, outOff);
             for (int i = 0; i < AD_BLK_LEN_HALF; i++)
             {
-                s[i] ^= input[i + inOff];
-                s[i] ^= output[i + outOff];
                 output[i + outOff] ^= input[i + inOff];
+                s[i] ^= output[i + outOff];
             }
             lfsr_gf56(CNT);
-            nonce_encryption(npub, CNT, s, k, (byte)0x04);
+            block_cipher(s, k, npub, 0, CNT, (byte)0x04);
         }
 
         @Override
@@ -562,8 +561,7 @@ public class RomulusEngine
             }
         }
 
-        @Override
-        public void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+        private void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
         {
             System.arraycopy(npub, 0, S, 0, 16);
             block_cipher(S, Z, T, 0, CNT, (byte)64);
@@ -572,44 +570,38 @@ public class RomulusEngine
             block_cipher(S, Z, T, 0, CNT, (byte)65);
             System.arraycopy(S, 0, Z, 0, 16);
             lfsr_gf56(CNT);
-            // ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT
-            System.arraycopy(output, outOff, m_aad, m_aadPos, BlockSize);
+        }
+
+        private void processAfterAbsorbCiphertext()
+        {
             if (m_aadPos == BlockSize)
             {
                 hirose_128_128_256(h, g, m_aad, 0);
                 m_aadPos = 0;
-                lfsr_gf56(CNT_Z);
             }
             else
             {
                 m_aadPos = BlockSize;
-                lfsr_gf56(CNT_Z);
             }
+            lfsr_gf56(CNT_Z);
+        }
+
+        @Override
+        public void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+        {
+            processBuffer(input, inOff, output, outOff);
+            // ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT
+            System.arraycopy(output, outOff, m_aad, m_aadPos, BlockSize);
+            processAfterAbsorbCiphertext();
         }
 
         @Override
         public void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
         {
-            System.arraycopy(npub, 0, S, 0, 16);
-            block_cipher(S, Z, T, 0, CNT, (byte)64);
-            Bytes.xor(AD_BLK_LEN_HALF, S, input, inOff, output, outOff);
-            System.arraycopy(npub, 0, S, 0, 16);
-            block_cipher(S, Z, T, 0, CNT, (byte)65);
-            System.arraycopy(S, 0, Z, 0, 16);
-            lfsr_gf56(CNT);
+            processBuffer(input, inOff, output, outOff);
             // ipad_256(ipad*_128(A)||ipad*_128(C)||N|| CNT
             System.arraycopy(input, inOff, m_aad, m_aadPos, BlockSize);
-            if (m_aadPos == BlockSize)
-            {
-                hirose_128_128_256(h, g, m_aad, 0);
-                m_aadPos = 0;
-                lfsr_gf56(CNT_Z);
-            }
-            else
-            {
-                m_aadPos = BlockSize;
-                lfsr_gf56(CNT_Z);
-            }
+            processAfterAbsorbCiphertext();
         }
 
         @Override
@@ -825,18 +817,10 @@ public class RomulusEngine
         skinny_128_384_plus_enc(s, KT);
     }
 
-    // Calls the TBC using the nonce as part of the tweakey
-    void nonce_encryption(byte[] N, byte[] CNT, byte[] s, byte[] k, byte D)
-    {
-        byte[] T = new byte[16];
-        System.arraycopy(N, 0, T, 0, 16);
-        block_cipher(s, k, T, 0, CNT, D);
-    }
-
     private void reset_lfsr_gf56(byte[] CNT)
     {
         CNT[0] = 0x01;
-        Arrays.fill(CNT, 1, 7, (byte) 0);
+        Arrays.fill(CNT, 1, 7, (byte)0);
     }
 
     public static void hirose_128_128_256(RomulusDigest.Friend friend, byte[] h, byte[] g, byte[] m, int mOff)
