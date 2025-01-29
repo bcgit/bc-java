@@ -39,7 +39,7 @@ public class XoodyakEngine
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
-        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Counter);
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     @Override
@@ -62,7 +62,6 @@ public class XoodyakEngine
     protected void processFinalAAD()
     {
         AbsorbAny(m_aad, 0, m_aadPos, aadcd);
-        m_aadPos = 0;
     }
 
     @Override
@@ -89,67 +88,44 @@ public class XoodyakEngine
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        encrypt(input, inOff, BlockSize, output, outOff);
+        int Cu = encrypted ? 0 : 0x80;
+        up(mode, state, Cu); /* Up without extract */
+        /* Extract from Up and Add */
+        Bytes.xor(BlockSize, state, input, inOff, output, outOff);
+        down(mode, state, input, inOff, BlockSize, 0x00);
+        phase = PhaseDown;
+        encrypted = true;
     }
 
     protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        decrypt(input, inOff, BlockSize, output, outOff);
-    }
-
-    private void encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
-    {
-        int splitLen;
-        byte[] P = new byte[BlockSize];
         int Cu = encrypted ? 0 : 0x80;
-        while (len != 0 || !encrypted)
-        {
-            splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            System.arraycopy(input, inOff, P, 0, splitLen);
-            up(mode, state, Cu); /* Up without extract */
-            /* Extract from Up and Add */
-            Bytes.xor(splitLen, state, input, inOff, output, outOff);
-            inOff += splitLen;
-            down(mode, state, P, 0, splitLen, 0x00);
-            phase = PhaseDown;
-            Cu = 0x00;
-            outOff += splitLen;
-            len -= splitLen;
-            encrypted = true;
-        }
-    }
-
-    private void decrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
-    {
-        int splitLen;
-        int Cu = encrypted ? 0 : 0x80;
-        while (len != 0 || !encrypted)
-        {
-            splitLen = Math.min(len, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            up(mode, state, Cu); /* Up without extract */
-            /* Extract from Up and Add */
-            Bytes.xor(splitLen, state, input, inOff, output, outOff);
-            inOff += splitLen;
-            down(mode, state, output, outOff, splitLen, 0x00);
-            phase = PhaseDown;
-            Cu = 0x00;
-            outOff += splitLen;
-            len -= splitLen;
-            encrypted = true;
-        }
+        up(mode, state, Cu); /* Up without extract */
+        /* Extract from Up and Add */
+        Bytes.xor(BlockSize, state, input, inOff, output, outOff);
+        down(mode, state, output, outOff, BlockSize, 0x00);
+        phase = PhaseDown;
+        encrypted = true;
     }
 
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        if (forEncryption)
+        int Cu = encrypted ? 0 : 0x80;
+        if (m_bufPos != 0 || !encrypted)
         {
-            Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
-            encrypt(m_buf, 0, m_bufPos, output, outOff);
-        }
-        else
-        {
-            decrypt(m_buf, 0, m_bufPos, output, outOff);
+            up(mode, state, Cu); /* Up without extract */
+            /* Extract from Up and Add */
+            Bytes.xor(m_bufPos, state, m_buf, 0, output, outOff);
+            if (forEncryption)
+            {
+                down(mode, state, m_buf, 0, m_bufPos, 0x00);
+            }
+            else
+            {
+                down(mode, state, output, outOff, m_bufPos, 0x00);
+            }
+            phase = PhaseDown;
         }
         up(mode, state, 0x40);
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
