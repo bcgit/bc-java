@@ -4,7 +4,6 @@ import org.bouncycastle.util.Arrays;
 
 class Packing
 {
-
     static byte[] packPublicKey(PolyVecK t1, MLDSAEngine engine)
     {
         byte[] out = new byte[engine.getCryptoPublicKeyBytes() - MLDSAEngine.SeedBytes];
@@ -62,7 +61,6 @@ class Packing
      * @param engine
      * @return Byte matrix where byte[0] = rho, byte[1] = tr, byte[2] = key
      */
-
     static void unpackSecretKey(PolyVecK t0, PolyVecL s1, PolyVecK s2, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, MLDSAEngine engine)
     {
         for (int i = 0; i < engine.getDilithiumL(); ++i)
@@ -81,40 +79,32 @@ class Packing
         }
     }
 
-    static byte[] packSignature(byte[] c, PolyVecL z, PolyVecK h, MLDSAEngine engine)
+    static void packSignature(byte[] sig, PolyVecL z, PolyVecK h, MLDSAEngine engine)
     {
-        int i, j, k, end = 0;
-        byte[] outBytes = new byte[engine.getCryptoBytes()];
-
-        System.arraycopy(c, 0, outBytes, 0, engine.getDilithiumCTilde());
-        end += engine.getDilithiumCTilde();
-
-        for (i = 0; i < engine.getDilithiumL(); ++i)
+        int end = engine.getDilithiumCTilde();
+        for (int i = 0; i < engine.getDilithiumL(); ++i)
         {
-            System.arraycopy(z.getVectorIndex(i).zPack(), 0, outBytes, end + i * engine.getDilithiumPolyZPackedBytes(), engine.getDilithiumPolyZPackedBytes());
-        }
-        end += engine.getDilithiumL() * engine.getDilithiumPolyZPackedBytes();
-
-        for (i = 0; i < engine.getDilithiumOmega() + engine.getDilithiumK(); ++i)
-        {
-            outBytes[end + i] = 0;
+            z.getVectorIndex(i).zPack(sig, end);
+            end += engine.getDilithiumPolyZPackedBytes();
         }
 
-        k = 0;
-        for (i = 0; i < engine.getDilithiumK(); ++i)
+        for (int i = 0; i < engine.getDilithiumOmega() + engine.getDilithiumK(); ++i)
         {
-            for (j = 0; j < MLDSAEngine.DilithiumN; ++j)
+            sig[end + i] = 0;
+        }
+
+        int k = 0;
+        for (int i = 0; i < engine.getDilithiumK(); ++i)
+        {
+            for (int j = 0; j < MLDSAEngine.DilithiumN; ++j)
             {
                 if (h.getVectorIndex(i).getCoeffIndex(j) != 0)
                 {
-                    outBytes[end + k++] = (byte)j;
+                    sig[end + k++] = (byte)j;
                 }
             }
-            outBytes[end + engine.getDilithiumOmega() + i] = (byte)k;
+            sig[end + engine.getDilithiumOmega() + i] = (byte)k;
         }
-
-        return outBytes;
-
     }
 
     static boolean unpackSignature(PolyVecL z, PolyVecK h, byte[] sig, MLDSAEngine engine)
@@ -161,5 +151,4 @@ class Packing
         }
         return true;
     }
-
 }

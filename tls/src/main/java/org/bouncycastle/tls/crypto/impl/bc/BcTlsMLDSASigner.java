@@ -1,7 +1,5 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import java.io.IOException;
-
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
@@ -30,11 +28,6 @@ public class BcTlsMLDSASigner
         super(crypto, privateKey);
 
         this.signatureScheme = signatureScheme;
-    }
-
-    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
-    {
-        throw new UnsupportedOperationException();
     }
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)
