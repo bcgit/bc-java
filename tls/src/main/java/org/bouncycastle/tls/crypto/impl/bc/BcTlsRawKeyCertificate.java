@@ -26,7 +26,6 @@ import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 import org.bouncycastle.tls.AlertDescription;
@@ -255,16 +254,10 @@ public class BcTlsRawKeyCertificate
         case SignatureScheme.DRAFT_mldsa65:
         case SignatureScheme.DRAFT_mldsa87:
         {
-            ASN1ObjectIdentifier algorithm = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
-            validateMLDSA(algorithm);
+            ASN1ObjectIdentifier mlDsaAlgOid = PQCUtil.getMLDSAObjectidentifier(signatureScheme);
+            validateMLDSA(mlDsaAlgOid);
 
             MLDSAPublicKeyParameters publicKey = getPubKeyMLDSA();
-            MLDSAParameters parameters = publicKey.getParameters();
-            if (!PQCUtil.getMLDSAObjectidentifier(parameters).equals(algorithm))
-            {
-                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
-                    "ML-DSA public key not for " + SignatureScheme.getText(signatureScheme));
-            }
 
             MLDSASigner verifier = new MLDSASigner();
             verifier.init(false, publicKey);
@@ -485,10 +478,10 @@ public class BcTlsRawKeyCertificate
         return true;
     }
 
-    protected boolean supportsMLDSA(ASN1ObjectIdentifier algorithm)
+    protected boolean supportsMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
     {
         AlgorithmIdentifier pubKeyAlgID = keyInfo.getAlgorithm();
-        return PQCUtil.supportsMLDSA(pubKeyAlgID, algorithm);
+        return PQCUtil.supportsMLDSA(pubKeyAlgID, mlDsaAlgOid);
     }
 
     protected boolean supportsRSA_PKCS1()
@@ -582,10 +575,10 @@ public class BcTlsRawKeyCertificate
         }
     }
 
-    protected void validateMLDSA(ASN1ObjectIdentifier algorithm)
+    protected void validateMLDSA(ASN1ObjectIdentifier mlDsaAlgOid)
         throws IOException
     {
-        if (!supportsMLDSA(algorithm))
+        if (!supportsMLDSA(mlDsaAlgOid))
         {
             throw new TlsFatalAlert(AlertDescription.certificate_unknown, "No support for ML-DSA signature scheme");
         }
