@@ -2038,7 +2038,12 @@ public class OpenPGPCertificate
         public boolean isValid()
                 throws PGPSignatureException
         {
-            OpenPGPCertificate cert = getRootKey().getCertificate();
+            OpenPGPComponentKey rootKey = getRootKey();
+            if (rootKey == null)
+            {
+                throw new MissingIssuerCertException(getRootLink().signature, "Missing issuer certificate.");
+            }
+            OpenPGPCertificate cert = rootKey.getCertificate();
             return isValid(cert.implementation.pgpContentVerifierBuilderProvider(), cert.policy);
         }
 
