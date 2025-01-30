@@ -6,7 +6,6 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyValidationException;
-import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -27,7 +26,7 @@ public class OpenPGPKeyEditor
     private final OpenPGPImplementation implementation;
     private final OpenPGPPolicy policy;
     private OpenPGPKey key;
-    private final PGPPrivateKey privatePrimaryKey;
+    private final PGPKeyPair primaryKey;
 
     public OpenPGPKeyEditor(OpenPGPKey key, KeyPassphraseProvider passphraseProvider)
             throws PGPException
@@ -50,7 +49,7 @@ public class OpenPGPKeyEditor
             throws PGPException
     {
         this.key = key;
-        this.privatePrimaryKey = key.getPrimarySecretKey().unlock(passphraseProvider);
+        this.primaryKey = key.getPrimarySecretKey().unlock(passphraseProvider);
         this.implementation = implementation;
         this.policy = policy;
     }
@@ -73,7 +72,7 @@ public class OpenPGPKeyEditor
                             publicPrimaryKey.getAlgorithm(),
                             parameters.getSignatureHashAlgorithmId()),
                     publicPrimaryKey);
-            dkSigGen.init(parameters.getSignatureType(), privatePrimaryKey);
+            dkSigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
             // Hashed subpackets
             PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -146,7 +145,7 @@ public class OpenPGPKeyEditor
                             publicPrimaryKey.getAlgorithm(),
                             parameters.getSignatureHashAlgorithmId()),
                     publicPrimaryKey);
-            uidSigGen.init(parameters.getSignatureType(), privatePrimaryKey);
+            uidSigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
             // Hashed subpackets
             PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -217,7 +216,7 @@ public class OpenPGPKeyEditor
                             publicPrimaryKey.getAlgorithm(),
                             parameters.getSignatureHashAlgorithmId()),
                     publicPrimaryKey);
-            idSigGen.init(parameters.getSignatureType(), privatePrimaryKey);
+            idSigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
             // Hashed subpackets
             PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -300,7 +299,7 @@ public class OpenPGPKeyEditor
                             publicPrimaryKey.getAlgorithm(),
                             parameters.getSignatureHashAlgorithmId()),
                     publicPrimaryKey);
-            subKeySigGen.init(parameters.getSignatureType(), privatePrimaryKey);
+            subKeySigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
             // Hashed subpackets
             PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -406,7 +405,7 @@ public class OpenPGPKeyEditor
                             publicPrimaryKey.getAlgorithm(),
                             parameters.getSignatureHashAlgorithmId()),
                     publicPrimaryKey);
-            subKeySigGen.init(parameters.getSignatureType(), privatePrimaryKey);
+            subKeySigGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
             // Hashed subpackets
             PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
@@ -490,7 +489,7 @@ public class OpenPGPKeyEditor
                         publicPrimaryKey.getAlgorithm(),
                         parameters.getSignatureHashAlgorithmId()),
                 publicPrimaryKey);
-        revGen.init(parameters.getSignatureType(), privatePrimaryKey);
+        revGen.init(parameters.getSignatureType(), primaryKey.getPrivateKey());
 
         // Hashed subpackets
         PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();

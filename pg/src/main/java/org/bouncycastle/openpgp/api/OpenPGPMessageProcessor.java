@@ -4,14 +4,15 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
-import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSessionKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.IntegrityProtectedInputStream;
+import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
@@ -356,11 +357,15 @@ public class OpenPGPMessageProcessor
                 }
 
                 char[] keyPassphrase = configuration.keyPassphraseProvider.getKeyPassword(decryptionKey);
-                PGPPrivateKey privateKey = decryptionKey.unlock(keyPassphrase);
+                PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase);
+                if (unlockedKey == null)
+                {
+                    throw new KeyPassphraseException(decryptionKey, new PGPException("Cannot unlock secret key."));
+                }
 
                 // Decrypt the message session key using the private key
                 PublicKeyDataDecryptorFactory pkDecryptorFactory =
-                        implementation.publicKeyDataDecryptorFactory(privateKey);
+                        implementation.publicKeyDataDecryptorFactory(unlockedKey.getPrivateKey());
                 PGPSessionKey decryptedSessionKey = pkesk.getSessionKey(pkDecryptorFactory);
 
                 // Decrypt the message using the decrypted session key

@@ -8,6 +8,7 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyValidationException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPSecretKey;
@@ -266,7 +267,7 @@ public class OpenPGPKey
             return getPGPSecretKey().getS2KUsage() != SecretKeyPacket.USAGE_NONE;
         }
 
-        public PGPPrivateKey unlock(KeyPassphraseProvider passphraseProvider)
+        public PGPKeyPair unlock(KeyPassphraseProvider passphraseProvider)
                 throws PGPException
         {
             if (!isLocked())
@@ -277,14 +278,14 @@ public class OpenPGPKey
         }
 
         /**
-         * Access the {@link PGPPrivateKey} by unlocking the potentially locked secret key using the provided
+         * Access the {@link PGPKeyPair} by unlocking the potentially locked secret key using the provided
          * passphrase. Note: If the key is not locked, it is sufficient to pass null as passphrase.
          *
          * @param passphrase passphrase or null
-         * @return unlocked private key
+         * @return keypair containing unlocked private key
          * @throws PGPException if the key cannot be unlocked
          */
-        public PGPPrivateKey unlock(char[] passphrase)
+        public PGPKeyPair unlock(char[] passphrase)
                 throws PGPException
         {
             sanitizeProtectionMode();
@@ -295,7 +296,14 @@ public class OpenPGPKey
                 {
                     decryptor = decryptorBuilderProvider.provide().build(passphrase);
                 }
-                return getPGPSecretKey().extractPrivateKey(decryptor);
+
+                PGPPrivateKey privateKey = getPGPSecretKey().extractPrivateKey(decryptor);
+                if (privateKey == null)
+                {
+                    return null;
+                }
+
+                return new PGPKeyPair(getPGPSecretKey().getPublicKey(), privateKey);
             }
             catch (PGPException e)
             {
@@ -340,8 +348,8 @@ public class OpenPGPKey
         {
             try
             {
-                PGPPrivateKey privateKey = unlock(passphrase);
-                return privateKey != null;
+                PGPKeyPair unlocked = unlock(passphrase);
+                return unlocked != null;
             }
             catch (PGPException e)
             {

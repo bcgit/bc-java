@@ -2,9 +2,11 @@ package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.exception.InvalidSigningKeyException;
+import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -248,7 +250,12 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
                 signingKey.getPGPPublicKey());
 
         char[] passphrase = passphraseProvider.getKeyPassword(signingKey);
-        sigGen.init(parameters.getSignatureType(), signingKey.unlock(passphrase));
+        PGPKeyPair unlockedKey = signingKey.unlock(passphrase);
+        if (unlockedKey == null)
+        {
+            throw new KeyPassphraseException(signingKey, new PGPException("Cannot unlock secret key."));
+        }
+        sigGen.init(parameters.getSignatureType(), unlockedKey.getPrivateKey());
 
         PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
         hashedSubpackets.setIssuerFingerprint(true, signingKey.getPGPPublicKey());
