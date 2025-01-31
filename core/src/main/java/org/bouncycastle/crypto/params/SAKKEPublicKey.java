@@ -4,20 +4,20 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 
 public class SAKKEPublicKey
     extends AsymmetricKeyParameter
 {
-    private final ECCurve curve;
+    private final ECCurve curve = new SecP256R1Curve();
     private final ECPoint P;  // Base point
     private final ECPoint Z;  // KMS Public Key: Z = [z]P
     private final BigInteger q; // Subgroup order
     private final int n;      // SSV bit length
 
-    public SAKKEPublicKey(ECCurve curve, ECPoint P, ECPoint Z, BigInteger q, int n)
+    public SAKKEPublicKey(ECPoint P, ECPoint Z, BigInteger q, int n)
     {
         super(false);
-        this.curve = curve;
         this.P = P;
         this.Z = Z;
         this.q = q;
