@@ -188,7 +188,7 @@ public class JcePBEKeyEncryptionMethodGenerator
 
     }
 
-    public static String getBaseAEADAlgorithm(int encAlgorithm)
+    private static String getBaseAEADAlgorithm(int encAlgorithm)
         throws PGPException
     {
         if (encAlgorithm == SymmetricKeyAlgorithmTags.AES_128
@@ -206,7 +206,7 @@ public class JcePBEKeyEncryptionMethodGenerator
         throw new PGPException("AEAD only supported for AES and Camellia based algorithms");
     }
 
-    public static Cipher createAEADCipher(String algorithm, int aeadAlgorithm)
+    private static Cipher createAEADCipher(String algorithm, int aeadAlgorithm)
         throws PGPException
     {
         // Block Cipher must work on 16 byte blocks
