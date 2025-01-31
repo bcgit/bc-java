@@ -2149,7 +2149,13 @@ public class OpenPGPCertificate
                 return 1;
             }
 
-            return -getSince().compareTo(other.getSince());
+            int rootCompare = -getRootLink().since().compareTo(other.getRootLink().since());
+            if (rootCompare != 0)
+            {
+                return rootCompare;
+            }
+
+            return -getHeadLink().since().compareTo(other.getHeadLink().since());
         }
 
         @Override
