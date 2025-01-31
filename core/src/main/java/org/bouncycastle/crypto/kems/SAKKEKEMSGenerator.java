@@ -144,10 +144,10 @@ public class SAKKEKEMSGenerator
                 "C67C6D19487FB449059F26CC8AAB655A" +
                 "B58B7CC796E24E9A394095754F5F8BAE", 16)   // Py
         );
+        BigInteger z = new BigInteger("AFF429D35F84B110D094803B3595A6E2998BC99F", 16);
         // 3. Compute R_(b,S) = [r]([b]P + Z_S)
         ECPoint bP = P.multiply(b).normalize();
-        ECPoint Z_S = Z;// P.multiply(ssv).normalize();;//.multiply(new BigInteger("AFF429D35F84B110D094803B3595A6E2998BC99F", 16));          // Z_S
-        ECPoint R_bS = bP.add(Z_S).multiply(r);         // [r]([b]P + Z_S)
+        ECPoint R_bS = bP.add(Z).multiply(r).normalize();         // [r]([b]P + Z_S)
         System.out.println("R_Bs x:" + new String(Hex.encode(R_bS.getXCoord().toBigInteger().toByteArray())));
         System.out.println("R_Bs y:" + new String(Hex.encode(R_bS.getYCoord().toBigInteger().toByteArray())));
 
