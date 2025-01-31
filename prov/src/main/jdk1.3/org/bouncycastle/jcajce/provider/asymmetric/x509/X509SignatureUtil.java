@@ -17,13 +17,14 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -40,22 +41,47 @@ class X509SignatureUtil
         algNames.put(X9ObjectIdentifiers.id_dsa_with_sha1, "SHA1withDSA");
     }
 
-    private static final ASN1Null       derNull = DERNull.INSTANCE;
+    static byte[] getExtensionValue(Extensions extensions, String oid) 
+    {
+        if (oid != null)
+        {
+            ASN1ObjectIdentifier asn1Oid = ASN1ObjectIdentifier.tryFromID(oid);
+            if (asn1Oid != null)
+            {
+                ASN1OctetString extValue = Extensions.getExtensionValue(extensions, asn1Oid);
+                if (null != extValue)
+                {
+                    try
+                    {
+                        return extValue.getEncoded();
+                    }
+                    catch (Exception e)
+                    {
+                        throw new IllegalStateException("error parsing " + e.toString());
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    private static boolean isAbsentOrEmptyParameters(ASN1Encodable parameters)
+    {
+        return parameters == null || DERNull.INSTANCE.equals(parameters);
+    }
 
-    static void setSignatureParameters(
-        Signature signature,
-        ASN1Encodable params)
+    static void setSignatureParameters(Signature signature, ASN1Encodable params)
         throws NoSuchAlgorithmException, SignatureException, InvalidKeyException
     {
-        if (params != null && !derNull.equals(params))
+        if (!isAbsentOrEmptyParameters(params))
         {
-
-            AlgorithmParameters  sigParams;
+            String sigAlgName = signature.getAlgorithm();
 
             try
             {
-                sigParams = AlgorithmParameters.getInstance(signature.getAlgorithm(), signature.getProvider().getName());
-            
+                AlgorithmParameters sigParams = AlgorithmParameters.getInstance(sigAlgName,
+                    signature.getProvider().getName());
+
                 sigParams.init(params.toASN1Primitive().getEncoded());
             }
             catch (NoSuchProviderException e)
@@ -66,8 +92,8 @@ class X509SignatureUtil
             {
                 throw new SignatureException("IOException decoding parameters: " + e.getMessage());
             }
-            
-            if (signature.getAlgorithm().endsWith("MGF1"))
+
+            if (sigAlgName.endsWith("MGF1"))
             {
                 try
                 {
@@ -80,38 +106,38 @@ class X509SignatureUtil
             }
         }
     }
-    
-    static String getSignatureName(
-        AlgorithmIdentifier sigAlgId) 
+
+    static String getSignatureName(AlgorithmIdentifier sigAlgId) 
     {
+        ASN1ObjectIdentifier sigAlgOid = sigAlgId.getAlgorithm();
         ASN1Encodable params = sigAlgId.getParameters();
-        
-        if (params != null && !derNull.equals(params))
+
+        if (!isAbsentOrEmptyParameters(params))
         {
-            if (sigAlgId.getAlgorithm().equals(PKCSObjectIdentifiers.id_RSASSA_PSS))
+            if (PKCSObjectIdentifiers.id_RSASSA_PSS.equals(sigAlgOid))
             {
                 RSASSAPSSparams rsaParams = RSASSAPSSparams.getInstance(params);
-                
+
                 return getDigestAlgName(rsaParams.getHashAlgorithm().getAlgorithm()) + "withRSAandMGF1";
             }
-            if (sigAlgId.getAlgorithm().equals(X9ObjectIdentifiers.ecdsa_with_SHA2))
+            if (X9ObjectIdentifiers.ecdsa_with_SHA2.equals(sigAlgOid))
             {
-                ASN1Sequence ecDsaParams = ASN1Sequence.getInstance(params);
-                
-                return getDigestAlgName((ASN1ObjectIdentifier)ecDsaParams.getObjectAt(0)) + "withECDSA";
+                AlgorithmIdentifier ecDsaParams = AlgorithmIdentifier.getInstance(params);
+
+                return getDigestAlgName(ecDsaParams.getAlgorithm()) + "withECDSA";
             }
         }
 
         // deal with the "weird" ones.
-        String algName = (String)algNames.get(sigAlgId.getAlgorithm());
+        String algName = (String)algNames.get(sigAlgOid);
         if (algName != null)
         {
             return algName;
         }
 
-        return findAlgName(sigAlgId.getAlgorithm());
+        return findAlgName(sigAlgOid);
     }
-    
+
     /**
      * Return the digest algorithm using one of the standard JCA string
      * representations rather the the algorithm identifier (if possible).
@@ -162,7 +188,7 @@ class X509SignatureUtil
 
     private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)
     {
-        String      algName = prov.getProperty("Alg.Alias.Signature." + algOid);
+        String algName = prov.getProperty("Alg.Alias.Signature." + algOid);
 
         if (algName != null)
         {

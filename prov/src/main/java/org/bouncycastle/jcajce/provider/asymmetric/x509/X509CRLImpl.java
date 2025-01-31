@@ -54,7 +54,6 @@ import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.X509Principal;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -84,30 +83,41 @@ abstract class X509CRLImpl
         this.isIndirect = isIndirect;
     }
 
-    /**
-     * Will return true if any extensions are present and marked
-     * as critical as we currently dont handle any extensions!
-     */
     public boolean hasUnsupportedCriticalExtension()
     {
-        Set extns = getCriticalExtensionOIDs();
-
-        if (extns == null)
+        if (getVersion() == 2)
         {
-            return false;
+            Extensions extensions = c.getExtensions();
+            if (extensions != null)
+            {
+                Enumeration e = extensions.oids();
+                while (e.hasMoreElements())
+                {
+                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
+
+                    if (Extension.issuingDistributionPoint.equals(oid) ||
+                        Extension.deltaCRLIndicator.equals(oid))
+                    {
+                        continue;
+                    }
+
+                    Extension ext = extensions.getExtension(oid);
+                    if (ext.isCritical())
+                    {
+                        return true;
+                    }
+                }
+            }
         }
 
-        extns.remove(Extension.issuingDistributionPoint.getId());
-        extns.remove(Extension.deltaCRLIndicator.getId());
-
-        return !extns.isEmpty();
+        return false;
     }
 
     private Set getExtensionOIDs(boolean critical)
     {
         if (this.getVersion() == 2)
         {
-            Extensions extensions = c.getTBSCertList().getExtensions();
+            Extensions extensions = c.getExtensions();
 
             if (extensions != null)
             {
@@ -144,26 +154,7 @@ abstract class X509CRLImpl
 
     public byte[] getExtensionValue(String oid)
     {
-        if (oid != null)
-        {
-            ASN1ObjectIdentifier asn1Oid = ASN1ObjectIdentifier.tryFromID(oid);
-            if (asn1Oid != null)
-            {
-                ASN1OctetString extValue = getExtensionValue(c, asn1Oid);
-                if (null != extValue)
-                {
-                    try
-                    {
-                        return extValue.getEncoded();
-                    }
-                    catch (Exception e)
-                    {
-                        throw Exceptions.illegalStateException("error parsing " + e.getMessage(), e);
-                    }
-                }
-            }
-        }
-        return null;
+        return X509SignatureUtil.getExtensionValue(c.getExtensions(), oid);
     }
 
     public void verify(PublicKey key)
@@ -548,7 +539,7 @@ abstract class X509CRLImpl
 
         X509SignatureUtil.prettyPrintSignature(this.getSignature(), buf, nl);
 
-        Extensions extensions = c.getTBSCertList().getExtensions();
+        Extensions extensions = c.getExtensions();
 
         if (extensions != null)
         {
@@ -708,25 +699,8 @@ abstract class X509CRLImpl
 
     static byte[] getExtensionOctets(CertificateList c, ASN1ObjectIdentifier oid)
     {
-        ASN1OctetString extValue = getExtensionValue(c, oid);
-        if (null != extValue)
-        {
-            return extValue.getOctets();
-        }
-        return null;
-    }
+        ASN1OctetString extValue = Extensions.getExtensionValue(c.getExtensions(), oid);
 
-    static ASN1OctetString getExtensionValue(CertificateList c, ASN1ObjectIdentifier oid)
-    {
-        Extensions exts = c.getTBSCertList().getExtensions();
-        if (null != exts)
-        {
-            Extension ext = exts.getExtension(oid);
-            if (null != ext)
-            {
-                return ext.getExtnValue();
-            }
-        }
-        return null;
+        return extValue == null ? null : extValue.getOctets();
     }
 }

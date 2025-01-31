@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.agreement.BasicRawAgreement;
 import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
@@ -38,7 +39,6 @@ import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * A method generator for supporting public key based encryption operations.
@@ -122,10 +122,8 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     AsymmetricCipherKeyPair ephKp = getAsymmetricCipherKeyPair(new ECKeyPairGenerator(),
                         new ECKeyGenerationParameters(((ECPublicKeyParameters)cryptoPublicKey).getParameters(), random));
 
-                    ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-                    agreement.init(ephKp.getPrivate());
-                    BigInteger S = agreement.calculateAgreement(cryptoPublicKey);
-                    byte[] secret = BigIntegers.asUnsignedByteArray(agreement.getFieldSize(), S);
+                    byte[] secret = BcUtil.getSecret(new BasicRawAgreement(new ECDHBasicAgreement()),
+                        ephKp.getPrivate(), cryptoPublicKey);
 
                     byte[] ephPubEncoding = ((ECPublicKeyParameters)ephKp.getPublic()).getQ().getEncoded(false);
 

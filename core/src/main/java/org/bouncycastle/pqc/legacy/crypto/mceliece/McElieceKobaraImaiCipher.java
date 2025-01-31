@@ -13,6 +13,8 @@ import org.bouncycastle.pqc.crypto.MessageEncryptor;
 import org.bouncycastle.pqc.legacy.math.linearalgebra.ByteUtils;
 import org.bouncycastle.pqc.legacy.math.linearalgebra.GF2Vector;
 import org.bouncycastle.pqc.legacy.math.linearalgebra.IntegerFunctions;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * This class implements the Kobara/Imai conversion of the McEliecePKCS. This is
@@ -23,20 +25,20 @@ import org.bouncycastle.pqc.legacy.math.linearalgebra.IntegerFunctions;
 public class McElieceKobaraImaiCipher
     implements MessageEncryptor
 {
+    public static byte[] getPublicConstant()
+    {
+        return Arrays.clone(PUBLIC_CONSTANT);
+    }
 
     /**
      * The OID of the algorithm.
      */
     public static final String OID = "1.3.6.1.4.1.8301.3.1.3.4.2.3";
 
-    private static final String DEFAULT_PRNG_NAME = "SHA1PRNG";
-
     /**
      * A predetermined public constant.
      */
-    public static final byte[] PUBLIC_CONSTANT = "a predetermined public constant"
-        .getBytes();
-
+    private static final byte[] PUBLIC_CONSTANT = Strings.toByteArray("a predetermined public constant");
 
     private Digest messDigest;
 
