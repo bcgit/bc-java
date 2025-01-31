@@ -1,7 +1,5 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
-import java.io.IOException;
-
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -14,11 +12,6 @@ public class BcTlsEd25519Signer
     public BcTlsEd25519Signer(BcTlsCrypto crypto, Ed25519PrivateKeyParameters privateKey)
     {
         super(crypto, privateKey);
-    }
-
-    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
-    {
-        throw new UnsupportedOperationException();
     }
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)

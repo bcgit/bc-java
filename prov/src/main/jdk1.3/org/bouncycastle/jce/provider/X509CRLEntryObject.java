@@ -12,6 +12,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -78,9 +79,9 @@ public class X509CRLEntryObject extends X509CRLEntry
      */
     public boolean hasUnsupportedCriticalExtension()
     {
-        Set extns = getCriticalExtensionOIDs();
+        Extensions extensions = c.getExtensions();
 
-        return extns != null && !extns.isEmpty();
+        return extensions != null && extensions.hasAnyCriticalExtensions();
     }
 
     private X500Name loadCertificateIssuer(boolean isIndirect, X500Name previousCertificateIssuer)
@@ -90,16 +91,15 @@ public class X509CRLEntryObject extends X509CRLEntry
             return null;
         }
 
-        byte[] ext = getExtensionValue(X509Extension.certificateIssuer.getId());
-        if (ext == null)
+        ASN1OctetString extValue = Extensions.getExtensionValue(c.getExtensions(), Extension.certificateIssuer);
+        if (extValue == null)
         {
             return previousCertificateIssuer;
         }
 
         try
         {
-            GeneralName[] names = GeneralNames.getInstance(
-                    X509ExtensionUtil.fromExtensionValue(ext)).getNames();
+            GeneralName[] names = GeneralNames.getInstance(extValue.getOctets()).getNames();
             for (int i = 0; i < names.length; i++)
             {
                 if (names[i].getTagNo() == GeneralName.directoryName)
@@ -121,8 +121,8 @@ public class X509CRLEntryObject extends X509CRLEntry
         {
             return null;
         }
-	try
-	{
+        try
+        {
             return new X509Principal(certificateIssuer.getEncoded());
         }
         catch (Exception e)
@@ -130,6 +130,7 @@ public class X509CRLEntryObject extends X509CRLEntry
             throw new IllegalStateException(e.toString());
         }
     }
+
     private Set getExtensionOIDs(boolean critical)
     {
         Extensions extensions = c.getExtensions();
@@ -168,26 +169,7 @@ public class X509CRLEntryObject extends X509CRLEntry
 
     public byte[] getExtensionValue(String oid)
     {
-        Extensions exts = c.getExtensions();
-
-        if (exts != null)
-        {
-            Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-
-            if (ext != null)
-            {
-                try
-                {
-                    return ext.getExtnValue().getEncoded();
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("error encoding " + e.toString());
-                }
-            }
-        }
-
-        return null;
+        return X509SignatureUtil.getExtensionValue(c.getExtensions(), oid);
     }
 
     /**

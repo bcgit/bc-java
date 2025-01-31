@@ -30,8 +30,6 @@ public class McElieceFujisakiCipher
      */
     public static final String OID = "1.3.6.1.4.1.8301.3.1.3.4.2.1";
 
-    private static final String DEFAULT_PRNG_NAME = "SHA1PRNG";
-
     private Digest messDigest;
 
     private SecureRandom sr;

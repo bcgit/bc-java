@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.hpke.AEAD;
@@ -16,9 +15,13 @@ import org.bouncycastle.crypto.hpke.HPKE;
 import org.bouncycastle.crypto.hpke.HPKEContext;
 import org.bouncycastle.crypto.hpke.HPKEContextWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.math.ec.rfc7748.X25519;
+import org.bouncycastle.math.ec.rfc7748.X448;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+
+import junit.framework.TestCase;
 
 public class HPKETestVectors
         extends TestCase
@@ -259,26 +262,50 @@ public class HPKETestVectors
                     // generate a private key from skRm and pkRm
                     AsymmetricCipherKeyPair kp = hpke.deserializePrivateKey(skRm, pkRm);
 
+                    byte[] skRm_serialized = Arrays.clone(skRm);
+                    byte[] skSm_serialized = Arrays.clone(skSm);
+                    byte[] skEm_serialized = Arrays.clone(skEm);
+
+                    switch (kem_id)
+                    {
+                    case HPKE.kem_X25519_SHA256:
+                        X25519.clampPrivateKey(skRm_serialized);
+                        if (mode == 2 || mode == 3)
+                        {
+                            X25519.clampPrivateKey(skSm_serialized);
+                        }
+                        X25519.clampPrivateKey(skEm_serialized);
+                        break;
+                    case HPKE.kem_X448_SHA512:
+                        X448.clampPrivateKey(skRm_serialized);
+                        if (mode == 2 || mode == 3)
+                        {
+                            X448.clampPrivateKey(skSm_serialized);
+                        }
+                        X448.clampPrivateKey(skEm_serialized);
+                        break;
+                    }
+
                     // tesing serialize
                     assertTrue("serialize public key failed", Arrays.areEqual(pkRm, hpke.serializePublicKey(kp.getPublic())));
-                    assertTrue("serialize private key failed", Arrays.areEqual(skRm, hpke.serializePrivateKey(kp.getPrivate())));
+                    assertTrue("serialize private key failed", Arrays.areEqual(skRm_serialized, hpke.serializePrivateKey(kp.getPrivate())));
 
                     // testing receiver derive key pair
                     assertTrue("receiver derived public key pair incorrect", Arrays.areEqual(pkRm, hpke.serializePublicKey(derivedKeyPairR.getPublic())));
-                    assertTrue("receiver derived secret key pair incorrect", Arrays.areEqual(skRm, hpke.serializePrivateKey(derivedKeyPairR.getPrivate())));
+                    assertTrue("receiver derived secret key pair incorrect", Arrays.areEqual(skRm_serialized, hpke.serializePrivateKey(derivedKeyPairR.getPrivate())));
 
                     // testing sender's derived key pair
                     if (mode == 2 || mode == 3)
                     {
                         AsymmetricCipherKeyPair derivedSenderKeyPair = hpke.deriveKeyPair(ikmS);
                         assertTrue("sender derived public key pair incorrect", Arrays.areEqual(pkSm, hpke.serializePublicKey(derivedSenderKeyPair.getPublic())));
-                        assertTrue("sender derived private key pair incorrect", Arrays.areEqual(skSm, hpke.serializePrivateKey(derivedSenderKeyPair.getPrivate())));
+                        assertTrue("sender derived private key pair incorrect", Arrays.areEqual(skSm_serialized, hpke.serializePrivateKey(derivedSenderKeyPair.getPrivate())));
                     }
 
                     // testing ephemeral derived key pair
                     AsymmetricCipherKeyPair derivedEKeyPair = hpke.deriveKeyPair(ikmE);
                     assertTrue("ephemeral derived public key pair incorrect", Arrays.areEqual(pkEm, hpke.serializePublicKey(derivedEKeyPair.getPublic())));
-                    assertTrue("ephemeral derived private key pair incorrect", Arrays.areEqual(skEm, hpke.serializePrivateKey(derivedEKeyPair.getPrivate())));
+                    assertTrue("ephemeral derived private key pair incorrect", Arrays.areEqual(skEm_serialized, hpke.serializePrivateKey(derivedEKeyPair.getPrivate())));
 
                     // create a context with setupRecv
                     // use pkEm as encap, private key from above, info as info

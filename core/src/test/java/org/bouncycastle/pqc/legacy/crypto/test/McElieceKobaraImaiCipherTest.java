@@ -129,13 +129,7 @@ public class McElieceKobaraImaiCipherTest
 
                 // XXX write in McElieceFujisakiDigestCipher?
 
-                boolean verified = true;
-                for (int i = 0; i < hash.length; i++)
-                {
-                    verified = verified && hash[i] == constructedmessage[i];
-                }
-
-                if (!verified)
+                if (!Arrays.areEqual(hash, constructedmessage))
                 {
                     fail("en/decryption fails");
                 }
