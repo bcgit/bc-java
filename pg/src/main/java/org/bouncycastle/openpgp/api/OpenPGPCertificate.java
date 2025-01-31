@@ -285,6 +285,63 @@ public class OpenPGPCertificate
         return identifiers;
     }
 
+    /**
+     * Return the last time, the key was modified (before right now).
+     * A modification is the addition of a new subkey, or key signature.
+     *
+     * @return last modification time
+     */
+    public Date getLastModificationDate()
+    {
+        return getLastModificationDateAt(new Date());
+    }
+
+    /**
+     * Return the last time, the key was modified before or at the given evaluation time.
+     *
+     * @param evaluationTime evaluation time
+     * @return last modification time before or at evaluation time
+     */
+    public Date getLastModificationDateAt(Date evaluationTime)
+    {
+        Date latestModification = null;
+        // Signature creation times
+        for (OpenPGPCertificateComponent component : getComponents())
+        {
+            OpenPGPSignatureChains componentChains = componentSignatureChains.get(component);
+            if (componentChains == null)
+            {
+                continue;
+            }
+            componentChains = componentChains.getChainsAt(evaluationTime);
+            for (OpenPGPSignatureChain chain : componentChains)
+            {
+                for (OpenPGPSignatureChain.Link link : chain)
+                {
+                    if (latestModification == null || link.since().after(latestModification))
+                    {
+                        latestModification = link.since();
+                    }
+                }
+            }
+        }
+
+        // Key creation times
+        for (OpenPGPComponentKey key : getKeys())
+        {
+            if (key.getCreationTime().after(evaluationTime))
+            {
+                continue;
+            }
+
+            if (latestModification == null || key.getCreationTime().after(latestModification))
+            {
+                latestModification = key.getCreationTime();
+            }
+        }
+        return latestModification;
+    }
+
     public static OpenPGPCertificate join(OpenPGPCertificate certificate, String armored)
             throws IOException, PGPException
     {
