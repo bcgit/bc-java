@@ -206,27 +206,20 @@ public class JcePBEKeyEncryptionMethodGenerator
         throw new PGPException("AEAD only supported for AES and Camellia based algorithms");
     }
 
-    private static Cipher createAEADCipher(String algorithm, int aeadAlgorithm)
+    private Cipher createAEADCipher(String algorithm, int aeadAlgorithm)
         throws PGPException
     {
         // Block Cipher must work on 16 byte blocks
-        try
+        switch (aeadAlgorithm)
         {
-            switch (aeadAlgorithm)
-            {
-            case AEADAlgorithmTags.EAX:
-                return Cipher.getInstance(algorithm + "/EAX/NoPadding", "BC");
-            case AEADAlgorithmTags.OCB:
-                return Cipher.getInstance(algorithm + "/OCB/NoPadding", "BC");
-            case AEADAlgorithmTags.GCM:
-                return Cipher.getInstance(algorithm + "/GCM/NoPadding", "BC");
-            default:
-                throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
-            }
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new PGPException("unrecognised AEAD algorithm: " + e.getMessage(), e);
+        case AEADAlgorithmTags.EAX:
+            return helper.createCipher(algorithm + "/EAX/NoPadding");
+        case AEADAlgorithmTags.OCB:
+            return helper.createCipher(algorithm + "/OCB/NoPadding");
+        case AEADAlgorithmTags.GCM:
+            return helper.createCipher(algorithm + "/GCM/NoPadding");
+        default:
+            throw new PGPException("unrecognised AEAD algorithm: " + aeadAlgorithm);
         }
     }
 }
