@@ -4,8 +4,12 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 
+import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.kems.SAKKEKEMExtractor;
 import org.bouncycastle.crypto.kems.SAKKEKEMSGenerator;
 import org.bouncycastle.crypto.kems.SAKKEUtils;
+import org.bouncycastle.crypto.params.SAKKEPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -146,8 +150,15 @@ public class SAKKEKEMSTest
             BigInteger.ONE     // Cofactor = 1
         );
         SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(new SecureRandom());
-        generator.generateEncapsulated(null);
+        SecretWithEncapsulation rlt = generator.generateEncapsulated(null);
+
         ECPoint K_bS = curve.createPoint(kbx, kby);
+
+
+        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS, new SAKKEPublicKeyParameters(null)));
+        byte[] test = extractor.extractSecret(rlt.getSecret());
+
+
         System.out.println("K_bS x:" + new String(Hex.encode(K_bS.getXCoord().toBigInteger().toByteArray())));
         System.out.println("K_bS y:" + new String(Hex.encode(K_bS.getYCoord().toBigInteger().toByteArray())));
         ECPoint R_bs = curve.createPoint(Rbx, Rby);
