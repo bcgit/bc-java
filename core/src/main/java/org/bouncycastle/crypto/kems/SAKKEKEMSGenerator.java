@@ -3,11 +3,10 @@ package org.bouncycastle.crypto.kems;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.params.SAKKEPublicKey;
+import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256R1Curve;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -153,8 +152,21 @@ public class SAKKEKEMSGenerator
 
 
         // 4. Compute H = SSV XOR HashToIntegerRange( g^r, 2^n )
-        BigInteger g_r = pairing(R_bS, G, p, q);
+        BigInteger[] result = fp2Exponentiate(p, BigInteger.ONE, g, r);
+        BigInteger g_r = result[0].mod(p);
+        g_r = g_r.modInverse(p);
+        g_r = g_r.multiply(result[1]).mod(p);
+        System.out.println("g_r " + new String(Hex.encode(g_r.toByteArray())));
+        byte[] expected_g_r = Hex.decode("7D2A8438 E6291C64 9B6579EB 3B79EAE9\n" +
+            "                 48B1DE9E 5F7D1F40 70A08F8D B6B3C515\n" +
+            "                 6F2201AF FBB5CB9D 82AA3EC0 D0398B89\n" +
+            "                 ABC78A13 A760C0BF 3F77E63D 0DF3F1A3\n" +
+            "                 41A41B88 11DF197F D6CD0F00 3125606F\n" +
+            "                 4F109F40 0F7292A1 0D255E3C 0EBCCB42\n" +
+            "                 53FB182C 68F09CF6 CD9C4A53 DA6C74AD\n" +
+            "                 007AF36B 8BCA979D 5895E282 F483FCD6");
         BigInteger mask = SAKKEUtils.hashToIntegerRange(g_r.toByteArray(), BigInteger.ONE.shiftLeft(n)); // 2^n
+        System.out.println(new String(Hex.encode(mask.toByteArray())));
 
         BigInteger H = ssv.xor(mask);
 
@@ -162,15 +174,156 @@ public class SAKKEKEMSGenerator
         byte[] encapsulated = encodeData(R_bS, H);
 
         return new SecretWithEncapsulationImpl(
-            BigIntegers.asUnsignedByteArray(n / 8, ssv), // Output SSV as key material
-            encapsulated
+            encapsulated,
+            BigIntegers.asUnsignedByteArray(n / 8, ssv) // Output SSV as key material
         );
     }
 
-    private BigInteger getRecipientId(SAKKEPublicKey pubKey)
+
+    // Helper method for F_p² exponentiation
+    public static BigInteger[] fp2Exponentiate(
+        BigInteger p,
+        BigInteger x,
+        BigInteger y,
+        BigInteger exponent
+    )
+    {
+        BigInteger[] result = new BigInteger[2];
+        sakkePointExponent(p, result, x, y, exponent);
+        return result;
+    }
+
+    public static boolean sakkePointExponent(
+        BigInteger p,
+        BigInteger[] result,
+        BigInteger pointX,
+        BigInteger pointY,
+        BigInteger n
+    )
+    {
+        if (n.equals(BigInteger.ZERO))
+        {
+            return false;
+        }
+
+        // Initialize result with the original point
+        BigInteger currentX = pointX;
+        BigInteger currentY = pointY;
+
+        int numBits = n.bitLength();
+
+        // Process bits from MSB-1 down to 0
+        for (int i = numBits - 2; i >= 0; i--)
+        {
+            // Square the current point
+            //sakkePointSquare(p, new BigInteger[]{currentX, currentY});
+            // Compute newX = (x + y)(x - y) mod p
+            BigInteger xPlusY = currentX.add(currentY).mod(p);
+            BigInteger xMinusY = currentX.subtract(currentY).mod(p);
+            BigInteger newX = xPlusY.multiply(xMinusY).mod(p);
+
+            // Compute newY = 2xy mod p
+            BigInteger newY = currentX.multiply(currentY).multiply(BigInteger.valueOf(2)).mod(p);
+            currentX = newX;
+            currentY = newY;
+            // Multiply if bit is set
+            if (n.testBit(i))
+            {
+                //sakkePointsMultiply(p, currentX, currentY, pointX, pointY);
+                BigInteger real = currentX.multiply(pointX)
+                    .subtract(currentY.multiply(pointY))
+                    .mod(p);
+
+                // Compute imaginary part = x1*y2 + x2*y1 mod p
+                BigInteger imag = currentX.multiply(pointY)
+                    .add(pointX.multiply(currentY))
+                    .mod(p);
+
+                currentX = real;
+                currentY = imag;
+            }
+        }
+
+        result[0] = currentX;
+        result[1] = currentY;
+        return true;
+    }
+
+
+    private BigInteger getRecipientId(SAKKEPublicKeyParameters pubKey)
     {
         byte[] hashedId = SAKKEUtils.hash(pubKey.getZ().getEncoded(false));  // Hash Z_S
         return new BigInteger(1, hashedId).mod(pubKey.getQ().subtract(BigInteger.ONE)).add(BigIntegers.TWO);
+    }
+
+    public static class FP2Element
+    {
+        private final BigInteger a; // Real part
+        private final BigInteger b; // Imaginary part
+        private final BigInteger p; // Prime modulus
+
+        public FP2Element(BigInteger a, BigInteger b, BigInteger p)
+        {
+            this.a = a.mod(p);
+            this.b = b.mod(p);
+            this.p = p;
+        }
+
+        public FP2Element add(FP2Element other)
+        {
+            return new FP2Element(a.add(other.a), b.add(other.b), p);
+        }
+
+        public FP2Element subtract(FP2Element other)
+        {
+            return new FP2Element(a.subtract(other.a), b.subtract(other.b), p);
+        }
+
+        public FP2Element multiply(FP2Element other)
+        {
+            BigInteger real = a.multiply(other.a).subtract(b.multiply(other.b)).mod(p);
+            BigInteger imag = a.multiply(other.b).add(b.multiply(other.a)).mod(p);
+            return new FP2Element(real, imag, p);
+        }
+
+        public FP2Element inverse()
+        {
+            BigInteger denom = a.pow(2).add(b.pow(2)).mod(p);
+            BigInteger invDenom = denom.modInverse(p);
+            return new FP2Element(a.multiply(invDenom), b.negate().multiply(invDenom), p);
+        }
+
+        public FP2Element square()
+        {
+            return this.multiply(this);
+        }
+
+        public FP2Element pow(BigInteger exponent)
+        {
+            // Implement exponentiation using square-and-multiply
+            FP2Element result = new FP2Element(BigInteger.ONE, BigInteger.ZERO, p);
+            FP2Element base = this;
+            for (int i = exponent.bitLength() - 1; i >= 0; i--)
+            {
+                result = result.square();
+                if (exponent.testBit(i))
+                {
+                    result = result.multiply(base);
+                }
+            }
+            return result;
+        }
+
+        // Getters
+        public BigInteger getA()
+        {
+            return a;
+        }
+
+        public BigInteger getB()
+        {
+            return b;
+        }
     }
 
     /**
@@ -184,52 +337,180 @@ public class SAKKEKEMSGenerator
     public static BigInteger pairing(ECPoint R, ECPoint Q, BigInteger p, BigInteger q)
     {
         ECCurve curve = R.getCurve();
-        ECFieldElement i = curve.fromBigInteger(BigInteger.ONE.negate()); // i = -1 in F_p^2
+        FP2Element v = new FP2Element(BigInteger.ONE, BigInteger.ZERO, p); // Initialize to 1+0i
 
-        ECPoint C = R;
-        BigInteger c = p.add(BigInteger.ONE).divide(q);
-        ECFieldElement v = curve.fromBigInteger(BigInteger.ONE); // v = 1 in F_p
+        // Use correct exponent from RFC 6508: (p² - 1)/q
+        BigInteger exponent = p.pow(2).subtract(BigInteger.ONE).divide(q);
 
-        String qBits = q.subtract(BigInteger.ONE).toString(2); // Binary representation of q-1
+        String qBits = q.subtract(BigInteger.ONE).toString(2);
+        ECPoint C = R.normalize();
 
         for (int j = 1; j < qBits.length(); j++)
-        { // Skip MSB
-            // l = (3 * (C_x^2 - 1)) / (2 * C_y)
+        {
+            C = C.normalize();
             ECFieldElement Cx = C.getAffineXCoord();
             ECFieldElement Cy = C.getAffineYCoord();
-            ECFieldElement l = Cx.square().multiply(curve.fromBigInteger(ECFieldElement.THREE)).subtract(curve.fromBigInteger(BigInteger.ONE))
-                .divide(Cy.multiply(curve.fromBigInteger(BigIntegers.TWO)));
 
-            // v = v^2 * (l * (Q_x + C_x) + (i * Q_y - C_y))
+            // Line function for doubling
+            ECFieldElement lNum = Cx.square().multiply(curve.fromBigInteger(BigInteger.valueOf(3))).add(curve.getA());
+            ECFieldElement lDen = Cy.multiply(curve.fromBigInteger(BigInteger.valueOf(2)));
+            BigInteger l = lNum.divide(lDen).toBigInteger();
+
+            // Evaluate line at Q using F_p² arithmetic
             ECFieldElement Qx = Q.getAffineXCoord();
             ECFieldElement Qy = Q.getAffineYCoord();
-            v = v.square().multiply(l.multiply(Qx.add(Cx)).add(i.multiply(Qy).subtract(Cy)));
+            FP2Element lineVal = new FP2Element(
+                l.multiply(Qx.add(Cx).toBigInteger()),
+                l.multiply(Qy.toBigInteger()),
+                p
+            );
 
-            // Double the point
-            C = C.twice();
+            v = v.multiply(lineVal).pow(BigInteger.valueOf(2));
+            C = C.twice().normalize();
 
-            // If the bit is 1, perform additional step
             if (qBits.charAt(j) == '1')
             {
-                // l = (C_y - R_y) / (C_x - R_x)
-                ECFieldElement Rx = R.getAffineXCoord();
-                ECFieldElement Ry = R.getAffineYCoord();
-                l = Cy.subtract(Ry).divide(Cx.subtract(Rx));
+                ECPoint Rnorm = R.normalize();
+                ECFieldElement Rx = Rnorm.getAffineXCoord();
+                ECFieldElement Ry = Rnorm.getAffineYCoord();
 
-                // v = v * (l * (Q_x + C_x) + (i * Q_y - C_y))
-                v = v.multiply(l.multiply(Qx.add(Cx)).add(i.multiply(Qy).subtract(Cy)));
+                // Line function for addition
+                ECFieldElement lAddNum = Cy.subtract(Ry);
+                ECFieldElement lAddDen = Cx.subtract(Rx);
+                BigInteger lAdd = lAddNum.divide(lAddDen).toBigInteger();
 
-                // C = C + R
-                C = C.add(R);
+                FP2Element lineAddVal = new FP2Element(
+                    lAdd.multiply(Qx.add(Cx).toBigInteger()),
+                    lAdd.multiply(Qy.toBigInteger()),
+                    p
+                );
+
+                v = v.multiply(lineAddVal);
+                C = C.add(Rnorm).normalize();
             }
         }
 
-        // Compute v^c
-        v = curve.fromBigInteger(v.toBigInteger().pow(c.intValue()));
+        // Final exponentiation
+        FP2Element t = v.pow(exponent);
 
-        // Convert to F_p representative
-        return computeFpRepresentative(v, curve);
+        // Convert to F_p representative: b/a mod p
+        BigInteger a = t.getA();
+        BigInteger b = t.getB();
+        return b.multiply(a.modInverse(p)).mod(p);
     }
+
+//    public static BigInteger pairing(ECPoint R, ECPoint Q, BigInteger p, BigInteger q)
+//    {
+//        ECCurve curve = R.getCurve();
+//        FP2Element i = new FP2Element(BigInteger.ZERO, BigInteger.ONE, p); // i = -1 in F_p^2
+//
+//        ECPoint C = R.normalize();
+//        BigInteger c = p.add(BigInteger.ONE).divide(q);
+//        //ECFieldElement v = curve.fromBigInteger(BigInteger.ONE); // v = 1 in F_p
+//        FP2Element v = new FP2Element(BigInteger.ONE, BigInteger.ZERO, p);
+//
+//        String qBits = q.subtract(BigInteger.ONE).toString(2); // Binary representation of q-1
+//
+//        for (int j = 1; j < qBits.length(); j++)
+//        { // Skip MSB
+//            // l = (3 * (C_x^2 - 1)) / (2 * C_y)
+//            C = C.normalize();  // Add this line to ensure normalization
+//            ECFieldElement Cx = C.getAffineXCoord();
+//            ECFieldElement Cy = C.getAffineXCoord();
+//            BigInteger CxVal = Cx.toBigInteger();
+//            BigInteger CyVal = Cy.toBigInteger();
+////            ECFieldElement l = Cx.square().multiply(curve.fromBigInteger(ECFieldElement.THREE)).subtract(curve.fromBigInteger(BigInteger.ONE))
+////                .divide(Cy.multiply(curve.fromBigInteger(BigIntegers.TWO)));
+//
+//            // l = 3*(Cx² - 1) / (2*Cy) in F_p
+//            ECFieldElement lNum = Cx.square().subtract(curve.fromBigInteger(BigInteger.ONE)).multiply(curve.fromBigInteger(BigInteger.valueOf(3)));
+//            ECFieldElement lDen = Cy.multiply(curve.fromBigInteger(BigInteger.valueOf(2)));
+//            ECFieldElement l = lNum.divide(lDen);
+//            BigInteger lVal = l.toBigInteger();
+//
+//            // Evaluate line at [i]Q: (Qx, i*Qy)
+//            ECFieldElement Qx = Q.getAffineXCoord();
+//            ECFieldElement Qy = Q.getAffineYCoord();
+//            BigInteger QxVal = Qx.toBigInteger();
+//            BigInteger QyVal = Qy.toBigInteger();
+//
+//            // Convert l*(Qx + Cx) to F_p²
+//            FP2Element term1 = new FP2Element(lVal.multiply(QxVal.add(CxVal)).mod(p), BigInteger.ZERO, p);
+//
+//            // (i*Qy - Cy) in F_p²: (-Cy, Qy)
+//            FP2Element term2 = new FP2Element(QyVal.negate().mod(p), QyVal, p); // Wait, original term is i*Qy - Cy: i*Qy is (0, Qy), subtract Cy (Cy,0) gives (-Cy, Qy)
+//            FP2Element lineVal = new FP2Element(lVal, BigInteger.ZERO, p) // l is in F_p
+//                .multiply(new FP2Element(QxVal.add(CxVal).mod(p), BigInteger.ZERO, p)) // (Qx + Cx) in F_p
+//                .add(term2); // i*Qy - Cy
+//
+//            v = v.square().multiply(lineVal);
+//
+//            C = C.twice().normalize();;
+//
+//            // v = v^2 * (l * (Q_x + C_x) + (i * Q_y - C_y))
+////            ECFieldElement Qx = Q.getAffineXCoord();
+////            ECFieldElement Qy = Q.getAffineYCoord();
+////            v = v.square().multiply(l.multiply(Qx.add(Cx)).add(i.multiply(Qy).subtract(Cy)));
+//
+//            // Double the point
+////            C = C.twice();
+//            if (qBits.charAt(j) == '1')
+//            {
+//                // Compute line function for addition
+//                ECFieldElement Rx = R.getAffineXCoord();
+//                ECFieldElement Ry = R.getAffineYCoord();
+//                BigInteger RxVal = Rx.toBigInteger();
+//                BigInteger RyVal = Ry.toBigInteger();
+//
+//                ECFieldElement lAddNum = Cy.subtract(Ry);
+//                ECFieldElement lAddDen = Cx.subtract(Rx);
+//                ECFieldElement lAdd = lAddNum.divide(lAddDen);
+//                BigInteger lAddVal = lAdd.toBigInteger();
+//
+//                // Evaluate line at [i]Q
+//                FP2Element lineAddTerm1 = new FP2Element(lAddVal.multiply(QxVal.add(CxVal)).mod(p), BigInteger.ZERO, p);
+//                FP2Element lineAddTerm2 = new FP2Element(QyVal.negate().mod(p), QyVal, p); // i*Qy - Cy (Cy is current C's y)
+//                FP2Element lineAddVal = lineAddTerm1.add(lineAddTerm2);
+//
+//                v = v.multiply(lineAddVal);
+//
+//                C = C.add(R);
+//            }
+//
+////            // If the bit is 1, perform additional step
+////            if (qBits.charAt(j) == '1')
+////            {
+////                // l = (C_y - R_y) / (C_x - R_x)
+////                ECFieldElement Rx = R.getAffineXCoord();
+////                ECFieldElement Ry = R.getAffineYCoord();
+////                l = Cy.subtract(Ry).divide(Cx.subtract(Rx));
+////
+////                // v = v * (l * (Q_x + C_x) + (i * Q_y - C_y))
+////                v = v.multiply(l.multiply(Qx.add(Cx)).add(i.multiply(Qy).subtract(Cy)));
+////
+////                // C = C + R
+////                C = C.add(R);
+////            }
+//        }
+//
+////        // Compute v^c
+////        v = curve.fromBigInteger(v.toBigInteger().modPow(c, p));
+////
+////        // Convert to F_p representative
+////        return computeFpRepresentative(v, curve);
+//        FP2Element t = v.pow(c);
+//
+//        // Compute representative: b/a mod p
+//        BigInteger a = t.getA();
+//        BigInteger bVal = t.getB();
+//        if (a.equals(BigInteger.ZERO)) {
+//            throw new ArithmeticException("Division by zero in F_p representative");
+//        }
+//        BigInteger aInv = a.modInverse(p);
+//        BigInteger representative = bVal.multiply(aInv).mod(p);
+//
+//        return representative;
+//    }
 
     private static BigInteger computeFpRepresentative(ECFieldElement t, ECCurve curve)
     {
@@ -238,7 +519,7 @@ public class SAKKEKEMSGenerator
 
         // Assume t = a + i * b in F_p² → extract a, b
         ECFieldElement a = t; // In F_p², a is the real part
-        ECFieldElement b = t.multiply(curve.fromBigInteger(BigInteger.ONE.negate())); // Imaginary part
+        ECFieldElement b = t.multiply(curve.fromBigInteger(BigInteger.ONE.negate().add(p))); // Imaginary part
 
         // Compute b/a mod p
         return b.toBigInteger().multiply(a.toBigInteger().modInverse(p)).mod(p);
