@@ -19,6 +19,7 @@ import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -225,6 +226,12 @@ public class OpenPGPKey
             // return the public key component to properly map this secret key to its public key component when
             //  the public key component is used as key in a map.
             return pubKey;
+        }
+
+        @Override
+        public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
+        {
+            return getPublicKey().getLatestSelfSignature(evaluationTime);
         }
 
         public OpenPGPKey getOpenPGPKey()

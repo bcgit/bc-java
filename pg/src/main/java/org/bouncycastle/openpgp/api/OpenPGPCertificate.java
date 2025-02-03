@@ -133,6 +133,26 @@ public class OpenPGPCertificate
         }
     }
 
+    public List<OpenPGPUserId> getAllUserIds()
+    {
+        return getPrimaryKey().getUserIDs();
+    }
+
+    public List<OpenPGPUserId> getValidUserIds()
+    {
+        return getValidUserIds(new Date());
+    }
+
+    public List<OpenPGPUserId> getValidUserIds(Date evaluationTime)
+    {
+        return getPrimaryKey().getValidUserIDs(evaluationTime);
+    }
+
+    /**
+     * Get a {@link Map} of all public {@link OpenPGPComponentKey component keys} keyed by their {@link KeyIdentifier}.
+     *
+     * @return all public keys
+     */
     public Map<KeyIdentifier, OpenPGPComponentKey> getPublicKeys()
     {
         Map<KeyIdentifier, OpenPGPComponentKey> keys = new HashMap<>();
@@ -162,6 +182,19 @@ public class OpenPGPCertificate
         return new HashMap<>(subkeys);
     }
 
+    public List<OpenPGPComponentKey> getComponentKeysWithFlag(Date evaluationTime, int... keyFlags)
+    {
+        List<OpenPGPComponentKey> componentKeys = new ArrayList<>();
+        for (OpenPGPComponentKey k : getKeys())
+        {
+            if (k.isBoundAt(evaluationTime) && k.hasKeyFlags(evaluationTime, keyFlags))
+            {
+                componentKeys.add(k);
+            }
+        }
+        return componentKeys;
+    }
+
     /**
      * Return a {@link List} containing all {@link OpenPGPCertificateComponent components} of the certificate.
      * Components are primary key, subkeys and identities (user-ids, user attributes).
@@ -186,6 +219,24 @@ public class OpenPGPCertificate
         keys.add(primaryKey);
         keys.addAll(subkeys.values());
         return keys;
+    }
+
+    public List<OpenPGPComponentKey> getValidKeys()
+    {
+        return getValidKeys(new Date());
+    }
+
+    public List<OpenPGPComponentKey> getValidKeys(Date evaluationTime)
+    {
+        List<OpenPGPComponentKey> validKeys = new ArrayList<>();
+        for (OpenPGPComponentKey k : getKeys())
+        {
+            if (k.isBoundAt(evaluationTime))
+            {
+                validKeys.add(k);
+            }
+        }
+        return validKeys;
     }
 
     /**
@@ -858,6 +909,33 @@ public class OpenPGPCertificate
             return chains;
         }
 
+        public OpenPGPComponentSignature getCertification(Date evaluationTime)
+        {
+            OpenPGPSignatureChain certification = getSignatureChains().getCertificationAt(evaluationTime);
+            if (certification != null)
+            {
+                return certification.getSignature();
+            }
+            return null;
+        }
+
+        public OpenPGPComponentSignature getRevocation(Date evaluationTime)
+        {
+            OpenPGPSignatureChain revocation = getSignatureChains().getRevocationAt(evaluationTime);
+            if (revocation != null)
+            {
+                return revocation.getSignature();
+            }
+            return null;
+        }
+
+        public OpenPGPComponentSignature getLatestSelfSignature()
+        {
+            return getLatestSelfSignature(new Date());
+        }
+
+        public abstract OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime);
+
         /**
          * Return the public {@link OpenPGPCertificateComponent} that belongs to this component.
          * For public components (pubkeys, identities...), that's simply this, while secret components
@@ -1039,13 +1117,20 @@ public class OpenPGPCertificate
             // Subkey binding signature
             else if (signature.getSignatureType() == PGPSignature.SUBKEY_BINDING)
             {
+                // For signing-capable subkeys, check the embedded primary key binding signature
+                verifyEmbeddedPrimaryKeyBinding(contentVerifierBuilderProvider, policy);
+
+                // Binding signature MUST NOT predate the subkey itself
+                if (((OpenPGPSubkey) target).getCreationTime().after(signature.getCreationTime()))
+                {
+                    isCorrect = false;
+                    throw new MalformedOpenPGPSignatureException(this, "Subkey binding signature predates subkey creation time.");
+                }
+
                 verifyKeySignature(
                         issuer,
                         (OpenPGPSubkey) target,
                         contentVerifierBuilderProvider);
-
-                // For signing-capable subkeys, check the embedded primary key binding signature
-                verifyEmbeddedPrimaryKeyBinding(contentVerifierBuilderProvider, policy);
             }
 
             // User-ID binding
@@ -1262,6 +1347,17 @@ public class OpenPGPCertificate
             return rawPubkey.getCreationTime();
         }
 
+        @Override
+        public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
+        {
+            OpenPGPSignatureChain currentDKChain = getSignatureChains().getChainAt(evaluationTime);
+            if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
+            {
+                return currentDKChain.getHeadLink().getSignature();
+            }
+            return null;
+        }
+
         /**
          * Return true, if the key is currently marked as encryption key.
          *
@@ -1286,15 +1382,8 @@ public class OpenPGPCertificate
                 return false;
             }
 
-            KeyFlags keyFlags = getKeyFlags(evaluationTime);
-            if (keyFlags == null)
-            {
-                return false;
-            }
-
-            int flags = keyFlags.getFlags();
-            return (flags & KeyFlags.ENCRYPT_COMMS) == KeyFlags.ENCRYPT_COMMS ||
-                    (flags & KeyFlags.ENCRYPT_STORAGE) == KeyFlags.ENCRYPT_STORAGE;
+            return hasKeyFlags(evaluationTime, KeyFlags.ENCRYPT_STORAGE) ||
+                    hasKeyFlags(evaluationTime, KeyFlags.ENCRYPT_COMMS);
         }
 
         /**
@@ -1321,16 +1410,7 @@ public class OpenPGPCertificate
                 return false;
             }
 
-            KeyFlags keyFlags = getKeyFlags(evaluationTime);
-            if (keyFlags == null)
-            {
-                // Key has no applicable key-flags
-                return false;
-            }
-
-            // Check if key is marked as signing-capable by key-flags
-            int flags = keyFlags.getFlags();
-            return (flags & KeyFlags.SIGN_DATA) == KeyFlags.SIGN_DATA;
+            return hasKeyFlags(evaluationTime, KeyFlags.SIGN_DATA);
         }
 
         /**
@@ -1358,14 +1438,7 @@ public class OpenPGPCertificate
                 return false;
             }
 
-            KeyFlags keyFlags = getKeyFlags(evaluationTime);
-            if (keyFlags == null)
-            {
-                return false;
-            }
-
-            int flags = keyFlags.getFlags();
-            return (flags & KeyFlags.CERTIFY_OTHER) == KeyFlags.CERTIFY_OTHER;
+            return hasKeyFlags(evaluationTime, KeyFlags.CERTIFY_OTHER);
         }
 
         /**
@@ -1391,6 +1464,36 @@ public class OpenPGPCertificate
                 return (KeyFlags) subpacket.getSubpacket();
             }
             return null;
+        }
+
+        /**
+         * Return <pre>true</pre>, if the key has any of the given key flags.
+         * <p>
+         * Note: To check if the key has EITHER flag A or B, call <pre>hasKeyFlags(evalTime, A, B)</pre>.
+         * To instead check, if the key has BOTH flags A AND B, call <pre>hasKeyFlags(evalTime, A &amp; B)</pre>.
+         *
+         * @param evaluationTime evaluation time
+         * @param flags key flags (see {@link KeyFlags} for possible values)
+         * @return true if the key has ANY of the provided flags
+         */
+        public boolean hasKeyFlags(Date evaluationTime, int... flags)
+        {
+            KeyFlags keyFlags = getKeyFlags(evaluationTime);
+            if (keyFlags == null)
+            {
+                // Key has no key-flags
+                return false;
+            }
+
+            // Check if key has the desired key-flags
+            for (int f : flags)
+            {
+                if (((keyFlags.getFlags() & f) == f))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         /**
@@ -1576,6 +1679,31 @@ public class OpenPGPCertificate
             }
         }
 
+        @Override
+        public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
+        {
+            List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+            OpenPGPSignatureChain currentDKChain = getSignatureChains().getChainAt(evaluationTime);
+            if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
+            {
+                signatures.add(currentDKChain.getHeadLink().getSignature());
+            }
+            for (OpenPGPIdentityComponent identity : getCertificate().getIdentities())
+            {
+                signatures.add(identity.getLatestSelfSignature(evaluationTime));
+            }
+
+            OpenPGPComponentSignature latest = null;
+            for (OpenPGPComponentSignature signature : signatures)
+            {
+                if (latest == null || signature.getCreationTime().after(latest.getCreationTime()))
+                {
+                    latest = signature;
+                }
+            }
+            return latest;
+        }
+
         /**
          * Return all {@link OpenPGPUserId OpenPGPUserIds} on this key.
          *
@@ -1587,6 +1715,24 @@ public class OpenPGPCertificate
             for (OpenPGPIdentityComponent identity : identityComponents)
             {
                 if (identity instanceof OpenPGPUserId)
+                {
+                    userIds.add((OpenPGPUserId) identity);
+                }
+            }
+            return userIds;
+        }
+
+        public List<OpenPGPUserId> getValidUserIds()
+        {
+            return getValidUserIDs(new Date());
+        }
+
+        public List<OpenPGPUserId> getValidUserIDs(Date evaluationTime)
+        {
+            List<OpenPGPUserId> userIds = new ArrayList<>();
+            for (OpenPGPIdentityComponent identity : identityComponents)
+            {
+                if (identity instanceof OpenPGPUserId && identity.isBoundAt(evaluationTime))
                 {
                     userIds.add((OpenPGPUserId) identity);
                 }
@@ -1839,6 +1985,17 @@ public class OpenPGPCertificate
         }
 
         @Override
+        public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
+        {
+            OpenPGPSignatureChain currentChain = getSignatureChains().getChainAt(evaluationTime);
+            if (currentChain != null && !currentChain.chainLinks.isEmpty())
+            {
+                return currentChain.getHeadLink().getSignature();
+            }
+            return null;
+        }
+
+        @Override
         public String toDetailString()
         {
             return toString();
@@ -1958,6 +2115,11 @@ public class OpenPGPCertificate
         private OpenPGPSignatureChain(OpenPGPSignatureChain copy)
         {
             this.chainLinks.addAll(copy.chainLinks);
+        }
+
+        public OpenPGPComponentSignature getSignature()
+        {
+            return getHeadLink().getSignature();
         }
 
         /**
@@ -2089,7 +2251,8 @@ public class OpenPGPCertificate
             }
             Date since = getSince();
             Date until = getUntil();
-            return !evaluationDate.before(since) && (until == null || evaluationDate.before(until));
+            // since <= eval <= until
+            return !evaluationDate.before(since) && (until == null || !evaluationDate.after(until));
         }
 
         public boolean isValid()
@@ -2149,13 +2312,23 @@ public class OpenPGPCertificate
                 return 1;
             }
 
-            int rootCompare = -getRootLink().since().compareTo(other.getRootLink().since());
-            if (rootCompare != 0)
+            int compare = -getRootLink().since().compareTo(other.getRootLink().since());
+            if (compare != 0)
             {
-                return rootCompare;
+                return compare;
             }
 
-            return -getHeadLink().since().compareTo(other.getHeadLink().since());
+            compare = -getHeadLink().since().compareTo(other.getHeadLink().since());
+            if (compare != 0)
+            {
+                return compare;
+            }
+
+            if (isRevocation())
+            {
+                return -1;
+            }
+            return 1;
         }
 
         @Override
