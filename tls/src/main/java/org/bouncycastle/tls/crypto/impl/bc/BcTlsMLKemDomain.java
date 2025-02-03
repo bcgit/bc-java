@@ -25,6 +25,7 @@ public class BcTlsMLKemDomain implements TlsKemDomain
             return MLKEMParameters.ml_kem_512;
         case NamedGroup.OQS_mlkem768:
         case NamedGroup.MLKEM768:
+        case NamedGroup.X25519MLKEM768:
             return MLKEMParameters.ml_kem_768;
         case NamedGroup.OQS_mlkem1024:
         case NamedGroup.MLKEM1024:
@@ -45,6 +46,11 @@ public class BcTlsMLKemDomain implements TlsKemDomain
         this.config = kemConfig;
         this.domainParameters = getDomainParameters(kemConfig);
         this.isServer = kemConfig.isServer();
+    }
+
+    public TlsKemConfig getTlsKemConfig()
+    {
+        return this.config;
     }
 
     public BcTlsSecret adoptLocalSecret(byte[] secret)
