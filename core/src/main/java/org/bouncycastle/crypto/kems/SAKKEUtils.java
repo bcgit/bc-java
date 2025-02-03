@@ -9,6 +9,38 @@ import org.bouncycastle.util.encoders.Hex;
 
 public class SAKKEUtils
 {
+    public static ECPoint sakkePointExponent(ECPoint point, BigInteger n) {
+        if (n.equals(BigInteger.ZERO)) {
+            throw new IllegalArgumentException("Exponent cannot be zero.");
+        }
+
+        ECPoint result = point;
+        int N = n.bitLength() - 1;
+
+        for (; N != 0; --N) {
+            result = sakkePointSquare(result);
+            if (n.testBit(N - 1)) {
+                result = sakkePointsMultiply(result, point);
+            }
+        }
+        return result;
+    }
+
+    public static ECPoint sakkePointSquare(ECPoint point) {
+        BigInteger x = point.getAffineXCoord().toBigInteger();
+        BigInteger y = point.getAffineYCoord().toBigInteger();
+
+        BigInteger bx1 = x.add(y);
+        BigInteger bx2 = x.subtract(y);
+        BigInteger newX = bx1.multiply(bx2).mod(point.getCurve().getField().getCharacteristic());
+        BigInteger newY = x.multiply(y).multiply(BigInteger.valueOf(2)).mod(point.getCurve().getField().getCharacteristic());
+
+        return point.getCurve().createPoint(newX, newY);
+    }
+
+    public static ECPoint sakkePointsMultiply(ECPoint p1, ECPoint p2) {
+        return p1.add(p2).normalize();
+    }
     public static BigInteger hashToIntegerRange(byte[] input, BigInteger q)
     {
         // RFC 6508 Section 5.1: Hashing to an Integer Range
