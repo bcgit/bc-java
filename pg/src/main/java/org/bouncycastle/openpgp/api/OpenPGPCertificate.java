@@ -359,7 +359,7 @@ public class OpenPGPCertificate
         // Signature creation times
         for (OpenPGPCertificateComponent component : getComponents())
         {
-            OpenPGPSignatureChains componentChains = componentSignatureChains.get(component);
+            OpenPGPSignatureChains componentChains = getAllSignatureChainsFor(component);
             if (componentChains == null)
             {
                 continue;
@@ -543,7 +543,9 @@ public class OpenPGPCertificate
 
     private OpenPGPSignatureChains getAllSignatureChainsFor(OpenPGPCertificateComponent component)
     {
-        return componentSignatureChains.get(component.getPublicComponent());
+        OpenPGPSignatureChains chains = new OpenPGPSignatureChains(component.getPublicComponent());
+        chains.addAll(componentSignatureChains.get(component.getPublicComponent()));
+        return chains;
     }
 
     private void processPrimaryKey(OpenPGPPrimaryKey primaryKey)
