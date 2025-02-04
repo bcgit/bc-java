@@ -44,7 +44,7 @@ public class BCMLKEMPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();
-        this.priorEncoding = keyInfo.getPrivateKey().getOctets();
+        this.priorEncoding = keyInfo.getEncoded();
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
@@ -89,12 +89,11 @@ public class BCMLKEMPrivateKey
     {
         try
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
-
             if (priorEncoding != null)
             {
-                pki = new PrivateKeyInfo(pki.getPrivateKeyAlgorithm(), priorEncoding, attributes);
+                return priorEncoding;
             }
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
 
             return pki.getEncoded();
         }
