@@ -1092,6 +1092,29 @@ public class OpenPGPCertificate
             throw new IllegalArgumentException("Unknown target type.");
         }
 
+        public Date getKeyExpirationTime()
+        {
+            PGPSignatureSubpacketVector hashed = signature.getHashedSubPackets();
+            if (hashed == null)
+            {
+                // v3 sigs have no expiration
+                return null;
+            }
+            long exp = hashed.getKeyExpirationTime();
+            if (exp < 0)
+            {
+                throw new RuntimeException("Negative key expiration time");
+            }
+
+            if (exp == 0L)
+            {
+                // Explicit or implicit no expiration
+                return null;
+            }
+
+            return new Date(getTargetKeyComponent().getCreationTime().getTime() + 1000 * exp);
+        }
+
         /**
          * Verify this signature.
          *
@@ -1624,25 +1647,7 @@ public class OpenPGPCertificate
          */
         public Date getKeyExpirationDateAt(Date evaluationTime)
         {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket =
-                    getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.KEY_EXPIRE_TIME);
-            if (subpacket != null)
-            {
-                long expiresIn = ((KeyExpirationTime) subpacket.getSubpacket()).getTime();
-                if (expiresIn == 0L)
-                {
-                    // Explicit no expiry
-                    return null;
-                }
-
-                Date creationTime = getCreationTime();
-                Date expirationTime = new Date(creationTime.getTime() + 1000 * expiresIn);
-                return expirationTime;
-            }
-            else
-            {
-                return null; // implicit no expiry
-            }
+            return getLatestSelfSignature(evaluationTime).getKeyExpirationTime();
         }
     }
 
