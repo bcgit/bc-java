@@ -2336,7 +2336,7 @@ public class OpenPGPCertificate
 
             if (isRevocation())
             {
-                return -1;
+                return 1;
             }
             return -1;
         }
