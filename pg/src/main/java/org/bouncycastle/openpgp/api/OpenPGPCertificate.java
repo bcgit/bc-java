@@ -377,6 +377,11 @@ public class OpenPGPCertificate
             }
         }
 
+        if (latestModification != null)
+        {
+            return latestModification;
+        }
+
         // Key creation times
         for (OpenPGPComponentKey key : getKeys())
         {
