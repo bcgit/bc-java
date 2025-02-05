@@ -85,6 +85,12 @@ public class OpenPGPKey
         }
     }
 
+    @Override
+    public boolean isSecretKey()
+    {
+        return true;
+    }
+
     /**
      * Return the {@link OpenPGPCertificate} of this {@link OpenPGPKey}.
      *

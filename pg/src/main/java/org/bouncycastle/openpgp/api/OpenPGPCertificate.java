@@ -133,6 +133,11 @@ public class OpenPGPCertificate
         }
     }
 
+    public boolean isSecretKey()
+    {
+        return false;
+    }
+
     public List<OpenPGPUserId> getAllUserIds()
     {
         return getPrimaryKey().getUserIDs();
