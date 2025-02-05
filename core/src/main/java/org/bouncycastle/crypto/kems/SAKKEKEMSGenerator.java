@@ -156,20 +156,12 @@ public class SAKKEKEMSGenerator
         BigInteger g_r = result[0].mod(p);
         g_r = g_r.modInverse(p);
         g_r = g_r.multiply(result[1]).mod(p);
-        System.out.println("g_r " + new String(Hex.encode(g_r.toByteArray())));
-        byte[] expected_g_r = Hex.decode("7D2A8438 E6291C64 9B6579EB 3B79EAE9\n" +
-            "                 48B1DE9E 5F7D1F40 70A08F8D B6B3C515\n" +
-            "                 6F2201AF FBB5CB9D 82AA3EC0 D0398B89\n" +
-            "                 ABC78A13 A760C0BF 3F77E63D 0DF3F1A3\n" +
-            "                 41A41B88 11DF197F D6CD0F00 3125606F\n" +
-            "                 4F109F40 0F7292A1 0D255E3C 0EBCCB42\n" +
-            "                 53FB182C 68F09CF6 CD9C4A53 DA6C74AD\n" +
-            "                 007AF36B 8BCA979D 5895E282 F483FCD6");
+
         BigInteger mask = SAKKEUtils.hashToIntegerRange(g_r.toByteArray(), BigInteger.ONE.shiftLeft(n)); // 2^n
         System.out.println(new String(Hex.encode(mask.toByteArray())));
 
         BigInteger H = ssv.xor(mask);
-
+        System.out.println(new String(Hex.encode(H.toByteArray())));
         // 5. Encode encapsulated data (R_bS, H)
         byte[] encapsulated = Arrays.concatenate(R_bS.getEncoded(false), H.toByteArray());
 
@@ -201,10 +193,6 @@ public class SAKKEKEMSGenerator
         BigInteger n
     )
     {
-        if (n.equals(BigInteger.ZERO))
-        {
-            return false;
-        }
 
         // Initialize result with the original point
         BigInteger currentX = pointX;
