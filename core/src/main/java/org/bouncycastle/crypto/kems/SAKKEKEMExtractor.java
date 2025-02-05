@@ -6,11 +6,9 @@ import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.params.SAKKEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
-import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 
 
 public class SAKKEKEMExtractor
@@ -49,7 +47,7 @@ public class SAKKEKEMExtractor
 
             // Step 2: Compute w = <R_bS, K_bS> using pairing
             BigInteger w = computePairing(R_bS, K_bS, p, q);
-            System.out.println(new String(Hex.encode(w.toByteArray())));
+            //System.out.println(new String(Hex.encode(w.toByteArray())));
             //BigInteger w = tatePairing(R_bS.getXCoord().toBigInteger(), R_bS.getYCoord().toBigInteger(), K_bS.getXCoord().toBigInteger(), K_bS.getYCoord().toBigInteger(), q, p);
             // Step 3: Compute SSV = H XOR HashToIntegerRange(w, 2^n)
             BigInteger twoToN = BigInteger.ONE.shiftLeft(n);

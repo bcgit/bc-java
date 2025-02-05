@@ -7,13 +7,11 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.kems.SAKKEKEMExtractor;
 import org.bouncycastle.crypto.kems.SAKKEKEMSGenerator;
-import org.bouncycastle.crypto.kems.SAKKEUtils;
 import org.bouncycastle.crypto.params.SAKKEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -27,18 +25,6 @@ public class SAKKEKEMSTest
     {
         SAKKEKEMSTest test = new SAKKEKEMSTest();
         test.performTest();
-        // Expected Rb values
-//        BigInteger expectedRbx = new BigInteger("44E8AD44AB8592A6A5A3DDCA5CF896C718043606A01D650DEF37A01F37C228C332FC317354E2C274D4DAF8AD001054C7...
-//            BigInteger expectedRby = new BigInteger("557E134AD85BB1D4B9CE4F8BE4B08A12BABF55B1D6F1D7A638019EA28E15AB1C9F76375FDD1210D4F4351B9A009486B7...
-//
-//            // Instantiate SAKKE KEM Generator
-//            SAKKEKEMSGenerator kem = new SAKKEKEMSGenerator();
-//        EncapsulatedData encapsulatedData = kem.encapsulate(SSV);
-//
-//        // Validate results
-//        boolean testPassed = expectedRbx.equals(encapsulatedData.getRbx()) && expectedRby.equals(encapsulatedData.getRby());
-
-        //System.out.println("SAKKE KEM Test " + (testPassed ? "PASSED" : "FAILED"));
     }
 
 
@@ -78,7 +64,7 @@ public class SAKKEKEMSTest
 //
         byte[] b = Hex.decode("323031312D30320074656C3A2B34343737303039303031323300");
 
-        byte[] SSV = Hex.decode("123456789ABCDEF0123456789ABCDEF0");
+        byte[] ssv = Hex.decode("123456789ABCDEF0123456789ABCDEF0");
         byte[] expectedR = Hex.decode("13EE3E1B8DAC5DB168B1CEB32F0566A4C273693F78BAFFA2A2EE6A686E6BD90F8206CCAB84E7F"
             + "42ED39BD4FB131012ECCA2ECD2119414560C17CAB46B956A80F58A3302EB3E2C9A228FBA7ED34D8ACA2392DA1FFB0B17B2320AE09AAEDF"
             + "D0235F6FE0EB65337A63F9CC97728B8E5AD0460FADE144369AA5B2166213247712096");
@@ -137,17 +123,18 @@ public class SAKKEKEMSTest
             g,// Order of the subgroup (from RFC 6509)
             BigInteger.ONE     // Cofactor = 1
         );
-        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(new SecureRandom());
+
+        SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv),
+            new FixedSecureRandom.Data(b)});
+        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(random);
         SecretWithEncapsulation rlt = generator.generateEncapsulated(null);
 
-
         ECPoint K_bS = curve.createPoint(kbx, kby);
-
 
         SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS,
             new SAKKEPublicKeyParameters(curve.createPoint(Zx, Zy))));
         byte[] test = extractor.extractSecret(rlt.getEncapsulation());
-        Assert.assertTrue(Arrays.areEqual(test, SSV));
+        Assert.assertTrue(Arrays.areEqual(test, ssv));
 
     }
 }
