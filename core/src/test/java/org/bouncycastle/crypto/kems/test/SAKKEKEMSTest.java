@@ -41,17 +41,6 @@ public class SAKKEKEMSTest
         //System.out.println("SAKKE KEM Test " + (testPassed ? "PASSED" : "FAILED"));
     }
 
-    private static byte[] hexStringToByteArray(String s)
-    {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2)
-        {
-            data[i / 2] = (byte)((Character.digit(s.charAt(i), 16) << 4)
-                + Character.digit(s.charAt(i + 1), 16));
-        }
-        return data;
-    }
 
     @Override
     public String getName()
@@ -141,7 +130,6 @@ public class SAKKEKEMSTest
                 "E26C6487326B4CD4512AC5CD65681CE1B6AFF4A831852A82A7CF3C521C3C09AA" +
                 "9F94D6AF56971F1FFCE3E82389857DB080C5DF10AC7ACE87666D807AFEA85FEB", 16
         );
-
         ECCurve.Fp curve = new ECCurve.Fp(
             p, // Prime p
             BigInteger.valueOf(-3).mod(p),             // a = -3
@@ -152,28 +140,14 @@ public class SAKKEKEMSTest
         SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(new SecureRandom());
         SecretWithEncapsulation rlt = generator.generateEncapsulated(null);
 
+
         ECPoint K_bS = curve.createPoint(kbx, kby);
 
 
         SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS,
             new SAKKEPublicKeyParameters(curve.createPoint(Zx, Zy))));
-        byte[] test = extractor.extractSecret(rlt.getSecret());
-
-
-        System.out.println("K_bS x:" + new String(Hex.encode(K_bS.getXCoord().toBigInteger().toByteArray())));
-        System.out.println("K_bS y:" + new String(Hex.encode(K_bS.getYCoord().toBigInteger().toByteArray())));
-        ECPoint R_bs = curve.createPoint(Rbx, Rby);
-        SAKKEKEMSGenerator.pairing(K_bS, R_bs, p, q);
-
-        BigInteger r = SAKKEUtils.hashToIntegerRange(Arrays.concatenate(SSV, b), q);
-
-        System.out.println("r:" + new String(Hex.encode(r.toByteArray())));
-
-        System.out.println("r:" + new String(Hex.encode(expectedR)));
-
-        Assert.assertTrue(Arrays.areEqual(r.toByteArray(), expectedR));
-//        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(new SecureRandom());
-//        generator.generateEncapsulated(null);
+        byte[] test = extractor.extractSecret(rlt.getEncapsulation());
+        Assert.assertTrue(Arrays.areEqual(test, SSV));
 
     }
 }
