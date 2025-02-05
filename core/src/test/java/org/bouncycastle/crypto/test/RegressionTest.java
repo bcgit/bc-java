@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.kems.test.SAKKEKEMSTest;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
@@ -195,6 +196,7 @@ public class RegressionTest
             new SparkleTest(),
             new ISAPTest(),
             new ConcatenationKDFTest(),
+            new SAKKEKEMSTest(),
         };
 
     public static void main(String[] args)
