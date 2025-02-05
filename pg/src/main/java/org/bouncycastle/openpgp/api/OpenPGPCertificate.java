@@ -10,7 +10,6 @@ import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
-import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
@@ -1153,7 +1152,7 @@ public class OpenPGPCertificate
             else if (signature.getSignatureType() == PGPSignature.SUBKEY_BINDING)
             {
                 // For signing-capable subkeys, check the embedded primary key binding signature
-                verifyEmbeddedPrimaryKeyBinding(contentVerifierBuilderProvider, policy);
+                verifyEmbeddedPrimaryKeyBinding(contentVerifierBuilderProvider, policy, getCreationTime());
 
                 // Binding signature MUST NOT predate the subkey itself
                 if (((OpenPGPSubkey) target).getCreationTime().after(signature.getCreationTime()))
@@ -1193,7 +1192,7 @@ public class OpenPGPCertificate
         }
 
         private void verifyEmbeddedPrimaryKeyBinding(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
-                                                     OpenPGPPolicy policy)
+                                                     OpenPGPPolicy policy, Date signatureCreationTime)
                 throws PGPSignatureException
         {
             int keyFlags = signature.getHashedSubPackets().getKeyFlags();
@@ -1228,7 +1227,14 @@ public class OpenPGPCertificate
                             subkey,
                             issuer);
 
+            if (!backSig.isEffectiveAt(signatureCreationTime))
+            {
+                throw new PGPSignatureException("Embedded PrimaryKeyBinding signature is expired or not yet effective.");
+            }
+
             backSig.sanitize(subkey, policy);
+
+            // needs to be called last to prevent false positives
             backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
         }
 
@@ -2402,7 +2408,50 @@ public class OpenPGPCertificate
 
             public Date until()
             {
-                return signature.getExpirationTime();
+                Date backSigExpiration = getBackSigExpirationTime();
+                if (backSigExpiration == null || signature.getExpirationTime().before(backSigExpiration))
+                {
+                    return signature.getExpirationTime();
+                }
+                return backSigExpiration;
+            }
+
+            private Date getBackSigExpirationTime()
+            {
+                if (signature.getSignature().getSignatureType() != PGPSignature.SUBKEY_BINDING)
+                {
+                    return null;
+                }
+
+                PGPSignatureSubpacketVector hashedSubpackets = signature.getSignature().getHashedSubPackets();
+                if (hashedSubpackets == null)
+                {
+                    return null;
+                }
+
+                int keyFlags = signature.getSignature().getHashedSubPackets().getKeyFlags();
+                if ((keyFlags & KeyFlags.SIGN_DATA) != KeyFlags.SIGN_DATA)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    PGPSignatureList embeddedSigs = hashedSubpackets.getEmbeddedSignatures();
+                    if (!embeddedSigs.isEmpty())
+                    {
+                        OpenPGPComponentSignature backSig = new OpenPGPComponentSignature(
+                                embeddedSigs.get(0),
+                                getSignature().getTargetKeyComponent(),
+                                getSignature().getIssuer());
+                        return backSig.getExpirationTime();
+                    }
+                    return null;
+                }
+                catch (PGPException e)
+                {
+                    return null;
+                }
             }
 
             public boolean verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
