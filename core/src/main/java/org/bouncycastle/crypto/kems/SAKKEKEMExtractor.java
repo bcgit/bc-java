@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.kems;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
@@ -8,9 +9,11 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.SAKKEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 
 import static org.bouncycastle.crypto.kems.SAKKEKEMSGenerator.pairing;
 
@@ -48,18 +51,28 @@ public class SAKKEKEMExtractor
             ECPoint R_bS = curve.decodePoint(Arrays.copyOfRange(encapsulation, 0, 257));
             BigInteger H = new BigInteger(Arrays.copyOfRange(encapsulation, 257, 274));
 
+            //ECCurveWithTatePairing pairing = new ECCurveWithTatePairing(q, BigInteger.ONE, BigInteger.ZERO, p);
+            //BigInteger w = pairing.TatePairing(R_bS, K_bS).toBigInteger();
             // Step 2: Compute w = <R_bS, K_bS> using pairing
 //            BigInteger w = computeTLPairing(new BigInteger[] {R_bS.getXCoord().toBigInteger(), R_bS.getYCoord().toBigInteger()},
 //                new BigInteger[] {K_bS.getXCoord().toBigInteger(), K_bS.getYCoord().toBigInteger()}, this.p, this.q);
             BigInteger w = computePairing(R_bS, K_bS, p, q);
-
+            System.out.println(new String(Hex.encode(w.toByteArray())));
+            //BigInteger w = tatePairing(R_bS.getXCoord().toBigInteger(), R_bS.getYCoord().toBigInteger(), K_bS.getXCoord().toBigInteger(), K_bS.getYCoord().toBigInteger(), q, p);
             // Step 3: Compute SSV = H XOR HashToIntegerRange(w, 2^n)
             BigInteger ssv = computeSSV(H, w);
 
             // Step 4: Compute r = HashToIntegerRange(SSV || b)
-//            BigInteger r = computeR(ssv, privateKey.getPrivatePoint());
+            BigInteger b = privateKey.getB();
+            BigInteger r = SAKKEUtils.hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q);
 //
 //            // Step 5: Validate R_bS
+            ECPoint bP = P.multiply(b).normalize();
+            ECPoint Test = bP.add(Z_S).multiply(r).normalize();
+            if(!R_bS.equals(Test))
+            {
+                throw new IllegalStateException("Validation of R_bS failed");
+            }
 //            if (!validateR_bS(r, privateKey.getPrivatePoint(), R_bS)) {
 //                throw new IllegalStateException("Validation of R_bS failed");
 //            }
@@ -78,11 +91,6 @@ public class SAKKEKEMExtractor
         return 0;
     }
 
-    private BigInteger computePairing(ECPoint R, ECPoint K)
-    {
-        // Use your existing pairing implementation
-        return pairing(R, K, p, q);
-    }
 
     private BigInteger computeSSV(BigInteger H, BigInteger w)
     {
@@ -91,175 +99,11 @@ public class SAKKEKEMExtractor
         return H.xor(mask);
     }
 
-    public static BigInteger computeTLPairing(
-        BigInteger[] R,  // C = (Rx, Ry)
-        BigInteger[] Q,  // Q = (Qx, Qy)
-        BigInteger p,
-        BigInteger q
-    )
-    {
-        BigInteger qMinus1 = q.subtract(BigInteger.ONE);
-        int N = qMinus1.bitLength() - 1;
-
-        // Initialize V = (1, 0)
-        BigInteger[] V = {BigInteger.ONE, BigInteger.ZERO};
-        // Initialize C = R
-        BigInteger[] C = {R[0], R[1]};
-
-        for (; N > 0; N--)
-        {
-            // V = V^2
-            pointSquare(V, p);
-
-            // Compute line function T
-            BigInteger[] T = computeLineFunctionT(C, Q, p);
-
-            // V = V * T
-            pointMultiply(V, T, p);
-
-            // C = 2*C (point doubling)
-            pointDouble(C, p);
-
-            if (qMinus1.testBit(N - 1))
-            {
-                // Compute addition line function
-                BigInteger[] TAdd = computeLineFunctionAdd(C, R, Q, p);
-
-                // V = V * TAdd
-                pointMultiply(V, TAdd, p);
-
-                // C = C + R (point addition)
-                pointAdd(C, R, p);
-            }
-        }
-
-        // Final squaring
-        pointSquare(V, p);
-        pointSquare(V, p);
-
-        // Compute w = (Vy * Vx^{-1}) mod p
-        BigInteger VxInv = V[0].modInverse(p);
-        return V[1].multiply(VxInv).mod(p);
-    }
-
-    private static void pointSquare(BigInteger[] point, BigInteger p)
-    {
-        BigInteger x = point[0];
-        BigInteger y = point[1];
-
-        // x = (x + y)(x - y) mod p
-        BigInteger xPlusY = x.add(y).mod(p);
-        BigInteger xMinusY = x.subtract(y).mod(p);
-        BigInteger newX = xPlusY.multiply(xMinusY).mod(p);
-
-        // y = 2xy mod p
-        BigInteger newY = x.multiply(y).multiply(BigInteger.valueOf(2)).mod(p);
-
-        point[0] = newX;
-        point[1] = newY;
-    }
-
-    private static void pointMultiply(BigInteger[] a, BigInteger[] b, BigInteger p)
-    {
-        // Complex multiplication (a + bi)*(c + di) = (ac - bd) + (ad + bc)i
-        BigInteger real = a[0].multiply(b[0]).subtract(a[1].multiply(b[1])).mod(p);
-        BigInteger imag = a[0].multiply(b[1]).add(a[1].multiply(b[0])).mod(p);
-
-        a[0] = real;
-        a[1] = imag;
-    }
-
-    private static void pointDouble(BigInteger[] point, BigInteger p)
-    {
-        // Elliptic curve point doubling formulas
-        BigInteger x = point[0];
-        BigInteger y = point[1];
-
-        BigInteger slope = x.pow(2).multiply(BigInteger.valueOf(3))
-            .mod(p)
-            .multiply(y.multiply(BigInteger.valueOf(2)).modInverse(p))
-            .mod(p);
-
-        BigInteger newX = slope.pow(2).subtract(x.multiply(BigInteger.valueOf(2))).mod(p);
-        BigInteger newY = slope.multiply(x.subtract(newX)).subtract(y).mod(p);
-
-        point[0] = newX;
-        point[1] = newY;
-    }
-
-    private static void pointAdd(BigInteger[] a, BigInteger[] b, BigInteger p)
-    {
-        // Elliptic curve point addition
-        BigInteger x1 = a[0], y1 = a[1];
-        BigInteger x2 = b[0], y2 = b[1];
-
-        BigInteger slope = y2.subtract(y1)
-            .multiply(x2.subtract(x1).modInverse(p))
-            .mod(p);
-
-        BigInteger newX = slope.pow(2).subtract(x1).subtract(x2).mod(p);
-        BigInteger newY = slope.multiply(x1.subtract(newX)).subtract(y1).mod(p);
-
-        a[0] = newX;
-        a[1] = newY;
-    }
-
-    private static BigInteger[] computeLineFunctionT(
-        BigInteger[] C,
-        BigInteger[] Q,
-        BigInteger p
-    )
-    {
-        // Line function evaluation for doubling
-        BigInteger Cx = C[0], Cy = C[1];
-        BigInteger Qx = Q[0], Qy = Q[1];
-
-        // l = (3Cx² + a)/(2Cy) but a=0 for many curves
-        BigInteger numerator = Cx.pow(2).multiply(BigInteger.valueOf(3)).mod(p);
-        BigInteger denominator = Cy.multiply(BigInteger.valueOf(2)).mod(p);
-        BigInteger l = numerator.multiply(denominator.modInverse(p)).mod(p);
-
-        // T = l*(Qx + Cx) - 2Qy
-        BigInteger tReal = l.multiply(Qx.add(Cx).mod(p)).mod(p);
-        BigInteger tImag = l.multiply(Qy).negate().mod(p);
-
-        return new BigInteger[]{tReal, tImag};
-    }
-
-    private static BigInteger[] computeLineFunctionAdd(
-        BigInteger[] C,
-        BigInteger[] R,
-        BigInteger[] Q,
-        BigInteger p
-    )
-    {
-        // Line function evaluation for addition
-        BigInteger Cx = C[0], Cy = C[1];
-        BigInteger Rx = R[0], Ry = R[1];
-        BigInteger Qx = Q[0], Qy = Q[1];
-
-        // l = (Cy - Ry)/(Cx - Rx)
-        BigInteger numerator = Cy.subtract(Ry).mod(p);
-        BigInteger denominator = Cx.subtract(Rx).mod(p);
-        BigInteger l = numerator.multiply(denominator.modInverse(p)).mod(p);
-
-        // T = l*(Qx + Cx) - Qy
-        BigInteger tReal = l.multiply(Qx.add(Cx).mod(p)).mod(p);
-        BigInteger tImag = l.multiply(Qy).negate().mod(p);
-
-        return new BigInteger[]{tReal, tImag};
-    }
-
-    private boolean pointsEqual(ECPoint p1, ECPoint p2)
-    {
-        return p1.normalize().getXCoord().equals(p2.normalize().getXCoord())
-            && p1.normalize().getYCoord().equals(p2.normalize().getYCoord());
-    }
-
     public static BigInteger computePairing(ECPoint R, ECPoint Q, BigInteger p, BigInteger q)
     {
         BigInteger c = p.add(BigInteger.ONE).divide(q);  // Compute c = (p+1)/q
         BigInteger[] v = new BigInteger[]{BigInteger.ONE, BigInteger.ZERO};  // v = (1,0) in F_p^2
+        //BigInteger v = BigInteger.ONE;
         ECPoint C = R;
 
         BigInteger qMinusOne = q.subtract(BigInteger.ONE);
@@ -269,6 +113,7 @@ public class SAKKEKEMExtractor
         for (int i = numBits - 2; i >= 0; i--)
         {
             v = fp2SquareAndAccumulate(v, C, Q, p);
+
             C = C.twice().normalize();  // C = [2]C
 
             if (qMinusOne.testBit(i))
@@ -290,13 +135,24 @@ public class SAKKEKEMExtractor
         BigInteger Qy = Q.getAffineYCoord().toBigInteger();
 
         // Compute l = (3 * (Cx^2 - 1)) / (2 * Cy) mod p
-        BigInteger l = Cx.multiply(Cx).mod(p).subtract(BigInteger.ONE).multiply(BigInteger.valueOf(3)).mod(p)
-            .multiply(Cy.multiply(BigInteger.valueOf(2)).modInverse(p))
-            .mod(p);
+        BigInteger l = BigInteger.valueOf(3).multiply(Cx.multiply(Cx).subtract(BigInteger.ONE))
+            .multiply(Cy.multiply(BigInteger.valueOf(2)).modInverse(p)).mod(p);
 
         // Compute v = v^2 * ( l*( Q_x + C_x ) + ( i*Q_y - C_y ) )
         v = fp2Multiply(v[0], v[1], v[0], v[1], p);
-        return fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)), (Qy.subtract(Cy)), p);
+//        v[0] = v[0].multiply(v[0]);
+//        v[1] = v[1].multiply(v[1]);
+        return accumulateLine(v[0], v[1], Cx, Cy, Qx, Qy, l, p);
+//        BigInteger t_x1_bn = Cx.multiply(Cx).subtract(BigInteger.ONE).multiply(BigInteger.valueOf(3)).multiply(Qx.add(Cx)).mod(p)
+//            .subtract(Cy.multiply(Cy).multiply(BigInteger.valueOf(2))).mod(p);
+//        BigInteger t_x2_bn =  Cy.multiply(Qy).multiply(BigInteger.valueOf(2)).mod(p);
+//        v = fp2Multiply(v[0], v[1], v[0], v[1], p);
+//        return fp2Multiply(v[0], v[1], t_x1_bn, t_x2_bn, p);
+    }
+
+    private static BigInteger[] accumulateLine(BigInteger v0, BigInteger v1, BigInteger Cx, BigInteger Cy, BigInteger Qx, BigInteger Qy, BigInteger l, BigInteger p)
+    {
+        return fp2Multiply(v0, v1, l.multiply(Qx.add(Cx)).subtract(Cy), Qy, p);
     }
 
     private static BigInteger[] fp2MultiplyAndAccumulate(BigInteger[] v, ECPoint C, ECPoint R, ECPoint Q, BigInteger p)
@@ -314,11 +170,15 @@ public class SAKKEKEMExtractor
             .mod(p);
 
         // Compute v = v * ( l*( Q_x + C_x ) + ( i*Q_y - C_y ) )
-        return fp2Multiply(v[0], v[1], l.multiply(Qx.add(Cx)), Qy.subtract(Cy), p);
+        return accumulateLine(v[0], v[1], Cx, Cy, Qx, Qy, l, p);
+//        BigInteger t_x1_bn = Qx.add(Rx).multiply(Cy).subtract(Qx.add(Cx).multiply(Ry)).mod(p);
+//        BigInteger t_x2_bn =  Cx.subtract(Rx).multiply(Qy).mod(p);
+//        return fp2Multiply(v[0], v[1], t_x1_bn, t_x2_bn, p);
+
     }
 
 
-    private static BigInteger[] fp2Multiply(BigInteger x_real, BigInteger x_imag, BigInteger y_real, BigInteger y_imag, BigInteger p)
+    static BigInteger[] fp2Multiply(BigInteger x_real, BigInteger x_imag, BigInteger y_real, BigInteger y_imag, BigInteger p)
     {
         // Multiply v = (a + i*b) * scalar
         return new BigInteger[]{
