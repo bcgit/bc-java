@@ -155,7 +155,8 @@ public class SAKKEKEMSTest
         ECPoint K_bS = curve.createPoint(kbx, kby);
 
 
-        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS, new SAKKEPublicKeyParameters(null)));
+        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS,
+            new SAKKEPublicKeyParameters(curve.createPoint(Zx, Zy))));
         byte[] test = extractor.extractSecret(rlt.getSecret());
 
 
