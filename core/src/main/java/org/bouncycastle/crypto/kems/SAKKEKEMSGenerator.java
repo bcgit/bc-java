@@ -64,7 +64,7 @@ public class SAKKEKEMSGenerator
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
         // 1. Generate random SSV in range [0, 2^n - 1]
-        BigInteger ssv = new BigInteger("123456789ABCDEF0123456789ABCDEF0", 16);//new BigInteger(n, random);
+        BigInteger ssv = new BigInteger(n, random);
 
         // 2. Compute r = HashToIntegerRange(SSV || b, q)
         BigInteger b = new BigInteger("323031312D30320074656C3A2B34343737303039303031323300", 16); //getRecipientId((SAKKEPublicKey)recipientKey);
@@ -127,25 +127,13 @@ public class SAKKEKEMSGenerator
     // Helper method for F_p² exponentiation
     public static BigInteger[] fp2Exponentiate(
         BigInteger p,
-        BigInteger x,
-        BigInteger y,
-        BigInteger exponent,
+        BigInteger pointX,
+        BigInteger pointY,
+        BigInteger n,
         ECCurve.Fp curve
     )
     {
         BigInteger[] result = new BigInteger[2];
-        sakkePointExponent(p, result, x, y, exponent, curve);
-        return result;
-    }
-
-    public static boolean sakkePointExponent(
-        BigInteger p,
-        BigInteger[] result,
-        BigInteger pointX,
-        BigInteger pointY,
-        BigInteger n,
-        ECCurve.Fp curve)
-    {
 
         // Initialize result with the original point
         BigInteger currentX = pointX;
@@ -174,6 +162,6 @@ public class SAKKEKEMSGenerator
 
         result[0] = currentX;
         result[1] = currentY;
-        return true;
+        return result;
     }
 }
