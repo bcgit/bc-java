@@ -1656,6 +1656,29 @@ public class OpenPGPCertificate
         {
             return getLatestSelfSignature(evaluationTime).getKeyExpirationTime();
         }
+
+        @Override
+        public int hashCode() {
+            return getPGPPublicKey().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null)
+            {
+                return false;
+            }
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof OpenPGPComponentKey))
+            {
+                return false;
+            }
+            OpenPGPComponentKey other = (OpenPGPComponentKey) obj;
+            return getPGPPublicKey().equals(other.getPGPPublicKey());
+        }
     }
 
     /**
