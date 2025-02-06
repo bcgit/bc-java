@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
@@ -15,6 +17,13 @@ public class SAKKEPublicKeyParameters
             "F40AAB27E2FC0F1B228730D531A59CB0E791B39FF7C88A19356D27F4A666A6D0" +
             "E26C6487326B4CD4512AC5CD65681CE1B6AFF4A831852A82A7CF3C521C3C09AA" +
             "9F94D6AF56971F1FFCE3E82389857DB080C5DF10AC7ACE87666D807AFEA85FEB", 16
+    );
+
+    private static final BigInteger q = new BigInteger(
+        "265EAEC7C2958FF69971846636B4195E905B0338672D20986FA6B8D62CF8068B" +
+            "BD02AAC9F8BF03C6C8A1CC354C69672C39E46CE7FDF222864D5B49FD2999A9B4" +
+            "389B1921CC9AD335144AB173595A07386DABFD2A0C614AA0A9F3CF14870F026A" +
+            "A7E535ABD5A5C7C7FF38FA08E2615F6C203177C42B1EB3A1D99B601EBFAA17FB", 16
     );
 
     private static final BigInteger Px = new BigInteger(
@@ -31,7 +40,8 @@ public class SAKKEPublicKeyParameters
             "13515AD7E9CB99A980BDAD5AD5BB4636ADB9B5706A67DCDE75573FD71BEF16D7", 16
     );
 
-
+    // g = <P,P>
+    // < , > is Tate-Lichtenbaum Pairing
     private static final BigInteger g = new BigInteger(Hex.decode("66FC2A43 2B6EA392 148F1586 7D623068\n" +
         "               C6A87BD1 FB94C41E 27FABE65 8E015A87\n" +
         "               371E9474 4C96FEDA 449AE956 3F8BC446\n" +
@@ -41,13 +51,6 @@ public class SAKKEPublicKeyParameters
         "               D682C033 A7942BCC E3720F20 B9B7B040\n" +
         "               3C8CAE87 B7A0042A CDE0FAB3 6461EA46"));
 
-    private static final BigInteger q = new BigInteger(
-        "265EAEC7C2958FF69971846636B4195E905B0338672D20986FA6B8D62CF8068B" +
-            "BD02AAC9F8BF03C6C8A1CC354C69672C39E46CE7FDF222864D5B49FD2999A9B4" +
-            "389B1921CC9AD335144AB173595A07386DABFD2A0C614AA0A9F3CF14870F026A" +
-            "A7E535ABD5A5C7C7FF38FA08E2615F6C203177C42B1EB3A1D99B601EBFAA17FB", 16
-    );
-
     private static final ECCurve.Fp curve = new ECCurve.Fp(
         p,                                   // Prime p
         BigInteger.valueOf(-3).mod(p),             // a = -3
@@ -56,18 +59,34 @@ public class SAKKEPublicKeyParameters
         BigInteger.ONE                      // Cofactor = 1
     );
 
+
     private static final ECPoint P = curve.createPoint(Px, Py);
-    private final ECPoint Z;  // KMS Public Key: Z = [z]P
+    private final ECPoint Z;
+
+    private final BigInteger identifier; // User's identity
 
     private static final int n = 128;      // SSV bit length
 
-    public SAKKEPublicKeyParameters(ECPoint Z)
+    private final Digest digest = new SHA256Digest();
+
+    public SAKKEPublicKeyParameters(BigInteger identifier, ECPoint Z)
     {
         super(false);
+        this.identifier = identifier;
         this.Z = Z;
     }
 
     // Getters
+    public BigInteger getIdentifier()
+    {
+        return identifier;
+    }
+
+    public ECPoint getZ()
+    {
+        return Z;
+    }
+
     public ECCurve getCurve()
     {
         return curve;
@@ -78,12 +97,7 @@ public class SAKKEPublicKeyParameters
         return P;
     }
 
-    public ECPoint getZ()
-    {
-        return Z;
-    }
-
-    public BigInteger getp()
+    public BigInteger getPrime()
     {
         return p;
     }
@@ -96,5 +110,15 @@ public class SAKKEPublicKeyParameters
     public int getN()
     {
         return n;
+    }
+
+    public Digest getDigest()
+    {
+        return digest;
+    }
+
+    public BigInteger getG()
+    {
+        return g;
     }
 }

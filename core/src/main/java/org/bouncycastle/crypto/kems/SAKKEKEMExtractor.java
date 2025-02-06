@@ -19,21 +19,21 @@ public class SAKKEKEMExtractor
     private final BigInteger q;
     private final ECPoint P;
     private final ECPoint Z_S;
-    private final ECPoint K_bS; // Receiver's RSK
+    private final ECPoint K_bs;
     private final int n; // Security parameter
-    private final SAKKEPrivateKeyParameters privateKey;
+    private final BigInteger identifier;
 
     public SAKKEKEMExtractor(SAKKEPrivateKeyParameters privateKey)
     {
-        this.privateKey = privateKey;
         SAKKEPublicKeyParameters publicKey = privateKey.getPublicParams();
         this.curve = publicKey.getCurve();
         this.q = publicKey.getQ();
         this.P = publicKey.getP();
-        this.p = publicKey.getp();
+        this.p = publicKey.getPrime();
         this.Z_S = publicKey.getZ();
-        this.K_bS = privateKey.getPrivatePoint();
+        this.K_bs = privateKey.getRSK();
         this.n = publicKey.getN();
+        this.identifier = publicKey.getIdentifier();
     }
 
     @Override
@@ -46,16 +46,15 @@ public class SAKKEKEMExtractor
             BigInteger H = new BigInteger(Arrays.copyOfRange(encapsulation, 257, 274));
 
             // Step 2: Compute w = <R_bS, K_bS> using pairing
-            BigInteger w = computePairing(R_bS, K_bS, p, q);
-            //System.out.println(new String(Hex.encode(w.toByteArray())));
-            //BigInteger w = tatePairing(R_bS.getXCoord().toBigInteger(), R_bS.getYCoord().toBigInteger(), K_bS.getXCoord().toBigInteger(), K_bS.getYCoord().toBigInteger(), q, p);
+            BigInteger w = computePairing(R_bS, K_bs, p, q);
+
             // Step 3: Compute SSV = H XOR HashToIntegerRange(w, 2^n)
             BigInteger twoToN = BigInteger.ONE.shiftLeft(n);
             BigInteger mask = SAKKEUtils.hashToIntegerRange(w.toByteArray(), twoToN);
             BigInteger ssv = H.xor(mask);
 
             // Step 4: Compute r = HashToIntegerRange(SSV || b)
-            BigInteger b = privateKey.getB();
+            BigInteger b = identifier;
             BigInteger r = SAKKEUtils.hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q);
 
             // Step 5: Validate R_bS
