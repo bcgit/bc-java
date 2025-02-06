@@ -7,21 +7,16 @@ import org.bouncycastle.math.ec.ECPoint;
 public class SAKKEPrivateKeyParameters
     extends AsymmetricKeyParameter
 {
-    private final BigInteger b; // User's identity
-    private final ECPoint K;    // Private key K_a
     private final SAKKEPublicKeyParameters publicParams;
+    private final BigInteger z;  // KMS Public Key: Z = [z]P
+    private final ECPoint rsk;
 
-    public SAKKEPrivateKeyParameters(BigInteger b, ECPoint K, SAKKEPublicKeyParameters publicParams)
+    public SAKKEPrivateKeyParameters(BigInteger z, ECPoint rsk, SAKKEPublicKeyParameters publicParams)
     {
         super(true);
-        this.b = b;
-        this.K = K;
+        this.z = z;
+        this.rsk = rsk;
         this.publicParams = publicParams;
-    }
-
-    public BigInteger getB()
-    {
-        return b;
     }
 
     public SAKKEPublicKeyParameters getPublicParams()
@@ -29,8 +24,14 @@ public class SAKKEPrivateKeyParameters
         return publicParams;
     }
 
-    public ECPoint getPrivatePoint()
+
+    public BigInteger getMasterSecret()
     {
-        return K;
+        return z;
+    }
+
+    public ECPoint getRSK()
+    {
+        return rsk;
     }
 }
