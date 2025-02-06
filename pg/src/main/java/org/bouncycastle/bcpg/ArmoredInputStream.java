@@ -276,9 +276,8 @@ public class ArmoredInputStream
                     }
                     catch (Exception e)
                     {
-                         throw new ArmoredInputException(e.getMessage());
+                        throw new ArmoredInputException(e.getMessage());
                     }
-
                     if (line.trim().length() == 0)
                     {
                         break;
