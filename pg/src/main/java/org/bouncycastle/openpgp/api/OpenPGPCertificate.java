@@ -2409,9 +2409,16 @@ public class OpenPGPCertificate
             public Date until()
             {
                 Date backSigExpiration = getBackSigExpirationTime();
-                if (backSigExpiration == null || signature.getExpirationTime().before(backSigExpiration))
+                Date expirationTime = signature.getExpirationTime();
+
+                if (expirationTime == null)
                 {
-                    return signature.getExpirationTime();
+                    return backSigExpiration;
+                }
+
+                if (backSigExpiration == null || expirationTime.before(backSigExpiration))
+                {
+                    return expirationTime;
                 }
                 return backSigExpiration;
             }
