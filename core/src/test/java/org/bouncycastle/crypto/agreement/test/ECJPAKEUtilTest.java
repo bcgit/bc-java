@@ -18,7 +18,6 @@ import org.bouncycastle.math.ec.ECPoint;
 public class ECJPAKEUtilTest
     extends TestCase
 {
-    private static final BigInteger TEN = BigInteger.valueOf(10);
     private static final BigInteger ONE = BigInteger.valueOf(1);
 
     public void testValidateParticipantIdsDiffer()
@@ -217,7 +216,7 @@ public class ECJPAKEUtilTest
         }
 
         // (x,y) elements for Gx are not in Fq ie: not in [0,q-1]
-        ECCurve.Fp curve = (ECCurve.Fp)curve1.getCurve();
+        ECCurve.AbstractFp curve = curve1.getCurve();
         try
         {
             ECPoint invalidGx_1 = curve.createPoint(ONE.negate(), ONE);
