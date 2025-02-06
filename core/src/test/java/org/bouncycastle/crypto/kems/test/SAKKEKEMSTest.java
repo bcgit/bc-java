@@ -38,6 +38,20 @@ public class SAKKEKEMSTest
     public void performTest()
         throws Exception
     {
+
+        final BigInteger Px = new BigInteger(
+            "53FC09EE332C29AD0A7990053ED9B52A2B1A2FD60AEC69C698B2F204B6FF7CBF" +
+                "B5EDB6C0F6CE2308AB10DB9030B09E1043D5F22CDB9DFA55718BD9E7406CE890" +
+                "9760AF765DD5BCCB337C86548B72F2E1A702C3397A60DE74A7C1514DBA66910D" +
+                "D5CFB4CC80728D87EE9163A5B63F73EC80EC46C4967E0979880DC8ABEAE63895", 16
+        );
+
+        final BigInteger Py = new BigInteger(
+            "0A8249063F6009F1F9F1F0533634A135D3E82016029906963D778D821E141178" +
+                "F5EA69F4654EC2B9E7F7F5E5F0DE55F66B598CCF9A140B2E416CFF0CA9E032B9" +
+                "70DAE117AD547C6CCAD696B5B7652FE0AC6F1E80164AA989492D979FC5A4D5F2" +
+                "13515AD7E9CB99A980BDAD5AD5BB4636ADB9B5706A67DCDE75573FD71BEF16D7", 16
+        );
         BigInteger g = new BigInteger(Hex.decode("66FC2A43 2B6EA392 148F1586 7D623068" +
             "               C6A87BD1 FB94C41E 27FABE65 8E015A87" +
             "               371E9474 4C96FEDA 449AE956 3F8BC446" +
@@ -127,14 +141,18 @@ public class SAKKEKEMSTest
         SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv),
             new FixedSecureRandom.Data(b)});
         SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(random);
-        SecretWithEncapsulation rlt = generator.generateEncapsulated(null);
+        SecretWithEncapsulation rlt = generator.generateEncapsulated(new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy)));
 
+        ECPoint P = curve.createPoint(Px, Py);
+
+        BigInteger computed_g2 = SAKKEKEMExtractor.computePairing(P, P, p, q);
+        Assert.assertTrue(computed_g2.equals(g));
         ECPoint K_bS = curve.createPoint(kbx, kby);
 
-        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(new BigInteger(b), K_bS,
-            new SAKKEPublicKeyParameters(curve.createPoint(Zx, Zy))));
+
+        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(z, K_bS,
+            new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy))));
         byte[] test = extractor.extractSecret(rlt.getEncapsulation());
         Assert.assertTrue(Arrays.areEqual(test, ssv));
-
     }
 }
