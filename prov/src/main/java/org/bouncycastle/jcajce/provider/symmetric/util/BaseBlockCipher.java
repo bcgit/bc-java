@@ -634,11 +634,11 @@ public class BaseBlockCipher
     protected void engineInit(
         int opmode,
         Key key,
-        final AlgorithmParameterSpec paramSpec,
+         AlgorithmParameterSpec params,
         SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
-        CipherParameters param;
+        CipherParameters param = null;
 
         this.pbeSpec = null;
         this.pbeAlgorithm = null;
@@ -656,7 +656,7 @@ public class BaseBlockCipher
         //
         // for RC5-64 we must have some default parameters
         //
-        if (paramSpec == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
+        if (params == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
         {
             throw new InvalidAlgorithmParameterException("RC5 requires an RC5ParametersSpec to be passed in.");
         }
@@ -676,9 +676,9 @@ public class BaseBlockCipher
                 throw new InvalidKeyException("PKCS12 requires a SecretKey/PBEKey");
             }
 
-            if (paramSpec instanceof PBEParameterSpec)
+            if (params instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)paramSpec;
+                pbeSpec = (PBEParameterSpec)params;
             }
 
             if (k instanceof PBEKey && pbeSpec == null)
@@ -727,9 +727,9 @@ public class BaseBlockCipher
         {
             PBKDF1Key k = (PBKDF1Key)key;
 
-            if (paramSpec instanceof PBEParameterSpec)
+            if (params instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)paramSpec;
+                pbeSpec = (PBEParameterSpec)params;
             }
             if (k instanceof PBKDF1KeyWithParameters && pbeSpec == null)
             {
@@ -746,9 +746,9 @@ public class BaseBlockCipher
         {
             PBKDF2Key k = (PBKDF2Key)key;
 
-            if (paramSpec instanceof PBEParameterSpec)
+            if (param instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)paramSpec;
+                pbeSpec = (PBEParameterSpec)param;
             }
             if (k instanceof PBKDF2KeyWithParameters && pbeSpec == null)
             {
@@ -776,12 +776,12 @@ public class BaseBlockCipher
 
             if (k.getParam() != null)
             {
-                param = adjustParameters(paramSpec, k.getParam());
+                param = adjustParameters(params, k.getParam());
             }
-            else if (paramSpec instanceof PBEParameterSpec)
+            else if (params instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)paramSpec;
-                param = PBE.Util.makePBEParameters(k, paramSpec, cipher.getUnderlyingCipher().getAlgorithmName());
+                pbeSpec = (PBEParameterSpec)params;
+                param = PBE.Util.makePBEParameters(k, params, cipher.getUnderlyingCipher().getAlgorithmName());
             }
             else
             {
@@ -796,7 +796,7 @@ public class BaseBlockCipher
         else if (key instanceof PBEKey)
         {
             PBEKey k = (PBEKey)key;
-            pbeSpec = (PBEParameterSpec)paramSpec;
+            pbeSpec = (PBEParameterSpec)params;
             if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
             {
                 pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
@@ -821,15 +821,15 @@ public class BaseBlockCipher
             param = null;
         }
 
-        AlgorithmParameterSpec params;
-        if (paramSpec instanceof PBEParameterSpec)
-        {
-            params = ((PBEParameterSpec)paramSpec).getParameterSpec();
-        }
-        else
-        {
-            params = paramSpec;
-        }
+//        AlgorithmParameterSpec params;
+//        if (params instanceof PBEParameterSpec)
+//        {
+//            params = ((PBEParameterSpec)params).getParameterSpec();
+//        }
+//        else
+//        {
+//            params = params;
+//        }
 
         if (params instanceof AEADParameterSpec)
         {
