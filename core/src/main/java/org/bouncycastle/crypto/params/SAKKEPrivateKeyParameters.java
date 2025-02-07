@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.params;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -23,15 +24,19 @@ public class SAKKEPrivateKeyParameters
     extends AsymmetricKeyParameter
 {
     private static final BigInteger qMinOne = SAKKEPublicKeyParameters.q.subtract(BigInteger.ONE);
-    /** The associated public key parameters. */
+    /**
+     * The associated public key parameters.
+     */
     private final SAKKEPublicKeyParameters publicParams;
-    /** The private key scalar (master secret). */
+    /**
+     * The private key scalar (master secret).
+     */
     private final BigInteger z;  // KMS Public Key: Z = [z]P
 
     /**
      * Constructs a SAKKE private key with a given private value and associated public parameters.
      *
-     * @param z The private key scalar.
+     * @param z            The private key scalar.
      * @param publicParams The associated public key parameters.
      */
     public SAKKEPrivateKeyParameters(BigInteger z, SAKKEPublicKeyParameters publicParams)
@@ -39,6 +44,11 @@ public class SAKKEPrivateKeyParameters
         super(true);
         this.z = z;
         this.publicParams = publicParams;
+        ECPoint computed_Z = publicParams.getPoint().multiply(z).normalize();
+        if (!computed_Z.equals(publicParams.getZ()))
+        {
+            throw new IllegalStateException("public key and private key of SAKKE do not match");
+        }
     }
 
     /**
