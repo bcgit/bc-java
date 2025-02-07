@@ -38,7 +38,15 @@ public class SAKKEKEMSTest
     public void performTest()
         throws Exception
     {
+        testTestVector();
+        for (int i = 0; i < 100; ++i)
+        {
+            testRandom();
+        }
+    }
 
+    private void testTestVector()
+    {
         final BigInteger Px = new BigInteger(
             "53FC09EE332C29AD0A7990053ED9B52A2B1A2FD60AEC69C698B2F204B6FF7CBF" +
                 "B5EDB6C0F6CE2308AB10DB9030B09E1043D5F22CDB9DFA55718BD9E7406CE890" +
@@ -60,7 +68,7 @@ public class SAKKEKEMSTest
             "               55DF0460 B4A9FD74 B4F1A32B CAFA1FFA" +
             "               D682C033 A7942BCC E3720F20 B9B7B040" +
             "               3C8CAE87 B7A0042A CDE0FAB3 6461EA46"));
-        BigInteger z = new BigInteger(Hex.decode("AFF429D35F84B110D094803B3595A6E2998BC99F"));
+        BigInteger z = new BigInteger("AFF429D35F84B110D094803B3595A6E2998BC99F", 16);
         BigInteger Zx = new BigInteger(Hex.decode("5958EF1B1679BF099B3A030DF255AA6A23C1D8F143D4D23F753E69BD27A832F38CB4AD53DDEF"
             + "4260B0FE8BB45C4C1FF510EFFE300367A37B61F701D914AEF09724825FA0707D61A6DFF4FBD7273566CDDE352A0B04B7C16A78309BE"
             + "640697DE747613A5FC195E8B9F328852A579DB8F99B1D0034479EA9C5595F47C4B2F54FF2"));
@@ -100,30 +108,30 @@ public class SAKKEKEMSTest
             "2884318A33D1A42ADF5E33CC5800280B" +
             "28356497F87135BAB9612A1726042440" +
             "9AC15FEE996B744C332151235DECB0F5", 16);
-        BigInteger w = new BigInteger(Hex.decode("7D2A8438 E6291C64 9B6579EB 3B79EAE9" +
-            "48B1DE9E 5F7D1F40 70A08F8D B6B3C515" +
-            "6F2201AF FBB5CB9D 82AA3EC0 D0398B89" +
-            "ABC78A13 A760C0BF 3F77E63D 0DF3F1A3" +
-            "41A41B88 11DF197F D6CD0F00 3125606F" +
-            "4F109F40 0F7292A1 0D255E3C 0EBCCB42" +
-            "53FB182C 68F09CF6 CD9C4A53 DA6C74AD" +
-            "007AF36B 8BCA979D 5895E282 F483FCD6"));
-        BigInteger Rbx = new BigInteger(Hex.decode("44E8AD44 AB8592A6 A5A3DDCA 5CF896C7" +
-            "18043606 A01D650D EF37A01F 37C228C3" +
-            "32FC3173 54E2C274 D4DAF8AD 001054C7" +
-            "6CE57971 C6F4486D 57230432 61C506EB" +
-            "F5BE438F 53DE04F0 67C776E0 DD3B71A6" +
-            "29013328 3725A532 F21AF145 126DC1D7" +
-            "77ECC27B E50835BD 28098B8A 73D9F801" +
-            "D893793A 41FF5C49 B87E79F2 BE4D56CE"));
-        BigInteger Rby = new BigInteger(Hex.decode("557E134A D85BB1D4 B9CE4F8B E4B08A12" +
-            "BABF55B1 D6F1D7A6 38019EA2 8E15AB1C" +
-            "9F76375F DD1210D4 F4351B9A 009486B7" +
-            "F3ED46C9 65DED2D8 0DADE4F3 8C6721D5" +
-            "2C3AD103 A10EBD29 59248B4E F006836B" +
-            "F097448E 6107C9ED EE9FB704 823DF199" +
-            "F832C905 AE45F8A2 47A072D8 EF729EAB" +
-            "C5E27574 B07739B3 4BE74A53 2F747B86"));
+//        BigInteger w = new BigInteger(Hex.decode("7D2A8438 E6291C64 9B6579EB 3B79EAE9" +
+//            "48B1DE9E 5F7D1F40 70A08F8D B6B3C515" +
+//            "6F2201AF FBB5CB9D 82AA3EC0 D0398B89" +
+//            "ABC78A13 A760C0BF 3F77E63D 0DF3F1A3" +
+//            "41A41B88 11DF197F D6CD0F00 3125606F" +
+//            "4F109F40 0F7292A1 0D255E3C 0EBCCB42" +
+//            "53FB182C 68F09CF6 CD9C4A53 DA6C74AD" +
+//            "007AF36B 8BCA979D 5895E282 F483FCD6"));
+//        BigInteger Rbx = new BigInteger(Hex.decode("44E8AD44 AB8592A6 A5A3DDCA 5CF896C7" +
+//            "18043606 A01D650D EF37A01F 37C228C3" +
+//            "32FC3173 54E2C274 D4DAF8AD 001054C7" +
+//            "6CE57971 C6F4486D 57230432 61C506EB" +
+//            "F5BE438F 53DE04F0 67C776E0 DD3B71A6" +
+//            "29013328 3725A532 F21AF145 126DC1D7" +
+//            "77ECC27B E50835BD 28098B8A 73D9F801" +
+//            "D893793A 41FF5C49 B87E79F2 BE4D56CE"));
+//        BigInteger Rby = new BigInteger(Hex.decode("557E134A D85BB1D4 B9CE4F8B E4B08A12" +
+//            "BABF55B1 D6F1D7A6 38019EA2 8E15AB1C" +
+//            "9F76375F DD1210D4 F4351B9A 009486B7" +
+//            "F3ED46C9 65DED2D8 0DADE4F3 8C6721D5" +
+//            "2C3AD103 A10EBD29 59248B4E F006836B" +
+//            "F097448E 6107C9ED EE9FB704 823DF199" +
+//            "F832C905 AE45F8A2 47A072D8 EF729EAB" +
+//            "C5E27574 B07739B3 4BE74A53 2F747B86"));
         BigInteger p = new BigInteger(
             "997ABB1F0A563FDA65C61198DAD0657A416C0CE19CB48261BE9AE358B3E01A2E" +
                 "F40AAB27E2FC0F1B228730D531A59CB0E791B39FF7C88A19356D27F4A666A6D0" +
@@ -137,21 +145,32 @@ public class SAKKEKEMSTest
             g,// Order of the subgroup (from RFC 6509)
             BigInteger.ONE     // Cofactor = 1
         );
-
-        SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv),
-            new FixedSecureRandom.Data(b)});
-        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(random);
-        SecretWithEncapsulation rlt = generator.generateEncapsulated(new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy)));
-
         ECPoint P = curve.createPoint(Px, Py);
 
-        BigInteger computed_g2 = SAKKEKEMExtractor.computePairing(P, P, p, q);
-        Assert.assertTrue(computed_g2.equals(g));
-        ECPoint K_bS = curve.createPoint(kbx, kby);
+        ECPoint computed_Z = P.multiply(z).normalize();
+        Assert.assertTrue(computed_Z.equals(curve.createPoint(Zx, Zy)));
+
+        SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv)});
+        SAKKEPublicKeyParameters b_publicKey = new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy));
+        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(random);
+        SecretWithEncapsulation rlt = generator.generateEncapsulated(b_publicKey);
 
 
-        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(z, K_bS,
-            new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy))));
+        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(z, b_publicKey));
+        byte[] test = extractor.extractSecret(rlt.getEncapsulation());
+        Assert.assertTrue(Arrays.areEqual(test, ssv));
+    }
+
+    private void testRandom()
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] ssv = new byte[16];
+        random.nextBytes(ssv);
+        SAKKEPrivateKeyParameters b_priv = new SAKKEPrivateKeyParameters(random);
+        SAKKEPublicKeyParameters b_pub = b_priv.getPublicParams();
+        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv)}));
+        SecretWithEncapsulation rlt = generator.generateEncapsulated(b_pub);
+        SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(b_priv);
         byte[] test = extractor.extractSecret(rlt.getEncapsulation());
         Assert.assertTrue(Arrays.areEqual(test, ssv));
     }
