@@ -25,6 +25,7 @@ public class BCMLKEMPrivateKey
     private transient MLKEMPrivateKeyParameters params;
     private transient String algorithm;
     private transient ASN1Set attributes;
+    private transient byte[] priorEncoding;
 
     public BCMLKEMPrivateKey(
             MLKEMPrivateKeyParameters params)
@@ -43,6 +44,7 @@ public class BCMLKEMPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();
+        this.priorEncoding = keyInfo.getPrivateKey().getOctets();
         this.params = (MLKEMPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.algorithm = Strings.toUpperCase(MLKEMParameterSpec.fromName(params.getParameters().getName()).getName());
     }
@@ -88,6 +90,11 @@ public class BCMLKEMPrivateKey
         try
         {
             PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
+
+            if (priorEncoding != null)
+            {
+                pki = new PrivateKeyInfo(pki.getPrivateKeyAlgorithm(), priorEncoding, attributes);
+            }
 
             return pki.getEncoded();
         }
