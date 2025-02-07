@@ -128,11 +128,13 @@ public class JcaPublicKeyConverter
             ECPublicKey pubKey = (ECPublicKey)publicKey;
             ECParameterSpec params = pubKey.getParameters();
 
+            ECCurve.AbstractFp curve = (ECCurve.AbstractFp)params.getCurve();
+
             return new ECDSAPublicKey(
                 usage,
-                ((ECCurve.Fp)params.getCurve()).getQ(),
-                ((ECFieldElement.Fp)params.getCurve().getA()).toBigInteger(),
-                ((ECFieldElement.Fp)params.getCurve().getB()).toBigInteger(),
+                curve.getField().getCharacteristic(),
+                curve.getA().toBigInteger(),
+                curve.getB().toBigInteger(),
                 params.getG().getEncoded(false),
                 params.getN(),
                 pubKey.getQ().getEncoded(false),

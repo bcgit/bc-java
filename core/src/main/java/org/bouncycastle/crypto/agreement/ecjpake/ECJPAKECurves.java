@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.agreement.ecjpake;
 
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECCurve;
 
 /**
@@ -37,13 +37,14 @@ public class ECJPAKECurves
 
     static
     {
-        NIST_P256 = fromX9ECParameters(NISTNamedCurves.getByName("P-256"));
-        NIST_P384 = fromX9ECParameters(NISTNamedCurves.getByName("P-384"));
-        NIST_P521 = fromX9ECParameters(NISTNamedCurves.getByName("P-521"));
+        NIST_P256 = getCurve("P-256");
+        NIST_P384 = getCurve("P-384");
+        NIST_P521 = getCurve("P-521");
     }
 
-    private static ECJPAKECurve fromX9ECParameters(X9ECParameters x9)
+    private static ECJPAKECurve getCurve(String curveName)
     {
-        return new ECJPAKECurve((ECCurve.Fp)x9.getCurve(), x9.getG());
+        X9ECParameters x9 = CustomNamedCurves.getByName(curveName);
+        return new ECJPAKECurve((ECCurve.AbstractFp)x9.getCurve(), x9.getG());
     }
 }

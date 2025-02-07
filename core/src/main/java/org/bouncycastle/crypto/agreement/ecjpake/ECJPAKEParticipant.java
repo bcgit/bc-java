@@ -107,9 +107,7 @@ public class ECJPAKEParticipant
      */
     private String partnerParticipantId;
 
-    private ECCurve.Fp ecCurve;
-    private BigInteger ecca;
-    private BigInteger eccb;
+    private ECCurve.AbstractFp ecCurve;
     private BigInteger q;
     private BigInteger h;
     private BigInteger n;
@@ -255,8 +253,6 @@ public class ECJPAKEParticipant
         this.password = Arrays.copyOf(password, password.length);
 
         this.ecCurve = curve.getCurve();
-        this.ecca = curve.getA();
-        this.eccb = curve.getB();
         this.g = curve.getG();
         this.h = curve.getH();
         this.n = curve.getN();
