@@ -18,7 +18,7 @@ import org.bouncycastle.math.ec.ECPoint;
  */
 public class ECJPAKECurve
 {
-    private final ECCurve.Fp curve;
+    private final ECCurve.AbstractFp curve;
     private final ECPoint g;
 
     /**
@@ -116,7 +116,7 @@ public class ECJPAKECurve
      * groups in {@link ECJPAKECurves}.
      * These pre-approved curves can avoid the expensive checks.
      */
-    ECJPAKECurve(ECCurve.Fp curve, ECPoint g)
+    ECJPAKECurve(ECCurve.AbstractFp curve, ECPoint g)
     {
         ECJPAKEUtil.validateNotNull(curve, "curve");
         ECJPAKEUtil.validateNotNull(g, "g");
@@ -127,7 +127,7 @@ public class ECJPAKECurve
         this.g = g;
     }
 
-    public ECCurve.Fp getCurve()
+    public ECCurve.AbstractFp getCurve()
     {
         return curve;
     }
@@ -159,7 +159,7 @@ public class ECJPAKECurve
 
     public BigInteger getQ()
     {
-        return curve.getQ();
+        return curve.getField().getCharacteristic();
     }
 
     private static BigInteger calculateDeterminant(BigInteger q, BigInteger a, BigInteger b)
