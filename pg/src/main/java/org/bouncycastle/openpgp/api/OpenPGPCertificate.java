@@ -1204,10 +1204,19 @@ public class OpenPGPCertificate
 
             OpenPGPComponentKey subkey = getTargetKeyComponent();
             // Signing subkey needs embedded primary key binding signature
-            PGPSignatureList embeddedSignatures;
+            List<PGPSignature> embeddedSignatures = new ArrayList<>();
             try
             {
-                embeddedSignatures = signature.getHashedSubPackets().getEmbeddedSignatures();
+                PGPSignatureList sigList = signature.getHashedSubPackets().getEmbeddedSignatures();
+                for (PGPSignature pgpSignature : sigList)
+                {
+                    embeddedSignatures.add(pgpSignature);
+                }
+                sigList = signature.getUnhashedSubPackets().getEmbeddedSignatures();
+                for (PGPSignature pgpSignature : sigList)
+                {
+                    embeddedSignatures.add(pgpSignature);
+                }
             }
             catch (PGPException e)
             {
@@ -1220,22 +1229,47 @@ public class OpenPGPCertificate
                         this,
                         "Signing key SubkeyBindingSignature MUST contain embedded PrimaryKeyBindingSignature.");
             }
-            PGPSignature primaryKeyBinding = embeddedSignatures.get(0);
-            OpenPGPCertificate.OpenPGPComponentSignature backSig =
-                    new OpenPGPCertificate.OpenPGPComponentSignature(
-                            primaryKeyBinding,
-                            subkey,
-                            issuer);
 
-            if (!backSig.isEffectiveAt(signatureCreationTime))
+            PGPSignatureException exception = null;
+            for (PGPSignature primaryKeyBinding : embeddedSignatures)
             {
-                throw new PGPSignatureException("Embedded PrimaryKeyBinding signature is expired or not yet effective.");
+                OpenPGPCertificate.OpenPGPComponentSignature backSig =
+                        new OpenPGPCertificate.OpenPGPComponentSignature(
+                                primaryKeyBinding,
+                                subkey,
+                                issuer);
+
+                if (primaryKeyBinding.getSignatureType() != PGPSignature.PRIMARYKEY_BINDING)
+                {
+                    exception = new PGPSignatureException("Unexpected embedded signature type: " + primaryKeyBinding.getSignatureType());
+                    continue;
+                }
+
+                if (!backSig.isEffectiveAt(signatureCreationTime))
+                {
+                    exception = new PGPSignatureException("Embedded PrimaryKeyBinding signature is expired or not yet effective.");
+                    continue;
+                }
+
+                try
+                {
+                    backSig.sanitize(subkey, policy);
+
+                    // needs to be called last to prevent false positives
+                    backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
+
+                    // valid -> return successfully
+                    return;
+                }
+                catch (PGPSignatureException e)
+                {
+                    exception = e;
+                    continue;
+                }
             }
 
-            backSig.sanitize(subkey, policy);
-
-            // needs to be called last to prevent false positives
-            backSig.verifyKeySignature(subkey, issuer, contentVerifierBuilderProvider);
+            // if we end up here, it means we have only found invalid sigs
+            throw exception;
         }
 
         protected void verifyKeySignature(
