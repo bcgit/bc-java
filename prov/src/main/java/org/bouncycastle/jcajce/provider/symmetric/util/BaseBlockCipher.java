@@ -448,7 +448,7 @@ public class BaseBlockCipher
             {
                 throw new NoSuchAlgorithmException("no mode support for " + modeName);
             }
-            
+
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(
                 new PGPCFBBlockCipher(baseEngine, inlineIV));
@@ -634,7 +634,7 @@ public class BaseBlockCipher
     protected void engineInit(
         int opmode,
         Key key,
-         AlgorithmParameterSpec params,
+        AlgorithmParameterSpec params,
         SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
@@ -825,6 +825,10 @@ public class BaseBlockCipher
 //        if (params instanceof PBEParameterSpec)
 //        {
 //            params = ((PBEParameterSpec)params).getParameterSpec();
+//            if (((IvParameterSpec)params).getIV().length == 0)
+//            {
+//                params = new IvParameterSpec(((ParametersWithIV)param).getIV());
+//            }
 //        }
 //        else
 //        {
