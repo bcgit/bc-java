@@ -28,11 +28,19 @@ public class AsconPermutationFriend
 
         public void round(long C)
         {
-            long t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
-            long t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
-            long t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
-            long t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
-            long t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
+            x2 ^= C;
+            long x0x4 = x0 ^ x4;
+            //long x0x2c = x0 ^ x2;
+            long x1x2c = x1 ^ x2;
+
+            //long t0 = x0 ^ x1x2c ^ x3 ^ (x1 & (x0x4 ^ x2));
+            long t0 = x0 ^ x2 ^ x3 ^ (x1 & ~(x0x4 ^ x2));
+            long t1 = x0x4 ^ x2 ^ x3 ^ (x1x2c & (x1 ^ x3));
+            //long t1 = x0x4 ^ x2 ^ x3 ^ (x1 & ~(x2 | x3));
+            long t2 = x1x2c ^ (x4 & (~x3));//x4 ^ (x3 & x4);
+            //long t3 = x0 ^ x1x2c ^ ((~x0) & (x3 ^ x4));
+            long t3 = (x0 | (x3 ^ x4)) ^ x1x2c;
+            long t4 = x1 ^ x3 ^ x4 ^ (x0x4 & x1);
             x0 = t0 ^ Longs.rotateRight(t0, 19) ^ Longs.rotateRight(t0, 28);
             x1 = t1 ^ Longs.rotateRight(t1, 39) ^ Longs.rotateRight(t1, 61);
             x2 = ~(t2 ^ Longs.rotateRight(t2, 1) ^ Longs.rotateRight(t2, 6));
