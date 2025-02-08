@@ -14,5 +14,14 @@ public class TestJasypt
 
         String encryptedText = stringEncryptor.encrypt("plainText");
 
+        StandardPBEStringEncryptor stringdecryptor = new StandardPBEStringEncryptor();
+        stringdecryptor.setAlgorithm("PBEWITHSHA256AND256BITAES-CBC-BC");
+        stringdecryptor.setPassword("secretPassword");
+        stringdecryptor.setIvGenerator(new RandomIvGenerator());
+        stringdecryptor.setProvider(new BouncyCastleProvider());
+
+        String decryptedText = stringdecryptor.decrypt(encryptedText);
+        System.out.println(decryptedText);
+
     }
 }
