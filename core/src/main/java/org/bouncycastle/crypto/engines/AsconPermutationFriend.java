@@ -32,10 +32,10 @@ public class AsconPermutationFriend
             long x0x4 = x0 ^ x4;
             //long x0x2c = x0 ^ x2;
             long x1x2c = x1 ^ x2;
-
-            long t0 = x3 ^ (x1 | x2) ^ x0 ^ (x1 & x0x4);
+            long x1orx2c = x1 | x2;
+            long t0 = x3 ^ x1orx2c ^ x0 ^ (x1 & x0x4);
             //long t1 = x0x4 ^ x2 ^ x3 ^ (x1x2c & (x1 ^ x3));
-            long t1 = x0x4 ^ (x1 | x2 | x3) ^ (x1 & x2 & x3);
+            long t1 = x0x4 ^ (x1orx2c | x3) ^ (x1 & x2 & x3);
             long t2 = x1x2c ^ (x4 & (~x3));//x4 ^ (x3 & x4);
             //long t3 = x0 ^ x1x2c ^ ((~x0) & (x3 ^ x4));
             long t3 = (x0 | (x3 ^ x4)) ^ x1x2c;
