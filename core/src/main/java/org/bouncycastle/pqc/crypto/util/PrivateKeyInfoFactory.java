@@ -53,6 +53,7 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Properties;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -247,18 +248,17 @@ public class PrivateKeyInfoFactory
             MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
             
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
-                                                  
-            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
-//            byte[] seed = params.getSeed();
-//
-//            if (seed == null)
-//            {
-//                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-//            }
-//            else
-//            {
-//                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
-//            }
+
+            byte[] seed = params.getSeed();
+            if (Properties.isOverrideSet("org.bouncycastle.mlkem.seedOnly"))
+            {
+                if (seed == null)    // very difficult to imagine, but...
+                {
+                    throw new IOException("no seed available");
+                }
+                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(seed, params.getEncoded()), attributes);
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -297,20 +297,16 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
+            byte[] seed = params.getSeed();
+            if (Properties.isOverrideSet("org.bouncycastle.mldsa.seedOnly"))
+            {
+                if (seed == null)    // very difficult to imagine, but...
+                {
+                    throw new IOException("no seed available");
+                }
+                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+            }
             return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
-//            byte[] seed = params.getSeed();
-//            if (seed == null)
-//            {
-//                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-//
-//                return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, pubParams.getEncoded());
-//            }
-//            else
-//            {
-//                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-//
-//                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes, pubParams.getEncoded());
-//            }
         }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {
