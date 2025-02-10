@@ -507,7 +507,7 @@ public class OperatorJcajceTest
         }
     }
 
-    private class NullProvider
+    private static final class NullProvider
         extends Provider
     {
         NullProvider()
@@ -516,7 +516,7 @@ public class OperatorJcajceTest
         }
     }
 
-    private class NonDashProvider
+    private static final class NonDashProvider
         extends Provider
     {
         NonDashProvider()
@@ -527,7 +527,7 @@ public class OperatorJcajceTest
         }
     }
 
-    private class DashProvider
+    private static final class DashProvider
         extends Provider
     {
         DashProvider()

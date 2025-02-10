@@ -44,6 +44,7 @@ public class BCMLDSAPrivateKey
     private void init(PrivateKeyInfo keyInfo)
             throws IOException
     {
+        this.encoding = keyInfo.getEncoded();
         init((MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo), keyInfo.getAttributes());
     }
 

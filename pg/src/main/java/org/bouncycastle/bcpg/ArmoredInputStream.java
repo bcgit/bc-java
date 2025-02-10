@@ -268,7 +268,16 @@ public class ArmoredInputStream
                 }
                 if (c == '\r' || (last != '\r' && c == '\n'))
                 {
-                    String line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    String line;
+
+                    try
+                    {
+                        line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArmoredInputException(e.getMessage());
+                    }
                     if (line.trim().length() == 0)
                     {
                         break;
