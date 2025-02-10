@@ -4,7 +4,9 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.io.Streams;
 
@@ -12,6 +14,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Reader for {@link OpenPGPKey OpenPGPKeys} or {@link OpenPGPCertificate OpenPGPCertificates}.
@@ -204,5 +208,66 @@ public class OpenPGPKeyReader
 
         PGPSecretKeyRing keyRing = (PGPSecretKeyRing) object;
         return new OpenPGPKey(keyRing, implementation, policy);
+    }
+
+    public List<OpenPGPCertificate> parseKeysOrCertificates(String armored)
+            throws IOException
+    {
+        return parseKeysOrCertificates(armored.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public List<OpenPGPCertificate> parseKeysOrCertificates(InputStream inputStream)
+            throws IOException
+    {
+        return parseKeysOrCertificates(Streams.readAll(inputStream));
+    }
+
+    public List<OpenPGPCertificate> parseKeysOrCertificates(byte[] bytes)
+            throws IOException
+    {
+        List<OpenPGPCertificate> certsOrKeys = new ArrayList<>();
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
+        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
+        BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
+        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
+        Object object;
+
+        while ((object = objectFactory.nextObject()) != null)
+        {
+            if (object instanceof PGPMarker)
+            {
+                continue;
+            }
+            if (object instanceof PGPSecretKeyRing)
+            {
+                certsOrKeys.add(new OpenPGPKey((PGPSecretKeyRing) object, implementation, policy));
+            }
+            else if (object instanceof PGPPublicKeyRing)
+            {
+                certsOrKeys.add(new OpenPGPCertificate((PGPPublicKeyRing) object, implementation, policy));
+            }
+            else if (object instanceof PGPSecretKeyRingCollection)
+            {
+                PGPSecretKeyRingCollection collection = (PGPSecretKeyRingCollection) object;
+                for (PGPSecretKeyRing k : collection)
+                {
+                    certsOrKeys.add(new OpenPGPKey(k, implementation, policy));
+                }
+            }
+            else if (object instanceof PGPPublicKeyRingCollection)
+            {
+                PGPPublicKeyRingCollection collection = (PGPPublicKeyRingCollection) object;
+                for (PGPPublicKeyRing k : collection)
+                {
+                    certsOrKeys.add(new OpenPGPCertificate(k, implementation, policy));
+                }
+            }
+            else
+            {
+                throw new IOException("Neither a certificate, nor secret key.");
+            }
+        }
+        return certsOrKeys;
     }
 }
