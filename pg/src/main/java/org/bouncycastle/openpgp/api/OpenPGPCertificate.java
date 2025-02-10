@@ -10,6 +10,7 @@ import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
+import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
@@ -340,6 +341,26 @@ public class OpenPGPCertificate
         return identifiers;
     }
 
+    public OpenPGPComponentSignature getCertification()
+    {
+        return getCertification(new Date());
+    }
+
+    public OpenPGPComponentSignature getCertification(Date evaluationTime)
+    {
+        return primaryKey.getCertification(evaluationTime);
+    }
+
+    public OpenPGPComponentSignature getRevocation()
+    {
+        return getRevocation(new Date());
+    }
+
+    public OpenPGPComponentSignature getRevocation(Date evaluationTime)
+    {
+        return primaryKey.getRevocation(evaluationTime);
+    }
+
     /**
      * Return the last time, the key was modified (before right now).
      * A modification is the addition of a new subkey, or key signature.
@@ -645,6 +666,23 @@ public class OpenPGPCertificate
                               OpenPGPComponentKey root,
                               Date evaluationTime)
     {
+        OpenPGPSignature.OpenPGPSignatureSubpacket keyExpiration =
+                component.getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.KEY_EXPIRE_TIME);
+        if (keyExpiration != null)
+        {
+            KeyExpirationTime kexp = (KeyExpirationTime) keyExpiration.getSubpacket();
+            if (kexp.getTime() != 0)
+            {
+                OpenPGPComponentKey key = component.getKeyComponent();
+                Date expirationDate = new Date(1000 * kexp.getTime() + key.getCreationTime().getTime());
+                if (expirationDate.before(evaluationTime))
+                {
+                    // Key is expired.
+                    return false;
+                }
+            }
+        }
+
         try
         {
             OpenPGPSignatureChain chain = getSignatureChainFor(component, root, evaluationTime);
@@ -960,6 +998,8 @@ public class OpenPGPCertificate
         {
             return this;
         }
+
+        protected abstract OpenPGPComponentKey getKeyComponent();
 
         /**
          * Return the {@link SignatureSubpacket} instance of the given subpacketType, which currently applies to
@@ -1759,18 +1799,63 @@ public class OpenPGPCertificate
             }
         }
 
+        public OpenPGPComponentSignature getLatestDirectKeySelfSignature()
+        {
+            return getLatestDirectKeySelfSignature(new Date());
+        }
+
+        public OpenPGPComponentSignature getLatestDirectKeySelfSignature(Date evaluationTime)
+        {
+            OpenPGPSignatureChain currentDKChain = getCertificate().getAllSignatureChainsFor(this)
+                    .getCertificationAt(evaluationTime);
+            if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
+            {
+                return currentDKChain.getHeadLink().getSignature();
+            }
+
+            return null;
+        }
+
+        public OpenPGPComponentSignature getLatestKeyRevocationSignature()
+        {
+            return getLatestKeyRevocationSignature(new Date());
+        }
+
+        public OpenPGPComponentSignature getLatestKeyRevocationSignature(Date evaluationTime)
+        {
+            OpenPGPSignatureChain currentRevocationChain = getCertificate().getAllSignatureChainsFor(this)
+                    .getRevocationAt(evaluationTime);
+            if (currentRevocationChain != null && !currentRevocationChain.chainLinks.isEmpty())
+            {
+                return currentRevocationChain.getHeadLink().getSignature();
+            }
+            return null;
+        }
+
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
             List<OpenPGPComponentSignature> signatures = new ArrayList<>();
-            OpenPGPSignatureChain currentDKChain = getSignatureChains().getChainAt(evaluationTime);
-            if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
+
+            OpenPGPComponentSignature directKeySig = getLatestDirectKeySelfSignature(evaluationTime);
+            if (directKeySig != null)
             {
-                signatures.add(currentDKChain.getHeadLink().getSignature());
+                signatures.add(directKeySig);
             }
+
+            OpenPGPComponentSignature keyRevocation = getLatestKeyRevocationSignature(evaluationTime);
+            if (keyRevocation != null)
+            {
+                signatures.add(keyRevocation);
+            }
+
             for (OpenPGPIdentityComponent identity : getCertificate().getIdentities())
             {
-                signatures.add(identity.getLatestSelfSignature(evaluationTime));
+                OpenPGPComponentSignature identitySig = identity.getLatestSelfSignature(evaluationTime);
+                if (identitySig != null)
+                {
+                    signatures.add(identitySig);
+                }
             }
 
             OpenPGPComponentSignature latest = null;
@@ -1782,6 +1867,11 @@ public class OpenPGPCertificate
                 }
             }
             return latest;
+        }
+
+        @Override
+        protected OpenPGPComponentKey getKeyComponent() {
+            return this;
         }
 
         /**
@@ -2012,6 +2102,11 @@ public class OpenPGPCertificate
             return "Subkey[" + getKeyIdentifier() + "] (" + UTCUtil.format(getCreationTime()) + ")";
         }
 
+        @Override
+        protected OpenPGPComponentKey getKeyComponent() {
+            return this;
+        }
+
         /**
          * Return all subkey-binding and -revocation signatures on the subkey.
          *
@@ -2073,6 +2168,11 @@ public class OpenPGPCertificate
                 return currentChain.getHeadLink().getSignature();
             }
             return null;
+        }
+
+        @Override
+        protected OpenPGPComponentKey getKeyComponent() {
+            return primaryKey;
         }
 
         @Override

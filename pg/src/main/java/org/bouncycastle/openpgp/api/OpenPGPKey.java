@@ -235,6 +235,11 @@ public class OpenPGPKey
         }
 
         @Override
+        protected OpenPGPComponentKey getKeyComponent() {
+            return this;
+        }
+
+        @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
             return getPublicKey().getLatestSelfSignature(evaluationTime);
