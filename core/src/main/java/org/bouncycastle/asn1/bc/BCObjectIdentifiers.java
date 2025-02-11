@@ -429,4 +429,18 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier hqc128 = pqc_kem_hqc.branch("1");
     ASN1ObjectIdentifier hqc192 = pqc_kem_hqc.branch("2");
     ASN1ObjectIdentifier hqc256 = pqc_kem_hqc.branch("3");
+
+    /**
+     * ML-KEM/ML-DSA seed parameters algorithms - temporary
+     * 
+     */
+    //TODO: delete before release
+    ASN1ObjectIdentifier id_id_alg_seed = bc.branch("10");
+
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_44_seed = id_id_alg_seed.branch("1");
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_65_seed = id_id_alg_seed.branch("2");
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_87_seed = id_id_alg_seed.branch("3");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_512_seed = id_id_alg_seed.branch("4");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_768_seed = id_id_alg_seed.branch("5");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_1024_seed = id_id_alg_seed.branch("6");
 }

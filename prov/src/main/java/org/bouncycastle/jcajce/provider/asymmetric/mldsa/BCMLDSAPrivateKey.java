@@ -91,6 +91,21 @@ public class BCMLDSAPrivateKey
         return algorithm;
     }
 
+    public byte[] getEncoded(boolean asKeyGenParams)
+    {
+        if (asKeyGenParams)
+        {
+            byte[] seed = params.getSeed();
+            if (seed == null)
+            {
+                return null;
+            }
+            return KeyUtil.getEncodedPrivateKeyInfo(getParameterSpec(), seed, attributes);
+        }
+
+        return getEncoded();
+    }
+
     public byte[] getEncoded()
     {
         if (encoding == null)
