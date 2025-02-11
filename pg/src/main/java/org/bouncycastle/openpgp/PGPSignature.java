@@ -637,8 +637,15 @@ public class PGPSignature
     public List<KeyIdentifier> getKeyIdentifiers()
     {
         List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
-        identifiers.addAll(getHashedKeyIdentifiers());
-        identifiers.addAll(getUnhashedKeyIdentifiers());
+        if (getVersion() <= SignaturePacket.VERSION_3)
+        {
+            identifiers.add(new KeyIdentifier(getKeyID()));
+        }
+        else
+        {
+            identifiers.addAll(getHashedKeyIdentifiers());
+            identifiers.addAll(getUnhashedKeyIdentifiers());
+        }
         return identifiers;
     }
 
