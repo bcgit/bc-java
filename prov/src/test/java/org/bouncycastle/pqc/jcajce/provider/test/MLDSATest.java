@@ -124,6 +124,7 @@ public class MLDSATest
         throws Exception
     {
         kFact.generatePrivate(new PKCS8EncodedKeySpec(kpValid.getPrivate().getEncoded()));
+        kFact.generatePrivate(new PKCS8EncodedKeySpec(((MLDSAPrivateKey)kpValid.getPrivate()).getEncoded(true)));
         kFact.generatePublic(new X509EncodedKeySpec(kpValid.getPublic().getEncoded()));
 
         try
