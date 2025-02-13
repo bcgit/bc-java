@@ -250,7 +250,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
                 signingKey.getPGPPublicKey());
 
         char[] passphrase = passphraseProvider.getKeyPassword(signingKey);
-        PGPKeyPair unlockedKey = signingKey.unlock(passphrase);
+        PGPKeyPair unlockedKey = signingKey.unlock(passphrase).getKeyPair();
         if (unlockedKey == null)
         {
             throw new KeyPassphraseException(signingKey, new PGPException("Cannot unlock secret key."));

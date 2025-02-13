@@ -357,7 +357,7 @@ public class OpenPGPMessageProcessor
                 }
 
                 char[] keyPassphrase = configuration.keyPassphraseProvider.getKeyPassword(decryptionKey);
-                PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase);
+                PGPKeyPair unlockedKey = decryptionKey.unlock(keyPassphrase).getKeyPair();
                 if (unlockedKey == null)
                 {
                     throw new KeyPassphraseException(decryptionKey, new PGPException("Cannot unlock secret key."));

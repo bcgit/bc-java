@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -16,6 +17,8 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilderProvider;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -292,7 +295,7 @@ public class OpenPGPKey
             return getPGPSecretKey().getS2KUsage() != SecretKeyPacket.USAGE_NONE;
         }
 
-        public PGPKeyPair unlock(KeyPassphraseProvider passphraseProvider)
+        public OpenPGPPrivateKey unlock(KeyPassphraseProvider passphraseProvider)
                 throws PGPException
         {
             if (!isLocked())
@@ -310,7 +313,7 @@ public class OpenPGPKey
          * @return keypair containing unlocked private key
          * @throws PGPException if the key cannot be unlocked
          */
-        public PGPKeyPair unlock(char[] passphrase)
+        public OpenPGPPrivateKey unlock(char[] passphrase)
                 throws PGPException
         {
             sanitizeProtectionMode();
@@ -328,7 +331,8 @@ public class OpenPGPKey
                     return null;
                 }
 
-                return new PGPKeyPair(getPGPSecretKey().getPublicKey(), privateKey);
+                PGPKeyPair unlockedKey = new PGPKeyPair(getPGPSecretKey().getPublicKey(), privateKey);
+                return new OpenPGPPrivateKey(this, unlockedKey);
             }
             catch (PGPException e)
             {
@@ -373,13 +377,110 @@ public class OpenPGPKey
         {
             try
             {
-                PGPKeyPair unlocked = unlock(passphrase);
-                return unlocked != null;
+                OpenPGPPrivateKey privateKey = unlock(passphrase);
+                return privateKey.unlockedKey != null;
             }
             catch (PGPException e)
             {
                 return false;
             }
+        }
+    }
+
+    /**
+     * Unlocked {@link OpenPGPSecretKey}.
+     */
+    public static class OpenPGPPrivateKey
+    {
+        private final OpenPGPSecretKey secretKey;
+        private final PGPKeyPair unlockedKey;
+
+        public OpenPGPPrivateKey(OpenPGPSecretKey secretKey, PGPKeyPair unlockedKey)
+        {
+            this.secretKey = secretKey;
+            this.unlockedKey = unlockedKey;
+        }
+
+        /**
+         * Return the {@link OpenPGPSecretKey} in its potentially locked form.
+         *
+         * @return secret key
+         */
+        public OpenPGPSecretKey getSecretKey()
+        {
+            return secretKey;
+        }
+
+        /**
+         * Return the unlocked {@link PGPKeyPair} containing the decrypted {@link PGPPrivateKey}.
+         * @return unlocked private key
+         */
+        public PGPKeyPair getKeyPair()
+        {
+            return unlockedKey;
+        }
+
+        private OpenPGPImplementation getImplementation()
+        {
+            return getSecretKey().getOpenPGPKey().implementation;
+        }
+
+        public OpenPGPSecretKey changePassphrase(char[] newPassphrase)
+                throws PGPException
+        {
+            boolean useAead = !secretKey.isLocked() ||
+                    secretKey.getPGPSecretKey().getS2KUsage() == SecretKeyPacket.USAGE_AEAD;
+
+            return changePassphrase(newPassphrase, getImplementation(), useAead);
+        }
+
+        public OpenPGPSecretKey changePassphrase(char[] newPassphrase,
+                                                 OpenPGPImplementation implementation,
+                                                 boolean useAEAD)
+                throws PGPException
+        {
+            return changePassphrase(newPassphrase, implementation.pbeSecretKeyEncryptorFactory(useAEAD));
+        }
+
+        public OpenPGPSecretKey changePassphrase(char[] newPassphrase,
+                                                 PBESecretKeyEncryptorFactory keyEncryptorFactory)
+                throws PGPException
+        {
+            PBESecretKeyEncryptor keyEncryptor;
+            if (newPassphrase == null || newPassphrase.length == 0)
+            {
+                keyEncryptor = null;
+            }
+            else
+            {
+                keyEncryptor = keyEncryptorFactory.build(
+                        newPassphrase,
+                        getKeyPair().getPublicKey().getPublicKeyPacket());
+            }
+
+            return changePassphrase(keyEncryptor);
+        }
+
+        public OpenPGPSecretKey changePassphrase(PBESecretKeyEncryptor keyEncryptor)
+                throws PGPException
+        {
+            PGPSecretKey encrypted = new PGPSecretKey(
+                getKeyPair().getPrivateKey(),
+                getKeyPair().getPublicKey(),
+                getImplementation().pgpDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+                getSecretKey().isPrimaryKey(),
+                keyEncryptor);
+
+            return new OpenPGPSecretKey(
+                    getSecretKey().getPublicKey(),
+                    encrypted,
+                    getImplementation().pbeSecretKeyDecryptorBuilderProvider());
+        }
+
+        public OpenPGPSecretKey removePassphrase()
+                throws PGPException
+        {
+            return changePassphrase((PBESecretKeyEncryptor) null);
         }
     }
 }
