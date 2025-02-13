@@ -1462,6 +1462,13 @@ public class OpenPGPCertificate
             return rawPubkey.getCreationTime();
         }
 
+        /**
+         * Return true, if this {@link OpenPGPComponentKey} represents the primary key of an {@link OpenPGPCertificate}.
+         *
+         * @return true if primary, false if subkey
+         */
+        public abstract boolean isPrimaryKey();
+
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
@@ -1799,6 +1806,12 @@ public class OpenPGPCertificate
             }
         }
 
+        @Override
+        public boolean isPrimaryKey()
+        {
+            return true;
+        }
+
         public OpenPGPComponentSignature getLatestDirectKeySelfSignature()
         {
             return getLatestDirectKeySelfSignature(new Date());
@@ -2088,6 +2101,12 @@ public class OpenPGPCertificate
         public OpenPGPSubkey(PGPPublicKey rawPubkey, OpenPGPCertificate certificate)
         {
             super(rawPubkey, certificate);
+        }
+
+        @Override
+        public boolean isPrimaryKey()
+        {
+            return false;
         }
 
         @Override

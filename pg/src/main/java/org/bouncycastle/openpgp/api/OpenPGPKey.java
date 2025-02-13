@@ -240,6 +240,12 @@ public class OpenPGPKey
         }
 
         @Override
+        public boolean isPrimaryKey()
+        {
+            return getPublicKey().isPrimaryKey();
+        }
+
+        @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
             return getPublicKey().getLatestSelfSignature(evaluationTime);
