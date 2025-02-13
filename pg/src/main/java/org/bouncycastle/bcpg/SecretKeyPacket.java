@@ -146,11 +146,11 @@ public class SecretKeyPacket
 
         if (this instanceof SecretSubkeyPacket)
         {
-            pubKeyPacket = new PublicSubkeyPacket(in);
+            pubKeyPacket = new PublicSubkeyPacket(in, newPacketFormat);
         }
         else
         {
-            pubKeyPacket = new PublicKeyPacket(in);
+            pubKeyPacket = new PublicKeyPacket(in, newPacketFormat);
         }
 
         int version = pubKeyPacket.getVersion();
@@ -342,7 +342,7 @@ public class SecretKeyPacket
         byte[] iv,
         byte[] secKeyData)
     {
-        super(keyTag);
+        super(keyTag, pubKeyPacket.hasNewPacketFormat());
 
         this.pubKeyPacket = pubKeyPacket;
         this.encAlgorithm = encAlgorithm;
