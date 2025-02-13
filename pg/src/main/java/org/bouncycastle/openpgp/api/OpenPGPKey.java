@@ -235,7 +235,8 @@ public class OpenPGPKey
         }
 
         @Override
-        protected OpenPGPComponentKey getKeyComponent() {
+        protected OpenPGPComponentKey getKeyComponent()
+        {
             return this;
         }
 

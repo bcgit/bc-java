@@ -1745,12 +1745,14 @@ public class OpenPGPCertificate
         }
 
         @Override
-        public int hashCode() {
+        public int hashCode()
+        {
             return getPGPPublicKey().hashCode();
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(Object obj)
+        {
             if (obj == null)
             {
                 return false;
@@ -1883,7 +1885,8 @@ public class OpenPGPCertificate
         }
 
         @Override
-        protected OpenPGPComponentKey getKeyComponent() {
+        protected OpenPGPComponentKey getKeyComponent()
+        {
             return this;
         }
 
@@ -2122,7 +2125,8 @@ public class OpenPGPCertificate
         }
 
         @Override
-        protected OpenPGPComponentKey getKeyComponent() {
+        protected OpenPGPComponentKey getKeyComponent()
+        {
             return this;
         }
 
@@ -2190,7 +2194,8 @@ public class OpenPGPCertificate
         }
 
         @Override
-        protected OpenPGPComponentKey getKeyComponent() {
+        protected OpenPGPComponentKey getKeyComponent()
+        {
             return primaryKey;
         }
 
