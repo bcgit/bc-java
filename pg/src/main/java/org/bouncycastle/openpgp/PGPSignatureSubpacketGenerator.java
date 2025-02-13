@@ -649,9 +649,9 @@ public class PGPSignatureSubpacketGenerator
     public boolean hasSubpacket(
         int type)
     {
-        for (int i = 0; i != packets.size(); i++)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
                 return true;
             }
@@ -670,17 +670,17 @@ public class PGPSignatureSubpacketGenerator
     public SignatureSubpacket[] getSubpackets(
         int type)
     {
-        List list = new ArrayList();
+        List<SignatureSubpacket> list = new ArrayList<>();
 
-        for (int i = 0; i != packets.size(); i++)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
-                list.add(packets.get(i));
+                list.add(packet);
             }
         }
 
-        return (SignatureSubpacket[])list.toArray(new SignatureSubpacket[]{});
+        return list.toArray(new SignatureSubpacket[0]);
     }
 
     public PGPSignatureSubpacketVector generate()
@@ -691,9 +691,9 @@ public class PGPSignatureSubpacketGenerator
 
     private boolean contains(int type)
     {
-        for (int i = 0; i < packets.size(); ++i)
+        for (SignatureSubpacket packet : packets)
         {
-            if (((SignatureSubpacket)packets.get(i)).getType() == type)
+            if (packet.getType() == type)
             {
                 return true;
             }
