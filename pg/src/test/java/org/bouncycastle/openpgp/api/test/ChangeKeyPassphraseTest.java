@@ -46,7 +46,7 @@ public class ChangeKeyPassphraseTest
         OpenPGPKey.OpenPGPSecretKey secretKey = key.getPrimarySecretKey();
         isFalse("Expect unlocked test vector to be unlocked", secretKey.isLocked());
 
-        OpenPGPKey.OpenPGPPrivateKey privateKey = secretKey.unlock((char[]) null);
+        OpenPGPKey.OpenPGPPrivateKey privateKey = secretKey.unlock();
         OpenPGPKey.OpenPGPSecretKey locked = privateKey.changePassphrase(
                 "sw0rdf1sh".toCharArray(),
                 api.getImplementation(),
@@ -84,7 +84,7 @@ public class ChangeKeyPassphraseTest
         OpenPGPKey.OpenPGPSecretKey secretKey = key.getPrimarySecretKey();
         isFalse("Expect Alice' key to not be locked initially", secretKey.isLocked());
 
-        OpenPGPKey.OpenPGPPrivateKey privateKey = secretKey.unlock((char[]) null);
+        OpenPGPKey.OpenPGPPrivateKey privateKey = secretKey.unlock();
         OpenPGPKey.OpenPGPSecretKey locked = privateKey.changePassphrase(
                 "sw0rdf1sh".toCharArray(), api.getImplementation(), false);
         isTrue("Expect Alice' key to be locked after locking", locked.isLocked());

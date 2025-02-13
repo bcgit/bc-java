@@ -300,6 +300,12 @@ public class OpenPGPKey
             return getPGPSecretKey().getS2KUsage() != SecretKeyPacket.USAGE_NONE;
         }
 
+        public OpenPGPPrivateKey unlock()
+                throws PGPException
+        {
+            return unlock((char[]) null);
+        }
+
         public OpenPGPPrivateKey unlock(KeyPassphraseProvider passphraseProvider)
                 throws PGPException
         {
@@ -476,10 +482,12 @@ public class OpenPGPKey
                 getSecretKey().isPrimaryKey(),
                 keyEncryptor);
 
-            return new OpenPGPSecretKey(
+            OpenPGPSecretKey sk = new OpenPGPSecretKey(
                     getSecretKey().getPublicKey(),
                     encrypted,
                     getImplementation().pbeSecretKeyDecryptorBuilderProvider());
+            sk.sanitizeProtectionMode();
+            return sk;
         }
 
         public OpenPGPSecretKey removePassphrase()
