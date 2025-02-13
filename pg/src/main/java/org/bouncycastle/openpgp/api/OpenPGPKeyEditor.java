@@ -560,18 +560,10 @@ public class OpenPGPKeyEditor
                     " is missing from the key.");
         }
 
-        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
-        PGPSecretKey reencrypted = PGPSecretKey.copyWithNewPassword(
-                secretKey.getPGPSecretKey(),
-                implementation.pbeSecretKeyDecryptorBuilderProvider().provide().build(oldPassphrase),
-                implementation.pbeSecretKeyEncryptorFactory(useAEAD)
-                        .build(
-                                newPassphrase,
-                                secretKey.getPGPSecretKey().getPublicKey().getPublicKeyPacket()),
-                implementation.pgpDigestCalculatorProvider().get(HashAlgorithmTags.SHA1));
-        secretKeys = PGPSecretKeyRing.insertSecretKey(secretKeys, reencrypted);
-        key = new OpenPGPKey(secretKeys, implementation, policy);
+        OpenPGPKey.OpenPGPPrivateKey privateKey = secretKey.unlock(oldPassphrase);
+        secretKey = privateKey.changePassphrase(newPassphrase, implementation, useAEAD);
 
+        key.replaceSecretKey(secretKey);
         return this;
     }
 

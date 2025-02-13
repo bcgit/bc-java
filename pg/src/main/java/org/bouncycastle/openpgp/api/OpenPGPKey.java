@@ -166,6 +166,11 @@ public class OpenPGPKey
         return getSecretKey(key.getKeyIdentifier());
     }
 
+    void replaceSecretKey(OpenPGPSecretKey secretKey)
+    {
+        secretKeys.put(secretKey.getKeyIdentifier(), secretKey);
+    }
+
     @Override
     public PGPSecretKeyRing getPGPKeyRing()
     {
