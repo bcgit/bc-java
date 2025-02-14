@@ -458,6 +458,9 @@ public class JcaTlsCrypto
             case NamedGroup.MLKEM512:
             case NamedGroup.MLKEM768:
             case NamedGroup.MLKEM1024:
+            case NamedGroup.SecP256r1MLKEM768:
+            case NamedGroup.X25519MLKEM768:
+            case NamedGroup.SecP384r1MLKEM1024:
                 return null;
             }
         }
@@ -862,7 +865,16 @@ public class JcaTlsCrypto
     
     public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
     {
-        return new JceTlsMLKemDomain(this, kemConfig);
+        switch (kemConfig.getNamedGroup())
+        {
+        case NamedGroup.SecP256r1MLKEM768:
+        case NamedGroup.SecP384r1MLKEM1024:
+            return new JceTlsECDHMLKemDomain(this, kemConfig);
+        case NamedGroup.X25519MLKEM768:
+            return new JceTlsX25519MLKemDomain(this, kemConfig);
+        default:
+            return new JceTlsMLKemDomain(this, kemConfig);
+        }
     }
 
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)

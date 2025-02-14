@@ -34,6 +34,9 @@ class MockTlsKemServer
         NamedGroup.MLKEM512,
         NamedGroup.MLKEM768,
         NamedGroup.MLKEM1024,
+        NamedGroup.SecP256r1MLKEM768,
+        NamedGroup.X25519MLKEM768,
+        NamedGroup.SecP384r1MLKEM1024,
         NamedGroup.x25519,
     };
 

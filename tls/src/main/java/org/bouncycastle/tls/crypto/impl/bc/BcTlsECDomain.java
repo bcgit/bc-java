@@ -27,6 +27,19 @@ import org.bouncycastle.util.BigIntegers;
  */
 public class BcTlsECDomain implements TlsECDomain
 {
+    public int getPublicKeyByteLength()
+    {
+        return (((domainParameters.getCurve().getFieldSize() + 7) / 8) * 2) + 1;
+    }
+
+    public byte[] calculateECDHAgreementBytes(ECPrivateKeyParameters privateKey, ECPublicKeyParameters publicKey)
+    {
+        ECDHBasicAgreement basicAgreement = new ECDHBasicAgreement();
+        basicAgreement.init(privateKey);
+        BigInteger agreementValue = basicAgreement.calculateAgreement(publicKey);
+        return BigIntegers.asUnsignedByteArray(basicAgreement.getFieldSize(), agreementValue);
+    }
+    
     public static BcTlsSecret calculateECDHAgreement(BcTlsCrypto crypto, ECPrivateKeyParameters privateKey,
         ECPublicKeyParameters publicKey)
     {
