@@ -47,7 +47,7 @@ public class BcTlsMLKem implements TlsAgreement
         }
         else
         {
-            this.secret = domain.decapsulate(privateKey, peerValue);
+            this.secret = domain.adoptLocalSecret(domain.decapsulate(privateKey, peerValue));
             this.privateKey = null;
         }
     }

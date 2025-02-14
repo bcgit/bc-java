@@ -52,6 +52,23 @@ public class JceTlsECDomain
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
 
+    public int getPublicKeyByteLength()
+    {
+        return (((ecCurve.getFieldSize() + 7) / 8) * 2) + 1;
+    }
+
+    public byte[] calculateECDHAgreementBytes(PrivateKey privateKey, PublicKey publicKey) throws IOException
+    {
+        try
+        {
+            return crypto.calculateKeyAgreement("ECDH", privateKey, publicKey, "TlsPremasterSecret");
+        }
+        catch (GeneralSecurityException e)
+        {
+            throw new TlsCryptoException("cannot calculate secret", e);
+        }
+    }
+
     public JceTlsSecret calculateECDHAgreement(PrivateKey privateKey, PublicKey publicKey)
         throws IOException
     {
