@@ -63,8 +63,7 @@ public class BcTlsMLKemDomain implements TlsKemDomain
     public byte[] decapsulate(MLKEMPrivateKeyParameters privateKey, byte[] ciphertext)
     {
         MLKEMExtractor kemExtract = new MLKEMExtractor(privateKey);
-        byte[] secret = kemExtract.extractSecret(ciphertext);
-        return adoptLocalSecret(secret);
+        return kemExtract.extractSecret(ciphertext);
     }
 
     public MLKEMPublicKeyParameters decodePublicKey(byte[] encoding)
