@@ -115,7 +115,7 @@ public class OpenPGPCertificate
         this.policy = policy;
 
         this.keyRing = keyRing;
-        this.subkeys = new HashMap<>();
+        this.subkeys = new LinkedHashMap<>();
         this.componentSignatureChains = new LinkedHashMap<>();
 
         Iterator<PGPPublicKey> rawKeys = keyRing.getPublicKeys();
@@ -184,7 +184,7 @@ public class OpenPGPCertificate
      */
     public Map<KeyIdentifier, OpenPGPSubkey> getSubkeys()
     {
-        return new HashMap<>(subkeys);
+        return new LinkedHashMap<>(subkeys);
     }
 
     public List<OpenPGPComponentKey> getComponentKeysWithFlag(Date evaluationTime, int... keyFlags)
