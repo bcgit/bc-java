@@ -35,6 +35,9 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.pqc.crypto.lms.Composer;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -191,6 +194,15 @@ public class SubjectPublicKeyInfoFactory
             Ed25519PublicKeyParameters key = (Ed25519PublicKeyParameters)publicKey;
 
             return new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519), key.getEncoded());
+        }
+        else if (publicKey instanceof HSSPublicKeyParameters)
+        {
+            HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
+            final byte tag_OctetString = (byte) 0x04;
+            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(new byte[]{tag_OctetString, (byte)encoding.length}, encoding));
         }
         else
         {
