@@ -37,6 +37,7 @@ import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -44,6 +45,7 @@ import org.bouncycastle.util.Arrays;
  */
 public class SubjectPublicKeyInfoFactory
 {
+    private static final byte tag_OctetString = (byte)0x04;
     private static Set cryptoProOids = new HashSet(5);
 
     static
@@ -198,9 +200,14 @@ public class SubjectPublicKeyInfoFactory
         else if (publicKey instanceof HSSPublicKeyParameters)
         {
             HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
-            final byte tag_OctetString = (byte) 0x04;
             byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
-
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
+            return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(new byte[]{tag_OctetString, (byte)encoding.length}, encoding));
+        }
+        else if (publicKey instanceof LMSPublicKeyParameters)
+        {
+            LMSPublicKeyParameters params = (LMSPublicKeyParameters)publicKey;
+            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
             return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(new byte[]{tag_OctetString, (byte)encoding.length}, encoding));
         }

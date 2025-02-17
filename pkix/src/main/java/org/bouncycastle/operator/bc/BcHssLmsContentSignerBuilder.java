@@ -1,7 +1,6 @@
 package org.bouncycastle.operator.bc;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -14,7 +13,9 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSSigner;
-import org.bouncycastle.util.Arrays;
+import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSSigner;
 
 public class BcHssLmsContentSignerBuilder
     extends BcContentSignerBuilder
@@ -35,10 +36,8 @@ public class BcHssLmsContentSignerBuilder
     static class HssSigner
         implements Signer
     {
-        private final MessageSigner hss = new HSSSigner();
+        private MessageSigner signer;
         private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        private HSSPublicKeyParameters publicKeyParameters;
-        static final byte tag_OctetString = 0x04;
 
         public HssSigner()
         {
@@ -47,15 +46,19 @@ public class BcHssLmsContentSignerBuilder
         @Override
         public void init(boolean forSigning, CipherParameters param)
         {
-            hss.init(forSigning, param);
-            if (forSigning)
+            if (param instanceof HSSPublicKeyParameters || param instanceof HSSPrivateKeyParameters)
             {
-                publicKeyParameters = ((HSSPrivateKeyParameters)param).getPublicKey();
+                signer = new HSSSigner();
+            }
+            else if (param instanceof LMSPublicKeyParameters || param instanceof LMSPrivateKeyParameters)
+            {
+                signer = new LMSSigner();
             }
             else
             {
-                publicKeyParameters = (HSSPublicKeyParameters)param;
+                throw new IllegalArgumentException("Incorrect Key Parameters");
             }
+            signer.init(forSigning, param);
         }
 
         @Override
@@ -76,7 +79,7 @@ public class BcHssLmsContentSignerBuilder
         {
             byte[] msg = stream.toByteArray();
             stream.reset();
-            return hss.generateSignature(msg);
+            return signer.generateSignature(msg);
         }
 
         @Override
@@ -84,7 +87,7 @@ public class BcHssLmsContentSignerBuilder
         {
             byte[] msg = stream.toByteArray();
             stream.reset();
-            return hss.verifySignature(msg, signature);
+            return signer.verifySignature(msg, signature);
         }
 
         @Override

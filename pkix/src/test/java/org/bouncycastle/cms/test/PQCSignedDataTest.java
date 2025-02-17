@@ -70,6 +70,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
@@ -382,7 +383,7 @@ public class PQCSignedDataTest
         }
     }
 
-    public void testCheckCreationHssLms()
+    public void testCheckCreationHss()
         throws Exception
     {
         //
@@ -455,6 +456,79 @@ public class PQCSignedDataTest
         X509Certificate x509cert = (X509Certificate)fact.generateCertificate(bIn);
 
         //System.out.println(cert);
+    }
+
+    public void testCheckCreationLms()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        AsymmetricKeyParameter privKey;
+        AsymmetricKeyParameter pubKey;
+
+        AsymmetricCipherKeyPairGenerator kpg = new LMSKeyPairGenerator();
+
+        kpg.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+
+        AsymmetricCipherKeyPair pair = kpg.generateKeyPair();
+
+        privKey = (AsymmetricKeyParameter)pair.getPrivate();
+        pubKey = (AsymmetricKeyParameter)pair.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
+
+        builder.addRDN(RFC4519Style.c, "AU");
+        builder.addRDN(RFC4519Style.o, "The Legion of the Bouncy Castle");
+        builder.addRDN(RFC4519Style.l, "Melbourne");
+        builder.addRDN(RFC4519Style.st, "Victoria");
+        builder.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "feedback-crypto@bouncycastle.org");
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+
+        X509CertificateHolder cert = certGen.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+
+        //
+        // create the certificate - version 1
+        //
+
+        sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v1CertificateBuilder certGen1 = new BcX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        cert = certGen1.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+        AsymmetricKeyParameter certPubKey = ((HSSPublicKeyParameters)PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo())).getLMSPublicKey();
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(certPubKey)));
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509");
+
+        X509Certificate x509cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(new String(cert.getEncoded()));
     }
 
     public void testTryLmsSettings()
