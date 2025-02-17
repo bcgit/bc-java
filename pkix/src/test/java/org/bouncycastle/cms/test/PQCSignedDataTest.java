@@ -395,7 +395,8 @@ public class PQCSignedDataTest
         AsymmetricCipherKeyPairGenerator kpg = new HSSKeyPairGenerator();
 
         kpg.init(new HSSKeyGenerationParameters(
-            new LMSParameters[]{new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4)}, new SecureRandom()));
+            new LMSParameters[]{new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n24_h5, LMOtsParameters.sha256_n24_w4)}, new SecureRandom()));
 
         AsymmetricCipherKeyPair pair = kpg.generateKeyPair();
 
@@ -420,8 +421,6 @@ public class PQCSignedDataTest
         //
         // create the certificate - version 3
         //
-
-
         ContentSigner sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
         X509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
@@ -436,7 +435,6 @@ public class PQCSignedDataTest
         //
         // create the certificate - version 1
         //
-
         sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
         X509v1CertificateBuilder certGen1 = new BcX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
 
