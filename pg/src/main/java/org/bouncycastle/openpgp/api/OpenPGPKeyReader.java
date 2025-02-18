@@ -229,8 +229,11 @@ public class OpenPGPKeyReader
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
-        BCPGInputStream pIn = BCPGInputStream.wrap(decoderStream);
-        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(pIn);
+        // Call getDecoderStream() twice, to make sure the stream is a BufferedInputStreamExt.
+        // This is necessary, so that for streams containing multiple concatenated armored blocks of keys,
+        //  we parse all of them and do not quit after reading the first one.
+        decoderStream = PGPUtil.getDecoderStream(decoderStream);
+        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(decoderStream);
         Object object;
 
         while ((object = objectFactory.nextObject()) != null)
