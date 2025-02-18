@@ -185,7 +185,6 @@ public class JcePBEKeyEncryptionMethodGenerator
         {
             throw new PGPException("cannot encrypt session info", e);
         }
-
     }
 
     private static String getBaseAEADAlgorithm(int encAlgorithm)
