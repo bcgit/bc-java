@@ -9,6 +9,13 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.operator.OperatorCreationException;
 
+/**
+ * Builder for creating content verifier providers that support the HSS/LMS Hash-Based Signature Algorithm.
+ *
+ * <b>Reference:</b> Use of the HSS/LMS Hash-Based Signature Algorithm in the Cryptographic Message Syntax (CMS)
+ * <a href="https://datatracker.ietf.org/doc/rfc9708/">RFC 9708</a>.
+ * </p>
+ */
 public class BcHssLmsContentVerifierProviderBuilder
     extends BcContentVerifierProviderBuilder
 {
