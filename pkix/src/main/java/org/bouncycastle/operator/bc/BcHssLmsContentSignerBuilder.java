@@ -17,6 +17,12 @@ import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSSigner;
 
+/**
+ * Builder for creating content signers that use the HSS/LMS Hash-Based Signature Algorithm.
+ *
+ * <b>Reference:</b> Use of the HSS/LMS Hash-Based Signature Algorithm in the Cryptographic Message Syntax (CMS)
+ * <a href="https://datatracker.ietf.org/doc/rfc9708/">RFC 9708</a>.
+ */
 public class BcHssLmsContentSignerBuilder
     extends BcContentSignerBuilder
 {
@@ -58,6 +64,7 @@ public class BcHssLmsContentSignerBuilder
             {
                 throw new IllegalArgumentException("Incorrect Key Parameters");
             }
+
             signer.init(forSigning, param);
         }
 
