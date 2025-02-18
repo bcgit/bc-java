@@ -337,7 +337,7 @@ public class PQCSignedDataTest
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
 
-            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().build(cert)));
+            assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
 
             //
             // check content digest

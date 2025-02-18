@@ -253,7 +253,10 @@ subprojects {
     }
 
     nohttp {
+        source.exclude '**/*.asc'
+        source.exclude '**/*.pem'
         source.exclude '**/*.rsp'
+        source.exclude '**/*.jar'
     }
 
     jacocoTestReport {

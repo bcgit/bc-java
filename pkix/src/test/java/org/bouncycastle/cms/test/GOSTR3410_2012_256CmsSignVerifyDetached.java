@@ -9,6 +9,7 @@ import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
@@ -121,8 +122,12 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
 
                     // Validate signer's certificate chain
                     X509CertSelector constraints = new X509CertSelector();
-                    constraints.setCertificate(getX509Certificate(signerCert));
+                    X509Certificate x509Certificate = getX509Certificate(signerCert);
+                    constraints.setCertificate(x509Certificate);
+
                     PKIXBuilderParameters params = new PKIXBuilderParameters(trustAnchors, constraints);
+
+                    params.setDate(new Date(x509Certificate.getNotAfter().getTime() - 5000L));
 
                     JcaCertStoreBuilder certStoreBuilder = new JcaCertStoreBuilder();
                     certStoreBuilder.addCertificate(signerCert);

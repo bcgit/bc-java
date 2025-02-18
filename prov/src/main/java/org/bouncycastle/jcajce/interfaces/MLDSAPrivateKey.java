@@ -25,4 +25,12 @@ public interface MLDSAPrivateKey
      * @return the seed for the private key, null if not available.
      */
     byte[] getSeed();
+
+    /**
+     * Return the encoding of the key or an encoding of its key generation parameters (the seed).
+     *
+     * @param asKeyGenParams return a key gen parameters structure.
+     * @return a PKCS#8 of the private key encoding, or a PKCS#8 of the seed.
+     */
+    byte[] getEncoded(boolean asKeyGenParams);
 }

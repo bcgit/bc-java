@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -44,14 +45,22 @@ public class MLDSAKeyFactorySpi
         hashKeyOids.add(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
     }
 
+    private final boolean isHashOnly;
+
     public MLDSAKeyFactorySpi(Set<ASN1ObjectIdentifier> keyOids)
     {
         super(keyOids);
+
+        this.isHashOnly = false;
     }
 
-    public MLDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid)
+    public MLDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid, ASN1ObjectIdentifier seedOid)
     {
-        super(keyOid);
+        super(setOf(keyOid, seedOid));
+
+        this.isHashOnly = (keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512)
+            || keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512)
+            || keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512));
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
@@ -165,7 +174,37 @@ public class MLDSAKeyFactorySpi
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        return new BCMLDSAPrivateKey(keyInfo);
+        BCMLDSAPrivateKey key = new BCMLDSAPrivateKey(keyInfo);
+
+        if (!isHashOnly || (key.getAlgorithm().indexOf("WITH") > 0))
+        {
+            return key;
+        }
+
+        // keyfactory for hash-only, convert key to hash-only.
+        MLDSAPrivateKeyParameters kParams = key.getKeyParams();
+        MLDSAParameters mldsaParameters = null;
+        if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_44))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_44_with_sha512;
+        }
+        else if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_65))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_65_with_sha512;
+        }
+        else if (kParams.getParameters().equals(MLDSAParameters.ml_dsa_87))
+        {
+            mldsaParameters = MLDSAParameters.ml_dsa_87_with_sha512;
+        }
+        else
+        {
+            throw new IllegalStateException("unknown ML-DSA parameters");
+        }
+        
+        MLDSAPrivateKeyParameters hkParams = new MLDSAPrivateKeyParameters(
+            mldsaParameters, kParams.getRho(), kParams.getK(), kParams.getTr(), kParams.getS1(), kParams.getS2(), kParams.getT0(), kParams.getT1(), kParams.getSeed());
+
+        return new BCMLDSAPrivateKey(hkParams);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
@@ -188,7 +227,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA44()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_44);
+            super(NISTObjectIdentifiers.id_ml_dsa_44, BCObjectIdentifiers.id_id_alg_ml_dsa_44_seed);
         }
     }
 
@@ -197,7 +236,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA65()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_65);
+            super(NISTObjectIdentifiers.id_ml_dsa_65, BCObjectIdentifiers.id_id_alg_ml_dsa_65_seed);
         }
     }
 
@@ -206,7 +245,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA87()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_87);
+            super(NISTObjectIdentifiers.id_ml_dsa_87, BCObjectIdentifiers.id_id_alg_ml_dsa_87_seed);
         }
     }
 
@@ -224,7 +263,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA44()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_44_seed);
         }
     }
 
@@ -233,7 +272,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA65()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_65_seed);
         }
     }
 
@@ -242,7 +281,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA87()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_87_seed);
         }
     }
 }
