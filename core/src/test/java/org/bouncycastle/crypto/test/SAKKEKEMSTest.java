@@ -1,4 +1,4 @@
-package org.bouncycastle.crypto.kems.test;
+package org.bouncycastle.crypto.test;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -31,7 +31,7 @@ public class SAKKEKEMSTest
     @Override
     public String getName()
     {
-        return null;
+        return "SAKKE-KEMS Test";
     }
 
     @Override

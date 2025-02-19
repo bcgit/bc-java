@@ -16,7 +16,6 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.ECCSIKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
 public class ECCSIKeyPairGenerator
@@ -24,14 +23,7 @@ public class ECCSIKeyPairGenerator
 {
     // Initialize NIST P-256 curve
     private static final X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
-    private static final ECCurve curve = params.getCurve();
-
-    private static final BigInteger q = ((ECCurve.Fp)curve).getQ();
-
-    //BigInteger p = ((ECCurve.Fp)curve).getOrder();
-
-    // The subgroup order is available as:
-    //BigInteger n = params.getN();
+    private static final BigInteger q = params.getCurve().getOrder();
 
     // And the base point (generator) is:
     private static final ECPoint G = params.getG();
@@ -73,6 +65,7 @@ public class ECCSIKeyPairGenerator
 
         // 4) Compute SSK = ( KSAK + HS * v ) modulo q;
         BigInteger ssk = parameters.computeSSK(HS.multiply(v));
-        return new AsymmetricCipherKeyPair(new ECCSIPublicKeyParameters(pvt), new ECCSIPrivateKeyParameters(ssk));
+        ECCSIPublicKeyParameters pub = new ECCSIPublicKeyParameters(pvt);
+        return new AsymmetricCipherKeyPair(new ECCSIPublicKeyParameters(pvt), new ECCSIPrivateKeyParameters(ssk, pub));
     }
 }

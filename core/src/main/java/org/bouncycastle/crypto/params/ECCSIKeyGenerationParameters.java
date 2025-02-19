@@ -6,25 +6,22 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
-import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 
 public class ECCSIKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private static final X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
-    private static final ECCurve curve = params.getCurve();
+    private static final BigInteger q;
+    private static final ECPoint G;
 
-    private static final BigInteger q = ((ECCurve.Fp)curve).getQ();
+    static
+    {
+        X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
+        q = params.getCurve().getOrder();
+        G = params.getG();
+    }
 
-    //BigInteger p = ((ECCurve.Fp)curve).getOrder();
-
-    // The subgroup order is available as:
-    //BigInteger n = params.getN();
-
-    // And the base point (generator) is:
-    private static final ECPoint G = params.getG();
     private final byte[] id;
     private final BigInteger ksak;
     private final ECPoint kpak;
