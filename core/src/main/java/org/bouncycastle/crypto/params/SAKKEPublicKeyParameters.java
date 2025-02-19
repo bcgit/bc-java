@@ -77,7 +77,7 @@ public class SAKKEPublicKeyParameters
      * Pairing result g = <P,P> computed using the Tate-Lichtenbaum pairing
      * (RFC 6508, Section 3.2). Value from RFC 6509 Appendix A.
      */
-    private static final BigInteger g = new BigInteger(Hex.decode("66FC2A43 2B6EA392 148F1586 7D623068\n" +
+    private static final BigInteger g = new BigInteger(1, Hex.decode("66FC2A43 2B6EA392 148F1586 7D623068\n" +
         "               C6A87BD1 FB94C41E 27FABE65 8E015A87\n" +
         "               371E9474 4C96FEDA 449AE956 3F8BC446\n" +
         "               CBFDA85D 5D00EF57 7072DA8F 541721BE\n" +
