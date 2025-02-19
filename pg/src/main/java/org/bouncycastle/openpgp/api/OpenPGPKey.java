@@ -412,6 +412,11 @@ public class OpenPGPKey
             this.unlockedKey = unlockedKey;
         }
 
+        public OpenPGPComponentKey getPublicKey()
+        {
+            return secretKey.getPublicKey();
+        }
+
         /**
          * Return the {@link OpenPGPSecretKey} in its potentially locked form.
          *
