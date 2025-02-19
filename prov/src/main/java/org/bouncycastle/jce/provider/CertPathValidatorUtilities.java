@@ -52,7 +52,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -64,7 +63,6 @@ import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.isismtt.ISISMTTObjectIdentifiers;
 import org.bouncycastle.jcajce.PKIXCRLStore;
@@ -968,16 +966,16 @@ class CertPathValidatorUtilities
         // 5.2.4 (c)
         selBuilder.setMaxBaseCRLNumber(completeCRLNumber);
 
-        // TODO[pkix] Would adding this to the selector be helpful?
-        //selBuilder.setDeltaCRLIndicatorEnabled(true);
+        // NOTE: Does not restrict to critical DCI extension, so we filter non-critical ones later
+        selBuilder.setDeltaCRLIndicatorEnabled(true);
 
         PKIXCRLStoreSelector deltaSelect = selBuilder.build();
 
         // find delta CRLs
-        Set temp = PKIXCRLUtil.findCRLs(deltaSelect, validityDate, certStores, pkixCrlStores);
+        Set deltaCRLs = getDeltaCRLs(PKIXCRLUtil.findCRLs(deltaSelect, validityDate, certStores, pkixCrlStores));
 
         // if the named CRL store is empty, and we're told to check with CRLDP
-        if (temp.isEmpty() && Properties.isOverrideSet("org.bouncycastle.x509.enableCRLDP"))
+        if (deltaCRLs.isEmpty() && Properties.isOverrideSet("org.bouncycastle.x509.enableCRLDP"))
         {
             CertificateFactory certFact;
             try
@@ -1001,7 +999,7 @@ class CertPathValidatorUtilities
 
                     for (int j = 0; j < genNames.length; j++)
                     {
-                        GeneralName name = genNames[i];
+                        GeneralName name = genNames[j];
                         if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                         {
                             try
@@ -1010,8 +1008,9 @@ class CertPathValidatorUtilities
                                     new URI(((ASN1String)name.getName()).getString()));
                                 if (store != null)
                                 {
-                                    temp = PKIXCRLUtil.findCRLs(deltaSelect, validityDate, Collections.EMPTY_LIST,
-                                        Collections.singletonList(store));
+                                    deltaCRLs = getDeltaCRLs(
+                                        PKIXCRLUtil.findCRLs(deltaSelect, validityDate, Collections.EMPTY_LIST,
+                                            Collections.singletonList(store)));
                                 }
                                 break;
                             }
@@ -1025,9 +1024,14 @@ class CertPathValidatorUtilities
             }
         }
 
+        return deltaCRLs;
+    }
+
+    private static Set getDeltaCRLs(Set crls)
+    {
         Set result = new HashSet();
 
-        for (Iterator it = temp.iterator(); it.hasNext(); )
+        for (Iterator it = crls.iterator(); it.hasNext(); )
         {
             X509CRL crl = (X509CRL)it.next();
 
@@ -1042,7 +1046,7 @@ class CertPathValidatorUtilities
 
     private static boolean isDeltaCRL(X509CRL crl)
     {
-        return hasCriticalExtension(crl, RFC3280CertPathUtilities.DELTA_CRL_INDICATOR);
+        return hasCriticalExtension(crl, Extension.deltaCRLIndicator.getId());
     }
 
     /**
