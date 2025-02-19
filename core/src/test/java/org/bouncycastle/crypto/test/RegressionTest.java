@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.test;
 
-import org.bouncycastle.crypto.kems.test.SAKKEKEMSTest;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.Test;
 
