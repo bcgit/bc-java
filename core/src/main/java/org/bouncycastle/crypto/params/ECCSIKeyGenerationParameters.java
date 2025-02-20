@@ -4,27 +4,21 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 
 public class ECCSIKeyGenerationParameters
     extends KeyGenerationParameters
 {
-    private static final BigInteger q;
-    private static final ECPoint G;
-
-    static
-    {
-        X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
-        q = params.getCurve().getOrder();
-        G = params.getG();
-    }
-
+    private final BigInteger q;
+    private final ECPoint G;
+    private final Digest digest;
     private final byte[] id;
     private final BigInteger ksak;
     private final ECPoint kpak;
+    private final int n;
 
     /**
      * initialise the generator with a source of randomness
@@ -32,11 +26,15 @@ public class ECCSIKeyGenerationParameters
      *
      * @param random the random byte source.
      */
-    public ECCSIKeyGenerationParameters(SecureRandom random, byte[] id)
+    public ECCSIKeyGenerationParameters(SecureRandom random, X9ECParameters params, Digest digest, byte[] id)
     {
-        super(random, 256);
+        super(random, params.getCurve().getA().bitLength());
+        this.q = params.getCurve().getOrder();
+        this.G = params.getG();
+        this.digest = digest;
         this.id = Arrays.clone(id);
-        this.ksak = new BigInteger(256, random).mod(q);
+        this.n = params.getCurve().getA().bitLength();
+        this.ksak = new BigInteger(n, random).mod(q);
         this.kpak = G.multiply(ksak).normalize();
     }
 
@@ -53,5 +51,25 @@ public class ECCSIKeyGenerationParameters
     public BigInteger computeSSK(BigInteger hs_v)
     {
         return ksak.add(hs_v).mod(q);
+    }
+
+    public BigInteger getQ()
+    {
+        return q;
+    }
+
+    public ECPoint getG()
+    {
+        return G;
+    }
+
+    public Digest getDigest()
+    {
+        return digest;
+    }
+
+    public int getN()
+    {
+        return n;
     }
 }
