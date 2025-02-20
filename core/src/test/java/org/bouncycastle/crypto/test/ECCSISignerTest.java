@@ -6,8 +6,13 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.AsconHash256;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECCSIKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECCSIKeyGenerationParameters;
@@ -59,6 +64,18 @@ public class ECCSISignerTest
         "sm2p256v1"
     };
 
+    Digest[] digests = new Digest[]{
+        new SHA256Digest(),
+        new SHA3Digest(),
+        new SHA3Digest(512),
+        new SHA224Digest(),
+        new SHA512Digest(),
+        new AsconHash256(),
+        new SHAKEDigest(256),
+        new SHAKEDigest(128),
+        new MD5Digest()
+    };
+
 
     public static void main(String[] args)
         throws Exception
@@ -80,8 +97,10 @@ public class ECCSISignerTest
         testTestVector();
         for (int i = 0; i < curveNames.length; ++i)
         {
-            //System.out.println(curveNames[i]);
-            testRandom(curveNames[i]);
+            for (int j = 0; j < digests.length; ++j)
+            {
+                testRandom(curveNames[i], digests[j]);
+            }
         }
     }
 
@@ -128,14 +147,13 @@ public class ECCSISignerTest
         isTrue(signer.verifySignature(sig));
     }
 
-    private void testRandom(String curveName)
+    private void testRandom(String curveName, Digest digest)
         throws Exception
     {
         SecureRandom random = new SecureRandom();
         ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
         byte[] id = new byte[16];
         random.nextBytes(id);
-        Digest digest = new SHA512Digest();
         X9ECParameters params = CustomNamedCurves.getByName(curveName);
         ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(random,
             params, digest, id);
