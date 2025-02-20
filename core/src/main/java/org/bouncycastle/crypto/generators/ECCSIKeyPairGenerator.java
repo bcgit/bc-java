@@ -15,6 +15,15 @@ import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
 
+/**
+ * A key pair generator for the ECCSI scheme (Elliptic Curve-based Certificateless Signatures
+ * for Identity-based Encryption) as defined in RFC 6507.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc6507">
+ *      RFC 6507: Elliptic Curve-Based Certificateless Signatures for Identity-based Encryption (ECCSI)
+ *      </a>
+ */
+
 public class ECCSIKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
@@ -23,6 +32,12 @@ public class ECCSIKeyPairGenerator
     private Digest digest;
     private ECCSIKeyGenerationParameters parameters;
 
+    /**
+     * Initializes the key pair generator with the specified parameters.
+     *
+     * @param parameters an instance of {@link ECCSIKeyGenerationParameters} which encapsulates the elliptic
+     *                   curve domain parameters, the digest algorithm, and an associated identifier.
+     */
     @Override
     public void init(KeyGenerationParameters parameters)
     {
