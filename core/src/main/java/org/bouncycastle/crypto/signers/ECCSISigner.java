@@ -20,14 +20,6 @@ import org.bouncycastle.util.BigIntegers;
 /**
  * Implementation of Elliptic Curve-based Certificateless Signatures for Identity-Based Encryption (ECCSI)
  * as defined in RFC 6507.
- * <p>
- * This class handles both signature generation and verification using the ECCSI scheme. It supports:
- * <ul>
- *   <li>NIST P-256 (secp256r1) elliptic curve parameters</li>
- *   <li>SHA-256 hash function</li>
- *   <li>Certificateless signatures using KMS Public Authentication Key (KPAK)</li>
- *   <li>Identity-based signatures with Secret Signing Key (SSK)</li>
- * </ul>
  *
  * @see <a href="https://datatracker.ietf.org/doc/html/rfc6507">RFC 6507:  Elliptic Curve-Based Certificateless
  * Signatures for Identity-Based Encryption (ECCSI)</a>
@@ -48,7 +40,12 @@ public class ECCSISigner
     private boolean forSigning;
     private final int N;
 
-
+    /**
+     * Constructs an ECCSI signer/verifier with KMS Public Authentication Key and user identity.
+     *
+     * @param kpak KMS Public Authentication Key (KPAK) from RFC 6507 Section 2
+     * @param id   User identity byte array formatted
+     */
     public ECCSISigner(ECPoint kpak, X9ECParameters params, Digest digest, byte[] id)
     {
         this.kpak = kpak;
@@ -60,6 +57,15 @@ public class ECCSISigner
         this.N = (params.getCurve().getOrder().bitLength() + 7) >> 3;
     }
 
+    /**
+     * Initializes the signer for either signature generation or verification.
+     *
+     * @param forSigning true for signing, false for verification
+     * @param param      Key parameters:
+     *                   - For signing: {@code ParametersWithRandom} containing {@code ECCSIPrivateKeyParameters}
+     *                   - For verification: {@code ECCSIPublicKeyParameters}
+     * @throws IllegalArgumentException if invalid parameters are provided
+     */
     @Override
     public void init(boolean forSigning, CipherParameters param)
     {
@@ -94,6 +100,17 @@ public class ECCSISigner
         }
     }
 
+    /**
+     * Generates an ECCSI signature according to RFC 6507 Section 5.2.1.
+     *
+     * @return Signature structure containing:
+     *         - r (N bytes)
+     *         - s (N bytes)
+     *         - PVT (Public Validation Token)
+     * @throws CryptoException       if cryptographic operations fail
+     * @throws DataLengthException   if input data is invalid
+     * @throws IllegalArgumentException if invalid SSK or j parameter is detected
+     */
     @Override
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
@@ -116,6 +133,13 @@ public class ECCSISigner
             params.getPublicKeyParameters().getPVT().getEncoded(false));
     }
 
+    /**
+     * Verifies an ECCSI signature according to RFC 6507 Section 5.2.2.
+     *
+     * @param signature Signature to verify (r || s || PVT)
+     * @return true if signature is valid, false otherwise
+     * @throws IllegalArgumentException if signature format is invalid
+     */
     @Override
     public boolean verifySignature(byte[] signature)
     {
@@ -141,6 +165,13 @@ public class ECCSISigner
         return rComputed.mod(q).equals(r.mod(q));
     }
 
+    /**
+     * Resets the signer/verifier state and performs initial computations:
+     * - For signing: Validates KPAK consistency (RFC 6507 Section 5.1.2)
+     * - For verification: Computes Y = HS·PVT + KPAK
+     *
+     * Also computes HS = hash(G || KPAK || ID || PVT) as per RFC 6507 Section 5.1.1
+     */
     @Override
     public void reset()
     {
