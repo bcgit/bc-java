@@ -124,7 +124,8 @@ public class MLDSATest
         throws Exception
     {
         kFact.generatePrivate(new PKCS8EncodedKeySpec(kpValid.getPrivate().getEncoded()));
-        kFact.generatePrivate(new PKCS8EncodedKeySpec(((MLDSAPrivateKey)kpValid.getPrivate()).getEncoded(true)));
+        kFact.generatePrivate(new PKCS8EncodedKeySpec(((MLDSAPrivateKey)kpValid.getPrivate()).getPrivateKey(true).getEncoded()));
+        kFact.generatePrivate(new PKCS8EncodedKeySpec(((MLDSAPrivateKey)kpValid.getPrivate()).getPrivateKey(false).getEncoded()));
         kFact.generatePublic(new X509EncodedKeySpec(kpValid.getPublic().getEncoded()));
 
         try
@@ -192,11 +193,10 @@ public class MLDSATest
 
         assertTrue(Arrays.areEqual(seq.getOctets(), seed));
 
-        ASN1OctetString privData = ASN1OctetString.getInstance((ASN1TaggedObject)ASN1Sequence.getInstance(privInfo.getPrivateKey().getOctets()).getObjectAt(1), false);
+        ASN1OctetString privData = ASN1OctetString.getInstance(ASN1Sequence.getInstance(privInfo.getPrivateKey().getOctets()).getObjectAt(1));
 
         assertTrue(Arrays.areEqual(privData.getOctets(), ((MLDSAPrivateKey)kp44.getPrivate()).getPrivateData()));
     }
-
 
     public void testSeedPrivateKeyEncoding()
         throws Exception
@@ -208,14 +208,27 @@ public class MLDSATest
         kpGen44.initialize(MLDSAParameterSpec.ml_dsa_44, new FixedSecureRandom(seed));
         KeyPair kp44 = kpGen44.generateKeyPair();
 
-        Security.setProperty("org.bouncycastle.mldsa.seedOnly", "true");
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(((MLDSAPrivateKey)kp44.getPrivate()).getPrivateKey(true).getEncoded());
 
-        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp44.getPrivate().getEncoded());
-
-        Security.setProperty("org.bouncycastle.mldsa.seedOnly", "false");
         ASN1OctetString k = privInfo.getPrivateKey();
 
-        assertTrue(Arrays.areEqual(k.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance((ASN1TaggedObject)privInfo.parsePrivateKey(), false).getOctets(), seed));
+    }
+
+    public void testExpandedKeyPrivateKeyEncoding()
+        throws Exception
+    {
+        KeyPairGenerator kpGen44 = KeyPairGenerator.getInstance("ML-DSA-44");
+
+        byte[] seed = Hex.decode("000102030405060708090a0b0c0d0e0f" + "100102030405060708090a0b0c0d0e0f");
+        byte[] expandedKey = Base64.decode("w/FofbPea45APAHeQqNeZL4KcvMHr8V/inNsUbmYlE0vTZbckQVhHq8sQi2F3yC7B1/aLXIta1rImyPmzsYITzPH4Iz+3/ysH0n3TDx9HFKMp5WwuOX7ZRnNqS/RaiaYltSR0LBwyi5uPgGqw1Cb/mAsJkoJuGx31QGfc1KTMSQYAjEiqU0QJjHAlAyBtiRSxkGZIFFYGAYIIEXSSC4YE2rAooADOQoIQmwbKARSQiWBRExbOIkEQEVJIEQcEUCTxhEjQCahpJFLwDEIhIFamETJqDEbEWrKyCwBKWnCQECcNgYDtAQMMWwMQTFjwCiisEUTQEGiFAoRQibaQmmaokgjFUYJREmMBHAClSABlyRQFAlQECCgRiSCJIEQEwoACSRElg0QEjBSFAgIOQLIuDCiRHHcFoIZp0zkCDCbBIkbFYnYFAQMQ1ELGSCYICDSBGhhBmAcoS0JQ0HBEGGUiIlTIkYaGGpJMJHLtCDAEDKBpgXUAgoSxQAjQm0EuUQjCBDcIkbKwkUUom0clomLKHETNpBioEBTpEDLEkocIzJiQI0JBAIaMQHaRCQbkW0KSHHgBGADoi0AFHHYFA3hgg0ayU1iloyIAEmQBJLLKC4JgQADhiGbmIiUggBcwCWDIiwByWCSEExaRC0ZkgALM0kTlZCJAnHUNEaYlJEEMU6JtAUAo0gRJ23kokkSxoREsjCSomBUyCFEAEpUJmkDkWVLloSSQkpjkm0AEQqZxFEIE4gjGCGTpkEhsEAUEyIZqEAjJg1BRlHBmCEJg4AZSGobNE5gMIWRRmTMtGBcgCVhpo2bwCDjFFLbAkJksHCZRAEKMVBjQi1jhkQQpg3EgmybBjDDqC3hRIBMoGHUpiHIMilQEgpQMA7QEClMBolUNihTAmDQAICTEm6IqEATCCEMOCoEEYwKN4maRDAjkSEJRmnIohALgAADBCoBhjFgJiIYkWmTQiHkKA4cImYLk3CSBIKUEA4gE2ibMkRjkkUKACyMRkYRoWQUl0wbmW2QBkkJR4AgR2iCJAYUMgpLKGwgKVHiBE4iBRALNYwbFwwUAGpQwAwDQSwSwQAQAi7REgrSIAlbkHEJyZAASWDMMm4YlSHiwFFIFkrbFI6IJJERJUhLlkXRyCAAk5GDoC2JyJGYQgkRRGkTJE2jRCzUGFEiF1DAghECNIJIgHAgQWlvzZh7vICP92WCMX3B8zbvb7tgGJ1FERU17RMAxgnav4gEW/oe9DFzrwvEKF4Ku25tc0FQgdmnvLQFYwpTQuDjTxsug4GZViD6JP0GvZpbvfRhSWIjeFVdQcspJ26wR3IaM4M8yRhim1xEfUf7HcopRHQ6bzJ0B7rhE60A1mouwYG8ekzSxQ4WPtqecHdT57vYaEjOqjM0g3vUKa8ybDzUUVJDXx/6pcww596LIBNHygVaBGdRyAhNYxzSg0Z9BuxN295I3WJLU13+yYsdgvMq/qoj0LVZPevCjMBLnGnBAGsXxpYmTZbiyE6v5vQO3xWB6So6vX+G82gl0T33gZEw0B0stRf76XAcHHNkQl5nz1ZdkCS2QGh8Or4nmnuatXYkfXSP8YWDFz7bgtISNta6w7iiluZOySkDb8unuWXa2lUiSbHOJJ1vJ3kxa/jOpQvKULjQ49VFJQpH+vVVZKRtXkvpkFnOmISVSx0rfus9NJCPpQm8S7DJH6pRA1ZgKYsLochGcs0pjWJGAZtUC9V0Bz7gz5XEWJzouDZZe7DfOagc/Ts7irQmpLMFuBeno9kzplKmYSDW1N88uO9CsCP4JOY/EKusbqzRu/032a0I9kozn8gyw3aAU6MArCVbfmr4/L+LV+MhLlnxe2RHy9iLw0SmVI2nJDNoLWichbLKJ7euagFMjqyw45WTmIYXKvX8rsl9TATOwcvL+0okzt8GuDyDmWej1UoGPPC74eyRfVVifPCPfb0M/o+QVwsNMggT11piJcEYmPS3hJWlTJ6t3WDIqwpvh9Bh2OBmNyJ0xMC3Zw3rNWVCLalzxf3RdOhINiSS91DtDP5FDqnZ8Br0HK5GCN00NPfWNt0FjNAWYuRoIBPqx471i+91mQAM7cRwP8izxj7D+wcGQMyQs/FA3ALXU62532rTt/eG90vPtTtj6Jvxcqx+l5oclJIZ/6qQjaqpzP6DIhlPa0e6FBiwRefdazXu2C5gPKtyY9YukXWftFnu3xDqRvxcYd/LBeK0utJYtERs4U2naS0W/8DMRrTTtiME4QZf8QSHnQoEjOS+ZNxb1yUUdmH0FKqeLgPNfXfVmD1B6ZTp/B02o3uRd7y9k4f5IKIPQedW4gdUIfycBP20lYmV5U1xcYVG6r/r1L1kfeCwlEsJ/3NsapVQx2JVuJ+EKBdqsx3zUHHSLnk3kRoZ4q0E5KRPccxgEGCpb2rK4W+hwvskcqfhKZQhYij4B10yzeno8FNIxT2vvXyALAxg2t4nSCVX7Wc1jv9ufEV3z1d5xzo5IDRHVkM1qT+V6zx+mkwXXksaVLiMNkeoy3/FF7uJxNcLajSwUwxht5LAzALa3LqlMyleIvK2fGWiqLaDkp1aYwvzc4i66sm42x2LHE6XwVVR/RnHj/1cg9rbcdVr1huGWA+TmLc0u01EYZrZnc0fGi9BnlYvm3JcEaNJ3f09cB/iN7pgMD/j8kzhykd0RsJgS5sU1ggAFkK4E9kt3WPrNqyIP1jdUZ30+Qnj6KL/bcTcvaxbC6Y1E0sIQgTSaQC9n3yhKawohtEjRDGnbqqltCw9qw6MRjTXWEPeju5YwRpN0DeVNB+3B8/sLeR7aR2tvbk7tyHvB9pW6WSInfmsGnTPqVChU7F0m/qYeP6PwjGK8TY69Pr0ziBh0JOLKYRVG2RwQnZGsGoLoXSHxZCV90Q5mIRagpGDBslvJTcxWtnUWT/ktFYkiFXHvW09hD/jqjzBRXSKOzfZnr5Xery2BIcmslYrSYbb38dY/3TmFL2k56R7nXS2uQEzhFJhT1OjOoOZ6hy6fGlNHhTXhiK0ZmF6AGb/Nw1nS0zW3HEa0wTJ5gnFUQrgkgon3NBtah5+dBsxNGn02O24vF4Lg8Va1Zj04igpuE/CctbUlJ5YKqqAj2SwL5hpBtNk8eV0srIFaFImaMcgzTJXt4tz5gOI3Ds3fkLjt3NBdLwMjw9VegdKHboCCYhVPzFY2lG++5LqJud37flp7Ikni17qpdUYO7khvsMLeUru6ouFqdV6fVdVywn2bW22Xs0DNNIfXGjnfhwhZ4AEvOqyFXmYHYqRYWOtBIxWu0aUtvtjcIi8gkDNsi0kY2Iuf6UFqwN7zqvuGYwsuC+n0UODwdi/48k1FWz/pOzqeaxo9O6AccKNEdDaXT4kwuJZsuvuKo0zv9IxDkVYoRB5Jx+vt58MtKGSxSpylWpJfw==");
+
+        kpGen44.initialize(MLDSAParameterSpec.ml_dsa_44, new FixedSecureRandom(seed));
+        KeyPair kp44 = kpGen44.generateKeyPair();
+        
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(((MLDSAPrivateKey)kp44.getPrivate()).getPrivateKey(false).getEncoded());
+
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(privInfo.parsePrivateKey()).getOctets(), expandedKey));
     }
 
     public void testPrivateKeyRecoding()
