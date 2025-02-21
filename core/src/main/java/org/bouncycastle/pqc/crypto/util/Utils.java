@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -829,6 +830,11 @@ class Utils
             if (data[0] == BERTags.OCTET_STRING)
             {
                 return ASN1OctetString.getInstance(data);
+            }
+
+            if ((data[0] & 0xff) == BERTags.TAGGED)
+            {
+                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(data), false);
             }
         }
 

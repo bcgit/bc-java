@@ -298,13 +298,13 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
             byte[] seed = params.getSeed();
-            if (Properties.isOverrideSet("org.bouncycastle.mldsa.seedOnly"))
+            if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.SEED_ONLY)
             {
-                if (seed == null)    // very difficult to imagine, but...
-                {
-                    throw new IOException("no seed available");
-                }
-                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
+            }
+            else if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.EXPANDED_KEY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
             }
             return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
@@ -406,7 +406,7 @@ public class PrivateKeyInfoFactory
 
         if (expanded != null)
         {
-            v.add(new DERTaggedObject(false, 1, new DEROctetString(expanded)));
+            v.add(new DEROctetString(expanded));
         }
 
         return new DERSequence(v);
