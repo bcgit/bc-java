@@ -21,6 +21,7 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
@@ -155,14 +156,33 @@ public class MLKEMTest
             + "300102030405060708090a0b0c0d0e0f");
         kpGen512.initialize(MLKEMParameterSpec.ml_kem_512, new FixedSecureRandom(seed));
         KeyPair kp512 = kpGen512.generateKeyPair();
-        Security.setProperty("org.bouncycastle.mlkem.seedOnly", "true");
 
-        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp512.getPrivate().getEncoded());
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(((MLKEMPrivateKey)kp512.getPrivate()).getPrivateKey(true).getEncoded());
 
-        Security.setProperty("org.bouncycastle.mlkem.seedOnly", "false");
-        ASN1OctetString k = privInfo.getPrivateKey();
+        ASN1OctetString k = ASN1OctetString.getInstance((ASN1TaggedObject)privInfo.parsePrivateKey(), false);
 
         assertTrue(Arrays.areEqual(k.getOctets(), seed));
+    }
+
+    public void testExpandedPrivateKeyEncoding()
+        throws Exception
+    {
+        KeyPairGenerator kpGen512 = KeyPairGenerator.getInstance("ML-KEM-512", "BC");
+
+        byte[] seed = Hex.decode("000102030405060708090a0b0c0d0e0f"
+            + "100102030405060708090a0b0c0d0e0f"
+            + "200102030405060708090a0b0c0d0e0f"
+            + "300102030405060708090a0b0c0d0e0f");
+        byte[] expanded = Base64.decode("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");
+
+        kpGen512.initialize(MLKEMParameterSpec.ml_kem_512, new FixedSecureRandom(seed));
+        KeyPair kp512 = kpGen512.generateKeyPair();
+
+        PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(((MLKEMPrivateKey)kp512.getPrivate()).getPrivateKey(false).getEncoded());
+
+        ASN1OctetString k = ASN1OctetString.getInstance(privInfo.parsePrivateKey());
+
+        assertTrue(Arrays.areEqual(k.getOctets(), expanded));
     }
 
     public void testPrivateKeyRecoding()
