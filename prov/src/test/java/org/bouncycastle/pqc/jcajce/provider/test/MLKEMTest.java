@@ -21,7 +21,6 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
@@ -138,13 +137,11 @@ public class MLKEMTest
         KeyPair kp512 = kpGen512.generateKeyPair();
 
         PrivateKeyInfo privInfo = PrivateKeyInfo.getInstance(kp512.getPrivate().getEncoded());
-        ASN1OctetString seq = ASN1OctetString.getInstance(ASN1Sequence.getInstance(privInfo.getPrivateKey().getOctets()).getObjectAt(0));
+        ASN1Sequence seq = ASN1Sequence.getInstance(privInfo.getPrivateKey().getOctets());
 
-        assertTrue(Arrays.areEqual(seq.getOctets(), seed));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(seq.getObjectAt(0)).getOctets(), seed));
 
-        ASN1OctetString privData = ASN1OctetString.getInstance((ASN1TaggedObject)ASN1Sequence.getInstance(privInfo.getPrivateKey().getOctets()).getObjectAt(1), false);
-
-        assertTrue(Arrays.areEqual(privData.getOctets(), ((MLKEMPrivateKey)kp512.getPrivate()).getPrivateData()));
+        assertTrue(Arrays.areEqual(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets(), ((MLKEMPrivateKey)kp512.getPrivate()).getPrivateData()));
     }
 
     public void testSeedPrivateKeyEncoding()
