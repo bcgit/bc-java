@@ -5,13 +5,19 @@ import org.bouncycastle.util.Arrays;
 public class MLKEMPrivateKeyParameters
     extends MLKEMKeyParameters
 {
+    public static final int BOTH = 0;
+    public static final int SEED_ONLY = 1;
+    public static final int EXPANDED_KEY = 2;
+
     final byte[] s;
     final byte[] hpk;
     final byte[] nonce;
     final byte[] t;
     final byte[] rho;
     final byte[] seed;
-    
+
+    private final int prefFormat;
+
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] s, byte[] hpk, byte[] nonce, byte[] t, byte[] rho)
     {
         this(params, s, hpk, nonce, t, rho, null);
@@ -27,6 +33,7 @@ public class MLKEMPrivateKeyParameters
         this.t = Arrays.clone(t);
         this.rho = Arrays.clone(rho);
         this.seed = Arrays.clone(seed);
+        this.prefFormat = BOTH;
     }
 
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding)
@@ -60,6 +67,35 @@ public class MLKEMPrivateKeyParameters
             this.nonce = Arrays.copyOfRange(encoding, index, index + MLKEMEngine.KyberSymBytes);
             this.seed = null;
         }
+
+        this.prefFormat = BOTH;
+    }
+
+    private MLKEMPrivateKeyParameters(MLKEMPrivateKeyParameters params, int preferredFormat)
+    {
+        super(true, params.getParameters());
+
+        this.s = params.s;
+        this.t = params.t;
+        this.rho = params.rho;
+        this.hpk = params.hpk;
+        this.nonce = params.nonce;
+        this.seed = params.seed;
+        this.prefFormat = preferredFormat;
+    }
+
+    public MLKEMPrivateKeyParameters getParametersWithFormat(int format)
+    {
+        if (this.seed == null && format == SEED_ONLY)
+        {
+            throw new IllegalArgumentException("no seed available");
+        }
+        return new MLKEMPrivateKeyParameters(this, format);
+    }
+
+    public int getPreferredFormat()
+    {
+        return prefFormat;
     }
 
     public byte[] getEncoded()

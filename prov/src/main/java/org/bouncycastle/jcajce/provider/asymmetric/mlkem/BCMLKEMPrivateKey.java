@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
@@ -118,6 +119,21 @@ public class BCMLKEMPrivateKey
     public byte[] getSeed()
     {
         return params.getSeed();
+    }
+
+    @Override
+    public MLKEMPrivateKey getPrivateKey(boolean preferSeedOnly)
+    {
+        if (preferSeedOnly)
+        {
+            byte[] seed = params.getSeed();
+            if (seed != null)
+            {
+                return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+            }
+        }
+
+        return new BCMLKEMPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
     }
 
     public MLKEMParameterSpec getParameterSpec()
