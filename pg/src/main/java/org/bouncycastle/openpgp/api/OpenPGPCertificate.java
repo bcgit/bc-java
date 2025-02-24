@@ -1002,6 +1002,202 @@ public class OpenPGPCertificate
         protected abstract OpenPGPComponentKey getKeyComponent();
 
         /**
+         * Return the {@link KeyFlags} signature subpacket that currently applies to the key.
+         * @return key flags subpacket
+         */
+        public KeyFlags getKeyFlags()
+        {
+            return getKeyFlags(new Date());
+        }
+
+        /**
+         * Return the {@link KeyFlags} signature subpacket that - at evaluation time - applies to the key.
+         * @param evaluationTime evaluation time
+         * @return key flags subpacket
+         */
+        public KeyFlags getKeyFlags(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(
+                    evaluationTime, SignatureSubpacketTags.KEY_FLAGS);
+            if (subpacket != null)
+            {
+                return (KeyFlags) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        /**
+         * Return <pre>true</pre>, if the key has any of the given key flags.
+         * <p>
+         * Note: To check if the key has EITHER flag A or B, call <pre>hasKeyFlags(evalTime, A, B)</pre>.
+         * To instead check, if the key has BOTH flags A AND B, call <pre>hasKeyFlags(evalTime, A &amp; B)</pre>.
+         *
+         * @param evaluationTime evaluation time
+         * @param flags key flags (see {@link KeyFlags} for possible values)
+         * @return true if the key has ANY of the provided flags
+         */
+        public boolean hasKeyFlags(Date evaluationTime, int... flags)
+        {
+            KeyFlags keyFlags = getKeyFlags(evaluationTime);
+            if (keyFlags == null)
+            {
+                // Key has no key-flags
+                return false;
+            }
+
+            // Check if key has the desired key-flags
+            for (int f : flags)
+            {
+                if (((keyFlags.getFlags() & f) == f))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Return the {@link Features} signature subpacket that currently applies to the key.
+         * @return feature signature subpacket
+         */
+        public Features getFeatures()
+        {
+            return getFeatures(new Date());
+        }
+
+        /**
+         * Return the {@link Features} signature subpacket that - at evaluation time - applies to the key.
+         * @param evaluationTime evaluation time
+         * @return features subpacket
+         */
+        public Features getFeatures(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.FEATURES);
+            if (subpacket != null)
+            {
+                return (Features) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        /**
+         * Return the {@link PreferredAEADCiphersuites} that apply to this (sub-)key.
+         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
+         *
+         * @return AEAD algorithm preferences
+         */
+        public PreferredAEADCiphersuites getAEADCipherSuitePreferences()
+        {
+            return getAEADCipherSuitePreferences(new Date());
+        }
+
+        /**
+         * Return the {@link PreferredAEADCiphersuites} that - at evaluation time - apply to this (sub-)key.
+         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
+         *
+         * @param evaluationTime evaluation time
+         * @return AEAD algorithm preferences at evaluation time
+         */
+        public PreferredAEADCiphersuites getAEADCipherSuitePreferences(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime,
+                    SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+            if (subpacket != null)
+            {
+                return (PreferredAEADCiphersuites) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        /**
+         * Return the current symmetric encryption algorithm preferences of this (sub-)key.
+         *
+         * @return current preferred symmetric-key algorithm preferences
+         */
+        public PreferredAlgorithms getSymmetricCipherPreferences()
+        {
+            return getSymmetricCipherPreferences(new Date());
+        }
+
+        /**
+         * Return the symmetric encryption algorithm preferences of this (sub-)key at evaluation time.
+         *
+         * @param evaluationTime evaluation time
+         * @return current preferred symmetric-key algorithm preferences
+         */
+        public PreferredAlgorithms getSymmetricCipherPreferences(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_SYM_ALGS);
+            if (subpacket != null)
+            {
+                return (PreferredAlgorithms) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        /**
+         * Return the current signature hash algorithm preferences of this (sub-)key.
+         *
+         * @return hash algorithm preferences
+         */
+        public PreferredAlgorithms getHashAlgorithmPreferences()
+        {
+            return getHashAlgorithmPreferences(new Date());
+        }
+
+        /**
+         * Return the signature hash algorithm preferences of this (sub-)key at evaluation time.
+         *
+         * @param evaluationTime evaluation time
+         * @return hash algorithm preferences
+         */
+        public PreferredAlgorithms getHashAlgorithmPreferences(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_HASH_ALGS);
+            if (subpacket != null)
+            {
+                return (PreferredAlgorithms) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        public PreferredAlgorithms getCompressionAlgorithmPreferences()
+        {
+            return getCompressionAlgorithmPreferences(new Date());
+        }
+
+        public PreferredAlgorithms getCompressionAlgorithmPreferences(Date evaluationTime)
+        {
+            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_COMP_ALGS);
+            if (subpacket != null)
+            {
+                return (PreferredAlgorithms) subpacket.getSubpacket();
+            }
+            return null;
+        }
+
+        /**
+         * Return the {@link Date}, at which the key expires.
+         *
+         * @return key expiration time
+         */
+        public Date getKeyExpirationDate()
+        {
+            return getKeyExpirationDateAt(new Date());
+        }
+
+        /**
+         * Return the {@link Date}, at which the key - at evaluation time - expires.
+         *
+         * @param evaluationTime evaluation time
+         * @return key expiration time
+         */
+        public Date getKeyExpirationDateAt(Date evaluationTime)
+        {
+            return getLatestSelfSignature(evaluationTime).getKeyExpirationTime();
+        }
+
+        /**
          * Return the {@link SignatureSubpacket} instance of the given subpacketType, which currently applies to
          * the key. Since subpackets from the Direct-Key signature apply to all subkeys of a certificate,
          * this method first inspects the signature that immediately applies to this key (e.g. a subkey-binding
@@ -1561,187 +1757,6 @@ public class OpenPGPCertificate
             }
 
             return hasKeyFlags(evaluationTime, KeyFlags.CERTIFY_OTHER);
-        }
-
-        /**
-         * Return the {@link KeyFlags} signature subpacket that currently applies to the key.
-         * @return key flags subpacket
-         */
-        public KeyFlags getKeyFlags()
-        {
-            return getKeyFlags(new Date());
-        }
-
-        /**
-         * Return the {@link KeyFlags} signature subpacket that - at evaluation time - applies to the key.
-         * @param evaluationTime evaluation time
-         * @return key flags subpacket
-         */
-        public KeyFlags getKeyFlags(Date evaluationTime)
-        {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(
-                    evaluationTime, SignatureSubpacketTags.KEY_FLAGS);
-            if (subpacket != null)
-            {
-                return (KeyFlags) subpacket.getSubpacket();
-            }
-            return null;
-        }
-
-        /**
-         * Return <pre>true</pre>, if the key has any of the given key flags.
-         * <p>
-         * Note: To check if the key has EITHER flag A or B, call <pre>hasKeyFlags(evalTime, A, B)</pre>.
-         * To instead check, if the key has BOTH flags A AND B, call <pre>hasKeyFlags(evalTime, A &amp; B)</pre>.
-         *
-         * @param evaluationTime evaluation time
-         * @param flags key flags (see {@link KeyFlags} for possible values)
-         * @return true if the key has ANY of the provided flags
-         */
-        public boolean hasKeyFlags(Date evaluationTime, int... flags)
-        {
-            KeyFlags keyFlags = getKeyFlags(evaluationTime);
-            if (keyFlags == null)
-            {
-                // Key has no key-flags
-                return false;
-            }
-
-            // Check if key has the desired key-flags
-            for (int f : flags)
-            {
-                if (((keyFlags.getFlags() & f) == f))
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        /**
-         * Return the {@link Features} signature subpacket that currently applies to the key.
-         * @return feature signature subpacket
-         */
-        public Features getFeatures()
-        {
-            return getFeatures(new Date());
-        }
-
-        /**
-         * Return the {@link Features} signature subpacket that - at evaluation time - applies to the key.
-         * @param evaluationTime evaluation time
-         * @return features subpacket
-         */
-        public Features getFeatures(Date evaluationTime)
-        {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.FEATURES);
-            if (subpacket != null)
-            {
-                return (Features) subpacket.getSubpacket();
-            }
-            return null;
-        }
-
-        /**
-         * Return the {@link PreferredAEADCiphersuites} that apply to this (sub-)key.
-         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
-         *
-         * @return AEAD algorithm preferences
-         */
-        public PreferredAEADCiphersuites getAEADCipherSuitePreferences()
-        {
-            return getAEADCipherSuitePreferences(new Date());
-        }
-
-        /**
-         * Return the {@link PreferredAEADCiphersuites} that - at evaluation time - apply to this (sub-)key.
-         * Note: This refers to AEAD preferences as defined in rfc9580, NOT LibrePGP AEAD algorithms.
-         *
-         * @param evaluationTime evaluation time
-         * @return AEAD algorithm preferences at evaluation time
-         */
-        public PreferredAEADCiphersuites getAEADCipherSuitePreferences(Date evaluationTime)
-        {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime,
-                    SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
-            if (subpacket != null)
-            {
-                return (PreferredAEADCiphersuites) subpacket.getSubpacket();
-            }
-            return null;
-        }
-
-        /**
-         * Return the current symmetric encryption algorithm preferences of this (sub-)key.
-         *
-         * @return current preferred symmetric-key algorithm preferences
-         */
-        public PreferredAlgorithms getSymmetricCipherPreferences()
-        {
-            return getSymmetricCipherPreferences(new Date());
-        }
-
-        /**
-         * Return the symmetric encryption algorithm preferences of this (sub-)key at evaluation time.
-         *
-         * @param evaluationTime evaluation time
-         * @return current preferred symmetric-key algorithm preferences
-         */
-        public PreferredAlgorithms getSymmetricCipherPreferences(Date evaluationTime)
-        {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_SYM_ALGS);
-            if (subpacket != null)
-            {
-                return (PreferredAlgorithms) subpacket.getSubpacket();
-            }
-            return null;
-        }
-
-        /**
-         * Return the current signature hash algorithm preferences of this (sub-)key.
-         *
-         * @return hash algorithm preferences
-         */
-        public PreferredAlgorithms getHashAlgorithmPreferences()
-        {
-            return getHashAlgorithmPreferences(new Date());
-        }
-
-        /**
-         * Return the signature hash algorithm preferences of this (sub-)key at evaluation time.
-         *
-         * @param evaluationTime evaluation time
-         * @return hash algorithm preferences
-         */
-        public PreferredAlgorithms getHashAlgorithmPreferences(Date evaluationTime)
-        {
-            OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_HASH_ALGS);
-            if (subpacket != null)
-            {
-                return (PreferredAlgorithms) subpacket.getSubpacket();
-            }
-            return null;
-        }
-
-        /**
-         * Return the {@link Date}, at which the key expires.
-         *
-         * @return key expiration time
-         */
-        public Date getKeyExpirationDate()
-        {
-            return getKeyExpirationDateAt(new Date());
-        }
-
-        /**
-         * Return the {@link Date}, at which the key - at evaluation time - expires.
-         *
-         * @param evaluationTime evaluation time
-         * @return key expiration time
-         */
-        public Date getKeyExpirationDateAt(Date evaluationTime)
-        {
-            return getLatestSelfSignature(evaluationTime).getKeyExpirationTime();
         }
 
         @Override
