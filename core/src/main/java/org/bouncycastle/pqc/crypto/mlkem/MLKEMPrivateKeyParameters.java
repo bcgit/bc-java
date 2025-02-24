@@ -81,7 +81,7 @@ public class MLKEMPrivateKeyParameters
             }
         }
 
-        this.prefFormat = BOTH;
+        this.prefFormat = (seed == null) ? EXPANDED_KEY : BOTH;
     }
 
     private MLKEMPrivateKeyParameters(MLKEMPrivateKeyParameters params, int preferredFormat)

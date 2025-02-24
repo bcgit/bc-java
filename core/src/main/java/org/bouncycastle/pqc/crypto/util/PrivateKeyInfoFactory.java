@@ -395,16 +395,10 @@ public class PrivateKeyInfoFactory
     private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
-        
-        if (seed != null)
-        {
-            v.add(new DEROctetString(seed));
-        }
 
-        if (expanded != null)
-        {
-            v.add(new DEROctetString(expanded));
-        }
+        v.add(new DEROctetString(seed));
+
+        v.add(new DEROctetString(expanded));
 
         return new DERSequence(v);
     }
