@@ -186,12 +186,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber512_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber768_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber1024_aes, new MLKEMConverter());
         converters.put(BCObjectIdentifiers.ntrulpr653, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr761, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr857, new NTRULPrimeConverter());
@@ -602,7 +602,7 @@ public class PublicKeyFactory
         }
     }
 
-    private static class KyberConverter
+    static class MLKEMConverter
         extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
@@ -621,6 +621,33 @@ public class PublicKeyFactory
             {
                 // we're a raw encoding
                 return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
+            }
+        }
+
+        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters dilithiumParams, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLKEMPublicKeyParameters(dilithiumParams,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLKEMPublicKeyParameters(dilithiumParams, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLKEMPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
             }
         }
     }
