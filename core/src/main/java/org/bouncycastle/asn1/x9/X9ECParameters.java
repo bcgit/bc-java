@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.PolynomialExtensionField;
 import org.bouncycastle.util.Arrays;
 
@@ -112,14 +113,15 @@ public class X9ECParameters
         this.h = h;
         this.seed = Arrays.clone(seed);
 
-        if (ECAlgorithms.isFpCurve(curve))
+        FiniteField field = curve.getField();
+        if (ECAlgorithms.isFpField(field))
         {
-            this.fieldID = new X9FieldID(curve.getField().getCharacteristic());
+            this.fieldID = new X9FieldID(field.getCharacteristic());
         }
-        else if (ECAlgorithms.isF2mCurve(curve))
+        else if (ECAlgorithms.isF2mField(field))
         {
-            PolynomialExtensionField field = (PolynomialExtensionField)curve.getField();
-            int[] exponents = field.getMinimalPolynomial().getExponentsPresent();
+            PolynomialExtensionField f2mField = (PolynomialExtensionField)field;
+            int[] exponents = f2mField.getMinimalPolynomial().getExponentsPresent();
             if (exponents.length == 3)
             {
                 this.fieldID = new X9FieldID(exponents[2], exponents[1]);
