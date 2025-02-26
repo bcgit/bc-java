@@ -22,3 +22,6 @@ export PATH=$JAVA_HOME/bin:$PATH
 ./gradlew clean build -x test
 ./osgi_scan.sh
 
+
+# module tester
+./run_mtt.sh
