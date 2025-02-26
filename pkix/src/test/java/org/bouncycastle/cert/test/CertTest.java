@@ -77,6 +77,7 @@ import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.SubjectAltPublicKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -118,6 +119,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.NoSignatureContentSigner;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcRSAContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -3973,6 +3975,60 @@ public class CertTest
         isTrue(null == crt.getSubjectPublicKeyInfo().getAlgorithm().getParameters());
     }
 
+    public void checkCreationNoSignature()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSASSA-PSS", BC);
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        PrivateKey privKey = kp.getPrivate();
+        PublicKey pubKey = kp.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = createStdBuilder();
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new NoSignatureContentSigner();
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certGen.build(sigGen));
+
+        cert.checkValidity(new Date());
+
+        //
+        // check fails on verify
+        //
+        try
+        {
+            cert.verify(pubKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals(e.getMessage(), "attempt to pass public key to NoSig");
+        }
+
+        // convert and check components.
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
+
+        cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        org.bouncycastle.asn1.x509.Certificate crt = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE).equals(crt.getTBSCertificate().getSignature()));
+        isTrue(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE).equals(crt.getSignatureAlgorithm()));
+        isTrue(0 == cert.getSignature().length);
+    }
+
     /*
      * we generate a self signed certificate across the range of ECDSA algorithms
      */
@@ -5644,6 +5700,7 @@ public class CertTest
         checkCreationECDSA();
         checkCreationRSA();
         checkCreationRSAPSS();
+        checkCreationNoSignature();
 
         checkCreationFalcon();
         checkCreationDilithium();

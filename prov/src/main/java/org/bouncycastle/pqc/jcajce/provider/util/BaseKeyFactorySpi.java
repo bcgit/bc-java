@@ -64,6 +64,10 @@ public abstract class BaseKeyFactorySpi
             {
                 throw e;
             }
+            catch (IllegalStateException e)
+            {
+                throw new InvalidKeySpecException(e.getMessage());
+            }
             catch (Exception e)
             {
                 throw new InvalidKeySpecException(e.toString());

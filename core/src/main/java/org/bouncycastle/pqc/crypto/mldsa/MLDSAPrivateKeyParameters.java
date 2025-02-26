@@ -82,17 +82,17 @@ public class MLDSAPrivateKeyParameters
             this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
             index += delta;
             this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);
-
-            if (pubKey != null)
-            {
-                if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
-                {
-                    throw new IllegalArgumentException("passed in public key does not match private values");
-                }
-            }
-
             this.seed = null;
         }
+
+        if (pubKey != null)
+        {
+            if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
+            {
+                throw new IllegalArgumentException("passed in public key does not match private values");
+            }
+        }
+
         this.prefFormat = (seed != null) ? BOTH : EXPANDED_KEY;
     }
 
