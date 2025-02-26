@@ -14,8 +14,8 @@ import java.security.spec.EllipticCurve;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.encoders.Hex;
@@ -78,13 +78,16 @@ public class DetDSATest
     private void testECHMacDeterministic()
         throws Exception
     {
-        X9ECParameters x9ECParameters = NISTNamedCurves.getByName("P-192");
-        ECCurve curve = x9ECParameters.getCurve();
+        X9ECParameters x9ECParameters = CustomNamedCurves.getByName("P-192");
+        ECCurve.AbstractFp curve = (ECCurve.AbstractFp)x9ECParameters.getCurve();
+        BigInteger q = curve.getQ();
+
+        org.bouncycastle.math.ec.ECPoint g = x9ECParameters.getG().normalize();
 
         ECPrivateKeySpec privKeySpec = new ECPrivateKeySpec(new BigInteger("6FAB034934E4C0FC9AE67F5B5659A9D7D1FEFD187EE09FD4", 16),
             new ECParameterSpec(
-                new EllipticCurve(new ECFieldFp(((ECCurve.Fp)curve).getQ()), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null),
-                new ECPoint(x9ECParameters.getG().getXCoord().toBigInteger(), x9ECParameters.getG().getYCoord().toBigInteger()),
+                new EllipticCurve(new ECFieldFp(q), curve.getA().toBigInteger(), curve.getB().toBigInteger(), null),
+                new ECPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger()),
                 x9ECParameters.getN(), x9ECParameters.getH().intValue())
             );
 

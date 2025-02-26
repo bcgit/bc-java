@@ -593,9 +593,14 @@ public abstract class ECCurve
             super(FiniteFields.getPrimeField(q));
         }
 
+        public BigInteger getQ()
+        {
+            return getField().getCharacteristic();
+        }
+
         public boolean isValidFieldElement(BigInteger x)
         {
-            return x != null && x.signum() >= 0 && x.compareTo(this.getField().getCharacteristic()) < 0;
+            return x != null && x.signum() >= 0 && x.compareTo(this.getQ()) < 0;
         }
 
         public ECFieldElement randomFieldElement(SecureRandom r)
@@ -604,7 +609,7 @@ public abstract class ECCurve
              * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
              * use the product of two independent elements to mitigate side-channels.
              */
-            BigInteger p = this.getField().getCharacteristic();
+            BigInteger p = this.getQ();
             ECFieldElement fe1 = this.fromBigInteger(implRandomFieldElement(r, p));
             ECFieldElement fe2 = this.fromBigInteger(implRandomFieldElement(r, p));
             return fe1.multiply(fe2);
@@ -616,7 +621,7 @@ public abstract class ECCurve
              * NOTE: BigInteger comparisons in the rejection sampling are not constant-time, so we
              * use the product of two independent elements to mitigate side-channels.
              */
-            BigInteger p = this.getField().getCharacteristic();
+            BigInteger p = this.getQ();
             ECFieldElement fe1 = this.fromBigInteger(implRandomFieldElementMult(r, p));
             ECFieldElement fe2 = this.fromBigInteger(implRandomFieldElementMult(r, p));
             return fe1.multiply(fe2);
@@ -699,12 +704,11 @@ public abstract class ECCurve
 
             if (isInternal)
             {
-                this.q = q;
                 knownQs.add(q);
             }
             else if (knownQs.contains(q) || validatedQs.contains(q))
             {
-                this.q = q;
+                // No need to validate
             }
             else
             {
@@ -724,10 +728,9 @@ public abstract class ECCurve
                 }
 
                 validatedQs.add(q);
-
-                this.q = q;
             }
 
+            this.q = q;
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
 
