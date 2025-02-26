@@ -38,6 +38,11 @@ public class MLKEMPrivateKeyParameters
 
     public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding)
     {
+        this(params, encoding, null);
+    }
+
+    public MLKEMPrivateKeyParameters(MLKEMParameters params, byte[] encoding, MLKEMPublicKeyParameters pubKey)
+    {
         super(true, params);
 
         MLKEMEngine eng = params.getEngine();
@@ -68,7 +73,15 @@ public class MLKEMPrivateKeyParameters
             this.seed = null;
         }
 
-        this.prefFormat = BOTH;
+        if (pubKey != null)
+        {
+            if (!Arrays.constantTimeAreEqual(this.t, pubKey.t) || !Arrays.constantTimeAreEqual(this.rho, pubKey.rho))
+            {
+                throw new IllegalArgumentException("passed in public key does not match private values");
+            }
+        }
+
+        this.prefFormat = (seed == null) ? EXPANDED_KEY : BOTH;
     }
 
     private MLKEMPrivateKeyParameters(MLKEMPrivateKeyParameters params, int preferredFormat)
