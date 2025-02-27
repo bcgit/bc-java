@@ -25,6 +25,7 @@ import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameter;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
@@ -196,7 +197,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.saberOidLookup(params.getParameters()));
-            
+
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
         }
         else if (publicKey instanceof PicnicPublicKeyParameters)
@@ -274,7 +275,7 @@ public class SubjectPublicKeyInfoFactory
         }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {
-            BIKEPublicKeyParameters params = (BIKEPublicKeyParameters) publicKey;
+            BIKEPublicKeyParameters params = (BIKEPublicKeyParameters)publicKey;
 
             byte[] encoding = params.getEncoded();
 
