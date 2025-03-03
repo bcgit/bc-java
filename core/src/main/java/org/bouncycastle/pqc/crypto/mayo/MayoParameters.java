@@ -18,7 +18,7 @@ public class MayoParameters
         40,                 // r_bytes
         120159,             // P1_bytes
         24336,              // P2_bytes
-        1404,               // P3_bytes
+        // P3_bytes
         24,                 // csk_bytes
         1420,               // cpk_bytes
         454,                // sig_bytes
@@ -46,7 +46,7 @@ public class MayoParameters
         34,                 // r_bytes
         66560,              // P1_bytes
         34816,              // P2_bytes
-        4896,               // P3_bytes
+        // P3_bytes
         24,                 // csk_bytes
         4912,               // cpk_bytes
         186,                // sig_bytes
@@ -74,7 +74,7 @@ public class MayoParameters
         55,                 // r_bytes
         317844,             // P1_bytes
         58320,              // P2_bytes
-        2970,               // P3_bytes
+        // P3_bytes
         32,                 // csk_bytes
         2986,               // cpk_bytes
         681,                // sig_bytes
@@ -102,7 +102,7 @@ public class MayoParameters
         72,                 // r_bytes
         720863,             // P1_bytes
         120984,             // P2_bytes
-        5538,               // P3_bytes
+        // P3_bytes
         40,                 // csk_bytes
         5554,               // cpk_bytes
         964,                // sig_bytes
@@ -129,7 +129,6 @@ public class MayoParameters
     private final int rBytes;
     private final int P1Bytes;
     private final int P2Bytes;
-    private final int P3Bytes;
     private final int cskBytes;
     private final int cpkBytes;
     private final int sigBytes;
@@ -141,7 +140,7 @@ public class MayoParameters
     private final int skSeedBytes;
 
     private MayoParameters(String name, int n, int m, int mVecLimbs, int o, int v, int ACols, int k, int q,
-                           int mBytes, int OBytes, int vBytes, int rBytes, int P1Bytes, int P2Bytes, int P3Bytes,
+                           int mBytes, int OBytes, int vBytes, int rBytes, int P1Bytes, int P2Bytes,
                            int cskBytes, int cpkBytes, int sigBytes, int[] fTail, byte[] fTailArr,
                            int saltBytes, int digestBytes, int pkSeedBytes, int skSeedBytes)
     {
@@ -160,7 +159,6 @@ public class MayoParameters
         this.rBytes = rBytes;
         this.P1Bytes = P1Bytes;
         this.P2Bytes = P2Bytes;
-        this.P3Bytes = P3Bytes;
         this.cskBytes = cskBytes;
         this.cpkBytes = cpkBytes;
         this.sigBytes = sigBytes;
@@ -314,14 +312,6 @@ public class MayoParameters
     public int getP3Limbs()
     {
         return ((o * (o + 1)) / 2) * mVecLimbs;
-    }
-
-    /**
-     * Computes: P1_limbs + P2_limbs + P3_limbs
-     */
-    public int getEPKLimbs()
-    {
-        return getP1Limbs() + getP2Limbs() + getP3Limbs();
     }
 }
 

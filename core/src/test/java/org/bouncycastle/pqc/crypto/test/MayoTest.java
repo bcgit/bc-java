@@ -48,6 +48,7 @@ public class MayoTest
     public void testTestVectors()
         throws Exception
     {
+        long start = System.currentTimeMillis();
         TestUtils.testTestVector(false, false, "pqc/crypto/mayo", files, new TestUtils.KeyGenerationOperation()
         {
             @Override
@@ -90,5 +91,7 @@ public class MayoTest
                 return new MayoSigner();
             }
         });
+        long end = System.currentTimeMillis();
+        System.out.println("time cost: " + (end - start) +"\n");
     }
 }
