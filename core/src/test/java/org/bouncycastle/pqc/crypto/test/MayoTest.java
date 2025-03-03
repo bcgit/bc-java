@@ -1,15 +1,22 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.mayo.MayoKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameter;
 import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameter;
+import org.bouncycastle.pqc.crypto.mayo.MayoSigner;
 
 public class MayoTest
     extends TestCase
@@ -18,7 +25,8 @@ public class MayoTest
         throws Exception
     {
         MayoTest test = new MayoTest();
-        test.testKeyGen();
+        test.testTestVectors();
+        //test.testKeyGen();
     }
 
     private static final MayoParameters[] PARAMETER_SETS = new MayoParameters[]
@@ -29,21 +37,28 @@ public class MayoTest
             MayoParameters.MAYO5
         };
 
-    public void testKeyGen()
-        throws IOException
+    private static final String[] files = new String[]{
+        "PQCsignKAT_24_MAYO_1.rsp",
+        "PQCsignKAT_24_MAYO_2.rsp",
+        "PQCsignKAT_32_MAYO_3.rsp",
+        "PQCsignKAT_40_MAYO_5.rsp",
+    };
+
+
+    public void testTestVectors()
+        throws Exception
     {
-        String[] files = new String[]{
-            "PQCsignKAT_24_MAYO_1.rsp",
-            "PQCsignKAT_24_MAYO_2.rsp",
-            "PQCsignKAT_32_MAYO_3.rsp",
-            "PQCsignKAT_40_MAYO_5.rsp",
-        };
-        TestUtils.testKeyGen(false, "pqc/crypto/mayo", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(false, false, "pqc/crypto/mayo", files, new TestUtils.KeyGenerationOperation()
         {
             @Override
-            public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, byte[] seed)
+            public SecureRandom getSecureRanom(byte[] seed)
             {
-                NISTSecureRandom random = new NISTSecureRandom(seed, null);
+                return new NISTSecureRandom(seed, null);
+            }
+
+            @Override
+            public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
+            {
                 MayoParameters parameters = PARAMETER_SETS[fileIndex];
 
                 MayoKeyPairGenerator kpGen = new MayoKeyPairGenerator();
@@ -58,9 +73,21 @@ public class MayoTest
             }
 
             @Override
-            public byte[] getPrivateKeyEncoded(AsymmetricKeyParameter privParams)
+            public byte[] getPrivateKeyEncoded(CipherParameters privParams)
             {
                 return ((MayoPrivateKeyParameter)privParams).getEncoded();
+            }
+
+            @Override
+            public Signer getSigner()
+            {
+                return null;
+            }
+
+            @Override
+            public MessageSigner getMessageSigner()
+            {
+                return new MayoSigner();
             }
         });
     }

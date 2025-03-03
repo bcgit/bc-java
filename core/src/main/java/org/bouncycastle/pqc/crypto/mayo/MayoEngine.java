@@ -91,62 +91,55 @@ public class MayoEngine
     }
 
     public static final int MAYO_OK = 0;
-    public static final int PK_SEED_BYTES_MAX = 16;  // Adjust as needed
-    public static final int O_BYTES_MAX = 312;         // Adjust as needed
 
     /**
      * Expands the secret key.
      *
      * @param p   the MayoParameters instance.
      * @param csk the input secret key seed (byte array).
-     * @param sk  the Sk object that holds the expanded secret key components.
      * @return MAYO_OK on success.
      */
-//    public static int mayoExpandSk(MayoParameters p, byte[] csk, MayoPrivateKeyParameter sk)
-//    {
-//        int ret = MAYO_OK;
-//        int totalS = PK_SEED_BYTES_MAX + O_BYTES_MAX;
-//        byte[] S = new byte[totalS];
-//
-//        // sk.p is the long[] array, sk.O is the byte[] array.
-//
-//        long[] P = new long[p.getPkSeedBytes() >> 3];
-//        Pack.littleEndianToLong(sk.getP(), 0, P);
-//        byte[] O = sk.getO();
-//
-//        int param_o = p.getO();
-//        int param_v = p.getV();
-//        int param_O_bytes = p.getOBytes();
-//        int param_pk_seed_bytes = p.getPkSeedBytes();
-//        int param_sk_seed_bytes = p.getSkSeedBytes();
-//
-//        // In C, seed_sk = csk and seed_pk = S (the beginning of S)
-//        byte[] seed_sk = csk;
-//        byte[] seed_pk = S;  // first param_pk_seed_bytes of S
-//
-//        // Generate S = seed_pk || (additional bytes), using SHAKE256.
-//        // Output length is param_pk_seed_bytes + param_O_bytes.
-//        Utils.shake256(S, param_pk_seed_bytes + param_O_bytes, seed_sk, param_sk_seed_bytes);
-//
-//        // Decode the portion of S after the first param_pk_seed_bytes into O.
-//        // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
-//        Utils.decode(S, param_pk_seed_bytes, O, param_v * param_o);
-//
-//        // Expand P1 and P2 into the long array P using seed_pk.
-//        MayoEngine.expandP1P2(p, P, seed_pk);
-//
-//        // Let P2 start at offset = PARAM_P1_limbs(p)
-//        int p1Limbs = p.getP1Limbs();
-//        int offsetP2 = p1Limbs;
-//
-//        // Compute L_i = (P1 + P1^t)*O + P2.
-//        // Here, we assume that P1P1tTimesO writes into the portion of P starting at offsetP2.
-//        P1P1tTimesO(p, P, O, P, offsetP2);
-//
-//        // Securely clear sensitive temporary data.
-//        java.util.Arrays.fill(S, (byte)0);
-//        return ret;
-//    }
+    public static int mayoExpandSk(MayoParameters p, byte[] csk, long[] P, byte[] O)
+    {
+        int ret = MAYO_OK;
+        int totalS = p.getPkSeedBytes() + p.getOBytes();
+        byte[] S = new byte[totalS];
+
+        // sk.p is the long[] array, sk.O is the byte[] array.
+
+        int param_o = p.getO();
+        int param_v = p.getV();
+        int param_O_bytes = p.getOBytes();
+        int param_pk_seed_bytes = p.getPkSeedBytes();
+        int param_sk_seed_bytes = p.getSkSeedBytes();
+
+        // In C, seed_sk = csk and seed_pk = S (the beginning of S)
+        byte[] seed_sk = csk;
+        byte[] seed_pk = S;  // first param_pk_seed_bytes of S
+
+        // Generate S = seed_pk || (additional bytes), using SHAKE256.
+        // Output length is param_pk_seed_bytes + param_O_bytes.
+        Utils.shake256(S, param_pk_seed_bytes + param_O_bytes, seed_sk, param_sk_seed_bytes);
+
+        // Decode the portion of S after the first param_pk_seed_bytes into O.
+        // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
+        Utils.decode(S, param_pk_seed_bytes, O, param_v * param_o);
+
+        // Expand P1 and P2 into the long array P using seed_pk.
+        MayoEngine.expandP1P2(p, P, seed_pk);
+
+        // Let P2 start at offset = PARAM_P1_limbs(p)
+        int p1Limbs = p.getP1Limbs();
+        int offsetP2 = p1Limbs;
+
+        // Compute L_i = (P1 + P1^t)*O + P2.
+        // Here, we assume that P1P1tTimesO writes into the portion of P starting at offsetP2.
+        P1P1tTimesO(p, P, O, P, offsetP2);
+
+        // Securely clear sensitive temporary data.
+        java.util.Arrays.fill(S, (byte)0);
+        return ret;
+    }
 
     /**
      * Multiplies and accumulates the product (P1 + P1^t)*O into the accumulator.

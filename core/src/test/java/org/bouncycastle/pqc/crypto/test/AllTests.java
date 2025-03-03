@@ -51,6 +51,7 @@ public class AllTests
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
         suite.addTestSuite(SLHDSATest.class);
+        suite.addTestSuite(MayoTest.class);
 
         return new BCTestSetup(suite);
     }
