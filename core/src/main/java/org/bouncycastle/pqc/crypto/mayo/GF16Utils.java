@@ -2,6 +2,10 @@ package org.bouncycastle.pqc.crypto.mayo;
 
 public class GF16Utils
 {
+    static final long NIBBLE_MASK_MSB = 0x7777777777777777L;
+    static final long MASK_MSB = 0x8888888888888888L;
+    static final long MASK_LSB = 0x1111111111111111L;
+    static final long NIBBLE_MASK_LSB = ~MASK_LSB;
 
     /**
      * Multiplies each limb of a GF(16) vector (subarray of 'in') by the GF(16) element 'a'
@@ -18,8 +22,7 @@ public class GF16Utils
      */
     public static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int b, long[] acc, int accOffset)
     {
-        long maskMsb = 0x8888888888888888L;
-        long a, r64, a_msb;
+        long a, r64, a_msb, a_msb3;
         long b32 = b & 0x00000000FFFFFFFFL;
         long b32and1 = b32 & 1;
         long b32_1_1 = ((b32 >>> 1) & 1);
@@ -29,23 +32,26 @@ public class GF16Utils
         {
             // In the original code there is a conditional XOR with unsigned_char_blocker;
             // here we simply use b directly.
-            a = in[inOffset + i];
-            r64 = a * b32and1;
+            a = in[inOffset++];
+            r64 = a & -b32and1;
 
-            a_msb = a & maskMsb;
-            a ^= a_msb;
-            a = (a << 1) ^ ((a_msb >>> 3) * 3);
-            r64 ^= a * b32_1_1;
+            a_msb = a & MASK_MSB;
+            a &= NIBBLE_MASK_MSB;
+            a_msb3 = a_msb >>> 3;
+            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
+            r64 ^= a & -b32_1_1;
 
-            a_msb = a & maskMsb;
-            a ^= a_msb;
-            a = (a << 1) ^ ((a_msb >>> 3) * 3);
-            r64 ^= a * b32_2_1;
+            a_msb = a & MASK_MSB;
+            a &= NIBBLE_MASK_MSB;
+            a_msb3 = a_msb >>> 3;
+            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
+            r64 ^= a & -b32_2_1;
 
-            a_msb = a & maskMsb;
-            a ^= a_msb;
-            a = (a << 1) ^ ((a_msb >>> 3) * 3);
-            acc[accOffset + i] ^= r64 ^ (a * b32_3_1);
+            a_msb = a & MASK_MSB;
+            a &= NIBBLE_MASK_MSB;
+            a_msb3 = a_msb >>> 3;
+            a = (a << 1) ^ (a_msb3 + (a_msb3 << 1));
+            acc[accOffset++] ^= r64 ^ (a & -b32_3_1);
         }
     }
 
@@ -190,24 +196,22 @@ public class GF16Utils
      * by the scalar (from {@code mat}) and adds the result to the corresponding vector in {@code acc}.
      * </p>
      *
-     * @param mVecLimbs  the number of limbs (elements) in each vector.
-     * @param bsMat      the bit‑sliced matrix stored as a long array.
-     * @param mat        the matrix stored as a byte array.
-     * @param acc        the accumulator array where the results are added.
-     * @param bsMatRows  the number of rows in the bit‑sliced matrix.
-     * @param bsMatCols  the number of columns in the bit‑sliced matrix.
-     * @param matRows    the number of rows in the matrix.
-     * @param triangular if non‑zero, indicates that the matrix is upper triangular (i.e. the loop for {@code c}
-     *                   starts at {@code triangular * r}).
+     * @param mVecLimbs the number of limbs (elements) in each vector.
+     * @param bsMat     the bit‑sliced matrix stored as a long array.
+     * @param mat       the matrix stored as a byte array.
+     * @param acc       the accumulator array where the results are added.
+     * @param bsMatRows the number of rows in the bit‑sliced matrix.
+     * @param bsMatCols the number of columns in the bit‑sliced matrix.
+     * @param matRows   the number of rows in the matrix.
      */
     public static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc,
-                                                          int bsMatRows, int bsMatCols, int matRows, int triangular)
+                                                          int bsMatRows, int bsMatCols, int matRows)
     {
         int bsMatEntriesUsed = 0;
         for (int r = 0; r < bsMatRows; r++)
         {
             // For upper triangular, start c at triangular * r; otherwise, triangular is zero.
-            for (int c = triangular * r; c < bsMatCols; c++)
+            for (int c = r; c < bsMatCols; c++)
             {
                 for (int k = 0; k < matRows; k++)
                 {
@@ -270,8 +274,7 @@ public class GF16Utils
         return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0f0f0f0f0f0f0f0fL;
     }
 
-    public static void matMul(byte[] a, byte[] b, byte[] c,
-                              int colrowAB, int rowA, int colB)
+    public static void matMul(byte[] a, byte[] b, byte[] c, int colrowAB, int rowA, int colB)
     {
         int cIndex = 0;
         for (int i = 0; i < rowA; i++)
@@ -287,12 +290,11 @@ public class GF16Utils
     public static void matMul(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff,
                               int colrowAB, int rowA, int colB)
     {
-        int cIndex = 0;
         for (int i = 0, aRowStart = 0; i < rowA; i++, aRowStart += colrowAB)
         {
             for (int j = 0; j < colB; j++)
             {
-                c[cOff + cIndex++] = lincomb(a, aOff + aRowStart, b, bOff + j, colrowAB, colB);
+                c[cOff++] = lincomb(a, aOff + aRowStart, b, bOff + j, colrowAB, colB);
             }
         }
     }
