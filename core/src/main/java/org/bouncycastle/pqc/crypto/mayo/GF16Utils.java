@@ -1,43 +1,7 @@
 package org.bouncycastle.pqc.crypto.mayo;
 
-import org.bouncycastle.util.Pack;
-
 public class GF16Utils
 {
-
-    /**
-     * Multiplies a 64-bit limb by a GF(16) element (represented as an int, 0–255).
-     * This emulates gf16v_mul_u64 from C.
-     *
-     * @param a a 64-bit limb
-     * @param b an 8-bit GF(16) element (only the low 4 bits are used)
-     * @return the product as a 64-bit limb
-     */
-    public static long gf16vMulU64(long a, int b)
-    {
-        long maskMsb = 0x8888888888888888L;
-        // In the original code there is a conditional XOR with unsigned_char_blocker;
-        // here we simply use b directly.
-        long b32 = b & 0x00000000FFFFFFFFL;
-        long r64 = a * (b32 & 1);
-
-        long a_msb = a & maskMsb;
-        a ^= a_msb;
-        a = (a << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a * ((b32 >> 1) & 1);
-
-        a_msb = a & maskMsb;
-        a ^= a_msb;
-        a = (a << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a * ((b32 >>> 2) & 1);
-
-        a_msb = a & maskMsb;
-        a ^= a_msb;
-        a = (a << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a * ((b32 >> 3) & 1);
-
-        return r64;
-    }
 
     /**
      * Multiplies each limb of a GF(16) vector (subarray of 'in') by the GF(16) element 'a'
@@ -48,15 +12,40 @@ public class GF16Utils
      * @param mVecLimbs the number of limbs in the vector
      * @param in        the input long array containing the vector; the vector starts at index inOffset
      * @param inOffset  the starting index in 'in'
-     * @param a         the GF(16) element (0–255) to multiply by
+     * @param b         the GF(16) element (0–255) to multiply by
      * @param acc       the accumulator long array; the target vector starts at index accOffset
      * @param accOffset the starting index in 'acc'
      */
-    public static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int a, long[] acc, int accOffset)
+    public static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int b, long[] acc, int accOffset)
     {
+        long maskMsb = 0x8888888888888888L;
+        long a, r64, a_msb;
+        long b32 = b & 0x00000000FFFFFFFFL;
+        long b32and1 = b32 & 1;
+        long b32_1_1 = ((b32 >>> 1) & 1);
+        long b32_2_1 = ((b32 >>> 2) & 1);
+        long b32_3_1 = ((b32 >>> 3) & 1);
         for (int i = 0; i < mVecLimbs; i++)
         {
-            acc[accOffset + i] ^= gf16vMulU64(in[inOffset + i], a);
+            // In the original code there is a conditional XOR with unsigned_char_blocker;
+            // here we simply use b directly.
+            a = in[inOffset + i];
+            r64 = a * b32and1;
+
+            a_msb = a & maskMsb;
+            a ^= a_msb;
+            a = (a << 1) ^ ((a_msb >>> 3) * 3);
+            r64 ^= a * b32_1_1;
+
+            a_msb = a & maskMsb;
+            a ^= a_msb;
+            a = (a << 1) ^ ((a_msb >>> 3) * 3);
+            r64 ^= a * b32_2_1;
+
+            a_msb = a & maskMsb;
+            a ^= a_msb;
+            a = (a << 1) ^ ((a_msb >>> 3) * 3);
+            acc[accOffset + i] ^= r64 ^ (a * b32_3_1);
         }
     }
 
@@ -65,38 +54,32 @@ public class GF16Utils
      * Performs the multiplication and accumulation of a block of an upper‐triangular matrix
      * times a second matrix.
      *
-     * @param mVecLimbs  number of limbs per m-vector.
-     * @param bsMat      the “basis” matrix (as a flat long[] array); each entry occupies mVecLimbs elements.
-     * @param mat        the second matrix (as a flat byte[] array) stored row‐major,
-     *                   with dimensions (bsMatCols x matCols).
-     * @param acc        the accumulator (as a flat long[] array) with dimensions (bsMatRows x matCols);
-     *                   each “entry” is an m‐vector (length mVecLimbs).
-     * @param bsMatRows  number of rows in the bsMat (the “triangular” matrix’s row count).
-     * @param bsMatCols  number of columns in bsMat.
-     * @param matCols    number of columns in the matrix “mat.”
-     * @param triangular if 1, start column index for each row is (r * triangular); otherwise use 0.
+     * @param mVecLimbs number of limbs per m-vector.
+     * @param bsMat     the “basis” matrix (as a flat long[] array); each entry occupies mVecLimbs elements.
+     * @param mat       the second matrix (as a flat byte[] array) stored row‐major,
+     *                  with dimensions (bsMatCols x matCols).
+     * @param acc       the accumulator (as a flat long[] array) with dimensions (bsMatRows x matCols);
+     *                  each “entry” is an m‐vector (length mVecLimbs).
+     * @param bsMatRows number of rows in the bsMat (the “triangular” matrix’s row count).
+     * @param bsMatCols number of columns in bsMat.
+     * @param matCols   number of columns in the matrix “mat.”
      */
-    public static void mulAddMUpperTriangularMatXMat(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc,
-                                                     int bsMatRows, int bsMatCols, int matCols, int triangular)
+    public static void mulAddMUpperTriangularMatXMat(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int accOff,
+                                                     int bsMatRows, int bsMatCols, int matCols)
     {
         int bsMatEntriesUsed = 0;
-        for (int r = 0; r < bsMatRows; r++)
+        int matColsmVecLimbs = matCols * mVecLimbs;
+        for (int r = 0, rmatCols = 0, rmatColsmVecLimbs = 0; r < bsMatRows; r++, rmatCols += matCols, rmatColsmVecLimbs += matColsmVecLimbs)
         {
             // For each row r, the inner loop goes from column triangular*r to bsMatCols-1.
-            for (int c = triangular * r; c < bsMatCols; c++)
+            for (int c = r, cmatCols = rmatCols; c < bsMatCols; c++, cmatCols += matCols)
             {
-                for (int k = 0; k < matCols; k++)
+                for (int k = 0, kmVecLimbs = 0; k < matCols; k++, kmVecLimbs += mVecLimbs)
                 {
-                    // Calculate the offsets:
-                    // For bsMat: the m-vector starting at index bsMatEntriesUsed * mVecLimbs.
-                    int bsMatOffset = bsMatEntriesUsed * mVecLimbs;
-                    // For mat: element at row c, column k (row-major layout).
-                    int a = mat[c * matCols + k] & 0xFF;
                     // For acc: add into the m-vector at row r, column k.
-                    int accOffset = (r * matCols + k) * mVecLimbs;
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, a, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, bsMatEntriesUsed, mat[cmatCols + k] & 0xFF, acc, accOff + rmatColsmVecLimbs + kmVecLimbs);
                 }
-                bsMatEntriesUsed++;
+                bsMatEntriesUsed += mVecLimbs;
             }
         }
     }
@@ -114,18 +97,18 @@ public class GF16Utils
      * @param matCols   number of columns in “mat.”
      * @param bsMatCols number of columns in the bsMat matrix.
      */
-    public static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, long[] acc,
+    public static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
                                            int matRows, int matCols, int bsMatCols)
     {
         // Loop over each column r of mat (which becomes row of mat^T)
         for (int r = 0; r < matCols; r++)
         {
-            for (int c = 0; c < matRows; c++)
+            for (int c = 0, cmatCols = 0; c < matRows; c++, cmatCols += matCols)
             {
-                byte matVal = mat[c * matCols + r];
+                byte matVal = mat[cmatCols + r];
                 for (int k = 0; k < bsMatCols; k++)
                 {
-                    int bsMatOffset = (c * bsMatCols + k) * mVecLimbs;
+                    int bsMatOffset = bsMatOff + (c * bsMatCols + k) * mVecLimbs;
                     // For acc: add into the m-vector at index (r * bsMatCols + k)
                     int accOffset = (r * bsMatCols + k) * mVecLimbs;
                     mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
@@ -257,10 +240,7 @@ public class GF16Utils
 
         // Perform carryless multiplication:
         // Multiply b by each bit of a and XOR the results.
-        int p = ((a & 1) * b) ^
-            ((a & 2) * b) ^
-            ((a & 4) * b) ^
-            ((a & 8) * b);
+        int p = ((a & 1) * b) ^ ((a & 2) * b) ^ ((a & 4) * b) ^ ((a & 8) * b);
 
         // Reduce modulo f(X) = x^4 + x + 1.
         // Extract the upper nibble (bits 4 to 7).
@@ -308,16 +288,14 @@ public class GF16Utils
                               int colrowAB, int rowA, int colB)
     {
         int cIndex = 0;
-        for (int i = 0; i < rowA; i++)
+        for (int i = 0, aRowStart = 0; i < rowA; i++, aRowStart += colrowAB)
         {
-            int aRowStart = i * colrowAB;
             for (int j = 0; j < colB; j++)
             {
                 c[cOff + cIndex++] = lincomb(a, aOff + aRowStart, b, bOff + j, colrowAB, colB);
             }
         }
     }
-
 
     private static byte lincomb(byte[] a, int aStart, byte[] b, int bStart,
                                 int colrowAB, int colB)
@@ -332,25 +310,13 @@ public class GF16Utils
 
     public static void matAdd(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff, int m, int n)
     {
-        for (int i = 0; i < m; i++)
+        for (int i = 0, in = 0; i < m; i++, in += n)
         {
             for (int j = 0; j < n; j++)
             {
-                int idx = i * n + j;
+                int idx = in + j;
                 c[idx + cOff] = (byte)(a[idx + aOff] ^ b[idx + bOff]);
             }
-        }
-    }
-
-    public static void efUnpackMVector(int legs, long[] packedRow, int packedRowOff, byte[] out)
-    {
-        int outIndex = 0;
-        byte[] bytes = new byte[out.length >> 1];
-        Pack.longToLittleEndian(packedRow, packedRowOff, out.length >> 4, bytes, 0);
-        for (int i = 0; i < legs * 16; i += 2)
-        {
-            out[outIndex++] = (byte)(bytes[i / 2] & 0x0F);       // Lower nibble
-            out[outIndex++] = (byte)((bytes[i / 2] >> 4) & 0x0F); // Upper nibble
         }
     }
 }

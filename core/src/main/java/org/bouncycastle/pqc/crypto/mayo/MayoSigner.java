@@ -132,7 +132,7 @@ public class MayoSigner
                 GF16Utils.mulAddMatXMMat(mVecLimbs, Vdec, Pv, vPv, k, v, k);
 
                 computeRHS(vPv, t, y);
-                computeA(params, Mtmp, A);
+                computeA(Mtmp, A);
 
                 // Clear trailing bytes
                 for (int i = 0; i < params.getM(); ++i)
@@ -143,7 +143,7 @@ public class MayoSigner
                 Utils.decode(V, k * params.getVBytes(), r, 0,
                     k * o);
 
-                if (sampleSolution(params, A, y, r, x) != 0)
+                if (sampleSolution(params, A, y, r, x))
                 {
                     break;
                 }
@@ -216,13 +216,6 @@ public class MayoSigner
         MayoEngine.expandP1P2(params, pk, cpk);
         Utils.unpackMVecs(cpk, params.getPkSeedBytes(), pk, p1Limbs + params.getP2Limbs(), params.getP3Limbs() / params.getMVecLimbs(), params.getM());
 
-        // Split pk into P1, P2, P3
-        long[] P1 = new long[p1Limbs];
-        long[] P2 = new long[p2Limbs];
-        long[] P3 = new long[p3Limbs];
-        System.arraycopy(pk, 0, P1, 0, p1Limbs);
-        System.arraycopy(pk, p1Limbs, P2, 0, p2Limbs);
-        System.arraycopy(pk, p1Limbs + p2Limbs, P3, 0, p3Limbs);
 
         // Hash message
         Utils.shake256(tmp, paramDigestBytes, message, message.length);
@@ -240,7 +233,7 @@ public class MayoSigner
         int mVecLimbs = (params.getM() + 15) / 16;
         long[] SPS = new long[k * k * mVecLimbs];
         long[] PS = new long[n * k * mVecLimbs];
-        mayoGenericMCalculatePS(params, P1, P2, P3, s, m, params.getV(), params.getO(), k, PS);
+        mayoGenericMCalculatePS(params, pk, p1Limbs, p1Limbs + p2Limbs, s, m, params.getV(), params.getO(), k, PS);
         mayoGenericMCalculateSPS(PS, s, m, k, n, SPS);
         byte[] zero = new byte[m];
         computeRHS(SPS, zero, y);
@@ -343,7 +336,7 @@ public class MayoSigner
     private static final long EVEN_2BYTES = 0x0000FFFF0000FFFFL;
     private static final long LOW_BIT_IN_NIBBLE = 0x1111111111111111L;
 
-    public static void computeA(MayoParameters params, long[] Mtmp, byte[] AOut)
+    public void computeA(long[] Mtmp, byte[] AOut)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -431,7 +424,7 @@ public class MayoSigner
         }
 
         // Generate tab array
-        byte[] tab = new byte[F_TAIL_LEN * 4];
+        byte[] tab = new byte[F_TAIL_LEN << 2];
         for (int i = 0; i < F_TAIL_LEN; i++)
         {
             byte ft = fTailArr[i];
@@ -521,8 +514,8 @@ public class MayoSigner
         }
     }
 
-    public int sampleSolution(MayoParameters params, byte[] A, byte[] y,
-                              byte[] r, byte[] x)
+    public boolean sampleSolution(MayoParameters params, byte[] A, byte[] y,
+                                  byte[] r, byte[] x)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -559,7 +552,7 @@ public class MayoSigner
         }
         if (!fullRank)
         {
-            return 0;
+            return false;
         }
 
         // Constant-time back substitution
@@ -600,7 +593,7 @@ public class MayoSigner
                 finished |= correctCol;
             }
         }
-        return 1;
+        return true;
     }
 
     /**
@@ -621,9 +614,12 @@ public class MayoSigner
         long[] pivotRow2 = new long[rowLen];
         // The packed matrix: one contiguous array storing nrows rows, each rowLen longs long.
         long[] packedA = new long[nrows * rowLen];
+        int len = params.getO() * params.getK() + 16;
+        byte[] bytes = new byte[len >> 1];
+        int len_4 = len >> 4;
 
         // Pack the matrix rows.
-        for (int i = 0; i < nrows; i++)
+        for (int i = 0, incols = 0; i < nrows; i++, incols += ncols)
         {
             //packRow(A, i, ncols);
             // Process each 64-bit word (each holds 16 nibbles).
@@ -635,7 +631,7 @@ public class MayoSigner
                     int col = (word << 4) + nibble;
                     if (col < ncols)
                     {
-                        wordVal |= ((long)A[i * ncols + col] & 0xF) << (nibble << 2);
+                        wordVal |= ((long)A[incols + col] & 0xF) << (nibble << 2);
                     }
                 }
                 packedA[word + i * rowLen] = wordVal;
@@ -681,14 +677,14 @@ public class MayoSigner
             vecMulAddU64(rowLen, pivotRow, (byte)inv, pivotRow2);
 
             // Conditionally write the pivot row back into the correct row (if pivot is nonzero).
-            for (int row = lowerBound; row <= upperBound; row++)
+            for (int row = lowerBound, rowRowLen = lowerBound * rowLen; row <= upperBound; row++, rowRowLen += rowLen)
             {
                 long doCopy = ~ctCompare64(row, pivotRowIndex) & ~pivotIsZero;
                 long doNotCopy = ~doCopy;
-                for (int col = 0; col < rowLen; col++)
+                for (int col = 0, rowRowLen_col = rowRowLen; col < rowLen; col++, rowRowLen_col++)
                 {
                     // Since the masks are disjoint, addition is equivalent to OR.
-                    packedA[row * rowLen + col] = (doNotCopy & packedA[row * rowLen + col]) |
+                    packedA[rowRowLen_col] = (doNotCopy & packedA[rowRowLen_col]) |
                         (doCopy & pivotRow2[col]);
                 }
             }
@@ -708,16 +704,19 @@ public class MayoSigner
             }
         }
 
-        byte[] temp = new byte[params.getO() * params.getK() + 1 + 15];
+        int outIndex = 0;
         // At this point, packedA holds the row-echelon form of the original matrix.
         // (Depending on your application you might want to unpack it back to A.)
-        for (int i = 0; i < nrows; i++)
+        for (int i = 0, irowLen = 0; i < nrows; i++, irowLen += rowLen)
         {
-            GF16Utils.efUnpackMVector(rowLen, packedA, i * rowLen, temp);
-            if (ncols >= 0)
+            Pack.longToLittleEndian(packedA, irowLen, len_4, bytes, 0);
+            int j = 0;
+            for (; j < ncols >> 1; j++)
             {
-                System.arraycopy(temp, 0, A, i * ncols, ncols);
+                A[outIndex++] = (byte)(bytes[j] & 0x0F);       // Lower nibble
+                A[outIndex++] = (byte)((bytes[j] >> 4) & 0x0F); // Upper nibble
             }
+            A[outIndex++] = (byte)(bytes[j] & 0x0F);
         }
     }
 
@@ -838,7 +837,7 @@ public class MayoSigner
         return x ^ (highHalf >>> 4) ^ (highHalf >>> 3);
     }
 
-    private static void mayoGenericMCalculatePS(MayoParameters p, long[] P1, long[] P2, long[] P3, byte[] S,
+    private static void mayoGenericMCalculatePS(MayoParameters p, long[] P1, int p2, int p3, byte[] S,
                                                 int m, int v, int o, int k, long[] PS)
     {
         int n = o + v;
@@ -861,7 +860,7 @@ public class MayoSigner
             {
                 for (int col = 0, ncol = 0; col < k; col++, ncol += n)
                 {
-                    Longs.xorTo(mVecLimbs, P2, orow_j_mVecLimbs, accumulator, (((krow + col) << 4) + (S[ncol + j + v] & 0xFF)) * mVecLimbs);
+                    Longs.xorTo(mVecLimbs, P1, p2 + orow_j_mVecLimbs, accumulator, (((krow + col) << 4) + (S[ncol + j + v] & 0xFF)) * mVecLimbs);
                 }
             }
         }
@@ -873,16 +872,13 @@ public class MayoSigner
             {
                 for (int col = 0, ncol = 0; col < k; col++, ncol += n)
                 {
-                    Longs.xorTo(mVecLimbs, P3, pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
+                    Longs.xorTo(mVecLimbs, P1, p3 + pUsed, accumulator, (((krow + col) << 4) + (S[ncol + j] & 0xFF)) * mVecLimbs);
                 }
                 pUsed += mVecLimbs;
             }
         }
 
-        for (int i = 0, imVecLimbs = 0; i < n * k; i++, imVecLimbs += mVecLimbs)
-        {
-            mVecMultiplyBins(mVecLimbs, accumulator, imVecLimbs << 4, PS, imVecLimbs);
-        }
+        mVecMultiplyBins(mVecLimbs, n * k, accumulator, PS);
     }
 
     private static void mayoGenericMCalculateSPS(long[] PS, byte[] S, int m, int k, int n, long[] SPS)
@@ -892,11 +888,11 @@ public class MayoSigner
         final long[] accumulator = new long[accumulatorSize];
 
         // Accumulation phase
-        for (int row = 0; row < k; row++)
+        for (int row = 0, nrow = 0; row < k; row++, nrow += n)
         {
             for (int j = 0; j < n; j++)
             {
-                final int sVal = S[row * n + j] & 0xFF; // Unsigned byte value
+                final int sVal = S[nrow + j] & 0xFF; // Unsigned byte value
                 for (int col = 0; col < k; col++)
                 {
                     final int psOffset = (j * k + col) * mVecLimbs;
@@ -907,30 +903,30 @@ public class MayoSigner
         }
 
         // Processing phase
-        for (int i = 0; i < k * k; i++)
-        {
-            mVecMultiplyBins(mVecLimbs, accumulator, i * 16 * mVecLimbs, SPS, i * mVecLimbs);
-        }
+        mVecMultiplyBins(mVecLimbs, k * k, accumulator, SPS);
     }
 
-    private static void mVecMultiplyBins(int mVecLimbs, long[] bins, int binOffset, long[] ps, int psOff)
+    private static void mVecMultiplyBins(int mVecLimbs, int len, long[] bins, long[] ps)
     {
-        // Series of modular operations as per original C code
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 5 * mVecLimbs, bins, binOffset + 10 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 11 * mVecLimbs, bins, binOffset + 12 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 10 * mVecLimbs, bins, binOffset + 7 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 12 * mVecLimbs, bins, binOffset + 6 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 7 * mVecLimbs, bins, binOffset + 14 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 6 * mVecLimbs, bins, binOffset + 3 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 14 * mVecLimbs, bins, binOffset + 15 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 3 * mVecLimbs, bins, binOffset + 8 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 15 * mVecLimbs, bins, binOffset + 13 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 8 * mVecLimbs, bins, binOffset + 4 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 13 * mVecLimbs, bins, binOffset + 9 * mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 4 * mVecLimbs, bins, binOffset + 2 * mVecLimbs);
-        mVecMulAddXInv(mVecLimbs, bins, binOffset + 9 * mVecLimbs, bins, binOffset + mVecLimbs);
-        mVecMulAddX(mVecLimbs, bins, binOffset + 2 * mVecLimbs, bins, binOffset + mVecLimbs);
-        System.arraycopy(bins, mVecLimbs + binOffset, ps, psOff, mVecLimbs);
+        for (int i = 0, imVecLimbs4 = 0; i < len; i++, imVecLimbs4 += (mVecLimbs << 4))
+        {
+            // Series of modular operations as per original C code
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 5 * mVecLimbs, bins, imVecLimbs4 + 10 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 11 * mVecLimbs, bins, imVecLimbs4 + 12 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 10 * mVecLimbs, bins, imVecLimbs4 + 7 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 12 * mVecLimbs, bins, imVecLimbs4 + 6 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 7 * mVecLimbs, bins, imVecLimbs4 + 14 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 6 * mVecLimbs, bins, imVecLimbs4 + 3 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 14 * mVecLimbs, bins, imVecLimbs4 + 15 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 3 * mVecLimbs, bins, imVecLimbs4 + 8 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 15 * mVecLimbs, bins, imVecLimbs4 + 13 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 8 * mVecLimbs, bins, imVecLimbs4 + 4 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 13 * mVecLimbs, bins, imVecLimbs4 + 9 * mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 4 * mVecLimbs, bins, imVecLimbs4 + 2 * mVecLimbs);
+            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 9 * mVecLimbs, bins, imVecLimbs4 + mVecLimbs);
+            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 2 * mVecLimbs, bins, imVecLimbs4 + mVecLimbs);
+            System.arraycopy(bins, mVecLimbs + imVecLimbs4, ps, imVecLimbs4 >> 4, mVecLimbs);
+        }
     }
 
     // Modular arithmetic operations
