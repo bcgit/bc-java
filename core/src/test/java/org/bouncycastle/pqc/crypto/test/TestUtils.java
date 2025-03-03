@@ -6,12 +6,17 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.Assert;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
@@ -19,7 +24,6 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.test.FixedSecureRandom;
 
 class TestUtils
 {
@@ -30,15 +34,21 @@ class TestUtils
 
     public interface KeyGenerationOperation
     {
-        AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, byte[] seed);
+        SecureRandom getSecureRanom(byte[] seed);
+
+        AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random);
 
         byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams);
 
-        byte[] getPrivateKeyEncoded(AsymmetricKeyParameter privParams);
+        byte[] getPrivateKeyEncoded(CipherParameters privParams);
+
+        Signer getSigner();
+
+        MessageSigner getMessageSigner();
     }
 
-    public static void testKeyGen(boolean enableFactory, String homeDir, String[] files, KeyGenerationOperation operation)
-        throws IOException
+    public static void testTestVector(boolean enableFactory, boolean isSigner, String homeDir, String[] files, KeyGenerationOperation operation)
+        throws Exception
     {
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
@@ -60,17 +70,27 @@ class TestUtils
                 {
                     if (buf.size() > 0)
                     {
+                        int count = Integer.parseInt(buf.get("count"));
+                        if (count == 99)
+                        {
+                            System.out.println("break");
+                        }
                         byte[] seed = Hex.decode((String)buf.get("seed"));
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] sk = Hex.decode((String)buf.get("sk"));
+                        byte[] message = Hex.decode((String)buf.get("msg"));
+                        byte[] signature = Hex.decode((String)buf.get("sm"));
 
-                        AsymmetricCipherKeyPairGenerator kpGen = operation.getAsymmetricCipherKeyPairGenerator(fileIndex, seed);
+                        SecureRandom random = operation.getSecureRanom(seed);
+
+                        AsymmetricCipherKeyPairGenerator kpGen = operation.getAsymmetricCipherKeyPairGenerator(fileIndex, random);
 
                         //
                         // Generate keys and test.
                         //
                         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
-                        AsymmetricKeyParameter pubParams, privParams;
+                        AsymmetricKeyParameter pubParams;
+                        CipherParameters privParams;
                         if (enableFactory)
                         {
                             pubParams = PublicKeyFactory.createKey(
@@ -86,6 +106,39 @@ class TestUtils
 
                         Assert.assertTrue(name + ": public key", Arrays.areEqual(pk, operation.getPublicKeyEncoded(pubParams)));
                         Assert.assertTrue(name + ": secret key", Arrays.areEqual(sk, operation.getPrivateKeyEncoded(privParams)));
+
+                        byte[] sigGenerated;
+                        privParams = new ParametersWithRandom(privParams, random);
+                        if (isSigner)
+                        {
+                            Signer signer = operation.getSigner();
+                            signer.init(true, privParams);
+                            signer.update(message, 0, message.length);
+                            sigGenerated = signer.generateSignature();
+                        }
+                        else
+                        {
+                            MessageSigner signer = operation.getMessageSigner();
+                            signer.init(true, privParams);
+                            sigGenerated = signer.generateSignature(message);
+                        }
+
+                        Assert.assertTrue(Arrays.areEqual(sigGenerated, signature));
+
+                        if (isSigner)
+                        {
+                            Signer signer = operation.getSigner();
+                            signer.init(false, pubParams);
+                            signer.update(message, 0, message.length);
+                            Assert.assertTrue(signer.verifySignature(sigGenerated));
+                        }
+                        else
+                        {
+                            MessageSigner signer = operation.getMessageSigner();
+                            signer.init(false, pubParams);
+                            Assert.assertTrue(signer.verifySignature(message, sigGenerated));
+                        }
+                        System.out.println("Count " + count + " pass");
                     }
                     buf.clear();
                     continue;

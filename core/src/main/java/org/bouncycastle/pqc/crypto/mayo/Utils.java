@@ -33,6 +33,24 @@ public class Utils
         }
     }
 
+    public static void decode(byte[] m, int mOff, byte[] mdec, int decIndex, int mdecLen)
+    {
+        int i;
+        // Process pairs of nibbles from each byte
+        for (i = 0; i < mdecLen / 2; i++)
+        {
+            // Extract the lower nibble
+            mdec[decIndex++] = (byte)((m[i + mOff] & 0xFF) & 0x0F);
+            // Extract the upper nibble (shift right 4 bits)
+            mdec[decIndex++] = (byte)(((m[i + mOff] & 0xFF) >> 4) & 0x0F);
+        }
+        // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
+        if (mdecLen % 2 == 1)
+        {
+            mdec[decIndex] = (byte)((m[i + mOff] & 0xFF) & 0x0F);
+        }
+    }
+
     /**
      * Decodes a nibble-packed byte array into an output array.
      *
@@ -109,6 +127,27 @@ public class Utils
             for (int j = 0; j < mVecLimbs; j++)
             {
                 out[i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j * 8);
+            }
+        }
+    }
+
+    public static void unpackMVecs(byte[] in, int inOff, long[] out, int outOff, int vecs, int m)
+    {
+        int mVecLimbs = (m + 15) / 16;
+        int bytesToCopy = m / 2; // Number of bytes to copy per vector
+
+        // Process vectors in reverse order
+        for (int i = vecs - 1; i >= 0; i--)
+        {
+            // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
+            byte[] tmp = new byte[mVecLimbs * 8];
+            // Copy m/2 bytes from the input into tmp. The rest remains zero.
+            System.arraycopy(in, inOff + i * bytesToCopy, tmp, 0, bytesToCopy);
+
+            // Convert each 8-byte block in tmp into a long using Pack
+            for (int j = 0; j < mVecLimbs; j++)
+            {
+                out[outOff + i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j * 8);
             }
         }
     }
