@@ -70,11 +70,11 @@ class TestUtils
                 {
                     if (buf.size() > 0)
                     {
-                        int count = Integer.parseInt(buf.get("count"));
-                        if (count == 99)
-                        {
-                            System.out.println("break");
-                        }
+//                        int count = Integer.parseInt(buf.get("count"));
+//                        if (count == 99)
+//                        {
+//                            System.out.println("break");
+//                        }
                         byte[] seed = Hex.decode((String)buf.get("seed"));
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] sk = Hex.decode((String)buf.get("sk"));
@@ -138,7 +138,7 @@ class TestUtils
                             signer.init(false, pubParams);
                             Assert.assertTrue(signer.verifySignature(message, sigGenerated));
                         }
-                        System.out.println("Count " + count + " pass");
+                        //System.out.println("Count " + count + " pass");
                     }
                     buf.clear();
                     continue;
