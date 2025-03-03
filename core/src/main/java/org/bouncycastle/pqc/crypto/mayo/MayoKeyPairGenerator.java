@@ -47,8 +47,6 @@ public class MayoKeyPairGenerator
         // Allocate P3 as a long array of size (O_MAX * O_MAX * M_VEC_LIMBS_MAX), zero-initialized.
         long[] P3 = new long[o * o * mVecLimbs];
 
-        // Allocate O as a byte array of size (V_MAX * O_MAX).
-        // Here we assume V_MAX is given by p.getV() (or replace with a constant if needed).
         byte[] O = new byte[v * o];
 
         // Generate secret key seed (seed_sk) using a secure random generator.
@@ -60,27 +58,21 @@ public class MayoKeyPairGenerator
         // o ← Decode_o(S[ param_pk_seed_bytes : param_pk_seed_bytes + O_bytes ])
         // Decode nibbles from S starting at offset param_pk_seed_bytes into O,
         // with expected output length = param_v * param_o.
-        Utils.decode(seed_pk, pkSeedBytes, O, v * o);
+        Utils.decode(seed_pk, pkSeedBytes, O, O.length);
 
         // Expand P1 and P2 into the array P using seed_pk.
         MayoEngine.expandP1P2(p, P, seed_pk);
 
-        // For compute_P3, we need to separate P1 and P2.
-        // Here, we treat P1 as the first param_P1_limbs elements of P,
-        // and P2 as the remaining elements.
-        long[] P2 = new long[P.length - p1Limbs];
-        System.arraycopy(P, p1Limbs, P2, 0, P2.length);
-
         // Compute P1 * O + P2 and store the result in P2.
-//        GF16Utils.P1TimesO(p, P, O, P2);
+        // GF16Utils.P1TimesO(p, P, O, P2);
         // Here, bsMatRows and bsMatCols are both paramV, and matCols is paramO, triangular=1.
-        GF16Utils.mulAddMUpperTriangularMatXMat(mVecLimbs, P, O, P2, v, v, o, 1);
+        GF16Utils.mulAddMUpperTriangularMatXMat(mVecLimbs, P, O, P, p1Limbs, v, v, o);
 
         // Compute P3 = O^T * (P1*O + P2).
         // Here, treat P2 as the bsMat for the multiplication.
         // Dimensions: mat = O (size: paramV x paramO), bsMat = P2 (size: paramV x paramO),
         // and acc (P3) will have dimensions: (paramO x paramO), each entry being an m-vector.
-        GF16Utils.mulAddMatTransXMMat(mVecLimbs, O, P2, P3, v, o, o);
+        GF16Utils.mulAddMatTransXMMat(mVecLimbs, O, P, p1Limbs, P3, v, o, o);
 
         // Store seed_pk into the public key cpk.
         System.arraycopy(seed_pk, 0, cpk, 0, pkSeedBytes);
@@ -90,25 +82,20 @@ public class MayoKeyPairGenerator
 
         // Compute Upper(P3) and store the result in P3_upper.
         int mVecsStored = 0;
-        for (int r = 0; r < o; r++)
+        int omVecLimbs = o * mVecLimbs;
+        for (int r = 0, rmVecLimbs = 0, romVecLimbs = 0; r < o; r++, romVecLimbs += omVecLimbs, rmVecLimbs += mVecLimbs)
         {
-            for (int c = r; c < o; c++)
+            for (int c = r, cmVecLimbs = rmVecLimbs, comVecLimbs = romVecLimbs; c < o; c++, cmVecLimbs += mVecLimbs, comVecLimbs += omVecLimbs)
             {
-                // Compute the starting index for the (r, c) vector in the input array.
-                int srcOffset = mVecLimbs * (r * o + c);
-                // Compute the output offset for the current stored vector.
-                int destOffset = mVecLimbs * mVecsStored;
-
                 // Copy the vector at (r, c) into the output.
-                System.arraycopy(P3, srcOffset, P3_upper, destOffset, mVecLimbs);
+                System.arraycopy(P3, romVecLimbs + cmVecLimbs, P3_upper, mVecsStored, mVecLimbs);
 
                 // If off-diagonal, add (XOR) the vector at (c, r) into the same output vector.
                 if (r != c)
                 {
-                    int srcOffset2 = mVecLimbs * (c * o + r);
-                    Longs.xorTo(mVecLimbs, P3, srcOffset2, P3_upper, destOffset);
+                    Longs.xorTo(mVecLimbs, P3, comVecLimbs + rmVecLimbs, P3_upper, mVecsStored);
                 }
-                mVecsStored++;
+                mVecsStored += mVecLimbs;
             }
         }
 
@@ -118,7 +105,6 @@ public class MayoKeyPairGenerator
         Utils.packMVecs(P3_upper, cpk, pkSeedBytes, p3Limbs / mVecLimbs, m);
         // Securely clear sensitive data.
         Arrays.clear(O);
-        Arrays.clear(P2);
         Arrays.clear(P3);
 
         return new AsymmetricCipherKeyPair(new MayoPublicKeyParameter(p, cpk), new MayoPrivateKeyParameter(p, seed_sk));
