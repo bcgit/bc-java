@@ -102,27 +102,6 @@ public class GF16Utils
     }
 
     /**
-     * Computes P1_times_O.
-     * <p>
-     * In C:
-     * P1_times_O(p, P1, O, acc) calls:
-     * mul_add_m_upper_triangular_mat_x_mat(PARAM_m_vec_limbs(p), P1, O, acc, PARAM_v(p), PARAM_v(p), PARAM_o(p), 1);
-     *
-     * @param p   the parameter object.
-     * @param P1  the P1 matrix as a long[] array.
-     * @param O   the O matrix as a byte[] array.
-     * @param acc the output accumulator (long[] array).
-     */
-    public static void P1TimesO(MayoParameters p, long[] P1, byte[] O, long[] acc)
-    {
-        int mVecLimbs = p.getMVecLimbs();
-        int paramV = p.getV();
-        int paramO = p.getO();
-        // Here, bsMatRows and bsMatCols are both paramV, and matCols is paramO, triangular=1.
-        mulAddMUpperTriangularMatXMat(mVecLimbs, P1, O, acc, paramV, paramV, paramO, 1);
-    }
-
-    /**
      * Multiplies the transpose of a single matrix with m matrices and adds the result into acc.
      *
      * @param mVecLimbs number of limbs per m-vector.
@@ -304,10 +283,7 @@ public class GF16Utils
         int aa = a & 0xFF;
         // Carryless multiplication: for each bit in 'aa' (considering only the lower 4 bits),
         // if that bit is set, multiply 'b' (by 1, 2, 4, or 8) and XOR the result.
-        long p = ((aa & 1) * b)
-            ^ ((aa & 2) * b)
-            ^ ((aa & 4) * b)
-            ^ ((aa & 8) * b);
+        long p = ((aa & 1) * b) ^ ((aa & 2) * b) ^ ((aa & 4) * b) ^ ((aa & 8) * b);
 
         // Reduction mod (x^4 + x + 1): process each byte in parallel.
         long topP = p & 0xf0f0f0f0f0f0f0f0L;
@@ -364,28 +340,6 @@ public class GF16Utils
                 c[idx + cOff] = (byte)(a[idx + aOff] ^ b[idx + bOff]);
             }
         }
-    }
-
-    /**
-     * Returns 0x00 if a equals b, otherwise returns 0xFF.
-     * This operation is performed in constant time.
-     *
-     * @param a an 8-bit value
-     * @param b an 8-bit value
-     * @return 0x00 if a == b, 0xFF if a != b
-     */
-    public static byte ctCompare8(byte a, byte b)
-    {
-        // Compute the difference between a and b using XOR.
-        // Masking with 0xFF ensures we work with values in 0..255.
-        int diff = (a ^ b) & 0xFF;
-        // Negate the difference.
-        int negDiff = -diff;
-        // Right shift by 31 bits (since 8*sizeof(uint32_t)-1 equals 31 for 32-bit integers).
-        // If diff is 0, then -diff is 0, and shifting yields 0.
-        // If diff is nonzero, -diff is negative, so the arithmetic shift yields -1 (0xFFFFFFFF),
-        // which when cast to a byte becomes 0xFF.
-        return (byte) (negDiff >> 31);
     }
 
     public static void efUnpackMVector(int legs, long[] packedRow, int packedRowOff, byte[] out)
