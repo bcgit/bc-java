@@ -16,26 +16,25 @@ public class GF16Utils
     public static long gf16vMulU64(long a, int b)
     {
         long maskMsb = 0x8888888888888888L;
-        long a64 = a;
         // In the original code there is a conditional XOR with unsigned_char_blocker;
         // here we simply use b directly.
         long b32 = b & 0x00000000FFFFFFFFL;
-        long r64 = a64 * (b32 & 1);
+        long r64 = a * (b32 & 1);
 
-        long a_msb = a64 & maskMsb;
-        a64 ^= a_msb;
-        a64 = (a64 << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a64 * ((b32 >> 1) & 1);
+        long a_msb = a & maskMsb;
+        a ^= a_msb;
+        a = (a << 1) ^ ((a_msb >>> 3) * 3);
+        r64 ^= a * ((b32 >> 1) & 1);
 
-        a_msb = a64 & maskMsb;
-        a64 ^= a_msb;
-        a64 = (a64 << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a64 * ((b32 >>> 2) & 1);
+        a_msb = a & maskMsb;
+        a ^= a_msb;
+        a = (a << 1) ^ ((a_msb >>> 3) * 3);
+        r64 ^= a * ((b32 >>> 2) & 1);
 
-        a_msb = a64 & maskMsb;
-        a64 ^= a_msb;
-        a64 = (a64 << 1) ^ ((a_msb >>> 3) * 3);
-        r64 ^= a64 * ((b32 >> 3) & 1);
+        a_msb = a & maskMsb;
+        a ^= a_msb;
+        a = (a << 1) ^ ((a_msb >>> 3) * 3);
+        r64 ^= a * ((b32 >> 3) & 1);
 
         return r64;
     }
@@ -61,18 +60,6 @@ public class GF16Utils
         }
     }
 
-    /**
-     * Convenience overload of mVecMulAdd that assumes zero offsets.
-     *
-     * @param mVecLimbs the number of limbs
-     * @param in        the input vector
-     * @param a         the GF(16) element to multiply by
-     * @param acc       the accumulator vector
-     */
-    public static void mVecMulAdd(int mVecLimbs, long[] in, int a, long[] acc)
-    {
-        mVecMulAdd(mVecLimbs, in, 0, a, acc, 0);
-    }
 
     /**
      * Performs the multiplication and accumulation of a block of an upper‐triangular matrix
@@ -156,30 +143,15 @@ public class GF16Utils
         {
             for (int c = 0; c < matRows; c++)
             {
+                byte matVal = mat[c * matCols + r];
                 for (int k = 0; k < bsMatCols; k++)
                 {
-                    // For bsMat: the m-vector at index (c * bsMatCols + k)
                     int bsMatOffset = (c * bsMatCols + k) * mVecLimbs;
-                    // For mat: element at row c, column r.
-                    int a = mat[c * matCols + r] & 0xFF;
                     // For acc: add into the m-vector at index (r * bsMatCols + k)
                     int accOffset = (r * bsMatCols + k) * mVecLimbs;
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, a, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
                 }
             }
-        }
-    }
-
-
-    /**
-     * Adds (bitwise XOR) mVecLimbs elements from the source array (starting at srcOffset)
-     * into the destination array (starting at destOffset).
-     */
-    public static void mVecAdd(int mVecLimbs, long[] src, int srcOffset, long[] dest, int destOffset)
-    {
-        for (int i = 0; i < mVecLimbs; i++)
-        {
-            dest[destOffset + i] ^= src[srcOffset + i];
         }
     }
 
@@ -289,30 +261,6 @@ public class GF16Utils
     }
 
     /**
-     * Multiplies a vector (from bsMat) by an unsigned scalar (from mat) and adds the result
-     * to the corresponding vector in acc.
-     *
-     * <p>
-     * This method corresponds to the C function <code>m_vec_mul_add</code>.
-     * It processes {@code mVecLimbs} elements starting from the given offsets in the source and accumulator arrays.
-     * </p>
-     *
-     * @param mVecLimbs   the number of limbs (elements) in the vector
-     * @param bsMat       the source array (bit-sliced matrix) of long values
-     * @param bsMatOffset the starting index in bsMat for the vector
-     * @param scalar      the scalar value (from mat), as a byte
-     * @param acc         the accumulator array where the result is added
-     * @param accOffset   the starting index in the accumulator array for the current vector
-     */
-    public static void mVecMulAdd(int mVecLimbs, long[] bsMat, int bsMatOffset, byte scalar, long[] acc, int accOffset)
-    {
-        for (int i = 0; i < mVecLimbs; i++)
-        {
-            acc[accOffset + i] ^= gf16vMulU64(bsMat[bsMatOffset + i], scalar);
-        }
-    }
-
-    /**
      * GF(16) multiplication mod x^4 + x + 1.
      * <p>
      * This method multiplies two elements in GF(16) (represented as integers 0–15)
@@ -339,8 +287,7 @@ public class GF16Utils
         // Extract the upper nibble (bits 4 to 7).
         int topP = p & 0xF0;
         // The reduction: XOR p with (topP shifted right by 4 and by 3) and mask to 4 bits.
-        int out = (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0F;
-        return out;
+        return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0F;
     }
 
     /**
@@ -364,8 +311,7 @@ public class GF16Utils
 
         // Reduction mod (x^4 + x + 1): process each byte in parallel.
         long topP = p & 0xf0f0f0f0f0f0f0f0L;
-        long out = (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0f0f0f0f0f0f0f0fL;
-        return out;
+        return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0f0f0f0f0f0f0f0fL;
     }
 
     public static void matMul(byte[] a, byte[] b, byte[] c,
@@ -420,9 +366,6 @@ public class GF16Utils
         }
     }
 
-    // Define the blocker constant as needed (set to 0 if not used).
-    private static final byte UNSIGNED_CHAR_BLOCKER = 0;
-
     /**
      * Returns 0x00 if a equals b, otherwise returns 0xFF.
      * This operation is performed in constant time.
@@ -442,9 +385,7 @@ public class GF16Utils
         // If diff is 0, then -diff is 0, and shifting yields 0.
         // If diff is nonzero, -diff is negative, so the arithmetic shift yields -1 (0xFFFFFFFF),
         // which when cast to a byte becomes 0xFF.
-        int result = negDiff >> 31;
-        // XOR with UNSIGNED_CHAR_BLOCKER (assumed 0 here) and cast to byte.
-        return (byte)(result ^ UNSIGNED_CHAR_BLOCKER);
+        return (byte) (negDiff >> 31);
     }
 
     public static void efUnpackMVector(int legs, long[] packedRow, int packedRowOff, byte[] out)

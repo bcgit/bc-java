@@ -1209,6 +1209,14 @@ public final class Arrays
         }
     }
 
+    public static void clear(long[] data)
+    {
+        if (null != data)
+        {
+            java.util.Arrays.fill(data, 0);
+        }
+    }
+
     public static boolean isNullOrContainsNull(Object[] array)
     {
         if (null == array)

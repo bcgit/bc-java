@@ -247,11 +247,6 @@ public class MayoParameters
         return P2Bytes;
     }
 
-    public int getP3Bytes()
-    {
-        return P3Bytes;
-    }
-
     public int getCskBytes()
     {
         return cskBytes;
@@ -327,38 +322,6 @@ public class MayoParameters
     public int getEPKLimbs()
     {
         return getP1Limbs() + getP2Limbs() + getP3Limbs();
-    }
-
-    @Override
-    public String toString()
-    {
-        return "MayoParameters{" +
-            "name='" + name + '\'' +
-            ", n=" + n +
-            ", m=" + m +
-            ", mVecLimbs=" + mVecLimbs +
-            ", o=" + o +
-            ", v=" + v +
-            ", ACols=" + ACols +
-            ", k=" + k +
-            ", q=" + q +
-            ", mBytes=" + mBytes +
-            ", OBytes=" + OBytes +
-            ", vBytes=" + vBytes +
-            ", rBytes=" + rBytes +
-            ", P1Bytes=" + P1Bytes +
-            ", P2Bytes=" + P2Bytes +
-            ", P3Bytes=" + P3Bytes +
-            ", cskBytes=" + cskBytes +
-            ", cpkBytes=" + cpkBytes +
-            ", sigBytes=" + sigBytes +
-            ", fTail='{" + fTail[0] + "," + fTail[1] + "," + fTail[2] + "," + fTail[3] + "}'" +
-            ", fTailArr='{" + fTailArr[0] + "," + fTailArr[1] + "," + fTailArr[2] + "," + fTailArr[3] + "}'" +
-            ", saltBytes=" + saltBytes +
-            ", digestBytes=" + digestBytes +
-            ", pkSeedBytes=" + pkSeedBytes +
-            ", skSeedBytes=" + skSeedBytes +
-            '}';
     }
 }
 

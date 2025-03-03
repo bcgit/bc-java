@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
 public class MayoSigner
@@ -15,7 +16,6 @@ public class MayoSigner
 {
     private SecureRandom random;
     MayoParameters params;
-    MayoEngine engine;
     private MayoPublicKeyParameter pubKey;
     private MayoPrivateKeyParameter privKey;
 
@@ -62,14 +62,13 @@ public class MayoSigner
         byte[] x = new byte[params.getK() * params.getN()];
         byte[] r = new byte[params.getK() * params.getO() + 1];
         byte[] s = new byte[params.getK() * params.getN()];
-        byte[] tmp = new byte[params.getDigestBytes() + params.getSaltBytes() +
-            params.getSkSeedBytes() + 1];
+        byte[] tmp = new byte[params.getDigestBytes() + params.getSaltBytes() + params.getSkSeedBytes() + 1];
         byte[] sig = new byte[params.getSigBytes()];
+        long[] P = new long[params.getP1Limbs() + params.getP2Limbs()];
+        byte[] O = new byte[params.getV() * params.getO()];
 
         try
         {
-            long[] P = new long[params.getP1Limbs() + params.getP2Limbs()];
-            byte[] O = new byte[params.getV() * params.getO()];
             // Expand secret key
             MayoEngine.mayoExpandSk(params, privKey.getSeedSk(), P, O);
 
@@ -964,7 +963,7 @@ public class MayoSigner
             {
                 for (int col = 0; col < k; col++)
                 {
-                    GF16Utils.mVecAdd(mVecLimbs, P1, p1Used * mVecLimbs,
+                    Longs.xorTo(mVecLimbs, P1, p1Used * mVecLimbs,
                         accumulator, ((row * k + col) * 16 + (S[col * n + j] & 0xFF)) * mVecLimbs);
                 }
                 p1Used++;
@@ -974,7 +973,7 @@ public class MayoSigner
             {
                 for (int col = 0; col < k; col++)
                 {
-                    GF16Utils.mVecAdd(mVecLimbs, P2, (row * o + j) * mVecLimbs,
+                    Longs.xorTo(mVecLimbs, P2, (row * o + j) * mVecLimbs,
                         accumulator, ((row * k + col) * 16 + (S[(col * n) + j + v] & 0xFF)) * mVecLimbs);
                 }
             }
@@ -987,7 +986,7 @@ public class MayoSigner
             {
                 for (int col = 0; col < k; col++)
                 {
-                    GF16Utils.mVecAdd(mVecLimbs, P3, p3Used * mVecLimbs,
+                    Longs.xorTo(mVecLimbs, P3, p3Used * mVecLimbs,
                         accumulator, ((row * k + col) * 16 + (S[col * n + j] & 0xFF)) * mVecLimbs);
                 }
                 p3Used++;
