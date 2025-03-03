@@ -1,6 +1,12 @@
 package org.bouncycastle.pqc.crypto.mayo;
 
-import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.BlockCipher;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CTRModeCipher;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class Utils
@@ -40,14 +46,14 @@ public class Utils
         for (i = 0; i < mdecLen / 2; i++)
         {
             // Extract the lower nibble
-            mdec[decIndex++] = (byte)((m[i + mOff] & 0xFF) & 0x0F);
+            mdec[decIndex++] = (byte)(m[i + mOff] & 0x0F);
             // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)(((m[i + mOff] & 0xFF) >> 4) & 0x0F);
+            mdec[decIndex++] = (byte)((m[i + mOff] >> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
         if (mdecLen % 2 == 1)
         {
-            mdec[decIndex] = (byte)((m[i + mOff] & 0xFF) & 0x0F);
+            mdec[decIndex] = (byte)(m[i + mOff] & 0x0F);
         }
     }
 
@@ -114,19 +120,19 @@ public class Utils
     {
         int mVecLimbs = (m + 15) / 16;
         int bytesToCopy = m / 2; // Number of bytes to copy per vector
+        // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
+        byte[] tmp = new byte[mVecLimbs << 3];
 
         // Process vectors in reverse order
         for (int i = vecs - 1; i >= 0; i--)
         {
-            // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
-            byte[] tmp = new byte[mVecLimbs * 8];
             // Copy m/2 bytes from the input into tmp. The rest remains zero.
             System.arraycopy(in, i * bytesToCopy, tmp, 0, bytesToCopy);
 
             // Convert each 8-byte block in tmp into a long using Pack
             for (int j = 0; j < mVecLimbs; j++)
             {
-                out[i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j * 8);
+                out[i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j << 3);
             }
         }
     }
@@ -135,12 +141,11 @@ public class Utils
     {
         int mVecLimbs = (m + 15) / 16;
         int bytesToCopy = m / 2; // Number of bytes to copy per vector
-
+        // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
+        byte[] tmp = new byte[mVecLimbs << 3];
         // Process vectors in reverse order
         for (int i = vecs - 1; i >= 0; i--)
         {
-            // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
-            byte[] tmp = new byte[mVecLimbs * 8];
             // Copy m/2 bytes from the input into tmp. The rest remains zero.
             System.arraycopy(in, inOff + i * bytesToCopy, tmp, 0, bytesToCopy);
 
@@ -183,26 +188,59 @@ public class Utils
     }
 
     /**
-     * Computes the SHAKE256 XOF on the given input.
+     * Expands P1 and P2 using AES_128_CTR as a PRF and then unpacks the resulting bytes
+     * into an array of 64-bit limbs.
      *
-     * @param output the output buffer that will be filled with the result.
-     * @param outlen the number of bytes to produce.
-     * @param input  the input byte array.
-     * @param inlen  the number of input bytes.
-     * @return the number of output bytes produced (equals outlen).
+     * @param p       Mayo parameters
+     * @param P       The output long array which will hold the unpacked limbs.
+     *                Its length should be at least ((P1_bytes + P2_bytes) / 8) limbs.
+     * @param seed_pk The seed (used as the key) for the PRF.
      */
-    public static int shake256(byte[] output, int outlen, byte[] input, int inlen)
+    public static void expandP1P2(MayoParameters p, long[] P, byte[] seed_pk)
     {
-        // Create a new SHAKE256 digest instance.
-        SHAKEDigest shake = new SHAKEDigest(256);
+        // Compute total number of bytes to generate: P1_bytes + P2_bytes.
+        int outLen = p.getP1Bytes() + p.getP2Bytes();
+        // Temporary byte array to hold the PRF output.
+        byte[] temp = new byte[outLen];
 
-        // Absorb the input.
-        shake.update(input, 0, inlen);
+        //AES_128_CTR(temp, outLen, seed_pk, p.getPkSeedBytes());
+        // Create a 16-byte IV (all zeros)
+        byte[] iv = new byte[16]; // automatically zero-initialized
 
-        // Squeeze out outlen bytes into the output array.
-        shake.doFinal(output, 0, outlen);
+        // Set up AES engine in CTR (SIC) mode.
+        BlockCipher aesEngine = AESEngine.newInstance();
+        // SICBlockCipher implements CTR mode for AES.
+        CTRModeCipher ctrCipher = SICBlockCipher.newInstance(aesEngine);
+        // Wrap the key with the IV.
+        ParametersWithIV params = new ParametersWithIV(new KeyParameter(Arrays.copyOf(seed_pk, p.getPkSeedBytes())), iv);
+        ctrCipher.init(true, params);
 
-        return outlen;
+        // CTR mode is a stream cipher: encrypting zero bytes produces the keystream.
+        int blockSize = ctrCipher.getBlockSize(); // typically 16 bytes
+        byte[] zeroBlock = new byte[blockSize];     // block of zeros
+        byte[] blockOut = new byte[blockSize];
+
+        int offset = 0;
+        // Process full blocks
+        while (offset + blockSize <= outLen)
+        {
+            ctrCipher.processBlock(zeroBlock, 0, blockOut, 0);
+            System.arraycopy(blockOut, 0, temp, offset, blockSize);
+            offset += blockSize;
+        }
+        // Process any remaining partial block.
+        if (offset < outLen)
+        {
+            ctrCipher.processBlock(zeroBlock, 0, blockOut, 0);
+            int remaining = outLen - offset;
+            System.arraycopy(blockOut, 0, temp, offset, remaining);
+        }
+
+        // The number of vectors is the total limbs divided by mVecLimbs.
+        int numVectors = (p.getP1Limbs() + p.getP2Limbs()) / p.getMVecLimbs();
+
+        // Unpack the byte array 'temp' into the long array 'P'
+        // using our previously defined unpackMVecs method.
+        unpackMVecs(temp, P, numVectors, p.getM());
     }
-
 }

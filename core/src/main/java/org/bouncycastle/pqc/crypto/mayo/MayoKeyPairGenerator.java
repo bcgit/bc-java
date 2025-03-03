@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
@@ -53,7 +54,9 @@ public class MayoKeyPairGenerator
         random.nextBytes(seed_sk);
 
         // S ← shake256(seed_sk, pk_seed_bytes + O_bytes)
-        Utils.shake256(seed_pk, pkSeedBytes + oBytes, seed_sk, skSeedBytes);
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(seed_sk, 0, skSeedBytes);
+        shake.doFinal(seed_pk, 0, pkSeedBytes + oBytes);
 
         // o ← Decode_o(S[ param_pk_seed_bytes : param_pk_seed_bytes + O_bytes ])
         // Decode nibbles from S starting at offset param_pk_seed_bytes into O,
@@ -61,7 +64,7 @@ public class MayoKeyPairGenerator
         Utils.decode(seed_pk, pkSeedBytes, O, O.length);
 
         // Expand P1 and P2 into the array P using seed_pk.
-        MayoEngine.expandP1P2(p, P, seed_pk);
+        Utils.expandP1P2(p, P, seed_pk);
 
         // Compute P1 * O + P2 and store the result in P2.
         // GF16Utils.P1TimesO(p, P, O, P2);
