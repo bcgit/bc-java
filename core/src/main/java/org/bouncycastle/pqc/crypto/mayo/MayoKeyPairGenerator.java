@@ -75,7 +75,7 @@ public class MayoKeyPairGenerator
         // Here, treat P2 as the bsMat for the multiplication.
         // Dimensions: mat = O (size: paramV x paramO), bsMat = P2 (size: paramV x paramO),
         // and acc (P3) will have dimensions: (paramO x paramO), each entry being an m-vector.
-        GF16Utils.mulAddMatTransXMMat(mVecLimbs, O, P, p1Limbs, P3, v, o, o);
+        GF16Utils.mulAddMatTransXMMat(mVecLimbs, O, P, p1Limbs, P3, v, o);
 
         // Store seed_pk into the public key cpk.
         System.arraycopy(seed_pk, 0, cpk, 0, pkSeedBytes);

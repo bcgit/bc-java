@@ -24,13 +24,14 @@ public class Utils
     {
         int i;
         int decIndex = 0;
+        int blocks = mdecLen >> 1;
         // Process pairs of nibbles from each byte
-        for (i = 0; i < mdecLen / 2; i++)
+        for (i = 0; i < blocks; i++)
         {
             // Extract the lower nibble
-            mdec[decIndex++] = (byte)((m[i] & 0xFF) & 0x0F);
+            mdec[decIndex++] = (byte)(m[i] & 0x0F);
             // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)(((m[i] & 0xFF) >> 4) & 0x0F);
+            mdec[decIndex++] = (byte)((m[i] >> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
         if (mdecLen % 2 == 1)
@@ -41,19 +42,19 @@ public class Utils
 
     public static void decode(byte[] m, int mOff, byte[] mdec, int decIndex, int mdecLen)
     {
-        int i;
         // Process pairs of nibbles from each byte
-        for (i = 0; i < mdecLen / 2; i++)
+        int blocks = mdecLen >> 1;
+        for (int i = 0; i < blocks; i++)
         {
             // Extract the lower nibble
-            mdec[decIndex++] = (byte)(m[i + mOff] & 0x0F);
+            mdec[decIndex++] = (byte)(m[mOff] & 0x0F);
             // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)((m[i + mOff] >> 4) & 0x0F);
+            mdec[decIndex++] = (byte)((m[mOff++] >> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
         if (mdecLen % 2 == 1)
         {
-            mdec[decIndex] = (byte)(m[i + mOff] & 0x0F);
+            mdec[decIndex] = (byte)(m[mOff] & 0x0F);
         }
     }
 
@@ -68,15 +69,15 @@ public class Utils
     public static void decode(byte[] input, int inputOffset, byte[] output, int mdecLen)
     {
         int decIndex = 0;
-        int blocks = mdecLen / 2;
+        int blocks = mdecLen >> 1;
         for (int i = 0; i < blocks; i++)
         {
-            output[decIndex++] = (byte)(input[inputOffset + i] & 0x0F);
-            output[decIndex++] = (byte)((input[inputOffset + i] >> 4) & 0x0F);
+            output[decIndex++] = (byte)(input[inputOffset] & 0x0F);
+            output[decIndex++] = (byte)((input[inputOffset++] >> 4) & 0x0F);
         }
         if (mdecLen % 2 == 1)
         {
-            output[decIndex] = (byte)(input[inputOffset + blocks] & 0x0F);
+            output[decIndex] = (byte)(input[inputOffset] & 0x0F);
         }
     }
 

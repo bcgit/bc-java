@@ -100,23 +100,19 @@ class GF16Utils
      *                  each entry is an m-vector.
      * @param matRows   number of rows in the matrix “mat.”
      * @param matCols   number of columns in “mat.”
-     * @param bsMatCols number of columns in the bsMat matrix.
      */
     static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
-                                    int matRows, int matCols, int bsMatCols)
+                                    int matRows, int matCols)
     {
-        // Loop over each column r of mat (which becomes row of mat^T)
-        for (int r = 0; r < matCols; r++)
+        int multiply = matCols * mVecLimbs;
+        for (int r = 0, rmultiply = 0; r < matCols; r++, rmultiply += multiply)
         {
-            for (int c = 0, cmatCols = 0; c < matRows; c++, cmatCols += matCols)
+            for (int c = 0, cmatCols = 0, cmultiply = 0; c < matRows; c++, cmatCols += matCols, cmultiply += multiply)
             {
                 byte matVal = mat[cmatCols + r];
-                for (int k = 0; k < bsMatCols; k++)
+                for (int k = 0, kmVecLimbs = 0; k < matCols; k++, kmVecLimbs += mVecLimbs)
                 {
-                    int bsMatOffset = bsMatOff + (c * bsMatCols + k) * mVecLimbs;
-                    // For acc: add into the m-vector at index (r * bsMatCols + k)
-                    int accOffset = (r * bsMatCols + k) * mVecLimbs;
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, bsMatOff + cmultiply + kmVecLimbs, matVal, acc, rmultiply + kmVecLimbs);
                 }
             }
         }
@@ -138,25 +134,19 @@ class GF16Utils
      * @param acc       the accumulator array (long[]) where results are accumulated
      * @param matRows   the number of rows in the matrix
      * @param matCols   the number of columns in the matrix
-     * @param bsMatCols the number of columns in the bit‐sliced matrix (per block)
      */
-    static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, long[] acc,
-                               int matRows, int matCols, int bsMatCols)
+    static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, long[] acc, int matRows, int matCols)
     {
-        for (int r = 0; r < matRows; r++)
+        int multiply = mVecLimbs * matRows;
+        for (int r = 0, rmatCols = 0, rmultiply = 0; r < matRows; r++, rmatCols += matCols, rmultiply += multiply)
         {
-            for (int c = 0; c < matCols; c++)
+            for (int c = 0, cmultiply = 0; c < matCols; c++, cmultiply += multiply)
             {
                 // Retrieve the scalar from the matrix for row r and column c.
-                byte matVal = mat[r * matCols + c];
-                for (int k = 0; k < bsMatCols; k++)
+                byte matVal = mat[rmatCols + c];
+                for (int k = 0, kmVecLimbs = 0; k < matRows; k++, kmVecLimbs += mVecLimbs)
                 {
-                    // Compute the starting index for the vector in bsMat.
-                    int bsMatOffset = mVecLimbs * (c * bsMatCols + k);
-                    // Compute the starting index for the accumulator vector in acc.
-                    int accOffset = mVecLimbs * (r * bsMatCols + k);
-                    // Multiply the vector by the scalar and add the result to the accumulator.
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, cmultiply + kmVecLimbs, matVal, acc, rmultiply + kmVecLimbs);
                 }
             }
         }
@@ -165,20 +155,16 @@ class GF16Utils
     static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
                                int matRows, int matCols, int bsMatCols)
     {
-        for (int r = 0; r < matRows; r++)
+        int multiply = mVecLimbs * bsMatCols;
+        for (int r = 0, rmultiply = 0, rmatCols = 0; r < matRows; r++, rmultiply += multiply, rmatCols += matCols)
         {
-            for (int c = 0; c < matCols; c++)
+            for (int c = 0, cmultiply = 0; c < matCols; c++, cmultiply += multiply)
             {
                 // Retrieve the scalar from the matrix for row r and column c.
-                byte matVal = mat[r * matCols + c];
-                for (int k = 0; k < bsMatCols; k++)
+                byte matVal = mat[rmatCols + c];
+                for (int k = 0, kmVecLimbs = 0; k < bsMatCols; k++, kmVecLimbs += mVecLimbs)
                 {
-                    // Compute the starting index for the vector in bsMat.
-                    int bsMatOffset = mVecLimbs * (c * bsMatCols + k) + bsMatOff;
-                    // Compute the starting index for the accumulator vector in acc.
-                    int accOffset = mVecLimbs * (r * bsMatCols + k);
-                    // Multiply the vector by the scalar and add the result to the accumulator.
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, cmultiply + kmVecLimbs + bsMatOff, matVal, acc, rmultiply + kmVecLimbs);
                 }
             }
         }
@@ -200,27 +186,22 @@ class GF16Utils
      * @param mat       the matrix stored as a byte array.
      * @param acc       the accumulator array where the results are added.
      * @param bsMatRows the number of rows in the bit‑sliced matrix.
-     * @param bsMatCols the number of columns in the bit‑sliced matrix.
      * @param matRows   the number of rows in the matrix.
      */
-    static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc,
-                                                   int bsMatRows, int bsMatCols, int matRows)
+    static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int bsMatRows, int matRows)
     {
         int bsMatEntriesUsed = 0;
-        for (int r = 0; r < bsMatRows; r++)
+        int multiply = mVecLimbs * matRows;
+        for (int r = 0, rmultiply = 0; r < bsMatRows; r++, rmultiply += multiply)
         {
             // For upper triangular, start c at triangular * r; otherwise, triangular is zero.
-            for (int c = r; c < bsMatCols; c++)
+            for (int c = r; c < bsMatRows; c++)
             {
-                for (int k = 0; k < matRows; k++)
+                for (int k = 0, kbsMatRows = 0, kmVecLimbs = 0; k < matRows; k++, kbsMatRows += bsMatRows, kmVecLimbs += mVecLimbs)
                 {
-                    int bsMatOffset = mVecLimbs * bsMatEntriesUsed;
-                    int accOffset = mVecLimbs * (r * matRows + k);
-                    // Get the matrix element at row k and column c
-                    byte matVal = mat[k * bsMatCols + c];
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatOffset, matVal, acc, accOffset);
+                    mVecMulAdd(mVecLimbs, bsMat, bsMatEntriesUsed, mat[kbsMatRows + c], acc, rmultiply + kmVecLimbs);
                 }
-                bsMatEntriesUsed++;
+                bsMatEntriesUsed += mVecLimbs;
             }
         }
     }
@@ -254,7 +235,7 @@ class GF16Utils
         int a4 = mulF(a2, a2);
         int a8 = mulF(a4, a4);
         int a6 = mulF(a2, a4);
-        return (byte) mulF(a8, a6);
+        return (byte)mulF(a8, a6);
     }
 
     /**
@@ -280,12 +261,12 @@ class GF16Utils
 
     static void matMul(byte[] a, byte[] b, int bOff, byte[] c, int colrowAB, int rowA)
     {
-        for (int i = 0, aRowStart = 0, cOff = 0; i < rowA; i++, aRowStart += colrowAB)
+        for (int i = 0, aRowStart = 0, cOff = 0; i < rowA; i++)
         {
             byte result = 0;
             for (int k = 0; k < colrowAB; k++)
             {
-                result ^= mulF(a[aRowStart + k], b[bOff + k]);
+                result ^= mulF(a[aRowStart++], b[bOff + k]);
             }
             c[cOff++] = result;
         }
