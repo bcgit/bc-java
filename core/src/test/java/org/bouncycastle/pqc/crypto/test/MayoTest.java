@@ -1,9 +1,6 @@
 package org.bouncycastle.pqc.crypto.test;
 
-import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
@@ -14,8 +11,8 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.mayo.MayoKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
-import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameter;
-import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameter;
+import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoSigner;
 
 public class MayoTest
@@ -31,10 +28,10 @@ public class MayoTest
 
     private static final MayoParameters[] PARAMETER_SETS = new MayoParameters[]
         {
-            MayoParameters.MAYO1,
-            MayoParameters.MAYO2,
-            MayoParameters.MAYO3,
-            MayoParameters.MAYO5
+            MayoParameters.mayo1,
+            MayoParameters.mayo2,
+            MayoParameters.mayo3,
+            MayoParameters.mayo5
         };
 
     private static final String[] files = new String[]{
@@ -70,13 +67,13 @@ public class MayoTest
             @Override
             public byte[] getPublicKeyEncoded(AsymmetricKeyParameter pubParams)
             {
-                return ((MayoPublicKeyParameter)pubParams).getEncoded();
+                return ((MayoPublicKeyParameters)pubParams).getEncoded();
             }
 
             @Override
             public byte[] getPrivateKeyEncoded(CipherParameters privParams)
             {
-                return ((MayoPrivateKeyParameter)privParams).getEncoded();
+                return ((MayoPrivateKeyParameters)privParams).getEncoded();
             }
 
             @Override

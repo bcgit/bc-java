@@ -40,6 +40,8 @@ import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
@@ -253,6 +255,11 @@ public class PublicKeyFactory
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, new SLHDSAConverter());
+
+        converters.put(BCObjectIdentifiers.mayo1, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo2, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo3, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo5, new MayoConverter());
     }
 
     /**
@@ -845,6 +852,20 @@ public class PublicKeyFactory
             RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new RainbowPublicKeyParameters(rainbowParams, keyEnc);
+        }
+    }
+
+    private static class MayoConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            MayoParameters mayoParams = Utils.mayoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new MayoPublicKeyParameters(mayoParams, keyEnc);
         }
     }
 }
