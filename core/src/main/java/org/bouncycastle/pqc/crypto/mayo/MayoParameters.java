@@ -11,7 +11,7 @@ public class MayoParameters
         86 - 8,             // v = n - o = 78
         10 * 8 + 1,         // A_cols = k * o + 1 = 10 * 8 + 1 = 81
         10,                 // k
-        16,                 // q
+        // q
         39,                 // m_bytes
         312,                // O_bytes
         39,                 // v_bytes
@@ -26,7 +26,7 @@ public class MayoParameters
         new byte[]{8, 1, 1, 0},        // f_tail_arr
         24,                 // salt_bytes
         32,                 // digest_bytes
-        16,                 // pk_seed_bytes
+        // pk_seed_bytes
         24                  // sk_seed_bytes
     );
 
@@ -39,7 +39,7 @@ public class MayoParameters
         81 - 17,            // v = 64
         4 * 17 + 1,         // A_cols = 4 * 17 + 1 = 69
         4,                  // k
-        16,                 // q
+        // q
         32,                 // m_bytes
         544,                // O_bytes
         32,                 // v_bytes
@@ -54,7 +54,7 @@ public class MayoParameters
         new byte[]{8, 0, 2, 8},        // f_tail_arr
         24,                 // salt_bytes
         32,                 // digest_bytes
-        16,                 // pk_seed_bytes
+        // pk_seed_bytes
         24                  // sk_seed_bytes
     );
 
@@ -67,7 +67,7 @@ public class MayoParameters
         118 - 10,           // v = 108
         11 * 10 + 1,        // A_cols = 11 * 10 + 1 = 111
         11,                 // k
-        16,                 // q
+        // q
         54,                 // m_bytes
         540,                // O_bytes
         54,                 // v_bytes
@@ -82,7 +82,7 @@ public class MayoParameters
         new byte[]{8, 0, 1, 7},       // f_tail_arr
         32,                 // salt_bytes
         48,                 // digest_bytes
-        16,                 // pk_seed_bytes
+        // pk_seed_bytes
         32                  // sk_seed_bytes
     );
 
@@ -95,7 +95,7 @@ public class MayoParameters
         154 - 12,           // v = 142
         12 * 12 + 1,        // A_cols = 12 * 12 + 1 = 145
         12,                 // k
-        16,                 // q
+        // q
         71,                 // m_bytes
         852,                // O_bytes
         71,                 // v_bytes
@@ -110,7 +110,7 @@ public class MayoParameters
         new byte[]{4, 0, 8, 1},       // f_tail_arr
         40,                 // salt_bytes
         64,                 // digest_bytes
-        16,                 // pk_seed_bytes
+        // pk_seed_bytes
         40                  // sk_seed_bytes
     );
 
@@ -122,7 +122,7 @@ public class MayoParameters
     private final int v;
     private final int ACols;
     private final int k;
-    private final int q;
+    //private final int q; q = 16
     private final int mBytes;
     private final int OBytes;
     private final int vBytes;
@@ -136,13 +136,13 @@ public class MayoParameters
     private final byte[] fTailArr;
     private final int saltBytes;
     private final int digestBytes;
-    private final int pkSeedBytes;
+    private static final int pkSeedBytes = 16;
     private final int skSeedBytes;
 
-    private MayoParameters(String name, int n, int m, int mVecLimbs, int o, int v, int ACols, int k, int q,
+    private MayoParameters(String name, int n, int m, int mVecLimbs, int o, int v, int ACols, int k,
                            int mBytes, int OBytes, int vBytes, int rBytes, int P1Bytes, int P2Bytes,
                            int cskBytes, int cpkBytes, int sigBytes, int[] fTail, byte[] fTailArr,
-                           int saltBytes, int digestBytes, int pkSeedBytes, int skSeedBytes)
+                           int saltBytes, int digestBytes, int skSeedBytes)
     {
         this.name = name;
         this.n = n;
@@ -152,7 +152,6 @@ public class MayoParameters
         this.v = v;
         this.ACols = ACols;
         this.k = k;
-        this.q = q;
         this.mBytes = mBytes;
         this.OBytes = OBytes;
         this.vBytes = vBytes;
@@ -166,7 +165,6 @@ public class MayoParameters
         this.fTailArr = fTailArr;
         this.saltBytes = saltBytes;
         this.digestBytes = digestBytes;
-        this.pkSeedBytes = pkSeedBytes;
         this.skSeedBytes = skSeedBytes;
     }
 
@@ -208,11 +206,6 @@ public class MayoParameters
     public int getK()
     {
         return k;
-    }
-
-    public int getQ()
-    {
-        return q;
     }
 
     public int getMBytes()
