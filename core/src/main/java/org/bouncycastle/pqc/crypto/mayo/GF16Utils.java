@@ -82,7 +82,7 @@ class GF16Utils
                 for (int k = 0, kmVecLimbs = 0; k < matCols; k++, kmVecLimbs += mVecLimbs)
                 {
                     // For acc: add into the m-vector at row r, column k.
-                    mVecMulAdd(mVecLimbs, bsMat, bsMatEntriesUsed, mat[cmatCols + k] & 0xFF, acc, accOff + rmatColsmVecLimbs + kmVecLimbs);
+                    mVecMulAdd(mVecLimbs, bsMat, bsMatEntriesUsed, mat[cmatCols + k], acc, accOff + rmatColsmVecLimbs + kmVecLimbs);
                 }
                 bsMatEntriesUsed += mVecLimbs;
             }
@@ -256,7 +256,7 @@ class GF16Utils
 
         // Reduction mod (x^4 + x + 1): process each byte in parallel.
         long topP = p & 0xf0f0f0f0f0f0f0f0L;
-        return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0f0f0f0f0f0f0f0fL;
+        return (p ^ (topP >>> 4) ^ (topP >>> 3)) & 0x0f0f0f0f0f0f0f0fL;
     }
 
     static void matMul(byte[] a, byte[] b, int bOff, byte[] c, int colrowAB, int rowA)

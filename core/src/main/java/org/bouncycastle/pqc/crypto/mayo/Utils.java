@@ -22,9 +22,7 @@ public class Utils
      */
     public static void decode(byte[] m, byte[] mdec, int mdecLen)
     {
-        int i;
-        int decIndex = 0;
-        int blocks = mdecLen >> 1;
+        int i, decIndex = 0, blocks = mdecLen >> 1;
         // Process pairs of nibbles from each byte
         for (i = 0; i < blocks; i++)
         {
@@ -34,7 +32,7 @@ public class Utils
             mdec[decIndex++] = (byte)((m[i] >> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if (mdecLen % 2 == 1)
+        if ((mdecLen & 1) == 1)
         {
             mdec[decIndex] = (byte)((m[i] & 0xFF) & 0x0F);
         }
@@ -52,7 +50,7 @@ public class Utils
             mdec[decIndex++] = (byte)((m[mOff++] >> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if (mdecLen % 2 == 1)
+        if ((mdecLen & 1) == 1)
         {
             mdec[decIndex] = (byte)(m[mOff] & 0x0F);
         }
@@ -68,14 +66,13 @@ public class Utils
      */
     public static void decode(byte[] input, int inputOffset, byte[] output, int mdecLen)
     {
-        int decIndex = 0;
-        int blocks = mdecLen >> 1;
+        int decIndex = 0, blocks = mdecLen >> 1;
         for (int i = 0; i < blocks; i++)
         {
             output[decIndex++] = (byte)(input[inputOffset] & 0x0F);
             output[decIndex++] = (byte)((input[inputOffset++] >> 4) & 0x0F);
         }
-        if (mdecLen % 2 == 1)
+        if ((mdecLen & 1) == 1)
         {
             output[decIndex] = (byte)(input[inputOffset] & 0x0F);
         }
@@ -92,8 +89,7 @@ public class Utils
      */
     public static void encode(byte[] m, byte[] menc, int mlen)
     {
-        int i;
-        int srcIndex = 0;
+        int i, srcIndex = 0;
         // Process pairs of 4-bit values
         for (i = 0; i < mlen / 2; i++)
         {
@@ -103,58 +99,28 @@ public class Utils
             srcIndex += 2;
         }
         // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if (mlen % 2 == 1)
+        if ((mlen & 1) == 1)
         {
             menc[i] = (byte)(m[srcIndex] & 0x0F);
         }
     }
 
-    /**
-     * Unpacks m-vectors from a packed byte array into an array of 64-bit limbs.
-     *
-     * @param in   the input byte array containing packed data
-     * @param out  the output long array where unpacked limbs are stored
-     * @param vecs the number of vectors
-     * @param m    the m parameter (used to compute m_vec_limbs and copy lengths)
-     */
-    public static void unpackMVecs(byte[] in, long[] out, int vecs, int m)
-    {
-        int mVecLimbs = (m + 15) / 16;
-        int bytesToCopy = m / 2; // Number of bytes to copy per vector
-        // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
-        byte[] tmp = new byte[mVecLimbs << 3];
-
-        // Process vectors in reverse order
-        for (int i = vecs - 1; i >= 0; i--)
-        {
-            // Copy m/2 bytes from the input into tmp. The rest remains zero.
-            System.arraycopy(in, i * bytesToCopy, tmp, 0, bytesToCopy);
-
-            // Convert each 8-byte block in tmp into a long using Pack
-            for (int j = 0; j < mVecLimbs; j++)
-            {
-                out[i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j << 3);
-            }
-        }
-    }
-
     public static void unpackMVecs(byte[] in, int inOff, long[] out, int outOff, int vecs, int m)
     {
-        int mVecLimbs = (m + 15) / 16;
-        int bytesToCopy = m / 2; // Number of bytes to copy per vector
+        int mVecLimbs = (m + 15) >> 4;
+        int bytesToCopy = m >> 1; // Number of bytes to copy per vector
         // Temporary buffer to hold mVecLimbs longs (each long is 8 bytes)
-        byte[] tmp = new byte[mVecLimbs << 3];
+        int lastblockLen = 8 - (mVecLimbs << 3) + bytesToCopy;
+        int i, j;
         // Process vectors in reverse order
-        for (int i = vecs - 1; i >= 0; i--)
+        for (i = vecs - 1, outOff += i * mVecLimbs, inOff += i * bytesToCopy; i >= 0; i--, outOff -= mVecLimbs, inOff -= bytesToCopy)
         {
-            // Copy m/2 bytes from the input into tmp. The rest remains zero.
-            System.arraycopy(in, inOff + i * bytesToCopy, tmp, 0, bytesToCopy);
-
             // Convert each 8-byte block in tmp into a long using Pack
-            for (int j = 0; j < mVecLimbs; j++)
+            for (j = 0; j < mVecLimbs - 1; j++)
             {
-                out[outOff + i * mVecLimbs + j] = Pack.littleEndianToLong(tmp, j * 8);
+                out[outOff + j] = Pack.littleEndianToLong(in, inOff + (j << 3));
             }
+            out[outOff + j] = Pack.littleEndianToLong(in, inOff + (j << 3), lastblockLen);
         }
     }
 
@@ -168,23 +134,19 @@ public class Utils
      */
     public static void packMVecs(long[] in, byte[] out, int outOff, int vecs, int m)
     {
-        int mVecLimbs = (m + 15) / 16;
-        int bytesToCopy = m / 2; // Number of bytes per vector to write
-
+        int mVecLimbs = (m + 15) >> 4;
+        int bytesToCopy = m >> 1; // Number of bytes per vector to write
+        int lastBlockLen = 8 - (mVecLimbs << 3) + bytesToCopy;
+        int j;
         // Process each vector in order
-        for (int i = 0; i < vecs; i++)
+        for (int i = 0, inOff = 0; i < vecs; i++, outOff += bytesToCopy, inOff += mVecLimbs)
         {
-            // Temporary buffer to hold the bytes for this vector
-            byte[] tmp = new byte[mVecLimbs * 8];
-
             // Convert each long into 8 bytes using Pack
-            for (int j = 0; j < mVecLimbs; j++)
+            for (j = 0; j < mVecLimbs - 1; j++)
             {
-                Pack.longToLittleEndian(in[i * mVecLimbs + j], tmp, j * 8);
+                Pack.longToLittleEndian(in[inOff + j], out, outOff + (j << 3));
             }
-
-            // Copy the first m/2 bytes from tmp to the output array
-            System.arraycopy(tmp, 0, out, i * bytesToCopy + outOff, bytesToCopy);
+            Pack.longToLittleEndian(in[inOff + j], out, outOff + (j << 3), lastBlockLen);
         }
     }
 
@@ -242,6 +204,6 @@ public class Utils
 
         // Unpack the byte array 'temp' into the long array 'P'
         // using our previously defined unpackMVecs method.
-        unpackMVecs(temp, P, numVectors, p.getM());
+        unpackMVecs(temp, 0, P, 0, numVectors, p.getM());
     }
 }
