@@ -110,6 +110,6 @@ public class MayoKeyPairGenerator
         Arrays.clear(O);
         Arrays.clear(P3);
 
-        return new AsymmetricCipherKeyPair(new MayoPublicKeyParameter(p, cpk), new MayoPrivateKeyParameter(p, seed_sk));
+        return new AsymmetricCipherKeyPair(new MayoPublicKeyParameters(p, cpk), new MayoPrivateKeyParameters(p, seed_sk));
     }
 }

@@ -16,8 +16,8 @@ public class MayoSigner
 {
     private SecureRandom random;
     MayoParameters params;
-    private MayoPublicKeyParameter pubKey;
-    private MayoPrivateKeyParameter privKey;
+    private MayoPublicKeyParameters pubKey;
+    private MayoPrivateKeyParameters privKey;
 
     @Override
     public void init(boolean forSigning, CipherParameters param)
@@ -30,19 +30,19 @@ public class MayoSigner
             if (param instanceof ParametersWithRandom)
             {
                 ParametersWithRandom withRandom = (ParametersWithRandom)param;
-                privKey = (MayoPrivateKeyParameter)withRandom.getParameters();
+                privKey = (MayoPrivateKeyParameters)withRandom.getParameters();
                 random = withRandom.getRandom();
             }
             else
             {
-                privKey = (MayoPrivateKeyParameter)param;
+                privKey = (MayoPrivateKeyParameters)param;
                 random = null;
             }
             params = privKey.getParameters();
         }
         else
         {
-            pubKey = (MayoPublicKeyParameter)param;
+            pubKey = (MayoPublicKeyParameters)param;
             params = pubKey.getParameters();
             privKey = null;
             random = null;

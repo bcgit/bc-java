@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.crypto.mayo;
 
 public class MayoParameters
 {
-    public static final MayoParameters MAYO1 = new MayoParameters(
+    public static final MayoParameters mayo1 = new MayoParameters(
         "MAYO_1",          // name
         86,                 // n
         78,                 // m
@@ -30,7 +30,7 @@ public class MayoParameters
         24                  // sk_seed_bytes
     );
 
-    public static final MayoParameters MAYO2 = new MayoParameters(
+    public static final MayoParameters mayo2 = new MayoParameters(
         "MAYO_2",          // name
         81,                 // n
         64,                 // m
@@ -58,7 +58,7 @@ public class MayoParameters
         24                  // sk_seed_bytes
     );
 
-    public static final MayoParameters MAYO3 = new MayoParameters(
+    public static final MayoParameters mayo3 = new MayoParameters(
         "MAYO_3",          // name
         118,                // n
         108,                // m
@@ -86,7 +86,7 @@ public class MayoParameters
         32                  // sk_seed_bytes
     );
 
-    public static final MayoParameters MAYO5 = new MayoParameters(
+    public static final MayoParameters mayo5 = new MayoParameters(
         "MAYO_5",          // name
         154,                // n
         142,                // m

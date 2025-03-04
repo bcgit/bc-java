@@ -1,9 +1,8 @@
-package org.bouncycastle.pqc.jcajce.provider.falcon;
+package org.bouncycastle.pqc.jcajce.provider.mayo;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.Key;
-import java.security.KeyFactorySpi;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -19,38 +18,40 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
 
-public class FalconKeyFactorySpi
+public class MayoKeyFactorySpi
     extends BaseKeyFactorySpi
 {
     private static final Set<ASN1ObjectIdentifier> keyOids = new HashSet<ASN1ObjectIdentifier>();
 
     static
     {
-        keyOids.add(BCObjectIdentifiers.falcon_512);
-        keyOids.add(BCObjectIdentifiers.falcon_1024);
+        keyOids.add(BCObjectIdentifiers.mayo1);
+        keyOids.add(BCObjectIdentifiers.mayo2);
+        keyOids.add(BCObjectIdentifiers.mayo3);
+        keyOids.add(BCObjectIdentifiers.mayo5);
     }
 
-    public FalconKeyFactorySpi()
+    public MayoKeyFactorySpi()
     {
         super(keyOids);
     }
 
-    public FalconKeyFactorySpi(ASN1ObjectIdentifier keyOid)
+    public MayoKeyFactorySpi(ASN1ObjectIdentifier keyOid)
     {
         super(keyOid);
     }
 
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
-            throws InvalidKeySpecException
+        throws InvalidKeySpecException
     {
-        if (key instanceof BCFalconPrivateKey)
+        if (key instanceof BCMayoPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
         }
-        else if (key instanceof BCFalconPublicKey)
+        else if (key instanceof BCMayoPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
@@ -60,17 +61,17 @@ public class FalconKeyFactorySpi
         else
         {
             throw new InvalidKeySpecException("Unsupported key type: "
-                    + key.getClass() + ".");
+                + key.getClass() + ".");
         }
 
         throw new InvalidKeySpecException("Unknown key specification: "
-                + keySpec + ".");
+            + keySpec + ".");
     }
 
     public final Key engineTranslateKey(Key key)
-            throws InvalidKeyException
+        throws InvalidKeyException
     {
-        if (key instanceof BCFalconPrivateKey || key instanceof BCFalconPublicKey)
+        if (key instanceof BCMayoPrivateKey || key instanceof BCMayoPublicKey)
         {
             return key;
         }
@@ -79,32 +80,51 @@ public class FalconKeyFactorySpi
     }
 
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
-        return new BCFalconPrivateKey(keyInfo);
+        return new BCMayoPrivateKey(keyInfo);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
-            throws IOException
+        throws IOException
     {
-        return new BCFalconPublicKey(keyInfo);
+        return new BCMayoPublicKey(keyInfo);
     }
 
-    public static class Falcon512
-        extends FalconKeyFactorySpi
+    public static class Mayo1
+        extends MayoKeyFactorySpi
     {
-        public Falcon512()
+        public Mayo1()
         {
-            super(BCObjectIdentifiers.falcon_512);
+            super(BCObjectIdentifiers.mayo1);
         }
     }
 
-    public static class Falcon1024
-        extends FalconKeyFactorySpi
+    public static class Mayo2
+        extends MayoKeyFactorySpi
     {
-        public Falcon1024()
+        public Mayo2()
         {
-            super(BCObjectIdentifiers.falcon_1024);
+            super(BCObjectIdentifiers.mayo2);
+        }
+    }
+
+    public static class Mayo3
+        extends MayoKeyFactorySpi
+    {
+        public Mayo3()
+        {
+            super(BCObjectIdentifiers.mayo3);
+        }
+    }
+
+    public static class Mayo5
+        extends MayoKeyFactorySpi
+    {
+        public Mayo5()
+        {
+            super(BCObjectIdentifiers.mayo5);
         }
     }
 }
+
