@@ -20,7 +20,7 @@ public class Bytes
     {
         for (int i = 0; i < len; ++i)
         {
-            z[zOff + i] = (byte)(x[xOff + i] ^ y[i]);
+            z[zOff++] = (byte)(x[xOff++] ^ y[i]);
         }
     }
 

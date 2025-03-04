@@ -16,7 +16,7 @@ public class MayoSigner
     implements MessageSigner
 {
     private SecureRandom random;
-    MayoParameters params;
+    private MayoParameters params;
     private MayoPublicKeyParameters pubKey;
     private MayoPrivateKeyParameters privKey;
 
@@ -57,6 +57,7 @@ public class MayoSigner
         int v = params.getV();
         int o = params.getO();
         int n = params.getN();
+        int m = params.getM();
         int vbytes = params.getVBytes();
         int oBytes = params.getOBytes();
         int saltBytes = params.getSaltBytes();
@@ -66,16 +67,17 @@ public class MayoSigner
         int digestBytes = params.getDigestBytes();
         int skSeedBytes = params.getSkSeedBytes();
         byte[] tenc = new byte[params.getMBytes()];
-        byte[] t = new byte[params.getM()];
-        byte[] y = new byte[params.getM()];
+        byte[] t = new byte[m];
+        byte[] y = new byte[m];
         byte[] salt = new byte[saltBytes];
         byte[] V = new byte[k * vbytes + params.getRBytes()];
         byte[] Vdec = new byte[v * k];
         int ok = k * o;
-        byte[] A = new byte[((params.getM() + 7) / 8 * 8) * (ok + 1)];
-        byte[] x = new byte[k * n];
+        int nk = k * n;
+        byte[] A = new byte[((m + 7) / 8 * 8) * (ok + 1)];
+        byte[] x = new byte[nk];
         byte[] r = new byte[ok + 1];
-        byte[] s = new byte[k * n];
+        byte[] s = new byte[nk];
         byte[] tmp = new byte[digestBytes + saltBytes + skSeedBytes + 1];
         byte[] sig = new byte[params.getSigBytes()];
         long[] P = new long[p1Limbs + params.getP2Limbs()];
@@ -121,9 +123,9 @@ public class MayoSigner
                     {
                         // Multiply the m-vector at P1 for the current matrix entry,
                         // and accumulate into acc for row r.
-                        GF16Utils.mVecMulAdd(mVecLimbs, P, bsMatEntriesUsed, O[co + j] & 0xFF, P, iomVecLimbs + jmVecLimbs);
+                        GF16Utils.mVecMulAdd(mVecLimbs, P, bsMatEntriesUsed, O[co + j], P, iomVecLimbs + jmVecLimbs);
                         // Similarly, accumulate into acc for row c.
-                        GF16Utils.mVecMulAdd(mVecLimbs, P, bsMatEntriesUsed, O[io + j] & 0xFF, P, comVecLimbs + jmVecLimbs);
+                        GF16Utils.mVecMulAdd(mVecLimbs, P, bsMatEntriesUsed, O[io + j], P, comVecLimbs + jmVecLimbs);
                     }
                     bsMatEntriesUsed += mVecLimbs;
                 }
@@ -150,9 +152,10 @@ public class MayoSigner
             System.arraycopy(salt, 0, tmp, digestBytes, saltBytes);
             shake.update(tmp, 0, digestBytes + saltBytes);
             shake.doFinal(tenc, 0, params.getMBytes());
-            Utils.decode(tenc, t, params.getM());
+            Utils.decode(tenc, t, m);
             int size = v * k * mVecLimbs;
             long[] Pv = new long[size];
+            byte[] Ox = new byte[v];
             for (int ctr = 0; ctr <= 255; ctr++)
             {
                 tmp[tmp.length - 1] = (byte)ctr;
@@ -182,12 +185,12 @@ public class MayoSigner
                 computeA(Mtmp, A);
 
                 // Clear trailing bytes
-//                for (int i = 0; i < params.getM(); ++i)
+//                for (int i = 0; i < m; ++i)
 //                {
 //                    A[(i + 1) * (ok + 1) - 1] = 0;
 //                }
 
-                Utils.decode(V, k * vbytes, r, 0, ok);
+                Utils.decode(V, k * vbytes, r, ok);
 
                 if (sampleSolution(params, A, y, r, x))
                 {
@@ -201,16 +204,16 @@ public class MayoSigner
             }
 
             // Compute final signature components
-            byte[] Ox = new byte[v];
-            for (int i = 0; i < k; i++)
+
+            for (int i = 0, io = 0, in = 0, iv = 0; i < k; i++, io += o, in+= n, iv += v)
             {
-                GF16Utils.matMul(O, x, i * o, Ox, o, n - o);
-                Bytes.xor(v, Vdec, i * v, Ox, s, i * n);
-                System.arraycopy(x, i * o, s, i * n + n - o, o);
+                GF16Utils.matMul(O, x, io, Ox, o, v);
+                Bytes.xor(v, Vdec, iv, Ox, s, in);
+                System.arraycopy(x, io, s, in + v, o);
             }
 
             // Encode and add salt
-            Utils.encode(s, sig, n * k);
+            Utils.encode(s, sig, nk);
             System.arraycopy(salt, 0, sig, sig.length - saltBytes, saltBytes);
 
             return Arrays.concatenate(sig, message);
@@ -294,13 +297,12 @@ public class MayoSigner
         final int k = params.getK();
         final int[] fTail = params.getFTail();
 
-        final int topPos = ((m - 1) & 15) * 4;
+        final int topPos = ((m - 1) & 15) << 2;
 
         // Zero out tails of m_vecs if necessary
         if ((m & 15) != 0)
         {
-            long mask = 1L << ((m & 15) << 2);
-            mask -= 1;
+            long mask = (1L << ((m & 15) << 2)) - 1;
             final int kSquared = k * k;
 
             for (int i = 0, index = mVecLimbs - 1; i < kSquared; i++, index += mVecLimbs)
@@ -409,7 +411,7 @@ public class MayoSigner
             }
         }
 
-        for (int i = 0, io = 0; i < k; i++, io += o)
+        for (int i = 0, io = 0, iomVecLimbs = 0; i < k; i++, io += o, iomVecLimbs += omVecLimbs)
         {
             for (int j = k - 1, jomVecLimbs = j * omVecLimbs, jo = j * o; j >= i; j--, jomVecLimbs -= omVecLimbs, jo -= o)
             {
@@ -433,13 +435,11 @@ public class MayoSigner
                 if (i != j)
                 {
                     // Process Mi
-                    int miOffset = i * mVecLimbs * o;
                     for (int c = 0, cmVecLimbs = 0; c < o; c++, cmVecLimbs += mVecLimbs)
                     {
                         for (int limb = 0, limbAWidhth = 0; limb < mVecLimbs; limb++, limbAWidhth += AWidth)
                         {
-                            long value = Mtmp[miOffset + limb + cmVecLimbs];
-
+                            long value = Mtmp[iomVecLimbs + limb + cmVecLimbs];
                             int aIndex = jo + c + wordsToShift + limbAWidhth;
                             A[aIndex] ^= value << bitsToShift;
 
@@ -461,7 +461,7 @@ public class MayoSigner
         }
 
         // Transpose blocks
-        for (int c = 0; c < AWidth * ((m + (k + 1) * k / 2 + 15) >>> 4); c += 16)
+        for (int c = 0; c < AWidth * ((m + (((k + 1) * k) >> 1) + 15) >>> 4); c += 16)
         {
             transpose16x16Nibbles(A, c);
         }
@@ -554,8 +554,7 @@ public class MayoSigner
         }
     }
 
-    boolean sampleSolution(MayoParameters params, byte[] A, byte[] y,
-                           byte[] r, byte[] x)
+    boolean sampleSolution(MayoParameters params, byte[] A, byte[] y, byte[] r, byte[] x)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -576,9 +575,9 @@ public class MayoSigner
         GF16Utils.matMul(A, r, 0, Ar, ok + 1, m);
 
         // Update last column of A with y - Ar
-        for (int i = 0; i < m; i++)
+        for (int i = 0, idx = ok; i < m; i++, idx += ok + 1)
         {
-            A[ok + i * (ok + 1)] = (byte)(y[i] ^ Ar[i]);
+            A[idx] = (byte)(y[i] ^ Ar[i]);
         }
 
         // Perform row echelon form transformation
@@ -586,9 +585,9 @@ public class MayoSigner
 
         // Check matrix rank
         boolean fullRank = false;
-        for (int i = 0; i < aCols - 1; i++)
+        for (int i = 0, idx = (m - 1) * aCols; i < aCols - 1; i++, idx++)
         {
-            fullRank |= (A[(m - 1) * aCols + i] != 0);
+            fullRank |= (A[idx] != 0);
         }
         if (!fullRank)
         {
@@ -608,7 +607,6 @@ public class MayoSigner
                 // Update x[col] using constant-time mask
                 byte u = (byte)(correctCol & ~finished & A[rowAcols + aCols - 1]);
                 x[col] ^= u;
-
 
                 // Update matrix entries
                 for (int i = 0, iaCols_col = col, iaCols_aCols1 = aCols - 1; i < row; i += 8,
@@ -647,7 +645,7 @@ public class MayoSigner
     void ef(byte[] A, int nrows, int ncols)
     {
         // Each 64-bit long can hold 16 nibbles (16 GF(16) elements).
-        int rowLen = (ncols + 15) / 16;
+        int rowLen = (ncols + 15) >> 4;
 
         // Allocate temporary arrays.
         long[] pivotRow = new long[rowLen];
@@ -686,11 +684,8 @@ public class MayoSigner
             int upperBound = Math.min(nrows - 1, pivotCol);
 
             // Zero out pivot row buffers.
-            for (int i = 0; i < rowLen; i++)
-            {
-                pivotRow[i] = 0;
-                pivotRow2[i] = 0;
-            }
+            Arrays.clear(pivotRow);
+            Arrays.clear(pivotRow2);
 
             // Try to select a pivot row in constant time.
             int pivot = 0;
