@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.mayo;
 
-public class GF16Utils
+class GF16Utils
 {
     static final long NIBBLE_MASK_MSB = 0x7777777777777777L;
     static final long MASK_MSB = 0x8888888888888888L;
@@ -20,7 +20,7 @@ public class GF16Utils
      * @param acc       the accumulator long array; the target vector starts at index accOffset
      * @param accOffset the starting index in 'acc'
      */
-    public static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int b, long[] acc, int accOffset)
+    static void mVecMulAdd(int mVecLimbs, long[] in, int inOffset, int b, long[] acc, int accOffset)
     {
         long a, r64, a_msb, a_msb3;
         long b32 = b & 0x00000000FFFFFFFFL;
@@ -67,18 +67,17 @@ public class GF16Utils
      * @param acc       the accumulator (as a flat long[] array) with dimensions (bsMatRows x matCols);
      *                  each “entry” is an m‐vector (length mVecLimbs).
      * @param bsMatRows number of rows in the bsMat (the “triangular” matrix’s row count).
-     * @param bsMatCols number of columns in bsMat.
      * @param matCols   number of columns in the matrix “mat.”
      */
-    public static void mulAddMUpperTriangularMatXMat(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int accOff,
-                                                     int bsMatRows, int bsMatCols, int matCols)
+    static void mulAddMUpperTriangularMatXMat(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc, int accOff,
+                                              int bsMatRows, int matCols)
     {
         int bsMatEntriesUsed = 0;
         int matColsmVecLimbs = matCols * mVecLimbs;
         for (int r = 0, rmatCols = 0, rmatColsmVecLimbs = 0; r < bsMatRows; r++, rmatCols += matCols, rmatColsmVecLimbs += matColsmVecLimbs)
         {
             // For each row r, the inner loop goes from column triangular*r to bsMatCols-1.
-            for (int c = r, cmatCols = rmatCols; c < bsMatCols; c++, cmatCols += matCols)
+            for (int c = r, cmatCols = rmatCols; c < bsMatRows; c++, cmatCols += matCols)
             {
                 for (int k = 0, kmVecLimbs = 0; k < matCols; k++, kmVecLimbs += mVecLimbs)
                 {
@@ -103,8 +102,8 @@ public class GF16Utils
      * @param matCols   number of columns in “mat.”
      * @param bsMatCols number of columns in the bsMat matrix.
      */
-    public static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
-                                           int matRows, int matCols, int bsMatCols)
+    static void mulAddMatTransXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
+                                    int matRows, int matCols, int bsMatCols)
     {
         // Loop over each column r of mat (which becomes row of mat^T)
         for (int r = 0; r < matCols; r++)
@@ -141,8 +140,8 @@ public class GF16Utils
      * @param matCols   the number of columns in the matrix
      * @param bsMatCols the number of columns in the bit‐sliced matrix (per block)
      */
-    public static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, long[] acc,
-                                      int matRows, int matCols, int bsMatCols)
+    static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, long[] acc,
+                               int matRows, int matCols, int bsMatCols)
     {
         for (int r = 0; r < matRows; r++)
         {
@@ -163,8 +162,8 @@ public class GF16Utils
         }
     }
 
-    public static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
-                                      int matRows, int matCols, int bsMatCols)
+    static void mulAddMatXMMat(int mVecLimbs, byte[] mat, long[] bsMat, int bsMatOff, long[] acc,
+                               int matRows, int matCols, int bsMatCols)
     {
         for (int r = 0; r < matRows; r++)
         {
@@ -204,8 +203,8 @@ public class GF16Utils
      * @param bsMatCols the number of columns in the bit‑sliced matrix.
      * @param matRows   the number of rows in the matrix.
      */
-    public static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc,
-                                                          int bsMatRows, int bsMatCols, int matRows)
+    static void mulAddMUpperTriangularMatXMatTrans(int mVecLimbs, long[] bsMat, byte[] mat, long[] acc,
+                                                   int bsMatRows, int bsMatCols, int matRows)
     {
         int bsMatEntriesUsed = 0;
         for (int r = 0; r < bsMatRows; r++)
@@ -236,21 +235,26 @@ public class GF16Utils
      * @param b an element in GF(16) (only the lower 4 bits are used)
      * @return the product a * b in GF(16)
      */
-    public static int mulF(int a, int b)
+    static int mulF(int a, int b)
     {
-        // In C there is a conditional XOR with unsigned_char_blocker to work around
-        // compiler-specific behavior. In Java we can omit it (or define it as needed).
-        // a ^= unsignedCharBlocker;  // Omitted in Java
-
-        // Perform carryless multiplication:
-        // Multiply b by each bit of a and XOR the results.
-        int p = ((a & 1) * b) ^ ((a & 2) * b) ^ ((a & 4) * b) ^ ((a & 8) * b);
-
+        // Carryless multiply: multiply b by each bit of a and XOR.
+        int p = (-(a & 1) & b) ^ (-((a >> 1) & 1) & (b << 1)) ^ (-((a >> 2) & 1) & (b << 2)) ^ (-((a >> 3) & 1) & (b << 3));
         // Reduce modulo f(X) = x^4 + x + 1.
-        // Extract the upper nibble (bits 4 to 7).
         int topP = p & 0xF0;
-        // The reduction: XOR p with (topP shifted right by 4 and by 3) and mask to 4 bits.
         return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0F;
+    }
+
+    /**
+     * Computes the multiplicative inverse in GF(16) for a GF(16) element.
+     */
+    static byte inverseF(int a)
+    {
+        // In GF(16), the inverse can be computed via exponentiation.
+        int a2 = mulF(a, a);
+        int a4 = mulF(a2, a2);
+        int a8 = mulF(a4, a4);
+        int a6 = mulF(a2, a4);
+        return (byte) mulF(a8, a6);
     }
 
     /**
@@ -261,64 +265,29 @@ public class GF16Utils
      * @param b a 64-bit word representing 16 GF(16) elements (packed 4 bits per element)
      * @return the reduced 64-bit word after multiplication
      */
-    public static long mulFx8(byte a, long b)
+    static long mulFx8(byte a, long b)
     {
         // Convert 'a' to an unsigned int so that bit operations work as expected.
         int aa = a & 0xFF;
         // Carryless multiplication: for each bit in 'aa' (considering only the lower 4 bits),
         // if that bit is set, multiply 'b' (by 1, 2, 4, or 8) and XOR the result.
-        long p = ((aa & 1) * b) ^ ((aa & 2) * b) ^ ((aa & 4) * b) ^ ((aa & 8) * b);
+        long p = (-(aa & 1) & b) ^ (-((aa >> 1) & 1) & (b << 1)) ^ (-((aa >> 2) & 1) & (b << 2)) ^ (-((aa >> 3) & 1) & (b << 3));
 
         // Reduction mod (x^4 + x + 1): process each byte in parallel.
         long topP = p & 0xf0f0f0f0f0f0f0f0L;
         return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0f0f0f0f0f0f0f0fL;
     }
 
-    public static void matMul(byte[] a, byte[] b, byte[] c, int colrowAB, int rowA, int colB)
+    static void matMul(byte[] a, byte[] b, int bOff, byte[] c, int colrowAB, int rowA)
     {
-        int cIndex = 0;
-        for (int i = 0; i < rowA; i++)
+        for (int i = 0, aRowStart = 0, cOff = 0; i < rowA; i++, aRowStart += colrowAB)
         {
-            int aRowStart = i * colrowAB;
-            for (int j = 0; j < colB; j++)
+            byte result = 0;
+            for (int k = 0; k < colrowAB; k++)
             {
-                c[cIndex++] = lincomb(a, aRowStart, b, j, colrowAB, colB);
+                result ^= mulF(a[aRowStart + k], b[bOff + k]);
             }
-        }
-    }
-
-    public static void matMul(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff,
-                              int colrowAB, int rowA, int colB)
-    {
-        for (int i = 0, aRowStart = 0; i < rowA; i++, aRowStart += colrowAB)
-        {
-            for (int j = 0; j < colB; j++)
-            {
-                c[cOff++] = lincomb(a, aOff + aRowStart, b, bOff + j, colrowAB, colB);
-            }
-        }
-    }
-
-    private static byte lincomb(byte[] a, int aStart, byte[] b, int bStart,
-                                int colrowAB, int colB)
-    {
-        byte result = 0;
-        for (int k = 0; k < colrowAB; k++)
-        {
-            result ^= mulF(a[aStart + k], b[bStart + k * colB]);
-        }
-        return result;
-    }
-
-    public static void matAdd(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff, int m, int n)
-    {
-        for (int i = 0, in = 0; i < m; i++, in += n)
-        {
-            for (int j = 0; j < n; j++)
-            {
-                int idx = in + j;
-                c[idx + cOff] = (byte)(a[idx + aOff] ^ b[idx + bOff]);
-            }
+            c[cOff++] = result;
         }
     }
 }
