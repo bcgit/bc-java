@@ -69,7 +69,7 @@ public class MayoKeyPairGenerator
         // Compute P1 * O + P2 and store the result in P2.
         // GF16Utils.P1TimesO(p, P, O, P2);
         // Here, bsMatRows and bsMatCols are both paramV, and matCols is paramO, triangular=1.
-        GF16Utils.mulAddMUpperTriangularMatXMat(mVecLimbs, P, O, P, p1Limbs, v, v, o);
+        GF16Utils.mulAddMUpperTriangularMatXMat(mVecLimbs, P, O, P, p1Limbs, v, o);
 
         // Compute P3 = O^T * (P1*O + P2).
         // Here, treat P2 as the bsMat for the multiplication.

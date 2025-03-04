@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
@@ -204,8 +205,8 @@ public class MayoSigner
             byte[] Ox = new byte[v];
             for (int i = 0; i < k; i++)
             {
-                GF16Utils.matMul(O, 0, x, i * o, Ox, 0, o, n - o, 1);
-                GF16Utils.matAdd(Vdec, i * v, Ox, 0, s, i * n, v, 1);
+                GF16Utils.matMul(O, x, i * o, Ox, o, n - o);
+                Bytes.xor(v, Vdec, i * v, Ox, s, i * n);
                 System.arraycopy(x, i * o, s, i * n + n - o, o);
             }
 
@@ -287,7 +288,7 @@ public class MayoSigner
         return Arrays.constantTimeAreEqual(m, y, 0, t, 0);
     }
 
-    public void computeRHS(long[] vPv, byte[] t, byte[] y)
+    void computeRHS(long[] vPv, byte[] t, byte[] y)
     {
         final int m = params.getM();
         final int mVecLimbs = params.getMVecLimbs();
@@ -350,16 +351,16 @@ public class MayoSigner
                 Pack.littleEndianToLong(tempBytes, 0, temp);
 
                 // Extract from vPv and add
-                int matrixIndex = i * k + j;
-                int symmetricIndex = j * k + i;
+                int matrixIndex = (i * k + j) * mVecLimbs;
+                int symmetricIndex = (j * k + i) * mVecLimbs;
                 boolean isDiagonal = (i == j);
 
                 for (int limb = 0; limb < mVecLimbs; limb++)
                 {
-                    long value = vPv[matrixIndex * mVecLimbs + limb];
+                    long value = vPv[matrixIndex + limb];
                     if (!isDiagonal)
                     {
-                        value ^= vPv[symmetricIndex * mVecLimbs + limb];
+                        value ^= vPv[symmetricIndex + limb];
                     }
                     temp[limb] ^= value;
                 }
@@ -379,7 +380,7 @@ public class MayoSigner
     private static final long EVEN_BYTES = 0x00FF00FF00FF00FFL;
     private static final long EVEN_2BYTES = 0x0000FFFF0000FFFFL;
 
-    public void computeA(long[] Mtmp, byte[] AOut)
+    void computeA(long[] Mtmp, byte[] AOut)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -554,8 +555,8 @@ public class MayoSigner
         }
     }
 
-    public boolean sampleSolution(MayoParameters params, byte[] A, byte[] y,
-                                  byte[] r, byte[] x)
+    boolean sampleSolution(MayoParameters params, byte[] A, byte[] y,
+                           byte[] r, byte[] x)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -573,7 +574,7 @@ public class MayoSigner
 //        {
 //            A[k * o + i * (k * o + 1)] = 0;
 //        }
-        GF16Utils.matMul(A, r, Ar, k * o + 1, m, 1);
+        GF16Utils.matMul(A, r, 0, Ar, k * o + 1, m);
 
         // Update last column of A with y - Ar
         for (int i = 0; i < m; i++)
@@ -645,7 +646,7 @@ public class MayoSigner
      * @param nrows the number of rows
      * @param ncols the number of columns (GF(16) elements per row)
      */
-    public void ef(byte[] A, int nrows, int ncols)
+    void ef(byte[] A, int nrows, int ncols)
     {
         // Each 64-bit long can hold 16 nibbles (16 GF(16) elements).
         int rowLen = (ncols + 15) / 16;
@@ -713,8 +714,7 @@ public class MayoSigner
             }
 
             // Multiply the pivot row by the inverse of the pivot element.
-            int inv = inverseF(pivot);
-            vecMulAddU64(rowLen, pivotRow, (byte)inv, pivotRow2);
+            vecMulAddU64(rowLen, pivotRow, GF16Utils.inverseF(pivot), pivotRow2);
 
             // Conditionally write the pivot row back into the correct row (if pivot is nonzero).
             for (int row = lowerBound, rowRowLen = lowerBound * rowLen; row <= upperBound; row++, rowRowLen += rowLen)
@@ -767,33 +767,6 @@ public class MayoSigner
     {
         // Compute (-(a XOR b)) >> 63 then XOR with UINT64_BLOCKER.
         return (-(long)(a ^ b)) >> 63;
-    }
-
-    /**
-     * Computes the multiplicative inverse in GF(16) for a GF(16) element.
-     */
-    private static int inverseF(int a)
-    {
-        // In GF(16), the inverse can be computed via exponentiation.
-        int a2 = mulF(a, a);
-        int a4 = mulF(a2, a2);
-        int a8 = mulF(a4, a4);
-        int a6 = mulF(a2, a4);
-        return mulF(a8, a6);
-    }
-
-    /**
-     * GF(16) multiplication mod (x^4 + x + 1).
-     * <p>
-     * Multiplies two GF(16) elements (only the lower 4 bits are used).
-     */
-    public static int mulF(int a, int b)
-    {
-        // Carryless multiply: multiply b by each bit of a and XOR.
-        int p = (-(a & 1) & b) ^ (-((a >> 1) & 1) & (b << 1)) ^ (-((a >> 2) & 1) & (b << 2)) ^ (-((a >> 3) & 1) & (b << 3));
-        // Reduce modulo f(X) = x^4 + x + 1.
-        int topP = p & 0xF0;
-        return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0F;
     }
 
     /**
@@ -927,45 +900,69 @@ public class MayoSigner
 
     private static void mVecMultiplyBins(int mVecLimbs, int len, long[] bins, long[] ps)
     {
+        long a, b, t;
+        int mVecLimbs2 = mVecLimbs + mVecLimbs,
+            mVecLimbs3 = mVecLimbs2 + mVecLimbs,
+            mVecLimbs4 = mVecLimbs3 + mVecLimbs,
+            mVecLimbs5 = mVecLimbs4 + mVecLimbs,
+            mVecLimbs6 = mVecLimbs5 + mVecLimbs,
+            mVecLimbs7 = mVecLimbs6 + mVecLimbs,
+            mVecLimbs8 = mVecLimbs7 + mVecLimbs,
+            mVecLimbs9 = mVecLimbs8 + mVecLimbs,
+            mVecLimbs10 = mVecLimbs9 + mVecLimbs,
+            mVecLimbs11 = mVecLimbs10 + mVecLimbs,
+            mVecLimbs12 = mVecLimbs11 + mVecLimbs,
+            mVecLimbs13 = mVecLimbs12 + mVecLimbs,
+            mVecLimbs14 = mVecLimbs13 + mVecLimbs,
+            mVecLimbs15 = mVecLimbs14 + mVecLimbs;
         for (int i = 0, imVecLimbs4 = 0; i < len; i++, imVecLimbs4 += (mVecLimbs << 4))
         {
-            // Series of modular operations as per original C code
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 5 * mVecLimbs, bins, imVecLimbs4 + 10 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 11 * mVecLimbs, bins, imVecLimbs4 + 12 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 10 * mVecLimbs, bins, imVecLimbs4 + 7 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 12 * mVecLimbs, bins, imVecLimbs4 + 6 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 7 * mVecLimbs, bins, imVecLimbs4 + 14 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 6 * mVecLimbs, bins, imVecLimbs4 + 3 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 14 * mVecLimbs, bins, imVecLimbs4 + 15 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 3 * mVecLimbs, bins, imVecLimbs4 + 8 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 15 * mVecLimbs, bins, imVecLimbs4 + 13 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 8 * mVecLimbs, bins, imVecLimbs4 + 4 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 13 * mVecLimbs, bins, imVecLimbs4 + 9 * mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 4 * mVecLimbs, bins, imVecLimbs4 + 2 * mVecLimbs);
-            mVecMulAddXInv(mVecLimbs, bins, imVecLimbs4 + 9 * mVecLimbs, bins, imVecLimbs4 + mVecLimbs);
-            mVecMulAddX(mVecLimbs, bins, imVecLimbs4 + 2 * mVecLimbs, bins, imVecLimbs4 + mVecLimbs);
-            System.arraycopy(bins, mVecLimbs + imVecLimbs4, ps, imVecLimbs4 >> 4, mVecLimbs);
-        }
-    }
+            for (int j = 0, off = imVecLimbs4; j < mVecLimbs; j++, off++)
+            {
+                b = bins[off + mVecLimbs5];
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs10] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
 
-    // Modular arithmetic operations
-    private static void mVecMulAddXInv(int limbs, long[] in, int inOffset, long[] acc, int accOffset)
-    {
-        for (int i = 0; i < limbs; i++)
-        {
-            long input = in[inOffset + i];
-            long t = input & GF16Utils.MASK_LSB;
-            acc[accOffset + i] ^= ((input & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
-        }
-    }
+                a = bins[off + mVecLimbs11];
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs12] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
 
-    private static void mVecMulAddX(int limbs, long[] in, int inOffset, long[] acc, int accOffset)
-    {
-        for (int i = 0; i < limbs; i++)
-        {
-            long input = in[inOffset + i];
-            long t = (input & GF16Utils.MASK_MSB) >>> 3;
-            acc[accOffset + i] ^= ((input & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs7] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs6] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs14] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs3] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs15] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs8] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs13] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs4] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs9] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                a = bins[off + mVecLimbs2] ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+
+                t = b & GF16Utils.MASK_LSB;
+                b = bins[off + mVecLimbs] ^ ((b & GF16Utils.NIBBLE_MASK_LSB) >>> 1) ^ ((t << 3) + t);
+
+                t = (a & GF16Utils.MASK_MSB) >>> 3;
+                ps[(imVecLimbs4 >> 4) + j] = b ^ ((a & GF16Utils.NIBBLE_MASK_MSB) << 1) ^ ((t << 1) + t);
+            }
         }
     }
 }

@@ -16,6 +16,14 @@ public class Bytes
         }
     }
 
+    public static void xor(int len, byte[] x, int xOff, byte[] y, byte[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] = (byte)(x[xOff + i] ^ y[i]);
+        }
+    }
+
     public static void xor(int len, byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff)
     {
         for (int i = 0; i < len; ++i)
