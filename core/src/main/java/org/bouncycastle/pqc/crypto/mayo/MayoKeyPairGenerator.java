@@ -9,6 +9,22 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Longs;
 
+/**
+ * Implementation of the MAYO asymmetric key pair generator following the MAYO signature scheme specifications.
+ * <p>
+ * This generator produces {@link MayoPublicKeyParameters} and {@link MayoPrivateKeyParameters} based on the
+ * MAYO algorithm parameters. The implementation follows the specification defined in the official MAYO
+ * documentation and reference implementation.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://pqmayo.org/">MAYO Official Website</a></li>
+ *   <li><a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Specification Document</a></li>
+ *   <li><a href="https://github.com/PQCMayo/MAYO-C">MAYO Reference Implementation (C)</a></li>
+ * </ul>
+ *
+ */
 public class MayoKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
@@ -21,6 +37,23 @@ public class MayoKeyPairGenerator
         this.random = param.getRandom();
     }
 
+    /**
+     * Generates a new asymmetric key pair following the MAYO algorithm specifications.
+     * <p>
+     * The key generation process follows these steps:
+     * </p>
+     * <ol>
+     *   <li>Initializes parameter dimensions from {@link MayoParameters}</li>
+     *   <li>Generates secret key seed using a secure random generator</li>
+     *   <li>Derives public key seed using SHAKE-256</li>
+     *   <li>Expands matrix parameters P1 and P2</li>
+     *   <li>Performs GF(16) matrix operations for key material generation</li>
+     *   <li>Assembles and packages the public key components</li>
+     *   <li>Securely clears temporary buffers containing sensitive data</li>
+     * </ol>
+     *
+     * @return A valid MAYO key pair containing public and private key parameters
+     */
     @Override
     public AsymmetricCipherKeyPair generateKeyPair()
     {
