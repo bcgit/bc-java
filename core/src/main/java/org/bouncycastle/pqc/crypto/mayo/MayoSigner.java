@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.mayo;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
@@ -12,6 +13,21 @@ import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
+/**
+ * Implementation of the MAYO digital signature scheme as specified in the MAYO documentation.
+ * This class provides functionality for both signature generation and verification.
+ *
+ * <p>MAYO is a candidate in the <b>NIST Post-Quantum Cryptography: Additional Digital Signature Schemes</b> project,
+ * currently in Round 2 of evaluations. For more details about the NIST standardization process, see:
+ * <a href="https://csrc.nist.gov/Projects/pqc-dig-sig">NIST PQC Additional Digital Signatures</a>.</p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://pqmayo.org/">MAYO Official Website</a></li>
+ *   <li><a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Specification Document</a></li>
+ *   <li><a href="https://github.com/PQCMayo/MAYO-C">MAYO Reference Implementation (C)</a></li>
+ * </ul>
+ */
 public class MayoSigner
     implements MessageSigner
 {
@@ -20,6 +36,17 @@ public class MayoSigner
     private MayoPublicKeyParameters pubKey;
     private MayoPrivateKeyParameters privKey;
 
+    /**
+     * Initializes the signer for either signature generation or verification.
+     *
+     * @param forSigning {@code true} for signing mode, {@code false} for verification
+     * @param param      CipherParameters containing:
+     *                   <ul>
+     *                     <li>{@link ParametersWithRandom} with {@link MayoPrivateKeyParameters} (for signing)</li>
+     *                     <li>{@link MayoPublicKeyParameters} (for verification)</li>
+     *                   </ul>
+     * @throws IllegalArgumentException if invalid parameters are provided
+     */
     @Override
     public void init(boolean forSigning, CipherParameters param)
     {
@@ -37,7 +64,7 @@ public class MayoSigner
             else
             {
                 privKey = (MayoPrivateKeyParameters)param;
-                random = null;
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
             params = privKey.getParameters();
         }
@@ -50,6 +77,14 @@ public class MayoSigner
         }
     }
 
+    /**
+     * Generates a MAYO signature for the given message using the initialized private key.
+     * Follows the signature generation process outlined in the MAYO specification document.
+     *
+     * @param message The message to be signed
+     * @return The signature bytes concatenated with the original message
+     * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 8 and 10</a>
+     */
     @Override
     public byte[] generateSignature(byte[] message)
     {
@@ -192,7 +227,7 @@ public class MayoSigner
 
                 Utils.decode(V, k * vbytes, r, ok);
 
-                if (sampleSolution(params, A, y, r, x))
+                if (sampleSolution(A, y, r, x))
                 {
                     break;
                 }
@@ -235,6 +270,15 @@ public class MayoSigner
         }
     }
 
+    /**
+     * Verifies a MAYO signature against the initialized public key and message.
+     * Implements the verification process specified in the MAYO documentation.
+     *
+     * @param message     The original message
+     * @param signature   The signature to verify
+     * @return {@code true} if the signature is valid, {@code false} otherwise
+     * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 9 and 11</a>
+     */
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
@@ -554,7 +598,17 @@ public class MayoSigner
         }
     }
 
-    boolean sampleSolution(MayoParameters params, byte[] A, byte[] y, byte[] r, byte[] x)
+    /**
+     * Samples a solution for the MAYO signature equation using the provided parameters.
+     *
+     * @param A      Coefficient matrix
+     * @param y      Target vector
+     * @param r      Randomness vector
+     * @param x      Output solution vector
+     * @return {@code true} if a valid solution was found, {@code false} otherwise
+     * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 2</a>
+     */
+    boolean sampleSolution(byte[] A, byte[] y, byte[] r, byte[] x)
     {
         final int k = params.getK();
         final int o = params.getO();
@@ -641,6 +695,7 @@ public class MayoSigner
      * @param A     the input matrix, stored rowwise; each element is in [0,15]
      * @param nrows the number of rows
      * @param ncols the number of columns (GF(16) elements per row)
+     * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 1</a>
      */
     void ef(byte[] A, int nrows, int ncols)
     {
