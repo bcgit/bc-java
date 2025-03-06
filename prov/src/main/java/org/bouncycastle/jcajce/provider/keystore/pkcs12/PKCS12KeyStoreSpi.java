@@ -76,6 +76,7 @@ import org.bouncycastle.asn1.pkcs.EncryptionScheme;
 import org.bouncycastle.asn1.pkcs.KeyDerivationFunc;
 import org.bouncycastle.asn1.pkcs.MacData;
 import org.bouncycastle.asn1.pkcs.PBES2Parameters;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -93,8 +94,14 @@ import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.PBEParametersGenerator;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
@@ -2041,6 +2048,39 @@ public class PKCS12KeyStoreSpi
         byte[] data)
         throws Exception
     {
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(oid))
+        {
+            PBMAC1Params pbmac1Params = PBMAC1Params.getInstance(macAlgorithm.getParameters());
+            if (pbmac1Params == null)
+            {
+                throw new IOException("If the DigestAlgorithmIdentifier is id-PBMAC1, then the parameters field must contain valid PBMAC1-params parameters.");
+            }
+            if (PKCSObjectIdentifiers.id_PBKDF2.equals(pbmac1Params.getKeyDerivationFunc().getAlgorithm()))
+            {
+                PBKDF2Params pbkdf2Params = PBKDF2Params.getInstance(pbmac1Params.getKeyDerivationFunc().getParameters());
+                if (pbkdf2Params.getKeyLength() == null)
+                {
+                    throw new IOException("Key length must be present when using PBMAC1.");
+                }
+                final HMac hMac = new HMac(getPrf(pbmac1Params.getMessageAuthScheme().getAlgorithm()));
+
+                PBEParametersGenerator generator = new PKCS5S2ParametersGenerator(getPrf(pbkdf2Params.getPrf().getAlgorithm()));
+
+                generator.init(
+                    Strings.toUTF8ByteArray(password),
+                    pbkdf2Params.getSalt(),
+                    BigIntegers.intValueExact(pbkdf2Params.getIterationCount()));
+
+                CipherParameters key = generator.generateDerivedParameters(BigIntegers.intValueExact(pbkdf2Params.getKeyLength()) * 8);
+
+                hMac.init(key);
+                hMac.update(data, 0, data.length);
+                byte[] res = new byte[hMac.getMacSize()];
+                hMac.doFinal(res, 0);
+                return res;
+            }
+        }
+        
         PBEParameterSpec defParams = new PBEParameterSpec(salt, itCount);
 
         Mac mac = helper.createMac(oid.getId());
@@ -2048,6 +2088,22 @@ public class PKCS12KeyStoreSpi
         mac.update(data);
 
         return mac.doFinal();
+    }
+
+    private static Digest getPrf(ASN1ObjectIdentifier prfId)
+    {
+        if (PKCSObjectIdentifiers.id_hmacWithSHA256.equals(prfId))
+        {
+            return new SHA256Digest();
+        }
+        else if (PKCSObjectIdentifiers.id_hmacWithSHA512.equals(prfId))
+        {
+            return new SHA512Digest();
+        }
+        else
+        {
+            throw new IllegalArgumentException("unknown prf id " + prfId);
+        }
     }
 
     public static class BCPKCS12KeyStore
