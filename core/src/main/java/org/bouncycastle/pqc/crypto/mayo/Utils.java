@@ -9,7 +9,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-public class Utils
+class Utils
 {
     /**
      * Decodes an encoded byte array.
@@ -34,7 +34,7 @@ public class Utils
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
         if ((mdecLen & 1) == 1)
         {
-            mdec[decIndex] = (byte)((m[i] & 0xFF) & 0x0F);
+            mdec[decIndex] = (byte)(m[i] & 0x0F);
         }
     }
 
@@ -53,28 +53,6 @@ public class Utils
         if ((mdecLen & 1) == 1)
         {
             mdec[decIndex] = (byte)(m[mOff] & 0x0F);
-        }
-    }
-
-    /**
-     * Decodes a nibble-packed byte array into an output array.
-     *
-     * @param input       the input byte array.
-     * @param inputOffset the offset in input from which to start decoding.
-     * @param output      the output byte array to hold the decoded nibbles.
-     * @param mdecLen     the total number of nibbles to decode.
-     */
-    public static void decode(byte[] input, int inputOffset, byte[] output, int mdecLen)
-    {
-        int decIndex = 0, blocks = mdecLen >> 1;
-        for (int i = 0; i < blocks; i++)
-        {
-            output[decIndex++] = (byte)(input[inputOffset] & 0x0F);
-            output[decIndex++] = (byte)((input[inputOffset++] >> 4) & 0x0F);
-        }
-        if ((mdecLen & 1) == 1)
-        {
-            output[decIndex] = (byte)(input[inputOffset] & 0x0F);
         }
     }
 

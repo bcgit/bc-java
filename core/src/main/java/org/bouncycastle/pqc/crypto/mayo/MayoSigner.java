@@ -135,7 +135,7 @@ public class MayoSigner
 
             // Decode the portion of S after the first param_pk_seed_bytes into O.
             // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
-            Utils.decode(seed_pk, pk_seed_bytes, O, v * o);
+            Utils.decode(seed_pk, pk_seed_bytes, O, 0, v * o);
 
             // Expand P1 and P2 into the long array P using seed_pk.
             Utils.expandP1P2(params, P, seed_pk);
@@ -225,7 +225,7 @@ public class MayoSigner
 //                    A[(i + 1) * (ok + 1) - 1] = 0;
 //                }
 
-                Utils.decode(V, k * vbytes, r, ok);
+                Utils.decode(V, k * vbytes, r, 0, ok);
 
                 if (sampleSolution(A, y, r, x))
                 {
@@ -240,7 +240,7 @@ public class MayoSigner
 
             // Compute final signature components
 
-            for (int i = 0, io = 0, in = 0, iv = 0; i < k; i++, io += o, in+= n, iv += v)
+            for (int i = 0, io = 0, in = 0, iv = 0; i < k; i++, io += o, in += n, iv += v)
             {
                 GF16Utils.matMul(O, x, io, Ox, o, v);
                 Bytes.xor(v, Vdec, iv, Ox, s, in);
@@ -274,8 +274,8 @@ public class MayoSigner
      * Verifies a MAYO signature against the initialized public key and message.
      * Implements the verification process specified in the MAYO documentation.
      *
-     * @param message     The original message
-     * @param signature   The signature to verify
+     * @param message   The original message
+     * @param signature The signature to verify
      * @return {@code true} if the signature is valid, {@code false} otherwise
      * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 9 and 11</a>
      */
@@ -601,10 +601,10 @@ public class MayoSigner
     /**
      * Samples a solution for the MAYO signature equation using the provided parameters.
      *
-     * @param A      Coefficient matrix
-     * @param y      Target vector
-     * @param r      Randomness vector
-     * @param x      Output solution vector
+     * @param A Coefficient matrix
+     * @param y Target vector
+     * @param r Randomness vector
+     * @param x Output solution vector
      * @return {@code true} if a valid solution was found, {@code false} otherwise
      * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 2</a>
      */

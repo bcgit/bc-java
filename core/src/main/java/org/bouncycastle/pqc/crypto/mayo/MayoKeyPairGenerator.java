@@ -94,7 +94,7 @@ public class MayoKeyPairGenerator
         // o ← Decode_o(S[ param_pk_seed_bytes : param_pk_seed_bytes + O_bytes ])
         // Decode nibbles from S starting at offset param_pk_seed_bytes into O,
         // with expected output length = param_v * param_o.
-        Utils.decode(seed_pk, pkSeedBytes, O, O.length);
+        Utils.decode(seed_pk, pkSeedBytes, O, 0,  O.length);
 
         // Expand P1 and P2 into the array P using seed_pk.
         Utils.expandP1P2(p, P, seed_pk);
