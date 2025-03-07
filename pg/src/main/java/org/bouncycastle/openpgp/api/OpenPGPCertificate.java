@@ -788,6 +788,45 @@ public class OpenPGPCertificate
     }
 
     /**
+     * Return a {@link List} containing all currently valid marked certification keys.
+     *
+     * @return list of certification keys
+     */
+    public List<OpenPGPComponentKey> getCertificationKeys()
+    {
+        return getCertificationKeys(new Date());
+    }
+
+    /**
+     * Return a list of all keys that - at evaluation time - are validly marked as certification keys.
+     *
+     * @param evaluationTime evaluation time
+     * @return list of certification keys
+     */
+    public List<OpenPGPComponentKey> getCertificationKeys(Date evaluationTime)
+    {
+        List<OpenPGPComponentKey> certificationKeys = new ArrayList<>();
+
+        for (OpenPGPComponentKey key : getKeys())
+        {
+            if (!isBound(key, evaluationTime))
+            {
+                // Key is not bound
+                continue;
+            }
+
+            if (!key.isCertificationKey(evaluationTime))
+            {
+                continue;
+            }
+
+            certificationKeys.add(key);
+        }
+
+        return certificationKeys;
+    }
+
+    /**
      * Return {@link OpenPGPSignatureChains} that contain preference information.
      *
      * @return signature chain containing certificate-wide preferences (typically DK signature)
