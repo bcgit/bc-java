@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.snova;
 
+import org.bouncycastle.util.Arrays;
+
 public class SnovaEngine
 {
     private final SnovaParameters params;
@@ -65,5 +67,44 @@ public class SnovaEngine
         }
     }
 
+    // Constant-time GF16 matrix generation
+    public void genAFqSCT(byte[] c, int cOff, byte[] ptMatrix)
+    {
+        int lsq = l * l;
+        int[] xTemp = new int[lsq];
 
+        // Initialize diagonal with c[0]
+        int cX = GF16Utils.gf16FromNibble(c[cOff]);
+        for (int ij = 0; ij < l; ij++)
+        {
+            xTemp[ij * l + ij] = cX;
+        }
+
+        // Process middle coefficients
+        for (int i1 = 1; i1 < l - 1; i1++)
+        {
+            cX = GF16Utils.gf16FromNibble(c[cOff + i1]);
+            for (int ij = 0; ij < lsq; ij++)
+            {
+                xTemp[ij] ^= cX * xS[i1][ij];
+            }
+        }
+
+        // Handle last coefficient with constant-time selection
+        int zero = GF16Utils.ctGF16IsNotZero(c[cOff + l - 1]);
+        int val = zero * c[cOff +l - 1] + (1 - zero) * (15 + GF16Utils.ctGF16IsNotZero(c[cOff]) - c[cOff]);
+        cX = GF16Utils.gf16FromNibble((byte)val);
+
+        for (int ij = 0; ij < lsq; ij++)
+        {
+            xTemp[ij] ^= cX * xS[l - 1][ij];
+        }
+
+        // Convert to nibbles and clear temp
+        for (int ij = 0; ij < lsq; ij++)
+        {
+            ptMatrix[ij] = GF16Utils.gf16ToNibble(xTemp[ij]);
+        }
+        Arrays.fill(xTemp, 0); // Secure clear
+    }
 }
