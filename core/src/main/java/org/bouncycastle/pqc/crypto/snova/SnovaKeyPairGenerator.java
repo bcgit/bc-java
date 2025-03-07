@@ -7,6 +7,8 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 
 public class SnovaKeyPairGenerator
@@ -97,13 +99,13 @@ public class SnovaKeyPairGenerator
 //        serializeMatrixGroup(bos, keyElements.map1.Qalpha2);
 
         // Serialize T12
-        for (GF16Matrix[] row : keyElements.T12)
-        {
-            for (GF16Matrix matrix : row)
-            {
-                serializeMatrix(bos, matrix);
-            }
-        }
+//        for (GF16Matrix[] row : keyElements.T12)
+//        {
+//            for (GF16Matrix matrix : row)
+//            {
+//                serializeMatrix(bos, matrix);
+//            }
+//        }
 
         // Add public and private seeds
         bos.write(ptPublicKeySeed, 0, ptPublicKeySeed.length);
@@ -168,7 +170,7 @@ public class SnovaKeyPairGenerator
 //        genP22(keyElements.pk.P22, keyElements.T12, keyElements.map1.P21, keyElements.map2.F12);
     }
 
-    private void genSeedsAndT12(GF16Matrix[][] T12, byte[] skSeed)
+    private void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
     {
         int bytesPrngPrivate = (params.getV() * params.getO() * params.getL() + 1) >>> 1;
         int gf16sPrngPrivate = params.getV() * params.getO() * params.getL();
@@ -181,60 +183,68 @@ public class SnovaKeyPairGenerator
 
         // Convert bytes to GF16 array
         byte[] gf16PrngOutput = new byte[gf16sPrngPrivate];
-        GF16Utils.convertBytesToGF16s(prngOutput, gf16PrngOutput, gf16sPrngPrivate);
+        GF16Utils.decode(prngOutput, gf16PrngOutput, gf16sPrngPrivate);
 
         // Generate T12 matrices
-        int ptr = 0;
+        int ptArray = 0;
+        int l = params.getL();
         for (int j = 0; j < params.getV(); j++)
         {
             for (int k = 0; k < params.getO(); k++)
             {
                 //gen_a_FqS_ct
-                GF16Matrix matrix = new GF16Matrix(params.getL());
-                for (int i = 0; i < params.getL(); i++)
-                {
-                    for (int m = 0; m < params.getL(); m++)
-                    {
-                        matrix.set(i, m, gf16PrngOutput[ptr++]);
-                    }
-                }
-                matrix.makeInvertible();
-                T12[j][k] = matrix;
+                engine.genAFqSCT(gf16PrngOutput, ptArray, T12[j][k]);
+                ptArray += l;
             }
         }
     }
-//
-//    private void genABQP(MapGroup1 map1, byte[] pkSeed)
-//    {
-//        byte[] prngOutput = new byte[params.getBytesPrngPublic()];
-//
-//        if (params.isPkExpandShake()) {
-//            // SHAKE-based expansion
-//            SHAKEDigest shake = new SHAKEDigest(256);
-//            shake.update(pkSeed, 0, pkSeed.length);
-//            shake.doFinal(prngOutput, 0, prngOutput.length);
-//        } else {
-//            // AES-CTR-based expansion
-//            AESEngine aes = new AESEngine();
-//            aes.init(true, new KeyParameter(pkSeed));
-//            for (int i = 0; i < prngOutput.length; i += 16) {
-//                byte[] block = new byte[16];
-//                aes.processBlock(block, 0, block, 0);
-//                System.arraycopy(block, 0, prngOutput, i, Math.min(16, prngOutput.length - i));
-//            }
-//        }
-//
-//        // Convert bytes to GF16 structures
-//        GF16Utils.convertBytesToGF16s(prngOutput, map1);
+
+    private void genABQP(MapGroup1 map1, byte[] pkSeed)
+    {
+        int l = params.getL();
+        int lsq = l * l;
+        int m = params.getM();
+        int alpha = params.getAlpha();
+        int v = params.getV();
+        int o = params.getO();
+        int n = v + o;
+
+        int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
+        byte[] prngOutput = new byte[gf16sPrngPublic];
+
+        if (params.isPkExpandShake())
+        {
+            // SHAKE-based expansion
+            SHAKEDigest shake = new SHAKEDigest(256);
+            shake.update(pkSeed, 0, pkSeed.length);
+            shake.doFinal(prngOutput, 0, prngOutput.length);
+        }
+        else
+        {
+            // AES-CTR-based expansion
+            AESEngine aes = new AESEngine();
+            aes.init(true, new KeyParameter(pkSeed));
+            for (int i = 0; i < prngOutput.length; i += 16)
+            {
+                byte[] block = new byte[16];
+                aes.processBlock(block, 0, block, 0);
+                System.arraycopy(block, 0, prngOutput, i, Math.min(16, prngOutput.length - i));
+            }
+        }
+
+        // Convert bytes to GF16 structures
+//        int inOff = map1.decode(prngOutput);
 //
 //        // Post-processing for invertible matrices
-//        for (GF16Matrix matrix : map1.Aalpha) {
+//        for (GF16Matrix matrix : map1.Aalpha)
+//        {
 //            GF16Utils.makeInvertible(matrix);
 //        }
-//        for (GF16Matrix matrix : map1.Balpha) {
+//        for (GF16Matrix matrix : map1.Balpha)
+//        {
 //            GF16Utils.makeInvertible(matrix);
 //        }
-//    }
+    }
 
 //    private void genF(MapGroup2 map2, MapGroup1 map1, GF16Matrix[][] T12)
 //    {
