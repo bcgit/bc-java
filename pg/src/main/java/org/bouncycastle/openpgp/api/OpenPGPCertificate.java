@@ -1639,6 +1639,17 @@ public class OpenPGPCertificate
         }
 
         /**
+         * Return the public key algorithm.
+         *
+         * @see org.bouncycastle.bcpg.PublicKeyAlgorithmTags
+         * @return public key algorithm id
+         */
+        public int getAlgorithm()
+        {
+            return getPGPPublicKey().getAlgorithm();
+        }
+
+        /**
          * Return the public key version.
          *
          * @return key version
