@@ -5,10 +5,14 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.CTRModeCipher;
+import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 
 public class SnovaKeyPairGenerator
@@ -161,7 +165,7 @@ public class SnovaKeyPairGenerator
         genSeedsAndT12(keyElements.T12, skSeed);
 
         // Generate map components
-//        genABQP(keyElements.map1, pkSeed);
+        genABQP(keyElements.map1, pkSeed);
 //
 //        // Generate F matrices
 //        genF(keyElements.map2, keyElements.map1, keyElements.T12);
@@ -210,7 +214,8 @@ public class SnovaKeyPairGenerator
         int n = v + o;
 
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
-        byte[] prngOutput = new byte[gf16sPrngPublic];
+        byte[] qTemp = new byte[(m * alpha * 16 + m * alpha * 16) / l];
+        byte[] prngOutput = new byte[(gf16sPrngPublic + 1) >> 1];
 
         if (params.isPkExpandShake())
         {
@@ -221,19 +226,45 @@ public class SnovaKeyPairGenerator
         }
         else
         {
+            // Create a 16-byte IV (all zeros)
+            byte[] iv = new byte[16]; // automatically zero-initialized
             // AES-CTR-based expansion
-            AESEngine aes = new AESEngine();
-            aes.init(true, new KeyParameter(pkSeed));
+            // Set up AES engine in CTR (SIC) mode.
+            BlockCipher aesEngine = AESEngine.newInstance();
+            // SICBlockCipher implements CTR mode for AES.
+            CTRModeCipher ctrCipher = SICBlockCipher.newInstance(aesEngine);
+            ParametersWithIV params = new ParametersWithIV(new KeyParameter(pkSeed), iv);
+            ctrCipher.init(true, params);
+            int blockSize = ctrCipher.getBlockSize(); // typically 16 bytes
+            byte[] zeroBlock = new byte[blockSize];     // block of zeros
+            byte[] blockOut = new byte[blockSize];
+
+            int offset = 0;
+            // Process full blocks
+            while (offset + blockSize <= prngOutput.length)
+            {
+                ctrCipher.processBlock(zeroBlock, 0, blockOut, 0);
+                System.arraycopy(blockOut, 0, prngOutput, offset, blockSize);
+                offset += blockSize;
+            }
+            // Process any remaining partial block.
+            if (offset < prngOutput.length)
+            {
+                ctrCipher.processBlock(zeroBlock, 0, blockOut, 0);
+                int remaining = prngOutput.length - offset;
+                System.arraycopy(blockOut, 0, prngOutput, offset, remaining);
+            }
+
             for (int i = 0; i < prngOutput.length; i += 16)
             {
                 byte[] block = new byte[16];
-                aes.processBlock(block, 0, block, 0);
+                ctrCipher.processBlock(block, 0, block, 0);
                 System.arraycopy(block, 0, prngOutput, i, Math.min(16, prngOutput.length - i));
             }
         }
 
         // Convert bytes to GF16 structures
-//        int inOff = map1.decode(prngOutput);
+        int inOff = map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1);
 //
 //        // Post-processing for invertible matrices
 //        for (GF16Matrix matrix : map1.Aalpha)
