@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.cmce;
+package org.bouncycastle.pqc.jcajce.provider.mayo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -6,28 +6,28 @@ import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.CMCEKey;
-import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
+import org.bouncycastle.pqc.jcajce.interfaces.MayoKey;
+import org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class BCCMCEPublicKey
-    implements PublicKey, CMCEKey
+public class BCMayoPublicKey
+    implements PublicKey, MayoKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient CMCEPublicKeyParameters params;
+    private transient MayoPublicKeyParameters params;
 
-    public BCCMCEPublicKey(
-        CMCEPublicKeyParameters params)
+    public BCMayoPublicKey(
+        MayoPublicKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCCMCEPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCMayoPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -36,11 +36,11 @@ public class BCCMCEPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.params = (MayoPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
     }
-    
+
     /**
-     * Compare this CMCE public key with another object.
+     * Compare this BIKE public key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -52,9 +52,9 @@ public class BCCMCEPublicKey
             return true;
         }
 
-        if (o instanceof BCCMCEPublicKey)
+        if (o instanceof BCMayoPublicKey)
         {
-            BCCMCEPublicKey otherKey = (BCCMCEPublicKey)o;
+            BCMayoPublicKey otherKey = (BCMayoPublicKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -68,7 +68,7 @@ public class BCCMCEPublicKey
     }
 
     /**
-     * @return name of the algorithm - "CMCE"
+     * @return name of the algorithm - "BIKE"
      */
     public final String getAlgorithm()
     {
@@ -94,12 +94,12 @@ public class BCCMCEPublicKey
         return "X.509";
     }
 
-    public CMCEParameterSpec getParameterSpec()
+    public MayoParameterSpec getParameterSpec()
     {
-        return CMCEParameterSpec.fromName(params.getParameters().getName());
+        return MayoParameterSpec.fromName(params.getParameters().getName());
     }
 
-    CMCEPublicKeyParameters getKeyParams()
+    MayoPublicKeyParameters getKeyParams()
     {
         return params;
     }
@@ -124,3 +124,4 @@ public class BCCMCEPublicKey
         out.writeObject(this.getEncoded());
     }
 }
+

@@ -77,6 +77,8 @@ public class AllTests
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(RainbowKeyPairGeneratorTest.class);
         suite.addTestSuite(RainbowTest.class);
+        suite.addTestSuite(MayoKeyPairGeneratorTest.class);
+        suite.addTestSuite(MayoTest.class);
 
         return new BCTestSetup(suite);
     }
