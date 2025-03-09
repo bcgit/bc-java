@@ -53,6 +53,7 @@ import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -117,6 +118,32 @@ class TestUtils
         return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
     }
 
+    public static X509Certificate createNoSigCert(X500Name dn, KeyPair keyPair)
+        throws Exception
+    {
+        V1TBSCertificateGenerator certGen = new V1TBSCertificateGenerator();
+
+        long time = System.currentTimeMillis();
+
+        certGen.setSerialNumber(new ASN1Integer(serialNumber.getAndIncrement()));
+        certGen.setIssuer(dn);
+        certGen.setSubject(dn);
+        certGen.setStartDate(new Time(new Date(time - 5000)));
+        certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
+        certGen.setSignature(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE));
+        certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()));
+
+        TBSCertificate tbsCert = certGen.generateTBSCertificate();
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsCert);
+        v.add(new AlgorithmIdentifier(X509ObjectIdentifiers.id_alg_noSignature, DERNull.INSTANCE));
+        v.add(new DERBitString(new byte[0]));
+
+        return (X509Certificate)CertificateFactory.getInstance("X.509", "BC").generateCertificate(new ByteArrayInputStream(new DERSequence(v).getEncoded(ASN1Encoding.DER)));
+    }
+
     public static X509Certificate createCert(X500Name signerName, PrivateKey signerKey, String dn, String sigName, Extensions extensions, PublicKey pubKey)
         throws Exception
     {
@@ -167,6 +194,12 @@ class TestUtils
         return kpGen.generateKeyPair();
     }
 
+    public static X509Certificate generateNoSigRootCert(KeyPair pair)
+        throws Exception
+    {
+        return createNoSigCert(new X500Name("CN=Test CA Certificate"), pair);
+    }
+    
     public static X509Certificate generateRootCert(KeyPair pair)
         throws Exception
     {
