@@ -132,7 +132,7 @@ public class JcaPublicKeyConverter
 
             return new ECDSAPublicKey(
                 usage,
-                curve.getField().getCharacteristic(),
+                curve.getQ(),
                 curve.getA().toBigInteger(),
                 curve.getB().toBigInteger(),
                 params.getG().getEncoded(false),

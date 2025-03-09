@@ -38,6 +38,7 @@ import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
@@ -92,29 +93,29 @@ public final class BouncyCastleProvider extends Provider
     private static final String SYMMETRIC_PACKAGE = "org.bouncycastle.jcajce.provider.symmetric.";
 
     private static final String[] SYMMETRIC_GENERIC =
-    {
-        "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT"
-    };
+        {
+            "PBEPBKDF1", "PBEPBKDF2", "PBEPKCS12", "TLSKDF", "SCRYPT"
+        };
 
     private static final String[] SYMMETRIC_MACS =
-    {
-        "SipHash", "SipHash128", "Poly1305"
-    };
+        {
+            "SipHash", "SipHash128", "Poly1305"
+        };
 
     private static final CryptoServiceProperties[] SYMMETRIC_CIPHERS =
-    {
-        // TODO: these numbers need a bit more work, we cap at 256 bits.
-        service("AES", 256), service("ARC4", 20), service("ARIA", 256), service("Blowfish", 128), service("Camellia", 256),
-        service("CAST5", 128), service("CAST6", 256), service("ChaCha", 128), service("DES", 56),  service("DESede", 112),
-        service("GOST28147", 128), service("Grainv1", 128), service("Grain128", 128), service("HC128", 128), service("HC256", 256),
-        service("IDEA", 128), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
-        service("Rijndael", 256), service("Salsa20", 128), service("SEED", 128), service("Serpent", 256), service("Shacal2", 128),
-        service("Skipjack", 80), service("SM4", 128), service("TEA", 128), service("Twofish", 256), service("Threefish", 128),
-        service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("OpenSSLPBKDF", 128),
-        service("DSTU7624", 256), service("GOST3412_2015", 256), service("Zuc", 128)
-    };
+        {
+            // TODO: these numbers need a bit more work, we cap at 256 bits.
+            service("AES", 256), service("ARC4", 20), service("ARIA", 256), service("Blowfish", 128), service("Camellia", 256),
+            service("CAST5", 128), service("CAST6", 256), service("ChaCha", 128), service("DES", 56),  service("DESede", 112),
+            service("GOST28147", 128), service("Grainv1", 128), service("Grain128", 128), service("HC128", 128), service("HC256", 256),
+            service("IDEA", 128), service("Noekeon", 128), service("RC2", 128), service("RC5", 128), service("RC6", 256),
+            service("Rijndael", 256), service("Salsa20", 128), service("SEED", 128), service("Serpent", 256), service("Shacal2", 128),
+            service("Skipjack", 80), service("SM4", 128), service("TEA", 128), service("Twofish", 256), service("Threefish", 128),
+            service("VMPC", 128), service("VMPCKSA3", 128), service("XTEA", 128), service("XSalsa20", 128), service("OpenSSLPBKDF", 128),
+            service("DSTU7624", 256), service("GOST3412_2015", 256), service("Zuc", 128)
+        };
 
-     /*
+    /*
      * Configurable asymmetric ciphers
      */
     private static final String ASYMMETRIC_PACKAGE = "org.bouncycastle.jcajce.provider.asymmetric.";
@@ -122,43 +123,43 @@ public final class BouncyCastleProvider extends Provider
     // this one is required for GNU class path - it needs to be loaded first as the
     // later ones configure it.
     private static final String[] ASYMMETRIC_GENERIC =
-    {
-        "X509", "IES", "COMPOSITE", "EXTERNAL", "CompositeSignatures"
-    };
+        {
+            "X509", "IES", "COMPOSITE", "EXTERNAL", "CompositeSignatures", "NoSig"
+        };
 
     private static final String[] ASYMMETRIC_CIPHERS =
-    {
-        "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "SPHINCSPlus", "Dilithium", "Falcon", "NTRU", "CONTEXT", "SLHDSA", "MLDSA", "MLKEM"
-    };
+        {
+            "DSA", "DH", "EC", "RSA", "GOST", "ECGOST", "ElGamal", "DSTU4145", "GM", "EdEC", "LMS", "SPHINCSPlus", "Dilithium", "Falcon", "NTRU", "CONTEXT", "SLHDSA", "MLDSA", "MLKEM"
+        };
 
     /*
      * Configurable digests
      */
     private static final String DIGEST_PACKAGE = "org.bouncycastle.jcajce.provider.digest.";
     private static final String[] DIGESTS =
-    {
-        "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224",
-        "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b", "Blake2s", "DSTU7564",
-        "Haraka", "Blake3"
-    };
+        {
+            "GOST3411", "Keccak", "MD2", "MD4", "MD5", "SHA1", "RIPEMD128", "RIPEMD160", "RIPEMD256", "RIPEMD320", "SHA224",
+            "SHA256", "SHA384", "SHA512", "SHA3", "Skein", "SM3", "Tiger", "Whirlpool", "Blake2b", "Blake2s", "DSTU7564",
+            "Haraka", "Blake3"
+        };
 
     /*
      * Configurable keystores
      */
     private static final String KEYSTORE_PACKAGE = "org.bouncycastle.jcajce.provider.keystore.";
     private static final String[] KEYSTORES =
-    {
-        "BC", "BCFKS", "PKCS12"
-    };
+        {
+            "BC", "BCFKS", "PKCS12"
+        };
 
     /*
      * Configurable secure random
      */
     private static final String SECURE_RANDOM_PACKAGE = "org.bouncycastle.jcajce.provider.drbg.";
     private static final String[] SECURE_RANDOMS =
-    {
-        "DRBG"
-    };
+        {
+            "DRBG"
+        };
 
     private Map<String, Service> serviceMap = new ConcurrentHashMap<String, Service>();
 
@@ -437,6 +438,11 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.ntruhps2048677, new NTRUKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.ntruhps4096821, new NTRUKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.ntruhrss701, new NTRUKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.mayo1, new MayoKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mayo2, new MayoKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mayo3, new MayoKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mayo5, new MayoKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
@@ -480,7 +486,7 @@ public final class BouncyCastleProvider extends Provider
         addAttributes(type + "." + oid, attributes);
         addAttributes(type + ".OID." + oid, attributes);
     }
-    
+
     public void addKeyInfoConverter(ASN1ObjectIdentifier oid, AsymmetricKeyInfoConverter keyInfoConverter)
     {
         synchronized (keyInfoConverters)
