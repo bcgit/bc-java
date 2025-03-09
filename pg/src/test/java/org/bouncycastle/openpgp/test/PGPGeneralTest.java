@@ -30,6 +30,7 @@ import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.attr.ImageAttribute;
+import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.IntendedRecipientFingerprint;
 import org.bouncycastle.bcpg.sig.KeyFlags;
@@ -37,6 +38,7 @@ import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.RegularExpression;
+import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
 import org.bouncycastle.bcpg.sig.RevocationKeyTags;
 import org.bouncycastle.bcpg.sig.RevocationReason;
@@ -2169,7 +2171,7 @@ public class PGPGeneralTest
         isTrue("Trust should be null", trustSignature != null);
         isTrue("Trust level depth should be " + depth, trustSignature.getDepth() == depth);
         isTrue("Trust amount should be " + trustAmount, trustSignature.getTrustAmount() == trustAmount);
-        isTrue("Exporable should be false", !hashedPcks.isExportable());
+        isTrue("Exportable should be false", !hashedPcks.isExportable());
         isTrue(hashedPcks.getIssuerFingerprint().getKeyVersion() == publicKey.getVersion());
         isTrue("isPrimaryUserID should be true", hashedPcks.isPrimaryUserID());
 
@@ -2195,7 +2197,7 @@ public class PGPGeneralTest
         isTrue("Trust should be null", trustSignature != null);
         isTrue("Trust level depth should be " + depth, trustSignature.getDepth() == depth);
         isTrue("Trust amount should be " + trustAmount, trustSignature.getTrustAmount() == trustAmount);
-        isTrue("Exporable should be false", !hashedPcks.isExportable());
+        isTrue("Exportable should be false", !hashedPcks.isExportable());
         isTrue(hashedPcks.getIssuerFingerprint().getKeyVersion() == publicKey.getVersion());
         isTrue("isPrimaryUserID should be true", hashedPcks.isPrimaryUserID());
 
@@ -2207,27 +2209,20 @@ public class PGPGeneralTest
 
         hashedGen = new PGPSignatureSubpacketGenerator();
         hashedGen.setExportable(false, true);
-        try
-        {
-            hashedGen.setExportable(false, false);
-            fail("Duplicated settings for Exportable");
-        }
-        catch (IllegalStateException e)
-        {
-            isTrue("Exportable Certification exists in the Signature Subpacket Generator",
-                messageIs(e.getMessage(), "Exportable Certification exists in the Signature Subpacket Generator"));
-        }
+        hashedGen.setExportable(false, false);
+        isEquals("Calling setExportable multiple times MUST NOT introduce duplicates",
+                1, hashedGen.getSubpackets(SignatureSubpacketTags.EXPORTABLE).length);
+        Exportable exportable = (Exportable) hashedGen.getSubpackets(SignatureSubpacketTags.EXPORTABLE)[0];
+        isTrue("Last invocation of setExportable MUST take precedence.",
+                !exportable.isExportable());
+
         hashedGen.setRevocable(false, true);
-        try
-        {
-            hashedGen.setRevocable(false, false);
-            fail("Duplicated settings for Revocable");
-        }
-        catch (IllegalStateException e)
-        {
-            isTrue("Revocable exists in the Signature Subpacket Generator",
-                messageIs(e.getMessage(), "Revocable exists in the Signature Subpacket Generator"));
-        }
+        hashedGen.setRevocable(false, false);
+        isEquals("Calling setRevocable multiple times MUST NOT introduce duplicates.",
+                1, hashedGen.getSubpackets(SignatureSubpacketTags.REVOCABLE).length);
+        Revocable revocable = (Revocable) hashedGen.getSubpackets(SignatureSubpacketTags.REVOCABLE)[0];
+        isTrue("Last invocation of setRevocable MUST take precedence.",
+                !revocable.isRevocable());
 
         try
         {
@@ -2273,13 +2268,13 @@ public class PGPGeneralTest
         hashedPcks = sig.getHashedSubPackets();
         isTrue("URL should be " + url, hashedPcks.getPolicyURI().getURI().equals(url));
         isTrue(areEqual(hashedPcks.getPolicyURI().getRawURI(), Strings.toUTF8ByteArray(url)));
-        isTrue("Exporable should be true", hashedPcks.isExportable());
-        isTrue("Test Singner User ID", hashedPcks.getSignerUserID().equals(""));
+        isTrue("Exportable should be false", !hashedPcks.isExportable());
+        isTrue("Test Signer User ID", hashedPcks.getSignerUserID().equals(""));
         isTrue("Test for empty description", hashedPcks.getRevocationReason().getRevocationDescription().equals(""));
         Features features = hashedPcks.getFeatures();
         isTrue(features.supportsSEIPDv2());
         isTrue(features.getFeatures() == Features.FEATURE_SEIPD_V2);
-        isTrue(hashedPcks.getRevocable().isRevocable());
+        isTrue("Revocable should be false", !hashedPcks.getRevocable().isRevocable());
     }
 
     public void testECNistCurves()

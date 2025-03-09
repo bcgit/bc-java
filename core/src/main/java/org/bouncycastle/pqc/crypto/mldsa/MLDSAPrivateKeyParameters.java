@@ -5,6 +5,10 @@ import org.bouncycastle.util.Arrays;
 public class MLDSAPrivateKeyParameters
     extends MLDSAKeyParameters
 {
+    public static final int BOTH = 0;
+    public static final int SEED_ONLY = 1;
+    public static final int EXPANDED_KEY = 2;
+
     final byte[] rho;
     final byte[] k;
     final byte[] tr;
@@ -14,6 +18,8 @@ public class MLDSAPrivateKeyParameters
 
     private final byte[] t1;
     private final byte[] seed;
+
+    private final int prefFormat;
 
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] encoding)
     {
@@ -36,6 +42,7 @@ public class MLDSAPrivateKeyParameters
         this.t0 = Arrays.clone(t0);
         this.t1 = Arrays.clone(t1);
         this.seed = Arrays.clone(seed);
+        this.prefFormat = (seed != null) ? BOTH : EXPANDED_KEY;
     }
 
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] encoding, MLDSAPublicKeyParameters pubKey)
@@ -75,17 +82,47 @@ public class MLDSAPrivateKeyParameters
             this.t0 = Arrays.copyOfRange(encoding, index, index + delta);
             index += delta;
             this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);
-
-            if (pubKey != null)
-            {
-                if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
-                {
-                    throw new IllegalArgumentException("passed in public key does not match private values");
-                }
-            }
-
             this.seed = null;
         }
+
+        if (pubKey != null)
+        {
+            if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
+            {
+                throw new IllegalArgumentException("passed in public key does not match private values");
+            }
+        }
+
+        this.prefFormat = (seed != null) ? BOTH : EXPANDED_KEY;
+    }
+
+    private MLDSAPrivateKeyParameters(MLDSAPrivateKeyParameters params, int preferredFormat)
+    {
+        super(true, params.getParameters());
+
+        this.rho = params.rho;
+        this.k = params.k;
+        this.tr = params.tr;
+        this.s1 = params.s1;
+        this.s2 = params.s2;
+        this.t0 = params.t0;
+        this.t1 = params.t1;
+        this.seed = params.seed;
+        this.prefFormat = preferredFormat;
+    }
+
+    public MLDSAPrivateKeyParameters getParametersWithFormat(int format)
+    {
+        if (this.seed == null && format == SEED_ONLY)
+        {
+            throw new IllegalArgumentException("no seed available");
+        }
+        return new MLDSAPrivateKeyParameters(this, format);
+    }
+
+    public int getPreferredFormat()
+    {
+        return prefFormat;
     }
 
     public byte[] getEncoded()

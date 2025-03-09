@@ -53,7 +53,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crypto.qtesla.QTESLAPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.Properties;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -249,16 +248,15 @@ public class PrivateKeyInfoFactory
             
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
-            byte[] seed = params.getSeed();
-            if (Properties.isOverrideSet("org.bouncycastle.mlkem.seedOnly"))
+            if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.SEED_ONLY)
             {
-                if (seed == null)    // very difficult to imagine, but...
-                {
-                    throw new IOException("no seed available");
-                }
-                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
             }
-            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(seed, params.getEncoded()), attributes);
+            else if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.EXPANDED_KEY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
+            }
+            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -297,14 +295,13 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
-            byte[] seed = params.getSeed();
-            if (Properties.isOverrideSet("org.bouncycastle.mldsa.seedOnly"))
+            if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.SEED_ONLY)
             {
-                if (seed == null)    // very difficult to imagine, but...
-                {
-                    throw new IOException("no seed available");
-                }
-                return new PrivateKeyInfo(algorithmIdentifier, seed, attributes);
+                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
+            }
+            else if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.EXPANDED_KEY)
+            {
+                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
             }
             return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
@@ -398,16 +395,10 @@ public class PrivateKeyInfoFactory
     private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
     {
         ASN1EncodableVector v = new ASN1EncodableVector(2);
-        
-        if (seed != null)
-        {
-            v.add(new DEROctetString(seed));
-        }
 
-        if (expanded != null)
-        {
-            v.add(new DERTaggedObject(false, 1, new DEROctetString(expanded)));
-        }
+        v.add(new DEROctetString(seed));
+
+        v.add(new DEROctetString(expanded));
 
         return new DERSequence(v);
     }

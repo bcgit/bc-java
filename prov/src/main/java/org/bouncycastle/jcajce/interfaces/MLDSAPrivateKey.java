@@ -27,10 +27,10 @@ public interface MLDSAPrivateKey
     byte[] getSeed();
 
     /**
-     * Return the encoding of the key or an encoding of its key generation parameters (the seed).
+     * Return a privateKey which will encode as seed-only or as an expanded-key.
      *
-     * @param asKeyGenParams return a key gen parameters structure.
-     * @return a PKCS#8 of the private key encoding, or a PKCS#8 of the seed.
+     * @param preferSeedOnly if true, return a privateKey which will encode to seed-only if possible.
+     * @return a new MLDSAPrivateKey which encodes to either seed-only or expanded-key.
      */
-    byte[] getEncoded(boolean asKeyGenParams);
+    MLDSAPrivateKey getPrivateKey(boolean preferSeedOnly);
 }
