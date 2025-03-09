@@ -10,7 +10,7 @@ public class MayoPrivateKeyParameters
     public MayoPrivateKeyParameters(MayoParameters params, byte[] seed_sk)
     {
         super(true, params);
-        this.seed_sk = seed_sk;
+        this.seed_sk = Arrays.clone(seed_sk);
     }
 
     public byte[] getEncoded()

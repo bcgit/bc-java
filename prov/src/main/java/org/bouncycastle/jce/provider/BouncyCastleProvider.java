@@ -38,7 +38,6 @@ import org.bouncycastle.pqc.jcajce.provider.falcon.FalconKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
@@ -438,11 +437,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.ntruhps2048677, new NTRUKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.ntruhps4096821, new NTRUKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.ntruhrss701, new NTRUKeyFactorySpi());
-
-        addKeyInfoConverter(BCObjectIdentifiers.mayo1, new MayoKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mayo2, new MayoKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mayo3, new MayoKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mayo5, new MayoKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)

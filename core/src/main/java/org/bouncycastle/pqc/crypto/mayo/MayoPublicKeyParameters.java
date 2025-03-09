@@ -10,12 +10,12 @@ public class MayoPublicKeyParameters
     public MayoPublicKeyParameters(MayoParameters params, byte[] p)
     {
         super(false, params);
-        this.p = p;
+        this.p = Arrays.clone(p);
     }
 
     public byte[] getP()
     {
-        return p;
+        return Arrays.clone(p);
     }
 
     public byte[] getEncoded()
