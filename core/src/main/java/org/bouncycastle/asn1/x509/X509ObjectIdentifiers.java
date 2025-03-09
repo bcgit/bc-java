@@ -95,6 +95,11 @@ public interface X509ObjectIdentifiers
      */
     static final ASN1ObjectIdentifier id_ecdsa_with_shake256 = pkix_algorithms.branch("33");
 
+    /**
+     * id-alg-noSignature OBJECT IDENTIFIER ::= {id-pkix id-alg(6) 2}
+     */
+    ASN1ObjectIdentifier id_alg_noSignature = pkix_algorithms.branch("2");
+
     /** 1.3.6.1.5.5.7.9 */
     static final ASN1ObjectIdentifier id_pda = id_pkix.branch("9");
 
