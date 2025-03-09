@@ -128,7 +128,7 @@ public class GOSTR3410_2012_256CmsSignVerifyDetached
                     PKIXBuilderParameters params = new PKIXBuilderParameters(trustAnchors, constraints);
 
                     params.setDate(new Date(x509Certificate.getNotAfter().getTime() - 5000L));
-                    
+
                     JcaCertStoreBuilder certStoreBuilder = new JcaCertStoreBuilder();
                     certStoreBuilder.addCertificate(signerCert);
 

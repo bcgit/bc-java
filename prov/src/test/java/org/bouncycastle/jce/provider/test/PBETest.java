@@ -564,6 +564,43 @@ public class PBETest
 
         isTrue(Arrays.areEqual(input, decryptedBytes));
     }
+
+    private void testNoIvPBEParameterSpec()
+        throws Exception
+    {
+        String cipherAlgo = "PBEWITHSHA256AND256BITAES-CBC-BC";
+
+        SecureRandom random = new FixedSecureRandom(Hex.decode(
+            "000102030405060708090a0b0c0d0e0f"
+                + "a0a1a2a3a4a5a6a7a8a9aaabacadaeaf"));
+
+        char[] password = "abcdefghijklmnop".toCharArray();
+        PBEKeySpec pbeKeySpec = new PBEKeySpec(password);
+
+        SecretKeyFactory factory = SecretKeyFactory.getInstance(
+            "PBEWITHSHA256AND256BITAES-CBC-BC",
+            "BC");
+        SecretKey key = factory.generateSecret(pbeKeySpec);
+
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        // simulate the situation for issue #1985
+        byte[] iv = new byte[0];
+
+        PBEParameterSpec pbeParamSpec = new PBEParameterSpec(salt, 1000, new IvParameterSpec(iv));
+
+        Cipher encryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+        Cipher decryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+
+        encryptCipher.init(Cipher.ENCRYPT_MODE, key, pbeParamSpec);
+        decryptCipher.init(Cipher.DECRYPT_MODE, key, pbeParamSpec);
+
+        byte[] input = Strings.toByteArray("testing");
+        byte[] encryptedBytes = encryptCipher.doFinal(input);
+        byte[] decryptedBytes = decryptCipher.doFinal(encryptedBytes);
+
+        isTrue(Arrays.areEqual(input, decryptedBytes));
+    }
     
     public void performTest()
         throws Exception
@@ -710,7 +747,7 @@ public class PBETest
         }
 
         testExtendedPBEParameterSpec();
-
+        testNoIvPBEParameterSpec();
         testPKCS12Interop();
 
         testPBEHMac("PBEWithHMacSHA1", hMac1);

@@ -159,7 +159,7 @@ public class ECJPAKECurve
 
     public BigInteger getQ()
     {
-        return curve.getField().getCharacteristic();
+        return curve.getQ();
     }
 
     private static BigInteger calculateDeterminant(BigInteger q, BigInteger a, BigInteger b)

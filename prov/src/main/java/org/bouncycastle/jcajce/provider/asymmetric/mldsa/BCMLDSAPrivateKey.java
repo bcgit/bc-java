@@ -91,6 +91,20 @@ public class BCMLDSAPrivateKey
         return algorithm;
     }
 
+    public MLDSAPrivateKey getPrivateKey(boolean preferSeedOnly)
+    {
+        if (preferSeedOnly)
+        {
+            byte[] seed = params.getSeed();
+            if (seed != null)
+            {
+                return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+            }
+        }
+
+        return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+    }
+
     public byte[] getEncoded()
     {
         if (encoding == null)

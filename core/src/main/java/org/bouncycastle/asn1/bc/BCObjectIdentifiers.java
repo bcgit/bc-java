@@ -248,7 +248,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier falcon = bc_sig.branch("7");
 
     ASN1ObjectIdentifier falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.6");  // falcon.branch("1");
-    ASN1ObjectIdentifier falcon_1024 =  new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
+    ASN1ObjectIdentifier falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.9"); // falcon.branch("2");
 
     /*
      * Dilithium
@@ -403,7 +403,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier ntrulpr953 = pqc_kem_ntrulprime.branch("4");
     ASN1ObjectIdentifier ntrulpr1013 = pqc_kem_ntrulprime.branch("5");
     ASN1ObjectIdentifier ntrulpr1277 = pqc_kem_ntrulprime.branch("6");
-    
+
     ASN1ObjectIdentifier pqc_kem_sntruprime = pqc_kem_ntruprime.branch("2");
     ASN1ObjectIdentifier sntrup653 = pqc_kem_sntruprime.branch("1");
     ASN1ObjectIdentifier sntrup761 = pqc_kem_sntruprime.branch("2");
@@ -411,7 +411,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sntrup953 = pqc_kem_sntruprime.branch("4");
     ASN1ObjectIdentifier sntrup1013 = pqc_kem_sntruprime.branch("5");
     ASN1ObjectIdentifier sntrup1277 = pqc_kem_sntruprime.branch("6");
-    
+
     /**
      * BIKE
      **/
@@ -429,4 +429,26 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier hqc128 = pqc_kem_hqc.branch("1");
     ASN1ObjectIdentifier hqc192 = pqc_kem_hqc.branch("2");
     ASN1ObjectIdentifier hqc256 = pqc_kem_hqc.branch("3");
+
+    /**
+     * ML-KEM/ML-DSA seed parameters algorithms - temporary
+     */
+    //TODO: delete before release
+    ASN1ObjectIdentifier id_id_alg_seed = bc.branch("10");
+
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_44_seed = id_id_alg_seed.branch("1");
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_65_seed = id_id_alg_seed.branch("2");
+    ASN1ObjectIdentifier id_id_alg_ml_dsa_87_seed = id_id_alg_seed.branch("3");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_512_seed = id_id_alg_seed.branch("4");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_768_seed = id_id_alg_seed.branch("5");
+    ASN1ObjectIdentifier id_id_alg_ml_kem_1024_seed = id_id_alg_seed.branch("6");
+
+    /**
+     * Mayo
+     */
+    ASN1ObjectIdentifier mayo = bc_sig.branch("10");
+    ASN1ObjectIdentifier mayo1 = mayo.branch("1");
+    ASN1ObjectIdentifier mayo2 = mayo.branch("2");
+    ASN1ObjectIdentifier mayo3 = mayo.branch("3");
+    ASN1ObjectIdentifier mayo5 = mayo.branch("4");
 }

@@ -61,6 +61,7 @@ public class AllTests
         suite.addTestSuite(BcAttrCertTest.class);
         suite.addTestSuite(BcCertTest.class);
         suite.addTestSuite(BcPKCS10Test.class);
+        suite.addTestSuite(PQCPKCS10Test.class);
         suite.addTest(ConverterTest.suite());
 
         return new BCTestSetup(suite);
