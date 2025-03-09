@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * Parameters for ECCSI key generation.
@@ -80,7 +81,7 @@ public class ECCSIKeyGenerationParameters
         this.digest = digest;
         this.id = Arrays.clone(id);
         this.n = params.getCurve().getA().bitLength();
-        this.ksak = new BigInteger(n, random).mod(q);
+        this.ksak = BigIntegers.createRandomBigInteger(n, random).mod(q);
         this.kpak = G.multiply(ksak).normalize();
     }
 
