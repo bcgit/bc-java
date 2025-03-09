@@ -1,46 +1,49 @@
-package org.bouncycastle.pqc.jcajce.provider.cmce;
+package org.bouncycastle.pqc.jcajce.provider.mayo;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PublicKey;
+import java.security.PrivateKey;
 
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
-import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.CMCEKey;
-import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.pqc.jcajce.interfaces.MayoKey;
+import org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class BCCMCEPublicKey
-    implements PublicKey, CMCEKey
+public class BCMayoPrivateKey
+    implements PrivateKey, MayoKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient CMCEPublicKeyParameters params;
+    private transient MayoPrivateKeyParameters params;
+    private transient ASN1Set attributes;
 
-    public BCCMCEPublicKey(
-        CMCEPublicKeyParameters params)
+    public BCMayoPrivateKey(
+        MayoPrivateKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCCMCEPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCMayoPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
     }
 
-    private void init(SubjectPublicKeyInfo keyInfo)
+    private void init(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (CMCEPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.attributes = keyInfo.getAttributes();
+        this.params = (MayoPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
     }
-    
+
     /**
-     * Compare this CMCE public key with another object.
+     * Compare this private key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -52,9 +55,9 @@ public class BCCMCEPublicKey
             return true;
         }
 
-        if (o instanceof BCCMCEPublicKey)
+        if (o instanceof BCMayoPrivateKey)
         {
-            BCCMCEPublicKey otherKey = (BCCMCEPublicKey)o;
+            BCMayoPrivateKey otherKey = (BCMayoPrivateKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -68,7 +71,7 @@ public class BCCMCEPublicKey
     }
 
     /**
-     * @return name of the algorithm - "CMCE"
+     * @return name of the algorithm - "Mayo[1|2|3|5]"
      */
     public final String getAlgorithm()
     {
@@ -77,9 +80,10 @@ public class BCCMCEPublicKey
 
     public byte[] getEncoded()
     {
+
         try
         {
-            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
+            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
 
             return pki.getEncoded();
         }
@@ -89,17 +93,17 @@ public class BCCMCEPublicKey
         }
     }
 
+    public MayoParameterSpec getParameterSpec()
+    {
+        return MayoParameterSpec.fromName(params.getParameters().getName());
+    }
+
     public String getFormat()
     {
-        return "X.509";
+        return "PKCS#8";
     }
 
-    public CMCEParameterSpec getParameterSpec()
-    {
-        return CMCEParameterSpec.fromName(params.getParameters().getName());
-    }
-
-    CMCEPublicKeyParameters getKeyParams()
+    MayoPrivateKeyParameters getKeyParams()
     {
         return params;
     }
@@ -112,7 +116,7 @@ public class BCCMCEPublicKey
 
         byte[] enc = (byte[])in.readObject();
 
-        init(SubjectPublicKeyInfo.getInstance(enc));
+        init(PrivateKeyInfo.getInstance(enc));
     }
 
     private void writeObject(
@@ -124,3 +128,4 @@ public class BCCMCEPublicKey
         out.writeObject(this.getEncoded());
     }
 }
+
