@@ -26,38 +26,42 @@ class MapGroup1
         qAlpha2 = new byte[m][alpha][16];
     }
 
-    public int decode(byte[] input)
+    public int decode(byte[] input, int len)
     {
-        int inOff = decodeP(input, 0, p11);
-        inOff = decodeP(input, inOff, p12);
-        inOff = decodeP(input, inOff, p21);
-        inOff = decodeAlpha(input, inOff, aAlpha);
-        inOff = decodeAlpha(input, inOff, bAlpha);
-        inOff = decodeAlpha(input, inOff, qAlpha1);
-        inOff = decodeAlpha(input, inOff, qAlpha2);
+        int inOff = decodeP(input, 0, p11, len);
+        inOff += decodeP(input, inOff, p12, len - inOff);
+        inOff += decodeP(input, inOff, p21, len - inOff);
+        inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
+        inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
+        inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
+        inOff += decodeAlpha(input, inOff, qAlpha2, len - inOff);
         return inOff;
     }
 
-    private int decodeP(byte[] input, int inOff, byte[][][][] p)
+    private int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
     {
+        int rlt = 0;
         for (int i = 0; i < p.length; ++i)
         {
-            inOff = decodeAlpha(input, inOff, p[i]);
+            rlt += decodeAlpha(input, inOff + rlt, p[i], len);
         }
-        return inOff;
+        return rlt;
     }
 
-    private int decodeAlpha(byte[] input, int inOff, byte[][][] alpha)
+    private int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
     {
+        int rlt = 0;
         for (int i = 0; i < alpha.length; ++i)
         {
             for (int j = 0; j < alpha[i].length; ++j)
             {
-                GF16Utils.decode(input, inOff, alpha[i][j], 0, alpha[i][j].length);
-                inOff += (alpha[i][j].length + 1) >> 1;
+                int tmp = Math.min(alpha[i][j].length, len << 1);
+                GF16Utils.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
+                rlt += (tmp + 1) >> 1;
+                len -= (tmp + 1) >> 1;
             }
         }
-        return inOff;
+        return rlt;
     }
 
 }
