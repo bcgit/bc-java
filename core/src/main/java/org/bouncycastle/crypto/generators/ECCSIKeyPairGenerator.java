@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.params.ECCSIKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A key pair generator for the ECCSI scheme (Elliptic Curve-based Certificateless Signatures
@@ -57,7 +58,7 @@ public class ECCSIKeyPairGenerator
         byte[] id = parameters.getId();
         ECPoint kpak = parameters.getKPAK();
         // 1) Choose v, a random (ephemeral) non-zero element of F_q;
-        BigInteger v = new BigInteger(256, random).mod(q);
+        BigInteger v = BigIntegers.createRandomBigInteger(256, random).mod(q);
         // 2) Compute PVT = [v]G
         ECPoint pvt = G.multiply(v).normalize();
 

@@ -78,7 +78,7 @@ public class SAKKEKEMSGenerator
         Digest digest = keyParameters.getDigest();
 
         // 1. Generate random SSV in range [0, 2^n - 1]
-        BigInteger ssv = new BigInteger(n, random);
+        BigInteger ssv = BigIntegers.createRandomBigInteger(n, random);
 
         // 2. Compute r = HashToIntegerRange(SSV || b, q)
         BigInteger r = hashToIntegerRange(Arrays.concatenate(ssv.toByteArray(), b.toByteArray()), q, digest);

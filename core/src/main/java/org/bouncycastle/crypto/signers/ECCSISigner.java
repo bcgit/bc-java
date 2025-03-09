@@ -189,7 +189,7 @@ public class ECCSISigner
         {
             ECCSIPrivateKeyParameters parameters = (ECCSIPrivateKeyParameters)param;
             pvt = parameters.getPublicKeyParameters().getPVT();
-            j = new BigInteger(q.bitLength(), random);
+            j = BigIntegers.createRandomBigInteger(q.bitLength(), random);
             ECPoint J = G.multiply(j).normalize();
             r = J.getAffineXCoord().toBigInteger().mod(q);
 
