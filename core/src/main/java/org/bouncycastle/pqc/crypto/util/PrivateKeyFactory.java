@@ -43,6 +43,8 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
@@ -183,7 +185,7 @@ public class PrivateKeyFactory
                 return new SPHINCSPlusPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
             }
         }
-        else if (Utils.shldsaParams.containsKey(algOID))
+        else if (Utils.slhdsaParams.containsKey(algOID))
         {
             SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
             ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
@@ -478,6 +480,12 @@ public class PrivateKeyFactory
             McElieceCCA2PrivateKey mKey = McElieceCCA2PrivateKey.getInstance(keyInfo.parsePrivateKey());
 
             return new McElieceCCA2PrivateKeyParameters(mKey.getN(), mKey.getK(), mKey.getField(), mKey.getGoppaPoly(), mKey.getP(), Utils.getDigestName(mKey.getDigest().getAlgorithm()));
+        }
+        else if (algOID.on(BCObjectIdentifiers.mayo))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            MayoParameters mayoParams = Utils.mayoParamsLookup(algOID);
+            return new MayoPrivateKeyParameters(mayoParams, keyEnc);
         }
         else
         {
