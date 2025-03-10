@@ -259,7 +259,8 @@ public class IEEE1609dot2
      * EndEntityType ::= BIT STRING {app (0), enrol (1) } (SIZE (8))
      */
     public static final OERDefinition.Builder EndEntityType =
-        OERDefinition.bitString(8).defaultValue(new DERBitString(new byte[]{0}, 0))
+        OERDefinition.bitString(8)
+                .defaultValue(new DERBitString(org.bouncycastle.oer.its.ieee1609dot2.EndEntityType.app))
             .typeName("EndEntityType");
 
     /**
