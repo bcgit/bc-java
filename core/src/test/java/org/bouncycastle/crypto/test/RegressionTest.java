@@ -197,6 +197,7 @@ public class RegressionTest
             new ConcatenationKDFTest(),
             new GiftCofbTest(),
             new RomulusTest(),
+            new SAKKEKEMSTest(),
         };
 
     public static void main(String[] args)
