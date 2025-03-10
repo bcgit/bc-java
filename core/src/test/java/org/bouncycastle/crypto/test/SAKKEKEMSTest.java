@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.test;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.kems.SAKKEKEMExtractor;
 import org.bouncycastle.crypto.kems.SAKKEKEMSGenerator;
@@ -15,7 +14,6 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
-import org.junit.Assert;
 
 public class SAKKEKEMSTest
     extends SimpleTest
@@ -148,7 +146,7 @@ public class SAKKEKEMSTest
         ECPoint P = curve.createPoint(Px, Py);
 
         ECPoint computed_Z = P.multiply(z).normalize();
-        Assert.assertTrue(computed_Z.equals(curve.createPoint(Zx, Zy)));
+        isTrue(computed_Z.equals(curve.createPoint(Zx, Zy)));
 
         SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv)});
         SAKKEPublicKeyParameters b_publicKey = new SAKKEPublicKeyParameters(new BigInteger(b), curve.createPoint(Zx, Zy));
@@ -158,7 +156,7 @@ public class SAKKEKEMSTest
 
         SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(new SAKKEPrivateKeyParameters(z, b_publicKey));
         byte[] test = extractor.extractSecret(rlt.getEncapsulation());
-        Assert.assertTrue(Arrays.areEqual(test, ssv));
+        isTrue(Arrays.areEqual(test, ssv));
     }
 
     private void testRandom()
@@ -172,6 +170,6 @@ public class SAKKEKEMSTest
         SecretWithEncapsulation rlt = generator.generateEncapsulated(b_pub);
         SAKKEKEMExtractor extractor = new SAKKEKEMExtractor(b_priv);
         byte[] test = extractor.extractSecret(rlt.getEncapsulation());
-        Assert.assertTrue(Arrays.areEqual(test, ssv));
+        isTrue(Arrays.areEqual(test, ssv));
     }
 }
