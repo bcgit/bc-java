@@ -449,6 +449,118 @@ public class OpenPGPKeyEditor
         return this;
     }
 
+    /**
+     * Add a component key to the certificate.
+     * The bindingSigCallback can be used to modify the subkey binding signature.
+     * If it is null, no subkey binding signature will be generated.
+     * The backSigCallback can be used to modify the embedded primary key binding signature.
+     * If it is null, no primary key binding signature will be generated.
+     * You MUST only pass a non-null value here, if the subkey is capable of creating signatures.
+     *
+     * @param subkey component key
+     * @param bindingSigCallback callback to modify the subkey binding signature
+     * @param backSigCallback callback to modify the embedded primary key binding signature
+     * @return this
+     * @throws PGPException
+     */
+    public OpenPGPKeyEditor addSubkey(PGPKeyPair subkey,
+                                      SignatureParameters.Callback bindingSigCallback,
+                                      SignatureParameters.Callback backSigCallback)
+            throws PGPException
+    {
+        if (PublicKeyUtils.isSigningAlgorithm(subkey.getPublicKey().getAlgorithm())
+                && backSigCallback != null)
+        {
+            throw new PGPKeyValidationException("Provided subkey is not signing-capable, so we cannot create a back-signature.");
+        }
+
+        PGPPublicKey publicSubKey = subkey.getPublicKey();
+
+        SignatureParameters backSigParameters = SignatureParameters.primaryKeyBinding(policy);
+        if (backSigCallback != null)
+        {
+            backSigParameters = backSigCallback.apply(backSigParameters);
+        }
+
+        PGPPublicKey publicPrimaryKey = key.getPrimaryKey().getPGPPublicKey();
+
+        PGPSignature backSig = null;
+        if (backSigParameters != null)
+        {
+            PGPSignatureGenerator backSigGen = new PGPSignatureGenerator(
+                    implementation.pgpContentSignerBuilder(subkey.getPublicKey().getAlgorithm(),
+                            backSigParameters.getSignatureHashAlgorithmId()),
+                    subkey.getPublicKey());
+            backSigGen.init(backSigParameters.getSignatureType(), subkey.getPrivateKey());
+
+            PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+            hashedSubpackets.setIssuerFingerprint(true, subkey.getPublicKey());
+            hashedSubpackets = backSigParameters.applyToHashedSubpackets(hashedSubpackets);
+            backSigGen.setHashedSubpackets(hashedSubpackets.generate());
+
+            PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+            unhashedSubpackets = backSigParameters.applyToUnhashedSubpackets(unhashedSubpackets);
+            backSigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
+
+            backSig = backSigGen.generateCertification(publicPrimaryKey, subkey.getPublicKey());
+        }
+
+        SignatureParameters parameters = SignatureParameters.subkeyBinding(policy);
+        if (bindingSigCallback != null)
+        {
+            parameters = bindingSigCallback.apply(parameters);
+        }
+
+        if (parameters != null)
+        {
+            PGPSignatureGenerator subKeySigGen = new PGPSignatureGenerator(
+                    implementation.pgpContentSignerBuilder(
+                            publicPrimaryKey.getAlgorithm(),
+                            parameters.getSignatureHashAlgorithmId()),
+                    publicPrimaryKey);
+            subKeySigGen.init(parameters.getSignatureType(), primaryKey.getKeyPair().getPrivateKey());
+
+            // Hashed subpackets
+            PGPSignatureSubpacketGenerator hashedSubpackets = new PGPSignatureSubpacketGenerator();
+            hashedSubpackets.setIssuerFingerprint(true, publicPrimaryKey);
+            hashedSubpackets.setSignatureCreationTime(parameters.getSignatureCreationTime());
+
+            if (backSig != null)
+            {
+                try
+                {
+                    hashedSubpackets.addEmbeddedSignature(true, backSig);
+                }
+                catch (IOException e)
+                {
+                    throw new PGPException("Cannot encode embedded back-sig.");
+                }
+            }
+            hashedSubpackets = parameters.applyToHashedSubpackets(hashedSubpackets);
+            subKeySigGen.setHashedSubpackets(hashedSubpackets.generate());
+
+            // Unhashed subpackets
+            PGPSignatureSubpacketGenerator unhashedSubpackets = new PGPSignatureSubpacketGenerator();
+            unhashedSubpackets = parameters.applyToUnhashedSubpackets(unhashedSubpackets);
+            subKeySigGen.setUnhashedSubpackets(unhashedSubpackets.generate());
+
+            // Inject signature into the certificate
+            PGPSignature subKeySig = subKeySigGen.generateCertification(publicPrimaryKey, publicSubKey);
+            publicSubKey = PGPPublicKey.addCertification(publicSubKey, subKeySig);
+        }
+
+        PGPSecretKey secretSubkey = new PGPSecretKey(
+                subkey.getPrivateKey(),
+                publicSubKey,
+                implementation.pgpDigestCalculatorProvider().get(HashAlgorithmTags.SHA1),
+                false,
+                null);
+        PGPSecretKeyRing secretKeyRing = PGPSecretKeyRing.insertSecretKey(key.getPGPKeyRing(), secretSubkey);
+        this.key = new OpenPGPKey(secretKeyRing, implementation, policy);
+
+        return this;
+    }
+
     public OpenPGPKeyEditor revokeComponentKey(OpenPGPCertificate.OpenPGPComponentKey componentKey)
             throws PGPException
     {
