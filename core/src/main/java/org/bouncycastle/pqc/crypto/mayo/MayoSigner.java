@@ -434,7 +434,7 @@ public class MayoSigner
         final int m = params.getM();
         final int mVecLimbs = params.getMVecLimbs();
         final int ACols = params.getACols();
-        final byte[] fTailArr = params.getFTailArr();
+        final int[] fTailArr = params.getFTail();
 
         int bitsToShift = 0;
         int wordsToShift = 0;
@@ -514,7 +514,7 @@ public class MayoSigner
         byte[] tab = new byte[F_TAIL_LEN << 2];
         for (int i = 0, idx = 0; i < F_TAIL_LEN; i++)
         {
-            byte ft = fTailArr[i];
+            int ft = fTailArr[i];
             tab[idx++] = (byte)GF16Utils.mulF(ft, 1);
             tab[idx++] = (byte)GF16Utils.mulF(ft, 2);
             tab[idx++] = (byte)GF16Utils.mulF(ft, 4);
@@ -798,13 +798,8 @@ public class MayoSigner
         for (int i = 0, irowLen = 0; i < nrows; i++, irowLen += rowLen)
         {
             Pack.longToLittleEndian(packedA, irowLen, len_4, bytes, 0);
-            int j = 0;
-            for (; j < ncols >> 1; j++)
-            {
-                A[outIndex++] = (byte)(bytes[j] & 0x0F);       // Lower nibble
-                A[outIndex++] = (byte)((bytes[j] >> 4) & 0x0F); // Upper nibble
-            }
-            A[outIndex++] = (byte)(bytes[j] & 0x0F);
+            Utils.decode(bytes, 0, A, outIndex, ncols);
+            outIndex += ncols;
         }
     }
 

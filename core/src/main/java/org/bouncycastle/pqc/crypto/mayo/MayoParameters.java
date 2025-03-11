@@ -18,15 +18,12 @@ public class MayoParameters
         40,                 // r_bytes
         120159,             // P1_bytes
         24336,              // P2_bytes
-        // P3_bytes
         24,                 // csk_bytes
         1420,               // cpk_bytes
         454,                // sig_bytes
         new int[]{8, 1, 1, 0},        // F_TAIL_78
-        new byte[]{8, 1, 1, 0},        // f_tail_arr
         24,                 // salt_bytes
         32,                 // digest_bytes
-        // pk_seed_bytes
         24                  // sk_seed_bytes
     );
 
@@ -39,22 +36,18 @@ public class MayoParameters
         81 - 17,            // v = 64
         4 * 17 + 1,         // A_cols = 4 * 17 + 1 = 69
         4,                  // k
-        // q
         32,                 // m_bytes
         544,                // O_bytes
         32,                 // v_bytes
         34,                 // r_bytes
         66560,              // P1_bytes
         34816,              // P2_bytes
-        // P3_bytes
         24,                 // csk_bytes
         4912,               // cpk_bytes
         186,                // sig_bytes
         new int[]{8, 0, 2, 8}, //F_TAIL_64
-        new byte[]{8, 0, 2, 8},        // f_tail_arr
         24,                 // salt_bytes
         32,                 // digest_bytes
-        // pk_seed_bytes
         24                  // sk_seed_bytes
     );
 
@@ -67,22 +60,18 @@ public class MayoParameters
         118 - 10,           // v = 108
         11 * 10 + 1,        // A_cols = 11 * 10 + 1 = 111
         11,                 // k
-        // q
         54,                 // m_bytes
         540,                // O_bytes
         54,                 // v_bytes
         55,                 // r_bytes
         317844,             // P1_bytes
         58320,              // P2_bytes
-        // P3_bytes
         32,                 // csk_bytes
         2986,               // cpk_bytes
         681,                // sig_bytes
         new int[]{8, 0, 1, 7}, //F_TAIL_108
-        new byte[]{8, 0, 1, 7},       // f_tail_arr
         32,                 // salt_bytes
         48,                 // digest_bytes
-        // pk_seed_bytes
         32                  // sk_seed_bytes
     );
 
@@ -95,22 +84,18 @@ public class MayoParameters
         154 - 12,           // v = 142
         12 * 12 + 1,        // A_cols = 12 * 12 + 1 = 145
         12,                 // k
-        // q
         71,                 // m_bytes
         852,                // O_bytes
         71,                 // v_bytes
         72,                 // r_bytes
         720863,             // P1_bytes
         120984,             // P2_bytes
-        // P3_bytes
         40,                 // csk_bytes
         5554,               // cpk_bytes
         964,                // sig_bytes
         new int[]{4, 0, 8, 1}, //F_TAIL_142
-        new byte[]{4, 0, 8, 1},       // f_tail_arr
         40,                 // salt_bytes
         64,                 // digest_bytes
-        // pk_seed_bytes
         40                  // sk_seed_bytes
     );
 
@@ -133,7 +118,6 @@ public class MayoParameters
     private final int cpkBytes;
     private final int sigBytes;
     private final int[] fTail;
-    private final byte[] fTailArr;
     private final int saltBytes;
     private final int digestBytes;
     private static final int pkSeedBytes = 16;
@@ -141,7 +125,7 @@ public class MayoParameters
 
     private MayoParameters(String name, int n, int m, int mVecLimbs, int o, int v, int ACols, int k,
                            int mBytes, int OBytes, int vBytes, int rBytes, int P1Bytes, int P2Bytes,
-                           int cskBytes, int cpkBytes, int sigBytes, int[] fTail, byte[] fTailArr,
+                           int cskBytes, int cpkBytes, int sigBytes, int[] fTail,
                            int saltBytes, int digestBytes, int skSeedBytes)
     {
         this.name = name;
@@ -162,7 +146,6 @@ public class MayoParameters
         this.cpkBytes = cpkBytes;
         this.sigBytes = sigBytes;
         this.fTail = fTail;
-        this.fTailArr = fTailArr;
         this.saltBytes = saltBytes;
         this.digestBytes = digestBytes;
         this.skSeedBytes = skSeedBytes;
@@ -258,11 +241,6 @@ public class MayoParameters
         return fTail;
     }
 
-    public byte[] getFTailArr()
-    {
-        return fTailArr;
-    }
-
     public int getSaltBytes()
     {
         return saltBytes;
@@ -288,7 +266,7 @@ public class MayoParameters
      */
     public int getP1Limbs()
     {
-        return ((v * (v + 1)) / 2) * mVecLimbs;
+        return ((v * (v + 1)) >> 1) * mVecLimbs;
     }
 
     /**
@@ -304,7 +282,7 @@ public class MayoParameters
      */
     public int getP3Limbs()
     {
-        return ((o * (o + 1)) / 2) * mVecLimbs;
+        return ((o * (o + 1)) >> 1) * mVecLimbs;
     }
 }
 
