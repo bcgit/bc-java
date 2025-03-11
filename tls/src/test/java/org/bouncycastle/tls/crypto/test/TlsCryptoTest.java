@@ -221,6 +221,14 @@ public abstract class TlsCryptoTest
             implTestDHDomain(new TlsDHConfig(namedGroup, false));
             implTestDHDomain(new TlsDHConfig(namedGroup, true));
         }
+    }
+
+    public void testDHExplicit() throws Exception
+    {
+        if (!crypto.hasDHAgreement())
+        {
+            return;
+        }
 
         new DefaultTlsDHGroupVerifier()
         {{
@@ -236,9 +244,10 @@ public abstract class TlsCryptoTest
                 assertSame(dhGroup, TlsDHUtils.getStandardGroupForDHParameters(p, g));
 
                 int namedGroup = TlsDHUtils.getNamedGroupForDHParameters(p, g);
+
+                // Named groups tested elsewhere
                 if (NamedGroup.refersToASpecificFiniteField(namedGroup))
                 {
-                    // Already tested the named groups
                     continue;
                 }
 
