@@ -247,7 +247,7 @@ public class OpenPGPKeyEditorTest
         isFalse(key.getPrimarySecretKey().isLocked());
 
         key = api.editKey(key)
-                .changePassphrase(key.getPrimaryKey(), null, "sw0rdf1sh".toCharArray(), false)
+                .changePassphrase(key.getPrimaryKey().getKeyIdentifier(), null, "sw0rdf1sh".toCharArray(), false)
                 .done();
         isTrue("Expect key to be locked", key.getPrimarySecretKey().isLocked());
         isTrue("Expect sw0rdf1sh to be the correct passphrase",
@@ -263,7 +263,7 @@ public class OpenPGPKeyEditorTest
         isFalse("Expect key to be unprotected", key.getPrimarySecretKey().isLocked());
 
         key = api.editKey(key)
-                .changePassphrase(key.getPrimaryKey(), null, "sw0rdf1sh".toCharArray(), true)
+                .changePassphrase(key.getPrimaryKey().getKeyIdentifier(), null, "sw0rdf1sh".toCharArray(), true)
                 .done();
         isTrue("Expect key to be locked after changing passphrase",
                 key.getPrimarySecretKey().isLocked());

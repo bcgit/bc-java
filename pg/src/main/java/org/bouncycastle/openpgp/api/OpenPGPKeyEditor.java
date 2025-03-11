@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.api;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.openpgp.PGPException;
@@ -651,7 +652,7 @@ public class OpenPGPKeyEditor
     /**
      * Change the passphrase of the given component key.
      *
-     * @param componentKey component key, whose passphrase shall be changed
+     * @param componentKeyIdentifier identifier of the component key, whose passphrase shall be changed
      * @param oldPassphrase old passphrase (or null)
      * @param newPassphrase new passphrase (or null)
      * @param useAEAD whether to use AEAD
@@ -659,16 +660,16 @@ public class OpenPGPKeyEditor
      * @throws OpenPGPKeyException if the secret component of the component key is missing
      * @throws PGPException if the key passphrase cannot be changed
      */
-    public OpenPGPKeyEditor changePassphrase(OpenPGPCertificate.OpenPGPComponentKey componentKey,
+    public OpenPGPKeyEditor changePassphrase(KeyIdentifier componentKeyIdentifier,
                                              char[] oldPassphrase,
                                              char[] newPassphrase,
                                              boolean useAEAD)
             throws OpenPGPKeyException, PGPException
     {
-        OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(componentKey);
+        OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(componentKeyIdentifier);
         if (secretKey == null)
         {
-            throw new OpenPGPKeyException(componentKey, "Secret component key " + componentKey.getKeyIdentifier() +
+            throw new OpenPGPKeyException(key, "Secret component key " + componentKeyIdentifier +
                     " is missing from the key.");
         }
 
