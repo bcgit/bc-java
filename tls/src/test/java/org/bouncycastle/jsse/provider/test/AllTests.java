@@ -4,7 +4,6 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import test.java.org.bouncycastle.jsse.provider.test.MLDSACredentialsTest;
 
 import org.bouncycastle.test.PrintTestResult;
 
