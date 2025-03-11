@@ -66,6 +66,18 @@ public class JcaDefaultTlsCredentialedSigner
         {
             signer = new JcaTlsEd448Signer(crypto, privateKey);
         }
+        else if ("ML-DSA-44".equalsIgnoreCase(algorithm))
+        {
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa44);
+        }
+        else if ("ML-DSA-65".equalsIgnoreCase(algorithm))
+        {
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa65);
+        }
+        else if ("ML-DSA-87".equalsIgnoreCase(algorithm))
+        {
+            signer = new JcaTlsMLDSASigner(crypto, privateKey, SignatureScheme.DRAFT_mldsa87);
+        }
         else
         {
             throw new IllegalArgumentException("'privateKey' type not supported: " + privateKey.getClass().getName());

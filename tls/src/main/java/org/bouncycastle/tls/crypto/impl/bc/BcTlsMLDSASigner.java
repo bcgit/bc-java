@@ -27,6 +27,11 @@ public class BcTlsMLDSASigner
     {
         super(crypto, privateKey);
 
+        if (!SignatureScheme.isMLDSA(signatureScheme))
+        {
+            throw new IllegalArgumentException("signatureScheme");
+        }
+
         this.signatureScheme = signatureScheme;
     }
 

@@ -158,6 +158,10 @@ class ProvX509KeyManager
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
 
+        addFilter(filters, "ML-DSA-44");
+        addFilter(filters, "ML-DSA-65");
+        addFilter(filters, "ML-DSA-87");
+
         addECFilter13(filters, NamedGroup.brainpoolP256r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP512r1tls13);
@@ -182,6 +186,10 @@ class ProvX509KeyManager
 
         addFilter(filters, "Ed25519");
         addFilter(filters, "Ed448");
+
+        addFilter(filters, "ML-DSA-44");
+        addFilter(filters, "ML-DSA-65");
+        addFilter(filters, "ML-DSA-87");
 
         addECFilter13(filters, NamedGroup.brainpoolP256r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);
