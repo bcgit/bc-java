@@ -254,28 +254,47 @@ public class SnovaKeyPairGenerator
                 int remaining = prngOutput.length - offset;
                 System.arraycopy(blockOut, 0, prngOutput, offset, remaining);
             }
-
-            for (int i = 0; i < prngOutput.length; i += 16)
-            {
-                byte[] block = new byte[16];
-                ctrCipher.processBlock(block, 0, block, 0);
-                System.arraycopy(block, 0, prngOutput, i, Math.min(16, prngOutput.length - i));
-            }
         }
 
         // Convert bytes to GF16 structures
         int inOff = map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1);
+        GF16Utils.decode(prngOutput, inOff, qTemp, 0, qTemp.length);
 //
-//        // Post-processing for invertible matrices
-//        for (GF16Matrix matrix : map1.Aalpha)
-//        {
-//            GF16Utils.makeInvertible(matrix);
-//        }
-//        for (GF16Matrix matrix : map1.Balpha)
-//        {
-//            GF16Utils.makeInvertible(matrix);
-//        }
+        // Post-processing for invertible matrices
+        for (int pi = 0; pi < m; ++pi)
+        {
+            for (int a = 0; a < alpha; ++a)
+            {
+                engine.makeInvertibleByAddingAS(map1.aAlpha[pi][a]);
+            }
+        }
+        for (int pi = 0; pi < m; ++pi)
+        {
+            for (int a = 0; a < alpha; ++a)
+            {
+                engine.makeInvertibleByAddingAS(map1.bAlpha[pi][a]);
+            }
+        }
+
+        int ptArray = 0;
+        for (int pi = 0; pi < m; ++pi)
+        {
+            for (int a = 0; a < alpha; ++a)
+            {
+                engine.genAFqS(qTemp, ptArray, map1.qAlpha1[pi][a]);
+                ptArray += l;
+            }
+        }
+        for (int pi = 0; pi < m; ++pi)
+        {
+            for (int a = 0; a < alpha; ++a)
+            {
+                engine.genAFqS(qTemp, ptArray, map1.qAlpha2[pi][a]);
+                ptArray += l;
+            }
+        }
     }
+
 
 //    private void genF(MapGroup2 map2, MapGroup1 map1, GF16Matrix[][] T12)
 //    {
