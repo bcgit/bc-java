@@ -16,14 +16,14 @@ class MapGroup1
         int v = params.getV();
         int o = params.getO();
         int alpha = params.getAlpha();
-
-        p11 = new byte[m][v][v][16];
-        p12 = new byte[m][v][o][16];
-        p21 = new byte[m][o][v][16];
-        aAlpha = new byte[m][alpha][16];
-        bAlpha = new byte[m][alpha][16];
-        qAlpha1 = new byte[m][alpha][16];
-        qAlpha2 = new byte[m][alpha][16];
+        int lsq = params.getL() * params.getL();
+        p11 = new byte[m][v][v][lsq];
+        p12 = new byte[m][v][o][lsq];
+        p21 = new byte[m][o][v][lsq];
+        aAlpha = new byte[m][alpha][lsq];
+        bAlpha = new byte[m][alpha][lsq];
+        qAlpha1 = new byte[m][alpha][lsq];
+        qAlpha2 = new byte[m][alpha][lsq];
     }
 
     public int decode(byte[] input, int len)

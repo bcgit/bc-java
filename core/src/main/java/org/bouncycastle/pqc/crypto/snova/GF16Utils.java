@@ -164,19 +164,6 @@ public class GF16Utils
         return INV4B[a & 0xF];
     }
 
-    public static void convertGF16sToBytes(byte[] output, byte[] gf16s, int gf16Count)
-    {
-        int pairs = gf16Count / 2;
-        for (int i = 0; i < pairs; i++)
-        {
-            output[i] = (byte)((gf16s[i * 2 + 1] << 4) | gf16s[i * 2]);
-        }
-        if (gf16Count % 2 == 1)
-        {
-            output[pairs] = gf16s[gf16Count - 1];
-        }
-    }
-
     static GF16Matrix[][][] create3DArray(int d1, int d2, int d3, int rank)
     {
         GF16Matrix[][][] arr = new GF16Matrix[d1][d2][d3];

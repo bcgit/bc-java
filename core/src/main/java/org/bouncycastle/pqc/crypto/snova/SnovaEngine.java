@@ -28,9 +28,19 @@ public class SnovaEngine
         {
             for (int ij = 0; ij < lsq; ++ij)
             {
-                xS[index][ij]  = GF16Utils.gf16FromNibble(S[index][ij]);
+                xS[index][ij] = GF16Utils.gf16FromNibble(S[index][ij]);
             }
         }
+    }
+
+    public byte getGF16m(byte[] gf16m, int x, int y)
+    {
+        return gf16m[x * l + y];
+    }
+
+    public void setGF16m(byte[] gf16m, int x, int y, byte value)
+    {
+        gf16m[x * l + y] = value;
     }
 
     public void be_aI(byte[] target, byte a)
@@ -92,7 +102,7 @@ public class SnovaEngine
 
         // Handle last coefficient with constant-time selection
         int zero = GF16Utils.ctGF16IsNotZero(c[cOff + l - 1]);
-        int val = zero * c[cOff +l - 1] + (1 - zero) * (15 + GF16Utils.ctGF16IsNotZero(c[cOff]) - c[cOff]);
+        int val = zero * c[cOff + l - 1] + (1 - zero) * (15 + GF16Utils.ctGF16IsNotZero(c[cOff]) - c[cOff]);
         cX = GF16Utils.gf16FromNibble((byte)val);
 
         for (int ij = 0; ij < lsq; ij++)
@@ -106,5 +116,219 @@ public class SnovaEngine
             ptMatrix[ij] = GF16Utils.gf16ToNibble(xTemp[ij]);
         }
         Arrays.fill(xTemp, 0); // Secure clear
+    }
+
+    public void makeInvertibleByAddingAS(byte[] source)
+    {
+        if (gf16Determinant(source) != 0)
+        {
+            return;
+        }
+
+
+        byte[] temp = new byte[l * l];
+
+        for (int a = 1; a < 16; a++)
+        {
+            generateASMatrix(temp, (byte)a);
+            addMatrices(temp, source, source);
+
+            if (gf16Determinant(source) != 0)
+            {
+                return;
+            }
+        }
+        throw new IllegalStateException("Failed to make matrix invertible");
+    }
+
+    private byte gf16Determinant(byte[] matrix)
+    {
+        switch (l)
+        {
+        case 2:
+            return determinant2x2(matrix);
+        case 3:
+            return determinant3x3(matrix);
+        case 4:
+            return determinant4x4(matrix);
+        case 5:
+            return determinant5x5(matrix);
+        default:
+            throw new IllegalStateException();
+        }
+    }
+
+    private byte determinant2x2(byte[] m)
+    {
+        return gf16Add(
+            gf16Mul(getGF16m(m, 0, 0), getGF16m(m, 1, 1)),
+            gf16Mul(getGF16m(m, 0, 1), getGF16m(m, 1, 0)));
+    }
+
+    private byte determinant3x3(byte[] m)
+    {
+        return gf16Add(
+            gf16Add(
+                gf16Mul(getGF16m(m, 0, 0), gf16Add(
+                    gf16Mul(getGF16m(m, 1, 1), getGF16m(m, 2, 2)),
+                    gf16Mul(getGF16m(m, 1, 2), getGF16m(m, 2, 1))
+                )),
+                gf16Mul(getGF16m(m, 0, 1), gf16Add(
+                    gf16Mul(getGF16m(m, 1, 0), getGF16m(m, 2, 2)),
+                    gf16Mul(getGF16m(m, 1, 2), getGF16m(m, 2, 0))
+                ))
+            ),
+            gf16Mul(getGF16m(m, 0, 2), gf16Add(
+                gf16Mul(getGF16m(m, 1, 0), getGF16m(m, 2, 1)),
+                gf16Mul(getGF16m(m, 1, 1), getGF16m(m, 2, 0))
+            ))
+        );
+    }
+
+    private byte determinant4x4(byte[] m)
+    {
+        byte d0 = gf16Mul(getGF16m(m, 0, 0), gf16Add(
+            gf16Add(
+                pod(m, 1, 1, 2, 2, 3, 3, 2, 3, 3, 2),
+                pod(m, 1, 2, 2, 1, 3, 3, 2, 3, 3, 1)
+            ),
+            pod(m, 1, 3, 2, 1, 3, 2, 2, 2, 3, 1)
+        ));
+
+        byte d1 = gf16Mul(getGF16m(m, 0, 1), gf16Add(
+            gf16Add(
+                pod(m, 1, 0, 2, 2, 3, 3, 2, 3, 3, 2),
+                pod(m, 1, 2, 2, 0, 3, 3, 2, 3, 3, 0)
+            ),
+            pod(m, 1, 3, 2, 0, 3, 2, 2, 2, 3, 0)
+        ));
+
+        byte d2 = gf16Mul(getGF16m(m, 0, 2), gf16Add(
+            gf16Add(
+                pod(m, 1, 0, 2, 1, 3, 3, 2, 3, 3, 1),
+                pod(m, 1, 1, 2, 0, 3, 3, 2, 3, 3, 0)
+            ),
+            pod(m, 1, 3, 2, 0, 3, 1, 2, 1, 3, 0)
+        ));
+
+        byte d3 = gf16Mul(getGF16m(m, 0, 3), gf16Add(
+            gf16Add(
+                pod(m, 1, 0, 2, 1, 3, 2, 2, 2, 3, 1),
+                pod(m, 1, 1, 2, 0, 3, 2, 2, 2, 3, 0)
+            ),
+            pod(m, 1, 2, 2, 0, 3, 1, 2, 1, 3, 0)
+        ));
+
+        return (byte)(d0 ^ d1 ^ d2 ^ d3);
+    }
+
+    private byte determinant5x5(byte[] m)
+    {
+        return 0;
+        //TODO:
+//        byte result;
+//
+//        result = gf16Mul(det3x3(m, 0, 1, 2, 0, 1, 2),
+//            gf16Add(gf16Mul(m[3][3], m[4][4]), gf16Mul(m[3][4], m[4][3])));
+        // ... similar calculations for other components ...
+        //result ^= gf16Mul(det3x3(m, 0, 1, 2, 0, 1, 2),
+        //            gf16Add(gf16Mul(m[3][3], m[4][4]), gf16Mul(m[3][4], m[4][3])));
+        //return result;
+    }
+
+    private byte det3x3(byte[] m, int row1, int row2, int row3, int col1, int col2, int col3)
+    {
+        //TODO:
+//        byte[][] sub = new byte[3][3];
+//        for (int i = 0; i < 3; i++)
+//        {
+//            sub[0][i] = m[row1][col1 + i];
+//            sub[1][i] = m[row2][col1 + i];
+//            sub[2][i] = m[row3][col1 + i];
+//        }
+//        return determinant3x3(sub);
+        return 0;
+    }
+
+    private void generateASMatrix(byte[] target, byte a)
+    {
+        for (int i = 0; i < l; i++)
+        {
+            for (int j = 0; j < l; j++)
+            {
+                byte coefficient = (byte)(8 - (i + j));
+                if (l == 5 && i == 4 && j == 4)
+                {
+                    coefficient = 9;
+                }
+                setGF16m(target, i, j, gf16Mul(coefficient, a));
+            }
+        }
+    }
+
+    // POD -> entry[a][b] * (entry[c][d] * entry[e][f] + entry[g][h] * entry[i][j])
+    private byte pod(byte[] m, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j)
+    {
+        return gf16Add(
+            gf16Mul(getGF16m(m, a, b), gf16Mul(getGF16m(m, c, d), getGF16m(m, e, f))),
+            gf16Mul(getGF16m(m, g, h), getGF16m(m, i, j)));
+    }
+
+    private void addMatrices(byte[] a, byte[] b, byte[] c)
+    {
+        for (int i = 0; i < l; i++)
+        {
+            for (int j = 0; j < l; j++)
+            {
+                setGF16m(c, i, j, gf16Add(getGF16m(a, i, j), getGF16m(b, i, j)));
+            }
+        }
+    }
+
+    // GF(16) arithmetic
+    private static byte gf16Add(byte a, byte b)
+    {
+        return (byte)(a ^ b);
+    }
+
+    // GF(16) multiplication using lookup table
+    private static byte gf16Mul(byte a, byte b)
+    {
+        return GF16Utils.mul(a, b);
+    }
+
+    public void genAFqS(byte[] c, int cOff, byte[] ptMatrix)
+    {
+        byte[] temp = new byte[l * l];
+
+        // Initialize with be_aI
+        be_aI(ptMatrix, c[cOff]);
+
+        // Process middle terms
+        for (int i = 1; i < l - 1; ++i)
+        {
+            gf16mScale(S[i], c[cOff + i], temp);
+            addMatrices(ptMatrix, temp, ptMatrix);
+        }
+
+        // Handle last term with special case
+        byte lastScalar = (c[cOff + l - 1] != 0) ? c[cOff + l - 1] :
+            gf16Add((byte)16, gf16Add(c[cOff], (byte)(c[cOff] == 0 ? 1 : 0)));
+        gf16mScale(S[l - 1], lastScalar, temp);
+        addMatrices(ptMatrix, temp, ptMatrix);
+
+        // Clear temporary matrix
+        //clearMatrix(temp);
+    }
+
+    private void gf16mScale(byte[] a, byte k, byte[] result)
+    {
+        for (int i = 0; i < l; ++i)
+        {
+            for (int j = 0; j < l; ++j)
+            {
+                setGF16m(result, i, j, gf16Mul(getGF16m(a, i, j), k));
+            }
+        }
     }
 }
