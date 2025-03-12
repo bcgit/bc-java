@@ -110,11 +110,11 @@ public class NamedGroup
     public static final int OQS_mlkem1024 = 0x0249;
 
     /*
-     * draft-connolly-tls-mlkem-key-agreement-03
+     * draft-connolly-tls-mlkem-key-agreement-05
      */
-    public static final int MLKEM512 = 0x0512;
-    public static final int MLKEM768 = 0x0768;
-    public static final int MLKEM1024 = 0x1024;
+    public static final int MLKEM512 = 0x0200;
+    public static final int MLKEM768 = 0x0201;
+    public static final int MLKEM1024 = 0x0202;
 
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
