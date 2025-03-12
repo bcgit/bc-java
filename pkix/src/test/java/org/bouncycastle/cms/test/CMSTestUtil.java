@@ -61,7 +61,12 @@ public class CMSTestUtil
     public static KeyPairGenerator ecDsaKpg;
     public static KeyPairGenerator ed25519Kpg;
     public static KeyPairGenerator ed448Kpg;
-    public static KeyPairGenerator mlKemKpg;
+    public static KeyPairGenerator mlDsa44Kpg;
+    public static KeyPairGenerator mlDsa65Kpg;
+    public static KeyPairGenerator mlDsa87Kpg;
+    public static KeyPairGenerator mlKem512Kpg;
+    public static KeyPairGenerator mlKem768Kpg;
+    public static KeyPairGenerator mlKem1024Kpg;
     public static KeyPairGenerator ntruKpg;
     public static KeyGenerator     aes192kg;
     public static KeyGenerator     desede128kg;
@@ -168,7 +173,14 @@ public class CMSTestUtil
             ed448Kpg = KeyPairGenerator.getInstance("Ed448", "BC");
 
             ntruKpg = KeyPairGenerator.getInstance(BCObjectIdentifiers.ntruhps2048509.getId(), "BC");
-            mlKemKpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
+
+            mlDsa44Kpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+            mlDsa65Kpg = KeyPairGenerator.getInstance("ML-DSA-65", "BC");
+            mlDsa87Kpg = KeyPairGenerator.getInstance("ML-DSA-87", "BC");
+
+            mlKem512Kpg = KeyPairGenerator.getInstance("ML-KEM-512", "BC");
+            mlKem768Kpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
+            mlKem1024Kpg = KeyPairGenerator.getInstance("ML-KEM-1024", "BC");
 
             aes192kg = KeyGenerator.getInstance("AES", "BC");
             aes192kg.init(192, rand);
@@ -281,9 +293,34 @@ public class CMSTestUtil
         return ntruKpg.generateKeyPair();
     }
 
-    public static KeyPair makeMLKemKeyPair()
+    public static KeyPair makeMLKem512KeyPair()
     {
-        return mlKemKpg.generateKeyPair();
+        return mlKem512Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLKem768KeyPair()
+    {
+        return mlKem768Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLKem1024KeyPair()
+    {
+        return mlKem1024Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa44KeyPair()
+    {
+        return mlDsa44Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa65KeyPair()
+    {
+        return mlDsa65Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa87KeyPair()
+    {
+        return mlDsa87Kpg.generateKeyPair();
     }
 
     public static SecretKey makeDesede128Key()
@@ -504,6 +541,10 @@ public class CMSTestUtil
 
     private static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
     {
+        /*
+         * NOTE: Current ALL test certificates are issued under a SHA1withRSA root, so this list is mostly
+         * redundant (and also incomplete in that it doesn't handle EdDSA or ML-DSA issuers).
+         */
         JcaContentSignerBuilder contentSignerBuilder;
         if (issPub instanceof RSAPublicKey)
         {
@@ -521,9 +562,13 @@ public class CMSTestUtil
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411withECGOST3410");
         }
-        else
+        else if (issPub.getAlgorithm().equals("GOST3410"))
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411WithGOST3410");
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Algorithm handlers incomplete");
         }
 
         contentSignerBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME);
