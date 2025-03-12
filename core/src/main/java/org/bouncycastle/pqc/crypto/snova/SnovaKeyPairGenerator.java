@@ -166,9 +166,9 @@ public class SnovaKeyPairGenerator
 
         // Generate map components
         genABQP(keyElements.map1, pkSeed);
-//
-//        // Generate F matrices
-//        genF(keyElements.map2, keyElements.map1, keyElements.T12);
+
+        // Generate F matrices
+        engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
 
         // Generate P22 matrix
 //        genP22(keyElements.pk.P22, keyElements.T12, keyElements.map1.P21, keyElements.map2.F12);

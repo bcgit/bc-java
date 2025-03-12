@@ -331,4 +331,106 @@ public class SnovaEngine
             }
         }
     }
+
+    public void genF(MapGroup2 map2, MapGroup1 map1, byte[][][] T12) {
+        int m = params.getM();
+        int v = params.getV();
+        int o = params.getO();
+        int l = params.getL();
+        int lsq = l * l;
+
+        // Copy initial matrices
+        copy4DMatrix(map1.p11, map2.f11, m, v, v, lsq);
+        copy4DMatrix(map1.p12, map2.f12, m, v, o, lsq);
+        copy4DMatrix(map1.p21, map2.f21, m, o, v, lsq);
+
+        byte[] temp = new byte[lsq];
+
+        // First matrix operation sequence
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < v; j++) {
+                for (int k = 0; k < o; k++) {
+                    for (int index = 0; index < v; index++) {
+                        GF16Utils.gf16mMul(temp, map1.p11[i][j][index], T12[index][k], l);
+                        GF16Utils.gf16mAdd(map2.f12[i][j][k], map2.f12[i][j][k], temp, l);
+                    }
+                }
+            }
+        }
+
+        // Second matrix operation sequence
+        for (int i = 0; i < m; i++) {
+            for (int j = 0; j < o; j++) {
+                for (int k = 0; k < v; k++) {
+                    for (int index = 0; index < v; index++) {
+                        GF16Utils.gf16mMul(temp, T12[index][j], map1.p11[i][index][k], l);
+                        GF16Utils.gf16mAdd(map2.f21[i][j][k], map2.f21[i][j][k], temp, l);
+                    }
+                }
+            }
+        }
+
+        // Secure clear temporary buffer
+        Arrays.fill(temp, (byte) 0);
+    }
+
+    private static void copy4DMatrix(byte[][][][] src, byte[][][][] dest,
+                                     int dim1, int dim2, int dim3, int lsq) {
+        for (int i = 0; i < dim1; i++) {
+            for (int j = 0; j < dim2; j++) {
+                for (int k = 0; k < dim3; k++) {
+                    System.arraycopy(
+                        src[i][j][k], 0,
+                        dest[i][j][k], 0,
+                        lsq
+                    );
+                }
+            }
+        }
+    }
+
+    public void genP22(byte[] outP22, byte[][][] T12, byte[][][][] P21, byte[][][][] F12, SnovaParameters params) {
+        int m = params.getM();
+        int o = params.getO();
+        int v = params.getV();
+        int l = params.getL();
+        int lsq = l * l;
+
+        // Initialize P22 with zeros
+        byte[][][][] P22 = new byte[m][o][o][lsq];
+
+        // Temporary buffers
+        byte[] temp1 = new byte[lsq];
+        byte[] temp2 = new byte[lsq];
+
+        try {
+            for (int i = 0; i < m; i++) {
+                for (int j = 0; j < o; j++) {
+                    for (int k = 0; k < o; k++) {
+                        for (int index = 0; index < v; index++) {
+                            // temp1 = T12[index][j] * F12[i][index][k]
+                            GF16Utils.gf16mMul(temp1, T12[index][j], F12[i][index][k], l);
+
+                            // temp2 = P21[i][j][index] * T12[index][k]
+                            GF16Utils.gf16mMul(temp2, P21[i][j][index], T12[index][k], l);
+
+                            // temp1 += temp2
+                            GF16Utils.gf16mAdd(temp1, temp1, temp2, l);
+
+                            // P22[i][j][k] += temp1
+                            GF16Utils.gf16mAdd(P22[i][j][k], P22[i][j][k], temp1, l);
+                        }
+                    }
+                }
+            }
+
+            // Convert GF16 elements to packed bytes
+            //TODO
+            //GF16Utils.decode(P22, outP22, m * o * o *lsq);
+        } finally {
+            // Secure clear temporary buffers
+            Arrays.fill(temp1, (byte) 0);
+            Arrays.fill(temp2, (byte) 0);
+        }
+    }
 }
