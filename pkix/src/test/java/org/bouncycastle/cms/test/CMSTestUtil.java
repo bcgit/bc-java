@@ -61,6 +61,9 @@ public class CMSTestUtil
     public static KeyPairGenerator ecDsaKpg;
     public static KeyPairGenerator ed25519Kpg;
     public static KeyPairGenerator ed448Kpg;
+    public static KeyPairGenerator mlDsa44Kpg;
+    public static KeyPairGenerator mlDsa65Kpg;
+    public static KeyPairGenerator mlDsa87Kpg;
     public static KeyPairGenerator mlKem512Kpg;
     public static KeyPairGenerator mlKem768Kpg;
     public static KeyPairGenerator mlKem1024Kpg;
@@ -170,6 +173,11 @@ public class CMSTestUtil
             ed448Kpg = KeyPairGenerator.getInstance("Ed448", "BC");
 
             ntruKpg = KeyPairGenerator.getInstance(BCObjectIdentifiers.ntruhps2048509.getId(), "BC");
+
+            mlDsa44Kpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+            mlDsa65Kpg = KeyPairGenerator.getInstance("ML-DSA-65", "BC");
+            mlDsa87Kpg = KeyPairGenerator.getInstance("ML-DSA-87", "BC");
+
             mlKem512Kpg = KeyPairGenerator.getInstance("ML-KEM-512", "BC");
             mlKem768Kpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
             mlKem1024Kpg = KeyPairGenerator.getInstance("ML-KEM-1024", "BC");
@@ -298,6 +306,21 @@ public class CMSTestUtil
     public static KeyPair makeMLKem1024KeyPair()
     {
         return mlKem1024Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa44KeyPair()
+    {
+        return mlDsa44Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa65KeyPair()
+    {
+        return mlDsa65Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeMLDsa87KeyPair()
+    {
+        return mlDsa87Kpg.generateKeyPair();
     }
 
     public static SecretKey makeDesede128Key()
