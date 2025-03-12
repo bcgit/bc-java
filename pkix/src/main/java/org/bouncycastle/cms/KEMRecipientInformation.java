@@ -27,13 +27,13 @@ public class KEMRecipientInformation
         {
             ASN1OctetString octs = ASN1OctetString.getInstance(r.getId());
 
-            rid = new KEMRecipientId(octs.getOctets());   // TODO: should be KEM
+            rid = new KEMRecipientId(octs.getOctets());
         }
         else
         {
             IssuerAndSerialNumber iAnds = IssuerAndSerialNumber.getInstance(r.getId());
 
-            rid = new KEMRecipientId(iAnds.getName(), iAnds.getSerialNumber().getValue());    // TODO:
+            rid = new KEMRecipientId(iAnds.getName(), iAnds.getSerialNumber().getValue());
         }
     }
 

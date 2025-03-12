@@ -35,11 +35,14 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
@@ -71,6 +74,7 @@ import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12MacCalculatorBuilderProvider;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBEOutputEncryptorBuilder;
+import org.bouncycastle.pkcs.bc.BcPKCS12PBMac1CalculatorBuilder;
 import org.bouncycastle.pkcs.bc.BcPKCS12PBMac1CalculatorBuilderProvider;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS12SafeBagBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS8EncryptedPrivateKeyInfoBuilder;
@@ -79,6 +83,7 @@ import org.bouncycastle.pkcs.jcajce.JcePKCS12MacCalculatorBuilderProvider;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEInputDecryptorProviderBuilder;
 import org.bouncycastle.pkcs.jcajce.JcePKCSPBEOutputEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.junit.function.ThrowingRunnable;
 
@@ -1136,6 +1141,25 @@ public class PfxPduTest
         assertFalse(pfx.isMacValid(new BcPKCS12MacCalculatorBuilderProvider(BcDefaultDigestProvider.INSTANCE), "not right".toCharArray()));
     }
 
+    public void testPfxPduMac1()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        KeyFactory fact = KeyFactory.getInstance("RSA", BC);
+        PrivateKey privKey = fact.generatePrivate(privKeySpec);
+        PublicKey pubKey = fact.generatePublic(pubKeySpec);
+
+        X509Certificate[] chain = createCertChain(fact, pubKey);
+
+        PKCS12PfxPdu pfx = createPfxMac1(privKey, pubKey, chain);
+
+        assertTrue(pfx.hasMac());
+        assertTrue(pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), passwd));
+        assertFalse(pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), "not right".toCharArray()));
+    }
+
     public void testPfxPduPBMac1PBKdf2()
         throws Exception
     {
@@ -1749,5 +1773,48 @@ public class PfxPduTest
         pfxPduBuilder.addData(keyBagBuilder.build());
 
         return pfxPduBuilder.build(new BcPKCS12MacCalculatorBuilder(), passwd);
+    }
+
+    private PKCS12PfxPdu createPfxMac1(PrivateKey privKey, PublicKey pubKey, X509Certificate[] chain)
+        throws NoSuchAlgorithmException, IOException, PKCSException
+    {
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        PKCS12SafeBagBuilder taCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[2]);
+
+        taCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString("Bouncy Primary Certificate"));
+
+        PKCS12SafeBagBuilder caCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[1]);
+
+        caCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString("Bouncy Intermediate Certificate"));
+
+        PKCS12SafeBagBuilder eeCertBagBuilder = new JcaPKCS12SafeBagBuilder(chain[0]);
+
+        eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString("Eric's Key"));
+        eeCertBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId, extUtils.createSubjectKeyIdentifier(pubKey));
+
+        PKCS12SafeBagBuilder keyBagBuilder = new JcaPKCS12SafeBagBuilder(privKey, new BcPKCS12PBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC, new CBCBlockCipher(new DESedeEngine())).build(passwd));
+
+        keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERBMPString("Eric's Key"));
+        keyBagBuilder.addBagAttribute(PKCSObjectIdentifiers.pkcs_9_at_localKeyId, extUtils.createSubjectKeyIdentifier(pubKey));
+
+        //
+        // construct the actual key store
+        //
+        PKCS12PfxPduBuilder pfxPduBuilder = new PKCS12PfxPduBuilder();
+
+        PKCS12SafeBag[] certs = new PKCS12SafeBag[3];
+
+        certs[0] = eeCertBagBuilder.build();
+        certs[1] = caCertBagBuilder.build();
+        certs[2] = taCertBagBuilder.build();
+
+        pfxPduBuilder.addEncryptedData(new BcPKCS12PBEOutputEncryptorBuilder(PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, new CBCBlockCipher(new RC2Engine())).build(passwd), certs);
+
+        pfxPduBuilder.addData(keyBagBuilder.build());
+
+        return pfxPduBuilder.build(new BcPKCS12PBMac1CalculatorBuilder(new PBMAC1Params(
+                                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(Strings.toByteArray("saltsalt"), 1024, 256, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256))),
+                                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512))), passwd);
     }
 }

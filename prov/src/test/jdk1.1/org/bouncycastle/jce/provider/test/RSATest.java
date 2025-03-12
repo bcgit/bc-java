@@ -12,6 +12,7 @@ import java.security.spec.RSAPublicKeySpec;
 import javax.crypto.Cipher;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -49,27 +50,6 @@ public class RSATest
             System.arraycopy(seed, 0, bytes, offset, bytes.length - offset);
         }
     }
-
-    private boolean arrayEquals(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     private RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(
         new BigInteger("b4a7e46170574f16a97082b22be58b6a2a629798419be12872a4bdba626cfae9900f76abfb12139dce5de56564fab2b6543165a040c606887420e33d91ed7ed7", 16),
@@ -115,7 +95,7 @@ public class RSATest
 
             byte[]  out = c.doFinal(input);
 
-            if (!arrayEquals(out, output[0]))
+            if (!Arrays.areEqual(out, output[0]))
             {
                 return new SimpleTestResult(false, "NoPadding test failed on encrypt expected " + new String(Hex.encode(output[0])) + " got " + new String(Hex.encode(out)));
             }
@@ -124,7 +104,7 @@ public class RSATest
 
             out = c.doFinal(out);
 
-            if (!arrayEquals(out, input))
+            if (!Arrays.areEqual(out, input))
             {
                 return new SimpleTestResult(false, "NoPadding test failed on decrypt expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out)));
             }
@@ -138,7 +118,7 @@ public class RSATest
 
             out = c.doFinal(input);
 
-            if (!arrayEquals(out, output[1]))
+            if (!Arrays.areEqual(out, output[1]))
             {
                 return new SimpleTestResult(false, "PKCS1 test failed on encrypt expected " + new String(Hex.encode(output[1])) + " got " + new String(Hex.encode(out)));
             }
@@ -147,7 +127,7 @@ public class RSATest
 
             out = c.doFinal(out);
 
-            if (!arrayEquals(out, input))
+            if (!Arrays.areEqual(out, input))
             {
                 return new SimpleTestResult(false, "PKCS1 test failed on decrypt expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out)));
             }
@@ -161,7 +141,7 @@ public class RSATest
 
             out = c.doFinal(input);
 
-            if (!arrayEquals(out, output[2]))
+            if (!Arrays.areEqual(out, output[2]))
             {
                 return new SimpleTestResult(false, "OAEP test failed on encrypt expected " + new String(Hex.encode(output[2])) + " got " + new String(Hex.encode(out)));
             }
@@ -170,7 +150,7 @@ public class RSATest
 
             out = c.doFinal(out);
 
-            if (!arrayEquals(out, input))
+            if (!Arrays.areEqual(out, input))
             {
                 return new SimpleTestResult(false, "OAEP test failed on decrypt expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(out)));
             }

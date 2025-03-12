@@ -46,6 +46,9 @@ public class CMSAlgorithm
     public static final ASN1ObjectIdentifier  AES128_WRAP     = NISTObjectIdentifiers.id_aes128_wrap.intern();
     public static final ASN1ObjectIdentifier  AES192_WRAP     = NISTObjectIdentifiers.id_aes192_wrap.intern();
     public static final ASN1ObjectIdentifier  AES256_WRAP     = NISTObjectIdentifiers.id_aes256_wrap.intern();
+    public static final ASN1ObjectIdentifier  AES128_WRAP_PAD     = NISTObjectIdentifiers.id_aes128_wrap_pad.intern();
+    public static final ASN1ObjectIdentifier  AES192_WRAP_PAD     = NISTObjectIdentifiers.id_aes192_wrap_pad.intern();
+    public static final ASN1ObjectIdentifier  AES256_WRAP_PAD     = NISTObjectIdentifiers.id_aes256_wrap_pad.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA128_WRAP = NTTObjectIdentifiers.id_camellia128_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA192_WRAP = NTTObjectIdentifiers.id_camellia192_wrap.intern();
     public static final ASN1ObjectIdentifier  CAMELLIA256_WRAP = NTTObjectIdentifiers.id_camellia256_wrap.intern();

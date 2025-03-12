@@ -195,6 +195,7 @@ public class RegressionTest
             new SparkleTest(),
             new ISAPTest(),
             new ConcatenationKDFTest(),
+            new SAKKEKEMSTest(),
         };
 
     public static void main(String[] args)
