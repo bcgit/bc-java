@@ -372,13 +372,13 @@ public class CMSSignedDataStreamGenerator
         return new ASN1Integer(1);
     }
 
-    private boolean checkForVersion3(List signerInfos, List signerInfoGens)
+    private static boolean checkForVersion3(List signerInfos, List signerInfoGens)
     {
         for (Iterator it = signerInfos.iterator(); it.hasNext();)
         {
-            SignerInfo s = SignerInfo.getInstance(((SignerInformation)it.next()).toASN1Structure());
+            SignerInfo s = ((SignerInformation)it.next()).toASN1Structure();
 
-            if (s.getVersion().intValueExact() == 3)
+            if (s.getVersion().hasValue(3))
             {
                 return true;
             }

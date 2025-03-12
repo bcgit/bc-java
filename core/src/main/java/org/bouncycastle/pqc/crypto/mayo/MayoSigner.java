@@ -131,11 +131,11 @@ public class MayoSigner
             // Generate S = seed_pk || (additional bytes), using SHAKE256.
             // Output length is param_pk_seed_bytes + param_O_bytes.
             shake.update(seed_sk, 0, seed_sk.length);
-            shake.doFinal(seed_pk, 0, pk_seed_bytes + oBytes);
+            shake.doFinal(seed_pk, 0, totalS);
 
             // Decode the portion of S after the first param_pk_seed_bytes into O.
             // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
-            Utils.decode(seed_pk, pk_seed_bytes, O, 0, v * o);
+            Utils.decode(seed_pk, pk_seed_bytes, O, 0, O.length);
 
             // Expand P1 and P2 into the long array P using seed_pk.
             Utils.expandP1P2(params, P, seed_pk);
@@ -434,7 +434,7 @@ public class MayoSigner
         final int m = params.getM();
         final int mVecLimbs = params.getMVecLimbs();
         final int ACols = params.getACols();
-        final byte[] fTailArr = params.getFTailArr();
+        final int[] fTailArr = params.getFTail();
 
         int bitsToShift = 0;
         int wordsToShift = 0;
@@ -514,7 +514,7 @@ public class MayoSigner
         byte[] tab = new byte[F_TAIL_LEN << 2];
         for (int i = 0, idx = 0; i < F_TAIL_LEN; i++)
         {
-            byte ft = fTailArr[i];
+            int ft = fTailArr[i];
             tab[idx++] = (byte)GF16Utils.mulF(ft, 1);
             tab[idx++] = (byte)GF16Utils.mulF(ft, 2);
             tab[idx++] = (byte)GF16Utils.mulF(ft, 4);
@@ -798,13 +798,8 @@ public class MayoSigner
         for (int i = 0, irowLen = 0; i < nrows; i++, irowLen += rowLen)
         {
             Pack.longToLittleEndian(packedA, irowLen, len_4, bytes, 0);
-            int j = 0;
-            for (; j < ncols >> 1; j++)
-            {
-                A[outIndex++] = (byte)(bytes[j] & 0x0F);       // Lower nibble
-                A[outIndex++] = (byte)((bytes[j] >> 4) & 0x0F); // Upper nibble
-            }
-            A[outIndex++] = (byte)(bytes[j] & 0x0F);
+            Utils.decode(bytes, 0, A, outIndex, ncols);
+            outIndex += ncols;
         }
     }
 
