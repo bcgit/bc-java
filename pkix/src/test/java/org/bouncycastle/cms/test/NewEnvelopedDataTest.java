@@ -143,8 +143,12 @@ public class NewEnvelopedDataTest
     private static X509Certificate _reciKemsCert;
     private static KeyPair _reciNtruKP;
     private static X509Certificate _reciNtruCert;
-    private static KeyPair _reciMLKemKP;
-    private static X509Certificate _reciMLKemCert;
+    private static KeyPair _reciMLKem512KP;
+    private static X509Certificate _reciMLKem512Cert;
+    private static KeyPair _reciMLKem768KP;
+    private static X509Certificate _reciMLKem768Cert;
+    private static KeyPair _reciMLKem1024KP;
+    private static X509Certificate _reciMLKem1024Cert;
 
     private static KeyPair _origDhKP;
     private static KeyPair _reciDhKP;
@@ -609,8 +613,14 @@ public class NewEnvelopedDataTest
             _reciNtruKP = CMSTestUtil.makeNtruKeyPair();
             _reciNtruCert = CMSTestUtil.makeCertificate(_reciNtruKP, _reciDN, _signKP, _signDN);
 
-            _reciMLKemKP = CMSTestUtil.makeMLKemKeyPair();
-            _reciMLKemCert = CMSTestUtil.makeCertificate(_reciMLKemKP, _reciDN, _signKP, _signDN);
+            _reciMLKem512KP = CMSTestUtil.makeMLKem512KeyPair();
+            _reciMLKem512Cert = CMSTestUtil.makeCertificate(_reciMLKem512KP, _reciDN, _signKP, _signDN);
+
+            _reciMLKem768KP = CMSTestUtil.makeMLKem768KeyPair();
+            _reciMLKem768Cert = CMSTestUtil.makeCertificate(_reciMLKem768KP, _reciDN, _signKP, _signDN);
+
+            _reciMLKem1024KP = CMSTestUtil.makeMLKem1024KeyPair();
+            _reciMLKem1024Cert = CMSTestUtil.makeCertificate(_reciMLKem1024KP, _reciDN, _signKP, _signDN);
         }
     }
 
@@ -716,7 +726,7 @@ public class NewEnvelopedDataTest
         }
     }
 
-    public void testMLKem()
+    public void testMLKem512()
         throws Exception
     {
         byte[] data = "WallaWallaWashington".getBytes();
@@ -725,8 +735,8 @@ public class NewEnvelopedDataTest
         CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
 
         // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
-        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKemCert, CMSAlgorithm.AES256_WRAP).setKDF(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)));
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem512Cert, CMSAlgorithm.AES128_WRAP)
+            .setKDF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256)));
 
         CMSEnvelopedData ed = edGen.generate(
             new CMSProcessableByteArray(data),
@@ -743,17 +753,108 @@ public class NewEnvelopedDataTest
         Iterator it = c.iterator();
 
         int expectedLength = new DefaultKemEncapsulationLengthProvider().getEncapsulationLength(
-                            SubjectPublicKeyInfo.getInstance(_reciMLKemKP.getPublic().getEncoded()).getAlgorithm());
+            SubjectPublicKeyInfo.getInstance(_reciMLKem512KP.getPublic().getEncoded()).getAlgorithm());
 
         while (it.hasNext())
         {
             KEMRecipientInformation recipient = (KEMRecipientInformation)it.next();
 
             assertEquals(expectedLength, recipient.getEncapsulation().length);
-            
+
+            assertEquals(NISTObjectIdentifiers.id_alg_ml_kem_512.getId(), recipient.getKeyEncryptionAlgOID());
+
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciMLKem512KP.getPrivate()).setProvider(BC));
+
+            assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
+            assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
+        }
+    }
+
+    public void testMLKem768()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        // Send response with encrypted certificate
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem768Cert, CMSAlgorithm.AES256_WRAP)
+            .setKDF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256)));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider("BC").build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES256_CBC);
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        int expectedLength = new DefaultKemEncapsulationLengthProvider().getEncapsulationLength(
+            SubjectPublicKeyInfo.getInstance(_reciMLKem768KP.getPublic().getEncoded()).getAlgorithm());
+
+        while (it.hasNext())
+        {
+            KEMRecipientInformation recipient = (KEMRecipientInformation)it.next();
+
+            assertEquals(expectedLength, recipient.getEncapsulation().length);
+
             assertEquals(NISTObjectIdentifiers.id_alg_ml_kem_768.getId(), recipient.getKeyEncryptionAlgOID());
 
-            CMSTypedStream contentStream = recipient.getContentStream(new JceKEMEnvelopedRecipient(_reciMLKemKP.getPrivate()).setProvider(BC));
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciMLKem768KP.getPrivate()).setProvider(BC));
+
+            assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
+            assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
+        }
+    }
+
+    public void testMLKem1024()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        // Send response with encrypted certificate
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        // note: use cert req ID as key ID, don't want to use issuer/serial in this case!
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem1024Cert, CMSAlgorithm.AES256_WRAP)
+            .setKDF(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256)));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider("BC").build());
+
+        RecipientInformationStore recipients = ed.getRecipientInfos();
+
+        assertEquals(ed.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES256_CBC);
+
+        Collection c = recipients.getRecipients();
+
+        assertEquals(1, c.size());
+
+        Iterator it = c.iterator();
+
+        int expectedLength = new DefaultKemEncapsulationLengthProvider().getEncapsulationLength(
+            SubjectPublicKeyInfo.getInstance(_reciMLKem1024KP.getPublic().getEncoded()).getAlgorithm());
+
+        while (it.hasNext())
+        {
+            KEMRecipientInformation recipient = (KEMRecipientInformation)it.next();
+
+            assertEquals(expectedLength, recipient.getEncapsulation().length);
+
+            assertEquals(NISTObjectIdentifiers.id_alg_ml_kem_1024.getId(), recipient.getKeyEncryptionAlgOID());
+
+            CMSTypedStream contentStream = recipient.getContentStream(
+                new JceKEMEnvelopedRecipient(_reciMLKem1024KP.getPrivate()).setProvider(BC));
 
             assertEquals(PKCSObjectIdentifiers.data, contentStream.getContentType());
             assertEquals(true, Arrays.equals(data, Streams.readAll(contentStream.getContentStream())));
