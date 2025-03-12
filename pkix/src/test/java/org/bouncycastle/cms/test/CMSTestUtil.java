@@ -504,6 +504,10 @@ public class CMSTestUtil
 
     private static JcaContentSignerBuilder makeContentSignerBuilder(PublicKey issPub)
     {
+        /*
+         * NOTE: Current ALL test certificates are issued under a SHA1withRSA root, so this list is mostly
+         * redundant (and also incomplete in that it doesn't handle EdDSA or ML-DSA issuers).
+         */
         JcaContentSignerBuilder contentSignerBuilder;
         if (issPub instanceof RSAPublicKey)
         {
@@ -521,9 +525,13 @@ public class CMSTestUtil
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411withECGOST3410");
         }
-        else
+        else if (issPub.getAlgorithm().equals("GOST3410"))
         {
             contentSignerBuilder = new JcaContentSignerBuilder("GOST3411WithGOST3410");
+        }
+        else
+        {
+            throw new UnsupportedOperationException("Algorithm handlers incomplete");
         }
 
         contentSignerBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME);
