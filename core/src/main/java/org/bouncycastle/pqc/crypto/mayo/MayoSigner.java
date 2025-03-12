@@ -131,11 +131,11 @@ public class MayoSigner
             // Generate S = seed_pk || (additional bytes), using SHAKE256.
             // Output length is param_pk_seed_bytes + param_O_bytes.
             shake.update(seed_sk, 0, seed_sk.length);
-            shake.doFinal(seed_pk, 0, pk_seed_bytes + oBytes);
+            shake.doFinal(seed_pk, 0, totalS);
 
             // Decode the portion of S after the first param_pk_seed_bytes into O.
             // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
-            Utils.decode(seed_pk, pk_seed_bytes, O, 0, v * o);
+            Utils.decode(seed_pk, pk_seed_bytes, O, 0, O.length);
 
             // Expand P1 and P2 into the long array P using seed_pk.
             Utils.expandP1P2(params, P, seed_pk);
