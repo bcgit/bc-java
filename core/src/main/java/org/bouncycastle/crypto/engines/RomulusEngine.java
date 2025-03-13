@@ -855,7 +855,7 @@ public class RomulusEngine
     }
 
     @Override
-    public void init(byte[] key, byte[] iv)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
         npub = iv;
