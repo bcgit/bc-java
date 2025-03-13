@@ -323,7 +323,6 @@ abstract class AEADBufferBaseEngine
         @Override
         public void reset()
         {
-
         }
     }
 
@@ -548,60 +547,30 @@ abstract class AEADBufferBaseEngine
 
     private int processDecryption(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
-        int resultLength = 0, available = m_bufferSizeDecrypt - m_bufPos;
-        if (MAC_SIZE > BlockSize)
+        int resultLength = 0, available;
+
+        // loop will run more than once for the following situation: pb128, ascon80pq, ascon128, ISAP_A_128(A)
+        while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
+            && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
         {
-            // situation: pb128, ascon80pq, ascon128, ISAP_A_128(A)
-            // If the mac size is greater than the block size, process the data in m_buf in the loop until
-            // there is nearly mac_size data left
-            while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
-                && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
-            {
-                processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
-                m_bufPos -= BlockSize;
-                resultLength += BlockSize;
-            }
-            if (m_bufPos > 0)
-            {
-                System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
-                if (processor.isLengthExceedingBlockSize(m_bufPos + len, m_bufferSizeDecrypt))
-                {
-                    available = Math.max(BlockSize - m_bufPos, 0);
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                    inOff += available;
-                    processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-                }
-                else
-                {
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                    m_bufPos += len;
-                    return -1;
-                }
-            }
+            processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+            m_bufPos -= BlockSize;
+            resultLength += BlockSize;
         }
-        else
+
+        if (m_bufPos > 0)
         {
-            if (m_bufPos > 0)
+            System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+            if (processor.isLengthWithinAvailableSpace(m_bufPos + len, m_bufferSizeDecrypt))
             {
-                if (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize))
-                {
-                    processBufferDecrypt(m_buf, 0, output, outOff);
-                    m_bufPos -= BlockSize;
-                    System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
-                    resultLength = BlockSize;
-                    available += BlockSize;
-                    if (processor.isLengthWithinAvailableSpace(len, available))
-                    {
-                        System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                        m_bufPos += len;
-                        return -1;
-                    }
-                }
-                available = Math.max(BlockSize - m_bufPos, 0);
-                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                inOff += available;
-                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return -1;
             }
+            available = Math.max(BlockSize - m_bufPos, 0);
+            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+            inOff += available;
+            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
         }
         return inOff;
     }
@@ -649,7 +618,7 @@ abstract class AEADBufferBaseEngine
         return resultLength;
     }
 
-    public int getBlockSize()
+    public final int getBlockSize()
     {
         return BlockSize;
     }
@@ -739,7 +708,7 @@ abstract class AEADBufferBaseEngine
 
     protected abstract void finishAAD(State nextState, boolean isDoFinal);
 
-    protected void bufferReset()
+    protected final void bufferReset()
     {
         if (m_buf != null)
         {
@@ -773,7 +742,7 @@ abstract class AEADBufferBaseEngine
         dataOperator.reset();
     }
 
-    protected void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
+    protected final void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
     {
         if (len >= BlockSize && outOff + len > output.length)
         {
@@ -781,7 +750,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
+    protected final void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
     {
         if (inOff + len > input.length)
         {
@@ -789,7 +758,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected void ensureInitialized()
+    protected final void ensureInitialized()
     {
         if (m_state == State.Uninitialized)
         {
