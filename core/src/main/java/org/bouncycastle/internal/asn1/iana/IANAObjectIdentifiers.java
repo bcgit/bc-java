@@ -37,8 +37,8 @@ public interface IANAObjectIdentifiers
     /** IANA security nametypes;  1.3.6.1.5.6 */
     static final ASN1ObjectIdentifier    security_nametypes   = security.branch("6");
 
-    /** PKIX base OID:            1.3.6.1.5.6.6 */
-    static final ASN1ObjectIdentifier    pkix                 = security_mechanisms.branch("6");
+    /** PKIX base OID:            1.3.6.1.5.5.7 */
+    static final ASN1ObjectIdentifier    pkix                 = security_mechanisms.branch("7");
 
 
     /** IPSEC base OID:                        1.3.6.1.5.5.8 */
