@@ -379,10 +379,10 @@ public class SparkleTest
                 byte[] ad = Hex.decode(map.get("AD"));
                 byte[] pt = Hex.decode(map.get("PT"));
                 byte[] ct = Hex.decode(map.get("CT"));
-                if (!map.get("Count").equals("17"))
-                {
-                    continue;
-                }
+//                if (!map.get("Count").equals("17"))
+//                {
+//                    continue;
+//                }
                 CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
 
                 // Encrypt
