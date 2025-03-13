@@ -465,26 +465,26 @@ abstract class AEADBufferBaseEngine
 
     protected int processEncDecBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
+        boolean forEncryption = checkData(false);
         int available, resultLength;
-        if (checkData(false))
+        available = (forEncryption ? BlockSize : m_bufferSizeDecrypt) - m_bufPos;
+        // The function is just an operator < or <=
+        if (processor.isLengthWithinAvailableSpace(len, available))
         {
-            resultLength = 0;
-            available = processor.getUpdateOutputSize(len) + m_bufPos;
-            ensureSufficientOutputBuffer(output, outOff, available - available % BlockSize);
+            System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+            m_bufPos += len;
+            return 0;
+        }
+        resultLength = processor.getUpdateOutputSize(len) + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
+        ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
+        resultLength = 0;
+        if (forEncryption)
+        {
             if (m_bufPos > 0)
             {
-                available = BlockSize - m_bufPos;
-                // The function is just an operator < or <=
-                if (processor.isLengthWithinAvailableSpace(len, available))
-                {
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                    m_bufPos += len;
-                    return 0;
-                }
                 System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                 inOff += available;
                 len -= available;
-
                 processBufferEncrypt(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
             }
@@ -499,25 +499,30 @@ abstract class AEADBufferBaseEngine
         }
         else
         {
-            available = m_bufferSizeDecrypt - m_bufPos;
-            if (processor.isLengthWithinAvailableSpace(len, available))
+            // loop will run more than once for the following situation: pb128, ascon80pq, ascon128, ISAP_A_128(A)
+            while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
+                && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
             {
-                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                m_bufPos += len;
-                return 0;
+                processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                m_bufPos -= BlockSize;
+                resultLength += BlockSize;
             }
-            resultLength = (processor.getUpdateOutputSize(len) + m_bufPos - MAC_SIZE);
-            resultLength -= resultLength % BlockSize;
-            ensureSufficientOutputBuffer(output, outOff, resultLength);
-            int originalInOff = inOff;
-            int originalm_bufPos = m_bufPos;
-            if ((inOff = processDecryption(input, inOff, len, output, outOff)) == -1)
+            if (m_bufPos > 0)
             {
-                return resultLength;
+                System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                if (processor.isLengthWithinAvailableSpace(m_bufPos + len, m_bufferSizeDecrypt))
+                {
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return resultLength;
+                }
+                available = Math.max(BlockSize - m_bufPos, 0);
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                resultLength += BlockSize;
             }
-            resultLength = inOff - originalInOff;
-            len -= resultLength;
-            resultLength += originalm_bufPos;
             while (processor.isLengthExceedingBlockSize(len, m_bufferSizeDecrypt))
             {
                 processBufferDecrypt(input, inOff, output, outOff + resultLength);
@@ -529,36 +534,6 @@ abstract class AEADBufferBaseEngine
         System.arraycopy(input, inOff, m_buf, 0, len);
         m_bufPos = len;
         return resultLength;
-    }
-
-    private int processDecryption(byte[] input, int inOff, int len, byte[] output, int outOff)
-    {
-        int resultLength = 0, available;
-
-        // loop will run more than once for the following situation: pb128, ascon80pq, ascon128, ISAP_A_128(A)
-        while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
-            && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
-        {
-            processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
-            m_bufPos -= BlockSize;
-            resultLength += BlockSize;
-        }
-
-        if (m_bufPos > 0)
-        {
-            System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
-            if (processor.isLengthWithinAvailableSpace(m_bufPos + len, m_bufferSizeDecrypt))
-            {
-                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                m_bufPos += len;
-                return -1;
-            }
-            available = Math.max(BlockSize - m_bufPos, 0);
-            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-            inOff += available;
-            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-        }
-        return inOff;
     }
 
     @Override
@@ -583,10 +558,7 @@ abstract class AEADBufferBaseEngine
             resultLength = m_bufPos;
         }
 
-        if (outOff > output.length - resultLength)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff, resultLength);
         mac = new byte[MAC_SIZE];
         processFinalBlock(output, outOff);
         if (forEncryption)
@@ -730,7 +702,7 @@ abstract class AEADBufferBaseEngine
 
     protected final void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
     {
-        if (len >= BlockSize && outOff + len > output.length)
+        if (outOff + len > output.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
