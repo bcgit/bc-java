@@ -109,8 +109,6 @@ abstract class AEADBufferBaseEngine
     {
         void processAADByte(byte input);
 
-        int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
-
         int getUpdateOutputSize(int len);
 
         boolean isLengthWithinAvailableSpace(int len, int available);
@@ -149,12 +147,6 @@ abstract class AEADBufferBaseEngine
             // The -1 is to account for the lazy processing of a full buffer
             return Math.max(0, len) - 1;
         }
-
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryption(input, inOff, len, output, outOff);
-        }
     }
 
     private class ImmediateAADProcessor
@@ -186,12 +178,6 @@ abstract class AEADBufferBaseEngine
         public boolean isLengthExceedingBlockSize(int len, int size)
         {
             return len >= size;
-        }
-
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryption(input, inOff, len, output, outOff);
         }
     }
 
@@ -525,7 +511,7 @@ abstract class AEADBufferBaseEngine
             ensureSufficientOutputBuffer(output, outOff, resultLength);
             int originalInOff = inOff;
             int originalm_bufPos = m_bufPos;
-            if ((inOff = processor.processDecryptBytes(input, inOff, len, output, outOff)) == -1)
+            if ((inOff = processDecryption(input, inOff, len, output, outOff)) == -1)
             {
                 return resultLength;
             }
