@@ -116,7 +116,7 @@ public class PhotonBeetleEngine
         m_state = nextState;
     }
 
-    public void processFinalAAD()
+    protected void processFinalAAD()
     {
         int aadLen = aadOperator.getLen();
         if (aadLen != 0)

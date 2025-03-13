@@ -28,7 +28,7 @@ abstract class AEADBufferBaseEngine
         Default,
         Counter,
         Stream,
-        //StreamCipher //TODO: add for Grain 128 AEAD
+        StreamCipher
     }
 
     protected enum State
@@ -99,9 +99,10 @@ abstract class AEADBufferBaseEngine
             m_buf = new byte[MAC_SIZE];
             dataOperator = new StreamDataOperator();
             break;
-//        case StreamCipher:
-//            dataOperator = new StreamCipherOperator();
-//            break;
+        case StreamCipher:
+            m_buf = new byte[m_bufferSizeDecrypt];
+            dataOperator = new StreamCipherOperator();
+            break;
         }
     }
 
@@ -368,30 +369,38 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-//    protected class StreamCipherOperator
-//        implements DataOperator
-//    {
-//        private int len;
-//        @Override
-//        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-//        {
-//            this.len = len;
-//            processBufferEncrypt(input, inOff, output, outOff);
-//            return len;
-//        }
-//
-//        @Override
-//        public int getLen()
-//        {
-//            return 0;
-//        }
-//
-//        @Override
-//        public void reset()
-//        {
-//
-//        }
-//    }
+    protected class StreamCipherOperator
+        implements DataOperator
+    {
+        private int len;
+
+        @Override
+        public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
+        {
+            this.len = len;
+            if (forEncryption)
+            {
+                processBufferEncrypt(input, inOff, output, outOff);
+            }
+            else
+            {
+                processBufferDecrypt(input, inOff, output, outOff);
+            }
+            return len;
+        }
+
+        @Override
+        public int getLen()
+        {
+            return 0;
+        }
+
+        @Override
+        public void reset()
+        {
+
+        }
+    }
 
     protected static final class ErasableOutputStream
         extends ByteArrayOutputStream
