@@ -16,7 +16,7 @@ public abstract class SimpleTest
         return SimpleTestResult.successful(this, "Okay");
     }
 
-    protected void fail(
+    public void fail(
         String message)
     {
         throw new TestFailedException(SimpleTestResult.failed(this, message));
@@ -163,7 +163,7 @@ public abstract class SimpleTest
         throw new TestFailedException(SimpleTestResult.failed(this, message, throwable));
     }
 
-    protected void fail(
+    public void fail(
         String message,
         Object expected,
         Object found)
@@ -178,7 +178,7 @@ public abstract class SimpleTest
         return Arrays.areEqual(a, b);
     }
 
-    protected boolean areEqual(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex)
+    public boolean areEqual(byte[] a, int aFromIndex, int aToIndex, byte[] b, int bFromIndex, int bToIndex)
     {
         return Arrays.areEqual(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex);
     }

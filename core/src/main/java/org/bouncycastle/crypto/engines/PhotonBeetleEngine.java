@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.digests.PhotonBeetleDigest;
+import org.bouncycastle.util.Bytes;
 
 /**
  * Photon-Beetle, <a href="https://www.isical.ac.in/~lightweight/beetle/"></a>
@@ -23,14 +24,11 @@ public class PhotonBeetleEngine
     private byte[] K;
     private byte[] N;
     private byte[] state;
-    private byte[][] state_2d;
-    private int aadLen;
-    private int messageLen;
     private final int RATE_INBYTES_HALF;
     private final int STATE_INBYTES;
     private final int LAST_THREE_BITS_OFFSET;
-    private final int D = 8;
-    private final byte[][] RC = {
+    private static final int D = 8;
+    private static final byte[][] RC = {
         {1, 3, 7, 14, 13, 11, 6, 12, 9, 2, 5, 10},
         {0, 2, 6, 15, 12, 10, 7, 13, 8, 3, 4, 11},
         {2, 0, 4, 13, 14, 8, 5, 15, 10, 1, 6, 9},
@@ -40,7 +38,7 @@ public class PhotonBeetleEngine
         {13, 15, 11, 2, 1, 7, 10, 0, 5, 14, 9, 6},
         {9, 11, 15, 6, 5, 3, 14, 4, 1, 10, 13, 2}
     };
-    private final byte[][] MixColMatrix = {
+    private static final byte[][] MixColMatrix = {
         {2, 4, 2, 11, 2, 8, 5, 6},
         {12, 9, 8, 13, 7, 7, 5, 2},
         {4, 4, 13, 13, 9, 4, 13, 9},
@@ -51,13 +49,11 @@ public class PhotonBeetleEngine
         {15, 1, 13, 10, 5, 10, 2, 3}
     };
 
-    private final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
+    private static final byte[] sbox = {12, 5, 6, 11, 9, 0, 10, 13, 3, 14, 15, 8, 4, 7, 1, 2};
 
     public PhotonBeetleEngine(PhotonBeetleParameters pbp)
     {
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         int CAPACITY_INBITS = 0, RATE_INBITS = 0;
         switch (pbp)
         {
@@ -75,9 +71,9 @@ public class PhotonBeetleEngine
         int STATE_INBITS = RATE_INBITS + CAPACITY_INBITS;
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
-        initialised = false;
         algorithmName = "Photon-Beetle AEAD";
-        m_aad = new byte[AADBufferSize];
+        setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
+            AADOperatorType.Counter, DataOperatorType.Counter);
     }
 
     @Override
@@ -87,53 +83,77 @@ public class PhotonBeetleEngine
         K = key;
         N = iv;
         state = new byte[STATE_INBYTES];
-        state_2d = new byte[D][D];
-        mac = new byte[MAC_SIZE];
-        initialised = true;
-        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset(false);
     }
 
+
     protected void processBufferAAD(byte[] input, int inOff)
     {
-        PHOTON_Permutation();
-        XOR(input, inOff, BlockSize);
+        photonPermutation(state);
+        Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        PHOTON_Permutation();
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                //m_state = State.DecData;
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
+    public void processFinalAAD()
+    {
+        int aadLen = aadOperator.getLen();
+        if (aadLen != 0)
+        {
+            if (m_aadPos != 0)
+            {
+                photonPermutation(state);
+                Bytes.xorTo(m_aadPos, m_aad, state);
+                if (m_aadPos < BlockSize)
+                {
+                    state[m_aadPos] ^= 0x01; // ozs
+                }
+            }
+            state[STATE_INBYTES - 1] ^= select(dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE) > 0,
+                ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
+        }
+    }
+
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
         rhoohr(output, outOff, input, inOff, BlockSize);
+        Bytes.xorTo(BlockSize, input, inOff, state);
     }
 
-    @Override
-    public void processAADByte(byte input)
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        aadLen++;
-        super.processAADByte(input);
-    }
-
-    @Override
-    public void processAADBytes(byte[] input, int inOff, int len)
-    {
-        aadLen += len;
-        super.processAADBytes(input, inOff, len);
-    }
-
-    @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        messageLen += len;
-        return super.processBytes(input, inOff, len, output, outOff);
+        rhoohr(output, outOff, input, inOff, BlockSize);
+        Bytes.xorTo(BlockSize, output, outOff, state);
     }
 
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        int len = messageLen - (forEncryption ? 0 : MAC_SIZE);
+        int len = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
         int bufferLen = m_bufPos;// - (forEncryption ? 0 : MAC_SIZE);
+        int aadLen = aadOperator.getLen();
         if (aadLen != 0 || len != 0)
         {
             input_empty = false;
@@ -144,69 +164,47 @@ public class PhotonBeetleEngine
         {
             if (bufferLen != 0)
             {
-                PHOTON_Permutation();
                 rhoohr(output, outOff, m_buf, 0, bufferLen);
-                if(bufferLen < BlockSize)
+                if (forEncryption)
+                {
+                    Bytes.xorTo(bufferLen, m_buf, state);
+                }
+                else
+                {
+                    Bytes.xorTo(bufferLen, output, outOff, state);
+                }
+                if (bufferLen < BlockSize)
                 {
                     state[bufferLen] ^= 0x01; // ozs
                 }
             }
             state[STATE_INBYTES - 1] ^= c1 << LAST_THREE_BITS_OFFSET;
         }
-        if (input_empty)
+        else if (input_empty)
         {
             state[STATE_INBYTES - 1] ^= 1 << LAST_THREE_BITS_OFFSET;
         }
-        PHOTON_Permutation();
-        mac = new byte[MAC_SIZE];
+        photonPermutation(state);
         System.arraycopy(state, 0, mac, 0, MAC_SIZE);
-    }
-
-    protected void processFinalAAD()
-    {
-        if (!aadFinished)
-        {
-            if (aadLen != 0)
-            {
-                if (m_aadPos != 0)
-                {
-                    PHOTON_Permutation();
-                    XOR(m_aad, 0, m_aadPos);
-                    if (m_aadPos < BlockSize)
-                    {
-                        state[m_aadPos] ^= 0x01; // ozs
-                    }
-                }
-                state[STATE_INBYTES - 1] ^= select(messageLen - (forEncryption ? 0 : MAC_SIZE) > 0,
-                    ((aadLen % BlockSize) == 0), (byte)3, (byte)4) << LAST_THREE_BITS_OFFSET;
-            }
-            m_aadPos = 0;
-            aadFinished = true;
-        }
     }
 
     protected void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
+        ensureInitialized();
         bufferReset();
         input_empty = true;
-        aadLen = 0;
-        aadFinished = false;
-        messageLen = 0;
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
         super.reset(clearMac);
     }
 
-    private void PHOTON_Permutation()
+    private static void photonPermutation(byte[] state)
     {
         int i, j, k;
         int dq = 3;
         int dr = 7;
         int DSquare = 64;
+        byte[][] state_2d = new byte[D][D];
         for (i = 0; i < DSquare; i++)
         {
             state_2d[i >>> dq][i & dr] = (byte)(((state[i >> 1] & 0xFF) >>> (4 * (i & 1))) & 0xf);
@@ -290,37 +288,26 @@ public class PhotonBeetleEngine
 
     private void rhoohr(byte[] ciphertext, int outOff, byte[] plaintext, int inOff, int DBlen_inbytes)
     {
-        byte[] OuterState_part1_ROTR1 = state_2d[0];
+        photonPermutation(state);
+        byte[] OuterState_part1_ROTR1 = new byte[D];
         int i, loop_end = Math.min(DBlen_inbytes, RATE_INBYTES_HALF);
         for (i = 0; i < RATE_INBYTES_HALF - 1; i++)
         {
             OuterState_part1_ROTR1[i] = (byte)(((state[i] & 0xFF) >>> 1) | ((state[(i + 1)] & 1) << 7));
         }
         OuterState_part1_ROTR1[RATE_INBYTES_HALF - 1] = (byte)(((state[i] & 0xFF) >>> 1) | ((state[0] & 1) << 7));
-        i = 0;
-        while (i < loop_end)
-        {
-            ciphertext[i + outOff] = (byte)(state[i + RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
-        }
-        while (i < DBlen_inbytes)
-        {
-            ciphertext[i + outOff] = (byte)(OuterState_part1_ROTR1[i - RATE_INBYTES_HALF] ^ plaintext[i++ + inOff]);
-        }
-        if (forEncryption)
-        {
-            XOR(plaintext, inOff, DBlen_inbytes);
-        }
-        else
-        {
-            XOR(ciphertext, outOff, DBlen_inbytes);
-        }
+        Bytes.xor(loop_end, state, RATE_INBYTES_HALF, plaintext, inOff, ciphertext, outOff);
+        Bytes.xor(DBlen_inbytes - loop_end, OuterState_part1_ROTR1, loop_end - RATE_INBYTES_HALF, plaintext,
+            inOff + loop_end, ciphertext, outOff + loop_end);
     }
 
-    private void XOR(byte[] in_right, int rOff, int iolen_inbytes)
+    public static void photonPermutation(PhotonBeetleDigest.Friend friend, byte[] state)
     {
-        for (int i = 0; i < iolen_inbytes; i++)
+        if (null == friend)
         {
-            state[i] ^= in_right[rOff++];
+            throw new NullPointerException("This method is only for use by PhotonBeetleDigest");
         }
+
+        photonPermutation(state);
     }
 }

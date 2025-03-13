@@ -31,12 +31,15 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
+        DigestTest.implTestVectorsDigest(this, new PhotonBeetleDigest(), "crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
+        DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
+        DigestTest.implTestExceptionsAndParametersDigest(this, new PhotonBeetleDigest(), 32);
         CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
         testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
         DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
-        testVectorsHash();
+
         PhotonBeetleEngine pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32);
         testExceptions(pb, pb.getKeyBytesSize(), pb.getIVBytesSize(), pb.getBlockSize());
         testParameters(pb, 16, 16, 16);
@@ -49,39 +52,6 @@ public class PhotonBeetleTest
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
-    }
-
-    private void testVectorsHash()
-        throws Exception
-    {
-        PhotonBeetleDigest PhotonBeetle = new PhotonBeetleDigest();
-        InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        byte[] ptByte;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
-                PhotonBeetle.reset();
-                ptByte = Hex.decode((String)map.get("Msg"));
-                PhotonBeetle.update(ptByte, 0, ptByte.length);
-                byte[] hash = new byte[32];
-                PhotonBeetle.doFinal(hash, 0);
-                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
-                {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
-                }
-                map.clear();
-                PhotonBeetle.reset();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
     }
 
     private void testVectors(PhotonBeetleEngine.PhotonBeetleParameters pbp, String filename)
@@ -178,7 +148,7 @@ public class PhotonBeetleTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
