@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.api.bc;
 
 import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -142,13 +143,19 @@ public class BcOpenPGPImplementation
     @Override
     public PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead)
     {
+        return pbeSecretKeyEncryptorFactory(aead, SymmetricKeyAlgorithmTags.AES_128, 0x60);
+    }
+
+    @Override
+    public PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead, int symmetricKeyAlgorithm, int iterationCount)
+    {
         if (aead)
         {
             return new BcAEADSecretKeyEncryptorFactory();
         }
         else
         {
-            return new BcCFBSecretKeyEncryptorFactory();
+            return new BcCFBSecretKeyEncryptorFactory(symmetricKeyAlgorithm, iterationCount);
         }
     }
 }

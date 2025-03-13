@@ -205,4 +205,6 @@ public abstract class OpenPGPImplementation
     public abstract KeyFingerPrintCalculator keyFingerPrintCalculator();
 
     public abstract PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead) throws PGPException;
+
+    public abstract PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead, int symmetricKeyAlgorithm, int iterationCount) throws PGPException;
 }

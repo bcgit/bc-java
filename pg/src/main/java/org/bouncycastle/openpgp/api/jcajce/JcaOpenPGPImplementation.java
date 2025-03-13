@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.api.jcajce;
 
 import org.bouncycastle.bcpg.S2K;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
@@ -205,7 +206,23 @@ public class JcaOpenPGPImplementation
         }
         else
         {
-            return new JcaCFBSecretKeyEncryptorFactory()
+            return new JcaCFBSecretKeyEncryptorFactory(SymmetricKeyAlgorithmTags.AES_128, 0x60)
+                    .setProvider(provider);
+        }
+    }
+
+    @Override
+    public PBESecretKeyEncryptorFactory pbeSecretKeyEncryptorFactory(boolean aead, int symmetricKeyAlgorithm, int iterationCount)
+            throws PGPException
+    {
+        if (aead)
+        {
+            return new JcaAEADSecretKeyEncryptorFactory()
+                    .setProvider(provider);
+        }
+        else
+        {
+            return new JcaCFBSecretKeyEncryptorFactory(symmetricKeyAlgorithm, iterationCount)
                     .setProvider(provider);
         }
     }
