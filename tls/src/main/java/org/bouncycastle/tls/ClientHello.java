@@ -44,6 +44,7 @@ public class ClientHello
     /**
      * @deprecated Use {@link #getVersion()} instead.
      */
+    @Deprecated
     public ProtocolVersion getClientVersion()
     {
         return version;

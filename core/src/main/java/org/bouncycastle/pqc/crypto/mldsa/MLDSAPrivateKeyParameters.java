@@ -138,6 +138,7 @@ public class MLDSAPrivateKeyParameters
     /**
      * @deprecated Use {@link #getEncoded()} instead.
      */
+    @Deprecated
     public byte[] getPrivateKey()
     {
         return getEncoded();

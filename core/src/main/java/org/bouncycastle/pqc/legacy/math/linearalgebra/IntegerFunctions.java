@@ -1061,6 +1061,7 @@ public final class IntegerFunctions
      * @return log_2(x)
      * @deprecated use MathFunctions.log(double) instead
      */
+    @Deprecated
     public static double log(double x)
     {
         if (x > 0 && x < 1)
@@ -1092,6 +1093,7 @@ public final class IntegerFunctions
      * @return log_2(x)
      * @deprecated use MathFunctions.log(long) instead
      */
+    @Deprecated
     public static double log(long x)
     {
         int tmp = floorLog(BigInteger.valueOf(x));
@@ -1108,9 +1110,10 @@ public final class IntegerFunctions
      * @return log_2(arg)
      * @deprecated use MathFunctions.logBKM(double) instead
      */
+    @Deprecated
     private static double logBKM(double arg)
     {
-        double ae[] = // A_e[k] = log_2 (1 + 0.5^k)
+        double[] ae = // A_e[k] = log_2 (1 + 0.5^k)
             {
                 1.0000000000000000000000000000000000000000000000000000000000000000000000000000,
                 0.5849625007211561814537389439478165087598144076924810604557526545410982276485,
