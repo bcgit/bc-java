@@ -14,7 +14,7 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     private byte[] state;
     private int phase;
@@ -34,11 +34,10 @@ public class XoodyakEngine
     public XoodyakEngine()
     {
         algorithmName = "Xoodyak AEAD";
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
+        state = new byte[48];
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
@@ -48,9 +47,6 @@ public class XoodyakEngine
     {
         K = key;
         this.iv = iv;
-        state = new byte[48];
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset();
     }
 
     protected void processBufferAAD(byte[] input, int inOff)
@@ -131,8 +127,6 @@ public class XoodyakEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
-        ensureInitialized();
         super.reset(clearMac);
         Arrays.fill(state, (byte)0);
         encrypted = false;

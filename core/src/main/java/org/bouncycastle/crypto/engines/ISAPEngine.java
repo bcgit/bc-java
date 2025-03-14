@@ -12,7 +12,7 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class ISAPEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
 
     public enum IsapType
@@ -682,8 +682,6 @@ public class ISAPEngine
         npub = iv;
         k = key;
         ISAPAEAD.init();
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset();
     }
 
 
@@ -747,9 +745,7 @@ public class ISAPEngine
 
     protected void reset(boolean clearMac)
     {
-        ensureInitialized();
-        bufferReset();
-        ISAPAEAD.reset();
         super.reset(clearMac);
+        ISAPAEAD.reset();
     }
 }

@@ -144,10 +144,6 @@ public class AsconAEAD128
         K1 = Pack.littleEndianToLong(key, 8);
         N0 = Pack.littleEndianToLong(iv, 0);
         N1 = Pack.littleEndianToLong(iv, 8);
-
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-
-        reset(true);
     }
 
     public String getAlgorithmVersion()
