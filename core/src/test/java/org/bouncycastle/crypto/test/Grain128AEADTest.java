@@ -1,19 +1,12 @@
 package org.bouncycastle.crypto.test;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.SecureRandom;
-import java.util.HashMap;
 
-import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.Grain128AEADEngine;
-import org.bouncycastle.crypto.engines.XoodyakEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
-import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -31,7 +24,7 @@ public class Grain128AEADTest
     public void performTest()
         throws Exception
     {
-
+        CipherTest.implTestVectorsEngine(new Grain128AEADEngine(), "crypto", "LWC_AEAD_KAT_128_96.txt", this);
         checkAEADCipherOutputSize(this, 16, 12, 8, new Grain128AEADEngine());
         CipherTest.checkCipher(32, 12, 100, 128, new CipherTest.Instance()
         {
@@ -43,7 +36,7 @@ public class Grain128AEADTest
         });
         CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 7, 100, 128, 12, new Grain128AEADEngine());
 
-        CipherTest.implTestVectorsEngine(new Grain128AEADEngine(), "crypto", "LWC_AEAD_KAT_128_96.txt", this);
+
         CipherTest.checkAEADParemeter(this, 16, 12, 8, 16, new Grain128AEADEngine());
         testSplitUpdate();
         testExceptions();

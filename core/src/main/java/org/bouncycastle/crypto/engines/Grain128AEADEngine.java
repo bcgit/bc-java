@@ -65,9 +65,7 @@ public class Grain128AEADEngine
         {
             for (int remainder = 0; remainder < 32; ++remainder)
             {
-                int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+                int output = getByteKeyStream();
                 auth[quotient] |= output << remainder;
             }
         }
@@ -176,6 +174,12 @@ public class Grain128AEADEngine
         return array;
     }
 
+    private void shift()
+    {
+        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+    }
+
     protected void reset(boolean clearMac)
     {
         this.aadOperator.reset();
@@ -208,58 +212,11 @@ public class Grain128AEADEngine
         int mask = -input_i_j;
         authAcc[0] ^= authSr[0] & mask;
         authAcc[1] ^= authSr[1] & mask;
-
-        authShift(getOutput());
-        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-    }
-
-    private void doProcessAADBytes(byte[] input, int len)
-    {
-        byte[] ader;
-        int aderlen;
-        //encodeDer
-        if (len < 128)
-        {
-            ader = new byte[1 + len];
-            ader[0] = (byte)len;
-            aderlen = 0;
-        }
-        else
-        {
-            // aderlen is the highest bit position divided by 8
-            aderlen = len_length(len);
-            ader = new byte[1 + aderlen + len];
-            ader[0] = (byte)(0x80 | aderlen);
-            int tmp = len;
-            for (int i = 0; i < aderlen; ++i)
-            {
-                ader[1 + i] = (byte)tmp;
-                tmp >>>= 8;
-            }
-        }
-        System.arraycopy(input, 0, ader, 1 + aderlen, len);
-
-        for (int i = 0; i < ader.length; ++i)
-        {
-            byte ader_i = ader[i];
-            for (int j = 0; j < 8; ++j)
-            {
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-
-                int ader_i_j = (ader_i >> j) & 1;
-
-                updateInternalState(ader_i_j);
-            }
-        }
-    }
-
-    private void authShift(int val)
-    {
+        int val = getByteKeyStream();
         authSr[0] = (authSr[0] >>> 1) | (authSr[1] << 31);
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
+
 
     public int getUpdateOutputSize(int len)
     {
@@ -281,12 +238,6 @@ public class Grain128AEADEngine
         }
         return total;
     }
-//
-//    public int getOutputSize(int len)
-//    {
-//        //the last 8 bytes are from AD
-//        return len + MAC_SIZE;
-//    }
 
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
@@ -327,7 +278,53 @@ public class Grain128AEADEngine
     @Override
     protected void processFinalAAD()
     {
-        doProcessAADBytes(((StreamAADOperator)aadOperator).getBytes(), aadOperator.getLen());
+        int len = aadOperator.getLen();
+        byte[] input = ((StreamAADOperator)aadOperator).getBytes();
+        byte[] ader;
+
+        //encodeDer
+        if (len < 128)
+        {
+            ader = new byte[1];
+            ader[0] = (byte)len;
+        }
+        else
+        {
+            // aderlen is the highest bit position divided by 8
+            int aderlen = len_length(len);
+            ader = new byte[1 + aderlen];
+            ader[0] = (byte)(0x80 | aderlen);
+            int tmp = len;
+            for (int i = 0; i < aderlen; ++i)
+            {
+                ader[1 + i] = (byte)tmp;
+                tmp >>>= 8;
+            }
+        }
+
+        absorbAadData(ader, ader.length);
+        absorbAadData(input, len);
+    }
+
+    private void absorbAadData(byte[] ader, int len)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            byte ader_i = ader[i];
+            for (int j = 0; j < 8; ++j)
+            {
+                shift();
+                int ader_i_j = (ader_i >> j) & 1;
+                updateInternalState(ader_i_j);
+            }
+        }
+    }
+
+    private int getByteKeyStream()
+    {
+        int rlt = getOutput();
+        shift();
+        return rlt;
     }
 
     @Override
@@ -339,13 +336,8 @@ public class Grain128AEADEngine
             byte cc = 0, input_i = input[inOff + i];
             for (int j = 0; j < 8; ++j)
             {
-                int rlt = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-
                 int input_i_j = (input_i >> j) & 1;
-                cc |= (input_i_j ^ rlt) << j;
-
+                cc |= (input_i_j ^ getByteKeyStream()) << j;
                 updateInternalState(input_i_j);
             }
             output[outOff + i] = cc;
@@ -361,13 +353,7 @@ public class Grain128AEADEngine
             byte cc = 0, input_i = input[inOff + i];
             for (int j = 0; j < 8; ++j)
             {
-                int rlt = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-
-                int input_i_j = (input_i >> j) & 1;
-                cc |= (input_i_j ^ rlt) << j;
-
+                cc |= (((input_i >> j) & 1) ^ getByteKeyStream()) << j;
                 updateInternalState((cc >> j) & 1);
             }
             output[outOff + i] = cc;
