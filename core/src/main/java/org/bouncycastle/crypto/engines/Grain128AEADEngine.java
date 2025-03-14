@@ -1,17 +1,12 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Pack;
 
 /**
  * Grain-128 AEAD, based on the current round 3 submission, https://grain-128aead.github.io/
  */
 public class Grain128AEADEngine
-    extends AEADBaseEngine
+    extends AEADBufferBaseEngine
 {
     /**
      * Constants
@@ -29,16 +24,13 @@ public class Grain128AEADEngine
     private int[] authAcc;
     private int[] authSr;
 
-    private boolean initialised = false;
-    private boolean aadFinished = false;
-    private final ErasableOutputStream aadData = new ErasableOutputStream();
-
     public Grain128AEADEngine()
     {
-        algorithmName = "Grain-128AEAD";
+        algorithmName = "Grain-128 AEAD";
         KEY_SIZE = 16;
         IV_SIZE = 12;
         MAC_SIZE = 8;
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream, DataOperatorType.StreamCipher);
     }
 
     /**
@@ -50,11 +42,6 @@ public class Grain128AEADEngine
         throws IllegalArgumentException
     {
         /*
-         * Grain encryption and decryption is completely symmetrical, so the
-         * 'forEncryption' is irrelevant.
-         */
-
-        /*
          * Initialize variables.
          */
         workingIV = new byte[16];
@@ -63,35 +50,13 @@ public class Grain128AEADEngine
         nfsr = new int[STATE_SIZE];
         authAcc = new int[2];
         authSr = new int[2];
-
+        m_state = forEncryption ? State.EncInit : State.DecInit;
         System.arraycopy(iv, 0, workingIV, 0, IV_SIZE);
-
+        workingIV[12] = (byte)0xFF;
+        workingIV[13] = (byte)0xFF;
+        workingIV[14] = (byte)0xFF;
+        workingIV[15] = (byte)0x7F;
         reset();
-    }
-
-    /**
-     * 320 clocks initialization phase.
-     */
-    private void initGrain()
-    {
-        for (int i = 0; i < 320; ++i)
-        {
-            int output = getOutput();
-            nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
-            lfsr = shift(lfsr, (getOutputLFSR() ^ output) & 1);
-        }
-        for (int quotient = 0; quotient < 8; ++quotient)
-        {
-            for (int remainder = 0; remainder < 8; ++remainder)
-            {
-                int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
-            }
-        }
-        initGrain(authAcc);
-        initGrain(authSr);
-        initialised = true;
     }
 
     private void initGrain(int[] auth)
@@ -211,84 +176,31 @@ public class Grain128AEADEngine
         return array;
     }
 
-    /**
-     * Set keys, reset cipher.
-     *
-     * @param keyBytes The key.
-     * @param ivBytes  The IV.
-     */
-    private void setKey(byte[] keyBytes, byte[] ivBytes)
-    {
-        ivBytes[12] = (byte)0xFF;
-        ivBytes[13] = (byte)0xFF;
-        ivBytes[14] = (byte)0xFF;
-        ivBytes[15] = (byte)0x7F;
-        workingKey = keyBytes;
-        workingIV = ivBytes;
-
-        /*
-         * Load NFSR and LFSR
-         */
-        Pack.littleEndianToInt(workingKey, 0, nfsr);
-        Pack.littleEndianToInt(workingIV, 0, lfsr);
-    }
-
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalStateException(getAlgorithmName() + " not initialised");
-        }
-
-        if (!aadFinished)
-        {
-            doProcessAADBytes(aadData.getBuf(), aadData.size());
-            aadFinished = true;
-        }
-
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-
-        if ((outOff + len) > output.length)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
-        getKeyStream(input, inOff, len, output, outOff);
-        return len;
-    }
-
     protected void reset(boolean clearMac)
     {
-        this.aadData.reset();
-        this.aadFinished = false;
+        this.aadOperator.reset();
 
-        setKey(workingKey, workingIV);
-        initGrain();
-        super.reset(clearMac);
-    }
-
-    private void getKeyStream(byte[] input, int inOff, int len, byte[] ciphertext, int outOff)
-    {
-        for (int i = 0; i < len; ++i)
+        Pack.littleEndianToInt(workingKey, 0, nfsr);
+        Pack.littleEndianToInt(workingIV, 0, lfsr);
+        // 320 clocks initialization phase.
+        for (int i = 0; i < 320; ++i)
         {
-            byte cc = 0, input_i = input[inOff + i];
-            for (int j = 0; j < 8; ++j)
+            int output = getOutput();
+            nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
+            lfsr = shift(lfsr, (getOutputLFSR() ^ output) & 1);
+        }
+        for (int quotient = 0; quotient < 8; ++quotient)
+        {
+            for (int remainder = 0; remainder < 8; ++remainder)
             {
                 int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-
-                int input_i_j = (input_i >> j) & 1;
-                cc |= (input_i_j ^ output) << j;
-
-                updateInternalState(input_i_j);
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
             }
-            ciphertext[outOff + i] = cc;
         }
-
+        initGrain(authAcc);
+        initGrain(authSr);
+        super.reset(clearMac);
     }
 
     private void updateInternalState(int input_i_j)
@@ -300,24 +212,6 @@ public class Grain128AEADEngine
         authShift(getOutput());
         nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
         lfsr = shift(lfsr, (getOutputLFSR()) & 1);
-    }
-
-    public void processAADByte(byte in)
-    {
-        if (aadFinished)
-        {
-            throw new IllegalStateException("associated data must be added before plaintext/ciphertext");
-        }
-        aadData.write(in);
-    }
-
-    public void processAADBytes(byte[] input, int inOff, int len)
-    {
-        if (aadFinished)
-        {
-            throw new IllegalStateException("associated data must be added before plaintext/ciphertext");
-        }
-        aadData.write(input, inOff, len);
     }
 
     private void doProcessAADBytes(byte[] input, int len)
@@ -361,47 +255,123 @@ public class Grain128AEADEngine
         }
     }
 
-    private void accumulate()
-    {
-        authAcc[0] ^= authSr[0];
-        authAcc[1] ^= authSr[1];
-    }
-
     private void authShift(int val)
     {
         authSr[0] = (authSr[0] >>> 1) | (authSr[1] << 31);
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
 
-    public int doFinal(byte[] out, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
-    {
-        if (!aadFinished)
-        {
-            doProcessAADBytes(aadData.getBuf(), aadData.size());
-            aadFinished = true;
-        }
-
-        accumulate();
-
-        this.mac = Pack.intToLittleEndian(authAcc);
-
-        System.arraycopy(mac, 0, out, outOff, mac.length);
-
-        reset(false);
-
-        return mac.length;
-    }
-
     public int getUpdateOutputSize(int len)
     {
-        return len;
+        int total = processor.getUpdateOutputSize(len);
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+        case DecData:
+        case DecFinal:
+            total = Math.max(0, total + m_bufPos - MAC_SIZE);
+            break;
+        case EncData:
+        case EncFinal:
+            total = Math.max(0, total + m_bufPos);
+            break;
+        default:
+            break;
+        }
+        return total;
+    }
+//
+//    public int getOutputSize(int len)
+//    {
+//        //the last 8 bytes are from AD
+//        return len + MAC_SIZE;
+//    }
+
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+        case EncInit:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
     }
 
-    public int getOutputSize(int len)
+    @Override
+    protected void processFinalBlock(byte[] output, int outOff)
     {
-        //the last 8 bytes are from AD
-        return len + 8;
+        authAcc[0] ^= authSr[0];
+        authAcc[1] ^= authSr[1];
+        Pack.intToLittleEndian(authAcc, mac, 0);
+    }
+
+    @Override
+    protected void processBufferAAD(byte[] input, int inOff)
+    {
+
+    }
+
+    @Override
+    protected void processFinalAAD()
+    {
+        doProcessAADBytes(((StreamAADOperator)aadOperator).getBytes(), aadOperator.getLen());
+    }
+
+    @Override
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        int len = dataOperator.getLen();
+        for (int i = 0; i < len; ++i)
+        {
+            byte cc = 0, input_i = input[inOff + i];
+            for (int j = 0; j < 8; ++j)
+            {
+                int rlt = getOutput();
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+
+                int input_i_j = (input_i >> j) & 1;
+                cc |= (input_i_j ^ rlt) << j;
+
+                updateInternalState(input_i_j);
+            }
+            output[outOff + i] = cc;
+        }
+    }
+
+    @Override
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        int len = dataOperator.getLen();
+        for (int i = 0; i < len; ++i)
+        {
+            byte cc = 0, input_i = input[inOff + i];
+            for (int j = 0; j < 8; ++j)
+            {
+                int rlt = getOutput();
+                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+                lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+
+                int input_i_j = (input_i >> j) & 1;
+                cc |= (input_i_j ^ rlt) << j;
+
+                updateInternalState((cc >> j) & 1);
+            }
+            output[outOff + i] = cc;
+        }
     }
 
     private static int len_length(int v)
@@ -418,27 +388,6 @@ public class Grain128AEADEngine
         {
             return 3;
         }
-
         return 4;
-    }
-
-    private static final class ErasableOutputStream
-        extends ByteArrayOutputStream
-    {
-        public ErasableOutputStream()
-        {
-        }
-
-        public byte[] getBuf()
-        {
-            return buf;
-        }
-
-//        public void erase()
-//        {
-//            Arrays.fill(this.buf, (byte)0);
-//            // this for JVM compatibility
-//            this.reset();
-//        }
     }
 }
