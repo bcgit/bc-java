@@ -72,8 +72,7 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         algorithmName = "Photon-Beetle AEAD";
-        setInnerMembers(pbp == PhotonBeetleParameters.pb128 ? ProcessingBufferType.Buffered : ProcessingBufferType.BufferedLargeMac,
-            AADOperatorType.Counter, DataOperatorType.Counter);
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter, DataOperatorType.Counter);
     }
 
     @Override
@@ -117,7 +116,7 @@ public class PhotonBeetleEngine
         m_state = nextState;
     }
 
-    public void processFinalAAD()
+    protected void processFinalAAD()
     {
         int aadLen = aadOperator.getLen();
         if (aadLen != 0)

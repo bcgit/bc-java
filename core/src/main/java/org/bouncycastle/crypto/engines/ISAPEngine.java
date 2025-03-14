@@ -26,34 +26,29 @@ public class ISAPEngine
     public ISAPEngine(IsapType isapType)
     {
         KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
-        ProcessingBufferType bufferType;
         switch (isapType)
         {
         case ISAP_A_128A:
             ISAPAEAD = new ISAPAEAD_A_128A();
             algorithmName = "ISAP-A-128A AEAD";
-            bufferType = ProcessingBufferType.ImmediateLargeMac;
             break;
         case ISAP_K_128A:
             ISAPAEAD = new ISAPAEAD_K_128A();
             algorithmName = "ISAP-K-128A AEAD";
-            bufferType = ProcessingBufferType.Immediate;
             break;
         case ISAP_A_128:
             ISAPAEAD = new ISAPAEAD_A_128();
             algorithmName = "ISAP-A-128 AEAD";
-            bufferType = ProcessingBufferType.ImmediateLargeMac;
             break;
         case ISAP_K_128:
             ISAPAEAD = new ISAPAEAD_K_128();
             algorithmName = "ISAP-K-128 AEAD";
-            bufferType = ProcessingBufferType.Immediate;
             break;
         default:
             throw new IllegalArgumentException("Incorrect ISAP parameter");
         }
         AADBufferSize = BlockSize;
-        setInnerMembers(bufferType, AADOperatorType.Default, DataOperatorType.Counter);
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     private static final int ISAP_STATE_SZ = 40;

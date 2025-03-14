@@ -13,9 +13,7 @@ abstract class AEADBufferBaseEngine
     protected enum ProcessingBufferType
     {
         Buffered, // Store a (aad) block size of input and process after the input size exceeds the buffer size
-        BufferedLargeMac, // handle the situation when mac size is larger than the block size, used for pb128
         Immediate, //process the input immediately when the input size is equal or greater than the block size
-        ImmediateLargeMac, // handle the situation when mac size is larger than the block size, used for ascon80pq, ascon128, ISAP_A_128(A)
     }
 
     protected enum AADOperatorType
@@ -65,14 +63,8 @@ abstract class AEADBufferBaseEngine
         case Buffered:
             processor = new BufferedAADProcessor();
             break;
-        case BufferedLargeMac:
-            processor = new BufferedLargeMacAADProcessor();
-            break;
         case Immediate:
             processor = new ImmediateAADProcessor();
-            break;
-        case ImmediateLargeMac:
-            processor = new ImmediateLargeMacAADProcessor();
             break;
         }
 
@@ -117,8 +109,6 @@ abstract class AEADBufferBaseEngine
     {
         void processAADByte(byte input);
 
-        int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
-
         int getUpdateOutputSize(int len);
 
         boolean isLengthWithinAvailableSpace(int len, int available);
@@ -126,7 +116,7 @@ abstract class AEADBufferBaseEngine
         boolean isLengthExceedingBlockSize(int len, int size);
     }
 
-    private abstract class BufferedBaseAADProcessor
+    private class BufferedAADProcessor
         implements AADProcessingBuffer
     {
         public void processAADByte(byte input)
@@ -159,27 +149,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    private class BufferedAADProcessor
-        extends BufferedBaseAADProcessor
-    {
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryptionWithSmallMacSize(input, inOff, len, output, outOff);
-        }
-    }
-
-    private class BufferedLargeMacAADProcessor
-        extends BufferedBaseAADProcessor
-    {
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryptionWithLargeMacSize(input, inOff, len, output, outOff);
-        }
-    }
-
-    private abstract class ImmediateBaseAADProcessor
+    private class ImmediateAADProcessor
         implements AADProcessingBuffer
     {
         public void processAADByte(byte input)
@@ -208,26 +178,6 @@ abstract class AEADBufferBaseEngine
         public boolean isLengthExceedingBlockSize(int len, int size)
         {
             return len >= size;
-        }
-    }
-
-    private class ImmediateAADProcessor
-        extends ImmediateBaseAADProcessor
-    {
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryptionWithSmallMacSize(input, inOff, len, output, outOff);
-        }
-    }
-
-    private class ImmediateLargeMacAADProcessor
-        extends ImmediateBaseAADProcessor
-    {
-        @Override
-        public int processDecryptBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        {
-            return processDecryptionWithLargeMacSize(input, inOff, len, output, outOff);
         }
     }
 
@@ -359,7 +309,6 @@ abstract class AEADBufferBaseEngine
         @Override
         public void reset()
         {
-
         }
     }
 
@@ -516,26 +465,26 @@ abstract class AEADBufferBaseEngine
 
     protected int processEncDecBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
     {
+        boolean forEncryption = checkData(false);
         int available, resultLength;
-        if (checkData(false))
+        available = (forEncryption ? BlockSize : m_bufferSizeDecrypt) - m_bufPos;
+        // The function is just an operator < or <=
+        if (processor.isLengthWithinAvailableSpace(len, available))
         {
-            resultLength = 0;
-            available = processor.getUpdateOutputSize(len) + m_bufPos;
-            ensureSufficientOutputBuffer(output, outOff, available - available % BlockSize);
+            System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+            m_bufPos += len;
+            return 0;
+        }
+        resultLength = processor.getUpdateOutputSize(len) + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
+        ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
+        resultLength = 0;
+        if (forEncryption)
+        {
             if (m_bufPos > 0)
             {
-                available = BlockSize - m_bufPos;
-                // The function is just an operator < or <=
-                if (processor.isLengthWithinAvailableSpace(len, available))
-                {
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                    m_bufPos += len;
-                    return 0;
-                }
                 System.arraycopy(input, inOff, m_buf, m_bufPos, available);
                 inOff += available;
                 len -= available;
-
                 processBufferEncrypt(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
             }
@@ -550,25 +499,30 @@ abstract class AEADBufferBaseEngine
         }
         else
         {
-            available = m_bufferSizeDecrypt - m_bufPos;
-            if (processor.isLengthWithinAvailableSpace(len, available))
+            // loop will run more than once for the following situation: pb128, ascon80pq, ascon128, ISAP_A_128(A)
+            while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
+                && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
             {
-                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                m_bufPos += len;
-                return 0;
+                processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
+                m_bufPos -= BlockSize;
+                resultLength += BlockSize;
             }
-            resultLength = (processor.getUpdateOutputSize(len) + m_bufPos - MAC_SIZE);
-            resultLength -= resultLength % BlockSize;
-            ensureSufficientOutputBuffer(output, outOff, resultLength);
-            int originalInOff = inOff;
-            int originalm_bufPos = m_bufPos;
-            if ((inOff = processor.processDecryptBytes(input, inOff, len, output, outOff)) == -1)
+            if (m_bufPos > 0)
             {
-                return resultLength;
+                System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
+                if (processor.isLengthWithinAvailableSpace(m_bufPos + len, m_bufferSizeDecrypt))
+                {
+                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                    m_bufPos += len;
+                    return resultLength;
+                }
+                available = Math.max(BlockSize - m_bufPos, 0);
+                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
+                inOff += available;
+                len -= available;
+                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
+                resultLength += BlockSize;
             }
-            resultLength = inOff - originalInOff;
-            len -= resultLength;
-            resultLength += originalm_bufPos;
             while (processor.isLengthExceedingBlockSize(len, m_bufferSizeDecrypt))
             {
                 processBufferDecrypt(input, inOff, output, outOff + resultLength);
@@ -580,65 +534,6 @@ abstract class AEADBufferBaseEngine
         System.arraycopy(input, inOff, m_buf, 0, len);
         m_bufPos = len;
         return resultLength;
-    }
-
-    private int processDecryptionWithLargeMacSize(byte[] input, int inOff, int len, byte[] output, int outOff)
-    {
-        int resultLength = 0, available;
-        // If the mac size is greater than the block size, process the data in m_buf in the loop until
-        // there is nearly mac_size data left
-        while (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize)
-            && processor.isLengthExceedingBlockSize(len + m_bufPos, m_bufferSizeDecrypt))
-        {
-            processBufferDecrypt(m_buf, resultLength, output, outOff + resultLength);
-            m_bufPos -= BlockSize;
-            resultLength += BlockSize;
-        }
-        if (m_bufPos > 0)
-        {
-            System.arraycopy(m_buf, resultLength, m_buf, 0, m_bufPos);
-            if (processor.isLengthExceedingBlockSize(m_bufPos + len, m_bufferSizeDecrypt))
-            {
-                available = Math.max(BlockSize - m_bufPos, 0);
-                System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-                inOff += available;
-                processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-            }
-            else
-            {
-                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                m_bufPos += len;
-                return -1;
-            }
-        }
-        return inOff;
-    }
-
-    private int processDecryptionWithSmallMacSize(byte[] input, int inOff, int len, byte[] output, int outOff)
-    {
-        int resultLength = 0, available = m_bufferSizeDecrypt - m_bufPos;
-        if (m_bufPos > 0)
-        {
-            if (processor.isLengthExceedingBlockSize(m_bufPos, BlockSize))
-            {
-                processBufferDecrypt(m_buf, 0, output, outOff);
-                m_bufPos -= BlockSize;
-                System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos);
-                resultLength = BlockSize;
-                available += BlockSize;
-                if (processor.isLengthWithinAvailableSpace(len, available))
-                {
-                    System.arraycopy(input, inOff, m_buf, m_bufPos, len);
-                    m_bufPos += len;
-                    return -1;
-                }
-            }
-            available = Math.max(BlockSize - m_bufPos, 0);
-            System.arraycopy(input, inOff, m_buf, m_bufPos, available);
-            inOff += available;
-            processBufferDecrypt(m_buf, 0, output, outOff + resultLength);
-        }
-        return inOff;
     }
 
     @Override
@@ -663,10 +558,7 @@ abstract class AEADBufferBaseEngine
             resultLength = m_bufPos;
         }
 
-        if (outOff > output.length - resultLength)
-        {
-            throw new OutputLengthException("output buffer too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff, resultLength);
         mac = new byte[MAC_SIZE];
         processFinalBlock(output, outOff);
         if (forEncryption)
@@ -684,7 +576,7 @@ abstract class AEADBufferBaseEngine
         return resultLength;
     }
 
-    public int getBlockSize()
+    public final int getBlockSize()
     {
         return BlockSize;
     }
@@ -774,7 +666,7 @@ abstract class AEADBufferBaseEngine
 
     protected abstract void finishAAD(State nextState, boolean isDoFinal);
 
-    protected void bufferReset()
+    protected final void bufferReset()
     {
         if (m_buf != null)
         {
@@ -808,15 +700,15 @@ abstract class AEADBufferBaseEngine
         dataOperator.reset();
     }
 
-    protected void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
+    protected final void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
     {
-        if (len >= BlockSize && outOff + len > output.length)
+        if (outOff + len > output.length)
         {
             throw new OutputLengthException("output buffer too short");
         }
     }
 
-    protected void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
+    protected final void ensureSufficientInputBuffer(byte[] input, int inOff, int len)
     {
         if (inOff + len > input.length)
         {
@@ -824,7 +716,7 @@ abstract class AEADBufferBaseEngine
         }
     }
 
-    protected void ensureInitialized()
+    protected final void ensureInitialized()
     {
         if (m_state == State.Uninitialized)
         {
