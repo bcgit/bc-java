@@ -100,6 +100,7 @@ abstract class AEADBufferBaseEngine
             dataOperator = new StreamDataOperator();
             break;
         case StreamCipher:
+            BlockSize = 0;
             m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new StreamCipherOperator();
             break;
@@ -377,28 +378,51 @@ abstract class AEADBufferBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
-            this.len = len;
+            boolean forEncryption = checkData(false);
             if (forEncryption)
             {
+                this.len = len;
                 processBufferEncrypt(input, inOff, output, outOff);
+                return len;
             }
             else
             {
-                processBufferDecrypt(input, inOff, output, outOff);
+                // keep last mac size bytes
+                int available = Math.max(m_bufPos + len - MAC_SIZE, 0);
+                int rlt = 0;
+                if (m_bufPos > 0)
+                {
+                    this.len = Math.min(available, m_bufPos);
+                    rlt = this.len;
+                    processBufferDecrypt(m_buf, 0, output, outOff);
+                    available -= rlt;
+                    m_bufPos -= rlt;
+                    System.arraycopy(m_buf, rlt, m_buf, 0, m_bufPos);
+                }
+                if (available > 0)
+                {
+                    this.len = available;
+                    processBufferDecrypt(input, inOff, output, outOff);
+                    rlt += available;
+                    len -= available;
+                    inOff += available;
+                }
+
+                System.arraycopy(input, inOff, m_buf, m_bufPos, len);
+                m_bufPos += len;
+                return rlt;
             }
-            return len;
         }
 
         @Override
         public int getLen()
         {
-            return 0;
+            return len;
         }
 
         @Override
         public void reset()
         {
-
         }
     }
 
