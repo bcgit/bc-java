@@ -268,7 +268,7 @@ class HQCCipherSpi
             return rv;
         }
         catch (IllegalArgumentException e)
-        {               e.printStackTrace();
+        {
             throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
         }
         catch (DestroyFailedException e)
