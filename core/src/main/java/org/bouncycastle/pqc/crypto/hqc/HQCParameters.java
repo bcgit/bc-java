@@ -118,7 +118,7 @@ public class HQCParameters
 
     public int getSessionKeySize()
     {
-        return k * 8;
+        return 32 * 8;
     }
 
     public String getName()
