@@ -91,6 +91,16 @@ public class WrapUtil
         return kWrap;
     }
 
+    public static byte[] trimSecret(String algName, byte[] secret)
+    {
+        if (algName.equals("SEED"))
+        {
+            return Arrays.copyOfRange(secret, 0, 16);
+        }
+        
+        return secret;
+    }
+
     private static byte[] makeKeyBytes(KTSParameterSpec ktsSpec, byte[] secret)
         throws InvalidKeyException
     {

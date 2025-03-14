@@ -251,7 +251,7 @@ class HQCCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret());
+            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secEnc.getSecret()));
 
             kWrap.init(true, keyParameter);
 
@@ -268,7 +268,7 @@ class HQCCipherSpi
             return rv;
         }
         catch (IllegalArgumentException e)
-        {
+        {               e.printStackTrace();
             throw new IllegalBlockSizeException("unable to generate KTS secret: " + e.getMessage());
         }
         catch (DestroyFailedException e)
@@ -296,7 +296,7 @@ class HQCCipherSpi
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 
-            KeyParameter keyParameter = new KeyParameter(secret);
+            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secret));
 
             Arrays.clear(secret);
 
