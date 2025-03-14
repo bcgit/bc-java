@@ -16,7 +16,7 @@ import org.bouncycastle.util.Pack;
 public class XoodyakEngine
     extends AEADBaseEngine
 {
-    private byte[] state;
+    private final byte[] state;
     private int phase;
     private int mode;
     private static final int f_bPrime_1 = 47;

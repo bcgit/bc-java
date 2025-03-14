@@ -208,7 +208,6 @@ public class AsconEngine
     protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-
         N0 = Pack.bigEndianToLong(iv, 0);
         N1 = Pack.bigEndianToLong(iv, 8);
         if (KEY_SIZE == 16)
