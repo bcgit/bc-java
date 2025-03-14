@@ -43,7 +43,7 @@ public class XoodyakEngine
     }
 
     @Override
-    public void init(byte[] key, byte[] iv)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
         K = key;
