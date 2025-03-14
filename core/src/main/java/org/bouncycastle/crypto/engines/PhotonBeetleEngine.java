@@ -84,7 +84,6 @@ public class PhotonBeetleEngine
         N = iv;
     }
 
-
     protected void processBufferAAD(byte[] input, int inOff)
     {
         photonPermutation(state);

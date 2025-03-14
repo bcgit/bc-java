@@ -181,8 +181,7 @@ public class Grain128AEADEngine
 
     protected void reset(boolean clearMac)
     {
-        this.aadOperator.reset();
-
+        super.reset(clearMac);
         Pack.littleEndianToInt(workingKey, 0, nfsr);
         Pack.littleEndianToInt(workingIV, 0, lfsr);
         // 320 clocks initialization phase.
@@ -203,7 +202,6 @@ public class Grain128AEADEngine
         }
         initGrain(authAcc);
         initGrain(authSr);
-        super.reset(clearMac);
     }
 
     private void updateInternalState(int input_i_j)
@@ -216,26 +214,9 @@ public class Grain128AEADEngine
         authSr[1] = (authSr[1] >>> 1) | (val << 31);
     }
 
-
     public int getUpdateOutputSize(int len)
     {
-        int total = processor.getUpdateOutputSize(len);
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-        case DecData:
-        case DecFinal:
-            total = Math.max(0, total + m_bufPos - MAC_SIZE);
-            break;
-        case EncData:
-        case EncFinal:
-            total = Math.max(0, total + m_bufPos);
-            break;
-        default:
-            break;
-        }
-        return total;
+        return getTotalBytesForUpdate(len);
     }
 
     @Override

@@ -161,8 +161,6 @@ abstract class AEADBaseEngine
         }
     }
 
-
-
     protected void reset(boolean clearMac)
     {
         ensureInitialized();
@@ -572,19 +570,6 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected static final class ErasableOutputStream
-        extends ByteArrayOutputStream
-    {
-        public ErasableOutputStream()
-        {
-        }
-
-        public byte[] getBuf()
-        {
-            return buf;
-        }
-    }
-
     @Override
     public void processAADByte(byte input)
     {
@@ -762,6 +747,12 @@ abstract class AEADBaseEngine
 
     public int getUpdateOutputSize(int len)
     {
+        int total = getTotalBytesForUpdate(len);
+        return total - total % BlockSize;
+    }
+
+    protected int getTotalBytesForUpdate(int len)
+    {
         int total = processor.getUpdateOutputSize(len);
         switch (m_state)
         {
@@ -778,7 +769,7 @@ abstract class AEADBaseEngine
         default:
             break;
         }
-        return total - total % BlockSize;
+        return total;
     }
 
     public int getOutputSize(int len)
@@ -843,13 +834,6 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected abstract void finishAAD(State nextState, boolean isDoFinal);
-
-    protected final void bufferReset()
-    {
-
-    }
-
     protected final void ensureSufficientOutputBuffer(byte[] output, int outOff, int len)
     {
         if (outOff + len > output.length)
@@ -876,6 +860,8 @@ abstract class AEADBaseEngine
 
     protected abstract void init(byte[] key, byte[] iv);
 
+    protected abstract void finishAAD(State nextState, boolean isDoFinal);
+
     protected abstract void processFinalBlock(byte[] output, int outOff);
 
     protected abstract void processBufferAAD(byte[] input, int inOff);
@@ -885,4 +871,17 @@ abstract class AEADBaseEngine
     protected abstract void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff);
 
     protected abstract void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff);
+
+    protected static final class ErasableOutputStream
+        extends ByteArrayOutputStream
+    {
+        public ErasableOutputStream()
+        {
+        }
+
+        public byte[] getBuf()
+        {
+            return buf;
+        }
+    }
 }

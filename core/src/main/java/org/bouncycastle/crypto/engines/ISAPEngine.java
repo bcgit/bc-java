@@ -684,7 +684,6 @@ public class ISAPEngine
         ISAPAEAD.init();
     }
 
-
     protected void processBufferAAD(byte[] input, int inOff)
     {
         ISAPAEAD.absorbMacBlock(input, inOff);
