@@ -226,10 +226,6 @@ public class AsconEngine
         {
             throw new IllegalStateException();
         }
-
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-
-        reset(true);
     }
 
     public String getAlgorithmVersion()

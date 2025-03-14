@@ -10,7 +10,7 @@ import org.bouncycastle.util.Bytes;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/elephant-spec-final.pdf
  */
 public class ElephantEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     public enum ElephantParameters
     {
@@ -291,8 +291,6 @@ public class ElephantEngine
         expanded_key = new byte[BlockSize];
         System.arraycopy(k, 0, expanded_key, 0, KEY_SIZE);
         instance.permutation(expanded_key);
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset(false);
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -479,12 +477,11 @@ public class ElephantEngine
 
     protected void reset(boolean clearMac)
     {
+        super.reset(clearMac);
         Arrays.fill(tag_buffer, (byte)0);
         Arrays.fill(previous_outputMessage, (byte)0);
         nb_its = 0;
         adOff = -1;
-        super.reset(clearMac);
-        bufferReset();
     }
 
     protected void checkAAD()

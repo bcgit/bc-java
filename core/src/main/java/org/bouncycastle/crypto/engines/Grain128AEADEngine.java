@@ -6,7 +6,7 @@ import org.bouncycastle.util.Pack;
  * Grain-128 AEAD, based on the current round 3 submission, https://grain-128aead.github.io/
  */
 public class Grain128AEADEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     /**
      * Constants
@@ -50,13 +50,12 @@ public class Grain128AEADEngine
         nfsr = new int[STATE_SIZE];
         authAcc = new int[2];
         authSr = new int[2];
-        m_state = forEncryption ? State.EncInit : State.DecInit;
+
         System.arraycopy(iv, 0, workingIV, 0, IV_SIZE);
         workingIV[12] = (byte)0xFF;
         workingIV[13] = (byte)0xFF;
         workingIV[14] = (byte)0xFF;
         workingIV[15] = (byte)0x7F;
-        reset();
     }
 
     private void initGrain(int[] auth)

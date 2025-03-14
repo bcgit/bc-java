@@ -1,7 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 abstract class AsconBaseEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     protected int nr;
     protected long K0;
@@ -98,9 +98,8 @@ abstract class AsconBaseEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
-        ascon_aeadinit();
         super.reset(clearMac);
+        ascon_aeadinit();
     }
 
     public abstract String getAlgorithmVersion();

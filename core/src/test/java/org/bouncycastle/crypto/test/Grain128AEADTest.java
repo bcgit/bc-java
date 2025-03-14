@@ -116,7 +116,7 @@ public class Grain128AEADTest
         grain.doFinal(rv, len);
 
         isTrue(Arrays.areEqual(rv, CT));
-
+        grain.init(true, params);
         grain.processBytes(PT, 0, 10, rv, 0);
         try
         {
@@ -230,7 +230,15 @@ public class Grain128AEADTest
 
     public static void main(String[] args)
     {
+//        runTest(new AsconTest());
+//        runTest(new ElephantTest());
+//        runTest(new GiftCofbTest());
         runTest(new Grain128AEADTest());
+//        runTest(new ISAPTest());
+//        runTest(new PhotonBeetleTest());
+//        runTest(new RomulusTest());
+//        runTest(new SparkleTest());
+//        runTest(new XoodyakTest());
     }
 }
 
