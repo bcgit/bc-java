@@ -859,6 +859,7 @@ abstract class AEADBaseEngine
         }
     }
 
+    // Used for Grain128 AEAD and Romulus Engine
     protected void finishAAD1(State nextState)
     {
         switch (m_state)
@@ -877,6 +878,7 @@ abstract class AEADBaseEngine
         m_state = nextState;
     }
 
+    // Use for Elephant and Sparkle
     protected void finishAAD2(State nextState)
     {
         // State indicates whether we ever received AAD
@@ -896,6 +898,7 @@ abstract class AEADBaseEngine
         m_state = nextState;
     }
 
+    // Used for Gift-Cofb, ISAP, PhotonBeetle and Xoodyak
     protected void finishAAD3(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
