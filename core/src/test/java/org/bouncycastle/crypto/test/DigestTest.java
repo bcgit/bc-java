@@ -1,9 +1,18 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Random;
 
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.ExtendedDigest;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.digests.EncodableDigest;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.encoders.Hex;
@@ -27,16 +36,16 @@ public abstract class DigestTest
         this.input = input;
         this.results = results;
     }
-    
+
     public String getName()
     {
         return digest.getAlgorithmName();
     }
-    
+
     public void performTest()
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-    
+
         for (int i = 0; i < input.length - 1; i++)
         {
             byte[] m = toByteArray(input[i]);
@@ -48,7 +57,7 @@ public abstract class DigestTest
 
         byte[] lastV = toByteArray(input[input.length - 1]);
         byte[] lastDigest = Hex.decode(results[input.length - 1]);
-        
+
         vectorTest(digest, input.length - 1, resBuf, lastV, Hex.decode(results[input.length - 1]));
 
         testClone(resBuf, lastV, lastDigest);
@@ -98,13 +107,13 @@ public abstract class DigestTest
     {
         Memoable m = (Memoable)digest;
 
-        digest.update(input, 0, input.length/2);
+        digest.update(input, 0, input.length / 2);
 
         // copy the Digest
         Memoable copy1 = m.copy();
         Memoable copy2 = copy1.copy();
 
-        digest.update(input, input.length/2, input.length - input.length/2);
+        digest.update(input, input.length / 2, input.length - input.length / 2);
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
@@ -114,7 +123,7 @@ public abstract class DigestTest
 
         m.reset(copy1);
 
-        digest.update(input, input.length/2, input.length - input.length/2);
+        digest.update(input, input.length / 2, input.length - input.length / 2);
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
@@ -124,7 +133,7 @@ public abstract class DigestTest
 
         Digest md = (Digest)copy2;
 
-        md.update(input, input.length/2, input.length - input.length/2);
+        md.update(input, input.length / 2, input.length - input.length / 2);
         md.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
@@ -140,7 +149,7 @@ public abstract class DigestTest
         // clone the Digest
         Digest d = cloneDigest(digest);
 
-        digest.update(input, input.length/2, input.length - input.length/2);
+        digest.update(input, input.length / 2, input.length - input.length / 2);
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
@@ -148,7 +157,7 @@ public abstract class DigestTest
             fail("failing clone vector test", results[results.length - 1], new String(Hex.encode(resBuf)));
         }
 
-        d.update(input, input.length/2, input.length - input.length/2);
+        d.update(input, input.length / 2, input.length - input.length / 2);
         d.doFinal(resBuf, 0);
 
         if (!areEqual(expected, resBuf))
@@ -160,15 +169,15 @@ public abstract class DigestTest
     protected byte[] toByteArray(String input)
     {
         byte[] bytes = new byte[input.length()];
-        
+
         for (int i = 0; i != bytes.length; i++)
         {
             bytes[i] = (byte)input.charAt(i);
         }
-        
+
         return bytes;
     }
-    
+
     private void vectorTest(
         Digest digest,
         int count,
@@ -216,12 +225,12 @@ public abstract class DigestTest
         String expected)
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-        
+
         for (int i = 0; i < 1000000; i++)
         {
             digest.update((byte)'a');
         }
-        
+
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(resBuf, Hex.decode(expected)))
@@ -229,17 +238,17 @@ public abstract class DigestTest
             fail("Million a's failed", expected, new String(Hex.encode(resBuf)));
         }
     }
-    
+
     protected void sixtyFourKTest(
         String expected)
     {
         byte[] resBuf = new byte[digest.getDigestSize()];
-        
+
         for (int i = 0; i < 65536; i++)
         {
             digest.update((byte)(i & 0xff));
         }
-        
+
         digest.doFinal(resBuf, 0);
 
         if (!areEqual(resBuf, Hex.decode(expected)))
@@ -271,7 +280,91 @@ public abstract class DigestTest
         /* Check that we have the same result */
         if (!java.util.Arrays.equals(myFirst, mySecond))
         {
-            throw new TestFailedException(SimpleTestResult.failed(test,"Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
+            throw new TestFailedException(SimpleTestResult.failed(test, "Digest " + pDigest.getAlgorithmName() + " does not reset properly on doFinal()"));
         }
+    }
+
+    static void implTestExceptionsAndParametersDigest(final SimpleTest test, final Digest pDigest, final int digestsize)
+    {
+        if (pDigest.getDigestSize() != digestsize)
+        {
+            test.fail(pDigest.getAlgorithmName() + ": digest size is not correct");
+        }
+
+        try
+        {
+            pDigest.update(new byte[1], 1, 1);
+            test.fail(pDigest.getAlgorithmName() + ": input for update is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            pDigest.doFinal(new byte[pDigest.getDigestSize() - 1], 2);
+            test.fail(pDigest.getAlgorithmName() + ": output for dofinal is too short");
+        }
+        catch (OutputLengthException e)
+        {
+            //expected
+        }
+    }
+
+    static void implTestVectorsDigest(SimpleTest test, ExtendedDigest digest, String path, String filename)
+        throws Exception
+    {
+        Random random = new Random();
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                int count = Integer.parseInt(map.get("Count"));
+                if (count != 21)
+                {
+                    continue;
+                }
+                byte[] ptByte = Hex.decode((String)map.get("Msg"));
+                byte[] expected = Hex.decode((String)map.get("MD"));
+
+                byte[] hash = new byte[digest.getDigestSize()];
+
+                digest.update(ptByte, 0, ptByte.length);
+                digest.doFinal(hash, 0);
+                if (!Arrays.areEqual(hash, expected))
+                {
+                    mismatch(test, "Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    digest.update(ptByte, 0, split);
+                    digest.update(ptByte, split, ptByte.length - split);
+                    digest.doFinal(hash, 0);
+                    if (!Arrays.areEqual(hash, expected))
+                    {
+                        mismatch(test, "Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
+                }
+
+                map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    private static void mismatch(SimpleTest test, String name, String expected, byte[] found)
+    {
+        test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
     }
 }

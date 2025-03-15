@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import org.bouncycastle.crypto.digests.SparkleDigest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
@@ -27,8 +28,6 @@ public class SparkleEngine
     private final int[] k;
     private final int[] npub;
     private boolean encrypted;
-    private final int m_bufferSizeDecrypt;
-
     private final int SPARKLE_STEPS_SLIM;
     private final int SPARKLE_STEPS_BIG;
     private final int KEY_WORDS;
@@ -111,9 +110,7 @@ public class SparkleEngine
         k = new int[KEY_WORDS];
         npub = new int[RATE_WORDS];
         AADBufferSize = BlockSize = IV_SIZE;
-        m_bufferSizeDecrypt = IV_SIZE + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
-        m_aad = new byte[BlockSize];
+        setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
 
         // Relied on by processBytes method for decryption
 //        assert RATE_BYTES >= TAG_BYTES;
@@ -124,10 +121,28 @@ public class SparkleEngine
     {
         Pack.littleEndianToInt(key, 0, k);
         Pack.littleEndianToInt(iv, 0, npub);
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
 
         reset();
+    }
+
+    protected void finishAAD(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
     }
 
     @Override
@@ -188,7 +203,6 @@ public class SparkleEngine
         {
             state[RATE_WORDS + i] ^= k[i];
         }
-        mac = new byte[MAC_SIZE];
         Pack.intToLittleEndian(state, RATE_WORDS, TAG_WORDS, mac, 0);
 
     }
@@ -212,10 +226,8 @@ public class SparkleEngine
         sparkle_opt(state, SPARKLE_STEPS_SLIM);
     }
 
-    private void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
+    protected void processBufferDecrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-//        assert bufOff <= buffer.length - RATE_BYTES;
-
         for (int i = 0; i < RATE_WORDS / 2; ++i)
         {
             int j = i + (RATE_WORDS / 2);
@@ -238,23 +250,8 @@ public class SparkleEngine
         encrypted = true;
     }
 
-    @Override
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
     {
-        if (forEncryption)
-        {
-            processBufferEncrypt(input, inOff, output, outOff);
-        }
-        else
-        {
-            processBufferDecrypt(input, inOff, output, outOff);
-        }
-    }
-
-    private void processBufferEncrypt(byte[] buffer, int bufOff, byte[] output, int outOff)
-    {
-//      assert bufOff <= buffer.length - RATE_BYTES;
-
         for (int i = 0; i < RATE_WORDS / 2; ++i)
         {
             int j = i + (RATE_WORDS / 2);
@@ -285,11 +282,8 @@ public class SparkleEngine
             state[STATE_WORDS - 1] ^= _A0;
 
             // padding
-            m_aad[m_aadPos] = (byte)0x80;
-            while (++m_aadPos < BlockSize)
-            {
-                m_aad[m_aadPos] = 0x00;
-            }
+            m_aad[m_aadPos++] = (byte)0x80;
+            Arrays.fill(m_aad, m_aadPos, BlockSize, (byte)0);
         }
         else
         {

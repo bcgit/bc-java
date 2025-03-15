@@ -1,19 +1,28 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Random;
 
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.CipherKeyGenerator;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.AEADCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.TestFailedException;
@@ -330,6 +339,11 @@ public abstract class CipherTest
         byte[] ciphertext2 = new byte[cipher.getOutputSize(plaintext.length)];
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext2, 0);
         len += cipher.doFinal(ciphertext2, len);
+        cipher.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+        byte[] ciphertext3 = new byte[cipher.getOutputSize(plaintext.length)];
+        cipher.processAADBytes(aad, 0, aad.length);
+        len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext3, 0);
+        len += cipher.doFinal(ciphertext3, len);
         test.isTrue("cipher text check", Arrays.areEqual(ciphertext1, ciphertext2));
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
@@ -354,7 +368,7 @@ public abstract class CipherTest
      * @param PARTLEN  Partial Data length. Must be greater than or equal to internal buffer length to exhibit problem.
      * @param AEADLEN  AEAD length.
      * @param NONCELEN Nonce length.
-     * */
+     */
     static void checkAEADCipherMultipleBlocks(SimpleTest test, int DATALEN, int PARTLEN, int AEADLEN, int strength, int NONCELEN, final AEADCipher pCipher)
         throws InvalidCipherTextException
     {
@@ -412,5 +426,470 @@ public abstract class CipherTest
 
         /* Check that we have the same result */
         test.isTrue("cipher text check", Arrays.areEqual(myData, myResult));
+    }
+
+    static void implTestVectorsEngine(AEADCipher cipher, String path, String filename, SimpleTest test)
+        throws Exception
+    {
+        Random random = new Random();
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                int count = Integer.parseInt((String)map.get("Count"));
+//                if (count != 562)
+//                {
+//                    continue;
+//                }
+                byte[] key = Hex.decode((String)map.get("Key"));
+                byte[] nonce = Hex.decode((String)map.get("Nonce"));
+                byte[] ad = Hex.decode((String)map.get("AD"));
+                byte[] pt = Hex.decode((String)map.get("PT"));
+                byte[] ct = Hex.decode((String)map.get("CT"));
+
+                CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
+
+                // Encrypt
+                {
+                    cipher.init(true, parameters);
+
+                    byte[] rv = new byte[cipher.getOutputSize(pt.length)];
+                    random.nextBytes(rv); // should overwrite any existing data
+
+                    cipher.processAADBytes(ad, 0, ad.length);
+                    int len = cipher.processBytes(pt, 0, pt.length, rv, 0);
+                    len += cipher.doFinal(rv, len);
+
+                    if (!test.areEqual(rv, 0, len, ct, 0, ct.length))
+                    {
+                        mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv, test);
+                    }
+                }
+
+                // Decrypt
+                {
+                    cipher.init(false, parameters);
+
+                    byte[] rv = new byte[cipher.getOutputSize(ct.length)];
+                    random.nextBytes(rv); // should overwrite any existing data
+
+                    cipher.processAADBytes(ad, 0, ad.length);
+                    int len = cipher.processBytes(ct, 0, ct.length, rv, 0);
+                    len += cipher.doFinal(rv, len);
+
+                    if (!test.areEqual(rv, 0, len, pt, 0, pt.length))
+                    {
+                        mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), rv, test);
+                    }
+                }
+                //System.out.println("pass " + count);
+                map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    static void mismatch(String name, String expected, byte[] found, SimpleTest test)
+        throws Exception
+    {
+        test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
+    }
+
+    static void implTestBufferingEngine(int keySize, int ivSize, final int macSize, SimpleTest test, Instance instance)
+        throws Exception
+    {
+        Random random = new Random();
+
+        int plaintextLength = 256;
+        byte[] plaintext = new byte[plaintextLength];
+        random.nextBytes(plaintext);
+
+        AEADCipher cipher0 = instance.createInstance();
+        AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize, new byte[ivSize], null);
+        cipher0.init(true, parameters);
+
+        byte[] ciphertext = new byte[cipher0.getOutputSize(plaintextLength)];
+        random.nextBytes(ciphertext);
+
+        int ciphertextLength = cipher0.processBytes(plaintext, 0, plaintextLength, ciphertext, 0);
+        ciphertextLength += cipher0.doFinal(ciphertext, ciphertextLength);
+
+        byte[] output = new byte[ciphertextLength];
+
+        // Encryption
+        for (int split = 1; split < plaintextLength; ++split)
+        {
+            AEADCipher cipher = instance.createInstance();
+            cipher.init(true, parameters);
+
+            random.nextBytes(output);
+
+            int length = cipher.processBytes(plaintext, 0, split, output, 0);
+
+            if (0 != cipher.getUpdateOutputSize(0))
+            {
+                test.fail("fail in implTestBufferingEngine encryption");
+            }
+
+            length += cipher.processBytes(plaintext, split, plaintextLength - split, output, length);
+            length += cipher.doFinal(output, length);
+
+            if (!Arrays.areEqual(ciphertext, 0, ciphertextLength, output, 0, length))
+            {
+                test.fail("encryption failed with split: " + split);
+            }
+        }
+
+        // Decryption
+        for (int split = 16; split < ciphertextLength; ++split)
+        {
+            AEADCipher cipher = instance.createInstance();
+            cipher.init(false, parameters);
+
+            random.nextBytes(output);
+
+            int length = cipher.processBytes(ciphertext, 0, split, output, 0);
+
+            if (0 != cipher.getUpdateOutputSize(0))
+            {
+                test.fail("fail in implTestBufferingEngine decryption");
+            }
+
+            length += cipher.processBytes(ciphertext, split, ciphertextLength - split, output, length);
+            length += cipher.doFinal(output, length);
+
+            if (!Arrays.areEqual(plaintext, 0, plaintextLength, output, 0, length))
+            {
+                test.fail("decryption failed with split: " + split);
+            }
+        }
+    }
+
+    static void implTestExceptionsEngine(int keysize, int ivsize, SimpleTest test, Instance instance)
+        throws Exception
+    {
+        AEADCipher cipher = instance.createInstance();
+
+        int offset;
+        byte[] k = new byte[keysize];
+        byte[] iv = new byte[ivsize];
+        byte[] m = new byte[0];
+        CipherParameters params = new ParametersWithIV(new KeyParameter(k), iv);
+        try
+        {
+            cipher.processBytes(m, 0, m.length, null, 0);
+            test.fail(cipher.getAlgorithmName() + " need to be initialized before processBytes");
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            cipher.processByte((byte)0, null, 0);
+            test.fail(cipher.getAlgorithmName() + " need to be initialized before processByte");
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            cipher.reset();
+            test.fail(cipher.getAlgorithmName() + " need to be initialized before reset");
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            cipher.doFinal(null, m.length);
+            test.fail(cipher.getAlgorithmName() + " need to be initialized before dofinal");
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            cipher.getMac();
+            cipher.getOutputSize(0);
+            cipher.getUpdateOutputSize(0);
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+            test.fail(cipher.getAlgorithmName() + " functions can be called before initialization");
+        }
+
+        Random rand = new Random();
+        int randomNum;
+        while ((randomNum = rand.nextInt(100)) == keysize) ;
+        byte[] k1 = new byte[randomNum];
+        while ((randomNum = rand.nextInt(100)) == ivsize) ;
+        byte[] iv1 = new byte[randomNum];
+        try
+        {
+            cipher.init(true, new ParametersWithIV(new KeyParameter(k1), iv));
+            test.fail(cipher.getAlgorithmName() + " k size does not match");
+        }
+        catch (IllegalArgumentException e)
+        {
+            //expected
+        }
+        try
+        {
+            cipher.init(true, new ParametersWithIV(new KeyParameter(k), iv1));
+            test.fail(cipher.getAlgorithmName() + "iv size does not match");
+        }
+        catch (IllegalArgumentException e)
+        {
+            //expected
+        }
+
+        try
+        {
+            cipher.init(true, new AEADParameters(new KeyParameter(k), 0, iv));
+            test.fail(cipher.getAlgorithmName() + " wrong type of CipherParameters");
+        }
+        catch (IllegalArgumentException e)
+        {
+            //expected
+        }
+
+        cipher.init(true, params);
+        byte[] c1 = new byte[cipher.getOutputSize(m.length)];
+        try
+        {
+            cipher.doFinal(c1, m.length);
+        }
+        catch (Exception e)
+        {
+            test.fail(cipher.getAlgorithmName() + " allows no input for AAD and plaintext");
+        }
+        byte[] mac2 = cipher.getMac();
+        if (mac2 == null)
+        {
+            test.fail("mac should not be empty after dofinal");
+        }
+        if (!Arrays.areEqual(mac2, c1))
+        {
+            test.fail("mac should be equal when calling dofinal and getMac");
+        }
+        cipher.init(true, params);
+        cipher.processAADByte((byte)0);
+        byte[] mac1 = new byte[cipher.getOutputSize(0)];
+        cipher.doFinal(mac1, 0);
+        if (Arrays.areEqual(mac1, mac2))
+        {
+            test.fail("mac should not match");
+        }
+        cipher.init(true, params);
+        cipher.processByte((byte)0, new byte[1], 0);
+        try
+        {
+            cipher.processAADByte((byte)0);
+            // Romuls-M stores message into Stream, so the procssAADbyte(s) is allowed
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("processAADByte(s) cannot be called after encryption/decryption");
+            }
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+        try
+        {
+            cipher.processAADBytes(new byte[]{0}, 0, 1);
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("processAADByte(s) cannot be called once only");
+            }
+        }
+        catch (IllegalStateException e)
+        {
+            //expected
+        }
+
+        cipher.reset();
+        try
+        {
+            cipher.processAADBytes(new byte[]{0}, 1, 1);
+            test.fail("input for processAADBytes is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+        try
+        {
+            cipher.processBytes(new byte[]{0}, 1, 1, c1, 0);
+            test.fail("input for processBytes is too short");
+        }
+        catch (DataLengthException e)
+        {
+            //expected
+        }
+        cipher.init(true, params);
+        try
+        {
+            int need = cipher.getUpdateOutputSize(64);
+            cipher.processBytes(new byte[64], 0, 64, new byte[need], 1);
+            if (!cipher.getAlgorithmName().equals("Romulus-M"))
+            {
+                test.fail("output for processBytes is too short");
+            }
+        }
+        catch (OutputLengthException e)
+        {
+            //expected
+        }
+        try
+        {
+            cipher.doFinal(new byte[2], 2);
+            test.fail("output for dofinal is too short");
+        }
+        catch (OutputLengthException e)
+        {
+            //expected
+        }
+
+        implTestExceptionsGetUpdateOutputSize(cipher, false, params, 100, test);
+        implTestExceptionsGetUpdateOutputSize(cipher, true, params, 100, test);
+
+        mac1 = new byte[cipher.getOutputSize(0)];
+        mac2 = new byte[cipher.getOutputSize(0)];
+        cipher.init(true, params);
+        cipher.processAADBytes(new byte[]{0, 0}, 0, 2);
+        cipher.doFinal(mac1, 0);
+        cipher.init(true, params);
+        cipher.processAADByte((byte)0);
+        cipher.processAADByte((byte)0);
+        cipher.doFinal(mac2, 0);
+        if (!Arrays.areEqual(mac1, mac2))
+        {
+            test.fail("mac should match for the same AAD with different ways of inputing");
+        }
+
+        byte[] c2 = new byte[cipher.getOutputSize(10)];
+        byte[] c3 = new byte[cipher.getOutputSize(10) + 2];
+
+        byte[] aad2 = {0, 1, 2, 3, 4};
+        byte[] aad3 = {0, 0, 1, 2, 3, 4, 5};
+        byte[] m2 = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+        byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+        byte[] m4 = new byte[m2.length];
+        cipher.init(true, params);
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(m2, 0, m2.length, c2, 0);
+        cipher.doFinal(c2, offset);
+        cipher.init(true, params);
+        cipher.processAADBytes(aad3, 1, aad2.length);
+        offset = cipher.processBytes(m3, 1, m2.length, c3, 1);
+        cipher.doFinal(c3, offset + 1);
+        byte[] c3_partial = new byte[c2.length];
+        System.arraycopy(c3, 1, c3_partial, 0, c2.length);
+        if (!Arrays.areEqual(c2, c3_partial))
+        {
+            test.fail("mac should match for the same AAD and message with different offset for both input and output");
+        }
+        cipher.init(false, params);
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(c2, 0, c2.length, m4, 0);
+        cipher.doFinal(m4, offset);
+        if (!Arrays.areEqual(m2, m4))
+        {
+            test.fail("The encryption and decryption does not recover the plaintext");
+        }
+        c2[c2.length - 1] ^= 1;
+        cipher.init(false, params);
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(c2, 0, c2.length, m4, 0);
+        try
+        {
+            cipher.doFinal(m4, offset);
+            test.fail("The decryption should fail");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            //expected;
+        }
+
+        byte[] m7 = new byte[32 + rand.nextInt(32)];
+        rand.nextBytes(m7);
+
+        cipher.init(true, params);
+        byte[] c7 = new byte[cipher.getOutputSize(m7.length)];
+        byte[] c8 = new byte[c7.length];
+        byte[] c9 = new byte[c7.length];
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(m7, 0, m7.length, c7, 0);
+        cipher.doFinal(c7, offset);
+
+        cipher.init(true, params);
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(m7, 0, m7.length / 2, c8, 0);
+        offset += cipher.processBytes(m7, m7.length / 2, m7.length - m7.length / 2, c8, offset);
+        cipher.doFinal(c8, offset);
+
+        cipher.init(true, params);
+        int split = rand.nextInt(m7.length - 1) + 1;
+        cipher.processAADBytes(aad2, 0, aad2.length);
+        offset = cipher.processBytes(m7, 0, split, c9, 0);
+        offset += cipher.processBytes(m7, split, m7.length - split, c9, offset);
+        cipher.doFinal(c9, offset);
+
+        if (!Arrays.areEqual(c7, c8) || !Arrays.areEqual(c7, c9))
+        {
+            test.fail("Splitting input of plaintext should output the same ciphertext");
+        }
+    }
+
+    static void implTestExceptionsGetUpdateOutputSize(AEADCipher cipher, boolean forEncryption,
+                                                      CipherParameters parameters, int maxInputSize, SimpleTest test)
+    {
+        cipher.init(forEncryption, parameters);
+
+        int maxOutputSize = cipher.getUpdateOutputSize(maxInputSize);
+
+        byte[] input = new byte[maxInputSize];
+        byte[] output = new byte[maxOutputSize];
+
+        for (int inputSize = 0; inputSize <= maxInputSize; ++inputSize)
+        {
+            cipher.init(forEncryption, parameters);
+
+            int outputSize = cipher.getUpdateOutputSize(inputSize);
+            if (outputSize > 0)
+            {
+                try
+                {
+                    cipher.processBytes(input, 0, inputSize, output, maxOutputSize - outputSize + 1);
+                    test.fail("output for processBytes is too short");
+                }
+                catch (OutputLengthException e)
+                {
+                    //expected
+                }
+            }
+            else
+            {
+                cipher.processBytes(input, 0, inputSize, null, 0);
+            }
+        }
     }
 }

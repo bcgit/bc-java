@@ -21,16 +21,12 @@ public class AsconAEAD128
 {
     public AsconAEAD128()
     {
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
-        ASCON_AEAD_RATE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = AADBufferSize = BlockSize = 16;
         ASCON_IV = 0x00001000808c0001L;
         algorithmName = "Ascon-AEAD128";
         nr = 8;
-        m_bufferSizeDecrypt = ASCON_AEAD_RATE + MAC_SIZE;
-        m_buf = new byte[m_bufferSizeDecrypt];
         dsep = -9223372036854775808L; //0x80L << 56
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Default);
     }
 
     protected long pad(int i)
@@ -53,27 +49,30 @@ public class AsconAEAD128
     protected void ascon_aeadinit()
     {
         /* initialize */
-        x0 = ASCON_IV;
-        x1 = K0;
-        x2 = K1;
-        x3 = N0;
-        x4 = N1;
-        p(12);
-        x3 ^= K0;
-        x4 ^= K1;
+        p.set(ASCON_IV, K0, K1, N0, N1);
+        p.p(12);
+        p.x3 ^= K0;
+        p.x4 ^= K1;
     }
 
-    protected void processFinalAadBlock()
+    protected void processFinalAAD()
     {
-        Arrays.fill(m_buf, m_bufPos, m_buf.length, (byte) 0);
-        if (m_bufPos >= 8) // ASCON_AEAD_RATE == 16 is implied
+        if (m_aadPos == BlockSize)
         {
-            x0 ^= Pack.littleEndianToLong(m_buf, 0);
-            x1 ^= Pack.littleEndianToLong(m_buf, 8) ^ pad(m_bufPos);
+            p.x0 ^= loadBytes(m_aad, 0);
+            p.x1 ^= loadBytes(m_aad, 8);
+            m_aadPos -= BlockSize;
+            p.p(nr);
+        }
+        Arrays.fill(m_aad, m_aadPos, AADBufferSize, (byte)0);
+        if (m_aadPos >= 8) // ASCON_AEAD_RATE == 16 is implied
+        {
+            p.x0 ^= Pack.littleEndianToLong(m_aad, 0);
+            p.x1 ^= Pack.littleEndianToLong(m_aad, 8) ^ pad(m_aadPos);
         }
         else
         {
-            x0 ^= Pack.littleEndianToLong(m_buf, 0) ^ pad(m_bufPos);
+            p.x0 ^= Pack.littleEndianToLong(m_aad, 0) ^ pad(m_aadPos);
         }
     }
 
@@ -84,23 +83,23 @@ public class AsconAEAD128
             long c0 = Pack.littleEndianToLong(input, 0);
             inLen -= 8;
             long c1 = Pack.littleEndianToLong(input, 8, inLen);
-            Pack.longToLittleEndian(x0 ^ c0, output, outOff);
-            Pack.longToLittleEndian(x1 ^ c1, output, outOff + 8, inLen);
-            x0 = c0;
-            x1 &= -(1L << (inLen << 3));
-            x1 |= c1;
-            x1 ^= pad(inLen);
+            Pack.longToLittleEndian(p.x0 ^ c0, output, outOff);
+            Pack.longToLittleEndian(p.x1 ^ c1, output, outOff + 8, inLen);
+            p.x0 = c0;
+            p.x1 &= -(1L << (inLen << 3));
+            p.x1 |= c1;
+            p.x1 ^= pad(inLen);
         }
         else
         {
             if (inLen != 0)
             {
                 long c0 = Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(x0 ^ c0, output, outOff, inLen);
-                x0 &= -(1L << (inLen << 3));
-                x0 |= c0;
+                Pack.longToLittleEndian(p.x0 ^ c0, output, outOff, inLen);
+                p.x0 &= -(1L << (inLen << 3));
+                p.x0 |= c0;
             }
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
         }
         finishData(State.DecFinal);
     }
@@ -109,32 +108,32 @@ public class AsconAEAD128
     {
         if (inLen >= 8) // ASCON_AEAD_RATE == 16 is implied
         {
-            x0 ^= Pack.littleEndianToLong(input, 0);
+            p.x0 ^= Pack.littleEndianToLong(input, 0);
             inLen -= 8;
-            x1 ^= Pack.littleEndianToLong(input, 8, inLen);
-            Pack.longToLittleEndian(x0, output, outOff);
-            Pack.longToLittleEndian(x1, output, outOff + 8);
-            x1 ^= pad(inLen);
+            p.x1 ^= Pack.littleEndianToLong(input, 8, inLen);
+            Pack.longToLittleEndian(p.x0, output, outOff);
+            Pack.longToLittleEndian(p.x1, output, outOff + 8);
+            p.x1 ^= pad(inLen);
         }
         else
         {
             if (inLen != 0)
             {
-                x0 ^= Pack.littleEndianToLong(input, 0, inLen);
-                Pack.longToLittleEndian(x0, output, outOff, inLen);
+                p.x0 ^= Pack.littleEndianToLong(input, 0, inLen);
+                Pack.longToLittleEndian(p.x0, output, outOff, inLen);
             }
-            x0 ^= pad(inLen);
+            p.x0 ^= pad(inLen);
         }
         finishData(State.EncFinal);
     }
 
     private void finishData(State nextState)
     {
-        x2 ^= K0;
-        x3 ^= K1;
-        p(12);
-        x3 ^= K0;
-        x4 ^= K1;
+        p.x2 ^= K0;
+        p.x3 ^= K1;
+        p.p(12);
+        p.x3 ^= K0;
+        p.x4 ^= K1;
         m_state = nextState;
     }
 
@@ -156,4 +155,3 @@ public class AsconAEAD128
         return "v1.3";
     }
 }
-

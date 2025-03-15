@@ -1,6 +1,8 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.digests.XoodyakDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
@@ -16,21 +18,18 @@ public class XoodyakEngine
 {
     private byte[] state;
     private int phase;
-    private MODE mode;
-    private final int f_bPrime_1 = 47;
+    private int mode;
+    private static final int f_bPrime_1 = 47;
     private byte[] K;
     private byte[] iv;
-    private final int PhaseUp = 2;
-    private final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
+    private static final int PhaseUp = 2;
+    private static final int PhaseDown = 1;
+    private static final int[] RC = {0x00000058, 0x00000038, 0x000003C0, 0x000000D0, 0x00000120, 0x00000014, 0x00000060,
         0x0000002C, 0x00000380, 0x000000F0, 0x000001A0, 0x00000012};
     private boolean encrypted;
     private byte aadcd;
-
-    enum MODE
-    {
-        ModeHash,
-        ModeKeyed
-    }
+    private static final int ModeKeyed = 0;
+    private static final int ModeHash = 1;
 
     public XoodyakEngine()
     {
@@ -40,19 +39,16 @@ public class XoodyakEngine
         MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
-        m_aad = new byte[AADBufferSize];
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
     @Override
-    public void init(byte[] key, byte[] iv)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
         K = key;
         this.iv = iv;
         state = new byte[48];
-        mac = new byte[MAC_SIZE];
-        m_buf = new byte[BlockSize + (forEncryption ? 0 : MAC_SIZE)];
-        initialised = true;
         m_state = forEncryption ? State.EncInit : State.DecInit;
         reset();
     }
@@ -65,109 +61,106 @@ public class XoodyakEngine
 
     protected void processFinalAAD()
     {
-        if (mode != MODE.ModeKeyed)
-        {
-            throw new IllegalArgumentException("Xoodyak has not been initialised");
-        }
-        if (!aadFinished)
-        {
-            AbsorbAny(m_aad, 0, m_aadPos, aadcd);
-            aadFinished = true;
-            m_aadPos = 0;
-        }
+        AbsorbAny(m_aad, 0, m_aadPos, aadcd);
     }
 
-    protected void processBuffer(byte[] input, int inOff, byte[] output, int outOff)
+    @Override
+    protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        processFinalAAD();
-        encrypt(input, inOff, BlockSize, output, outOff);
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
     }
 
-    private void encrypt(byte[] input, int inOff, int len, byte[] output, int outOff)
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
     {
-        int IOLen = len;
-        int splitLen;
-        byte[] P = new byte[BlockSize];
-        int Cu = encrypted ? 0 : 0x80;
-        while (IOLen != 0 || !encrypted)
-        {
-            splitLen = Math.min(IOLen, BlockSize); /* use Rkout instead of Rsqueeze, this function is only called in keyed mode */
-            if (forEncryption)
-            {
-                System.arraycopy(input, inOff, P, 0, splitLen);
-            }
-            Up(null, 0, Cu); /* Up without extract */
-            /* Extract from Up and Add */
-            for (int i = 0; i < splitLen; i++)
-            {
-                output[outOff + i] = (byte)(input[inOff++] ^ state[i]);
-            }
-            if (forEncryption)
-            {
-                Down(P, 0, splitLen, 0x00);
-            }
-            else
-            {
-                Down(output, outOff, splitLen, 0x00);
-            }
-            Cu = 0x00;
-            outOff += splitLen;
-            IOLen -= splitLen;
-            encrypted = true;
-        }
+        up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
+        /* Extract from Up and Add */
+        Bytes.xor(BlockSize, state, input, inOff, output, outOff);
+        down(mode, state, input, inOff, BlockSize, 0x00);
+        phase = PhaseDown;
+        encrypted = true;
+    }
+
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
+        /* Extract from Up and Add */
+        Bytes.xor(BlockSize, state, input, inOff, output, outOff);
+        down(mode, state, output, outOff, BlockSize, 0x00);
+        phase = PhaseDown;
+        encrypted = true;
     }
 
     @Override
     protected void processFinalBlock(byte[] output, int outOff)
     {
-        processFinalAAD();
-        if (forEncryption)
+        if (m_bufPos != 0 || !encrypted)
         {
-            Arrays.fill(m_buf, m_bufPos, BlockSize, (byte)0);
+            up(mode, state, encrypted ? 0 : 0x80); /* Up without extract */
+            /* Extract from Up and Add */
+            Bytes.xor(m_bufPos, state, m_buf, 0, output, outOff);
+            if (forEncryption)
+            {
+                down(mode, state, m_buf, 0, m_bufPos, 0x00);
+            }
+            else
+            {
+                down(mode, state, output, outOff, m_bufPos, 0x00);
+            }
+            phase = PhaseDown;
         }
-        encrypt(m_buf, 0, m_bufPos, output, outOff);
-        mac = new byte[MAC_SIZE];
-        Up(mac, MAC_SIZE, 0x40);
+        up(mode, state, 0x40);
+        System.arraycopy(state, 0, mac, 0, MAC_SIZE);
+        phase = PhaseUp;
     }
 
     protected void reset(boolean clearMac)
     {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
+        bufferReset();
+        ensureInitialized();
+        super.reset(clearMac);
         Arrays.fill(state, (byte)0);
-        aadFinished = false;
         encrypted = false;
         phase = PhaseUp;
-        Arrays.fill(m_buf, (byte)0);
-        Arrays.fill(m_aad, (byte)0);
-        m_bufPos = 0;
-        m_aadPos = 0;
         aadcd = (byte)0x03;
         //Absorb key
         int KLen = K.length;
         int IDLen = iv.length;
         byte[] KID = new byte[AADBufferSize];
-        mode = MODE.ModeKeyed;
+        mode = ModeKeyed;
         System.arraycopy(K, 0, KID, 0, KLen);
         System.arraycopy(iv, 0, KID, KLen, IDLen);
         KID[KLen + IDLen] = (byte)IDLen;
         AbsorbAny(KID, 0, KLen + IDLen + 1, 0x02);
-        super.reset(clearMac);
     }
 
     private void AbsorbAny(byte[] X, int Xoff, int XLen, int Cd)
     {
         int splitLen;
+        if (phase != PhaseUp)
+        {
+            up(mode, state, 0);
+        }
         do
         {
-            if (phase != PhaseUp)
-            {
-                Up(null, 0, 0);
-            }
             splitLen = Math.min(XLen, AADBufferSize);
-            Down(X, Xoff, splitLen, Cd);
+            down(mode, state, X, Xoff, splitLen, Cd);
+            phase = PhaseDown;
             Cd = 0;
             Xoff += splitLen;
             XLen -= splitLen;
@@ -175,9 +168,18 @@ public class XoodyakEngine
         while (XLen != 0);
     }
 
-    private void Up(byte[] Yi, int YiLen, int Cu)
+    public static void up(XoodyakDigest.Friend friend, int mode, byte[] state, int Cu)
     {
-        if (mode != MODE.ModeHash)
+        if (null == friend)
+        {
+            throw new NullPointerException("This method is only for use by XoodyakDigest");
+        }
+        up(mode, state, Cu);
+    }
+
+    private static void up(int mode, byte[] state, int Cu)
+    {
+        if (mode != ModeHash)
         {
             state[f_bPrime_1] ^= Cu;
         }
@@ -283,22 +285,21 @@ public class XoodyakEngine
         Pack.intToLittleEndian(a9, state, 36);
         Pack.intToLittleEndian(a10, state, 40);
         Pack.intToLittleEndian(a11, state, 44);
-
-        phase = PhaseUp;
-        if (Yi != null)
-        {
-            System.arraycopy(state, 0, Yi, 0, YiLen);
-        }
     }
 
-    void Down(byte[] Xi, int XiOff, int XiLen, int Cd)
+    public static void down(XoodyakDigest.Friend friend, int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
     {
-        for (int i = 0; i < XiLen; i++)
+        if (null == friend)
         {
-            state[i] ^= Xi[XiOff++];
+            throw new NullPointerException("This method is only for use by XoodyakDigest");
         }
+        down(mode, state, Xi, XiOff, XiLen, Cd);
+    }
+
+    private static void down(int mode, byte[] state, byte[] Xi, int XiOff, int XiLen, int Cd)
+    {
+        Bytes.xorTo(XiLen, Xi, XiOff, state);
         state[XiLen] ^= 0x01;
-        state[f_bPrime_1] ^= (mode == MODE.ModeHash) ? (Cd & 0x01) : Cd;
-        phase = 1;
+        state[f_bPrime_1] ^= (mode == ModeHash) ? (Cd & 0x01) : Cd;
     }
 }
