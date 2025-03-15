@@ -1,5 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
+import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -19,10 +21,10 @@ public class Grain128AEADEngine
      */
     private byte[] workingKey;
     private byte[] workingIV;
-    private int[] lfsr;
-    private int[] nfsr;
-    private int[] authAcc;
-    private int[] authSr;
+    private final int[] lfsr;
+    private final int[] nfsr;
+    private final int[] authAcc;
+    private final int[] authSr;
 
     public Grain128AEADEngine()
     {
@@ -30,13 +32,15 @@ public class Grain128AEADEngine
         KEY_SIZE = 16;
         IV_SIZE = 12;
         MAC_SIZE = 8;
+        lfsr = new int[STATE_SIZE];
+        nfsr = new int[STATE_SIZE];
+        authAcc = new int[2];
+        authSr = new int[2];
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Stream, DataOperatorType.StreamCipher);
     }
 
     /**
      * Initialize a Grain-128AEAD cipher.
-     *
-     * @throws IllegalArgumentException If the params argument is inappropriate.
      */
     protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
@@ -46,11 +50,6 @@ public class Grain128AEADEngine
          */
         workingIV = new byte[16];
         workingKey = key;
-        lfsr = new int[STATE_SIZE];
-        nfsr = new int[STATE_SIZE];
-        authAcc = new int[2];
-        authSr = new int[2];
-
         System.arraycopy(iv, 0, workingIV, 0, IV_SIZE);
         workingIV[12] = (byte)0xFF;
         workingIV[13] = (byte)0xFF;
@@ -158,25 +157,23 @@ public class Grain128AEADEngine
     }
 
     /**
-     * Shift array 1 bit and add val to index.length - 1.
+     * Shift array 1 bit and add val to index - 1.
      *
      * @param array The array to shift.
      * @param val   The value to shift in.
-     * @return The shifted array with val added to index.length - 1.
      */
-    private int[] shift(int[] array, int val)
+    private void shift(int[] array, int val)
     {
         array[0] = (array[0] >>> 1) | (array[1] << 31);
         array[1] = (array[1] >>> 1) | (array[2] << 31);
         array[2] = (array[2] >>> 1) | (array[3] << 31);
         array[3] = (array[3] >>> 1) | (val << 31);
-        return array;
     }
 
     private void shift()
     {
-        nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
-        lfsr = shift(lfsr, (getOutputLFSR()) & 1);
+        shift(nfsr, (getOutputNFSR() ^ lfsr[0]) & 1);
+        shift(lfsr, (getOutputLFSR()) & 1);
     }
 
     protected void reset(boolean clearMac)
@@ -184,34 +181,37 @@ public class Grain128AEADEngine
         super.reset(clearMac);
         Pack.littleEndianToInt(workingKey, 0, nfsr);
         Pack.littleEndianToInt(workingIV, 0, lfsr);
+        Arrays.clear(authAcc);
+        Arrays.clear(authSr);
+        int output;
         // 320 clocks initialization phase.
         for (int i = 0; i < 320; ++i)
         {
-            int output = getOutput();
-            nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
-            lfsr = shift(lfsr, (getOutputLFSR() ^ output) & 1);
+            output = getOutput();
+            shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output) & 1);
+            shift(lfsr, (getOutputLFSR() ^ output) & 1);
         }
         for (int quotient = 0; quotient < 8; ++quotient)
         {
             for (int remainder = 0; remainder < 8; ++remainder)
             {
-                int output = getOutput();
-                nfsr = shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
-                lfsr = shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
+                output = getOutput();
+                shift(nfsr, (getOutputNFSR() ^ lfsr[0] ^ output ^ ((workingKey[quotient]) >> remainder)) & 1);
+                shift(lfsr, (getOutputLFSR() ^ output ^ ((workingKey[quotient + 8]) >> remainder)) & 1);
             }
         }
         initGrain(authAcc);
         initGrain(authSr);
     }
 
-    private void updateInternalState(int input_i_j)
+    private void updateInternalState(int mask)
     {
-        int mask = -input_i_j;
+        mask = -mask;
         authAcc[0] ^= authSr[0] & mask;
         authAcc[1] ^= authSr[1] & mask;
-        int val = getByteKeyStream();
+        mask = getByteKeyStream();
         authSr[0] = (authSr[0] >>> 1) | (authSr[1] << 31);
-        authSr[1] = (authSr[1] >>> 1) | (val << 31);
+        authSr[1] = (authSr[1] >>> 1) | (mask << 31);
     }
 
     public int getUpdateOutputSize(int len)
@@ -222,23 +222,7 @@ public class Grain128AEADEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-        case EncInit:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD1(nextState);
     }
 
     @Override
@@ -252,7 +236,6 @@ public class Grain128AEADEngine
     @Override
     protected void processBufferAAD(byte[] input, int inOff)
     {
-
     }
 
     @Override
