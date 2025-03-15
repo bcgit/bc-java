@@ -33,6 +33,9 @@ public class XoodyakTest
     public void performTest()
         throws Exception
     {
+        DigestTest.implTestVectorsDigest(this, new XoodyakDigest(), "crypto/xoodyak", "LWC_HASH_KAT_256.txt");
+        DigestTest.checkDigestReset(this, new XoodyakDigest());
+        DigestTest.implTestExceptionsAndParametersDigest(this, new XoodyakDigest(), 32);
         CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 18, 100, 128, 16, new XoodyakEngine());
         testVectors();
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
@@ -43,8 +46,6 @@ public class XoodyakTest
                 return new XoodyakEngine();
             }
         });
-        DigestTest.checkDigestReset(this, new XoodyakDigest());
-        testVectorsHash();
 
         XoodyakEngine xoodyak = new XoodyakEngine();
         testExceptions(xoodyak, xoodyak.getKeyBytesSize(), xoodyak.getIVBytesSize(), xoodyak.getBlockSize());
@@ -52,47 +53,6 @@ public class XoodyakTest
         testExceptions(new XoodyakDigest(), 32);
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 24, 16, new XoodyakEngine());
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 24, new XoodyakEngine());
-    }
-
-    private void testVectorsHash()
-        throws Exception
-    {
-        XoodyakDigest xoodyak = new XoodyakDigest();
-        InputStream src = TestResourceFinder.findTestResource("crypto/xoodyak", "LWC_HASH_KAT_256.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        byte[] ptByte;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
-//                if (!map.get("Count").equals("18"))
-//                {
-//                    continue;
-//                }
-                xoodyak.reset();
-                ptByte = Hex.decode((String)map.get("Msg"));
-                xoodyak.update(ptByte, 0, ptByte.length);
-                byte[] hash = new byte[32];
-                xoodyak.doFinal(hash, 0);
-                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
-                {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
-                }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
-                map.clear();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
-//        System.out.println("Xoodyak Hash pass");
     }
 
     private void testVectors()
@@ -187,7 +147,7 @@ public class XoodyakTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -301,6 +261,7 @@ public class XoodyakTest
         }
 
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         try
         {
             aeadBlockCipher.processAADBytes(new byte[]{0}, 1, 1);

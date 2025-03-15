@@ -123,7 +123,7 @@ public class HQCTest
         SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
         assertEquals("AES", secEnc1.getAlgorithm());
-        assertEquals(16, secEnc1.getEncoded().length);
+        assertEquals(32, secEnc1.getEncoded().length);
 
         keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
 

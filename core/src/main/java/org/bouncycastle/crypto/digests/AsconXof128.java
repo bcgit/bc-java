@@ -18,10 +18,11 @@ public class AsconXof128
     extends AsconBaseDigest
     implements Xof
 {
-    private boolean m_squeezing = false;
+    private boolean m_squeezing;
 
     public AsconXof128()
     {
+        algorithmName = "Ascon-XOF-128";
         reset();
     }
 
@@ -57,28 +58,16 @@ public class AsconXof128
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return "Ascon-XOF-128";
-    }
-
-    @Override
     public void update(byte in)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(in);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(input, inOff, len);
     }
 
@@ -97,22 +86,12 @@ public class AsconXof128
     }
 
     @Override
-    public int getByteLength()
-    {
-        return 8;
-    }
-
-    @Override
     public void reset()
     {
         m_squeezing = false;
         super.reset();
         /* initialize */
-        x0 = -2701369817892108309L;
-        x1 = -3711838248891385495L;
-        x2 = -1778763697082575311L;
-        x3 = 1072114354614917324L;
-        x4 = -2282070310009238562L;
+        p.set(-2701369817892108309L, -3711838248891385495L, -1778763697082575311L, 1072114354614917324L, -2282070310009238562L);
     }
 }
 

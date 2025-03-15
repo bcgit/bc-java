@@ -26,6 +26,7 @@ public class AsconXof
 
     public AsconXof(AsconXof.AsconParameters parameters)
     {
+        BlockSize = 8;
         this.asconParameters = parameters;
         switch (parameters)
         {
@@ -43,26 +44,19 @@ public class AsconXof
         reset();
     }
 
-    private final String algorithmName;
     private boolean m_squeezing = false;
 
     @Override
     public void update(byte in)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(in);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(input, inOff, len);
     }
 
@@ -98,12 +92,6 @@ public class AsconXof
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
-    }
-
-    @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
         return hash(output, outOff, outLen);
@@ -118,12 +106,6 @@ public class AsconXof
     }
 
     @Override
-    public int getByteLength()
-    {
-        return 8;
-    }
-
-    @Override
     public void reset()
     {
         super.reset();
@@ -132,18 +114,10 @@ public class AsconXof
         switch (asconParameters)
         {
         case AsconXof:
-            x0 = -5368810569253202922L;
-            x1 = 3121280575360345120L;
-            x2 = 7395939140700676632L;
-            x3 = 6533890155656471820L;
-            x4 = 5710016986865767350L;
+            p.set(-5368810569253202922L, 3121280575360345120L, 7395939140700676632L, 6533890155656471820L, 5710016986865767350L);
             break;
         case AsconXofA:
-            x0 = 4940560291654768690L;
-            x1 = -3635129828240960206L;
-            x2 = -597534922722107095L;
-            x3 = 2623493988082852443L;
-            x4 = -6283826724160825537L;
+            p.set(4940560291654768690L, -3635129828240960206L, -597534922722107095L, 2623493988082852443L, -6283826724160825537L);
             break;
         }
     }

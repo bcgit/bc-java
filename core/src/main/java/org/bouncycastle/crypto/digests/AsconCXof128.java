@@ -35,40 +35,32 @@ public class AsconCXof128
 
     public AsconCXof128(byte[] s, int off, int len)
     {
-        if ((off + len) > s.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
+        algorithmName = "Ascon-CXOF128";
+        ensureSufficientInputBuffer(s, off, len);
         if (len > 256)
         {
             throw new DataLengthException("customized string is too long");
         }
         initState(s, off, len);
         // NOTE: Cache the initialized state
-        z0 = x0;
-        z1 = x1;
-        z2 = x2;
-        z3 = x3;
-        z4 = x4;
+        z0 = p.x0;
+        z1 = p.x1;
+        z2 = p.x2;
+        z3 = p.x3;
+        z4 = p.x4;
     }
 
     @Override
     public void update(byte in)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(in);
     }
 
     @Override
     public void update(byte[] input, int inOff, int len)
     {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
-        }
+        ensureNoAbsorbWhileSqueezing(m_squeezing);
         super.update(input, inOff, len);
     }
 
@@ -104,24 +96,14 @@ public class AsconCXof128
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return "Ascon-CXOF128";
-    }
-
-    @Override
     public int doOutput(byte[] output, int outOff, int outLen)
     {
-        if (CRYPTO_BYTES + outOff > output.length)
-        {
-            throw new OutputLengthException("output buffer is too short");
-        }
+        ensureSufficientOutputBuffer(output, outOff, outLen);
         padAndAbsorb();
         /* squeeze full output blocks */
         squeeze(output, outOff, outLen);
         return outLen;
     }
-
 
     @Override
     public int doFinal(byte[] output, int outOff, int outLen)
@@ -137,23 +119,15 @@ public class AsconCXof128
         super.reset();
         m_squeezing = false;
         /* initialize */
-        x0 = z0;
-        x1 = z1;
-        x2 = z2;
-        x3 = z3;
-        x4 = z4;
+        p.set(z0, z1, z2, z3, z4);
     }
 
     private void initState(byte[] z, int zOff, int zLen)
     {
-        x0 = 7445901275803737603L;
-        x1 = 4886737088792722364L;
-        x2 = -1616759365661982283L;
-        x3 = 3076320316797452470L;
-        x4 = -8124743304765850554L;
+        p.set(7445901275803737603L, 4886737088792722364L, -1616759365661982283L, 3076320316797452470L, -8124743304765850554L);
         long bitLength = ((long)zLen) << 3;
         Pack.longToLittleEndian(bitLength, m_buf, 0);
-        p(12);
+        p.p(12);
         update(z, zOff, zLen);
         padAndAbsorb();
         m_squeezing = false;

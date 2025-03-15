@@ -41,8 +41,6 @@ public class AsconDigest
         reset();
     }
 
-    private final String algorithmName;
-
     protected long pad(int i)
     {
         return 0x80L << (56 - (i << 3));
@@ -69,12 +67,6 @@ public class AsconDigest
     }
 
     @Override
-    public String getAlgorithmName()
-    {
-        return algorithmName;
-    }
-
-    @Override
     public void reset()
     {
         super.reset();
@@ -82,18 +74,10 @@ public class AsconDigest
         switch (asconParameters)
         {
         case AsconHashA:
-            x0 = 92044056785660070L;
-            x1 = 8326807761760157607L;
-            x2 = 3371194088139667532L;
-            x3 = -2956994353054992515L;
-            x4 = -6828509670848688761L;
+            p.set(92044056785660070L, 8326807761760157607L, 3371194088139667532L, -2956994353054992515L, -6828509670848688761L);
             break;
         case AsconHash:
-            x0 = -1255492011513352131L;
-            x1 = -8380609354527731710L;
-            x2 = -5437372128236807582L;
-            x3 = 4834782570098516968L;
-            x4 = 3787428097924915520L;
+            p.set(-1255492011513352131L, -8380609354527731710L, -5437372128236807582L, 4834782570098516968L, 3787428097924915520L);
             break;
         }
     }
