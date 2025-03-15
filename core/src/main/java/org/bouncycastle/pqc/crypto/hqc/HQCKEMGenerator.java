@@ -36,6 +36,6 @@ public class HQCKEMGenerator
 
         byte[] cipherText = Arrays.concatenate(u, v, salt);
 
-        return new SecretWithEncapsulationImpl(Arrays.copyOfRange(K, 0, key.getParameters().getK()), cipherText);
+        return new SecretWithEncapsulationImpl(Arrays.copyOfRange(K, 0, 32), cipherText);
     }
 }
