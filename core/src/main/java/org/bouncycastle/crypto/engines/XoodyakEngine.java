@@ -63,23 +63,7 @@ public class XoodyakEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
-            {
-                return;
-            }
-        case EncInit:
-        case EncAad:
-            processFinalAAD();
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD3(nextState, isDoFinal);
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)

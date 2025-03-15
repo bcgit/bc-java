@@ -122,21 +122,7 @@ public class SparkleEngine
 
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecAad:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD2(nextState);
     }
 
     @Override

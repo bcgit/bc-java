@@ -865,20 +865,7 @@ public class RomulusEngine
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-        case EncInit:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-        m_state = nextState;
+        finishAAD1(nextState);
     }
 
     protected void processBufferAAD(byte[] input, int inOff)

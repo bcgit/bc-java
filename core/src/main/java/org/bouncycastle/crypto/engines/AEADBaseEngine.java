@@ -96,12 +96,6 @@ abstract class AEADBaseEngine
         reset(true);
     }
 
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
-    }
-
     public void init(boolean forEncryption, CipherParameters params)
     {
         this.forEncryption = forEncryption;
@@ -225,6 +219,7 @@ abstract class AEADBaseEngine
             aadOperator = new CounterAADOperator();
             break;
         case Stream:
+            AADBufferSize = 0;
             aadOperator = new StreamAADOperator();
             break;
         }
@@ -619,6 +614,12 @@ abstract class AEADBaseEngine
         m_aadPos = len;
     }
 
+    public int processByte(byte in, byte[] out, int outOff)
+        throws DataLengthException
+    {
+        return processBytes(new byte[]{in}, 0, 1, out, outOff);
+    }
+
     @Override
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
@@ -858,9 +859,67 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected abstract void init(byte[] key, byte[] iv);
+    protected void finishAAD1(State nextState)
+    {
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+        case EncInit:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+        m_state = nextState;
+    }
+
+    protected void finishAAD2(State nextState)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecAad:
+        case EncAad:
+        {
+            processFinalAAD();
+            break;
+        }
+        default:
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
+
+    protected void finishAAD3(State nextState, boolean isDoFinal)
+    {
+        // State indicates whether we ever received AAD
+        switch (m_state)
+        {
+        case DecInit:
+        case DecAad:
+            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
+            {
+                return;
+            }
+        case EncInit:
+        case EncAad:
+            processFinalAAD();
+            break;
+        }
+
+        m_aadPos = 0;
+        m_state = nextState;
+    }
 
     protected abstract void finishAAD(State nextState, boolean isDoFinal);
+
+    protected abstract void init(byte[] key, byte[] iv);
 
     protected abstract void processFinalBlock(byte[] output, int outOff);
 
