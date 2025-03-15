@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.engines;
 
-import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -63,8 +62,7 @@ public class Grain128AEADEngine
         {
             for (int remainder = 0; remainder < 32; ++remainder)
             {
-                int output = getByteKeyStream();
-                auth[quotient] |= output << remainder;
+                auth[quotient] |= getByteKeyStream() << remainder;
             }
         }
     }
@@ -258,9 +256,9 @@ public class Grain128AEADEngine
             ader = new byte[1 + aderlen];
             ader[0] = (byte)(0x80 | aderlen);
             int tmp = len;
-            for (int i = 0; i < aderlen; ++i)
+            for (int i = 1; i < ader.length; ++i)
             {
-                ader[1 + i] = (byte)tmp;
+                ader[i] = (byte)tmp;
                 tmp >>>= 8;
             }
         }
@@ -277,8 +275,7 @@ public class Grain128AEADEngine
             for (int j = 0; j < 8; ++j)
             {
                 shift();
-                int ader_i_j = (ader_i >> j) & 1;
-                updateInternalState(ader_i_j);
+                updateInternalState((ader_i >> j) & 1);
             }
         }
     }
