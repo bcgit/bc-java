@@ -258,9 +258,11 @@ public class ElephantEngine
             state[0] ^= KeccakRoundConstants[indexRound];//index(0,0)
         }
 
+        //TODO: search for " >>> (8 - " merge with with CamelliaLightEngine.lRot8,
+        // code in OCBBlockCipher.init, DualECSP800DRBG.pad8,
         private byte ROL8(byte a, int offset)
         {
-            return (byte)(((a & 0xff) << offset) | ((a & 0xff) >> (8 - offset)));
+            return (byte)((a << offset) | ((a & 0xff) >>> (8 - offset)));
         }
 
         private int index(int x, int y)
@@ -271,7 +273,7 @@ public class ElephantEngine
 
     private byte rotl(byte b)
     {
-        return (byte)(((b & 0xFF) << 1) | ((b & 0xFF) >>> 7));
+        return (byte)((b << 1) | ((b & 0xFF) >>> 7));
     }
 
     // State should be BLOCK_SIZE bytes long
