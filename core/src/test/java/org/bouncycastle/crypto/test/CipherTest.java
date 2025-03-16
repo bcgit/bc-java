@@ -331,7 +331,11 @@ public abstract class CipherTest
         {
             cipher.processAADByte(aad[i]);
         }
-        int len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext1, 0);
+        int len = 0;
+        for (int i = 0; i < plaintext.length; ++i)
+        {
+            len += cipher.processByte(plaintext[i], ciphertext1, len);
+        }
         len += cipher.doFinal(ciphertext1, len);
         int aadSplit = random.nextInt(aad.length) + 1;
         cipher.init(true, new AEADParameters(new KeyParameter(key), macSize * 8, iv, Arrays.copyOf(aad, aadSplit)));
@@ -345,6 +349,18 @@ public abstract class CipherTest
         len = cipher.processBytes(plaintext, 0, plaintext.length, ciphertext3, 0);
         len += cipher.doFinal(ciphertext3, len);
         test.isTrue("cipher text check", Arrays.areEqual(ciphertext1, ciphertext2));
+        cipher.init(false, new ParametersWithIV(new KeyParameter(key), iv));
+        for (int i = 0; i < aad.length; ++i)
+        {
+            cipher.processAADByte(aad[i]);
+        }
+        len = 0;
+        byte[] plaintext1 = new byte[plaintext.length];
+        for (int i = 0; i < ciphertext1.length; ++i)
+        {
+            len += cipher.processByte(ciphertext1[i], plaintext1, len);
+        }
+        len += cipher.doFinal(plaintext1, len);
 
         test.testException("Invalid value for MAC size: ", "IllegalArgumentException", new TestExceptionOperation()
         {

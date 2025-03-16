@@ -91,11 +91,7 @@ abstract class AEADBaseEngine
         return mac;
     }
 
-    public void reset()
-    {
-        reset(true);
-    }
-
+    @Override
     public void init(boolean forEncryption, CipherParameters params)
     {
         this.forEncryption = forEncryption;
@@ -153,6 +149,12 @@ abstract class AEADBaseEngine
         {
             processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
         }
+    }
+
+    @Override
+    public void reset()
+    {
+        reset(true);
     }
 
     protected void reset(boolean clearMac)
@@ -246,9 +248,11 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected interface AADProcessingBuffer
+    private interface AADProcessingBuffer
     {
         void processAADByte(byte input);
+
+        int processByte(byte input, byte[] output, int outOff);
 
         int getUpdateOutputSize(int len);
 
@@ -268,6 +272,15 @@ abstract class AEADBaseEngine
                 m_aadPos = 0;
             }
             m_aad[m_aadPos++] = input;
+        }
+
+        @Override
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            checkData(false);
+            int rlt = processEncDecByte(output, outOff);
+            m_buf[m_bufPos++] = input;
+            return rlt;
         }
 
         @Override
@@ -304,6 +317,14 @@ abstract class AEADBaseEngine
         }
 
         @Override
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            checkData(false);
+            m_buf[m_bufPos++] = input;
+            return processEncDecByte(output, outOff);
+        }
+
+        @Override
         public int getUpdateOutputSize(int len)
         {
             return Math.max(0, len);
@@ -333,7 +354,7 @@ abstract class AEADBaseEngine
         int getLen();
     }
 
-    protected class DefaultAADOperator
+    private class DefaultAADOperator
         implements AADOperator
     {
         @Override
@@ -359,7 +380,7 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected class CounterAADOperator
+    private class CounterAADOperator
         implements AADOperator
     {
         private int aadLen;
@@ -426,6 +447,8 @@ abstract class AEADBaseEngine
 
     protected interface DataOperator
     {
+        int processByte(byte input, byte[] output, int outOff);
+
         int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff);
 
         int getLen();
@@ -433,9 +456,14 @@ abstract class AEADBaseEngine
         void reset();
     }
 
-    protected class DefaultDataOperator
+    private class DefaultDataOperator
         implements DataOperator
     {
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            return processor.processByte(input, output, outOff);
+        }
+
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
             return processEncDecBytes(input, inOff, len, output, outOff);
@@ -453,10 +481,16 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected class CounterDataOperator
+    private class CounterDataOperator
         implements DataOperator
     {
         private int messegeLen;
+
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            messegeLen++;
+            return processor.processByte(input, output, outOff);
+        }
 
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
@@ -481,6 +515,14 @@ abstract class AEADBaseEngine
         implements DataOperator
     {
         private final ErasableOutputStream stream = new ErasableOutputStream();
+
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            ensureInitialized();
+            stream.write(input);
+            m_bufPos = stream.size();
+            return 0;
+        }
 
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
@@ -509,10 +551,38 @@ abstract class AEADBaseEngine
         }
     }
 
-    protected class StreamCipherOperator
+    private class StreamCipherOperator
         implements DataOperator
     {
+        //TODO: shift index instead of arraycopy
         private int len;
+
+        public int processByte(byte input, byte[] output, int outOff)
+        {
+            boolean forEncryption = checkData(false);
+            if (forEncryption)
+            {
+                this.len = 1;
+                processBufferEncrypt(new byte[]{input}, 0, output, outOff);
+                return 1;
+            }
+            else
+            {
+                if (m_bufPos == MAC_SIZE)
+                {
+                    this.len = 1;
+                    processBufferDecrypt(m_buf, 0, output, outOff);
+                    System.arraycopy(m_buf, 1, m_buf, 0, m_bufPos - 1);
+                    m_buf[m_bufPos - 1] = input;
+                    return 1;
+                }
+                else
+                {
+                    m_buf[m_bufPos++] = input;
+                    return 0;
+                }
+            }
+        }
 
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
@@ -614,10 +684,33 @@ abstract class AEADBaseEngine
         m_aadPos = len;
     }
 
+    @Override
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
+        return dataOperator.processByte(in, out, outOff);
+    }
+
+    protected int processEncDecByte(byte[] output, int outOff)
+    {
+        int rlt = 0;
+        int available = (forEncryption ? BlockSize : m_bufferSizeDecrypt) - m_bufPos;
+        if (available == 0)
+        {
+            ensureSufficientOutputBuffer(output, outOff, BlockSize);
+            if (forEncryption)
+            {
+                processBufferEncrypt(m_buf, 0, output, outOff);
+            }
+            else
+            {
+                processBufferDecrypt(m_buf, 0, output, outOff);
+                System.arraycopy(m_buf, BlockSize, m_buf, 0, m_bufPos - BlockSize);
+            }
+            m_bufPos -= BlockSize;
+            rlt = BlockSize;
+        }
+        return rlt;
     }
 
     @Override

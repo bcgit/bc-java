@@ -37,7 +37,7 @@ public class Grain128AEADTest
         CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 7, 100, 128, 12, new Grain128AEADEngine());
 
 
-        CipherTest.checkAEADParemeter(this, 16, 12, 8, 16, new Grain128AEADEngine());
+        CipherTest.checkAEADParemeter(this, 16, 12, 8, 20, new Grain128AEADEngine());
         testSplitUpdate();
         testExceptions();
         testLongAEAD();
