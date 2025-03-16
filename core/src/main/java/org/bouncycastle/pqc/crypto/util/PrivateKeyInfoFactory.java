@@ -152,7 +152,7 @@ public class PrivateKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
-            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes, params.getPublicKey());
+            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
         }
         else if (privateKey instanceof PicnicPrivateKeyParameters)
         {
