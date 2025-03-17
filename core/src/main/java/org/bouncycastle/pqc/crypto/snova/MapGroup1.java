@@ -38,7 +38,19 @@ class MapGroup1
         return inOff;
     }
 
-    private int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
+//    public int encode(byte[] output, int len)
+//    {
+//        int outOff = encodeP(p11, output, 0, len);
+//        outOff += encodeP(p12, output, outOff, len - outOff);
+//        outOff += encodeP(p21, output, outOff, len - outOff);
+//        outOff += encodeAlpha(aAlpha, output, outOff, len - outOff);
+//        outOff += encodeAlpha(bAlpha, output, outOff, len - outOff);
+//        outOff += encodeAlpha(qAlpha1, output, outOff, len - outOff);
+//        outOff += encodeAlpha(qAlpha2, output, outOff, len - outOff);
+//        return outOff;
+//    }
+
+    static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
     {
         int rlt = 0;
         for (int i = 0; i < p.length; ++i)
@@ -48,7 +60,7 @@ class MapGroup1
         return rlt;
     }
 
-    private int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
+    private static int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
     {
         int rlt = 0;
         for (int i = 0; i < alpha.length; ++i)
@@ -57,6 +69,32 @@ class MapGroup1
             {
                 int tmp = Math.min(alpha[i][j].length, len << 1);
                 GF16Utils.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
+                rlt += (tmp + 1) >> 1;
+                len -= (tmp + 1) >> 1;
+            }
+        }
+        return rlt;
+    }
+
+    static int encodeP(byte[][][][] p, byte[] output, int outOff, int len)
+    {
+        int rlt = 0;
+        for (int i = 0; i < p.length; ++i)
+        {
+            rlt += encodeAlpha(p[i], output, outOff + rlt, len);
+        }
+        return rlt;
+    }
+
+    static int encodeAlpha(byte[][][] alpha, byte[] output, int outOff, int len)
+    {
+        int rlt = 0;
+        for (int i = 0; i < alpha.length; ++i)
+        {
+            for (int j = 0; j < alpha[i].length; ++j)
+            {
+                int tmp = Math.min(alpha[i][j].length, len << 1);
+                GF16Utils.encode(alpha[i][j], output, outOff + rlt, tmp);
                 rlt += (tmp + 1) >> 1;
                 len -= (tmp + 1) >> 1;
             }

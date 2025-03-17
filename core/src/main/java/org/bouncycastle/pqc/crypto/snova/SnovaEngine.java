@@ -356,8 +356,8 @@ public class SnovaEngine
                 {
                     for (int index = 0; index < v; index++)
                     {
-                        GF16Utils.gf16mMul(temp, map1.p11[i][j][index], T12[index][k], l);
-                        GF16Utils.gf16mAdd(map2.f12[i][j][k], map2.f12[i][j][k], temp, l);
+                        GF16Utils.gf16mMul(map1.p11[i][j][index], T12[index][k], temp, l);
+                        GF16Utils.gf16mAdd(map2.f12[i][j][k], temp, map2.f12[i][j][k], l);
                     }
                 }
             }
@@ -372,8 +372,8 @@ public class SnovaEngine
                 {
                     for (int index = 0; index < v; index++)
                     {
-                        GF16Utils.gf16mMul(temp, T12[index][j], map1.p11[i][index][k], l);
-                        GF16Utils.gf16mAdd(map2.f21[i][j][k], map2.f21[i][j][k], temp, l);
+                        GF16Utils.gf16mMul(T12[index][j], map1.p11[i][index][k], temp, l);
+                        GF16Utils.gf16mAdd(map2.f21[i][j][k], temp, map2.f21[i][j][k], l);
                     }
                 }
             }
@@ -402,7 +402,7 @@ public class SnovaEngine
         }
     }
 
-    public void genP22(byte[] outP22, byte[][][] T12, byte[][][][] P21, byte[][][][] F12, SnovaParameters params)
+    public void genP22(byte[] outP22, byte[][][] T12, byte[][][][] P21, byte[][][][] F12)
     {
         int m = params.getM();
         int o = params.getO();
@@ -428,24 +428,23 @@ public class SnovaEngine
                         for (int index = 0; index < v; index++)
                         {
                             // temp1 = T12[index][j] * F12[i][index][k]
-                            GF16Utils.gf16mMul(temp1, T12[index][j], F12[i][index][k], l);
+                            GF16Utils.gf16mMul(T12[index][j], F12[i][index][k], temp1, l);
 
                             // temp2 = P21[i][j][index] * T12[index][k]
-                            GF16Utils.gf16mMul(temp2, P21[i][j][index], T12[index][k], l);
+                            GF16Utils.gf16mMul(P21[i][j][index], T12[index][k], temp2, l);
 
                             // temp1 += temp2
-                            GF16Utils.gf16mAdd(temp1, temp1, temp2, l);
+                            GF16Utils.gf16mAdd(temp1, temp2, temp1, l);
 
                             // P22[i][j][k] += temp1
-                            GF16Utils.gf16mAdd(P22[i][j][k], P22[i][j][k], temp1, l);
+                            GF16Utils.gf16mAdd(P22[i][j][k], temp1, P22[i][j][k],  l);
                         }
                     }
                 }
             }
 
             // Convert GF16 elements to packed bytes
-            //TODO
-            //GF16Utils.decode(P22, outP22, m * o * o *lsq);
+            MapGroup1.encodeP(P22, outP22, 0, m * o * o *lsq);
         }
         finally
         {
