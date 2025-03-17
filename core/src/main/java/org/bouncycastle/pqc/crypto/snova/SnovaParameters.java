@@ -111,6 +111,7 @@ public class SnovaParameters
     private final int v;
     private final int o;
     private final int l;
+    private final int alpha;
     private final boolean skIsSeed;
     private final boolean pkExpandShake;
 
@@ -120,6 +121,7 @@ public class SnovaParameters
         this.v = v;
         this.o = o;
         this.l = l;
+        this.alpha = l * l + l;
         this.skIsSeed = skIsSeed;
         this.pkExpandShake = pkExpandShake;
     }
@@ -162,6 +164,17 @@ public class SnovaParameters
 
     public int getAlpha()
     {
-        return l * l + l;
+        return alpha;
+    }
+
+    public int getPublicKeyLength()
+    {
+        return SnovaKeyPairGenerator.publicSeedLength + ((o * o * o * l * l + 1) >>> 1);
+    }
+
+    public int getPrivateKeyLength()
+    {
+        return ((l * l * (4 * o * alpha + o * (v * v + v * o + o * v) + v * o) + 1) >> 1)
+            + SnovaKeyPairGenerator.privateSeedLength + SnovaKeyPairGenerator.publicSeedLength;
     }
 }

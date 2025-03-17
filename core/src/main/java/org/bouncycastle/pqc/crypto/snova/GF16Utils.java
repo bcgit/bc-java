@@ -82,6 +82,46 @@ public class GF16Utils
     }
 
     /**
+     * Convert two GF16 values to one byte.
+     *
+     * @param m    the input array of 4-bit values (stored as bytes, only lower 4 bits used)
+     * @param menc the output byte array that will hold the encoded bytes
+     * @param mlen the number of nibbles in the input array
+     */
+    public static void encode(byte[] m, byte[] menc, int outOff, int mlen)
+    {
+        int i, srcIndex = 0;
+        // Process pairs of 4-bit values
+        for (i = 0; i < mlen / 2; i++)
+        {
+            int lowerNibble = m[srcIndex] & 0x0F;
+            int upperNibble = (m[srcIndex + 1] & 0x0F) << 4;
+            menc[outOff++] = (byte)(lowerNibble | upperNibble);
+            srcIndex += 2;
+        }
+        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
+        if ((mlen & 1) == 1)
+        {
+            menc[outOff] = (byte)(m[srcIndex] & 0x0F);
+        }
+    }
+
+    public static void encodeMergeInHalf(byte[] m, int mlen, byte[] menc)
+    {
+        int i, half = (mlen + 1) >>> 1;
+        // Process pairs of 4-bit values
+        for (i = 0; i < mlen / 2; i++, half++)
+        {
+            menc[i] = (byte)(m[i] | (m[half] << 4));
+        }
+        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
+        if ((mlen & 1) == 1)
+        {
+            menc[i] = (byte)m[i];
+        }
+    }
+
+    /**
      * Decodes a nibble-packed byte array into an output array.
      *
      * @param input       the input byte array.
