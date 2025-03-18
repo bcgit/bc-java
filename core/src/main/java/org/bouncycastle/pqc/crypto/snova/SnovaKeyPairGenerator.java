@@ -53,8 +53,6 @@ public class SnovaKeyPairGenerator
         byte[] ptPublicKeySeed = Arrays.copyOfRange(seedPair, 0, publicSeedLength);
         byte[] ptPrivateKeySeed = Arrays.copyOfRange(seedPair, publicSeedLength, seedPair.length);
 
-//        System.arraycopy(ptPublicKeySeed, 0, sk, 0, ptPublicKeySeed.length);
-//        System.arraycopy(ptPrivateKeySeed, 0, sk, ptPublicKeySeed.length, ptPrivateKeySeed.length);
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
         generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed);
 
@@ -133,15 +131,16 @@ public class SnovaKeyPairGenerator
         int n = v + o;
 
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
-        byte[] qTemp = new byte[(m * alpha * 16 + m * alpha * 16) / l];
+        byte[] qTemp = new byte[(m * alpha * lsq + m * alpha * lsq) / l];
         byte[] prngOutput = new byte[(gf16sPrngPublic + 1) >> 1];
 
         if (params.isPkExpandShake())
         {
+            snovaShake(pkSeed, prngOutput.length, prngOutput);
             // SHAKE-based expansion
-            SHAKEDigest shake = new SHAKEDigest(256);
-            shake.update(pkSeed, 0, pkSeed.length);
-            shake.doFinal(prngOutput, 0, prngOutput.length);
+//            SHAKEDigest shake = new SHAKEDigest(128);
+//            shake.update(pkSeed, 0, pkSeed.length);
+//            shake.doFinal(prngOutput, 0, prngOutput.length);
         }
         else
         {
@@ -174,11 +173,11 @@ public class SnovaKeyPairGenerator
                 System.arraycopy(blockOut, 0, prngOutput, offset, remaining);
             }
         }
+        byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
+        GF16Utils.decode(prngOutput, temp, temp.length);
+        map1.fill(temp);
+        GF16Utils.decode(prngOutput, temp.length >> 1, qTemp, 0, qTemp.length);
 
-        // Convert bytes to GF16 structures
-        int inOff = map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1);
-        GF16Utils.decode(prngOutput, inOff, qTemp, 0, qTemp.length);
-//
         // Post-processing for invertible matrices
         for (int pi = 0; pi < m; ++pi)
         {
@@ -212,5 +211,43 @@ public class SnovaKeyPairGenerator
                 ptArray += l;
             }
         }
+    }
+
+    public static void snovaShake(byte[] ptSeed, int outputBytes, byte[] out)
+    {
+        final int SHAKE128_RATE = 168; // 1344-bit rate = 168 bytes
+        long blockCounter = 0;
+        int offset = 0;
+        int remaining = outputBytes;
+
+        while (remaining > 0)
+        {
+            SHAKEDigest shake = new SHAKEDigest(128);
+
+            // Process seed + counter
+            shake.update(ptSeed, 0, ptSeed.length);
+            updateWithCounter(shake, blockCounter);
+
+            // Calculate bytes to generate in this iteration
+            int bytesToGenerate = Math.min(remaining, SHAKE128_RATE);
+
+            // Generate output (XOF mode)
+            shake.doFinal(out, offset, bytesToGenerate);
+
+            offset += bytesToGenerate;
+            remaining -= bytesToGenerate;
+            blockCounter++;
+        }
+    }
+
+    private static void updateWithCounter(SHAKEDigest shake, long counter)
+    {
+        byte[] counterBytes = new byte[8];
+        // Little-endian conversion
+        for (int i = 0; i < 8; i++)
+        {
+            counterBytes[i] = (byte)(counter >> (i * 8));
+        }
+        shake.update(counterBytes, 0, 8);
     }
 }

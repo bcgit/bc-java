@@ -8,7 +8,7 @@ class PublicKey
     public PublicKey(SnovaParameters params)
     {
         publicKeySeed = new byte[SnovaKeyPairGenerator.publicSeedLength];
-        P22 = new byte[(params.getM() * params.getO() * params.getO() * params.getL() * params.getL()) >> 1];
+        P22 = new byte[(params.getM() * params.getO() * params.getO() * params.getL() * params.getL() + 1) >> 1];
     }
 }
 
