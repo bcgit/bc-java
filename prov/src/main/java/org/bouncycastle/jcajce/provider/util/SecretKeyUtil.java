@@ -9,13 +9,16 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.util.Integers;
 
+/**
+ * @deprecated class appears to be no longer in use, maybe getting imported by others though.
+ */
 public class SecretKeyUtil
 {
-    private static Map keySizes = new HashMap();
+    private static Map<ASN1ObjectIdentifier, Integer> keySizes = new HashMap<ASN1ObjectIdentifier, Integer>();
 
     static
     {
-        keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC.getId(), Integers.valueOf(192));
+        keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
 
         keySizes.put(NISTObjectIdentifiers.id_aes128_CBC, Integers.valueOf(128));
         keySizes.put(NISTObjectIdentifiers.id_aes192_CBC, Integers.valueOf(192));
