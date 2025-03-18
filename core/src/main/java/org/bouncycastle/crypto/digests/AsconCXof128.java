@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
