@@ -311,6 +311,16 @@ public abstract class ASN1BitString
         return rv;
     }
 
+    public int getBytesLength()
+    {
+        return contents.length - 1;
+    }
+
+    public boolean isOctetAligned()
+    {
+        return getPadBits() == 0;
+    }
+
     public int getPadBits()
     {
         return contents[0] & 0xFF;
