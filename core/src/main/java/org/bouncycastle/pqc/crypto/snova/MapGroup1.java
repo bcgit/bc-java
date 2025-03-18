@@ -26,62 +26,87 @@ class MapGroup1
         qAlpha2 = new byte[m][alpha][lsq];
     }
 
-    public int decode(byte[] input, int len)
-    {
-        int inOff = decodeP(input, 0, p11, len);
-        inOff += decodeP(input, inOff, p12, len - inOff);
-        inOff += decodeP(input, inOff, p21, len - inOff);
-        inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
-        inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
-        inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
-        inOff += decodeAlpha(input, inOff, qAlpha2, len - inOff);
-        return inOff;
-    }
-
-//    public int encode(byte[] output, int len)
+//    public int decode(byte[] input, int len)
 //    {
-//        int outOff = encodeP(p11, output, 0, len);
-//        outOff += encodeP(p12, output, outOff, len - outOff);
-//        outOff += encodeP(p21, output, outOff, len - outOff);
-//        outOff += encodeAlpha(aAlpha, output, outOff, len - outOff);
-//        outOff += encodeAlpha(bAlpha, output, outOff, len - outOff);
-//        outOff += encodeAlpha(qAlpha1, output, outOff, len - outOff);
-//        outOff += encodeAlpha(qAlpha2, output, outOff, len - outOff);
-//        return outOff;
+//        int inOff = decodeP(input, 0, p11, len);
+//        inOff += decodeP(input, inOff, p12, len - inOff);
+//        inOff += decodeP(input, inOff, p21, len - inOff);
+//        inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
+//        inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
+//        inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
+//        inOff += decodeAlpha(input, inOff, qAlpha2, len - inOff);
+//        return inOff;
 //    }
 
-    static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
+    public void fill(byte[] input)
+    {
+        int inOff = fillP(input, 0, p11, input.length);
+        inOff += fillP(input, inOff, p12, input.length - inOff);
+        inOff += fillP(input, inOff, p21, input.length - inOff);
+        inOff += fillAlpha(input, inOff, aAlpha, input.length - inOff);
+        inOff += fillAlpha(input, inOff, bAlpha, input.length - inOff);
+        inOff += fillAlpha(input, inOff, qAlpha1, input.length - inOff);
+        fillAlpha(input, inOff, qAlpha2, input.length - inOff);
+    }
+
+    static int fillP(byte[] input, int inOff, byte[][][][] p, int len)
     {
         int rlt = 0;
         for (int i = 0; i < p.length; ++i)
         {
-            rlt += decodeAlpha(input, inOff + rlt, p[i], len);
+            rlt += fillAlpha(input, inOff + rlt, p[i], len - rlt);
         }
         return rlt;
     }
 
-    private static int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
+    private static int fillAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
     {
         int rlt = 0;
         for (int i = 0; i < alpha.length; ++i)
         {
             for (int j = 0; j < alpha[i].length; ++j)
             {
-                int tmp = Math.min(alpha[i][j].length, len << 1);
-                GF16Utils.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
-                rlt += (tmp + 1) >> 1;
-                len -= (tmp + 1) >> 1;
+                int tmp = Math.min(alpha[i][j].length, len - rlt);
+                System.arraycopy(input, inOff + rlt, alpha[i][j], 0, tmp);
+                rlt += tmp;
             }
         }
         return rlt;
     }
+
+
+//    static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
+//    {
+//        int rlt = 0;
+//        for (int i = 0; i < p.length; ++i)
+//        {
+//            rlt += decodeAlpha(input, inOff + rlt, p[i], len);
+//        }
+//        return rlt;
+//    }
+
+//    private static int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
+//    {
+//        int rlt = 0;
+//        for (int i = 0; i < alpha.length; ++i)
+//        {
+//            for (int j = 0; j < alpha[i].length; ++j)
+//            {
+//                int tmp = Math.min(alpha[i][j].length, len << 1);
+//                GF16Utils.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
+//                rlt += (tmp + 1) >> 1;
+//                len -= (tmp + 1) >> 1;
+//            }
+//        }
+//        return rlt;
+//    }
 
     static int encodeP(byte[][][][] p, byte[] output, int outOff, int len)
     {
         int rlt = 0;
         for (int i = 0; i < p.length; ++i)
         {
-            rlt += encodeAlpha(p[i], output, outOff + rlt, len);
+            rlt += encodeAlpha(p[i], output, outOff + rlt, len - rlt);
         }
         return rlt;
     }
