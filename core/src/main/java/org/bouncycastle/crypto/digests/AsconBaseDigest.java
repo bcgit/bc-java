@@ -67,7 +67,6 @@ abstract class AsconBaseDigest
         }
         /* squeeze final output block */
         setBytes(p.x0, output, outOff, len);
-        reset();
     }
 
     protected int hash(byte[] output, int outOff, int outLen)
