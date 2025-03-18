@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.test;
 
 import java.security.SecureRandom;
 
-import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -18,7 +17,7 @@ public class RandomTest
 
         random.nextBytes(rng);
 
-        Assert.assertTrue(checkNonConstant(rng));
+        assertTrue(checkNonConstant(rng));
     }
 
     public void testCheckNonceIVRandom()
@@ -30,7 +29,7 @@ public class RandomTest
 
         random.nextBytes(rng);
 
-        Assert.assertTrue(checkNonConstant(rng));
+        assertTrue(checkNonConstant(rng));
     }
 
     private boolean checkNonConstant(byte[] data)
