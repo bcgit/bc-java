@@ -339,6 +339,7 @@ public class ASN1Dump
             int chunk = Math.min(remaining, SAMPLE_SIZE);
 
             buf.append(indent);
+            // -DM Hex.toHexString
             buf.append(Hex.toHexString(bytes, i, chunk));
             for (int j = chunk; j < SAMPLE_SIZE; ++j)
             {
