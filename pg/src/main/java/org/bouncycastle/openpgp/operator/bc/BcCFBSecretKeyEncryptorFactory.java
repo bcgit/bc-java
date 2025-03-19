@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
@@ -23,7 +22,8 @@ public class BcCFBSecretKeyEncryptorFactory
     private final int iterationCount;
 
     public BcCFBSecretKeyEncryptorFactory(int symmetricKeyAlgorithm,
-                                          int iterationCount) {
+                                          int iterationCount)
+    {
         this.symmetricKeyAlgorithm = symmetricKeyAlgorithm;
         this.iterationCount = iterationCount;
     }
