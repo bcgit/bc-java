@@ -1,6 +1,7 @@
 package org.bouncycastle.x509.extension;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.PublicKey;
 import java.security.cert.CertificateParsingException;
@@ -59,48 +60,36 @@ public class AuthorityKeyIdentifierStructure
         super((ASN1Sequence)extension.getParsedValue());
     }
 
-    private static ASN1Sequence fromCertificate(
-        X509Certificate certificate)
+    private static ASN1Sequence fromCertificate(X509Certificate certificate)
         throws CertificateParsingException
     {
         try
         {
-            if (certificate.getVersion() != 3)
+            GeneralName genName = new GeneralName(PrincipalUtil.getIssuerX509Principal(certificate));
+            GeneralNames genNames = new GeneralNames(genName);
+            BigInteger serialNumber = certificate.getSerialNumber();
+
+            if (certificate.getVersion() == 3)
             {
-                GeneralName          genName = new GeneralName(PrincipalUtil.getIssuerX509Principal(certificate));
-                SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
-                
-                return (ASN1Sequence)new AuthorityKeyIdentifier(
-                               info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
-            }
-            else
-            {
-                GeneralName             genName = new GeneralName(PrincipalUtil.getIssuerX509Principal(certificate));
-                
-                byte[]                  ext = certificate.getExtensionValue(Extension.subjectKeyIdentifier.getId());
-                
+                byte[] ext = certificate.getExtensionValue(Extension.subjectKeyIdentifier.getId());
                 if (ext != null)
                 {
-                    ASN1OctetString     str = (ASN1OctetString)X509ExtensionUtil.fromExtensionValue(ext);
-                
-                    return (ASN1Sequence)new AuthorityKeyIdentifier(
-                                    str.getOctets(), new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
-                }
-                else
-                {
-                    SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
-                    
-                    return (ASN1Sequence)new AuthorityKeyIdentifier(
-                            info, new GeneralNames(genName), certificate.getSerialNumber()).toASN1Primitive();
+                    ASN1OctetString str = (ASN1OctetString)X509ExtensionUtil.fromExtensionValue(ext);
+                    return (ASN1Sequence)new AuthorityKeyIdentifier(str.getOctets(), genNames, serialNumber)
+                        .toASN1Primitive();
                 }
             }
+
+            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
+
+            return (ASN1Sequence)new AuthorityKeyIdentifier(info, genNames, serialNumber).toASN1Primitive();
         }
         catch (Exception e)
         {
             throw new CertificateParsingException("Exception extracting certificate details: " + e.toString());
         }
     }
-    
+
     private static ASN1Sequence fromKey(
         PublicKey pubKey)
         throws InvalidKeyException

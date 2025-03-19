@@ -255,8 +255,8 @@ class TestUtils
             new GeneralNames(new GeneralName(caCertLw.getIssuer())),
             caCertLw.getSerialNumber().getValue()));
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
-        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
 
         return createCert(
             caCertLw.getSubject(),
@@ -280,8 +280,8 @@ class TestUtils
             new GeneralNames(new GeneralName(caCertLw.getIssuer())),
             caCertLw.getSerialNumber().getValue()));
         extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(getDigest(entityKey.getEncoded())));
-        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        extGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
         if (keyPurpose2 == null)
         {
             extGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(keyPurpose1));

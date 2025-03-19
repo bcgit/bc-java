@@ -52,22 +52,18 @@ public class ASN1Dump
      *
      * @param obj the ASN1Primitive to be dumped out.
      */
-    static void _dumpAsString(
-        String      indent,
-        boolean     verbose,
-        ASN1Primitive obj,
-        StringBuffer    buf)
+    static void _dumpAsString(String indent, boolean verbose, ASN1Primitive obj, StringBuffer buf)
     {
         String nl = Strings.lineSeparator();
+        buf.append(indent);
+
         if (obj instanceof ASN1Null)
         {
-            buf.append(indent);
             buf.append("NULL");
             buf.append(nl);
         }
         else if (obj instanceof ASN1Sequence)
         {
-            buf.append(indent);
             if (obj instanceof BERSequence)
             {
                 buf.append("BER Sequence");
@@ -92,7 +88,6 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1Set)
         {
-            buf.append(indent);
             if (obj instanceof BERSet)
             {
                 buf.append("BER Set");
@@ -117,7 +112,6 @@ public class ASN1Dump
         }
         else if (obj instanceof ASN1TaggedObject)
         {
-            buf.append(indent);
             if (obj instanceof BERTaggedObject)
             {
                 buf.append("BER Tagged ");
@@ -137,7 +131,7 @@ public class ASN1Dump
 
             if (!o.isExplicit())
             {
-                buf.append(" IMPLICIT ");
+                buf.append(" IMPLICIT");
             }
 
             buf.append(nl);
@@ -146,130 +140,124 @@ public class ASN1Dump
 
             _dumpAsString(baseIndent, verbose, o.getBaseObject().toASN1Primitive(), buf);
         }
+        else if (obj instanceof ASN1ObjectIdentifier)
+        {
+            buf.append("ObjectIdentifier(" + ((ASN1ObjectIdentifier)obj).getId() + ")" + nl);
+        }
+        else if (obj instanceof ASN1RelativeOID)
+        {
+            buf.append("RelativeOID(" + ((ASN1RelativeOID)obj).getId() + ")" + nl);
+        }
+        else if (obj instanceof ASN1Boolean)
+        {
+            buf.append("Boolean(" + ((ASN1Boolean)obj).isTrue() + ")" + nl);
+        }
+        else if (obj instanceof ASN1Integer)
+        {
+            buf.append("Integer(" + ((ASN1Integer)obj).getValue() + ")" + nl);
+        }
         else if (obj instanceof ASN1OctetString)
         {
             ASN1OctetString oct = (ASN1OctetString)obj;
 
             if (obj instanceof BEROctetString)
             {
-                buf.append(indent + "BER Constructed Octet String" + "[" + oct.getOctets().length + "] ");
+                buf.append("BER Constructed Octet String[");
             }
             else
             {
-                buf.append(indent + "DER Octet String" + "[" + oct.getOctets().length + "] ");
+                buf.append("DER Octet String[");
             }
+
+            buf.append(oct.getOctetsLength() + "]" + nl);
+
             if (verbose)
             {
-                buf.append(dumpBinaryDataAsString(indent, oct.getOctets()));
+                dumpBinaryDataAsString(buf, indent, oct.getOctets());
             }
-            else
-            {
-                buf.append(nl);
-            }
-        }
-        else if (obj instanceof ASN1ObjectIdentifier)
-        {
-            buf.append(indent + "ObjectIdentifier(" + ((ASN1ObjectIdentifier)obj).getId() + ")" + nl);
-        }
-        else if (obj instanceof ASN1RelativeOID)
-        {
-            buf.append(indent + "RelativeOID(" + ((ASN1RelativeOID)obj).getId() + ")" + nl);
-        }
-        else if (obj instanceof ASN1Boolean)
-        {
-            buf.append(indent + "Boolean(" + ((ASN1Boolean)obj).isTrue() + ")" + nl);
-        }
-        else if (obj instanceof ASN1Integer)
-        {
-            buf.append(indent + "Integer(" + ((ASN1Integer)obj).getValue() + ")" + nl);
         }
         else if (obj instanceof ASN1BitString)
         {
             ASN1BitString bitString = (ASN1BitString)obj;
 
-            byte[] bytes = bitString.getBytes();
-            int padBits = bitString.getPadBits();
-
             if (bitString instanceof DERBitString)
             {
-                buf.append(indent + "DER Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+                buf.append("DER Bit String[");
             }
             else if (bitString instanceof DLBitString)
             {
-                buf.append(indent + "DL Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+                buf.append("DL Bit String[");
             }
             else
             {
-                buf.append(indent + "BER Bit String" + "[" + bytes.length + ", " + padBits + "] ");
+                buf.append("BER Bit String[");
             }
+
+            buf.append(bitString.getBytesLength() + ", " + bitString.getPadBits() + "]" + nl);
 
             if (verbose)
             {
-                buf.append(dumpBinaryDataAsString(indent, bytes));
-            }
-            else
-            {
-                buf.append(nl);
+                dumpBinaryDataAsString(buf, indent, bitString.getBytes());
             }
         }
         else if (obj instanceof ASN1IA5String)
         {
-            buf.append(indent + "IA5String(" + ((ASN1IA5String)obj).getString() + ") " + nl);
+            buf.append("IA5String(" + ((ASN1IA5String)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1UTF8String)
         {
-            buf.append(indent + "UTF8String(" + ((ASN1UTF8String)obj).getString() + ") " + nl);
+            buf.append("UTF8String(" + ((ASN1UTF8String)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1NumericString)
         {
-            buf.append(indent + "NumericString(" + ((ASN1NumericString)obj).getString() + ") " + nl);
+            buf.append("NumericString(" + ((ASN1NumericString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1PrintableString)
         {
-            buf.append(indent + "PrintableString(" + ((ASN1PrintableString)obj).getString() + ") " + nl);
+            buf.append("PrintableString(" + ((ASN1PrintableString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1VisibleString)
         {
-            buf.append(indent + "VisibleString(" + ((ASN1VisibleString)obj).getString() + ") " + nl);
+            buf.append("VisibleString(" + ((ASN1VisibleString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1BMPString)
         {
-            buf.append(indent + "BMPString(" + ((ASN1BMPString)obj).getString() + ") " + nl);
+            buf.append("BMPString(" + ((ASN1BMPString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1T61String)
         {
-            buf.append(indent + "T61String(" + ((ASN1T61String)obj).getString() + ") " + nl);
+            buf.append("T61String(" + ((ASN1T61String)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1GraphicString)
         {
-            buf.append(indent + "GraphicString(" + ((ASN1GraphicString)obj).getString() + ") " + nl);
+            buf.append("GraphicString(" + ((ASN1GraphicString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1VideotexString)
         {
-            buf.append(indent + "VideotexString(" + ((ASN1VideotexString)obj).getString() + ") " + nl);
+            buf.append("VideotexString(" + ((ASN1VideotexString)obj).getString() + ") " + nl);
         }
         else if (obj instanceof ASN1UTCTime)
         {
-            buf.append(indent + "UTCTime(" + ((ASN1UTCTime)obj).getTime() + ") " + nl);
+            buf.append("UTCTime(" + ((ASN1UTCTime)obj).getTime() + ") " + nl);
         }
         else if (obj instanceof ASN1GeneralizedTime)
         {
-            buf.append(indent + "GeneralizedTime(" + ((ASN1GeneralizedTime)obj).getTime() + ") " + nl);
+            buf.append("GeneralizedTime(" + ((ASN1GeneralizedTime)obj).getTime() + ") " + nl);
         }
         else if (obj instanceof ASN1Enumerated)
         {
             ASN1Enumerated en = (ASN1Enumerated) obj;
-            buf.append(indent + "DER Enumerated(" + en.getValue() + ")" + nl);
+            buf.append("DER Enumerated(" + en.getValue() + ")" + nl);
         }
         else if (obj instanceof ASN1ObjectDescriptor)
         {
             ASN1ObjectDescriptor od = (ASN1ObjectDescriptor)obj;
-            buf.append(indent + "ObjectDescriptor(" + od.getBaseGraphicString().getString() + ") " + nl);
+            buf.append("ObjectDescriptor(" + od.getBaseGraphicString().getString() + ") " + nl);
         }
         else if (obj instanceof ASN1External)
         {
             ASN1External ext = (ASN1External) obj;
-            buf.append(indent + "External " + nl);
+            buf.append("External " + nl);
             String          tab = indent + TAB;
             if (ext.getDirectReference() != null)
             {
@@ -288,7 +276,7 @@ public class ASN1Dump
         }
         else
         {
-            buf.append(indent + obj.toString() + nl);
+            buf.append(obj.toString() + nl);
         }
     }
 
@@ -334,45 +322,37 @@ public class ASN1Dump
         return buf.toString();
     }
 
-    private static String dumpBinaryDataAsString(String indent, byte[] bytes)
+    private static void dumpBinaryDataAsString(StringBuffer buf, String indent, byte[] bytes)
     {
+        if (bytes.length < 1)
+        {
+            return;
+        }
+
         String nl = Strings.lineSeparator();
-        StringBuffer buf = new StringBuffer();
 
         indent += TAB;
-        
-        buf.append(nl);
+
         for (int i = 0; i < bytes.length; i += SAMPLE_SIZE)
         {
-            if (bytes.length - i > SAMPLE_SIZE)
+            int remaining = bytes.length - i;
+            int chunk = Math.min(remaining, SAMPLE_SIZE);
+
+            buf.append(indent);
+            // -DM Hex.toHexString
+            buf.append(Hex.toHexString(bytes, i, chunk));
+            for (int j = chunk; j < SAMPLE_SIZE; ++j)
             {
-                buf.append(indent);
-                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, SAMPLE_SIZE)));
-                buf.append(TAB);
-                buf.append(calculateAscString(bytes, i, SAMPLE_SIZE));
-                buf.append(nl);
+                buf.append("  ");
             }
-            else
-            {
-                buf.append(indent);
-                buf.append(Strings.fromByteArray(Hex.encode(bytes, i, bytes.length - i)));
-                for (int j = bytes.length - i; j != SAMPLE_SIZE; j++)
-                {
-                    buf.append("  ");
-                }
-                buf.append(TAB);
-                buf.append(calculateAscString(bytes, i, bytes.length - i));
-                buf.append(nl);
-            }
+            buf.append(TAB);
+            appendAscString(buf, bytes, i, chunk);
+            buf.append(nl);
         }
-        
-        return buf.toString();
     }
 
-    private static String calculateAscString(byte[] bytes, int off, int len)
+    private static void appendAscString(StringBuffer buf, byte[] bytes, int off, int len)
     {
-        StringBuffer buf = new StringBuffer();
-
         for (int i = off; i != off + len; i++)
         {
             if (bytes[i] >= ' ' && bytes[i] <= '~')
@@ -380,7 +360,5 @@ public class ASN1Dump
                 buf.append((char)bytes[i]);
             }
         }
-
-        return buf.toString();
     }
 }
