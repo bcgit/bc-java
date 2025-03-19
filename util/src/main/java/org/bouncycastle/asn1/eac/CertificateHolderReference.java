@@ -1,14 +1,15 @@
 package org.bouncycastle.asn1.eac;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public class CertificateHolderReference
 {
-    private static final String ReferenceEncoding = "ISO-8859-1";
+    private static final Charset ReferenceEncoding = StandardCharsets.ISO_8859_1;
 
-    private String countryCode;
-    private String holderMnemonic;
-    private String sequenceNumber;
+    private final String countryCode;
+    private final String holderMnemonic;
+    private final String sequenceNumber;
 
     public CertificateHolderReference(String countryCode, String holderMnemonic, String sequenceNumber)
     {
@@ -19,19 +20,12 @@ public class CertificateHolderReference
 
     CertificateHolderReference(byte[] contents)
     {
-        try
-        {
-            String concat = new String(contents, ReferenceEncoding);
+        String concat = new String(contents, ReferenceEncoding);
 
-            this.countryCode = concat.substring(0, 2);
-            this.holderMnemonic = concat.substring(2, concat.length() - 5);
+        this.countryCode = concat.substring(0, 2);
+        this.holderMnemonic = concat.substring(2, concat.length() - 5);
 
-            this.sequenceNumber = concat.substring(concat.length() - 5);
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new IllegalStateException(e.toString());
-        }
+        this.sequenceNumber = concat.substring(concat.length() - 5);
     }
 
     public String getCountryCode()
@@ -54,13 +48,6 @@ public class CertificateHolderReference
     {
         String ref = countryCode + holderMnemonic + sequenceNumber;
 
-        try
-        {
-            return ref.getBytes(ReferenceEncoding);
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new IllegalStateException(e.toString());
-        }
+        return ref.getBytes(ReferenceEncoding);
     }
 }

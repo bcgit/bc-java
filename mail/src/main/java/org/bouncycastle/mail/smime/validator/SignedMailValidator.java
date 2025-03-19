@@ -360,12 +360,7 @@ public class SignedMailValidator
                     {
                         review = (PKIXCertPathReviewer)certPathReviewerClass.newInstance();
                     }
-                    catch (IllegalAccessException e)
-                    {
-                        throw new IllegalArgumentException("Cannot instantiate object of type " +
-                            certPathReviewerClass.getName() + ": " + e.getMessage());
-                    }
-                    catch (InstantiationException e)
+                    catch (IllegalAccessException | InstantiationException e)
                     {
                         throw new IllegalArgumentException("Cannot instantiate object of type " +
                             certPathReviewerClass.getName() + ": " + e.getMessage());
@@ -418,15 +413,15 @@ public class SignedMailValidator
         TBSCertificate tbsCertificate = getTBSCert(cert);
 
         RDN[] rdns = tbsCertificate.getSubject().getRDNs(PKCSObjectIdentifiers.pkcs_9_at_emailAddress);
-        for (int i = 0; i < rdns.length; i++)
+        for (RDN rdn : rdns)
         {
-            AttributeTypeAndValue[] atVs = rdns[i].getTypesAndValues();
+            AttributeTypeAndValue[] atVs = rdn.getTypesAndValues();
 
             for (int j = 0; j != atVs.length; j++)
             {
                 if (atVs[j].getType().equals(PKCSObjectIdentifiers.pkcs_9_at_emailAddress))
                 {
-                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase();
+                    String email = ((ASN1String) atVs[j].getValue()).getString().toLowerCase();
                     addresses.add(email);
                 }
             }
@@ -456,10 +451,12 @@ public class SignedMailValidator
     private static ASN1Primitive getObject(byte[] ext)
         throws IOException
     {
-        ASN1InputStream aIn = new ASN1InputStream(ext);
-        ASN1OctetString octs = ASN1OctetString.getInstance(aIn.readObject());
+        try (ASN1InputStream aIn = new ASN1InputStream(ext))
+        {
+            ASN1OctetString octs = ASN1OctetString.getInstance(aIn.readObject());
 
-        return ASN1Primitive.fromByteArray(octs.getOctets());
+            return ASN1Primitive.fromByteArray(octs.getOctets());
+        }
     }
 
     protected void checkSignerCert(X509Certificate cert, List errors,
@@ -547,9 +544,9 @@ public class SignedMailValidator
                 // check if email in cert is equal to the from address in the
                 // message
                 boolean equalsFrom = false;
-                for (int i = 0; i < fromAddresses.length; i++)
+                for (String fromAddress : fromAddresses)
                 {
-                    if (certEmails.contains(fromAddresses[i].toLowerCase()))
+                    if (certEmails.contains(fromAddress.toLowerCase()))
                     {
                         equalsFrom = true;
                         break;
@@ -621,16 +618,15 @@ public class SignedMailValidator
         throws CertStoreException
     {
         List result = new ArrayList();
-        Iterator it = certStores.iterator();
-        while (it.hasNext())
+        for (Object certStore : certStores)
         {
-            CertStore store = (CertStore)it.next();
+            CertStore store = (CertStore) certStore;
             Collection coll = store.getCertificates(selector);
             // sometimes the subjectKeyIdentifier in a TA certificate, even when the authorityKeyIdentifier is set.
             // where this happens we role back to a simpler match to make sure we've got all the possibilities.
             if (coll.isEmpty() && selector.getSubjectKeyIdentifier() != null)
             {
-                X509CertSelector certSelector = (X509CertSelector)selector.clone();
+                X509CertSelector certSelector = (X509CertSelector) selector.clone();
                 certSelector.setSubjectKeyIdentifier(null);
                 coll = store.getCertificates(certSelector);
             }

@@ -41,7 +41,7 @@ public class GroupContext
         this.epoch = epoch;
         this.treeHash = treeHash;
         this.confirmedTranscriptHash = confirmedTranscriptHash;
-        this.extensions = new ArrayList<Extension>(extensions);
+        this.extensions = new ArrayList<>(extensions);
     }
 
     @SuppressWarnings("unused")
@@ -55,7 +55,7 @@ public class GroupContext
         this.epoch = (long)stream.read(long.class);
         this.treeHash = stream.readOpaque();
         this.confirmedTranscriptHash = stream.readOpaque();
-        this.extensions = new ArrayList<Extension>();
+        this.extensions = new ArrayList<>();
         stream.readList(extensions, Extension.class);
     }
 

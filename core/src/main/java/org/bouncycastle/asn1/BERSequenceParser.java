@@ -7,6 +7,7 @@ import java.io.IOException;
  * 
  * @deprecated Check for 'ASN1SequenceParser' instead 
  */
+@Deprecated
 public class BERSequenceParser
     implements ASN1SequenceParser
 {

@@ -7,6 +7,7 @@ import java.io.IOException;
  * 
  * @deprecated Check for 'ASN1SetParser' instead 
  */
+@Deprecated
 public class DLSetParser
     implements ASN1SetParser
 {

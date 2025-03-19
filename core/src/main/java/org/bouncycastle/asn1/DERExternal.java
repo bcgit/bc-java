@@ -20,6 +20,7 @@ public class DERExternal
      * 
      * @deprecated Use {@link DERExternal#DERExternal(DERSequence)} instead.
      */
+    @Deprecated
     public DERExternal(ASN1EncodableVector vector)
     {
         this(DERFactory.createSequence(vector));
