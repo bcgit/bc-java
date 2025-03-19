@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -13,8 +12,7 @@ import org.bouncycastle.util.Pack;
  * @deprecated Now superseded - please use AsconXof128
  */
 public class AsconXof
-    extends AsconBaseDigest
-    implements Xof
+    extends AsconXofBase
 {
     public enum AsconParameters
     {
@@ -44,28 +42,6 @@ public class AsconXof
         reset();
     }
 
-    private boolean m_squeezing = false;
-
-    @Override
-    public void update(byte in)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(in);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(input, inOff, len);
-    }
-
-    protected void padAndAbsorb()
-    {
-        m_squeezing = true;
-        super.padAndAbsorb();
-    }
-
     protected long pad(int i)
     {
         return 0x80L << (56 - (i << 3));
@@ -92,24 +68,9 @@ public class AsconXof
     }
 
     @Override
-    public int doOutput(byte[] output, int outOff, int outLen)
-    {
-        return hash(output, outOff, outLen);
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff, int outLen)
-    {
-        int rlt = doOutput(output, outOff, outLen);
-        reset();
-        return rlt;
-    }
-
-    @Override
     public void reset()
     {
         super.reset();
-        m_squeezing = false;
         /* initialize */
         switch (asconParameters)
         {

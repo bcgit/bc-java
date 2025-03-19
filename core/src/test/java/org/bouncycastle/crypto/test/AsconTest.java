@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -44,6 +45,11 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        DigestTest.checkXof(new AsconXof128(), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconCXof128(), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconXof(AsconXof.AsconParameters.AsconXof), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconXof(AsconXof.AsconParameters.AsconXofA), 1429, 317, new SecureRandom(), this);
+
         testVectorsEngine_asconaead128();
         testVectorsDigest_AsconHash256();
         testVectorsXof_AsconXof128();
