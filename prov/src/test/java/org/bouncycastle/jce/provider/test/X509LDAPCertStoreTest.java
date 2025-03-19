@@ -9,12 +9,12 @@ import com.unboundid.ldap.sdk.LDAPException;
 import com.unboundid.ldap.sdk.LDAPResult;
 import com.unboundid.ldap.sdk.ResultCode;
 import com.unboundid.ldif.LDIFException;
-import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import org.bouncycastle.jce.exception.ExtCertPathBuilderException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.test.SimpleTest;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
@@ -39,18 +39,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class X509LDAPCertStoreTest
-    extends TestCase
+    extends SimpleTest
 {
-    public void setUp()
-    {
-        if (Security.getProvider("BC") == null)
-        {
-            Security.addProvider(new BouncyCastleProvider());
-        }
-    }
-
-    public void testLdapFilter()
-            throws Exception
+    public void performTest()
+        throws Exception
     {
         BcFilterCheck filterCheck = new BcFilterCheck();
 
@@ -96,7 +88,7 @@ public class X509LDAPCertStoreTest
         //shut down ldap server
         ds.shutDown(true);
 
-        assertTrue(filterCheck.isUsed());
+        isTrue(filterCheck.isUsed());
     }
 
     private static InMemoryDirectoryServer mockLdapServer(BcFilterCheck filterCheck)
@@ -116,7 +108,7 @@ public class X509LDAPCertStoreTest
         return new InMemoryDirectoryServer(serverConfig);
     }
 
-    public static void readEntriesFromFile(InMemoryDirectoryServer ds) throws IOException, LDAPException, LDIFException
+    private void readEntriesFromFile(InMemoryDirectoryServer ds) throws IOException, LDAPException, LDIFException
     {
         InputStream src = TestResourceFinder.findTestResource("ldap/", "X509LDAPCertTest.ldif");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
@@ -168,11 +160,12 @@ public class X509LDAPCertStoreTest
 //        addEntry(ds, "dn: cn=chars[*()\\\0],dc=people,dc=test", "objectClass: Person", "objectClass: organizationalPerson", "sn: chars", "cn: chars[*()\\\0]");
 //    }
 
-    public static void addEntry(InMemoryDirectoryServer ds, String... args)
+    private void addEntry(InMemoryDirectoryServer ds, String... args)
         throws LDIFException, LDAPException
     {
         LDAPResult result = ds.add(args);
-        assertEquals(0, result.getResultCode().intValue());
+
+        isEquals(0, result.getResultCode().intValue());
     }
 
     static void verifyCert(X509Certificate cert)
@@ -199,7 +192,6 @@ public class X509LDAPCertStoreTest
         {
             CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
             PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(pkixParams);
-
         }
         catch (ExtCertPathBuilderException exception)
         {
@@ -210,7 +202,7 @@ public class X509LDAPCertStoreTest
     /*
         check we get a suitably escaped subject.
      */
-    static class BcFilterCheck
+    class BcFilterCheck
         extends InMemoryOperationInterceptor
     {
         private volatile boolean used = false;
@@ -219,7 +211,7 @@ public class X509LDAPCertStoreTest
         {
             String filter = result.getRequest().getFilter().toString();
 
-            assertEquals("(&(cn=*chars[\\2a\\28\\29\\00]*)(userCertificate=*))", filter);
+            isEquals("(&(cn=*chars[\\2a\\28\\29\\00]*)(userCertificate=*))", filter);
 
             used = true;
 
@@ -230,5 +222,17 @@ public class X509LDAPCertStoreTest
         {
             return used;
         }
+    }
+
+    public String getName()
+    {
+        return "X509LDAPCertStore";
+    }
+
+    public static void main(String[] args)
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        runTest(new X509LDAPCertStoreTest());
     }
 }

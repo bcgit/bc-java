@@ -1976,6 +1976,17 @@ public class NewSignedDataTest
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA512withECDSA");
     }
 
+    public void testECDSASHA512EncapsulatedWithKeyFactoryAsEC()
+        throws Exception
+    {
+        X509EncodedKeySpec  pubSpec = new X509EncodedKeySpec(_signEcDsaKP.getPublic().getEncoded());
+        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(_signEcDsaKP.getPrivate().getEncoded());
+        KeyFactory          keyFact = KeyFactory.getInstance("EC", BC);
+        KeyPair             kp = new KeyPair(keyFact.generatePublic(pubSpec), keyFact.generatePrivate(privSpec));
+        
+        encapsulatedTest(kp, _signEcDsaCert, "SHA512withECDSA");
+    }
+
     public void testECDSASHA3_224Encapsulated()
         throws Exception
     {
@@ -2046,17 +2057,6 @@ public class NewSignedDataTest
         throws Exception
     {
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-512withPLAIN-ECDSA");
-    }
-
-    public void testECDSASHA512EncapsulatedWithKeyFactoryAsEC()
-        throws Exception
-    {
-        X509EncodedKeySpec  pubSpec = new X509EncodedKeySpec(_signEcDsaKP.getPublic().getEncoded());
-        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(_signEcDsaKP.getPrivate().getEncoded());
-        KeyFactory          keyFact = KeyFactory.getInstance("EC", BC);
-        KeyPair             kp = new KeyPair(keyFact.generatePublic(pubSpec), keyFact.generatePrivate(privSpec));
-        
-        encapsulatedTest(kp, _signEcDsaCert, "SHA512withECDSA");
     }
 
     public void testDSAEncapsulated()

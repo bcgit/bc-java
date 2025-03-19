@@ -2864,7 +2864,7 @@ public class CertTest
         {
             ASN1Enumerated reasonCode = (ASN1Enumerated)fromExtensionValue(ext);
 
-            if (reasonCode.intValueExact() != CRLReason.privilegeWithdrawn)
+            if (!reasonCode.hasValue(CRLReason.privilegeWithdrawn))
             {
                 fail("CRL entry reasonCode wrong");
             }
