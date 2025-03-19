@@ -6,7 +6,7 @@ class SnovaKeyElements
     public final byte[][][] T12;     // [v][o]
     public final MapGroup2 map2;
     public final PublicKey publicKey;
-    private int length;
+    private final int length;
 
     public SnovaKeyElements(SnovaParameters params)
     {

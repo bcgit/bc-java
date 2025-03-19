@@ -117,7 +117,7 @@ public class GF16Utils
         // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
         if ((mlen & 1) == 1)
         {
-            menc[i] = (byte)m[i];
+            menc[i] = m[i];
         }
     }
 

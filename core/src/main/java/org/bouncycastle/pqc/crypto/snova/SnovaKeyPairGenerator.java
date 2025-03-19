@@ -137,10 +137,6 @@ public class SnovaKeyPairGenerator
         if (params.isPkExpandShake())
         {
             snovaShake(pkSeed, prngOutput.length, prngOutput);
-            // SHAKE-based expansion
-//            SHAKEDigest shake = new SHAKEDigest(128);
-//            shake.update(pkSeed, 0, pkSeed.length);
-//            shake.doFinal(prngOutput, 0, prngOutput.length);
         }
         else
         {
