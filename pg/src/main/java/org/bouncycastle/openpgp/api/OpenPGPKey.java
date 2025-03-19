@@ -207,6 +207,16 @@ public class OpenPGPKey
         return bOut.toString();
     }
 
+    public byte[] getEncoded(PacketFormat format)
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        getPGPSecretKeyRing().encode(pOut);
+        pOut.close();
+        return bOut.toByteArray();
+    }
+
     /**
      * Secret key component of a {@link org.bouncycastle.openpgp.api.OpenPGPCertificate.OpenPGPPrimaryKey} or
      * {@link org.bouncycastle.openpgp.api.OpenPGPCertificate.OpenPGPSubkey}.

@@ -523,7 +523,22 @@ public class OpenPGPCertificate
         }
 
         ArmoredOutputStream aOut = armorBuilder.build(bOut);
-        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
+        aOut.write(getEncoded());
+        aOut.close();
+        return bOut.toString();
+    }
+
+    public byte[] getEncoded()
+            throws IOException
+    {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    public byte[] getEncoded(PacketFormat format)
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
 
         // Make sure we export a TPK
         List<PGPPublicKey> list = new ArrayList<>();
@@ -535,8 +550,7 @@ public class OpenPGPCertificate
 
         publicKeys.encode(pOut, true);
         pOut.close();
-        aOut.close();
-        return bOut.toString();
+        return bOut.toByteArray();
     }
 
     private OpenPGPSignatureChain getSignatureChainFor(OpenPGPCertificateComponent component,
