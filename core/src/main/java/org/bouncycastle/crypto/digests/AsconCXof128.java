@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.digests;
 
 import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -16,10 +15,8 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class AsconCXof128
-    extends AsconBaseDigest
-    implements Xof
+    extends AsconXofBase
 {
-    private boolean m_squeezing = false;
     private final long z0, z1, z2, z3, z4;
 
     public AsconCXof128()
@@ -49,20 +46,6 @@ public class AsconCXof128
         z4 = p.x4;
     }
 
-    @Override
-    public void update(byte in)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(in);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(input, inOff, len);
-    }
-
     protected long pad(int i)
     {
         return 0x01L << (i << 3);
@@ -88,35 +71,10 @@ public class AsconCXof128
         Pack.longToLittleEndian(w, bytes, inOff, n);
     }
 
-    protected void padAndAbsorb()
-    {
-        m_squeezing = true;
-        super.padAndAbsorb();
-    }
-
-    @Override
-    public int doOutput(byte[] output, int outOff, int outLen)
-    {
-        ensureSufficientOutputBuffer(output, outOff, outLen);
-        padAndAbsorb();
-        /* squeeze full output blocks */
-        squeeze(output, outOff, outLen);
-        return outLen;
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff, int outLen)
-    {
-        int rlt = doOutput(output, outOff, outLen);
-        reset();
-        return rlt;
-    }
-
     @Override
     public void reset()
     {
         super.reset();
-        m_squeezing = false;
         /* initialize */
         p.set(z0, z1, z2, z3, z4);
     }
@@ -129,7 +87,7 @@ public class AsconCXof128
         p.p(12);
         update(z, zOff, zLen);
         padAndAbsorb();
-        m_squeezing = false;
+        super.reset();
     }
 }
 

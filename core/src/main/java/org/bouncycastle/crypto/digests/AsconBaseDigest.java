@@ -25,7 +25,6 @@ abstract class AsconBaseDigest
         DigestSize = 32;
     }
 
-
     protected abstract long pad(int i);
 
     protected abstract long loadBytes(final byte[] bytes, int inOff);
@@ -83,14 +82,6 @@ abstract class AsconBaseDigest
         if (outOff + len > output.length)
         {
             throw new OutputLengthException("output buffer is too short");
-        }
-    }
-
-    protected void ensureNoAbsorbWhileSqueezing(boolean m_squeezing)
-    {
-        if (m_squeezing)
-        {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
         }
     }
 }
