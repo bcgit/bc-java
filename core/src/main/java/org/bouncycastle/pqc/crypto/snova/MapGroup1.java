@@ -74,7 +74,21 @@ class MapGroup1
         return rlt;
     }
 
-    //private static void copyTo(byte[][][] al)
+    static void copyTo(byte[][][][] alpha, byte[] output)
+    {
+        int outOff = 0;
+        for (int i = 0; i < alpha.length; ++i)
+        {
+            for (int j = 0; j < alpha[i].length; ++j)
+            {
+                for (int k = 0; k < alpha[i][j].length; ++k)
+                {
+                    System.arraycopy(alpha[i][j][k], 0, output, outOff, alpha[i][j][k].length);
+                    outOff += alpha[i][j][k].length;
+                }
+            }
+        }
+    }
 
 
 //    static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
