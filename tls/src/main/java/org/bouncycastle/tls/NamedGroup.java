@@ -116,6 +116,13 @@ public class NamedGroup
     public static final int MLKEM768 = 0x0201;
     public static final int MLKEM1024 = 0x0202;
 
+    /*
+     * draft-kwiatkowski-tls-ecdhe-mlkem-03
+     */
+    public static final int SecP256r1MLKEM768 = 0x11EB;
+    public static final int X25519MLKEM768 = 0x11EC;
+    public static final int SecP384r1MLKEM1024 = 0x11ED;
+
     /* Names of the actual underlying elliptic curves (not necessarily matching the NamedGroup names). */
     private static final String[] CURVE_NAMES = new String[]{ "sect163k1", "sect163r1", "sect163r2", "sect193r1",
         "sect193r2", "sect233k1", "sect233r1", "sect239k1", "sect283k1", "sect283r1", "sect409k1", "sect409r1",
@@ -310,6 +317,12 @@ public class NamedGroup
         case OQS_mlkem1024:
         case MLKEM1024:
             return "ML-KEM-1024";
+        case SecP256r1MLKEM768:
+            return "SecP256r1MLKEM768";
+        case X25519MLKEM768:
+            return "X25519MLKEM768";
+        case SecP384r1MLKEM1024:
+            return "SecP384r1MLKEM1024";
         default:
             return null;
         }
@@ -382,6 +395,12 @@ public class NamedGroup
             return "MLKEM768";
         case MLKEM1024:
             return "MLKEM1024";
+        case SecP256r1MLKEM768:
+            return "SecP256r1MLKEM768";
+        case X25519MLKEM768:
+            return "X25519MLKEM768";
+        case SecP384r1MLKEM1024:
+            return "SecP384r1MLKEM1024";
         case arbitrary_explicit_prime_curves:
             return "arbitrary_explicit_prime_curves";
         case arbitrary_explicit_char2_curves:
@@ -502,6 +521,9 @@ public class NamedGroup
         case MLKEM512:
         case MLKEM768:
         case MLKEM1024:
+        case SecP256r1MLKEM768:
+        case X25519MLKEM768:
+        case SecP384r1MLKEM1024:
             return true;
         default:
             return false;

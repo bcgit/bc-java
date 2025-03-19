@@ -81,7 +81,10 @@ class NamedGroupInfo
         OQS_mlkem1024(NamedGroup.OQS_mlkem1024, "ML-KEM"),
         MLKEM512(NamedGroup.MLKEM512, "ML-KEM"),
         MLKEM768(NamedGroup.MLKEM768, "ML-KEM"),
-        MLKEM1024(NamedGroup.MLKEM1024, "ML-KEM");
+        MLKEM1024(NamedGroup.MLKEM1024, "ML-KEM"),
+        SecP256r1MLKEM768(NamedGroup.SecP256r1MLKEM768, "ML-KEM"),
+        X25519MLKEM768(NamedGroup.X25519MLKEM768, "ML-KEM"),
+        SecP384r1MLKEM1024(NamedGroup.SecP384r1MLKEM1024, "ML-KEM");
 
         private final int namedGroup;
         private final String name;
