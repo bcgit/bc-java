@@ -479,7 +479,9 @@ public class SnovaEngine
             }
 
             // Convert GF16 elements to packed bytes
-            MapGroup1.encodeP(P22, outP22, 0, outP22.length);
+            byte[] tmp = new byte[outP22.length << 1];
+            MapGroup1.copyTo(P22, tmp);
+            GF16Utils.encode(tmp, outP22, 0, tmp.length);
         }
         finally
         {
