@@ -168,6 +168,7 @@ public class OpenPGPKey
 
     void replaceSecretKey(OpenPGPSecretKey secretKey)
     {
+        keyRing = PGPSecretKeyRing.insertSecretKey((PGPSecretKeyRing) keyRing, secretKey.rawSecKey);
         secretKeys.put(secretKey.getKeyIdentifier(), secretKey);
     }
 

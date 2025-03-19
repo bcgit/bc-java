@@ -69,7 +69,7 @@ public class OpenPGPCertificate
     final OpenPGPImplementation implementation;
     final OpenPGPPolicy policy;
 
-    private final PGPKeyRing keyRing;
+    protected PGPKeyRing keyRing;
 
     private final OpenPGPPrimaryKey primaryKey;
     private final Map<KeyIdentifier, OpenPGPSubkey> subkeys;
