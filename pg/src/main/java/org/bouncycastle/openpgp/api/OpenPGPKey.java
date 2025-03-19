@@ -183,35 +183,11 @@ public class OpenPGPKey
         return (PGPSecretKeyRing) super.getPGPKeyRing();
     }
 
-    @Override
-    public String toAsciiArmoredString()
+    public byte[] getEncoded(PacketFormat packetFormat)
             throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
-                .clearHeaders();
-
-        armorBuilder.addSplitMultilineComment(getPrettyFingerprint());
-
-        for (OpenPGPUserId userId : getPrimaryKey().getUserIDs())
-        {
-            armorBuilder.addComment(userId.getUserId());
-        }
-
-        ArmoredOutputStream aOut = armorBuilder.build(bOut);
-        BCPGOutputStream pOut = new BCPGOutputStream(aOut, PacketFormat.CURRENT);
-
-        getPGPKeyRing().encode(pOut);
-        pOut.close();
-        aOut.close();
-        return bOut.toString();
-    }
-
-    public byte[] getEncoded(PacketFormat format)
-            throws IOException
-    {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, packetFormat);
         getPGPSecretKeyRing().encode(pOut);
         pOut.close();
         return bOut.toByteArray();

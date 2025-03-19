@@ -501,13 +501,19 @@ public class OpenPGPCertificate
         return FingerprintUtil.prettifyFingerprint(getFingerprint());
     }
 
+    public String toAsciiArmoredString()
+            throws IOException
+    {
+        return toAsciiArmoredString(PacketFormat.ROUNDTRIP);
+    }
+
     /**
      * Return an ASCII armored {@link String} containing the certificate.
      *
      * @return armored certificate
      * @throws IOException if the cert cannot be encoded
      */
-    public String toAsciiArmoredString()
+    public String toAsciiArmoredString(PacketFormat packetFormat)
             throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -523,7 +529,7 @@ public class OpenPGPCertificate
         }
 
         ArmoredOutputStream aOut = armorBuilder.build(bOut);
-        aOut.write(getEncoded());
+        aOut.write(getEncoded(packetFormat));
         aOut.close();
         return bOut.toString();
     }
