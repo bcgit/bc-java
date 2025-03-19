@@ -113,23 +113,16 @@ public class X509ExtensionUtils
 
     private byte[] getSubjectKeyIdentifier(X509CertificateHolder certHolder)
     {
-        if (certHolder.getVersionNumber() != 3)
-        {
-            return calculateIdentifier(certHolder.getSubjectPublicKeyInfo());
-        }
-        else
+        if (certHolder.getVersionNumber() == 3)
         {
             Extension ext = certHolder.getExtension(Extension.subjectKeyIdentifier);
-
             if (ext != null)
             {
                 return ASN1OctetString.getInstance(ext.getParsedValue()).getOctets();
             }
-            else
-            {
-                return calculateIdentifier(certHolder.getSubjectPublicKeyInfo());
-            }
         }
+
+        return calculateIdentifier(certHolder.getSubjectPublicKeyInfo());
     }
 
     private byte[] calculateIdentifier(SubjectPublicKeyInfo publicKeyInfo)
