@@ -164,14 +164,10 @@ public class HQCTest
         assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
     }
 
-    public static void main(String[] args)
+    public void testReedSolomon()
         throws Exception
     {
-        HQCTest test = new HQCTest();
-
-        test.setUp();
-
-        byte[] seed = Hex.decode("416a32ada1c7a569c34d5334273a781c340aac25eb7614271aa6930d0358fb30fd87e111336a29e165dc60d9643a3e9b");
+        byte[] seed = Hex.decode("416a32ada1c7a569c34d5334273a781c340aac25eb7614271aa6930d0358fb30fd87e111336a29e165dc60d9643a3e9b");//b
         byte[] kemSeed = Hex.decode("13f36c0636ff93af6d702f7774097c185bf67cddc9b09f9b584d736c4faf40e073b0499efa0c926e9a44fec1e45ee4cf");
         //HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
         //kpg.init(new HQCKeyGenerationParameters();
@@ -206,11 +202,6 @@ public class HQCTest
         Key k = w2.unwrap(data, "AES", Cipher.SECRET_KEY);
 
         assertTrue(Arrays.areEqual(keyBytes, k.getEncoded()));
-//        for (int i = 0; i < 10000; ++i)
-//        {
-//            test.testBasicKEMARIA();
-//        }
-        System.out.println("OK");
     }
 
 }
