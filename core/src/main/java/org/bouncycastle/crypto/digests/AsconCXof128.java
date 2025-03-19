@@ -82,8 +82,7 @@ public class AsconCXof128
     private void initState(byte[] z, int zOff, int zLen)
     {
         p.set(7445901275803737603L, 4886737088792722364L, -1616759365661982283L, 3076320316797452470L, -8124743304765850554L);
-        long bitLength = ((long)zLen) << 3;
-        Pack.longToLittleEndian(bitLength, m_buf, 0);
+        p.x0 ^= ((long)zLen) << 3;
         p.p(12);
         update(z, zOff, zLen);
         padAndAbsorb();
