@@ -53,6 +53,7 @@ abstract class AsconBaseDigest
     {
         p.x0 ^= loadBytes(m_buf, 0, m_bufPos) ^ pad(m_bufPos);
         p.p(12);
+        m_bufPos = 0;
     }
 
     protected void squeeze(byte[] output, int outOff, int len)
