@@ -23,8 +23,20 @@ public class AllTests
     
     public void testSimpleTests()
     {
-        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new CertTest(), new DANETest(), new PKCS10Test(), new AttrCertSelectorTest(), new AttrCertTest(), new X509ExtensionUtilsTest(),
-            new CertPathLoopTest(), new GOST3410_2012CMSTest(), new ExternalKeyTest() };
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
+        {
+            new AttrCertSelectorTest(),
+            new AttrCertTest(),
+            new CertPathLoopTest(),
+            new CertTest(),
+            new DANETest(),
+            new ExternalKeyTest(),
+            new GOST3410_2012CMSTest(),
+            new GOSTR3410_2012_256GenerateCertificate(),
+            new MLDSACredentialsTest(),
+            new PKCS10Test(),
+            new X509ExtensionUtilsTest(),
+        };
 
         for (int i = 0; i != tests.length; i++)
         {
