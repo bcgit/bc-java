@@ -17,7 +17,7 @@ public class SnovaEngine
         this.lsq = l * l;
         S = new byte[l][lsq];
         xS = new int[l][lsq];
-        be_aI(S[0], (byte)1);
+        be_aI(S[0], 0, (byte)1);
         beTheS(S[1]);
         for (int index = 2; index < l; ++index)
         {
@@ -43,7 +43,7 @@ public class SnovaEngine
         gf16m[x * l + y] = value;
     }
 
-    public void be_aI(byte[] target, byte a)
+    public void be_aI(byte[] target, int off, byte a)
     {
         // Mask 'a' to ensure it's a valid 4-bit GF16 element
         a = (byte)(a & 0x0F);
@@ -52,7 +52,7 @@ public class SnovaEngine
         {
             for (int j = 0; j < l; ++j)
             {
-                int index = i * l + j;
+                int index = i * l + j + off;
                 target[index] = (i == j) ? a : (byte)0;
             }
         }
@@ -118,9 +118,9 @@ public class SnovaEngine
         Arrays.fill(xTemp, 0); // Secure clear
     }
 
-    public void makeInvertibleByAddingAS(byte[] source)
+    public void makeInvertibleByAddingAS(byte[] source, int off)
     {
-        if (gf16Determinant(source) != 0)
+        if (gf16Determinant(source, off) != 0)
         {
             return;
         }
@@ -131,160 +131,140 @@ public class SnovaEngine
         for (int a = 1; a < 16; a++)
         {
             generateASMatrix(temp, (byte)a);
-            addMatrices(temp, source, source);
+            addMatrices(temp, 0, source, off, source, off);
 
-            if (gf16Determinant(source) != 0)
+            if (gf16Determinant(source, off) != 0)
             {
                 return;
             }
         }
-        throw new IllegalStateException("Failed to make matrix invertible");
+        //throw new IllegalStateException("Failed to make matrix invertible");
     }
 
-    private byte gf16Determinant(byte[] matrix)
+    private byte gf16Determinant(byte[] matrix, int off)
     {
         switch (l)
         {
         case 2:
-            return determinant2x2(matrix);
+            return determinant2x2(matrix, off);
         case 3:
-            return determinant3x3(matrix);
+            return determinant3x3(matrix, off, 0, 1, 2, 0, 1, 2);
         case 4:
-            return determinant4x4(matrix);
+            return determinant4x4(matrix, off);
         case 5:
-            return determinant5x5(matrix);
+            return determinant5x5(matrix, off);
         default:
             throw new IllegalStateException();
         }
     }
 
-    private byte determinant2x2(byte[] m)
+    private byte determinant2x2(byte[] m, int off)
     {
         return gf16Add(
-            gf16Mul(getGF16m(m, 0, 0), getGF16m(m, 1, 1)),
-            gf16Mul(getGF16m(m, 0, 1), getGF16m(m, 1, 0)));
+            gf16Mul(getGF16m(m, 0, off), getGF16m(m, 1, off + 1)),
+            gf16Mul(getGF16m(m, 0, off + 1), getGF16m(m, 1, off)));
     }
 
-    private byte determinant3x3(byte[] m)
+    private byte determinant3x3(byte[] m, int off, int i0, int i1, int i2, int j0, int j1, int j2)
     {
         return gf16Add(
             gf16Add(
-                gf16Mul(getGF16m(m, 0, 0), gf16Add(
-                    gf16Mul(getGF16m(m, 1, 1), getGF16m(m, 2, 2)),
-                    gf16Mul(getGF16m(m, 1, 2), getGF16m(m, 2, 1))
+                gf16Mul(getGF16m(m, j0, off + i0), gf16Add(
+                    gf16Mul(getGF16m(m, j1, off + i1), getGF16m(m, j2, off + i2)),
+                    gf16Mul(getGF16m(m, j1, off + i2), getGF16m(m, j2, off + i1))
                 )),
-                gf16Mul(getGF16m(m, 0, 1), gf16Add(
-                    gf16Mul(getGF16m(m, 1, 0), getGF16m(m, 2, 2)),
-                    gf16Mul(getGF16m(m, 1, 2), getGF16m(m, 2, 0))
+                gf16Mul(getGF16m(m, j0, off + i1), gf16Add(
+                    gf16Mul(getGF16m(m, j1, off + i0), getGF16m(m, j2, off + i2)),
+                    gf16Mul(getGF16m(m, j1, off + i2), getGF16m(m, j2, off + i0))
                 ))
             ),
-            gf16Mul(getGF16m(m, 0, 2), gf16Add(
-                gf16Mul(getGF16m(m, 1, 0), getGF16m(m, 2, 1)),
-                gf16Mul(getGF16m(m, 1, 1), getGF16m(m, 2, 0))
+            gf16Mul(getGF16m(m, j0, off + i2), gf16Add(
+                gf16Mul(getGF16m(m, j1, off + i0), getGF16m(m, j2, off + i1)),
+                gf16Mul(getGF16m(m, j1, off + i1), getGF16m(m, j2, off + i0))
             ))
         );
     }
 
-    private byte determinant3x3(byte[] m, int i0, int i1, int i2, int j0, int j1, int j2)
+    private byte determinant4x4(byte[] m, int off)
     {
-        return gf16Add(
+        byte d0 = gf16Mul(getGF16m(m, 0, off), gf16Add(
             gf16Add(
-                gf16Mul(getGF16m(m, j0, i0), gf16Add(
-                    gf16Mul(getGF16m(m, j1, i1), getGF16m(m, j2, i2)),
-                    gf16Mul(getGF16m(m, j1, i2), getGF16m(m, j2, i1))
-                )),
-                gf16Mul(getGF16m(m, j0, i1), gf16Add(
-                    gf16Mul(getGF16m(m, j1, i0), getGF16m(m, j2, i2)),
-                    gf16Mul(getGF16m(m, j1, i2), getGF16m(m, j2, i0))
-                ))
+                pod(m, off, 1, 1, 2, 2, 3, 3, 2, 3, 3, 2),
+                pod(m, off, 1, 2, 2, 1, 3, 3, 2, 3, 3, 1)
             ),
-            gf16Mul(getGF16m(m, j0, i2), gf16Add(
-                gf16Mul(getGF16m(m, j1, i0), getGF16m(m, j2, i1)),
-                gf16Mul(getGF16m(m, j1, i1), getGF16m(m, j2, i0))
-            ))
-        );
-    }
-
-    private byte determinant4x4(byte[] m)
-    {
-        byte d0 = gf16Mul(getGF16m(m, 0, 0), gf16Add(
-            gf16Add(
-                pod(m, 1, 1, 2, 2, 3, 3, 2, 3, 3, 2),
-                pod(m, 1, 2, 2, 1, 3, 3, 2, 3, 3, 1)
-            ),
-            pod(m, 1, 3, 2, 1, 3, 2, 2, 2, 3, 1)
+            pod(m, off, 1, 3, 2, 1, 3, 2, 2, 2, 3, 1)
         ));
 
-        byte d1 = gf16Mul(getGF16m(m, 0, 1), gf16Add(
+        byte d1 = gf16Mul(getGF16m(m, 0, off + 1), gf16Add(
             gf16Add(
-                pod(m, 1, 0, 2, 2, 3, 3, 2, 3, 3, 2),
-                pod(m, 1, 2, 2, 0, 3, 3, 2, 3, 3, 0)
+                pod(m, off, 1, 0, 2, 2, 3, 3, 2, 3, 3, 2),
+                pod(m, off, 1, 2, 2, 0, 3, 3, 2, 3, 3, 0)
             ),
-            pod(m, 1, 3, 2, 0, 3, 2, 2, 2, 3, 0)
+            pod(m, off, 1, 3, 2, 0, 3, 2, 2, 2, 3, 0)
         ));
 
-        byte d2 = gf16Mul(getGF16m(m, 0, 2), gf16Add(
+        byte d2 = gf16Mul(getGF16m(m, 0, off + 2), gf16Add(
             gf16Add(
-                pod(m, 1, 0, 2, 1, 3, 3, 2, 3, 3, 1),
-                pod(m, 1, 1, 2, 0, 3, 3, 2, 3, 3, 0)
+                pod(m, off, 1, 0, 2, 1, 3, 3, 2, 3, 3, 1),
+                pod(m, off, 1, 1, 2, 0, 3, 3, 2, 3, 3, 0)
             ),
-            pod(m, 1, 3, 2, 0, 3, 1, 2, 1, 3, 0)
+            pod(m, off, 1, 3, 2, 0, 3, 1, 2, 1, 3, 0)
         ));
 
-        byte d3 = gf16Mul(getGF16m(m, 0, 3), gf16Add(
+        byte d3 = gf16Mul(getGF16m(m, 0, off + 3), gf16Add(
             gf16Add(
-                pod(m, 1, 0, 2, 1, 3, 2, 2, 2, 3, 1),
-                pod(m, 1, 1, 2, 0, 3, 2, 2, 2, 3, 0)
+                pod(m, off, 1, 0, 2, 1, 3, 2, 2, 2, 3, 1),
+                pod(m, off, 1, 1, 2, 0, 3, 2, 2, 2, 3, 0)
             ),
-            pod(m, 1, 2, 2, 0, 3, 1, 2, 1, 3, 0)
+            pod(m, off, 1, 2, 2, 0, 3, 1, 2, 1, 3, 0)
         ));
 
         return (byte)(d0 ^ d1 ^ d2 ^ d3);
     }
 
-    private byte determinant5x5(byte[] m)
+    private byte determinant5x5(byte[] m, int off)
     {
-        byte result = gf16Mul(determinant3x3(m, 0, 1, 2, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,3), getGF16m(m, 4,4)), gf16Mul(getGF16m(m, 3,4),getGF16m(m, 4,3))));
-        result ^= gf16Mul(determinant3x3(m, 0, 1, 3, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,2), getGF16m(m, 4,4)), gf16Mul(getGF16m(m, 3,4),getGF16m(m, 4,2))));
-        result ^= gf16Mul(determinant3x3(m, 0, 1, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,2), getGF16m(m, 4,3)), gf16Mul(getGF16m(m, 3,3),getGF16m(m, 4,2))));
-        result ^= gf16Mul(determinant3x3(m, 0, 2, 3, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,1), getGF16m(m, 4,4)), gf16Mul(getGF16m(m, 3,4),getGF16m(m, 4,1))));
-        result ^= gf16Mul(determinant3x3(m, 0, 2, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,1), getGF16m(m, 4,3)), gf16Mul(getGF16m(m, 3,3),getGF16m(m, 4,1))));
-        result ^= gf16Mul(determinant3x3(m, 0, 3, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,1), getGF16m(m, 4,2)), gf16Mul(getGF16m(m, 3,2),getGF16m(m, 4,1))));
-        result ^= gf16Mul(determinant3x3(m, 1, 2, 3, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,0), getGF16m(m, 4,4)), gf16Mul(getGF16m(m, 3,4),getGF16m(m, 4,0))));
-        result ^= gf16Mul(determinant3x3(m, 1, 2, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,0), getGF16m(m, 4,3)), gf16Mul(getGF16m(m, 3,3),getGF16m(m, 4,0))));
-        result ^= gf16Mul(determinant3x3(m, 1, 3, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,0), getGF16m(m, 4,2)), gf16Mul(getGF16m(m, 3,2),getGF16m(m, 4,0))));
-        result ^= gf16Mul(determinant3x3(m, 2, 3, 4, 0, 1, 2),
-            gf16Add(gf16Mul(getGF16m(m, 3,0), getGF16m(m, 4,1)), gf16Mul(getGF16m(m, 3,1),getGF16m(m, 4,0))));
+        byte result = gf16Mul(determinant3x3(m, off, 0, 1, 2, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 3), getGF16m(m, 4, off + 4)), gf16Mul(getGF16m(m, 3, off + 4), getGF16m(m, 4, off + 3))));
+        result ^= gf16Mul(determinant3x3(m, off, 0, 1, 3, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 2), getGF16m(m, 4, off + 4)), gf16Mul(getGF16m(m, 3, off + 4), getGF16m(m, 4, off + 2))));
+        result ^= gf16Mul(determinant3x3(m, off, 0, 1, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 2), getGF16m(m, 4, off + 3)), gf16Mul(getGF16m(m, 3, off + 3), getGF16m(m, 4, off + 2))));
+        result ^= gf16Mul(determinant3x3(m, off, 0, 2, 3, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3,off +  1), getGF16m(m, 4,off +  4)), gf16Mul(getGF16m(m, 3, off + 4), getGF16m(m, 4,off +  1))));
+        result ^= gf16Mul(determinant3x3(m, off, 0, 2, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 1), getGF16m(m, 4, off + 3)), gf16Mul(getGF16m(m, 3, off + 3), getGF16m(m, 4,off +  1))));
+        result ^= gf16Mul(determinant3x3(m, off, 0, 3, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 1), getGF16m(m, 4, off + 2)), gf16Mul(getGF16m(m, 3,off +  2), getGF16m(m, 4, off + 1))));
+        result ^= gf16Mul(determinant3x3(m, off, 1, 2, 3, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 0), getGF16m(m, 4, off + 4)), gf16Mul(getGF16m(m, 3, off + 4), getGF16m(m, 4, off + 0))));
+        result ^= gf16Mul(determinant3x3(m, off, 1, 2, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 0), getGF16m(m, 4, off + 3)), gf16Mul(getGF16m(m, 3,off +  3), getGF16m(m, 4, off + 0))));
+        result ^= gf16Mul(determinant3x3(m, off, 1, 3, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 0), getGF16m(m, 4, off + 2)), gf16Mul(getGF16m(m, 3, off + 2), getGF16m(m, 4,off +  0))));
+        result ^= gf16Mul(determinant3x3(m, off, 2, 3, 4, 0, 1, 2),
+            gf16Add(gf16Mul(getGF16m(m, 3, off + 0), getGF16m(m, 4, off + 1)), gf16Mul(getGF16m(m, 3,off +  1), getGF16m(m, 4,off +  0))));
 //        return result;
-        byte a012 = determinant3x3(m, 0, 1, 2, 0, 1, 2);
-        byte b012 = gf16Add(gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 3)));
-        byte a013 = determinant3x3(m, 0, 1, 3, 0, 1, 2);
-        byte b013 = gf16Add(gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 2)));
-        byte a014 = determinant3x3(m, 0, 1, 4, 0, 1, 2);
-        byte b014 = gf16Add(gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 2)));
-        byte a023 = determinant3x3(m, 0, 2, 3, 0, 1, 2);
-        byte b023 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 1)));
-        byte a024 = determinant3x3(m, 0, 2, 4, 0, 1, 2);
-        byte b024 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 1)));
-        byte a034 = determinant3x3(m, 0, 3, 4, 0, 1, 2);
-        byte b034 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 2)), gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 1)));
-        byte a123 = determinant3x3(m, 1, 2, 3, 0, 1, 2);
-        byte b123 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 0)));
-        byte a124 = determinant3x3(m, 1, 2, 4, 0, 1, 2);
-        byte b124 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 0)));
-        byte a134 = determinant3x3(m, 1, 3, 4, 0, 1, 2);
-        byte b134 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 2)), gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 0)));
-        byte a234 = determinant3x3(m, 2, 3, 4, 0, 1, 2);
-        byte b234 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 1)), gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 0)));
+//        byte a012 = determinant3x3(m, 0, 1, 2, 0, 1, 2);
+//        byte b012 = gf16Add(gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 3)));
+//        byte a013 = determinant3x3(m, 0, 1, 3, 0, 1, 2);
+//        byte b013 = gf16Add(gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 2)));
+//        byte a014 = determinant3x3(m, 0, 1, 4, 0, 1, 2);
+//        byte b014 = gf16Add(gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 2)));
+//        byte a023 = determinant3x3(m, 0, 2, 3, 0, 1, 2);
+//        byte b023 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 1)));
+//        byte a024 = determinant3x3(m, 0, 2, 4, 0, 1, 2);
+//        byte b024 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 1)));
+//        byte a034 = determinant3x3(m, 0, 3, 4, 0, 1, 2);
+//        byte b034 = gf16Add(gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 2)), gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 1)));
+//        byte a123 = determinant3x3(m, 1, 2, 3, 0, 1, 2);
+//        byte b123 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 4)), gf16Mul(getGF16m(m, 3, 4), getGF16m(m, 4, 0)));
+//        byte a124 = determinant3x3(m, 1, 2, 4, 0, 1, 2);
+//        byte b124 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 3)), gf16Mul(getGF16m(m, 3, 3), getGF16m(m, 4, 0)));
+//        byte a134 = determinant3x3(m, 1, 3, 4, 0, 1, 2);
+//        byte b134 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 2)), gf16Mul(getGF16m(m, 3, 2), getGF16m(m, 4, 0)));
+//        byte a234 = determinant3x3(m, 2, 3, 4, 0, 1, 2);
+//        byte b234 = gf16Add(gf16Mul(getGF16m(m, 3, 0), getGF16m(m, 4, 1)), gf16Mul(getGF16m(m, 3, 1), getGF16m(m, 4, 0)));
         return result;
     }
 
@@ -305,18 +285,18 @@ public class SnovaEngine
     }
 
     // POD -> entry[a][b] * (entry[c][d] * entry[e][f] + entry[g][h] * entry[i][j])
-    private byte pod(byte[] m, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j)
+    private byte pod(byte[] m, int off, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j)
     {
-        return gf16Mul(getGF16m(m, a, b), (byte)(gf16Mul(getGF16m(m, c, d), getGF16m(m, e, f)) ^ gf16Mul(getGF16m(m, g, h), getGF16m(m, i, j))));
+        return gf16Mul(getGF16m(m, a, off + b), (byte)(gf16Mul(getGF16m(m, c, off + d), getGF16m(m, e, off + f)) ^ gf16Mul(getGF16m(m, g, off + h), getGF16m(m, i, off + j))));
     }
 
-    private void addMatrices(byte[] a, byte[] b, byte[] c)
+    private void addMatrices(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff)
     {
         for (int i = 0; i < l; i++)
         {
             for (int j = 0; j < l; j++)
             {
-                setGF16m(c, i, j, gf16Add(getGF16m(a, i, j), getGF16m(b, i, j)));
+                setGF16m(c, i, cOff + j, gf16Add(getGF16m(a, i, aOff + j), getGF16m(b, i, bOff + j)));
             }
         }
     }
@@ -333,24 +313,24 @@ public class SnovaEngine
         return GF16Utils.mul(a, b);
     }
 
-    public void genAFqS(byte[] c, int cOff, byte[] ptMatrix)
+    public void genAFqS(byte[] c, int cOff, byte[] ptMatrix, int off)
     {
         byte[] temp = new byte[l * l];
 
         // Initialize with be_aI
-        be_aI(ptMatrix, c[cOff]);
+        be_aI(ptMatrix, off, c[cOff]);
 
         // Process middle terms
         for (int i = 1; i < l - 1; ++i)
         {
             gf16mScale(S[i], c[cOff + i], temp);
-            addMatrices(ptMatrix, temp, ptMatrix);
+            addMatrices(ptMatrix, off, temp, 0, ptMatrix, off);
         }
 
         // Handle last term with special case
         byte lastScalar = (byte)((c[cOff + l - 1] != 0) ? c[cOff + l - 1] : 16 - (c[cOff] + (c[cOff] == 0 ? 1 : 0)));
         gf16mScale(S[l - 1], lastScalar, temp);
-        addMatrices(ptMatrix, temp, ptMatrix);
+        addMatrices(ptMatrix, off, temp, 0, ptMatrix, off);
 
         // Clear temporary matrix
         //clearMatrix(temp);

@@ -53,7 +53,7 @@ public class SnovaKeyPairGenerator
         byte[] ptPublicKeySeed = Arrays.copyOfRange(seedPair, 0, publicSeedLength);
         byte[] ptPrivateKeySeed = Arrays.copyOfRange(seedPair, publicSeedLength, seedPair.length);
 
-        SnovaKeyElements keyElements = new SnovaKeyElements(params);
+        SnovaKeyElements keyElements = new SnovaKeyElements(params, engine);
         generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed);
 
         // Pack public key components
@@ -82,7 +82,7 @@ public class SnovaKeyPairGenerator
         genSeedsAndT12(keyElements.T12, skSeed);
 
         // Generate map components
-        genABQP(keyElements.map1, pkSeed);
+        genABQP(keyElements.map1, pkSeed, keyElements.fixedAbq);
 
         // Generate F matrices
         engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
@@ -120,7 +120,7 @@ public class SnovaKeyPairGenerator
         }
     }
 
-    private void genABQP(MapGroup1 map1, byte[] pkSeed)
+    private void genABQP(MapGroup1 map1, byte[] pkSeed, byte[] fixedAbq)
     {
         int l = params.getL();
         int lsq = l * l;
@@ -172,40 +172,48 @@ public class SnovaKeyPairGenerator
         byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
         GF16Utils.decode(prngOutput, temp, temp.length);
         map1.fill(temp);
-        GF16Utils.decode(prngOutput, temp.length >> 1, qTemp, 0, qTemp.length);
+        if (l >= 4)
+        {
+            GF16Utils.decode(prngOutput, temp.length >> 1, qTemp, 0, qTemp.length);
 
-        // Post-processing for invertible matrices
-        for (int pi = 0; pi < m; ++pi)
-        {
-            for (int a = 0; a < alpha; ++a)
+            // Post-processing for invertible matrices
+            for (int pi = 0; pi < m; ++pi)
             {
-                engine.makeInvertibleByAddingAS(map1.aAlpha[pi][a]);
+                for (int a = 0; a < alpha; ++a)
+                {
+                    engine.makeInvertibleByAddingAS(map1.aAlpha[pi][a], 0);
+                }
             }
-        }
-        for (int pi = 0; pi < m; ++pi)
-        {
-            for (int a = 0; a < alpha; ++a)
+            for (int pi = 0; pi < m; ++pi)
             {
-                engine.makeInvertibleByAddingAS(map1.bAlpha[pi][a]);
+                for (int a = 0; a < alpha; ++a)
+                {
+                    engine.makeInvertibleByAddingAS(map1.bAlpha[pi][a], 0);
+                }
             }
-        }
 
-        int ptArray = 0;
-        for (int pi = 0; pi < m; ++pi)
-        {
-            for (int a = 0; a < alpha; ++a)
+            int ptArray = 0;
+            for (int pi = 0; pi < m; ++pi)
             {
-                engine.genAFqS(qTemp, ptArray, map1.qAlpha1[pi][a]);
-                ptArray += l;
+                for (int a = 0; a < alpha; ++a)
+                {
+                    engine.genAFqS(qTemp, ptArray, map1.qAlpha1[pi][a], 0);
+                    ptArray += l;
+                }
+            }
+            for (int pi = 0; pi < m; ++pi)
+            {
+                for (int a = 0; a < alpha; ++a)
+                {
+                    engine.genAFqS(qTemp, ptArray, map1.qAlpha2[pi][a], 0);
+                    ptArray += l;
+                }
             }
         }
-        for (int pi = 0; pi < m; ++pi)
+        else
         {
-            for (int a = 0; a < alpha; ++a)
-            {
-                engine.genAFqS(qTemp, ptArray, map1.qAlpha2[pi][a]);
-                ptArray += l;
-            }
+            //TODO: fixedAbq fill more than aAlpha. bAlpha should be filled as well
+            MapGroup1.fillAlpha(fixedAbq, 0, map1.aAlpha, m * o * alpha * lsq);
         }
     }
 
