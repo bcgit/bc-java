@@ -1,8 +1,12 @@
 package org.bouncycastle.cms.test;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -68,6 +72,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.test.SampleCredentials;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
@@ -106,10 +111,13 @@ import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 public class NewSignedDataTest
     extends TestCase
@@ -688,6 +696,29 @@ public class NewSignedDataTest
             "zAYME3itle90ztUh3NcEYQxJOQNZRGhkTMsXHKNPDCGS+erpU8BERkU+FOCH9+wS\n" +
             "CiwhMCLDeeEBOdxWZHVbIiFnnRTQqyIDGAOSSIUmjE/pMPKpPvumkCGq2r9GxPV9\n" +
             "YlpnThaYbDCnWg8tbWYAAAAAAAA=");
+
+    private static byte[] signedData_mldsa44 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-44.pem");
+    private static byte[] signedData_mldsa65 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-65.pem");
+    private static byte[] signedData_mldsa87 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-87.pem");
+
+    private static byte[] loadPemContents(String path, String name)
+    {
+        try
+        {
+            InputStream input = new BufferedInputStream(TestResourceFinder.findTestResource(path, name));
+            Reader reader = new InputStreamReader(input);
+
+            PemReader pemReader = new PemReader(reader);
+            PemObject pemObject = pemReader.readPemObject();
+            pemReader.close();
+
+            return pemObject.getContent();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     static
     {
@@ -3447,6 +3478,24 @@ public class NewSignedDataTest
         }
     }
 
+    public void testVerifySignedDataMLDsa44()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa44, SampleCredentials.ML_DSA_44);
+    }
+
+    public void testVerifySignedDataMLDsa65()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa65, SampleCredentials.ML_DSA_65);
+    }
+
+    public void testVerifySignedDataMLDsa87()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa87, SampleCredentials.ML_DSA_87);
+    }
+
     private void verifySignatures(CMSSignedDataParser sp)
         throws Exception
     {
@@ -3466,6 +3515,21 @@ public class NewSignedDataTest
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
+    }
+
+    private static void implTestVerifySignedData(byte[] signedData, SampleCredentials credentials)
+        throws Exception
+    {
+        CMSSignedData sd = new CMSSignedData(signedData);
+
+        assertTrue(sd.verifySignatures(new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(credentials.getCertificate());
+            }
+        }));
     }
 
     private static class TestCMSSignatureAlgorithmNameGenerator
