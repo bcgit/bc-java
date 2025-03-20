@@ -59,7 +59,7 @@ class MapGroup1
         return rlt;
     }
 
-    private static int fillAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
+    static int fillAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
     {
         int rlt = 0;
         for (int i = 0; i < alpha.length; ++i)
@@ -117,30 +117,30 @@ class MapGroup1
 //        return rlt;
 //    }
 
-    static int encodeP(byte[][][][] p, byte[] output, int outOff, int len)
-    {
-        int rlt = 0;
-        for (int i = 0; i < p.length; ++i)
-        {
-            rlt += encodeAlpha(p[i], output, outOff + rlt, len - rlt);
-        }
-        return rlt;
-    }
+//    static int encodeP(byte[][][][] p, byte[] output, int outOff, int len)
+//    {
+//        int rlt = 0;
+//        for (int i = 0; i < p.length; ++i)
+//        {
+//            rlt += encodeAlpha(p[i], output, outOff + rlt, len - rlt);
+//        }
+//        return rlt;
+//    }
 
-    static int encodeAlpha(byte[][][] alpha, byte[] output, int outOff, int len)
-    {
-        int rlt = 0;
-        for (int i = 0; i < alpha.length; ++i)
-        {
-            for (int j = 0; j < alpha[i].length; ++j)
-            {
-                int tmp = Math.min(alpha[i][j].length, len << 1);
-                GF16Utils.encode(alpha[i][j], output, outOff + rlt, tmp);
-                rlt += (tmp + 1) >> 1;
-                len -= (tmp + 1) >> 1;
-            }
-        }
-        return rlt;
-    }
+//    static int encodeAlpha(byte[][][] alpha, byte[] output, int outOff, int len)
+//    {
+//        int rlt = 0;
+//        for (int i = 0; i < alpha.length; ++i)
+//        {
+//            for (int j = 0; j < alpha[i].length; ++j)
+//            {
+//                int tmp = Math.min(alpha[i][j].length, len << 1);
+//                GF16Utils.encode(alpha[i][j], output, outOff + rlt, tmp);
+//                rlt += (tmp + 1) >> 1;
+//                len -= (tmp + 1) >> 1;
+//            }
+//        }
+//        return rlt;
+//    }
 
 }
