@@ -455,11 +455,12 @@ public class BcTlsCrypto
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
+            return false;
         // TODO[tls] Test coverage before adding
         case SignatureScheme.DRAFT_mldsa44:
         case SignatureScheme.DRAFT_mldsa65:
         case SignatureScheme.DRAFT_mldsa87:
-            return false;
+            return true;
         default:
         {
             short signature = SignatureScheme.getSignatureAlgorithm(signatureScheme);
