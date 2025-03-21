@@ -177,4 +177,14 @@ public class SnovaParameters
         return ((l * l * (4 * o * alpha + o * (v * v + v * o + o * v) + v * o) + 1) >> 1)
             + SnovaKeyPairGenerator.privateSeedLength + SnovaKeyPairGenerator.publicSeedLength;
     }
+
+    public int getN()
+    {
+        return v + o;
+    }
+
+    public int getLsq()
+    {
+        return l * l;
+    }
 }

@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.snova.SnovaKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaSigner;
 
 
 public class SnovaTest
@@ -158,7 +159,7 @@ public class SnovaTest
             @Override
             public Signer getSigner()
             {
-                return null;
+                return new SnovaSigner();
             }
 
             @Override

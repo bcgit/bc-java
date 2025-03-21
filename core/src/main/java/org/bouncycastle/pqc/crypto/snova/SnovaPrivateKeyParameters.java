@@ -7,11 +7,13 @@ public class SnovaPrivateKeyParameters
     extends AsymmetricKeyParameter
 {
     private final byte[] privateKey;
+    private final SnovaParameters parameters;
 
-    public SnovaPrivateKeyParameters(byte[] privateKey)
+    public SnovaPrivateKeyParameters(SnovaParameters parameters, byte[] privateKey)
     {
         super(true);
         this.privateKey = Arrays.clone(privateKey);
+        this.parameters = parameters;
     }
 
     public byte[] getPrivateKey()
@@ -22,5 +24,10 @@ public class SnovaPrivateKeyParameters
     public byte[] getEncoded()
     {
         return Arrays.clone(privateKey);
+    }
+
+    public SnovaParameters getParameters()
+    {
+        return parameters;
     }
 }
