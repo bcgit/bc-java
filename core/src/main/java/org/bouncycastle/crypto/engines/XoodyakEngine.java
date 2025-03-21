@@ -14,9 +14,9 @@ import org.bouncycastle.util.Pack;
  */
 
 public class XoodyakEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
-    private byte[] state;
+    private final byte[] state;
     private int phase;
     private int mode;
     private static final int f_bPrime_1 = 47;
@@ -34,11 +34,10 @@ public class XoodyakEngine
     public XoodyakEngine()
     {
         algorithmName = "Xoodyak AEAD";
-        KEY_SIZE = 16;
-        IV_SIZE = 16;
-        MAC_SIZE = 16;
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         BlockSize = 24;
         AADBufferSize = 44;
+        state = new byte[48];
         setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
@@ -48,9 +47,6 @@ public class XoodyakEngine
     {
         K = key;
         this.iv = iv;
-        state = new byte[48];
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset();
     }
 
     protected void processBufferAAD(byte[] input, int inOff)
@@ -67,23 +63,7 @@ public class XoodyakEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
-            {
-                return;
-            }
-        case EncInit:
-        case EncAad:
-            processFinalAAD();
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD3(nextState, isDoFinal);
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -131,8 +111,6 @@ public class XoodyakEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
-        ensureInitialized();
         super.reset(clearMac);
         Arrays.fill(state, (byte)0);
         encrypted = false;
