@@ -49,6 +49,12 @@ public class MLDSA
             addSignatureAlgorithm(provider, "ML-DSA-87", PREFIX + "SignatureSpi$MLDSA87", NISTObjectIdentifiers.id_ml_dsa_87);
             provider.addAlgorithm("Alg.Alias.Signature.MLDSA", "ML-DSA");
 
+            addSignatureAlgorithm(provider, "ML-DSA-CALCULATE-MU", PREFIX + "SignatureSpi$MLDSACalcMu", (ASN1ObjectIdentifier)null);
+            provider.addAlgorithm("Alg.Alias.Signature.MLDSA-CALCULATE-MU", "ML-DSA-CALCULATE-MU");
+
+            addSignatureAlgorithm(provider, "ML-DSA-EXTERNAL-MU", PREFIX + "SignatureSpi$MLDSAExtMu", (ASN1ObjectIdentifier)null);
+            provider.addAlgorithm("Alg.Alias.Signature.MLDSA-EXTERNAL-MU", "ML-DSA-EXTERNAL-MU");
+
             addSignatureAlgorithm(provider, "HASH-ML-DSA", PREFIX + "HashSignatureSpi$MLDSA", (ASN1ObjectIdentifier)null);
             addSignatureAlgorithm(provider, "ML-DSA-44-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA44", NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
             addSignatureAlgorithm(provider, "ML-DSA-65-WITH-SHA512", PREFIX + "HashSignatureSpi$MLDSA65", NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
