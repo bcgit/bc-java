@@ -11,7 +11,7 @@ import org.bouncycastle.util.Pack;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/sparkle-spec-final.pdf
  */
 public class SparkleEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     public enum SparkleParameters
     {
@@ -111,9 +111,6 @@ public class SparkleEngine
         npub = new int[RATE_WORDS];
         AADBufferSize = BlockSize = IV_SIZE;
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Default);
-
-        // Relied on by processBytes method for decryption
-//        assert RATE_BYTES >= TAG_BYTES;
     }
 
     protected void init(byte[] key, byte[] iv)
@@ -121,28 +118,11 @@ public class SparkleEngine
     {
         Pack.littleEndianToInt(key, 0, k);
         Pack.littleEndianToInt(iv, 0, npub);
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-
-        reset();
     }
 
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecAad:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD2(nextState);
     }
 
     @Override
@@ -310,7 +290,6 @@ public class SparkleEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
         encrypted = false;
         // The Initialize function loads nonce and key into the state and executes the
         // SPARKLE permutation with the big number of steps.
