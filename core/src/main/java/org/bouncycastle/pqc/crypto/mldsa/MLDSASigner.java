@@ -106,6 +106,10 @@ public class MLDSASigner
     public byte[] generateMuSignature(byte[] mu)
         throws CryptoException, DataLengthException
     {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
         byte[] rnd = new byte[MLDSAEngine.RndBytes];
         if (random != null)
         {
@@ -140,6 +144,11 @@ public class MLDSASigner
 
     public boolean verifyMu(byte[] mu)
     {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
+        
         boolean isTrue = engine.verifyInternalMu(mu);
 
         reset();
@@ -158,6 +167,11 @@ public class MLDSASigner
 
     public boolean verifyMuSignature(byte[] mu, byte[] signature)
     {
+        if (mu.length != MLDSAEngine.CrhBytes)
+        {
+            throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
+        }
+        
         msgDigest.reset();
         
         boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
