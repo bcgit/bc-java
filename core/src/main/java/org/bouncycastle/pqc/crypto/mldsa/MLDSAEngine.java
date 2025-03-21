@@ -388,15 +388,20 @@ class MLDSAEngine
 
         shake256.update(msg, 0, msglen);
 
-        return generateSignature(shake256, rho, key, t0Enc, s1Enc, s2Enc, rnd);
+        return generateSignature(generateMu(shake256), shake256, rho, key, t0Enc, s1Enc, s2Enc, rnd);
     }
 
-    byte[] generateSignature(SHAKEDigest shake256Digest, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    byte[] generateMu(SHAKEDigest shake256Digest)
     {
         byte[] mu = new byte[CrhBytes];
 
         shake256Digest.doFinal(mu, 0, CrhBytes);
 
+        return mu;
+    }
+
+    byte[] generateSignature(byte[] mu, SHAKEDigest shake256Digest, byte[] rho, byte[] key, byte[] t0Enc, byte[] s1Enc, byte[] s2Enc, byte[] rnd)
+    {
         byte[] outSig = new byte[CryptoBytes];
         byte[] rhoPrime = new byte[CrhBytes];
         short nonce = 0;
@@ -491,7 +496,36 @@ class MLDSAEngine
         return null;
     }
 
+    boolean verifyInternalMu(byte[] providedMu)
+    {
+        byte[] mu = new byte[CrhBytes];
+
+        shake256Digest.doFinal(mu, 0);
+
+        return Arrays.constantTimeAreEqual(mu, providedMu);
+    }
+
+    boolean verifyInternalMuSignature(byte[] mu, byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    {
+        byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];
+
+        // Mu
+        System.arraycopy(mu, 0, buf, 0, mu.length);
+
+        return doVerifyInternal(buf, sig, siglen, shake256Digest, rho, encT1);
+    }
+
     boolean verifyInternal(byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
+    {
+        byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];
+
+        // Mu
+        shake256Digest.doFinal(buf, 0);
+
+        return doVerifyInternal(buf, sig, siglen, shake256Digest, rho, encT1);
+    }
+
+    private boolean doVerifyInternal(byte[] buf, byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
     {
         if (siglen != CryptoBytes)
         {
@@ -510,11 +544,6 @@ class MLDSAEngine
         {
             return false;
         }
-
-        byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];
-
-        // Mu
-        shake256Digest.doFinal(buf, 0);
 
         Poly cp = new Poly(this);
         PolyVecMatrix aMatrix = new PolyVecMatrix(this);

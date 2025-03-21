@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.EncodableDigest;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
@@ -366,5 +367,44 @@ public abstract class DigestTest
     private static void mismatch(SimpleTest test, String name, String expected, byte[] found)
     {
         test.fail("mismatch on " + name, expected, new String(Hex.encode(found)));
+    }
+
+    /**
+     * Check xof.
+     *
+     * @param pXof the xof
+     * @param DATALEN DataLength
+     * @param PARTIALLEN Partial length
+     */
+    public static void checkXof(final Xof pXof, int DATALEN, int PARTIALLEN, SecureRandom random, SimpleTest test)
+    {
+        /* Create the data */
+        final byte[] myData = new byte[DATALEN];
+        random.nextBytes(myData);
+
+        /* Update the Xof with the data */
+        pXof.update(myData, 0, DATALEN);
+
+        /* Extract Xof as single block */
+        final byte[] myFull = new byte[DATALEN];
+        pXof.doFinal(myFull, 0, DATALEN);
+
+        /* Update the Xof with the data */
+        pXof.update(myData, 0, DATALEN);
+        final byte[] myPart = new byte[DATALEN];
+
+        /* Create the xof as partial blocks */
+        for (int myPos = 0; myPos < DATALEN; myPos += PARTIALLEN)
+        {
+            final int myLen = Math.min(PARTIALLEN, DATALEN - myPos);
+            pXof.doOutput(myPart, myPos, myLen);
+        }
+        pXof.doFinal(myPart, 0, 0);
+
+        /* Check that they are identical */
+        if (!Arrays.areEqual(myPart, myFull))
+        {
+            test.fail(pXof.getAlgorithmName() + ": Mismatch on partial vs full xof");
+        }
     }
 }

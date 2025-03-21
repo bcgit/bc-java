@@ -10,7 +10,7 @@ import org.bouncycastle.util.Bytes;
  * Specification: https://csrc.nist.gov/CSRC/media/Projects/lightweight-cryptography/documents/finalist-round/updated-spec-doc/elephant-spec-final.pdf
  */
 public class ElephantEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     public enum ElephantParameters
     {
@@ -258,9 +258,11 @@ public class ElephantEngine
             state[0] ^= KeccakRoundConstants[indexRound];//index(0,0)
         }
 
+        //TODO: search for " >>> (8 - " merge with with CamelliaLightEngine.lRot8,
+        // code in OCBBlockCipher.init, DualECSP800DRBG.pad8,
         private byte ROL8(byte a, int offset)
         {
-            return (byte)(((a & 0xff) << offset) | ((a & 0xff) >> (8 - offset)));
+            return (byte)((a << offset) | ((a & 0xff) >>> (8 - offset)));
         }
 
         private int index(int x, int y)
@@ -271,7 +273,7 @@ public class ElephantEngine
 
     private byte rotl(byte b)
     {
-        return (byte)(((b & 0xFF) << 1) | ((b & 0xFF) >>> 7));
+        return (byte)((b << 1) | ((b & 0xFF) >>> 7));
     }
 
     // State should be BLOCK_SIZE bytes long
@@ -291,8 +293,6 @@ public class ElephantEngine
         expanded_key = new byte[BlockSize];
         System.arraycopy(k, 0, expanded_key, 0, KEY_SIZE);
         instance.permutation(expanded_key);
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset(false);
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -441,21 +441,7 @@ public class ElephantEngine
 
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecAad:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD2(nextState);
     }
 
     @Override
@@ -479,12 +465,11 @@ public class ElephantEngine
 
     protected void reset(boolean clearMac)
     {
+        super.reset(clearMac);
         Arrays.fill(tag_buffer, (byte)0);
         Arrays.fill(previous_outputMessage, (byte)0);
         nb_its = 0;
         adOff = -1;
-        super.reset(clearMac);
-        bufferReset();
     }
 
     protected void checkAAD()

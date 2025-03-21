@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.ExtendedDigest;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.util.Arrays;
 
-public abstract class BufferBaseDigest
+abstract class BufferBaseDigest
     implements ExtendedDigest
 {
     protected enum ProcessingBufferType

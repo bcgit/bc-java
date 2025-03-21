@@ -93,6 +93,34 @@ public class MLDSASigner
         msgDigest.update(in, off, len);
     }
 
+    public byte[] generateMu()
+        throws CryptoException, DataLengthException
+    {
+        byte[] mu = engine.generateMu(msgDigest);
+
+        reset();
+
+        return mu;
+    }
+
+    public byte[] generateMuSignature(byte[] mu)
+        throws CryptoException, DataLengthException
+    {
+        byte[] rnd = new byte[MLDSAEngine.RndBytes];
+        if (random != null)
+        {
+            random.nextBytes(rnd);
+        }
+
+        msgDigest.reset();
+
+        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+
+        reset();
+
+        return sig;
+    }
+
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
     {
@@ -102,16 +130,37 @@ public class MLDSASigner
             random.nextBytes(rnd);
         }
 
-        byte[] sig = engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        byte[] mu = engine.generateMu(msgDigest);
+        byte[] sig = engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
 
         reset();
 
         return sig;
     }
 
+    public boolean verifyMu(byte[] mu)
+    {
+        boolean isTrue = engine.verifyInternalMu(mu);
+
+        reset();
+
+        return isTrue;
+    }
+
     public boolean verifySignature(byte[] signature)
     {
         boolean isTrue = engine.verifyInternal(signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
+
+        reset();
+
+        return isTrue;
+    }
+
+    public boolean verifyMuSignature(byte[] mu, byte[] signature)
+    {
+        msgDigest.reset();
+        
+        boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
 
         reset();
 

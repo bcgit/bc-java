@@ -12,7 +12,7 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class ISAPEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
 
     public enum IsapType
@@ -682,10 +682,7 @@ public class ISAPEngine
         npub = iv;
         k = key;
         ISAPAEAD.init();
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset();
     }
-
 
     protected void processBufferAAD(byte[] input, int inOff)
     {
@@ -700,23 +697,7 @@ public class ISAPEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
-            {
-                return;
-            }
-        case EncInit:
-        case EncAad:
-            processFinalAAD();
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD3(nextState, isDoFinal);
     }
 
     protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
@@ -747,9 +728,7 @@ public class ISAPEngine
 
     protected void reset(boolean clearMac)
     {
-        ensureInitialized();
-        bufferReset();
-        ISAPAEAD.reset();
         super.reset(clearMac);
+        ISAPAEAD.reset();
     }
 }
