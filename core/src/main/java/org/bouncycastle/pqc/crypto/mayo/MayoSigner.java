@@ -50,7 +50,6 @@ public class MayoSigner
     @Override
     public void init(boolean forSigning, CipherParameters param)
     {
-
         if (forSigning)
         {
             pubKey = null;

@@ -71,8 +71,8 @@ public class SnovaKeyPairGenerator
         }
 
         return new AsymmetricCipherKeyPair(
-            new SnovaPublicKeyParameters(pk),
-            new SnovaPrivateKeyParameters(sk)
+            new SnovaPublicKeyParameters(params, pk),
+            new SnovaPrivateKeyParameters(params, sk)
         );
     }
 
