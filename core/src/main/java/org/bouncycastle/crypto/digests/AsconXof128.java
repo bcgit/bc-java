@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.digests;
 
-import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -15,10 +14,8 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class AsconXof128
-    extends AsconBaseDigest
-    implements Xof
+    extends AsconXofBase
 {
-    private boolean m_squeezing;
 
     public AsconXof128()
     {
@@ -51,44 +48,9 @@ public class AsconXof128
         Pack.longToLittleEndian(w, bytes, inOff, n);
     }
 
-    protected void padAndAbsorb()
-    {
-        m_squeezing = true;
-        super.padAndAbsorb();
-    }
-
-    @Override
-    public void update(byte in)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(in);
-    }
-
-    @Override
-    public void update(byte[] input, int inOff, int len)
-    {
-        ensureNoAbsorbWhileSqueezing(m_squeezing);
-        super.update(input, inOff, len);
-    }
-
-    @Override
-    public int doOutput(byte[] output, int outOff, int outLen)
-    {
-        return hash(output, outOff, outLen);
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff, int outLen)
-    {
-        int rlt = doOutput(output, outOff, outLen);
-        reset();
-        return rlt;
-    }
-
     @Override
     public void reset()
     {
-        m_squeezing = false;
         super.reset();
         /* initialize */
         p.set(-2701369817892108309L, -3711838248891385495L, -1778763697082575311L, 1072114354614917324L, -2282070310009238562L);

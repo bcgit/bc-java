@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -44,6 +45,12 @@ public class AsconTest
     public void performTest()
         throws Exception
     {
+        testVectorsAsconCXof128_512();
+        DigestTest.checkXof(new AsconXof128(), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconCXof128(), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconXof(AsconXof.AsconParameters.AsconXof), 1429, 317, new SecureRandom(), this);
+        DigestTest.checkXof(new AsconXof(AsconXof.AsconParameters.AsconXofA), 1429, 317, new SecureRandom(), this);
+
         testVectorsEngine_asconaead128();
         testVectorsDigest_AsconHash256();
         testVectorsXof_AsconXof128();
@@ -512,6 +519,12 @@ public class AsconTest
         throws Exception
     {
         implTestVectorsXof(new AsconXof128(), "crypto/ascon/asconxof128", "LWC_HASH_KAT_256.txt");
+    }
+
+    public void testVectorsAsconCXof128_512()
+        throws Exception
+    {
+        implTestVectorsAsconCXof128(512 / 8, "crypto/ascon/asconcxof128", "LWC_CXOF_KAT_128_512.txt");
     }
 
     public void testVectorsXof_AsconXof()
@@ -1158,6 +1171,54 @@ public class AsconTest
                 }
                 //System.out.println("pass "+ count);
                 map.clear();
+            }
+            else
+            {
+                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    private void implTestVectorsAsconCXof128(int hash_length, String path, String filename)
+        throws Exception
+    {
+        Random random = new Random();
+
+        InputStream src = TestResourceFinder.findTestResource(path, filename);
+        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+        String line;
+        HashMap<String, String> map = new HashMap<String, String>();
+        while ((line = bin.readLine()) != null)
+        {
+            int a = line.indexOf('=');
+            if (a < 0)
+            {
+                byte[] zByte = Hex.decode((String)map.get("Z"));
+                byte[] ptByte = Hex.decode((String)map.get("Msg"));
+                byte[] expected = Hex.decode((String)map.get("MD"));
+
+                byte[] hash = new byte[hash_length];
+
+                AsconCXof128 ascon = new AsconCXof128(zByte);
+                ascon.update(ptByte, 0, ptByte.length);
+                ascon.doFinal(hash, 0, hash_length);
+                if (!areEqual(hash, expected))
+                {
+                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                }
+
+                if (ptByte.length > 1)
+                {
+                    int split = random.nextInt(ptByte.length - 1) + 1;
+                    ascon = new AsconCXof128(zByte);
+                    ascon.update(ptByte, 0, split);
+                    ascon.update(ptByte, split, ptByte.length - split);
+                    ascon.doFinal(hash, 0, hash_length);
+                    if (!areEqual(hash, expected))
+                    {
+                        mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
+                    }
+                }
             }
             else
             {
