@@ -30,6 +30,11 @@ public class PreferredAEADCiphersuites
      */
     private static final Combination AES_128_OCB = new Combination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB);
 
+    public static PreferredAEADCiphersuites DEFAULT()
+    {
+        return new PreferredAEADCiphersuites(false, new Combination[]{AES_128_OCB});
+    }
+
     /**
      * Create a new PreferredAEADAlgorithms signature subpacket from raw data.
      *
