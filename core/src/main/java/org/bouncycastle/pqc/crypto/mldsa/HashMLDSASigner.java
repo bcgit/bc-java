@@ -119,8 +119,9 @@ public class HashMLDSASigner
         {
             random.nextBytes(rnd);
         }
+        byte[] mu = engine.generateMu(msgDigest);
 
-        return engine.generateSignature(msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
+        return engine.generateSignature(mu, msgDigest, privKey.rho, privKey.k, privKey.t0, privKey.s1, privKey.s2, rnd);
     }
 
     public boolean verifySignature(byte[] signature)

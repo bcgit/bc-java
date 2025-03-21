@@ -12,7 +12,7 @@ import org.bouncycastle.util.Bytes;
  */
 
 public class PhotonBeetleEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     public enum PhotonBeetleParameters
     {
@@ -72,6 +72,7 @@ public class PhotonBeetleEngine
         STATE_INBYTES = (STATE_INBITS + 7) >>> 3;
         LAST_THREE_BITS_OFFSET = (STATE_INBITS - ((STATE_INBYTES - 1) << 3) - 3);
         algorithmName = "Photon-Beetle AEAD";
+        state = new byte[STATE_INBYTES];
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Counter, DataOperatorType.Counter);
     }
 
@@ -81,11 +82,7 @@ public class PhotonBeetleEngine
     {
         K = key;
         N = iv;
-        state = new byte[STATE_INBYTES];
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset(false);
     }
-
 
     protected void processBufferAAD(byte[] input, int inOff)
     {
@@ -96,24 +93,7 @@ public class PhotonBeetleEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
-            {
-                //m_state = State.DecData;
-                return;
-            }
-        case EncInit:
-        case EncAad:
-            processFinalAAD();
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD3(nextState, isDoFinal);
     }
 
     protected void processFinalAAD()
@@ -189,12 +169,10 @@ public class PhotonBeetleEngine
 
     protected void reset(boolean clearMac)
     {
-        ensureInitialized();
-        bufferReset();
+        super.reset(clearMac);
         input_empty = true;
         System.arraycopy(K, 0, state, 0, K.length);
         System.arraycopy(N, 0, state, K.length, N.length);
-        super.reset(clearMac);
     }
 
     private static void photonPermutation(byte[] state)

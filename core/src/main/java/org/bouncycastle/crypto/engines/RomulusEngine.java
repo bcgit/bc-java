@@ -11,7 +11,7 @@ import org.bouncycastle.util.Bytes;
  */
 
 public class RomulusEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     public enum RomulusParameters
     {
@@ -860,27 +860,12 @@ public class RomulusEngine
     {
         npub = iv;
         k = key;
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset(false);
     }
 
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-        case EncInit:
-        case EncAad:
-        {
-            processFinalAAD();
-            break;
-        }
-        default:
-            break;
-        }
-        m_state = nextState;
+        finishAAD1(nextState);
     }
 
     protected void processBufferAAD(byte[] input, int inOff)
@@ -913,8 +898,7 @@ public class RomulusEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
-        instance.reset();
         super.reset(clearMac);
+        instance.reset();
     }
 }

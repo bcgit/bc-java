@@ -9,7 +9,7 @@ import org.bouncycastle.util.Bytes;
  */
 
 public class GiftCofbEngine
-    extends AEADBufferBaseEngine
+    extends AEADBaseEngine
 {
     private byte[] npub;
     private byte[] k;
@@ -207,23 +207,7 @@ public class GiftCofbEngine
     @Override
     protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        // State indicates whether we ever received AAD
-        switch (m_state)
-        {
-        case DecInit:
-        case DecAad:
-            if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
-            {
-                return;
-            }
-        case EncInit:
-        case EncAad:
-            processFinalAAD();
-            break;
-        }
-
-        m_aadPos = 0;
-        m_state = nextState;
+        finishAAD3(nextState, isDoFinal);
     }
 
     @Override
@@ -234,8 +218,6 @@ public class GiftCofbEngine
         Y = new byte[BlockSize];
         input = new byte[16];
         offset = new byte[8];
-        m_state = forEncryption ? State.EncInit : State.DecInit;
-        reset(false);
     }
 
     @Override
@@ -302,7 +284,6 @@ public class GiftCofbEngine
 
     protected void reset(boolean clearMac)
     {
-        bufferReset();
         super.reset(clearMac);
         /*nonce is 128-bit*/
         System.arraycopy(npub, 0, input, 0, IV_SIZE);
