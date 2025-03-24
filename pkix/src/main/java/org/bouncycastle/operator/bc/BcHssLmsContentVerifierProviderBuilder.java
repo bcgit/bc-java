@@ -6,8 +6,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 
 /**
  * Builder for creating content verifier providers that support the HSS/LMS Hash-Based Signature Algorithm.
