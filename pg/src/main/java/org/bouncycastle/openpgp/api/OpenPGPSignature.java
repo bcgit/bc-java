@@ -264,6 +264,16 @@ public abstract class OpenPGPSignature
             throw new PGPSignatureException("Unacceptable hash algorithm: " + signature.getHashAlgorithm());
         }
 
+        if (signature.getVersion() < SignaturePacket.VERSION_4)
+        {
+            if (signature.getCreationTime().before(issuer.getCreationTime()))
+            {
+                throw new MalformedOpenPGPSignatureException(
+                        this, "Signature predates issuer key creation time.");
+            }
+            return;
+        }
+
         PGPSignatureSubpacketVector hashed = signature.getHashedSubPackets();
         if (hashed == null)
         {
