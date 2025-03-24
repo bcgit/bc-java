@@ -52,16 +52,16 @@ public class SampleCredentials
             Reader reader = new InputStreamReader(input);
 
             PemReader pemReader = new PemReader(reader);
-            PemObject pemPub = expectPemObject(pemReader, "PRIVATE KEY");
-            PemObject pemPriv = expectPemObject(pemReader, "PUBLIC KEY");
+            PemObject pemPriv = expectPemObject(pemReader, "PRIVATE KEY");
+            PemObject pemPub = expectPemObject(pemReader, "PUBLIC KEY");
             PemObject pemCert = expectPemObject(pemReader, "CERTIFICATE");
             pemReader.close();
 
             KeyFactory kf = KeyFactory.getInstance(algorithm, BouncyCastleProvider.PROVIDER_NAME);
             CertificateFactory cf = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
 
-            PrivateKey privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pemPub.getContent()));
-            PublicKey publicKey = kf.generatePublic(new X509EncodedKeySpec(pemPriv.getContent()));
+            PrivateKey privateKey = kf.generatePrivate(new PKCS8EncodedKeySpec(pemPriv.getContent()));
+            PublicKey publicKey = kf.generatePublic(new X509EncodedKeySpec(pemPub .getContent()));
             KeyPair keyPair = new KeyPair(publicKey, privateKey);
 
             X509Certificate certificate = (X509Certificate)cf.generateCertificate(
