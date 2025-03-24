@@ -143,6 +143,21 @@ public class GF16Utils
         }
     }
 
+    public static void decodeMergeInHalf(byte[] byteArray, byte[] gf16Array, int nGf16)
+    {
+        int i, half = (nGf16 + 1) >>> 1;
+        // Process pairs of 4-bit values
+        for (i = 0; i < half; i++)
+        {
+            gf16Array[i] = (byte)(byteArray[i] & 0x0F);
+        }
+        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
+        for (i = 0; i < nGf16 >>> 1; i++)
+        {
+            gf16Array[i + half] = (byte)((byteArray[i] >>> 4) & 0x0F);
+        }
+    }
+
     public static void gf16mMul(byte[] a, byte[] b, byte[] c, int rank)
     {
 
@@ -204,34 +219,34 @@ public class GF16Utils
         return INV4B[a & 0xF];
     }
 
-    static GF16Matrix[][][] create3DArray(int d1, int d2, int d3, int rank)
-    {
-        GF16Matrix[][][] arr = new GF16Matrix[d1][d2][d3];
-        for (int i = 0; i < d1; i++)
-        {
-            for (int j = 0; j < d2; j++)
-            {
-                for (int k = 0; k < d3; k++)
-                {
-                    arr[i][j][k] = new GF16Matrix(rank);
-                }
-            }
-        }
-        return arr;
-    }
+//    static GF16Matrix[][][] create3DArray(int d1, int d2, int d3, int rank)
+//    {
+//        GF16Matrix[][][] arr = new GF16Matrix[d1][d2][d3];
+//        for (int i = 0; i < d1; i++)
+//        {
+//            for (int j = 0; j < d2; j++)
+//            {
+//                for (int k = 0; k < d3; k++)
+//                {
+//                    arr[i][j][k] = new GF16Matrix(rank);
+//                }
+//            }
+//        }
+//        return arr;
+//    }
 
-    static GF16Matrix[][] create2DArray(int d1, int d2, int rank)
-    {
-        GF16Matrix[][] arr = new GF16Matrix[d1][d2];
-        for (int i = 0; i < d1; i++)
-        {
-            for (int j = 0; j < d2; j++)
-            {
-                arr[i][j] = new GF16Matrix(rank);
-            }
-        }
-        return arr;
-    }
+//    static GF16Matrix[][] create2DArray(int d1, int d2, int rank)
+//    {
+//        GF16Matrix[][] arr = new GF16Matrix[d1][d2];
+//        for (int i = 0; i < d1; i++)
+//        {
+//            for (int j = 0; j < d2; j++)
+//            {
+//                arr[i][j] = new GF16Matrix(rank);
+//            }
+//        }
+//        return arr;
+//    }
 
     private static final int GF16_MASK = 0x249; // Mask for GF(2^4) reduction
 
