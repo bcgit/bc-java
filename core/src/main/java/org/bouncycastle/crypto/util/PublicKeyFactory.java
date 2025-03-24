@@ -165,8 +165,7 @@ public class PublicKeyFactory
         SubjectPublicKeyInfoConverter converter = (SubjectPublicKeyInfoConverter)converters.get(algID.getAlgorithm());
         if (null == converter)
         {
-            return org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(keyInfo, defaultParams);
-            //throw new IOException("algorithm identifier in public key not recognised: " + algID.getAlgorithm());
+            throw new IOException("algorithm identifier in public key not recognised: " + algID.getAlgorithm());
         }
 
         return converter.getPublicKeyParameters(keyInfo, defaultParams);
