@@ -49,6 +49,7 @@ public class SnovaSigner
             privKey = null;
             random = null;
         }
+        engine = new SnovaEngine(params);
     }
 
     @Override
@@ -67,6 +68,19 @@ public class SnovaSigner
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
     {
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        if (params.isSkIsSeed())
+        {
+
+        }
+        else
+        {
+            SnovaKeyElements esk = new SnovaKeyElements(params, engine);
+            esk.skUnpack(privKey.getPrivateKey());
+        }
         return new byte[0];
     }
 
@@ -114,6 +128,7 @@ public class SnovaSigner
     {
         // Initialize constants from parameters
         final int m = params.getM();
+        final int l = params.getL();
         final int lsq = params.getLsq();
         final int alpha = params.getAlpha();
         final int v = params.getV();
@@ -127,9 +142,9 @@ public class SnovaSigner
         byte[][] Temp = new byte[lsq][lsq];
         byte[] solution = new byte[m * lsq];
 
-        byte[][][] Left = new byte[m][alpha][v];
-        byte[][][] Right = new byte[m][alpha][v];
-        byte[][] XInGF16Matrix = new byte[n][lsq];
+        byte[][][][][] Left = new byte[m][alpha][v][l][l];
+        byte[][][][][] Right = new byte[m][alpha][v][l][l];
+        byte[][][] XInGF16Matrix = new byte[n][l][l];
         byte[][] FvvGF16Matrix = new byte[m][lsq];
         byte[] hashInGF16 = new byte[m * lsq];
         byte[][] signatureGF16Matrix = new byte[n][lsq];
@@ -138,8 +153,8 @@ public class SnovaSigner
         byte[] vinegarBytes = new byte[(v * lsq + 1) / 2];
 
         // Temporary matrices
-        byte[] gf16mTemp0 = new byte[lsq];
-        byte[] gf16mTemp1 = new byte[lsq];
+        byte[][] gf16mTemp0 = new byte[l][l];
+        byte[][] gf16mTemp1 = new byte[l][l];
         byte[] gf16mSecretTemp0 = new byte[lsq];
 
         int flagRedo;
@@ -155,7 +170,7 @@ public class SnovaSigner
             // Initialize Gauss matrix
             Arrays.stream(Gauss).forEach(row -> Arrays.fill(row, (byte)0));
             numSign++;
-            flagRedo = 0;
+            //flagRedo = 0;
 
             // Fill last column of Gauss matrix
             for (int i = 0; i < m * lsq; i++)
@@ -168,9 +183,11 @@ public class SnovaSigner
             shake.update(ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
             shake.update(digest, 0, digest.length);
             shake.update(arraySalt, 0, arraySalt.length);
-            shake.update(new byte[]{numSign}, 0, 1);
+            shake.update(numSign);
             shake.doFinal(vinegarBytes, 0, vinegarBytes.length);
-            //GF16Utils.decode(vinegarBytes, 0, XInGF16Matrix, 0, v * lsq);
+            byte[] tmp = new byte[vinegarBytes.length << 1];
+            GF16Utils.decode(vinegarBytes, tmp, tmp.length);
+            MapGroup1.fillAlpha(tmp, 0, XInGF16Matrix, tmp.length);
 
             // Evaluate vinegar part of central map
             for (int mi = 0; mi < m; mi++)
@@ -180,11 +197,11 @@ public class SnovaSigner
                     for (int idx = 0; idx < v; idx++)
                     {
                         transposeGF16Matrix(XInGF16Matrix[idx], gf16mTemp0);
-//                        multiplyGF16Matrices(gf16mTemp0, Qalpha1[mi][a], gf16mTemp1);
-//                        multiplyGF16Matrices(Aalpha[mi][a], gf16mTemp1, Left[mi][a][idx]);
-//
-//                        multiplyGF16Matrices(Qalpha2[mi][a], XInGF16Matrix[idx], gf16mTemp1);
-//                        multiplyGF16Matrices(gf16mTemp1, Balpha[mi][a], Right[mi][a][idx]);
+                        multiplyGF16Matrices(gf16mTemp0, Qalpha1[mi][a], gf16mTemp1);
+                        multiplyGF16Matrices(Aalpha[mi][a], gf16mTemp1, Left[mi][a][idx]);
+
+                        multiplyGF16Matrices(Qalpha2[mi][a], XInGF16Matrix[idx], gf16mTemp1);
+                        multiplyGF16Matrices(gf16mTemp1, Balpha[mi][a], Right[mi][a][idx]);
                     }
                 }
             }
@@ -200,9 +217,9 @@ public class SnovaSigner
                     {
                         for (int k = 0; k < v; k++)
                         {
-//                            multiplyGF16Matrices(Left[mi][a][j], F11[miPrime][j][k], gf16mTemp0);
-//                            multiplyGF16Matrices(gf16mTemp0, Right[mi][a][k], gf16mTemp1);
-                            //GF16Utils.addGF16Matrices(FvvGF16Matrix[mi], gf16mTemp1, FvvGF16Matrix[mi]);
+                            multiplyGF16Matrices(Left[mi][a][j], F11[miPrime][j][k], gf16mTemp0);
+                            multiplyGF16Matrices(gf16mTemp0, Right[mi][a][k], gf16mTemp1);
+                            addGF16Matrices(FvvGF16Matrix[mi], gf16mTemp1, FvvGF16Matrix[mi]);
                         }
                     }
                 }
@@ -231,62 +248,186 @@ public class SnovaSigner
         while (flagRedo != 0);
 
         // Build final signature
-        buildSignature(XInGF16Matrix, signatureGF16Matrix, T12, v, o, lsq);
-        convertGF16MatrixToBytes(ptSignature, signatureGF16Matrix, n * lsq);
-        //System.arraycopy(arraySalt, 0, ptSignature, params.getBytesSignature(), bytesSalt);
+        //buildSignature(XInGF16Matrix, signatureGF16Matrix, T12, v, o, lsq);
+        //void buildSignature(byte[][][] XIn, byte[][] signature,
+        //                                byte[][][][] T12, int v, int o, int lsq)
+        // Copy vinegar variables
+        for (int idx = 0; idx < v; idx++)
+        {
+            System.arraycopy(XInGF16Matrix[idx], 0, signatureGF16Matrix[idx], 0, lsq);
+        }
+
+        // Process oil variables with T12 matrix
+        for (int idx = 0; idx < v; idx++)
+        {
+            for (int i = 0; i < o; i++)
+            {
+                multiplyGF16Matrices(T12[idx][i], XInGF16Matrix[v + i], gf16mTemp0);
+                addGF16Matrices(signatureGF16Matrix[idx], gf16mTemp0, signatureGF16Matrix[idx]);
+            }
+        }
+
+        // Copy remaining oil variables
+        for (int idx = 0; idx < o; idx++)
+        {
+            System.arraycopy(XInGF16Matrix[v + idx], 0, signatureGF16Matrix[v + idx], 0, lsq);
+        }
+
+        // Convert to packed bytes
+        int bytePos = 0;
+        for (int matIdx = 0; matIdx < signatureGF16Matrix.length; matIdx++)
+        {
+            for (int i = 0; i < l; i++)
+            {
+                for (int j = 0; j < l; j++)
+                {
+                    int nibblePos = bytePos % 2;
+                    if (nibblePos == 0)
+                    {
+                        ptSignature[bytePos / 2] = (byte)(engine.getGF16m(signatureGF16Matrix[matIdx], i, j) << 4);
+                    }
+                    else
+                    {
+                        ptSignature[bytePos / 2] |= engine.getGF16m(signatureGF16Matrix[matIdx], i, j) & 0x0F;
+                    }
+                    bytePos++;
+                }
+            }
+        }
+        byte[] tmp = new byte[n * lsq];
+        for (int i = 0; i < signatureGF16Matrix.length; ++i)
+        {
+            System.arraycopy(signatureGF16Matrix[i], 0, tmp, 0, signatureGF16Matrix[i].length);
+        }
+        GF16Utils.encode(tmp, ptSignature, 0, tmp.length);
+        System.arraycopy(arraySalt, 0, ptSignature, 0, bytesSalt);
 
         // Clear sensitive data
         Arrays.fill(gf16mSecretTemp0, (byte)0);
     }
 
-    private void transposeGF16Matrix(byte[] src, byte[] dest)
+    private void transposeGF16Matrix(byte[][] src, byte[][] dest)
     {
         for (int i = 0; i < params.getL(); i++)
         {
             for (int j = 0; j < params.getL(); j++)
             {
-                engine.setGF16m(dest, i, j, engine.getGF16m(src, j, i));
+                dest[i][j] = src[j][i];
             }
         }
     }
 
-    private void multiplyGF16Matrices(byte[] a, byte[] b, byte[] result)
+    private void multiplyGF16Matrices(byte[][] a, byte[][] b, byte[][] result)
     {
-        Arrays.fill(result, (byte)0);
         for (int i = 0; i < params.getL(); i++)
         {
+            Arrays.fill(result[i], (byte)0);
             for (int j = 0; j < params.getL(); j++)
             {
                 byte sum = 0;
                 for (int k = 0; k < params.getL(); k++)
                 {
                     sum = GF16Utils.add(sum, GF16Utils.mul(
-                        engine.getGF16m(a, i, k),
+                        a[i][k],
+                        b[k][j]
+                    ));
+                }
+                result[i][j] = sum;
+            }
+        }
+    }
+
+    private void multiplyGF16Matrices(byte[][] a, byte[] b, byte[][] result)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            Arrays.fill(result[i], (byte)0);
+            for (int j = 0; j < params.getL(); j++)
+            {
+                byte sum = 0;
+                for (int k = 0; k < params.getL(); k++)
+                {
+                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                        a[i][k],
                         engine.getGF16m(b, k, j)
                     ));
                 }
-                engine.setGF16m(result, i, j, sum);
+                result[i][j] = sum;
             }
         }
     }
 
     private int performGaussianElimination(byte[][] Gauss, byte[] solution, int size)
     {
-        // Implementation of Gaussian elimination with GF16 arithmetic
-        // ... (similar structure to C code's elimination steps)
-        return 0; // Return 0 if successful, 1 if needs redo
+        final int cols = size + 1;
+        byte tGF16;
+
+        for (int i = 0; i < size; i++)
+        {
+            // Find pivot
+            int pivot = i;
+            while (pivot < size && Gauss[pivot][i] == 0)
+            {
+                pivot++;
+            }
+
+            // Check for singularity
+            if (pivot >= size)
+            {
+                return 1; // Flag for redo
+            }
+
+            // Swap rows if needed
+            if (pivot != i)
+            {
+                byte[] tempRow = Gauss[i];
+                Gauss[i] = Gauss[pivot];
+                Gauss[pivot] = tempRow;
+            }
+
+            // Normalize pivot row
+            byte invPivot = GF16Utils.inv(Gauss[i][i]);
+            for (int j = i; j < cols; j++)
+            {
+                Gauss[i][j] = GF16Utils.mul(Gauss[i][j], invPivot);
+            }
+
+            // Eliminate below
+            for (int j = i + 1; j < size; j++)
+            {
+                byte factor = Gauss[j][i];
+                if (factor != 0)
+                {
+                    for (int k = i; k < cols; k++)
+                    {
+                        Gauss[j][k] = GF16Utils.add(Gauss[j][k], GF16Utils.mul(Gauss[i][k], factor));
+                    }
+                }
+            }
+        }
+
+        // Back substitution
+        for (int i = size - 1; i >= 0; i--)
+        {
+            solution[i] = Gauss[i][size];
+            for (int j = i + 1; j < size; j++)
+            {
+                solution[i] = GF16Utils.add(solution[i], GF16Utils.mul(Gauss[i][j], solution[j]));
+            }
+        }
+
+        return 0;
     }
 
-    private void buildSignature(byte[][] XIn, byte[][] signature,
-                                byte[][][][] T12, int v, int o, int lsq)
+    private void addGF16Matrices(byte[] a, byte[][] b, byte[] result)
     {
-        // Implementation of signature construction
-        // ... (similar to C code's final matrix operations)
-    }
-
-    private void convertGF16MatrixToBytes(byte[] output, byte[][] matrix, int totalElements)
-    {
-        // Conversion implementation using GF16Utils.encode
+        for (int i = 0; i < b.length; i++)
+        {
+            for (int j = 0; j < b[i].length; ++j)
+            {
+                engine.setGF16m(result, i, j, GF16Utils.add(engine.getGF16m(a, i, j), b[i][j]));
+            }
+        }
     }
 
     private int iPrime(int mi, int alpha)

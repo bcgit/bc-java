@@ -8,6 +8,7 @@ class SnovaKeyElements
     public final byte[][][] T12;     // [v][o]
     public final MapGroup2 map2;
     public final PublicKey publicKey;
+    public byte[] ptPrivateKeySeed;
     private final int length;
     byte[] fixedAbq;
 
@@ -75,6 +76,25 @@ class SnovaKeyElements
         GF16Utils.encodeMergeInHalf(input, length, output);
     }
 
+    public void skUnpack(byte[] input)
+    {
+        byte[] tmp = new byte[input.length << 1];
+        GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
+        int inOff = 0;
+        inOff = copy3d(tmp, inOff, map1.aAlpha);
+        inOff = copy3d(tmp, inOff, map1.bAlpha);
+        inOff = copy3d(tmp, inOff, map1.qAlpha1);
+        inOff = copy3d(tmp, inOff, map1.qAlpha2);
+        inOff = copy3d(tmp, inOff, T12);
+        inOff = copy4d(tmp, inOff, map2.f11);
+        inOff = copy4d(tmp, inOff, map2.f12);
+        inOff = copy4d(tmp, inOff, map2.f21);
+        System.arraycopy(tmp, inOff, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
+        inOff += publicKey.publicKeySeed.length;
+        ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
+        System.arraycopy(tmp, inOff, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
+    }
+
     public int copy3d(byte[][][] alpha, byte[] output, int outOff)
     {
         for (int i = 0; i < alpha.length; ++i)
@@ -95,5 +115,27 @@ class SnovaKeyElements
             outOff = copy3d(alpha[i], output, outOff);
         }
         return outOff;
+    }
+
+    public int copy3d(byte[] input, int inOff, byte[][][] alpha)
+    {
+        for (int i = 0; i < alpha.length; ++i)
+        {
+            for (int j = 0; j < alpha[i].length; ++j)
+            {
+                System.arraycopy(input, inOff, alpha[i][j], 0, alpha[i][j].length);
+                inOff += alpha[i][j].length;
+            }
+        }
+        return inOff;
+    }
+
+    public int copy4d(byte[] input, int inOff, byte[][][][] alpha)
+    {
+        for (int i = 0; i < alpha.length; ++i)
+        {
+            inOff = copy3d(alpha[i], input, inOff);
+        }
+        return inOff;
     }
 }
