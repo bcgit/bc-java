@@ -314,8 +314,12 @@ public abstract class OpenPGPSignature
                         hashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) == null &&
                         unhashed.getSubpacket(SignatureSubpacketTags.ISSUER_KEY_ID) == null)
                 {
-                    throw new MalformedOpenPGPSignatureException(
-                            this, "Missing IssuerKeyID and IssuerFingerprint subpacket.");
+                    int type = signature.getSignatureType();
+                    if (type != PGPSignature.SUBKEY_BINDING && type != PGPSignature.PRIMARYKEY_BINDING)
+                    {
+                        throw new MalformedOpenPGPSignatureException(
+                                this, "Missing IssuerKeyID and IssuerFingerprint subpacket.");
+                    }
                 }
                 break;
 

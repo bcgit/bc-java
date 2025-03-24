@@ -269,6 +269,15 @@ public class OpenPGPCertificate
     public OpenPGPComponentKey getSigningKeyFor(PGPSignature signature)
     {
         List<KeyIdentifier> keyIdentifiers = signature.getKeyIdentifiers();
+
+        // Subkey binding signatures do not require issuer
+        int type = signature.getSignatureType();
+        if (type == PGPSignature.SUBKEY_BINDING ||
+                type == PGPSignature.SUBKEY_REVOCATION)
+        {
+            return primaryKey;
+        }
+
         // issuer is primary key
         if (KeyIdentifier.matches(keyIdentifiers, getPrimaryKey().getKeyIdentifier(), true))
         {
@@ -565,7 +574,8 @@ public class OpenPGPCertificate
     {
         // Check if there are signatures at all for the component
         OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component);
-        if (component == getPrimaryKey() && chainsForComponent.isEmpty())
+        boolean isPrimaryKey = component == getPrimaryKey();
+        if (isPrimaryKey && chainsForComponent.getCertificationAt(evaluationDate) == null)
         {
             // If cert has no direct-key signatures, consider primary UID bindings instead
             OpenPGPUserId primaryUserId = getPrimaryUserId(evaluationDate);
