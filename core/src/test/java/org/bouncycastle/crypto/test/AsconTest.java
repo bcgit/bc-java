@@ -70,9 +70,14 @@ public class AsconTest
         testExceptionsEngine_ascon80pq();
 
         testExceptionsXof_AsconXof128();
-        testExceptionsXof_AsconCxof128();
+        testExceptionsXof_AsconCXof128();
         testExceptionsXof_AsconXof();
         testExceptionsXof_AsconXofA();
+
+        testOutputXof_AsconXof128();
+        testOutputXof_AsconCXof128();
+        testOutputXof_AsconXof();
+        testOutputXof_AsconXofA();
 
         testParametersDigest_AsconHash256();
         testParametersDigest_AsconHash();
@@ -84,7 +89,7 @@ public class AsconTest
         testParametersEngine_ascon80pq();
 
         testParametersXof_AsconXof128();
-        testParametersXof_AsconCxof128();
+        testParametersXof_AsconCXof128();
         testParametersXof_AsconXof();
         testParametersXof_AsconXofA();
 
@@ -331,7 +336,7 @@ public class AsconTest
         });
     }
 
-    public void testExceptionsXof_AsconCxof128()
+    public void testExceptionsXof_AsconCXof128()
         throws Exception
     {
         implTestExceptionsXof(new CreateDigest()
@@ -342,6 +347,26 @@ public class AsconTest
                 return new AsconCXof128();
             }
         });
+    }
+
+    public void testOutputXof_AsconXof()
+    {
+        implTestOutputXof(new AsconXof(AsconXof.AsconParameters.AsconXof));
+    }
+
+    public void testOutputXof_AsconXofA()
+    {
+        implTestOutputXof(new AsconXof(AsconXof.AsconParameters.AsconXofA));
+    }
+
+    public void testOutputXof_AsconXof128()
+    {
+        implTestOutputXof(new AsconXof128());
+    }
+
+    public void testOutputXof_AsconCXof128()
+    {
+        implTestOutputXof(new AsconCXof128());
     }
 
     public void testParametersDigest_AsconHash()
@@ -460,7 +485,7 @@ public class AsconTest
         }, 32);
     }
 
-    public void testParametersXof_AsconCxof128()
+    public void testParametersXof_AsconCXof128()
         throws Exception
     {
         implTestParametersDigest(new CreateDigest()
@@ -1002,6 +1027,35 @@ public class AsconTest
         catch (OutputLengthException e)
         {
             //expected
+        }
+    }
+
+    private void implTestOutputXof(Xof ascon)
+    {
+        Random random = new Random();
+
+        byte[] expected = new byte[64];
+        ascon.doFinal(expected, 0, expected.length);
+
+        byte[] output = new byte[64];
+        for (int i = 0; i < 64; ++i)
+        {
+            random.nextBytes(output);
+
+            int pos = 0;
+            while (pos <= output.length - 16)
+            {
+                int len = random.nextInt(17);
+                ascon.doOutput(output, pos, len);
+                pos += len;
+            }
+
+            ascon.doFinal(output, pos, output.length - pos);
+
+            if (!areEqual(expected, output))
+            {
+                fail("");
+            }
         }
     }
 
