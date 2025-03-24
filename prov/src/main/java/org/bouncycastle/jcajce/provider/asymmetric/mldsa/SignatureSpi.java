@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mldsa;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -9,11 +10,14 @@ import java.security.SecureRandom;
 import java.security.SignatureException;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.jcajce.MLDSAProxyPrivateKey;
+import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 
 public class SignatureSpi
     extends BaseDeterministicOrRandomSignature
@@ -80,12 +84,19 @@ public class SignatureSpi
                 }
             }
         }
-        else if (privateKey instanceof MLDSAProxyPrivateKey)
+        else if (privateKey instanceof MLDSAProxyPrivateKey && this instanceof MLDSACalcMu)
         {
             MLDSAProxyPrivateKey pKey = (MLDSAProxyPrivateKey)privateKey;
-            BCMLDSAPublicKey key = (BCMLDSAPublicKey)pKey.getPublicKey();
+            MLDSAPublicKey key = pKey.getPublicKey();
 
-            this.keyParams = key.getKeyParams();
+            try
+            {
+                this.keyParams = PublicKeyFactory.createKey(key.getEncoded());
+            }
+            catch (IOException e)
+            {
+                throw new InvalidKeyException(e.getMessage());
+            }
 
             if (parameters != null)
             {
@@ -208,6 +219,10 @@ public class SignatureSpi
 
                 return signer.generateMuSignature(mu);
             }
+            catch (DataLengthException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
             catch (Exception e)
             {
                 throw new SignatureException(e.toString());
@@ -221,7 +236,14 @@ public class SignatureSpi
 
             bOut.reset();
 
-            return signer.verifyMuSignature(mu, sigBytes);
+            try
+            {
+                return signer.verifyMuSignature(mu, sigBytes);
+            }
+            catch (DataLengthException e)
+            {
+                throw new SignatureException(e.getMessage());
+            }
         }
     }
 
