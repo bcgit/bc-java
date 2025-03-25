@@ -187,4 +187,9 @@ public class SnovaParameters
     {
         return l * l;
     }
+
+    public int getSaltLength()
+    {
+        return 16;
+    }
 }

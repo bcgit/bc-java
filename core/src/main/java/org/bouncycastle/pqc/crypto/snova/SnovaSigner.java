@@ -4,15 +4,13 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.pqc.crypto.MessageSigner;
 
 public class SnovaSigner
-    implements Signer
+    implements MessageSigner
 {
     private SnovaParameters params;
     private SnovaEngine engine;
@@ -53,25 +51,14 @@ public class SnovaSigner
     }
 
     @Override
-    public void update(byte b)
-    {
-        digest.update(b);
-    }
-
-    @Override
-    public void update(byte[] in, int off, int len)
-    {
-        digest.update(in, off, len);
-    }
-
-    @Override
-    public byte[] generateSignature()
-        throws CryptoException, DataLengthException
+    public byte[] generateSignature(byte[] message)
     {
         byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(message, 0, message.length);
         digest.doFinal(hash, 0);
-        byte[] salt = new byte[16];
+        byte[] salt = new byte[params.getSaltLength()];
         random.nextBytes(salt);
+        byte[] signature = new byte[((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength()];
         if (params.isSkIsSeed())
         {
 
@@ -80,20 +67,16 @@ public class SnovaSigner
         {
             SnovaKeyElements esk = new SnovaKeyElements(params, engine);
             esk.skUnpack(privKey.getPrivateKey());
+            signDigestCore(signature, hash, salt, esk.map1.aAlpha, esk.map1.bAlpha, esk.map1.qAlpha1, esk.map1.qAlpha2,
+                esk.T12, esk.map2.f11, esk.map2.f12, esk.map2.f21, esk.publicKey.publicKeySeed, esk.ptPrivateKeySeed);
         }
         return new byte[0];
     }
 
     @Override
-    public boolean verifySignature(byte[] signature)
+    public boolean verifySignature(byte[] message, byte[] signature)
     {
         return false;
-    }
-
-    @Override
-    public void reset()
-    {
-
     }
 
     public static void createSignedHash(
@@ -120,9 +103,9 @@ public class SnovaSigner
     }
 
     public void signDigestCore(byte[] ptSignature, byte[] digest, byte[] arraySalt,
-                               byte[][][][] Aalpha, byte[][][][] Balpha,
-                               byte[][][][] Qalpha1, byte[][][][] Qalpha2,
-                               byte[][][][] T12, byte[][][][] F11,
+                               byte[][][] Aalpha, byte[][][] Balpha,
+                               byte[][][] Qalpha1, byte[][][] Qalpha2,
+                               byte[][][] T12, byte[][][][] F11,
                                byte[][][][] F12, byte[][][][] F21,
                                byte[] ptPublicKeySeed, byte[] ptPrivateKeySeed)
     {
@@ -168,7 +151,10 @@ public class SnovaSigner
         do
         {
             // Initialize Gauss matrix
-            Arrays.stream(Gauss).forEach(row -> Arrays.fill(row, (byte)0));
+            for (int i = 0; i < Gauss.length; ++i)
+            {
+                Arrays.fill(Gauss[i], (byte)0);
+            }
             numSign++;
             //flagRedo = 0;
 
@@ -350,6 +336,26 @@ public class SnovaSigner
                     sum = GF16Utils.add(sum, GF16Utils.mul(
                         a[i][k],
                         engine.getGF16m(b, k, j)
+                    ));
+                }
+                result[i][j] = sum;
+            }
+        }
+    }
+
+    private void multiplyGF16Matrices(byte[] a, byte[][] b, byte[][] result)
+    {
+        for (int i = 0; i < params.getL(); i++)
+        {
+            Arrays.fill(result[i], (byte)0);
+            for (int j = 0; j < params.getL(); j++)
+            {
+                byte sum = 0;
+                for (int k = 0; k < params.getL(); k++)
+                {
+                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                        engine.getGF16m(a, i, k),
+                        b[k][j]
                     ));
                 }
                 result[i][j] = sum;
