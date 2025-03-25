@@ -78,7 +78,7 @@ class SnovaKeyElements
 
     public void skUnpack(byte[] input)
     {
-        byte[] tmp = new byte[input.length << 1];
+        byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength)<< 1];
         GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
         int inOff = 0;
         inOff = copy3d(tmp, inOff, map1.aAlpha);
@@ -89,10 +89,9 @@ class SnovaKeyElements
         inOff = copy4d(tmp, inOff, map2.f11);
         inOff = copy4d(tmp, inOff, map2.f12);
         inOff = copy4d(tmp, inOff, map2.f21);
-        System.arraycopy(tmp, inOff, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
-        inOff += publicKey.publicKeySeed.length;
+        System.arraycopy(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
         ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
-        System.arraycopy(tmp, inOff, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
+        System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
     }
 
     public int copy3d(byte[][][] alpha, byte[] output, int outOff)
@@ -134,7 +133,14 @@ class SnovaKeyElements
     {
         for (int i = 0; i < alpha.length; ++i)
         {
-            inOff = copy3d(alpha[i], input, inOff);
+            for (int j = 0; j < alpha[i].length; ++j)
+            {
+                for (int k = 0; k < alpha[i][j].length; ++k)
+                {
+                    System.arraycopy(input, inOff, alpha[i][j][k], 0, alpha[i][j][k].length);
+                    inOff += alpha[i][j][k].length;
+                }
+            }
         }
         return inOff;
     }
