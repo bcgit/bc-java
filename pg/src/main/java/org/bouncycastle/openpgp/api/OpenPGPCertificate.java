@@ -2410,10 +2410,15 @@ public class OpenPGPCertificate
             this.chainLinks.add(rootLink);
         }
 
+        private OpenPGPSignatureChain(List<Link> links)
+        {
+            this.chainLinks.addAll(links);
+        }
+
         // copy constructor
         private OpenPGPSignatureChain(OpenPGPSignatureChain copy)
         {
-            this.chainLinks.addAll(copy.chainLinks);
+            this(copy.chainLinks);
         }
 
         public OpenPGPComponentSignature getSignature()
