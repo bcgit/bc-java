@@ -1332,6 +1332,35 @@ public class OpenPGPCertificate
             }
             return OpenPGPSignature.OpenPGPSignatureSubpacket.hashed(subpacket, keySignature);
         }
+
+        protected OpenPGPSignatureChains getDanglingExternalSignatureChainEndsFrom(
+                OpenPGPCertificate thirdPartyCertificate,
+                Date evaluationTime)
+        {
+            OpenPGPSignatureChains chainsBy = new OpenPGPSignatureChains(this);
+
+            OpenPGPSignatureChains allChains = getCertificate().getAllSignatureChainsFor(this)
+                    .getChainsAt(evaluationTime);
+            for (OpenPGPSignatureChain chain : allChains)
+            {
+                OpenPGPSignatureChain.Link rootLink = chain.getRootLink();
+                for (OpenPGPComponentKey issuerKey : thirdPartyCertificate.getKeys())
+                {
+                    if (KeyIdentifier.matches(
+                            rootLink.getSignature().getKeyIdentifiers(),
+                            issuerKey.getKeyIdentifier(),
+                            true))
+                    {
+                        OpenPGPSignatureChain externalChain = issuerKey.getSignatureChains().getChainAt(evaluationTime);
+                        externalChain = externalChain.plus(
+                                new OpenPGPComponentSignature(rootLink.signature.getSignature(), issuerKey, this),
+                                this);
+                        chainsBy.add(externalChain);
+                    }
+                }
+            }
+            return chainsBy;
+        }
     }
 
     /**
@@ -2204,6 +2233,32 @@ public class OpenPGPCertificate
             }
             return list;
         }
+
+        public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getDelegationBy(thirdPartyCertificate, new Date());
+        }
+
+        public OpenPGPSignatureChain getDelegationBy(
+                OpenPGPCertificate thirdPartyCertificate,
+                Date evaluationTime)
+        {
+            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            return chainsBy.getCertificationAt(evaluationTime);
+        }
+
+        public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getRevocationBy(thirdPartyCertificate, new Date());
+        }
+
+        public OpenPGPSignatureChain getRevocationBy(
+                OpenPGPCertificate thirdPartyCertificate,
+                Date evaluationTime)
+        {
+            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            return chainsBy.getRevocationAt(evaluationTime);
+        }
     }
 
     /**
@@ -2308,6 +2363,32 @@ public class OpenPGPCertificate
         protected OpenPGPComponentKey getKeyComponent()
         {
             return primaryKey;
+        }
+
+        public OpenPGPSignatureChain getCertificationBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getCertificationBy(thirdPartyCertificate, new Date());
+        }
+
+        public OpenPGPSignatureChain getCertificationBy(
+                OpenPGPCertificate thirdPartyCertificate,
+                Date evaluationTime)
+        {
+            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            return chainsBy.getCertificationAt(evaluationTime);
+        }
+
+        public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
+        {
+            return getRevocationBy(thirdPartyCertificate, new Date());
+        }
+
+        public OpenPGPSignatureChain getRevocationBy(
+                OpenPGPCertificate thirdPartyCertificate,
+                Date evaluationTime)
+        {
+            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            return chainsBy.getRevocationAt(evaluationTime);
         }
 
         @Override
