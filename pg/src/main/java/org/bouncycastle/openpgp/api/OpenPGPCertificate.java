@@ -1479,7 +1479,7 @@ public class OpenPGPCertificate
             {
                 verifyKeySignature(
                         issuer,
-                        issuer,
+                        target.getKeyComponent(),
                         contentVerifierBuilderProvider);
             }
 
@@ -1632,7 +1632,8 @@ public class OpenPGPCertificate
             try
             {
                 signature.init(contentVerifierBuilderProvider, issuer.getPGPPublicKey());
-                if (issuer == target)
+                if (signature.getSignatureType() == PGPSignature.DIRECT_KEY
+                        || signature.getSignatureType() == PGPSignature.KEY_REVOCATION)
                 {
                     // Direct-Key Signature
                     isCorrect = signature.verifyCertification(target.getPGPPublicKey());
