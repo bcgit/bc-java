@@ -1445,7 +1445,8 @@ public class OpenPGPCertificate
             sanitize(issuer, policy);
 
             // Direct-Key signature
-            if (signature.getSignatureType() == PGPSignature.DIRECT_KEY)
+            if (signature.getSignatureType() == PGPSignature.DIRECT_KEY
+                    || signature.getSignatureType() == PGPSignature.KEY_REVOCATION)
             {
                 verifyKeySignature(
                         issuer,
@@ -1464,6 +1465,21 @@ public class OpenPGPCertificate
                 {
                     isCorrect = false;
                     throw new MalformedOpenPGPSignatureException(this, "Subkey binding signature predates subkey creation time.");
+                }
+
+                verifyKeySignature(
+                        issuer,
+                        (OpenPGPSubkey) target,
+                        contentVerifierBuilderProvider);
+            }
+
+            else if (signature.getSignatureType() == PGPSignature.SUBKEY_REVOCATION)
+            {
+                // Binding signature MUST NOT predate the subkey itself
+                if (((OpenPGPSubkey) target).getCreationTime().after(signature.getCreationTime()))
+                {
+                    isCorrect = false;
+                    throw new MalformedOpenPGPSignatureException(this, "Subkey revocation signature predates subkey creation time.");
                 }
 
                 verifyKeySignature(
