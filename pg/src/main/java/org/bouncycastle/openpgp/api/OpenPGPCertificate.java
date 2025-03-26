@@ -957,6 +957,34 @@ public class OpenPGPCertificate
         return getPrimaryKey().getKeyExpirationDateAt(evaluationTime);
     }
 
+    public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
+    {
+        return getDelegationBy(thirdPartyCertificate, new Date());
+    }
+
+    public OpenPGPSignatureChain getDelegationBy(
+            OpenPGPCertificate thirdPartyCertificate,
+            Date evaluationTime)
+    {
+        OpenPGPSignatureChains chainsBy = getPrimaryKey().
+                getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+        return chainsBy.getCertificationAt(evaluationTime);
+    }
+
+    public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
+    {
+        return getRevocationBy(thirdPartyCertificate, new Date());
+    }
+
+    public OpenPGPSignatureChain getRevocationBy(
+            OpenPGPCertificate thirdPartyCertificate,
+            Date evaluationTime)
+    {
+        OpenPGPSignatureChains chainsBy = getPrimaryKey()
+                .getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+        return chainsBy.getRevocationAt(evaluationTime);
+    }
+
     /**
      * Component on an OpenPGP certificate.
      * Components can either be {@link OpenPGPComponentKey keys} or {@link OpenPGPIdentityComponent identities}.
@@ -2233,32 +2261,6 @@ public class OpenPGPCertificate
                 list.add(new OpenPGPCertificate.OpenPGPComponentSignature(sig, issuer, identity));
             }
             return list;
-        }
-
-        public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
-        {
-            return getDelegationBy(thirdPartyCertificate, new Date());
-        }
-
-        public OpenPGPSignatureChain getDelegationBy(
-                OpenPGPCertificate thirdPartyCertificate,
-                Date evaluationTime)
-        {
-            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-            return chainsBy.getCertificationAt(evaluationTime);
-        }
-
-        public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
-        {
-            return getRevocationBy(thirdPartyCertificate, new Date());
-        }
-
-        public OpenPGPSignatureChain getRevocationBy(
-                OpenPGPCertificate thirdPartyCertificate,
-                Date evaluationTime)
-        {
-            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
-            return chainsBy.getRevocationAt(evaluationTime);
         }
     }
 
