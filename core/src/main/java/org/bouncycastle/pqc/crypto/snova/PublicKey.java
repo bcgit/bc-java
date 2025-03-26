@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.crypto.snova;
 
 class PublicKey
 {
-    public final byte[] publicKeySeed;
+    public byte[] publicKeySeed;
     public final byte[] P22;
 
     public PublicKey(SnovaParameters params)
