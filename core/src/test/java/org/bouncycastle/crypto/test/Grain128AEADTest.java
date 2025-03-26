@@ -228,17 +228,8 @@ public class Grain128AEADTest
         }
     }
 
-//    public static void main(String[] args)
-//    {
-//        runTest(new AsconTest());
-//        runTest(new ElephantTest());
-//        runTest(new GiftCofbTest());
-//        runTest(new Grain128AEADTest());
-//        runTest(new ISAPTest());
-//        runTest(new PhotonBeetleTest());
-//        runTest(new RomulusTest());
-//        runTest(new SparkleTest());
-//        runTest(new XoodyakTest());
-//    }
+    public static void main(String[] args)
+    {
+        runTest(new Grain128AEADTest());
+    }
 }
-

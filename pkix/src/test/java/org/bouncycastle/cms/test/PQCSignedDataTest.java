@@ -2,13 +2,17 @@ package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -27,8 +31,14 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.RFC4519Style;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v1CertificateBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.bc.BcX509v1CertificateBuilder;
+import org.bouncycastle.cert.bc.BcX509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
@@ -40,11 +50,25 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.bc.BcHssLmsContentSignerBuilder;
+import org.bouncycastle.operator.bc.BcHssLmsContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.lms.LMSParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Store;
 
@@ -104,7 +128,7 @@ public class PQCSignedDataTest
         throws Exception
     {
         init();
-
+        //checkCreationHssLms();
         junit.textui.TestRunner.run(PQCSignedDataTest.class);
     }
 
@@ -321,7 +345,7 @@ public class PQCSignedDataTest
 
         assertTrue(digAlgIds.contains(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
         assertTrue(digAlgIds.size() == 1);
-        
+
         certs = s.getCertificates();
 
         SignerInformationStore signers = s.getSignerInfos();
@@ -350,6 +374,152 @@ public class PQCSignedDataTest
 
             assertTrue(MessageDigest.isEqual(contentDigest, ((ASN1OctetString)hash.getAttrValues().getObjectAt(0)).getOctets()));
         }
+    }
+
+    public void testCheckCreationHss()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        AsymmetricKeyParameter privKey;
+        AsymmetricKeyParameter pubKey;
+
+        AsymmetricCipherKeyPairGenerator kpg = new HSSKeyPairGenerator();
+
+        kpg.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
+                new LMSParameters(LMSigParameters.lms_sha256_n24_h5, LMOtsParameters.sha256_n24_w4)}, new SecureRandom()));
+
+        AsymmetricCipherKeyPair pair = kpg.generateKeyPair();
+
+        privKey = (AsymmetricKeyParameter)pair.getPrivate();
+        pubKey = (AsymmetricKeyParameter)pair.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
+
+        builder.addRDN(RFC4519Style.c, "AU");
+        builder.addRDN(RFC4519Style.o, "The Legion of the Bouncy Castle");
+        builder.addRDN(RFC4519Style.l, "Melbourne");
+        builder.addRDN(RFC4519Style.st, "Victoria");
+        builder.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "feedback-crypto@bouncycastle.org");
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+
+        X509CertificateHolder cert = certGen.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+
+        //
+        // create the certificate - version 1
+        //
+        sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v1CertificateBuilder certGen1 = new BcX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        cert = certGen1.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+        AsymmetricKeyParameter certPubKey = org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(certPubKey)));
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509");
+
+        X509Certificate x509cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(cert);
+    }
+
+    public void testCheckCreationLms()
+        throws Exception
+    {
+        //
+        // set up the keys
+        //
+        AsymmetricKeyParameter privKey;
+        AsymmetricKeyParameter pubKey;
+
+        AsymmetricCipherKeyPairGenerator kpg = new LMSKeyPairGenerator();
+
+        kpg.init(new LMSKeyGenerationParameters(
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4), new SecureRandom()));
+
+        AsymmetricCipherKeyPair pair = kpg.generateKeyPair();
+
+        privKey = (AsymmetricKeyParameter)pair.getPrivate();
+        pubKey = (AsymmetricKeyParameter)pair.getPublic();
+
+        //
+        // distinguished name table.
+        //
+        X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
+
+        builder.addRDN(RFC4519Style.c, "AU");
+        builder.addRDN(RFC4519Style.o, "The Legion of the Bouncy Castle");
+        builder.addRDN(RFC4519Style.l, "Melbourne");
+        builder.addRDN(RFC4519Style.st, "Victoria");
+        builder.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "feedback-crypto@bouncycastle.org");
+
+        //
+        // extensions
+        //
+
+        //
+        // create the certificate - version 3
+        //
+        ContentSigner sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v3CertificateBuilder certGen = new BcX509v3CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+
+        X509CertificateHolder cert = certGen.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+
+        //
+        // create the certificate - version 1
+        //
+
+        sigGen = new BcHssLmsContentSignerBuilder().build(privKey);
+        X509v1CertificateBuilder certGen1 = new BcX509v1CertificateBuilder(builder.build(), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), builder.build(), pubKey);
+
+        cert = certGen1.build(sigGen);
+
+        assertTrue(cert.isValidOn(new Date()));
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
+
+        AsymmetricKeyParameter certPubKey = ((HSSPublicKeyParameters)org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo())).getLMSPublicKey();
+
+        assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(certPubKey)));
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
+        CertificateFactory fact = CertificateFactory.getInstance("X.509");
+
+        X509Certificate x509cert = (X509Certificate)fact.generateCertificate(bIn);
+
+        //System.out.println(new String(cert.getEncoded()));
     }
 
     public void testTryLmsSettings()

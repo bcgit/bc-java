@@ -3522,14 +3522,33 @@ public class NewSignedDataTest
     {
         CMSSignedData sd = new CMSSignedData(signedData);
 
-        assertTrue(sd.verifySignatures(new SignerInformationVerifierProvider()
+        // Verify using the certificate from the supplied credentials
+        SignerInformationVerifierProvider verifierProvider = new SignerInformationVerifierProvider()
         {
             public SignerInformationVerifier get(SignerId signerId)
                 throws OperatorCreationException
             {
                 return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(credentials.getCertificate());
             }
-        }));
+        };
+
+        // External signer verification
+        {
+            SignerInformationStore signers = sd.getSignerInfos();
+
+            Iterator it = signers.getSigners().iterator();
+            while (it.hasNext())
+            {
+                SignerInformation signer = (SignerInformation)it.next();
+
+                SignerInformationVerifier verifier = verifierProvider.get(signer.getSID());
+
+                assertTrue(signer.verify(verifier));
+            }
+        }
+
+        // Built-in signer verification
+        assertTrue(sd.verifySignatures(verifierProvider));
     }
 
     private static class TestCMSSignatureAlgorithmNameGenerator
