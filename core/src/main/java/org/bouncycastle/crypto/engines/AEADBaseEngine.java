@@ -733,9 +733,22 @@ abstract class AEADBaseEngine
             m_bufPos += len;
             return 0;
         }
-        resultLength = processor.getUpdateOutputSize(len) + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
+        int length = processor.getUpdateOutputSize(len);
+        resultLength = length + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
         ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
         resultLength = 0;
+        if (input == output)
+        {
+            int inEnd = inOff + len;
+            int outEnd = outOff + length;
+            if ((inOff <= outOff && outOff <= inEnd) ||
+                (outOff <= inOff && inOff <= outEnd))
+            {
+                input = new byte[len];
+                System.arraycopy(output, inOff, input, 0, len);
+                inOff = 0;
+            }
+        }
         if (forEncryption)
         {
             if (m_bufPos > 0)
@@ -746,6 +759,7 @@ abstract class AEADBaseEngine
                 processBufferEncrypt(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
             }
+
             // The function is just an operator >= or >
             while (processor.isLengthExceedingBlockSize(len, BlockSize))
             {
