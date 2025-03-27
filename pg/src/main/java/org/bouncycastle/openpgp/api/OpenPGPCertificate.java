@@ -3010,6 +3010,11 @@ public class OpenPGPCertificate
         @Override
         public int compareTo(OpenPGPSignatureChain other)
         {
+            if (this == other)
+            {
+                return 0;
+            }
+
             if (isHardRevocation())
             {
                 return -1;
