@@ -26,7 +26,7 @@ public class IetfAttrSyntax
     public static final int VALUE_OID       = 2;
     public static final int VALUE_UTF8      = 3;
     GeneralNames            policyAuthority = null;
-    Vector                  values          = new Vector();
+    Vector<ASN1Primitive>   values          = new Vector<>();
     int                     valueChoice     = -1;
 
     public static IetfAttrSyntax getInstance(Object obj)
@@ -68,9 +68,9 @@ public class IetfAttrSyntax
 
         seq = (ASN1Sequence)seq.getObjectAt(i);
 
-        for (Enumeration e = seq.getObjects(); e.hasMoreElements();)
+        for (ASN1Encodable element : seq)
         {
-            ASN1Primitive obj = (ASN1Primitive)e.nextElement();
+            ASN1Primitive obj = (ASN1Primitive)element;
             int type;
 
             if (obj instanceof ASN1ObjectIdentifier)
@@ -178,9 +178,9 @@ public class IetfAttrSyntax
         {
             ASN1EncodableVector v2 = new ASN1EncodableVector(values.size());
 
-            for (Enumeration i = values.elements(); i.hasMoreElements();)
+            for (ASN1Primitive element : values)
             {
-                v2.add((ASN1Encodable)i.nextElement());
+                v2.add(element);
             }
     
             v.add(new DERSequence(v2));

@@ -35,6 +35,7 @@ import org.bouncycastle.util.encoders.Hex;
  * </pre>
  * @deprecated use org.bouncycastle.asn1.x500.X500Name.
  */
+@Deprecated
 public class X509Name
     extends ASN1Object
 {
@@ -42,30 +43,35 @@ public class X509Name
      * country code - StringType(SIZE(2))
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier C = new ASN1ObjectIdentifier("2.5.4.6");
 
     /**
      * organization - StringType(SIZE(1..64))
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier O = new ASN1ObjectIdentifier("2.5.4.10");
 
     /**
      * organizational unit name - StringType(SIZE(1..64))
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier OU = new ASN1ObjectIdentifier("2.5.4.11");
 
     /**
      * Title
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier T = new ASN1ObjectIdentifier("2.5.4.12");
 
     /**
      * common name - StringType(SIZE(1..64))
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier CN = new ASN1ObjectIdentifier("2.5.4.3");
 
     /**
@@ -191,6 +197,7 @@ public class X509Name
      * <p>Note: if you're trying to be ultra orthodox, don't use this! It shouldn't be in here.
      * @deprecated use a X500NameStyle
      */
+    @Deprecated
     public static final ASN1ObjectIdentifier EmailAddress = PKCSObjectIdentifiers.pkcs_9_at_emailAddress;
     
     /**
@@ -224,36 +231,38 @@ public class X509Name
      * default look up table translating OID values into their common symbols following
      * the convention in RFC 2253 with a few extras
      */
-    public static final Hashtable DefaultSymbols = new Hashtable();
+    public static final Hashtable<ASN1ObjectIdentifier, String> DefaultSymbols = new Hashtable<>();
 
     /**
      * look up table translating OID values into their common symbols following the convention in RFC 2253
      * 
      */
-    public static final Hashtable RFC2253Symbols = new Hashtable();
+    public static final Hashtable<ASN1ObjectIdentifier, String> RFC2253Symbols = new Hashtable<>();
 
     /**
      * look up table translating OID values into their common symbols following the convention in RFC 1779
      * 
      */
-    public static final Hashtable RFC1779Symbols = new Hashtable();
+    public static final Hashtable<ASN1ObjectIdentifier, String> RFC1779Symbols = new Hashtable<>();
 
     /**
      * look up table translating common symbols into their OIDS.
      */
-    public static final Hashtable DefaultLookUp = new Hashtable();
+    public static final Hashtable<String, ASN1ObjectIdentifier> DefaultLookUp = new Hashtable<>();
 
     /**
      * look up table translating OID values into their common symbols
      * @deprecated use DefaultSymbols
      */
-    public static final Hashtable OIDLookUp = DefaultSymbols;
+    @Deprecated
+    public static final Hashtable<ASN1ObjectIdentifier, String> OIDLookUp = DefaultSymbols;
 
     /**
      * look up table translating string values into their OIDS -
      * @deprecated use DefaultLookUp
      */
-    public static final Hashtable SymbolLookUp = DefaultLookUp;
+    @Deprecated
+    public static final Hashtable<String, ASN1ObjectIdentifier> SymbolLookUp = DefaultLookUp;
 
     private static final Boolean TRUE = new Boolean(true); // for J2ME compatibility
     private static final Boolean FALSE = new Boolean(false);
@@ -400,16 +409,15 @@ public class X509Name
      * the principal will be a list of constructed sets, each containing an (OID, String) pair.
      * @deprecated use X500Name.getInstance()
      */
+    @Deprecated
     public X509Name(
         ASN1Sequence  seq)
     {
         this.seq = seq;
 
-        Enumeration e = seq.getObjects();
-
-        while (e.hasMoreElements())
+        for (ASN1Encodable element : seq)
         {
-            ASN1Set         set = ASN1Set.getInstance(((ASN1Encodable)e.nextElement()).toASN1Primitive());
+            ASN1Set         set = ASN1Set.getInstance(element.toASN1Primitive());
 
             for (int i = 0; i < set.size(); i++) 
             {
@@ -426,7 +434,7 @@ public class X509Name
                    if (value instanceof ASN1String && !(value instanceof ASN1UniversalString))
                    {
                        String v = ((ASN1String)value).getString();
-                       if (v.length() > 0 && v.charAt(0) == '#')
+                       if (!v.isEmpty() && v.charAt(0) == '#')
                        {
                            values.addElement("\\" + v);
                        }
@@ -463,6 +471,7 @@ public class X509Name
      * with the ordering specified below.
      * @deprecated use an ordered constructor! The hashtable ordering is rarely correct
      */
+    @Deprecated
     public X509Name(
         Hashtable  attributes)
     {
@@ -496,6 +505,7 @@ public class X509Name
      * ASN.1 counterparts.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         Vector                   ordering,
         Hashtable                attributes,
@@ -539,6 +549,7 @@ public class X509Name
      * Takes two vectors one of the oids and the other of the values.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         Vector  oids,
         Vector  values)
@@ -553,6 +564,7 @@ public class X509Name
      * ASN.1 counterparts.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         Vector                  oids,
         Vector                  values,
@@ -588,6 +600,7 @@ public class X509Name
      * some such, converting it into an ordered set of name attributes.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         String  dirName)
     {
@@ -601,6 +614,7 @@ public class X509Name
      * in converter.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         String                  dirName,
         X509NameEntryConverter  converter)
@@ -615,6 +629,7 @@ public class X509Name
      * last element in the string.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         boolean reverse,
         String  dirName)
@@ -630,6 +645,7 @@ public class X509Name
      * be built by starting at the end of the string, rather than the start.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         boolean                 reverse,
         String                  dirName,
@@ -652,6 +668,7 @@ public class X509Name
      * @param dirName the X.500 string to be parsed.
      * @deprecated use X500Name, X500NameBuilder
      */
+    @Deprecated
     public X509Name(
         boolean     reverse,
         Hashtable   lookUp,
@@ -686,7 +703,7 @@ public class X509Name
 
     private String unescape(String elt)
     {
-        if (elt.length() == 0 || (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0))
+        if (elt.isEmpty() || (elt.indexOf('\\') < 0 && elt.indexOf('"') < 0))
         {
             return elt.trim();
         }
@@ -694,7 +711,7 @@ public class X509Name
         char[] elts = elt.toCharArray();
         boolean escaped = false;
         boolean quoted = false;
-        StringBuffer buf = new StringBuffer(elt.length());
+        StringBuilder buf = new StringBuilder(elt.length());
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -838,7 +855,8 @@ public class X509Name
     {
         X509NameTokenizer vTok;
         String name;
-        String value;ASN1ObjectIdentifier oid;
+        String value;
+        ASN1ObjectIdentifier oid;
         vTok = new X509NameTokenizer(token, '=');
 
         name = vTok.nextToken();
@@ -895,7 +913,7 @@ public class X509Name
     public Vector getValues(
         ASN1ObjectIdentifier oid)
     {
-        Vector  v = new Vector();
+        Vector<String> v = new Vector<>();
 
         for (int i = 0; i != values.size(); i++)
         {
@@ -1016,6 +1034,7 @@ public class X509Name
         return true;
     }
 
+    @Override
     public int hashCode()
     {
         if (isHashCodeCalculated)
@@ -1043,6 +1062,7 @@ public class X509Name
     /**
      * test for equality - note: case is ignored.
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (obj == this)
@@ -1156,7 +1176,7 @@ public class X509Name
     {
         String value = Strings.toLowerCase(s.trim());
         
-        if (value.length() > 0 && value.charAt(0) == '#')
+        if (!value.isEmpty() && value.charAt(0) == '#')
         {
             ASN1Primitive obj = decodeObject(value);
 
@@ -1184,9 +1204,9 @@ public class X509Name
     private String stripInternalSpaces(
         String str)
     {
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
 
-        if (str.length() != 0)
+        if (!str.isEmpty())
         {
             char    c1 = str.charAt(0);
 
@@ -1207,7 +1227,7 @@ public class X509Name
     }
 
     private void appendValue(
-        StringBuffer        buf,
+        StringBuilder       buf,
         Hashtable           oidSymbols,
         ASN1ObjectIdentifier oid,
         String              value)
@@ -1285,11 +1305,11 @@ public class X509Name
         boolean     reverse,
         Hashtable   oidSymbols)
     {
-        StringBuffer            buf = new StringBuffer();
-        Vector                  components = new Vector();
+        StringBuilder           buf = new StringBuilder();
+        Vector<StringBuilder>   components = new Vector<>();
         boolean                 first = true;
 
-        StringBuffer ava = null;
+        StringBuilder ava = null;
 
         for (int i = 0; i < ordering.size(); i++)
         {
@@ -1302,7 +1322,7 @@ public class X509Name
             }
             else
             {
-                ava = new StringBuffer();
+                ava = new StringBuilder();
                 appendValue(ava, oidSymbols,
                     (ASN1ObjectIdentifier)ordering.elementAt(i),
                     (String)values.elementAt(i));
