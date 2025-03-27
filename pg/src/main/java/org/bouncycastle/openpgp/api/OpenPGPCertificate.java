@@ -967,7 +967,7 @@ public class OpenPGPCertificate
             Date evaluationTime)
     {
         OpenPGPSignatureChains chainsBy = getPrimaryKey().
-                getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+                getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
         return chainsBy.getCertificationAt(evaluationTime);
     }
 
@@ -981,7 +981,7 @@ public class OpenPGPCertificate
             Date evaluationTime)
     {
         OpenPGPSignatureChains chainsBy = getPrimaryKey()
-                .getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+                .getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
         return chainsBy.getRevocationAt(evaluationTime);
     }
 
@@ -1361,7 +1361,7 @@ public class OpenPGPCertificate
             return OpenPGPSignature.OpenPGPSignatureSubpacket.hashed(subpacket, keySignature);
         }
 
-        protected OpenPGPSignatureChains getDanglingExternalSignatureChainEndsFrom(
+        protected OpenPGPSignatureChains getMergedDanglingExternalSignatureChainEndsFrom(
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
         {
@@ -2000,12 +2000,12 @@ public class OpenPGPCertificate
             return null;
         }
 
-        public OpenPGPComponentSignature getLatestKeyRevocationSignature()
+        public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature()
         {
-            return getLatestKeyRevocationSignature(new Date());
+            return getLatestKeyRevocationSelfSignature(new Date());
         }
 
-        public OpenPGPComponentSignature getLatestKeyRevocationSignature(Date evaluationTime)
+        public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentRevocationChain = getCertificate().getAllSignatureChainsFor(this)
                     .getRevocationAt(evaluationTime);
@@ -2027,7 +2027,7 @@ public class OpenPGPCertificate
                 signatures.add(directKeySig);
             }
 
-            OpenPGPComponentSignature keyRevocation = getLatestKeyRevocationSignature(evaluationTime);
+            OpenPGPComponentSignature keyRevocation = getLatestKeyRevocationSelfSignature(evaluationTime);
             if (keyRevocation != null)
             {
                 signatures.add(keyRevocation);
@@ -2377,7 +2377,7 @@ public class OpenPGPCertificate
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
         {
-            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            OpenPGPSignatureChains chainsBy = getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
             return chainsBy.getCertificationAt(evaluationTime);
         }
 
@@ -2390,7 +2390,7 @@ public class OpenPGPCertificate
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
         {
-            OpenPGPSignatureChains chainsBy = getDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
+            OpenPGPSignatureChains chainsBy = getMergedDanglingExternalSignatureChainEndsFrom(thirdPartyCertificate, evaluationTime);
             return chainsBy.getRevocationAt(evaluationTime);
         }
 
