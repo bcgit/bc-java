@@ -81,12 +81,26 @@ public class AsconCXof128
 
     private void initState(byte[] z, int zOff, int zLen)
     {
-        p.set(7445901275803737603L, 4886737088792722364L, -1616759365661982283L, 3076320316797452470L, -8124743304765850554L);
-        p.x0 ^= ((long)zLen) << 3;
-        p.p(12);
-        update(z, zOff, zLen);
-        padAndAbsorb();
+//        p.set(0x0000080000cc0004L, 0L, 0L, 0L, 0L);
+//        p.p(12);
+
+        if (zLen == 0)
+        {
+//            p.p(12);
+//            padAndAbsorb();
+
+            p.set(0x500cccc894e3c9e8L, 0x5bed06f28f71248dL, 0x3b03a0f930afd512L, 0x112ef093aa5c698bL, 0x00c8356340a347f0L);
+        }
+        else
+        {
+            p.set(0x675527c2a0e8de03L, 0x43d12d7dc0377bbcL, 0xe9901dec426e81b5L, 0x2ab14907720780b6L, 0x8f3f1d02d432bc46L);
+
+            p.x0 ^= ((long)zLen) << 3;
+            p.p(12);
+            update(z, zOff, zLen);
+            padAndAbsorb();
+        }
+
         super.reset();
     }
 }
-
