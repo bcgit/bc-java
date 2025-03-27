@@ -749,7 +749,7 @@ public class OpenPGPCertificate
         // Key Signatures
         for (OpenPGPComponentSignature sig : keySignatures)
         {
-            OpenPGPSignatureChain chain = OpenPGPSignatureChain.direct(sig, sig.issuer, primaryKey);
+            OpenPGPSignatureChain chain = OpenPGPSignatureChain.direct(sig);
             keySignatureChains.add(chain);
         }
         componentSignatureChains.put(primaryKey, keySignatureChains);
@@ -771,7 +771,7 @@ public class OpenPGPCertificate
 
             for (OpenPGPComponentSignature sig : bindings)
             {
-                OpenPGPSignatureChain chain = OpenPGPSignatureChain.direct(sig, sig.getIssuerComponent(), identity);
+                OpenPGPSignatureChain chain = OpenPGPSignatureChain.direct(sig);
                 identityChains.add(chain);
             }
             componentSignatureChains.put(identity, identityChains);
@@ -801,13 +801,12 @@ public class OpenPGPCertificate
             {
                 for (OpenPGPSignatureChain issuerChain : issuerChains.chains)
                 {
-                    subkeyChains.add(issuerChain.plus(sig, subkey));
+                    subkeyChains.add(issuerChain.plus(sig));
                 }
             }
             else
             {
-                subkeyChains.add(new OpenPGPSignatureChain(
-                        new OpenPGPSignatureChain.Certification(sig, issuer, subkey)));
+                subkeyChains.add(new OpenPGPSignatureChain(OpenPGPSignatureChain.Link.create(sig)));
             }
         }
         this.componentSignatureChains.put(subkey, subkeyChains);
@@ -1621,8 +1620,7 @@ public class OpenPGPCertificate
                     {
                         OpenPGPSignatureChain externalChain = issuerKey.getSignatureChains().getChainAt(evaluationTime);
                         externalChain = externalChain.plus(
-                                new OpenPGPComponentSignature(rootLink.signature.getSignature(), issuerKey, this),
-                                this);
+                                new OpenPGPComponentSignature(rootLink.signature.getSignature(), issuerKey, this));
                         chainsBy.add(externalChain);
                     }
                 }
@@ -2833,11 +2831,9 @@ public class OpenPGPCertificate
         /**
          * Return an NEW instance of the {@link OpenPGPSignatureChain} with the new link appended.
          * @param sig signature
-         * @param targetComponent signature target
          * @return new instance
          */
-        public OpenPGPSignatureChain plus(OpenPGPComponentSignature sig,
-                                          OpenPGPCertificateComponent targetComponent)
+        public OpenPGPSignatureChain plus(OpenPGPComponentSignature sig)
         {
             if (getLeafLinkTargetKey() != sig.getIssuerComponent())
             {
@@ -2846,16 +2842,14 @@ public class OpenPGPCertificate
 
             OpenPGPSignatureChain chain = new OpenPGPSignatureChain(this);
 
-            chain.chainLinks.add(Link.create(sig, sig.getIssuerComponent(), targetComponent));
+            chain.chainLinks.add(Link.create(sig));
 
             return chain;
         }
 
-        public static OpenPGPSignatureChain direct(OpenPGPComponentSignature sig,
-                                                   OpenPGPComponentKey issuer,
-                                                   OpenPGPCertificateComponent targetComponent)
+        public static OpenPGPSignatureChain direct(OpenPGPComponentSignature sig)
         {
-            return new OpenPGPSignatureChain(Link.create(sig, issuer, targetComponent));
+            return new OpenPGPSignatureChain(Link.create(sig));
         }
 
         public Link getRootLink()
@@ -3056,16 +3050,10 @@ public class OpenPGPCertificate
         public static abstract class Link
         {
             protected final OpenPGPComponentSignature signature;
-            protected final OpenPGPComponentKey issuer;
-            protected final OpenPGPCertificateComponent target;
 
-            public Link(OpenPGPComponentSignature signature,
-                        OpenPGPComponentKey issuer,
-                        OpenPGPCertificateComponent target)
+            public Link(OpenPGPComponentSignature signature)
             {
                 this.signature = signature;
-                this.issuer = issuer;
-                this.target = target;
             }
 
             public Date since()
@@ -3142,17 +3130,15 @@ public class OpenPGPCertificate
                 return signature.toString();
             }
 
-            public static Link create(OpenPGPComponentSignature signature,
-                                      OpenPGPComponentKey issuer,
-                                      OpenPGPCertificateComponent target)
+            public static Link create(OpenPGPComponentSignature signature)
             {
                 if (signature.isRevocation())
                 {
-                    return new Revocation(signature, issuer, target);
+                    return new Revocation(signature);
                 }
                 else
                 {
-                    return new Certification(signature, issuer, target);
+                    return new Certification(signature);
                 }
             }
 
@@ -3172,15 +3158,10 @@ public class OpenPGPCertificate
              * Positive certification.
              *
              * @param signature signature
-             * @param issuer key that issued the certification.
-             *               Is nullable (e.g. for 3rd-party sigs where the cert is not available)
-             * @param target signed certificate component
              */
-            public Certification(OpenPGPComponentSignature signature,
-                                 OpenPGPComponentKey issuer,
-                                 OpenPGPCertificateComponent target)
+            public Certification(OpenPGPComponentSignature signature)
             {
-                super(signature, issuer, target);
+                super(signature);
             }
         }
 
@@ -3194,15 +3175,10 @@ public class OpenPGPCertificate
              * Revocation.
              *
              * @param signature signature
-             * @param issuer key that issued the revocation.
-             *               Is nullable (e.g. for 3rd-party sigs where the cert is not available)
-             * @param target revoked certification component
              */
-            public Revocation(OpenPGPComponentSignature signature,
-                              OpenPGPComponentKey issuer,
-                              OpenPGPCertificateComponent target)
+            public Revocation(OpenPGPComponentSignature signature)
             {
-                super(signature, issuer, target);
+                super(signature);
             }
 
             @Override
