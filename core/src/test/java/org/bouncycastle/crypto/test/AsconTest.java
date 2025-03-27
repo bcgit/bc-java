@@ -108,6 +108,12 @@ public class AsconTest
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
         CipherTest.checkAEADParemeter(this, 20, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
 
+        CipherTest.testOverlapping(this,16, 16, 16, 16, new AsconAEAD128());
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128));
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon128a));
+        CipherTest.testOverlapping(this, 20, 16, 16, 16, new AsconEngine(AsconEngine.AsconParameters.ascon80pq));
+
+
         CipherTest.checkCipher(32, 16, 100, 128, new CipherTest.Instance()
         {
             @Override

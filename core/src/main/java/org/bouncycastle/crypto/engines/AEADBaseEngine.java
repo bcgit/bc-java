@@ -587,6 +587,18 @@ abstract class AEADBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
+            if (input == output)
+            {
+                int inEnd = inOff + len;
+                int outEnd = outOff + processor.getUpdateOutputSize(len);
+                if ((inOff <= outOff && outOff <= inEnd) ||
+                    (outOff <= inOff && inOff <= outEnd))
+                {
+                    input = new byte[len];
+                    System.arraycopy(output, inOff, input, 0, len);
+                    inOff = 0;
+                }
+            }
             boolean forEncryption = checkData(false);
             if (forEncryption)
             {
