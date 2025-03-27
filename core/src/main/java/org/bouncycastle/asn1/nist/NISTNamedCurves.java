@@ -15,8 +15,8 @@ import org.bouncycastle.util.Strings;
  */
 public class NISTNamedCurves
 {
-    static final Hashtable objIds = new Hashtable();
-    static final Hashtable names = new Hashtable();
+    static final Hashtable<String, ASN1ObjectIdentifier> objIds = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, String> names = new Hashtable<>();
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid)
     {
@@ -79,7 +79,7 @@ public class NISTNamedCurves
      */
     public static ASN1ObjectIdentifier getOID(String name)
     {
-        return (ASN1ObjectIdentifier)objIds.get(Strings.toUpperCase(name));
+        return objIds.get(Strings.toUpperCase(name));
     }
 
     /**
@@ -87,7 +87,7 @@ public class NISTNamedCurves
      */
     public static String getName(ASN1ObjectIdentifier oid)
     {
-        return (String)names.get(oid);
+        return names.get(oid);
     }
 
     /**

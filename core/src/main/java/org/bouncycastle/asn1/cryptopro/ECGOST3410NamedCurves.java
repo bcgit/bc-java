@@ -42,6 +42,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder gostR3410_2001_CryptoPro_A = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97");
@@ -72,6 +73,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder gostR3410_2001_CryptoPro_B = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("8000000000000000000000000000000000000000000000000000000000000C99");
@@ -102,6 +104,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder gostR3410_2001_CryptoPro_C = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("9B9F605F5A858107AB1EC85E6B41C8AACF846E86789051D37998F7B9022D759B");
@@ -132,6 +135,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder id_tc26_gost_3410_12_256_paramSetA = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFD97");
@@ -162,6 +166,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder id_tc26_gost_3410_12_512_paramSetA = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDC7");
@@ -192,6 +197,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder id_tc26_gost_3410_12_512_paramSetB = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("8000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006F");
@@ -222,6 +228,7 @@ public class ECGOST3410NamedCurves
      */
     static X9ECParametersHolder id_tc26_gost_3410_12_512_paramSetC = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger mod_p = fromHex("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFDC7");
@@ -248,9 +255,9 @@ public class ECGOST3410NamedCurves
     };
 
 
-    static final Hashtable objIds = new Hashtable();
-    static final Hashtable curves = new Hashtable();
-    static final Hashtable names = new Hashtable();
+    static final Hashtable<String, ASN1ObjectIdentifier> objIds = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, X9ECParametersHolder> curves = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, String> names = new Hashtable<>();
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
@@ -295,12 +302,12 @@ public class ECGOST3410NamedCurves
 
     public static X9ECParametersHolder getByOIDLazy(ASN1ObjectIdentifier oid)
     {
-        return (X9ECParametersHolder)curves.get(oid);
+        return curves.get(oid);
     }
 
     public static ASN1ObjectIdentifier getOID(String name)
     {
-        return (ASN1ObjectIdentifier)objIds.get(name);
+        return objIds.get(name);
     }
 
     /**
@@ -309,7 +316,7 @@ public class ECGOST3410NamedCurves
     public static String getName(
         ASN1ObjectIdentifier  oid)
     {
-        return (String)names.get(oid);
+        return names.get(oid);
     }
 
     /**
