@@ -132,7 +132,6 @@ public class SnovaEngine
             return;
         }
 
-
         byte[] temp = new byte[l * l];
 
         for (int a = 1; a < 16; a++)
@@ -166,29 +165,23 @@ public class SnovaEngine
 
     private byte determinant2x2(byte[] m, int off)
     {
-        return gf16Add(
-            gf16Mul(getGF16m(m, 0, off), getGF16m(m, 1, off + 1)),
-            gf16Mul(getGF16m(m, 0, off + 1), getGF16m(m, 1, off)));
+        return (byte)
+            (gf16Mul(getGF16m(m, 0, off), getGF16m(m, 1, off + 1)) ^
+                gf16Mul(getGF16m(m, 0, off + 1), getGF16m(m, 1, off)));
     }
 
     private byte determinant3x3(byte[] m, int off, int i0, int i1, int i2)
     {
-        return gf16Add(
-            gf16Add(
-                gf16Mul(getGF16m(m, 0, off + i0), gf16Add(
-                    gf16Mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i2)),
-                    gf16Mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i1))
-                )),
-                gf16Mul(getGF16m(m, 0, off + i1), gf16Add(
-                    gf16Mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i2)),
-                    gf16Mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i0))
-                ))
-            ),
-            gf16Mul(getGF16m(m, 0, off + i2), gf16Add(
-                gf16Mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i1)),
-                gf16Mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i0))
-            ))
-        );
+        return (byte)(
+            gf16Mul(getGF16m(m, 0, off + i0), (byte)(
+                gf16Mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i2)) ^
+                    gf16Mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i1)))) ^
+                gf16Mul(getGF16m(m, 0, off + i1), (byte)(
+                    gf16Mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i2)) ^
+                        gf16Mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i0)))) ^
+                gf16Mul(getGF16m(m, 0, off + i2), (byte)(
+                    gf16Mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i1)) ^
+                        gf16Mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i0)))));
     }
 
     private byte determinant4x4(byte[] m, int off)
@@ -501,7 +494,29 @@ public class SnovaEngine
 
         if (params.isPkExpandShake())
         {
-            snovaShake(pkSeed, prngOutput.length, prngOutput);
+            final int SHAKE128_RATE = 168; // 1344-bit rate = 168 bytes
+            long blockCounter = 0;
+            int offset = 0;
+            int remaining = prngOutput.length;
+            byte[] counterBytes = new byte[8];
+            SHAKEDigest shake = new SHAKEDigest(128);
+            while (remaining > 0)
+            {
+                // Process seed + counter
+                shake.update(pkSeed, 0, pkSeed.length);
+                Pack.longToLittleEndian(blockCounter, counterBytes, 0);
+                shake.update(counterBytes, 0, 8);
+
+                // Calculate bytes to generate in this iteration
+                int bytesToGenerate = Math.min(remaining, SHAKE128_RATE);
+
+                // Generate output (XOF mode)
+                shake.doFinal(prngOutput, offset, bytesToGenerate);
+
+                offset += bytesToGenerate;
+                remaining -= bytesToGenerate;
+                blockCounter++;
+            }
         }
         else
         {
@@ -581,34 +596,6 @@ public class SnovaEngine
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq, map1.bAlpha, (m - 1) * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq * 2, map1.qAlpha1, (m - 2) * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq * 3, map1.qAlpha2, (m - 3) * o * alpha * lsq);
-        }
-    }
-
-    public static void snovaShake(byte[] ptSeed, int outputBytes, byte[] out)
-    {
-        final int SHAKE128_RATE = 168; // 1344-bit rate = 168 bytes
-        long blockCounter = 0;
-        int offset = 0;
-        int remaining = outputBytes;
-        byte[] counterBytes = new byte[8];
-        while (remaining > 0)
-        {
-            SHAKEDigest shake = new SHAKEDigest(128);
-
-            // Process seed + counter
-            shake.update(ptSeed, 0, ptSeed.length);
-            Pack.longToLittleEndian(blockCounter, counterBytes, 0);
-            shake.update(counterBytes, 0, 8);
-
-            // Calculate bytes to generate in this iteration
-            int bytesToGenerate = Math.min(remaining, SHAKE128_RATE);
-
-            // Generate output (XOF mode)
-            shake.doFinal(out, offset, bytesToGenerate);
-
-            offset += bytesToGenerate;
-            remaining -= bytesToGenerate;
-            blockCounter++;
         }
     }
 }
