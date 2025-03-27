@@ -888,7 +888,7 @@ public class OpenPGPCertificate
         uidBindings.sort(Comparator.comparing(OpenPGPSignatureChain::getSince).reversed());
         for (OpenPGPSignatureChain binding : uidBindings)
         {
-            PGPSignature sig = binding.getHeadLink().getSignature().getSignature();
+            PGPSignature sig = binding.getSignature().getSignature();
             if (sig.getHashedSubPackets().isPrimaryUserID())
             {
                 return binding;
@@ -1334,7 +1334,7 @@ public class OpenPGPCertificate
             }
 
             // find signature "closest to the key", e.g. subkey binding signature
-            OpenPGPComponentSignature keySignature = binding.getHeadLink().getSignature();
+            OpenPGPComponentSignature keySignature = binding.getSignature();
 
             PGPSignatureSubpacketVector hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
             if (hashedSubpackets == null || !hashedSubpackets.hasSubpacket(subpacketType))
@@ -1347,7 +1347,7 @@ public class OpenPGPCertificate
                     // No direct-key / primary uid sig found -> No subpacket
                     return null;
                 }
-                keySignature = preferenceBinding.getHeadLink().signature;
+                keySignature = preferenceBinding.getSignature();
                 hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
             }
             // else -> attribute from DK sig is shadowed by SB sig
@@ -1825,7 +1825,7 @@ public class OpenPGPCertificate
             OpenPGPSignatureChain currentDKChain = getSignatureChains().getChainAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
-                return currentDKChain.getHeadLink().getSignature();
+                return currentDKChain.getSignature();
             }
             return null;
         }
@@ -1994,7 +1994,7 @@ public class OpenPGPCertificate
                     .getCertificationAt(evaluationTime);
             if (currentDKChain != null && !currentDKChain.chainLinks.isEmpty())
             {
-                return currentDKChain.getHeadLink().getSignature();
+                return currentDKChain.getSignature();
             }
 
             return null;
@@ -2011,7 +2011,7 @@ public class OpenPGPCertificate
                     .getRevocationAt(evaluationTime);
             if (currentRevocationChain != null && !currentRevocationChain.chainLinks.isEmpty())
             {
-                return currentRevocationChain.getHeadLink().getSignature();
+                return currentRevocationChain.getSignature();
             }
             return null;
         }
@@ -2164,7 +2164,7 @@ public class OpenPGPCertificate
                     continue;
                 }
 
-                OpenPGPSignature binding = chain.getHeadLink().getSignature();
+                OpenPGPSignature binding = chain.getSignature();
                 if (oldestBinding == null ||
                         binding.getCreationTime().before(oldestBinding.getCreationTime()))
                 {
@@ -2357,7 +2357,7 @@ public class OpenPGPCertificate
             OpenPGPSignatureChain currentChain = getSignatureChains().getChainAt(evaluationTime);
             if (currentChain != null && !currentChain.chainLinks.isEmpty())
             {
-                return currentChain.getHeadLink().getSignature();
+                return currentChain.getSignature();
             }
             return null;
         }
@@ -2571,7 +2571,7 @@ public class OpenPGPCertificate
 
         public OpenPGPComponentKey getHeadKey()
         {
-            return getHeadLink().signature.getTargetKeyComponent();
+            return getSignature().getTargetKeyComponent();
         }
 
         public boolean isCertification()
