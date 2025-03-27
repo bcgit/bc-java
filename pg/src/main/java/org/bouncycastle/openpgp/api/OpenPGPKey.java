@@ -230,12 +230,6 @@ public class OpenPGPKey
         }
 
         @Override
-        protected OpenPGPComponentKey getKeyComponent()
-        {
-            return this;
-        }
-
-        @Override
         public boolean isPrimaryKey()
         {
             return getPublicKey().isPrimaryKey();

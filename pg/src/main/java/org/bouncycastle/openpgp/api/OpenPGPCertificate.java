@@ -2159,6 +2159,13 @@ public class OpenPGPCertificate
         }
 
         @Override
+        protected OpenPGPComponentKey getKeyComponent()
+        {
+            // This already IS a component key
+            return this;
+        }
+
+        @Override
         public int hashCode()
         {
             return getPGPPublicKey().hashCode();
@@ -2318,12 +2325,6 @@ public class OpenPGPCertificate
                 }
             }
             return latest;
-        }
-
-        @Override
-        protected OpenPGPComponentKey getKeyComponent()
-        {
-            return this;
         }
 
         /**
@@ -2570,12 +2571,6 @@ public class OpenPGPCertificate
         public String toDetailString()
         {
             return "Subkey[" + getKeyIdentifier() + "] (" + UTCUtil.format(getCreationTime()) + ")";
-        }
-
-        @Override
-        protected OpenPGPComponentKey getKeyComponent()
-        {
-            return this;
         }
 
         /**
