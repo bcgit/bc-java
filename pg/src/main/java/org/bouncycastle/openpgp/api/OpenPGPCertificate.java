@@ -3235,8 +3235,8 @@ public class OpenPGPCertificate
                     {
                         OpenPGPComponentSignature backSig = new OpenPGPComponentSignature(
                                 embeddedSigs.get(0),
-                                getSignature().getTargetKeyComponent(),
-                                getSignature().getIssuer());
+                                /* issuer= */getSignature().getTargetKeyComponent(),
+                                /* target= */getSignature().getIssuer());
                         return backSig.getExpirationTime();
                     }
                     return null;
