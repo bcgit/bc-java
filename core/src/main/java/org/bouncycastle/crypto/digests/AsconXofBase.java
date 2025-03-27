@@ -100,7 +100,7 @@ abstract class AsconXofBase
     {
         if (m_squeezing)
         {
-            throw new IllegalArgumentException("attempt to absorb while squeezing");
+            throw new IllegalStateException("attempt to absorb while squeezing");
         }
     }
 }

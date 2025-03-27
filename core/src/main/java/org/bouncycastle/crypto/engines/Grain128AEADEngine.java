@@ -239,43 +239,49 @@ public class Grain128AEADEngine
     @Override
     protected void processFinalAAD()
     {
+        // Encode(ad length) denotes the message length encoded in the DER format.
+        
         int len = aadOperator.getLen();
         byte[] input = ((StreamAADOperator)aadOperator).getBytes();
-        byte[] ader;
 
-        //encodeDer
+        // Need up to 5 bytes for the DER length as an 'int'
+        byte[] ader = new byte[5];
+
+        int pos;
         if (len < 128)
         {
-            ader = new byte[1];
-            ader[0] = (byte)len;
+            pos = ader.length - 1;
+            ader[pos] = (byte)len;
         }
         else
         {
-            // aderlen is the highest bit position divided by 8
-            int aderlen = len_length(len);
-            ader = new byte[1 + aderlen];
-            ader[0] = (byte)(0x80 | aderlen);
-            int tmp = len;
-            for (int i = 1; i < ader.length; ++i)
+            pos = ader.length;
+
+            int dl = len;
+            do
             {
-                ader[i] = (byte)tmp;
-                tmp >>>= 8;
+                ader[--pos] = (byte)dl;
+                dl >>>= 8;
             }
+            while (dl != 0);
+
+            int count = ader.length - pos;
+            ader[--pos] = (byte)(0x80 | count);
         }
 
-        absorbAadData(ader, ader.length);
-        absorbAadData(input, len);
+        absorbAadData(ader, pos, ader.length - pos);
+        absorbAadData(input, 0, len);
     }
 
-    private void absorbAadData(byte[] ader, int len)
+    private void absorbAadData(byte[] buf, int off, int len)
     {
         for (int i = 0; i < len; ++i)
         {
-            byte ader_i = ader[i];
+            byte b = buf[off + i];
             for (int j = 0; j < 8; ++j)
             {
                 shift();
-                updateInternalState((ader_i >> j) & 1);
+                updateInternalState((b >> j) & 1);
             }
         }
     }
@@ -318,22 +324,5 @@ public class Grain128AEADEngine
             }
             output[outOff + i] = cc;
         }
-    }
-
-    private static int len_length(int v)
-    {
-        if ((v & 0xff) == v)
-        {
-            return 1;
-        }
-        if ((v & 0xffff) == v)
-        {
-            return 2;
-        }
-        if ((v & 0xffffff) == v)
-        {
-            return 3;
-        }
-        return 4;
     }
 }
