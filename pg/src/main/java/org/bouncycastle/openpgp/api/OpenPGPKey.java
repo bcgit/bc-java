@@ -182,6 +182,7 @@ public class OpenPGPKey
         return (PGPSecretKeyRing) super.getPGPKeyRing();
     }
 
+    @Override
     public byte[] getEncoded(PacketFormat packetFormat)
             throws IOException
     {
