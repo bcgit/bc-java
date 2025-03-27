@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.InvalidParameterException;
@@ -1738,6 +1739,29 @@ public class BlockCipherTest
         
         testExceptions();
         testIncorrectCipherModes();
+        doFinalTest();
+    }
+
+    private void doFinalTest()
+    {
+        try
+        {
+            int INPUT_LENGTH = 32;
+            int offset = 1;
+            byte[] PT = new byte[INPUT_LENGTH + offset];
+            SecretKey KEY = new SecretKeySpec(new byte[16], "AES");
+            Cipher c = Cipher.getInstance("AES/ECB/NoPadding", "BC");
+            c.init(Cipher.ENCRYPT_MODE, KEY);
+            int len = c.doFinal(PT, 0, INPUT_LENGTH, PT, offset);
+
+            byte[] expected = Hex.decode("0066e94bd4ef8a2c3b884cfa59ca342b2e66e94bd4ef8a2c3b884cfa59ca342b2e");
+
+            isTrue("expected not match PT", areEqual(expected, PT));
+        }
+        catch (GeneralSecurityException e)
+        {
+            fail(e.toString());
+        }
     }
 
     public static void main(
