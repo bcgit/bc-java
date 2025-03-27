@@ -65,6 +65,7 @@ public class GMNamedCurves
 
     static X9ECParametersHolder wapip192v1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             BigInteger p = fromHex("BDB6F4FE3E8B1D9E0DA8C0D46F4C318CEFE4AFE3B6B8551F");
@@ -89,9 +90,9 @@ public class GMNamedCurves
     };
 
 
-    static final Hashtable objIds = new Hashtable();
-    static final Hashtable curves = new Hashtable();
-    static final Hashtable names = new Hashtable();
+    static final Hashtable<String, ASN1ObjectIdentifier> objIds = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, X9ECParametersHolder> curves = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, String> names = new Hashtable<>();
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
@@ -133,7 +134,7 @@ public class GMNamedCurves
 
     public static X9ECParametersHolder getByOIDLazy(ASN1ObjectIdentifier oid)
     {
-        return (X9ECParametersHolder)curves.get(oid);
+        return curves.get(oid);
     }
 
     /**
@@ -145,7 +146,7 @@ public class GMNamedCurves
     public static ASN1ObjectIdentifier getOID(
         String name)
     {
-        return (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+        return objIds.get(Strings.toLowerCase(name));
     }
 
     /**
@@ -154,7 +155,7 @@ public class GMNamedCurves
     public static String getName(
         ASN1ObjectIdentifier oid)
     {
-        return (String)names.get(oid);
+        return names.get(oid);
     }
 
     /**
