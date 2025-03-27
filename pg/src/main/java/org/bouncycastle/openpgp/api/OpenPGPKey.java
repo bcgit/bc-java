@@ -367,6 +367,11 @@ public class OpenPGPKey
 
         public boolean isPassphraseCorrect(char[] passphrase)
         {
+            if (passphrase != null && !isLocked())
+            {
+                return false;
+            }
+
             try
             {
                 OpenPGPPrivateKey privateKey = unlock(passphrase);
