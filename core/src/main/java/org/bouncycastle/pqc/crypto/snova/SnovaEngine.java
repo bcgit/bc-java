@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 public class SnovaEngine
 {
@@ -589,14 +590,15 @@ public class SnovaEngine
         long blockCounter = 0;
         int offset = 0;
         int remaining = outputBytes;
-
+        byte[] counterBytes = new byte[8];
         while (remaining > 0)
         {
             SHAKEDigest shake = new SHAKEDigest(128);
 
             // Process seed + counter
             shake.update(ptSeed, 0, ptSeed.length);
-            updateWithCounter(shake, blockCounter);
+            Pack.longToLittleEndian(blockCounter, counterBytes, 0);
+            shake.update(counterBytes, 0, 8);
 
             // Calculate bytes to generate in this iteration
             int bytesToGenerate = Math.min(remaining, SHAKE128_RATE);
@@ -608,16 +610,5 @@ public class SnovaEngine
             remaining -= bytesToGenerate;
             blockCounter++;
         }
-    }
-
-    private static void updateWithCounter(SHAKEDigest shake, long counter)
-    {
-        byte[] counterBytes = new byte[8];
-        // Little-endian conversion
-        for (int i = 0; i < 8; i++)
-        {
-            counterBytes[i] = (byte)(counter >> (i * 8));
-        }
-        shake.update(counterBytes, 0, 8);
     }
 }
