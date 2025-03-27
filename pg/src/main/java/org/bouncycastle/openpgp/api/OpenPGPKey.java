@@ -1,6 +1,5 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
