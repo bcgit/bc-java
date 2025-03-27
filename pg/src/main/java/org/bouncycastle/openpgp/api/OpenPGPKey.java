@@ -128,6 +128,11 @@ public class OpenPGPKey
         return components;
     }
 
+    /**
+     * Return the {@link OpenPGPSecretKey} of this key's primary key.
+     *
+     * @return primary secret key
+     */
     public OpenPGPSecretKey getPrimarySecretKey()
     {
         return getSecretKey(getPrimaryKey());
@@ -165,6 +170,11 @@ public class OpenPGPKey
         return getSecretKey(key.getKeyIdentifier());
     }
 
+    /**
+     * Replace the given secret key component.
+     *
+     * @param secretKey secret key
+     */
     void replaceSecretKey(OpenPGPSecretKey secretKey)
     {
         keyRing = PGPSecretKeyRing.insertSecretKey((PGPSecretKeyRing) keyRing, secretKey.rawSecKey);
@@ -177,6 +187,11 @@ public class OpenPGPKey
         return getPGPSecretKeyRing();
     }
 
+    /**
+     * Return the underlying {@link PGPSecretKeyRing}.
+     *
+     * @return secret key ring
+     */
     public PGPSecretKeyRing getPGPSecretKeyRing()
     {
         return (PGPSecretKeyRing) super.getPGPKeyRing();
@@ -241,6 +256,11 @@ public class OpenPGPKey
             return getPublicKey().getLatestSelfSignature(evaluationTime);
         }
 
+        /**
+         * Return the {@link OpenPGPKey} which this {@link OpenPGPSecretKey} belongs to.
+         *
+         * @return OpenPGPKey
+         */
         public OpenPGPKey getOpenPGPKey()
         {
             return (OpenPGPKey) getCertificate();
@@ -275,18 +295,33 @@ public class OpenPGPKey
         /**
          * If true, the secret key is not available in plain and likely needs to be decrypted by providing
          * a key passphrase.
+         *
+         * @return true if the key is locked
          */
         public boolean isLocked()
         {
             return getPGPSecretKey().getS2KUsage() != SecretKeyPacket.USAGE_NONE;
         }
 
+        /**
+         * Unlock an unprotected {@link OpenPGPSecretKey}.
+         *
+         * @return unlocked private key
+         * @throws PGPException if the key cannot be unlocked
+         */
         public OpenPGPPrivateKey unlock()
                 throws PGPException
         {
             return unlock((char[]) null);
         }
 
+        /**
+         * Unlock a protected {@link OpenPGPSecretKey}.
+         *
+         * @param passphraseProvider provider for key passphrases
+         * @return unlocked private key
+         * @throws PGPException if the key cannot be unlocked
+         */
         public OpenPGPPrivateKey unlock(KeyPassphraseProvider passphraseProvider)
                 throws PGPException
         {
@@ -365,6 +400,12 @@ public class OpenPGPKey
             }
         }
 
+        /**
+         * Return true if the provided passphrase is correct.
+         *
+         * @param passphrase passphrase
+         * @return true if the passphrase is correct
+         */
         public boolean isPassphraseCorrect(char[] passphrase)
         {
             if (passphrase != null && !isLocked())
@@ -398,6 +439,11 @@ public class OpenPGPKey
             this.unlockedKey = unlockedKey;
         }
 
+        /**
+         * Return the public {@link OpenPGPComponentKey} of this {@link OpenPGPPrivateKey}.
+         *
+         * @return public component key
+         */
         public OpenPGPComponentKey getPublicKey()
         {
             return secretKey.getPublicKey();
@@ -415,6 +461,7 @@ public class OpenPGPKey
 
         /**
          * Return the unlocked {@link PGPKeyPair} containing the decrypted {@link PGPPrivateKey}.
+         *
          * @return unlocked private key
          */
         public PGPKeyPair getKeyPair()
@@ -422,11 +469,25 @@ public class OpenPGPKey
             return unlockedKey;
         }
 
+        /**
+         * Return the used {@link OpenPGPImplementation}.
+         *
+         * @return implementation
+         */
         private OpenPGPImplementation getImplementation()
         {
             return getSecretKey().getOpenPGPKey().implementation;
         }
 
+        /**
+         * Return a NEW instance of the {@link OpenPGPSecretKey} locked with the new passphrase.
+         * If the key was unprotected before, or if it was protected using AEAD, the new instance will be
+         * protected using AEAD as well.
+         *
+         * @param newPassphrase new passphrase
+         * @return new instance of the key, locked with the new passphrase
+         * @throws PGPException if the key cannot be locked
+         */
         public OpenPGPSecretKey changePassphrase(char[] newPassphrase)
                 throws PGPException
         {
@@ -436,6 +497,15 @@ public class OpenPGPKey
             return changePassphrase(newPassphrase, getImplementation(), useAead);
         }
 
+        /**
+         * Return a NEW instance of the {@link OpenPGPSecretKey} locked with the new passphrase.
+         *
+         * @param newPassphrase new passphrase
+         * @param implementation OpenPGP implementation
+         * @param useAEAD whether to protect the key using AEAD
+         * @return new instance of the key, locked with the new passphrase
+         * @throws PGPException if the key cannot be locked
+         */
         public OpenPGPSecretKey changePassphrase(char[] newPassphrase,
                                                  OpenPGPImplementation implementation,
                                                  boolean useAEAD)
@@ -444,6 +514,14 @@ public class OpenPGPKey
             return changePassphrase(newPassphrase, implementation.pbeSecretKeyEncryptorFactory(useAEAD));
         }
 
+        /**
+         * Return a NEW instance of the {@link OpenPGPSecretKey} locked with the new passphrase.
+         *
+         * @param newPassphrase new passphrase
+         * @param keyEncryptorFactory factory for {@link PBESecretKeyEncryptor} instances
+         * @return new instance of the key, locked with the new passphrase
+         * @throws PGPException if the key cannot be locked
+         */
         public OpenPGPSecretKey changePassphrase(char[] newPassphrase,
                                                  PBESecretKeyEncryptorFactory keyEncryptorFactory)
                 throws PGPException
@@ -463,6 +541,13 @@ public class OpenPGPKey
             return changePassphrase(keyEncryptor);
         }
 
+        /**
+         * Return a NEW instance of the {@link OpenPGPSecretKey} locked using the given {@link PBESecretKeyEncryptor}.
+         *
+         * @param keyEncryptor encryptor
+         * @return new instance of the key, locked with the key encryptor
+         * @throws PGPException if the key cannot be locked
+         */
         public OpenPGPSecretKey changePassphrase(PBESecretKeyEncryptor keyEncryptor)
                 throws PGPException
         {
@@ -481,6 +566,12 @@ public class OpenPGPKey
             return sk;
         }
 
+        /**
+         * Return a NEW instance of the {@link OpenPGPSecretKey} with removed passphrase protection.
+         *
+         * @return unlocked new instance of the key
+         * @throws PGPException if the key cannot be unlocked
+         */
         public OpenPGPSecretKey removePassphrase()
                 throws PGPException
         {

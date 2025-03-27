@@ -1812,6 +1812,16 @@ public class OpenPGPCertificate
             }
         }
 
+        /**
+         * Verify a signature of type {@link PGPSignature#PRIMARYKEY_BINDING}, which is typically embedded as
+         * {@link org.bouncycastle.bcpg.sig.EmbeddedSignature} inside a signature of type
+         * {@link PGPSignature#SUBKEY_BINDING} for a signing capable subkey.
+         *
+         * @param contentVerifierBuilderProvider provider for content verifier builders
+         * @param policy algorithm policy
+         * @param signatureCreationTime creation time of the signature
+         * @throws PGPSignatureException if an exception happens during signature verification
+         */
         private void verifyEmbeddedPrimaryKeyBinding(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
                                                      OpenPGPPolicy policy, Date signatureCreationTime)
                 throws PGPSignatureException
@@ -1893,6 +1903,15 @@ public class OpenPGPCertificate
             throw exception;
         }
 
+        /**
+         * Verify a signature of type {@link PGPSignature#DIRECT_KEY}, {@link PGPSignature#KEY_REVOCATION},
+         * {@link PGPSignature#SUBKEY_BINDING} or {@link PGPSignature#SUBKEY_REVOCATION}.
+         *
+         * @param issuer issuing component key
+         * @param target targeted component key
+         * @param contentVerifierBuilderProvider provider for content verifier builders
+         * @throws PGPSignatureException if an exception happens during signature verification
+         */
         protected void verifyKeySignature(
                 OpenPGPComponentKey issuer,
                 OpenPGPComponentKey target,
@@ -1931,6 +1950,17 @@ public class OpenPGPCertificate
             }
         }
 
+        /**
+         * Verify a certification signature over an {@link OpenPGPUserId}.
+         * The signature is of type {@link PGPSignature#DEFAULT_CERTIFICATION}, {@link PGPSignature#NO_CERTIFICATION},
+         * {@link PGPSignature#CASUAL_CERTIFICATION}, {@link PGPSignature#POSITIVE_CERTIFICATION} or
+         * {@link PGPSignature#CERTIFICATION_REVOCATION}.
+         *
+         * @param issuer issuing component key
+         * @param target targeted userid
+         * @param contentVerifierBuilderProvider provider for content verifier builders
+         * @throws PGPSignatureException if an exception happens during signature verification
+         */
         protected void verifyUserIdSignature(OpenPGPComponentKey issuer,
                                           OpenPGPUserId target,
                                           PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
@@ -1953,6 +1983,17 @@ public class OpenPGPCertificate
             }
         }
 
+        /**
+         * Verify a certification signature over an {@link OpenPGPUserAttribute}.
+         * The signature is of type {@link PGPSignature#DEFAULT_CERTIFICATION}, {@link PGPSignature#NO_CERTIFICATION},
+         * {@link PGPSignature#CASUAL_CERTIFICATION}, {@link PGPSignature#POSITIVE_CERTIFICATION} or
+         * {@link PGPSignature#CERTIFICATION_REVOCATION}.
+         *
+         * @param issuer issuing component key
+         * @param target targeted userid
+         * @param contentVerifierBuilderProvider provider for content verifier builders
+         * @throws PGPSignatureException if an exception happens during signature verification
+         */
         protected void verifyUserAttributeSignature(OpenPGPComponentKey issuer,
                                                  OpenPGPUserAttribute target,
                                                  PGPContentVerifierBuilderProvider contentVerifierBuilderProvider)
@@ -2823,6 +2864,12 @@ public class OpenPGPCertificate
             this(copy.chainLinks);
         }
 
+        /**
+         * Return the signature from the leaf of the chain, which directly applies to the
+         * {@link OpenPGPCertificateComponent}.
+         *
+         * @return signature
+         */
         public OpenPGPComponentSignature getSignature()
         {
             return getLeafLink().getSignature();
@@ -2830,6 +2877,7 @@ public class OpenPGPCertificate
 
         /**
          * Return an NEW instance of the {@link OpenPGPSignatureChain} with the new link appended.
+         *
          * @param sig signature
          * @return new instance
          */
@@ -2847,31 +2895,65 @@ public class OpenPGPCertificate
             return chain;
         }
 
+        /**
+         * Factory method for creating an {@link OpenPGPSignatureChain} with only a single link.
+         *
+         * @param sig signature
+         * @return chain
+         */
         public static OpenPGPSignatureChain direct(OpenPGPComponentSignature sig)
         {
             return new OpenPGPSignatureChain(Link.create(sig));
         }
 
+        /**
+         * Return the very first link in the chain.
+         * This is typically a link that originates from the issuing certificates primary key.
+         *
+         * @return root link
+         */
         public Link getRootLink()
         {
             return chainLinks.get(0);
         }
 
+        /**
+         * Return the issuer of the root link. This is typically the issuing certificates primary key.
+         *
+         * @return root links issuer
+         */
         public OpenPGPComponentKey getRootLinkIssuer()
         {
             return getRootLink().getSignature().getIssuer();
         }
 
+        /**
+         * Return the last link in the chain, which applies to the chains target component.
+         *
+         * @return leaf link
+         */
         public Link getLeafLink()
         {
             return chainLinks.get(chainLinks.size() - 1);
         }
 
+        /**
+         * Return the {@link OpenPGPComponentKey} to which the leaf link applies to.
+         * For subkey binding signatures, this is the subkey.
+         * For user-id certification signatures, it is the primary key.
+         *
+         * @return target key component of the leaf link
+         */
         public OpenPGPComponentKey getLeafLinkTargetKey()
         {
             return getSignature().getTargetKeyComponent();
         }
 
+        /**
+         * Return true, if the chain only consists of non-revocation signatures and is therefore a certification chain.
+         *
+         * @return true if the chain is a certification, false if it contains a revocation link.
+         */
         public boolean isCertification()
         {
             for (Link link : chainLinks)
@@ -2884,6 +2966,11 @@ public class OpenPGPCertificate
             return true;
         }
 
+        /**
+         * Return true, if the chain contains at least one revocation signature.
+         *
+         * @return true if the chain is a revocation.
+         */
         public boolean isRevocation()
         {
             for (Link link : chainLinks)
@@ -2896,6 +2983,11 @@ public class OpenPGPCertificate
             return false;
         }
 
+        /**
+         * Return true, if the chain contains at least one link that represents a hard revocation.
+         *
+         * @return true if chain is hard revocation, false if it is a certification or soft revocation
+         */
         public boolean isHardRevocation()
         {
             for (Link link : chainLinks)
@@ -2945,6 +3037,13 @@ public class OpenPGPCertificate
             return soonestExpiration;
         }
 
+        /**
+         * Return true if the chain is effective at the given evaluation date, meaning all link signatures have
+         * been created before the evaluation time, and none signature expires before the evaluation time.
+         *
+         * @param evaluationDate reference time
+         * @return true if chain is effective at evaluation date
+         */
         public boolean isEffectiveAt(Date evaluationDate)
         {
             if (isHardRevocation())
@@ -2957,6 +3056,12 @@ public class OpenPGPCertificate
             return !evaluationDate.before(since) && (until == null || !evaluationDate.after(until));
         }
 
+        /**
+         * Return true if the signature chain is valid, meaning all its chain links are valid.
+         *
+         * @return true if chain is valid
+         * @throws PGPSignatureException if an exception occurs during signature verification
+         */
         public boolean isValid()
                 throws PGPSignatureException
         {
@@ -2969,6 +3074,14 @@ public class OpenPGPCertificate
             return isValid(cert.implementation.pgpContentVerifierBuilderProvider(), cert.policy);
         }
 
+        /**
+         * Return true if the signature chain is valid, meaning all its chain links are valid.
+         *
+         * @param contentVerifierBuilderProvider provider for content verifier builders
+         * @param policy algorithm policy
+         * @return true if chain is valid
+         * @throws PGPSignatureException if an exception occurs during signature verification
+         */
         public boolean isValid(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider, OpenPGPPolicy policy)
                 throws PGPSignatureException
         {
@@ -3056,11 +3169,24 @@ public class OpenPGPCertificate
                 this.signature = signature;
             }
 
+            /**
+             * Return the {@link Date} since when the link is effective.
+             * This is the creation time of the signature.
+             *
+             * @return signature creation time
+             */
             public Date since()
             {
                 return signature.getCreationTime();
             }
 
+            /**
+             * Return the {@link Date} until the signature is effective.
+             * This is, depending on which event is earlier in time, either the signature expiration time,
+             * or the key expiration time.
+             *
+             * @return time until the link is valid
+             */
             public Date until()
             {
                 Date backSigExpiration = getBackSigExpirationTime();
@@ -3078,6 +3204,11 @@ public class OpenPGPCertificate
                 return backSigExpiration;
             }
 
+            /**
+             * Return the expiration time of the primary key binding signature.
+             *
+             * @return primary key binding signature expiration time
+             */
             private Date getBackSigExpirationTime()
             {
                 if (signature.getSignature().getSignatureType() != PGPSignature.SUBKEY_BINDING)
@@ -3116,6 +3247,14 @@ public class OpenPGPCertificate
                 }
             }
 
+            /**
+             * Verify the link signature.
+             *
+             * @param contentVerifierBuilderProvider provider for content verifier builders
+             * @param policy algorithm policy
+             * @return true if the signature is valid, false otherwise
+             * @throws PGPSignatureException if an exception occurs during signature verification
+             */
             public boolean verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
                                   OpenPGPPolicy policy)
                     throws PGPSignatureException
@@ -3130,6 +3269,14 @@ public class OpenPGPCertificate
                 return signature.toString();
             }
 
+            /**
+             * Factory method for creating Links from component signatures.
+             * Returns either a {@link Certification} in case the signature is a binding,
+             * or a {@link Revocation} in case the signature is a revocation signature.
+             *
+             * @param signature component signature
+             * @return link
+             */
             public static Link create(OpenPGPComponentSignature signature)
             {
                 if (signature.isRevocation())
@@ -3142,6 +3289,11 @@ public class OpenPGPCertificate
                 }
             }
 
+            /**
+             * Return the signature of the link.
+             *
+             * @return signature
+             */
             public OpenPGPComponentSignature getSignature()
             {
                 return signature;
@@ -3218,6 +3370,7 @@ public class OpenPGPCertificate
 
         /**
          * Add a single chain to the collection.
+         *
          * @param chain chain
          */
         public void add(OpenPGPSignatureChain chain)
@@ -3225,11 +3378,21 @@ public class OpenPGPCertificate
             this.chains.add(chain);
         }
 
+        /**
+         * Add all chains to the collection.
+         *
+         * @param otherChains other chains
+         */
         public void addAll(OpenPGPSignatureChains otherChains)
         {
             this.chains.addAll(otherChains.chains);
         }
 
+        /**
+         * Return true if the collection is empty.
+         *
+         * @return true if empty
+         */
         public boolean isEmpty()
         {
             return chains.isEmpty();
@@ -3254,6 +3417,12 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return all {@link OpenPGPSignatureChain} objects, which are valid at the given evaluation time.
+         *
+         * @param evaluationTime reference time
+         * @return valid chains at reference time
+         */
         public OpenPGPSignatureChains getChainsAt(Date evaluationTime)
         {
             OpenPGPSignatureChains effectiveChains = new OpenPGPSignatureChains(targetComponent);
@@ -3269,6 +3438,7 @@ public class OpenPGPCertificate
 
         /**
          * Return a negative certification chain for the component for the given evaluationTime.
+         *
          * @param evaluationTime time for which revocation-ness of the {@link OpenPGPCertificateComponent} is checked.
          * @return negative certification chain or null
          */
@@ -3301,6 +3471,12 @@ public class OpenPGPCertificate
             return b.toString();
         }
 
+        /**
+         * Return all {@link OpenPGPSignatureChain} items which originate from the root {@link OpenPGPComponentKey}.
+         *
+         * @param root root key
+         * @return all chains with root key as origin
+         */
         public OpenPGPSignatureChains fromOrigin(OpenPGPComponentKey root)
         {
             OpenPGPSignatureChains chainsFromRoot = new OpenPGPSignatureChains(root);
@@ -3315,6 +3491,12 @@ public class OpenPGPCertificate
             return chainsFromRoot;
         }
 
+        /**
+         * Return the latest chain, which is valid at the given evaluation time.
+         *
+         * @param evaluationDate reference time
+         * @return latest valid chain
+         */
         public OpenPGPSignatureChain getChainAt(Date evaluationDate)
         {
             OpenPGPSignatureChains atDate = getChainsAt(evaluationDate);
