@@ -246,9 +246,8 @@ public class DefaultBufferedBlockCipher
                 if ((inOff <= outOff && outOff <= inEnd) ||
                     (outOff <= inOff && inOff <= outEnd))
                 {
-                    byte[] overlap = new byte[len];
-                    System.arraycopy(in, inOff, overlap, 0, len);
-                    in = overlap;
+                    in = new byte[len];
+                    System.arraycopy(out, inOff, in, 0, len);
                     inOff = 0;
                 }
             }
