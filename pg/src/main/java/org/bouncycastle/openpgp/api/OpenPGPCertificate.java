@@ -2827,7 +2827,7 @@ public class OpenPGPCertificate
 
         public OpenPGPComponentSignature getSignature()
         {
-            return getHeadLink().getSignature();
+            return getLeafLink().getSignature();
         }
 
         /**
@@ -2839,7 +2839,7 @@ public class OpenPGPCertificate
         public OpenPGPSignatureChain plus(OpenPGPComponentSignature sig,
                                           OpenPGPCertificateComponent targetComponent)
         {
-            if (getHeadKey() != sig.getIssuerComponent())
+            if (getLeafLinkTargetKey() != sig.getIssuerComponent())
             {
                 throw new IllegalArgumentException("Chain head is not equal to link issuer.");
             }
@@ -2863,17 +2863,17 @@ public class OpenPGPCertificate
             return chainLinks.get(0);
         }
 
-        public OpenPGPComponentKey getRootKey()
+        public OpenPGPComponentKey getRootLinkIssuer()
         {
-            return getRootLink().issuer;
+            return getRootLink().getSignature().getIssuer();
         }
 
-        public Link getHeadLink()
+        public Link getLeafLink()
         {
             return chainLinks.get(chainLinks.size() - 1);
         }
 
-        public OpenPGPComponentKey getHeadKey()
+        public OpenPGPComponentKey getLeafLinkTargetKey()
         {
             return getSignature().getTargetKeyComponent();
         }
@@ -2966,7 +2966,7 @@ public class OpenPGPCertificate
         public boolean isValid()
                 throws PGPSignatureException
         {
-            OpenPGPComponentKey rootKey = getRootKey();
+            OpenPGPComponentKey rootKey = getRootLinkIssuer();
             if (rootKey == null)
             {
                 throw new MissingIssuerCertException(getRootLink().signature, "Missing issuer certificate.");
@@ -3026,7 +3026,7 @@ public class OpenPGPCertificate
                 return compare;
             }
 
-            compare = -getHeadLink().since().compareTo(other.getHeadLink().since());
+            compare = -getLeafLink().since().compareTo(other.getLeafLink().since());
             if (compare != 0)
             {
                 return compare;
@@ -3325,7 +3325,7 @@ public class OpenPGPCertificate
             OpenPGPSignatureChains chainsFromRoot = new OpenPGPSignatureChains(root);
             for (OpenPGPSignatureChain chain : chains)
             {
-                OpenPGPComponentKey chainRoot = chain.getRootKey();
+                OpenPGPComponentKey chainRoot = chain.getRootLinkIssuer();
                 if (chainRoot == root)
                 {
                     chainsFromRoot.add(chain);
