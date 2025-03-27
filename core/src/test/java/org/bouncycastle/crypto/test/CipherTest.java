@@ -908,4 +908,39 @@ public abstract class CipherTest
             }
         }
     }
+
+    static void testOverlapping(SimpleTest test, int keySize, int ivSize, int macSize, int blockSize, AEADCipher cipher)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[keySize];
+        byte[] ivBytes = new byte[ivSize];
+        int offset = 1 + random.nextInt(blockSize - 1);
+        byte[] data = new byte[blockSize * 2 + offset + macSize];
+        byte[] expected;
+        random.nextBytes(keyBytes);
+        random.nextBytes(ivBytes);
+        random.nextBytes(data);
+        AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize * 8, new byte[ivSize], null);
+        cipher.init(true, parameters);
+        expected = new byte[cipher.getOutputSize(blockSize * 2)];
+        int len = cipher.processBytes(data, 0, blockSize * 2, expected, 0);
+        cipher.doFinal(expected, len);
+        cipher.init(true, parameters);
+        len = cipher.processBytes(data, 0, blockSize * 2, data, offset);
+        cipher.doFinal(data, len + offset);
+        test.isTrue("fail on testing overlapping of encryption for " + cipher.getAlgorithmName(),
+            Arrays.areEqual(expected, 0, expected.length, data, offset, offset + expected.length));
+        System.arraycopy(data, offset, data, 0, expected.length);
+        cipher.init(false, parameters);
+        expected = new byte[cipher.getOutputSize(data.length)];
+        len = cipher.processBytes(data, 0, blockSize * 2 + macSize, expected, 0);
+        cipher.doFinal(expected, len);
+        cipher.init(false, parameters);
+        len = cipher.processBytes(data, 0, blockSize * 2 + macSize, data, offset);
+        cipher.doFinal(data, len + offset);
+        test.isTrue("fail on testing overlapping of decryption for " + cipher.getAlgorithmName(),
+            Arrays.areEqual(expected, 0, blockSize * 2, data, offset, offset + blockSize * 2));
+
+    }
 }

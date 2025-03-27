@@ -38,6 +38,7 @@ public class GiftCofbTest
         });
         implTestParametersEngine(new GiftCofbEngine(), 16, 16, 16);
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new GiftCofbEngine());
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new GiftCofbEngine());
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new GiftCofbEngine());
 
         CipherTest.checkCipher(16, 16, 40, 128, new CipherTest.Instance()
