@@ -85,7 +85,19 @@ public class SnovaSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        return false;
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(message, 0, message.length);
+        digest.doFinal(hash, 0);
+        SnovaKeyElements keyElements = new SnovaKeyElements(params, engine);
+        byte[] pk = pubKey.getEncoded();
+        System.arraycopy(pk, 0, keyElements.publicKey.publicKeySeed, 0, SnovaKeyPairGenerator.publicSeedLength);
+        System.arraycopy(pk, SnovaKeyPairGenerator.publicSeedLength, keyElements.publicKey.P22, 0, keyElements.publicKey.P22.length);
+        engine.genABQP(keyElements.map1, keyElements.publicKey.publicKeySeed, keyElements.fixedAbq);
+        byte[] p22_gf16s = new byte[keyElements.publicKey.P22.length << 1];
+        GF16Utils.decode(keyElements.publicKey.P22, p22_gf16s, p22_gf16s.length);
+        byte[][][][] p22 = new byte[params.getM()][params.getO()][params.getO()][params.getLsq()];
+        MapGroup1.fillP(p22_gf16s, 0, p22, p22_gf16s.length);
+        return verifySignatureCore(hash, signature, keyElements.publicKey, keyElements.map1, p22);
     }
 
     public static void createSignedHash(
@@ -365,6 +377,172 @@ public class SnovaSigner
         Arrays.fill(gf16mSecretTemp0, (byte)0);
     }
 
+    public boolean verifySignatureCore(byte[] digest, byte[] signature, PublicKey pkx, MapGroup1 map1, byte[][][][] p22)
+    {
+        final int bytesHash = (params.getO() * params.getLsq() + 1) >>> 1;
+        final int bytesSalt = params.getSaltLength();
+        final int l = params.getL();
+        final int lsq = params.getLsq();
+        final int m = params.getM();
+        final int n = params.getN();
+        final int v = params.getV();
+        final int o = params.getO();
+        int bytesSignature = ((n * lsq) + 1) >>> 1;
+
+        // Extract salt from signature
+        byte[] ptSalt = Arrays.copyOfRange(signature, bytesSignature, bytesSignature + bytesSalt);
+        //byte[] signatureBody = Arrays.copyOf(signature, signature.length - bytesSalt);
+
+        // Step 1: Regenerate signed hash using public key seed, digest and salt
+        byte[] signedHash = new byte[bytesHash];
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(pkx.publicKeySeed, 0, pkx.publicKeySeed.length);
+        shake.update(digest, 0, digest.length);
+        shake.update(ptSalt, 0, ptSalt.length);
+        shake.doFinal(signedHash, 0, bytesHash);
+
+        // Handle odd-length adjustment (if needed)
+        if ((o * lsq) % 2 != 0)
+        {
+            signedHash[bytesHash - 1] &= 0x0F;
+        }
+
+        // Step 2: Convert signature to GF16 matrices
+        byte[][][] signatureGF16Matrix = new byte[n][l][l];
+        byte[] decodedSig = new byte[n * lsq];
+        GF16Utils.decode(signature, 0, decodedSig, 0, decodedSig.length);
+
+        for (int i = 0; i < n; i++)
+        {
+            for (int row = 0; row < l; row++)
+            {
+                System.arraycopy(decodedSig, i * lsq + row * l,
+                    signatureGF16Matrix[i][row], 0, l);
+            }
+        }
+
+        // Step 3: Evaluate signature using public key
+        byte[][][] computedHashMatrix = new byte[m][l][l];
+        evaluation(computedHashMatrix, map1, p22, signatureGF16Matrix);
+
+        // Convert computed hash matrix to bytes
+        byte[] computedHashBytes = new byte[m * lsq];
+        for (int i = 0; i < m; i++)
+        {
+            for (int row = 0; row < l; row++)
+            {
+                System.arraycopy(computedHashMatrix[i][row], 0,
+                    computedHashBytes, i * lsq + row * l, l);
+            }
+        }
+        byte[] encodedHash = new byte[bytesHash];
+        GF16Utils.encode(computedHashBytes, encodedHash, 0, computedHashBytes.length);
+
+        // Step 4: Compare hashes
+        return Arrays.areEqual(signedHash, encodedHash);
+    }
+
+    private void evaluation(byte[][][] hashMatrix, MapGroup1 map1, byte[][][][] p22, byte[][][] signature)
+    {
+        final int m = params.getM();
+        final int alpha = params.getAlpha();
+        final int n = params.getN();
+        final int v = params.getV();
+        final int l = params.getL();
+
+        byte[][][][][] Left = new byte[m][alpha][n][l][l];
+        byte[][][][][] Right = new byte[m][alpha][n][l][l];
+        byte[][] temp = new byte[l][l];
+        byte[][] transposedSig = new byte[l][l];
+
+        // Evaluate Left and Right matrices
+        for (int mi = 0; mi < m; mi++)
+        {
+            for (int si = 0; si < n; si++)
+            {
+                transposeGF16Matrix(signature[si], transposedSig);
+                for (int a = 0; a < alpha; a++)
+                {
+                    // Left[mi][a][si] = Aalpha * (sig^T * Qalpha1)
+                    multiplyGF16Matrices(transposedSig, map1.qAlpha1[mi][a], temp);
+                    multiplyGF16Matrices(map1.aAlpha[mi][a], temp, Left[mi][a][si]);
+
+                    // Right[mi][a][si] = (Qalpha2 * sig) * Balpha
+                    multiplyGF16Matrices(map1.qAlpha2[mi][a], signature[si], temp);
+                    multiplyGF16Matrices(temp, map1.bAlpha[mi][a], Right[mi][a][si]);
+                }
+            }
+        }
+
+        // Initialize hash matrix to zero
+        for (int mi = 0; mi < m; mi++)
+        {
+            for (int i = 0; i < l; i++)
+            {
+                Arrays.fill(hashMatrix[mi][i], (byte)0);
+            }
+        }
+
+        // Process P matrices and accumulate results
+        byte[][] sumTemp = new byte[l][l];
+        byte[][] pTemp = new byte[l][l];
+        for (int mi = 0; mi < m; mi++)
+        {
+            for (int a = 0; a < alpha; a++)
+            {
+                int miPrime = iPrime(mi, a);
+
+                for (int ni = 0; ni < n; ni++)
+                {
+                    // sum_t0 = sum(P[miPrime][ni][nj] * Right[mi][a][nj])
+                    for (int i = 0; i < l; i++)
+                    {
+                        Arrays.fill(sumTemp[i], (byte)0);
+                    }
+
+                    for (int nj = 0; nj < n; nj++)
+                    {
+                        byte[] p = getPMatrix(map1, p22, miPrime, ni, nj);
+                        multiplyGF16Matrices(p, Right[mi][a][nj], pTemp);
+                        addGF16Matrices(sumTemp, pTemp, sumTemp);
+                    }
+
+                    // hashMatrix += Left[mi][a][ni] * sumTemp
+                    multiplyGF16Matrices(Left[mi][a][ni], sumTemp, temp);
+                    addGF16Matrices(hashMatrix[mi], temp, hashMatrix[mi]);
+                }
+            }
+        }
+    }
+
+    // Helper method to get appropriate P matrix based on indices
+    private byte[] getPMatrix(MapGroup1 map1, byte[][][][] p22, int mi, int ni, int nj)
+    {
+        final int v = params.getV();
+        if (ni < v)
+        {
+            if (nj < v)
+            {
+                return map1.p11[mi][ni][nj];
+            }
+            else
+            {
+                return map1.p12[mi][ni][nj - v];
+            }
+        }
+        else
+        {
+            if (nj < v)
+            {
+                return map1.p21[mi][ni - v][nj];
+            }
+            else
+            {
+                return p22[mi][ni - v][nj - v];
+            }
+        }
+    }
+
     private void transposeGF16Matrix(byte[][] src, byte[][] dest)
     {
         for (int i = 0; i < params.getL(); i++)
@@ -525,6 +703,17 @@ public class SnovaSigner
             for (int j = 0; j < b[i].length; ++j)
             {
                 engine.setGF16m(result, i, j, GF16Utils.add(engine.getGF16m(a, i, j), b[i][j]));
+            }
+        }
+    }
+
+    private void addGF16Matrices(byte[][] a, byte[][] b, byte[][] result)
+    {
+        for (int i = 0; i < b.length; i++)
+        {
+            for (int j = 0; j < b[i].length; ++j)
+            {
+                result[i][j] = GF16Utils.add(a[i][j], b[i][j]);
             }
         }
     }

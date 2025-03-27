@@ -52,7 +52,7 @@ public class AllTests
         suite.addTestSuite(AllTests.SimpleTestTest.class);
         suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(MayoTest.class);
-
+        suite.addTestSuite(SnovaTest.class);
         return new BCTestSetup(suite);
     }
 
