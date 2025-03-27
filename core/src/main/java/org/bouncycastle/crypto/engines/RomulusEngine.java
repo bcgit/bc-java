@@ -137,7 +137,7 @@ public class RomulusEngine
             int adlen = aadOperator.getLen();
             int mlen = dataOperator.getLen() - (forEncryption ? 0 : MAC_SIZE);
             byte[] m = ((StreamDataOperator)dataOperator).getBytes();
-            int xlen, mOff = 0, mauth = 0;
+            int xlen, mOff = 0, mauth = outOff;
             xlen = mlen;
             if ((adlen & 31) == 0 && adlen != 0)
             {
