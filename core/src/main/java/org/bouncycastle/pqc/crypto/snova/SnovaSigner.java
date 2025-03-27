@@ -16,7 +16,6 @@ public class SnovaSigner
     private SnovaEngine engine;
     private SecureRandom random;
     private final SHAKEDigest digest = new SHAKEDigest(256);
-
     private SnovaPublicKeyParameters pubKey;
     private SnovaPrivateKeyParameters privKey;
 
@@ -104,8 +103,7 @@ public class SnovaSigner
         byte[] digest, int bytesDigest,
         byte[] ptPublicKeySeed, int seedLengthPublic,
         byte[] arraySalt, int bytesSalt,
-        byte[] signedHashOut, int bytesHash
-    )
+        byte[] signedHashOut, int bytesHash)
     {
         // Initialize SHAKE256 XOF
         SHAKEDigest shake = new SHAKEDigest(256);
@@ -385,20 +383,15 @@ public class SnovaSigner
         final int lsq = params.getLsq();
         final int m = params.getM();
         final int n = params.getN();
-        final int v = params.getV();
         final int o = params.getO();
         int bytesSignature = ((n * lsq) + 1) >>> 1;
-
-        // Extract salt from signature
-        byte[] ptSalt = Arrays.copyOfRange(signature, bytesSignature, bytesSignature + bytesSalt);
-        //byte[] signatureBody = Arrays.copyOf(signature, signature.length - bytesSalt);
 
         // Step 1: Regenerate signed hash using public key seed, digest and salt
         byte[] signedHash = new byte[bytesHash];
         SHAKEDigest shake = new SHAKEDigest(256);
         shake.update(pkx.publicKeySeed, 0, pkx.publicKeySeed.length);
         shake.update(digest, 0, digest.length);
-        shake.update(ptSalt, 0, ptSalt.length);
+        shake.update(signature, bytesSignature, bytesSalt);
         shake.doFinal(signedHash, 0, bytesHash);
 
         // Handle odd-length adjustment (if needed)
@@ -412,14 +405,7 @@ public class SnovaSigner
         byte[] decodedSig = new byte[n * lsq];
         GF16Utils.decode(signature, 0, decodedSig, 0, decodedSig.length);
 
-        for (int i = 0; i < n; i++)
-        {
-            for (int row = 0; row < l; row++)
-            {
-                System.arraycopy(decodedSig, i * lsq + row * l,
-                    signatureGF16Matrix[i][row], 0, l);
-            }
-        }
+        MapGroup1.fillAlpha(decodedSig, 0, signatureGF16Matrix, decodedSig.length);
 
         // Step 3: Evaluate signature using public key
         byte[][][] computedHashMatrix = new byte[m][l][l];
@@ -447,7 +433,6 @@ public class SnovaSigner
         final int m = params.getM();
         final int alpha = params.getAlpha();
         final int n = params.getN();
-        final int v = params.getV();
         final int l = params.getL();
 
         byte[][][][][] Left = new byte[m][alpha][n][l][l];
@@ -515,7 +500,6 @@ public class SnovaSigner
         }
     }
 
-    // Helper method to get appropriate P matrix based on indices
     private byte[] getPMatrix(MapGroup1 map1, byte[][][][] p22, int mi, int ni, int nj)
     {
         final int v = params.getV();
@@ -637,7 +621,6 @@ public class SnovaSigner
     private int performGaussianElimination(byte[][] Gauss, byte[] solution, int size)
     {
         final int cols = size + 1;
-        byte tGF16;
 
         for (int i = 0; i < size; i++)
         {
@@ -723,5 +706,4 @@ public class SnovaSigner
         // Implement index calculation based on SNOVA specification
         return (mi + alpha) % params.getO();
     }
-
 }
