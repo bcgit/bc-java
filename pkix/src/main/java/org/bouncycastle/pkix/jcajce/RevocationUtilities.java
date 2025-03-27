@@ -111,11 +111,8 @@ class RevocationUtilities
     protected static void findCertificates(LinkedHashSet certs, PKIXCertStoreSelector certSelect, List certStores)
         throws AnnotatedException
     {
-        Iterator iter = certStores.iterator();
-        while (iter.hasNext())
+        for (Object obj : certStores)
         {
-            Object obj = iter.next();
-
             if (obj instanceof Store)
             {
                 Store certStore = (Store)obj;
@@ -161,19 +158,19 @@ class RevocationUtilities
             throw new AnnotatedException("Distribution points could not be read.", e);
         }
 
-        List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
+        List<PKIXCRLStore> stores = new ArrayList<>();
 
-        for (int i = 0; i < dps.length; i++)
+        for (DistributionPoint dp : dps)
         {
-            DistributionPointName dpn = dps[i].getDistributionPoint();
+            DistributionPointName dpn = dp.getDistributionPoint();
             // look for URIs in fullName
             if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
             {
                 GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
 
-                for (int j = 0; j < genNames.length; j++)
+                for (GeneralName genName : genNames)
                 {
-                    PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
+                    PKIXCRLStore store = namedCRLStoreMap.get(genName);
                     if (store != null)
                     {
                         stores.add(store);

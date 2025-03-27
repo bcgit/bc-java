@@ -350,6 +350,7 @@ public final class XMSSPrivateKeyParameters
     /**
      * @deprecated use getEncoded() - this method will become private.
      */
+    @Deprecated
     public byte[] toByteArray()
     {
         synchronized (this)
