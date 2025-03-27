@@ -1,6 +1,5 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-
 public class GF16Utils
 {
     private static final byte[] F_STAR = {1, 2, 4, 8, 3, 6, 12, 11, 5, 10, 7, 14, 15, 13, 9};
@@ -14,7 +13,6 @@ public class GF16Utils
 
     static
     {
-
         // Initialize multiplication table
         for (int i = 0; i < 15; i++)
         {
@@ -218,35 +216,6 @@ public class GF16Utils
     {
         return INV4B[a & 0xF];
     }
-
-//    static GF16Matrix[][][] create3DArray(int d1, int d2, int d3, int rank)
-//    {
-//        GF16Matrix[][][] arr = new GF16Matrix[d1][d2][d3];
-//        for (int i = 0; i < d1; i++)
-//        {
-//            for (int j = 0; j < d2; j++)
-//            {
-//                for (int k = 0; k < d3; k++)
-//                {
-//                    arr[i][j][k] = new GF16Matrix(rank);
-//                }
-//            }
-//        }
-//        return arr;
-//    }
-
-//    static GF16Matrix[][] create2DArray(int d1, int d2, int rank)
-//    {
-//        GF16Matrix[][] arr = new GF16Matrix[d1][d2];
-//        for (int i = 0; i < d1; i++)
-//        {
-//            for (int j = 0; j < d2; j++)
-//            {
-//                arr[i][j] = new GF16Matrix(rank);
-//            }
-//        }
-//        return arr;
-//    }
 
     private static final int GF16_MASK = 0x249; // Mask for GF(2^4) reduction
 

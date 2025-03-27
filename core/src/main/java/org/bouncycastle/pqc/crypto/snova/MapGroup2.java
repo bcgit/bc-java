@@ -1,6 +1,6 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-public class MapGroup2
+class MapGroup2
 {
     public final byte[][][][] f11;  // [m][v][v]
     public final byte[][][][] f12;  // [m][v][o]
