@@ -3235,6 +3235,7 @@ public class OpenPGPCertificate
                     {
                         OpenPGPComponentSignature backSig = new OpenPGPComponentSignature(
                                 embeddedSigs.get(0),
+                                // Primary Key Binding Signature has issuer and target swapped
                                 /* issuer= */getSignature().getTargetKeyComponent(),
                                 /* target= */getSignature().getIssuer());
                         return backSig.getExpirationTime();
@@ -3259,7 +3260,7 @@ public class OpenPGPCertificate
                                   OpenPGPPolicy policy)
                     throws PGPSignatureException
             {
-                signature.verify(contentVerifierBuilderProvider, policy);
+                signature.verify(contentVerifierBuilderProvider, policy); // throws if invalid
                 return true;
             }
 
@@ -3338,6 +3339,7 @@ public class OpenPGPCertificate
             {
                 if (signature.signature.isHardRevocation())
                 {
+                    // hard revocations are valid retroactively, so we return the beginning of time here
                     return new Date(0L);
                 }
                 return super.since();
@@ -3348,6 +3350,7 @@ public class OpenPGPCertificate
             {
                 if (signature.signature.isHardRevocation())
                 {
+                    // hard revocations do not expire, so they are effective indefinitely
                     return new Date(Long.MAX_VALUE);
                 }
                 return super.until();
