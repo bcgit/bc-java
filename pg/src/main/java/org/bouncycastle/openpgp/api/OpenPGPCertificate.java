@@ -133,21 +133,44 @@ public class OpenPGPCertificate
         }
     }
 
+    /**
+     * Return true, if this object is an {@link OpenPGPKey}, false otherwise.
+     *
+     * @return true if this is a secret key
+     */
     public boolean isSecretKey()
     {
         return false;
     }
 
+    /**
+     * Return a {@link List} of all {@link OpenPGPUserId OpenPGPUserIds} on the certificate, regardless of their
+     * validity.
+     *
+     * @return all user ids
+     */
     public List<OpenPGPUserId> getAllUserIds()
     {
         return getPrimaryKey().getUserIDs();
     }
 
+    /**
+     * Return a {@link List} of all valid {@link OpenPGPUserId OpenPGPUserIds} on the certificate.
+     *
+     * @return valid user ids
+     */
     public List<OpenPGPUserId> getValidUserIds()
     {
         return getValidUserIds(new Date());
     }
 
+    /**
+     * Return a {@link List} containing all {@link OpenPGPUserId OpenPGPUserIds} that are valid at the given
+     * evaluation time.
+     *
+     * @param evaluationTime reference time
+     * @return user ids that are valid at the given evaluation time
+     */
     public List<OpenPGPUserId> getValidUserIds(Date evaluationTime)
     {
         return getPrimaryKey().getValidUserIDs(evaluationTime);
@@ -187,6 +210,24 @@ public class OpenPGPCertificate
         return new LinkedHashMap<>(subkeys);
     }
 
+    /**
+     * Return a {@link List} containing all {@link OpenPGPComponentKey component keys} that carry any of the
+     * given key flags at evaluation time.
+     * <b>
+     * Note: To get all component keys that have EITHER {@link KeyFlags#ENCRYPT_COMMS} OR {@link KeyFlags#ENCRYPT_STORAGE},
+     * call this method like this:
+     * <pre>
+     * keys = getComponentKeysWithFlag(date, KeyFlags.ENCRYPT_COMMS, KeyFlags.ENCRYPT_STORAGE);
+     * </pre>
+     * If you instead want to access all keys, that have BOTH flags, you need to <pre>&amp;</pre> both flags:
+     * <pre>
+     * keys = getComponentKeysWithFlag(date, KeyFlags.ENCRYPT_COMMS &amp; KeyFlags.ENCRYPT_STORAGE);
+     * </pre>
+     *
+     * @param evaluationTime reference time
+     * @param keyFlags key flags
+     * @return list of keys that carry any of the given key flags at evaluation time
+     */
     public List<OpenPGPComponentKey> getComponentKeysWithFlag(Date evaluationTime, int... keyFlags)
     {
         List<OpenPGPComponentKey> componentKeys = new ArrayList<>();
@@ -226,11 +267,23 @@ public class OpenPGPCertificate
         return keys;
     }
 
+    /**
+     * Return a {@link List} of all {@link OpenPGPComponentKey component keys} that are valid right now.
+     *
+     * @return all valid keys
+     */
     public List<OpenPGPComponentKey> getValidKeys()
     {
         return getValidKeys(new Date());
     }
 
+    /**
+     * Return a {@link List} of all {@link OpenPGPComponentKey component keys} that are valid at the given
+     * evaluation time.
+     *
+     * @param evaluationTime reference time
+     * @return all keys that are valid at evaluation time
+     */
     public List<OpenPGPComponentKey> getValidKeys(Date evaluationTime)
     {
         List<OpenPGPComponentKey> validKeys = new ArrayList<>();
@@ -350,21 +403,51 @@ public class OpenPGPCertificate
         return identifiers;
     }
 
+    /**
+     * Return the current self-certification signature.
+     * This is either a DirectKey signature on the primary key, or the latest self-certification on
+     * a {@link OpenPGPUserId}.
+     *
+     * @return latest certification signature
+     */
     public OpenPGPComponentSignature getCertification()
     {
         return getCertification(new Date());
     }
 
+    /**
+     * Return the most recent self-certification signature at evaluation time.
+     * This is either a DirectKey signature on the primary key, or the (at evaluation time) latest
+     * self-certification on an {@link OpenPGPUserId}.
+     *
+     * @param evaluationTime reference time
+     * @return latest certification signature
+     */
     public OpenPGPComponentSignature getCertification(Date evaluationTime)
     {
         return primaryKey.getCertification(evaluationTime);
     }
 
+    /**
+     * Return the most recent revocation signature on the certificate.
+     * This is either a KeyRevocation signature on the primary key, or the latest certification revocation
+     * signature on an {@link OpenPGPUserId}.
+     *
+     * @return latest certification revocation
+     */
     public OpenPGPComponentSignature getRevocation()
     {
         return getRevocation(new Date());
     }
 
+    /**
+     * Return the (at evaluation time) most recent revocation signature on the certificate.
+     * This is either a KeyRevocation signature on the primary key, or the latest certification revocation
+     * signature on an {@link OpenPGPUserId}.
+     *
+     * @param evaluationTime reference time
+     * @return latest certification revocation
+     */
     public OpenPGPComponentSignature getRevocation(Date evaluationTime)
     {
         return primaryKey.getRevocation(evaluationTime);
@@ -432,6 +515,19 @@ public class OpenPGPCertificate
         return latestModification;
     }
 
+    /**
+     * Join two copies of the same {@link OpenPGPCertificate}, merging its {@link OpenPGPCertificateComponent components}
+     * into a single instance.
+     * The ASCII armored {@link String} might contain more than one {@link OpenPGPCertificate}.
+     * Items that are not a copy of the base certificate are silently ignored.
+     *
+     * @param certificate base certificate
+     * @param armored ASCII armored {@link String} containing one or more copies of the same certificate,
+     *               possibly containing a different set of components
+     * @return merged certificate
+     * @throws IOException if the armored data cannot be processed
+     * @throws PGPException if a protocol level error occurs
+     */
     public static OpenPGPCertificate join(OpenPGPCertificate certificate, String armored)
             throws IOException, PGPException
     {
@@ -482,6 +578,15 @@ public class OpenPGPCertificate
         return null;
     }
 
+    /**
+     * Join two copies of the same {@link OpenPGPCertificate}, merging its {@link OpenPGPCertificateComponent components}
+     * into a single instance.
+     *
+     * @param certificate base certificate
+     * @param other copy of the same certificate, potentially carrying a different set of components
+     * @return merged certificate
+     * @throws PGPException if a protocol level error occurs
+     */
     public static OpenPGPCertificate join(OpenPGPCertificate certificate, OpenPGPCertificate other)
             throws PGPException
     {
@@ -510,6 +615,12 @@ public class OpenPGPCertificate
         return FingerprintUtil.prettifyFingerprint(getFingerprint());
     }
 
+    /**
+     * Return an ASCII armored {@link String} containing the certificate.
+     *
+     * @return armored certificate
+     * @throws IOException if the cert cannot be encoded
+     */
     public String toAsciiArmoredString()
             throws IOException
     {
@@ -519,6 +630,7 @@ public class OpenPGPCertificate
     /**
      * Return an ASCII armored {@link String} containing the certificate.
      *
+     * @param packetFormat packet length encoding format
      * @return armored certificate
      * @throws IOException if the cert cannot be encoded
      */
@@ -543,12 +655,26 @@ public class OpenPGPCertificate
         return bOut.toString();
     }
 
+    /**
+     * Return a byte array containing the binary representation of the certificate.
+     *
+     * @return binary encoded certificate
+     * @throws IOException if the certificate cannot be encoded
+     */
     public byte[] getEncoded()
             throws IOException
     {
         return getEncoded(PacketFormat.ROUNDTRIP);
     }
 
+    /**
+     * Return a byte array containing the binary representation of the certificate, encoded using the
+     * given packet length encoding format.
+     *
+     * @param format packet length encoding format
+     * @return binary encoded certificate
+     * @throws IOException if the certificate cannot be encoded
+     */
     public byte[] getEncoded(PacketFormat format)
             throws IOException
     {
@@ -596,6 +722,13 @@ public class OpenPGPCertificate
         return fromOrigin.getChainAt(evaluationDate);
     }
 
+    /**
+     * Return all {@link OpenPGPSignatureChain OpenPGPSignatureChains} binding the given
+     * {@link OpenPGPCertificateComponent}.
+     *
+     * @param component certificate component
+     * @return all chains of the component
+     */
     private OpenPGPSignatureChains getAllSignatureChainsFor(OpenPGPCertificateComponent component)
     {
         OpenPGPSignatureChains chains = new OpenPGPSignatureChains(component.getPublicComponent());
@@ -603,6 +736,11 @@ public class OpenPGPCertificate
         return chains;
     }
 
+    /**
+     * Process the given {@link OpenPGPPrimaryKey}, parsing all its signatures and identities.
+     *
+     * @param primaryKey primary key
+     */
     private void processPrimaryKey(OpenPGPPrimaryKey primaryKey)
     {
         OpenPGPSignatureChains keySignatureChains = new OpenPGPSignatureChains(primaryKey);
@@ -640,6 +778,11 @@ public class OpenPGPCertificate
         }
     }
 
+    /**
+     * Process the given {@link OpenPGPSubkey}, parsing all its binding signatures.
+     *
+     * @param subkey subkey
+     */
     private void processSubkey(OpenPGPSubkey subkey)
     {
         List<OpenPGPComponentSignature> bindingSignatures = subkey.getKeySignatures();
@@ -947,21 +1090,49 @@ public class OpenPGPCertificate
         return null;
     }
 
+    /**
+     * Return the time at which the certificate expires.
+     *
+     * @return expiration time of the certificate
+     */
     public Date getExpirationTime()
     {
         return getExpirationTime(new Date());
     }
 
+    /**
+     * Return the time at which the certificate is expected to expire, considering the given evaluation time.
+     *
+     * @param evaluationTime reference time
+     * @return expiration time at evaluation time
+     */
     public Date getExpirationTime(Date evaluationTime)
     {
         return getPrimaryKey().getKeyExpirationDateAt(evaluationTime);
     }
 
+    /**
+     * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
+     * which represents a delegation of trust.
+     * If no delegation signature is found, return null.
+     *
+     * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
+     * @return chain containing the latest delegation issued by the 3rd-party certificate
+     */
     public OpenPGPSignatureChain getDelegationBy(OpenPGPCertificate thirdPartyCertificate)
     {
         return getDelegationBy(thirdPartyCertificate, new Date());
     }
 
+    /**
+     * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
+     * which represents a delegation of trust at evaluation time.
+     * If no delegation signature is found, return null.
+     *
+     * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
+     * @param evaluationTime reference time
+     * @return chain containing the (at evaluation time) latest delegation issued by the 3rd-party certificate
+     */
     public OpenPGPSignatureChain getDelegationBy(
             OpenPGPCertificate thirdPartyCertificate,
             Date evaluationTime)
@@ -971,11 +1142,26 @@ public class OpenPGPCertificate
         return chainsBy.getCertificationAt(evaluationTime);
     }
 
+    /**
+     * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
+     * which represents a revocation of trust.
+     *
+     * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
+     * @return chain containing the latest revocation issued by the 3rd party certificate
+     */
     public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
     {
         return getRevocationBy(thirdPartyCertificate, new Date());
     }
 
+    /**
+     * Return an {@link OpenPGPSignatureChain} from the given 3rd-party certificate to this certificate,
+     * which (at evaluation time) represents a revocation of trust.
+     *
+     * @param thirdPartyCertificate {@link OpenPGPCertificate} of a 3rd party.
+     * @param evaluationTime reference time
+     * @return chain containing the (at evaluation time) latest revocation issued by the 3rd party certificate
+     */
     public OpenPGPSignatureChain getRevocationBy(
             OpenPGPCertificate thirdPartyCertificate,
             Date evaluationTime)
@@ -1055,6 +1241,12 @@ public class OpenPGPCertificate
             return chains;
         }
 
+        /**
+         * Return the (at evaluation time) latest certification signature binding this component.
+         *
+         * @param evaluationTime reference time
+         * @return latest component certification signature
+         */
         public OpenPGPComponentSignature getCertification(Date evaluationTime)
         {
             OpenPGPSignatureChain certification = getSignatureChains().getCertificationAt(evaluationTime);
@@ -1065,6 +1257,12 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the (at evaluation time) latest revocation signature revoking this component.
+         *
+         * @param evaluationTime reference time
+         * @return latest component revocation signature
+         */
         public OpenPGPComponentSignature getRevocation(Date evaluationTime)
         {
             OpenPGPSignatureChain revocation = getSignatureChains().getRevocationAt(evaluationTime);
@@ -1075,11 +1273,24 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the latest self-signature on the component.
+         * That might either be a certification signature, or a revocation.
+         *
+         * @return latest self signature
+         */
         public OpenPGPComponentSignature getLatestSelfSignature()
         {
             return getLatestSelfSignature(new Date());
         }
 
+        /**
+         * Return the (at evaluation time) latest self-signature on the component.
+         * That might either be a certification signature, or a revocation.
+         *
+         * @param evaluationTime reference time
+         * @return latest self signature
+         */
         public abstract OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime);
 
         /**
@@ -1096,6 +1307,15 @@ public class OpenPGPCertificate
             return this;
         }
 
+        /**
+         * Return the {@link OpenPGPComponentKey} belonging to this {@link OpenPGPCertificateComponent}.
+         * If this {@link OpenPGPCertificateComponent} is an instance of {@link OpenPGPComponentKey},
+         * the method simply returns <pre>this</pre>.
+         * If instead, the {@link OpenPGPCertificateComponent} is an {@link OpenPGPIdentityComponent},
+         * the primary key it is bound to is returned.
+         *
+         * @return {@link OpenPGPComponentKey} of this {@link OpenPGPCertificateComponent}.
+         */
         protected abstract OpenPGPComponentKey getKeyComponent();
 
         /**
@@ -1258,11 +1478,22 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the compression algorithm preferences of this (sub-)key.
+         *
+         * @return compression algorithm preferences
+         */
         public PreferredAlgorithms getCompressionAlgorithmPreferences()
         {
             return getCompressionAlgorithmPreferences(new Date());
         }
 
+        /**
+         * Return the compression algorithm preferences of this (sub-)key at evaluation time.
+         *
+         * @param evaluationTime reference time
+         * @return compression algorithm preferences
+         */
         public PreferredAlgorithms getCompressionAlgorithmPreferences(Date evaluationTime)
         {
             OpenPGPSignature.OpenPGPSignatureSubpacket subpacket = getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.PREFERRED_COMP_ALGS);
@@ -1361,6 +1592,15 @@ public class OpenPGPCertificate
             return OpenPGPSignature.OpenPGPSignatureSubpacket.hashed(subpacket, keySignature);
         }
 
+        /**
+         * Iterate over signatures issued over this component by the given 3rd-party certificate,
+         * merge them with the (at evaluation time) valid self-certification chain and return the
+         * results.
+         *
+         * @param thirdPartyCertificate certificate of a 3rd party
+         * @param evaluationTime reference time
+         * @return all 3rd party signatures on this component, merged with their issuer chains
+         */
         protected OpenPGPSignatureChains getMergedDanglingExternalSignatureChainEndsFrom(
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
@@ -1460,6 +1700,11 @@ public class OpenPGPCertificate
             throw new IllegalArgumentException("Unknown target type.");
         }
 
+        /**
+         * Return the key expiration time stored in the signature.
+         *
+         * @return key expiration time
+         */
         public Date getKeyExpirationTime()
         {
             PGPSignatureSubpacketVector hashed = signature.getHashedSubPackets();
@@ -1983,11 +2228,22 @@ public class OpenPGPCertificate
             return true;
         }
 
+        /**
+         * Return the latest DirectKey self-signature on this primary key.
+         *
+         * @return latest direct key self-signature.
+         */
         public OpenPGPComponentSignature getLatestDirectKeySelfSignature()
         {
             return getLatestDirectKeySelfSignature(new Date());
         }
 
+        /**
+         * Return the (at evaluation time) latest DirectKey self-signature on this primary key.
+         *
+         * @param evaluationTime reference time
+         * @return latest (at evaluation time) direct key self-signature
+         */
         public OpenPGPComponentSignature getLatestDirectKeySelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentDKChain = getCertificate().getAllSignatureChainsFor(this)
@@ -2000,11 +2256,22 @@ public class OpenPGPCertificate
             return null;
         }
 
+        /**
+         * Return the latest KeyRevocation self-signature on this primary key.
+         *
+         * @return latest key revocation self-signature
+         */
         public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature()
         {
             return getLatestKeyRevocationSelfSignature(new Date());
         }
 
+        /**
+         * Return the (at evaluation time) latest KeyRevocation self-signature on this primary key.
+         *
+         * @param evaluationTime reference time
+         * @return latest (at evaluation time) key revocation self-signature
+         */
         public OpenPGPComponentSignature getLatestKeyRevocationSelfSignature(Date evaluationTime)
         {
             OpenPGPSignatureChain currentRevocationChain = getCertificate().getAllSignatureChainsFor(this)
@@ -2077,11 +2344,23 @@ public class OpenPGPCertificate
             return userIds;
         }
 
+        /**
+         * Return a {@link List} containing all currently valid {@link OpenPGPUserId OpenPGPUserIds} on this
+         * primary key.
+         * @return valid userids
+         */
         public List<OpenPGPUserId> getValidUserIds()
         {
             return getValidUserIDs(new Date());
         }
 
+        /**
+         * Return a {@link List} containing all valid (at evaluation time) {@link OpenPGPUserId OpenPGPUserIds}
+         * on this primary key.
+         *
+         * @param evaluationTime reference time
+         * @return valid (at evaluation time) userids
+         */
         public List<OpenPGPUserId> getValidUserIDs(Date evaluationTime)
         {
             List<OpenPGPUserId> userIds = new ArrayList<>();
@@ -2368,11 +2647,26 @@ public class OpenPGPCertificate
             return primaryKey;
         }
 
+        /**
+         * Return the latest {@link OpenPGPSignatureChain} containing a certification issued by the given
+         * 3rd-party certificate over this identity component.
+         *
+         * @param thirdPartyCertificate certificate of a 3rd party
+         * @return 3rd party certification
+         */
         public OpenPGPSignatureChain getCertificationBy(OpenPGPCertificate thirdPartyCertificate)
         {
             return getCertificationBy(thirdPartyCertificate, new Date());
         }
 
+        /**
+         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a certification
+         * issued by the given 3rd-party certificate over this identity component.
+         *
+         * @param evaluationTime reference time
+         * @param thirdPartyCertificate certificate of a 3rd party
+         * @return 3rd party certification
+         */
         public OpenPGPSignatureChain getCertificationBy(
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
@@ -2381,11 +2675,26 @@ public class OpenPGPCertificate
             return chainsBy.getCertificationAt(evaluationTime);
         }
 
+        /**
+         * Return the latest {@link OpenPGPSignatureChain} containing a revocation issued by the given
+         * 3rd-party certificate over this identity component.
+         *
+         * @param thirdPartyCertificate certificate of a 3rd party
+         * @return 3rd party revocation signature
+         */
         public OpenPGPSignatureChain getRevocationBy(OpenPGPCertificate thirdPartyCertificate)
         {
             return getRevocationBy(thirdPartyCertificate, new Date());
         }
 
+        /**
+         * Return the latest (at evaluation time) {@link OpenPGPSignatureChain} containing a revocation issued by the given
+         * 3rd-party certificate over this identity component.
+         *
+         * @param thirdPartyCertificate certificate of a 3rd party
+         * @param evaluationTime reference time
+         * @return 3rd party revocation signature
+         */
         public OpenPGPSignatureChain getRevocationBy(
                 OpenPGPCertificate thirdPartyCertificate,
                 Date evaluationTime)
