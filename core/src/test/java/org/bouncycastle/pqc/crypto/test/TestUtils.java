@@ -53,7 +53,7 @@ class TestUtils
             String name = files[fileIndex];
             InputStream src = TestResourceFinder.findTestResource(homeDir, name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-
+            //System.out.println(files[fileIndex]);
             String line;
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)
@@ -101,24 +101,7 @@ class TestUtils
                             pubParams = kp.getPublic();
                             privParams = kp.getPrivate();
                         }
-//                        byte[] pk2 = operation.getPublicKeyEncoded(pubParams);
-//                        for (int i = 0; i < pk2.length; ++i)
-//                        {
-//                            if (pk[i] != pk2[i])
-//                            {
-//                                System.out.println(i + " " + pk[i] + " " + pk2[i]);
-//                            }
-//                        }
-//
-//                        byte[] sk2 = operation.getPrivateKeyEncoded(privParams);
-//                        System.out.println(new String(Hex.encode(sk2)));
-//                        for (int i = 0; i < sk2.length; ++i)
-//                        {
-//                            if (sk[i] != sk2[i])
-//                            {
-//                                System.out.println(i + " " + sk[i] + " " + sk2[i]);
-//                            }
-//                        }
+
                         Assert.assertTrue(name + ": public key", Arrays.areEqual(pk, operation.getPublicKeyEncoded(pubParams)));
                         Assert.assertTrue(name + ": secret key", Arrays.areEqual(sk, operation.getPrivateKeyEncoded(privParams)));
 
@@ -140,20 +123,20 @@ class TestUtils
 
                         Assert.assertTrue(Arrays.areEqual(sigGenerated, signature));
 
-//                        if (isSigner)
-//                        {
-//                            Signer signer = operation.getSigner();
-//                            signer.init(false, pubParams);
-//                            signer.update(message, 0, message.length);
-//                            Assert.assertTrue(signer.verifySignature(sigGenerated));
-//                        }
-//                        else
-//                        {
-//                            MessageSigner signer = operation.getMessageSigner();
-//                            signer.init(false, pubParams);
-//                            Assert.assertTrue(signer.verifySignature(message, sigGenerated));
-//                        }
-//                        System.out.println("Count " + count + " pass");
+                        if (isSigner)
+                        {
+                            Signer signer = operation.getSigner();
+                            signer.init(false, pubParams);
+                            signer.update(message, 0, message.length);
+                            Assert.assertTrue(signer.verifySignature(sigGenerated));
+                        }
+                        else
+                        {
+                            MessageSigner signer = operation.getMessageSigner();
+                            signer.init(false, pubParams);
+                            Assert.assertTrue(signer.verifySignature(message, sigGenerated));
+                        }
+                        System.out.println("Count " + count + " pass");
                     }
                     buf.clear();
                     continue;
