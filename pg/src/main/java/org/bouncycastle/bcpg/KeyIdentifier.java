@@ -78,7 +78,16 @@ public class KeyIdentifier
      */
     public KeyIdentifier(long keyId)
     {
-        this(null, keyId);
+        if (keyId == 0L)
+        {
+            this.keyId = 0L;
+            this.fingerprint = new byte[0];
+        }
+        else
+        {
+            this.keyId = keyId;
+            this.fingerprint = null;
+        }
     }
 
     /**
@@ -86,7 +95,7 @@ public class KeyIdentifier
      */
     private KeyIdentifier()
     {
-        this(new byte[0], 0L);
+        this(0L);
     }
 
     /**
@@ -132,7 +141,7 @@ public class KeyIdentifier
      */
     public boolean isWildcard()
     {
-        return keyId == 0L && fingerprint.length == 0;
+        return keyId == 0L && (fingerprint == null || fingerprint.length == 0);
     }
 
     /**

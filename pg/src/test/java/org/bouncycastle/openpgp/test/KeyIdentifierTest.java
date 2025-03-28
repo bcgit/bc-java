@@ -59,6 +59,9 @@ public class KeyIdentifierTest
                 wildcard.isWildcard());
 
         isEquals("*", wildcard.toString());
+
+        KeyIdentifier id = new KeyIdentifier(0L);
+        isTrue(id.isWildcard());
     }
 
     private void testIdentifierFromKeyId()
