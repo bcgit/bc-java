@@ -207,11 +207,6 @@ public class GF16Utils
         return MT4B[(a & 0xF) << 4 | (b & 0xF)];
     }
 
-    public static byte add(byte a, byte b)
-    {
-        return (byte)((a ^ b) & 0xF);
-    }
-
     public static byte inv(byte a)
     {
         return INV4B[a & 0xF];

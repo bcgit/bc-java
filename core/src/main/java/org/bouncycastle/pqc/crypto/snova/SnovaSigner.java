@@ -300,7 +300,7 @@ public class SnovaSigner
                                     int colRight = ti % l;
                                     byte valRight = rightXtmp[rowRight][colRight];
                                     byte product = GF16Utils.mul(valA, valRight);
-                                    Temp[ti][tj] = GF16Utils.add(Temp[ti][tj], product);
+                                    Temp[ti][tj] ^= product;
                                 }
                             }
                         }
@@ -311,7 +311,7 @@ public class SnovaSigner
                             {
                                 int gaussRow = mi * lsq + ti;
                                 int gaussCol = index * lsq + tj;
-                                Gauss[gaussRow][gaussCol] = GF16Utils.add(Gauss[gaussRow][gaussCol], Temp[ti][tj]);
+                                Gauss[gaussRow][gaussCol] ^= Temp[ti][tj];
                             }
                         }
                     }
@@ -548,10 +548,10 @@ public class SnovaSigner
                 byte sum = 0;
                 for (int k = 0; k < params.getL(); k++)
                 {
-                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                    sum ^= GF16Utils.mul(
                         a[i][k],
                         b[k][j]
-                    ));
+                    );
                 }
                 result[i][j] = sum;
             }
@@ -568,10 +568,9 @@ public class SnovaSigner
                 byte sum = 0;
                 for (int k = 0; k < params.getL(); k++)
                 {
-                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                    sum ^= GF16Utils.mul(
                         a[i][k],
-                        engine.getGF16m(b, k, j)
-                    ));
+                        engine.getGF16m(b, k, j));
                 }
                 result[i][j] = sum;
             }
@@ -588,10 +587,9 @@ public class SnovaSigner
                 byte sum = 0;
                 for (int k = 0; k < params.getL(); k++)
                 {
-                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                    sum ^= GF16Utils.mul(
                         engine.getGF16m(a, i, k),
-                        b[k][j]
-                    ));
+                        b[k][j]);
                 }
                 result[i][j] = sum;
             }
@@ -608,10 +606,9 @@ public class SnovaSigner
                 byte sum = 0;
                 for (int k = 0; k < params.getL(); k++)
                 {
-                    sum = GF16Utils.add(sum, GF16Utils.mul(
+                    sum ^= GF16Utils.mul(
                         engine.getGF16m(a, i, k),
-                        engine.getGF16m(b, k, j)
-                    ));
+                        engine.getGF16m(b, k, j));
                 }
                 result[i][j] = sum;
             }
@@ -660,7 +657,7 @@ public class SnovaSigner
                 {
                     for (int k = i; k < cols; k++)
                     {
-                        Gauss[j][k] = GF16Utils.add(Gauss[j][k], GF16Utils.mul(Gauss[i][k], factor));
+                        Gauss[j][k] ^= GF16Utils.mul(Gauss[i][k], factor);
                     }
                 }
             }
@@ -672,7 +669,7 @@ public class SnovaSigner
             solution[i] = Gauss[i][size];
             for (int j = i + 1; j < size; j++)
             {
-                solution[i] = GF16Utils.add(solution[i], GF16Utils.mul(Gauss[i][j], solution[j]));
+                solution[i] ^= GF16Utils.mul(Gauss[i][j], solution[j]);
             }
         }
 
@@ -685,7 +682,7 @@ public class SnovaSigner
         {
             for (int j = 0; j < b[i].length; ++j)
             {
-                engine.setGF16m(result, i, j, GF16Utils.add(engine.getGF16m(a, i, j), b[i][j]));
+                engine.setGF16m(result, i, j, (byte)(engine.getGF16m(a, i, j) ^ b[i][j]));
             }
         }
     }
@@ -696,7 +693,7 @@ public class SnovaSigner
         {
             for (int j = 0; j < b[i].length; ++j)
             {
-                result[i][j] = GF16Utils.add(a[i][j], b[i][j]);
+                result[i][j] = (byte)(a[i][j] ^ b[i][j]);
             }
         }
     }
