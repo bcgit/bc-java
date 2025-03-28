@@ -4,9 +4,7 @@ import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
-import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
-import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.io.Streams;
 
@@ -250,27 +248,99 @@ public class OpenPGPKeyReader
             {
                 certsOrKeys.add(new OpenPGPCertificate((PGPPublicKeyRing) object, implementation, policy));
             }
-            else if (object instanceof PGPSecretKeyRingCollection)
-            {
-                PGPSecretKeyRingCollection collection = (PGPSecretKeyRingCollection) object;
-                for (PGPSecretKeyRing k : collection)
-                {
-                    certsOrKeys.add(new OpenPGPKey(k, implementation, policy));
-                }
-            }
-            else if (object instanceof PGPPublicKeyRingCollection)
-            {
-                PGPPublicKeyRingCollection collection = (PGPPublicKeyRingCollection) object;
-                for (PGPPublicKeyRing k : collection)
-                {
-                    certsOrKeys.add(new OpenPGPCertificate(k, implementation, policy));
-                }
-            }
             else
             {
                 throw new IOException("Neither a certificate, nor secret key.");
             }
         }
         return certsOrKeys;
+    }
+
+    public List<OpenPGPCertificate> parseCertificates(String armored)
+            throws IOException
+    {
+        return parseCertificates(armored.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public List<OpenPGPCertificate> parseCertificates(InputStream inputStream)
+            throws IOException
+    {
+        return parseCertificates(Streams.readAll(inputStream));
+    }
+
+    public List<OpenPGPCertificate> parseCertificates(byte[] bytes)
+            throws IOException
+    {
+        List<OpenPGPCertificate> certs = new ArrayList<>();
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
+        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
+        // Call getDecoderStream() twice, to make sure the stream is a BufferedInputStreamExt.
+        // This is necessary, so that for streams containing multiple concatenated armored blocks of certs,
+        //  we parse all of them and do not quit after reading the first one.
+        decoderStream = PGPUtil.getDecoderStream(decoderStream);
+        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(decoderStream);
+        Object object;
+
+        while ((object = objectFactory.nextObject()) != null)
+        {
+            if (object instanceof PGPMarker)
+            {
+                continue;
+            }
+            else if (object instanceof PGPPublicKeyRing)
+            {
+                certs.add(new OpenPGPCertificate((PGPPublicKeyRing) object, implementation, policy));
+            }
+            else
+            {
+                throw new IOException("Encountered unexpected packet: " + object.getClass().getName());
+            }
+        }
+        return certs;
+    }
+
+    public List<OpenPGPKey> parseKeys(String armored)
+            throws IOException
+    {
+        return parseKeys(armored.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public List<OpenPGPKey> parseKeys(InputStream inputStream)
+            throws IOException
+    {
+        return parseKeys(Streams.readAll(inputStream));
+    }
+
+    public List<OpenPGPKey> parseKeys(byte[] bytes)
+            throws IOException
+    {
+        List<OpenPGPKey> keys = new ArrayList<>();
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
+        InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
+        // Call getDecoderStream() twice, to make sure the stream is a BufferedInputStreamExt.
+        // This is necessary, so that for streams containing multiple concatenated armored blocks of keys,
+        //  we parse all of them and do not quit after reading the first one.
+        decoderStream = PGPUtil.getDecoderStream(decoderStream);
+        PGPObjectFactory objectFactory = implementation.pgpObjectFactory(decoderStream);
+        Object object;
+
+        while ((object = objectFactory.nextObject()) != null)
+        {
+            if (object instanceof PGPMarker)
+            {
+                continue;
+            }
+            else if (object instanceof PGPSecretKeyRing)
+            {
+                keys.add(new OpenPGPKey((PGPSecretKeyRing) object, implementation, policy));
+            }
+            else
+            {
+                throw new IOException("Encountered unexpected packet: " + object.getClass().getName());
+            }
+        }
+        return keys;
     }
 }
