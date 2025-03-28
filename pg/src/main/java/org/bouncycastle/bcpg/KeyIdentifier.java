@@ -32,6 +32,14 @@ public class KeyIdentifier
      */
     public KeyIdentifier(byte[] fingerprint)
     {
+        // Long KeyID
+        if (fingerprint.length == 8)
+        {
+            keyId = FingerprintUtil.longFromRightMostBytes(fingerprint);
+            this.fingerprint = null;
+            return;
+        }
+
         this.fingerprint = Arrays.clone(fingerprint);
 
         // v4
