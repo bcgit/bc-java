@@ -204,6 +204,44 @@ public class CTSTest
         }
     }
 
+    private void testOverlapping2()
+        throws Exception
+    {
+        //Skip the dofinal of the test
+        OldCTSBlockCipher bc = new OldCTSBlockCipher(AESEngine.newInstance());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 1 + random.nextInt(bc.getBlockSize() - 1) + bc.getBlockSize();
+        byte[] data = new byte[bc.getBlockSize() * 4 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 3)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        int len = bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.doFinal(expected, len);
+        bc.init(true, key);
+        len = bc.processBytes(data, 0, expected.length, data, offset);
+        bc.doFinal(data, offset + len);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, expected.length, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+    }
+
     public String getName()
     {
         return "CTS";
@@ -256,6 +294,7 @@ public class CTSTest
 
         testExceptions();
         testOverlapping();
+        testOverlapping2();
     }
 
     public static void main(
