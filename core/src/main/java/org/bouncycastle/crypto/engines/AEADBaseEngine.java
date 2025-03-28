@@ -587,17 +587,11 @@ abstract class AEADBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
-            if (input == output)
+            if (input == output && segmentsOverlap(inOff, len, outOff, processor.getUpdateOutputSize(len)))
             {
-                int inEnd = inOff + len;
-                int outEnd = outOff + processor.getUpdateOutputSize(len);
-                if ((inOff <= outOff && outOff <= inEnd) ||
-                    (outOff <= inOff && inOff <= outEnd))
-                {
-                    input = new byte[len];
-                    System.arraycopy(output, inOff, input, 0, len);
-                    inOff = 0;
-                }
+                input = new byte[len];
+                System.arraycopy(output, inOff, input, 0, len);
+                inOff = 0;
             }
             boolean forEncryption = checkData(false);
             if (forEncryption)
@@ -749,17 +743,11 @@ abstract class AEADBaseEngine
         resultLength = length + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
         ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
         resultLength = 0;
-        if (input == output)
+        if (input == output && segmentsOverlap(inOff, len, outOff, length))
         {
-            int inEnd = inOff + len;
-            int outEnd = outOff + length;
-            if ((inOff <= outOff && outOff <= inEnd) ||
-                (outOff <= inOff && inOff <= outEnd))
-            {
-                input = new byte[len];
-                System.arraycopy(output, inOff, input, 0, len);
-                inOff = 0;
-            }
+            input = new byte[len];
+            System.arraycopy(output, inOff, input, 0, len);
+            inOff = 0;
         }
         if (forEncryption)
         {
@@ -1037,6 +1025,12 @@ abstract class AEADBaseEngine
 
         m_aadPos = 0;
         m_state = nextState;
+    }
+
+    private boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
+    {
+        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
+        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 
     protected abstract void finishAAD(State nextState, boolean isDoFinal);
