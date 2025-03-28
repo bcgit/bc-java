@@ -11,15 +11,15 @@ package org.bouncycastle.crypto;
  */
 public class BufferedBlockCipher
 {
-    protected byte[]        buf;
-    protected int           bufOff;
+    protected byte[] buf;
+    protected int bufOff;
 
-    protected boolean          forEncryption;
-    protected BlockCipher      cipher;
+    protected boolean forEncryption;
+    protected BlockCipher cipher;
     protected MultiBlockCipher mbCipher;
 
-    protected boolean       partialBlockOkay;
-    protected boolean       pgpCFB;
+    protected boolean partialBlockOkay;
+    protected boolean pgpCFB;
 
     /**
      * constructor for subclasses
@@ -35,7 +35,7 @@ public class BufferedBlockCipher
      * @deprecated use the constructor on DefaultBufferedBlockCipher.
      */
     public BufferedBlockCipher(
-        BlockCipher     cipher)
+        BlockCipher cipher)
     {
         this.cipher = cipher;
 
@@ -55,8 +55,8 @@ public class BufferedBlockCipher
         //
         // check if we can handle partial blocks on doFinal.
         //
-        String  name = cipher.getAlgorithmName();
-        int     idx = name.indexOf('/') + 1;
+        String name = cipher.getAlgorithmName();
+        int idx = name.indexOf('/') + 1;
 
         pgpCFB = (idx > 0 && name.startsWith("PGP", idx));
 
@@ -84,14 +84,14 @@ public class BufferedBlockCipher
      * initialise the cipher.
      *
      * @param forEncryption if true the cipher is initialised for
-     *  encryption, if false for decryption.
-     * @param params the key and other data required by the cipher.
-     * @exception IllegalArgumentException if the params argument is
-     * inappropriate.
+     *                      encryption, if false for decryption.
+     * @param params        the key and other data required by the cipher.
+     * @throws IllegalArgumentException if the params argument is
+     *                                  inappropriate.
      */
     public void init(
-        boolean             forEncryption,
-        CipherParameters    params)
+        boolean forEncryption,
+        CipherParameters params)
         throws IllegalArgumentException
     {
         this.forEncryption = forEncryption;
@@ -112,7 +112,7 @@ public class BufferedBlockCipher
     }
 
     /**
-     * return the size of the output buffer required for an update 
+     * return the size of the output buffer required for an update
      * an input of len bytes.
      *
      * @param len the length of the input.
@@ -122,7 +122,7 @@ public class BufferedBlockCipher
     public int getUpdateOutputSize(
         int len)
     {
-        int total       = len + bufOff;
+        int total = len + bufOff;
         int leftOver;
 
         if (pgpCFB)
@@ -138,7 +138,7 @@ public class BufferedBlockCipher
         }
         else
         {
-            leftOver    = total % buf.length;
+            leftOver = total % buf.length;
         }
 
         return total - leftOver;
@@ -167,20 +167,20 @@ public class BufferedBlockCipher
     /**
      * process a single byte, producing an output block if necessary.
      *
-     * @param in the input byte.
-     * @param out the space for any output that might be produced.
+     * @param in     the input byte.
+     * @param out    the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException   if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
-        byte        in,
-        byte[]      out,
-        int         outOff)
+        byte in,
+        byte[] out,
+        int outOff)
         throws DataLengthException, IllegalStateException
     {
-        int         resultLen = 0;
+        int resultLen = 0;
 
         buf[bufOff++] = in;
 
@@ -196,21 +196,21 @@ public class BufferedBlockCipher
     /**
      * process an array of bytes, producing output if necessary.
      *
-     * @param in the input byte array.
-     * @param inOff the offset at which the input data starts.
-     * @param len the number of bytes to be copied out of the input array.
-     * @param out the space for any output that might be produced.
+     * @param in     the input byte array.
+     * @param inOff  the offset at which the input data starts.
+     * @param len    the number of bytes to be copied out of the input array.
+     * @param out    the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException   if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
-        byte[]      in,
-        int         inOff,
-        int         len,
-        byte[]      out,
-        int         outOff)
+        byte[] in,
+        int inOff,
+        int len,
+        byte[] out,
+        int outOff)
         throws DataLengthException, IllegalStateException
     {
         if (len < 0)
@@ -218,9 +218,9 @@ public class BufferedBlockCipher
             throw new IllegalArgumentException("Can't have a negative input length!");
         }
 
-        int blockSize   = getBlockSize();
-        int length      = getUpdateOutputSize(len);
-        
+        int blockSize = getBlockSize();
+        int length = getUpdateOutputSize(len);
+
         if (length > 0)
         {
             if ((outOff + length) > out.length)
@@ -237,17 +237,11 @@ public class BufferedBlockCipher
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
             inOff += gapLen;
             len -= gapLen;
-            if (in == out)
+            if (in == out && segmentsOverlap(inOff, len, outOff, length))
             {
-                int inEnd = inOff + len;
-                int outEnd = outOff + length;
-                if ((inOff <= outOff && outOff <= inEnd) ||
-                    (outOff <= inOff && inOff <= outEnd))
-                {
-                    in = new byte[len];
-                    System.arraycopy(out, inOff, in, 0, len);
-                    inOff = 0;
-                }
+                in = new byte[len];
+                System.arraycopy(out, inOff, in, 0, len);
+                inOff = 0;
             }
 
             resultLen += cipher.processBlock(buf, 0, out, outOff);
@@ -296,20 +290,20 @@ public class BufferedBlockCipher
     /**
      * Process the last block in the buffer.
      *
-     * @param out the array the block currently being held is copied into.
+     * @param out    the array the block currently being held is copied into.
      * @param outOff the offset at which the copying starts.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there is insufficient space in out for
-     * the output, or the input is not block size aligned and should be.
-     * @exception IllegalStateException if the underlying cipher is not
-     * initialised.
-     * @exception InvalidCipherTextException if padding is expected and not found.
-     * @exception DataLengthException if the input is not block size
-     * aligned.
+     * @throws DataLengthException        if there is insufficient space in out for
+     *                                    the output, or the input is not block size aligned and should be.
+     * @throws IllegalStateException      if the underlying cipher is not
+     *                                    initialised.
+     * @throws InvalidCipherTextException if padding is expected and not found.
+     * @throws DataLengthException        if the input is not block size
+     *                                    aligned.
      */
     public int doFinal(
-        byte[]  out,
-        int     outOff)
+        byte[] out,
+        int outOff)
         throws DataLengthException, IllegalStateException, InvalidCipherTextException
     {
         try
@@ -362,5 +356,11 @@ public class BufferedBlockCipher
         // reset the underlying cipher.
         //
         cipher.reset();
+    }
+
+    protected boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
+    {
+        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
+        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 }
