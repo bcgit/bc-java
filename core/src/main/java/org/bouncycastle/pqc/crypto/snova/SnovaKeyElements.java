@@ -72,7 +72,7 @@ class SnovaKeyElements
         inOff = copy3d(T12, input, inOff);
         inOff = copy4d(map2.f11, input, inOff);
         inOff = copy4d(map2.f12, input, inOff);
-        inOff = copy4d(map2.f21, input, inOff);
+        copy4d(map2.f21, input, inOff);
         GF16Utils.encodeMergeInHalf(input, length, output);
     }
 
@@ -88,13 +88,13 @@ class SnovaKeyElements
         inOff = copy3d(tmp, inOff, T12);
         inOff = copy4d(tmp, inOff, map2.f11);
         inOff = copy4d(tmp, inOff, map2.f12);
-        inOff = copy4d(tmp, inOff, map2.f21);
+        copy4d(tmp, inOff, map2.f21);
         System.arraycopy(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
         ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
         System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
     }
 
-    public int copy3d(byte[][][] alpha, byte[] output, int outOff)
+    private int copy3d(byte[][][] alpha, byte[] output, int outOff)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -107,7 +107,7 @@ class SnovaKeyElements
         return outOff;
     }
 
-    public int copy4d(byte[][][][] alpha, byte[] output, int outOff)
+    private int copy4d(byte[][][][] alpha, byte[] output, int outOff)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -116,7 +116,7 @@ class SnovaKeyElements
         return outOff;
     }
 
-    public int copy3d(byte[] input, int inOff, byte[][][] alpha)
+    private int copy3d(byte[] input, int inOff, byte[][][] alpha)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -129,7 +129,7 @@ class SnovaKeyElements
         return inOff;
     }
 
-    public int copy4d(byte[] input, int inOff, byte[][][][] alpha)
+    private int copy4d(byte[] input, int inOff, byte[][][][] alpha)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
