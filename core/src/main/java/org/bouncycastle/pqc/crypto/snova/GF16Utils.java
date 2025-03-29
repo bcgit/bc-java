@@ -86,9 +86,9 @@ public class GF16Utils
      * @param menc the output byte array that will hold the encoded bytes
      * @param mlen the number of nibbles in the input array
      */
-    public static void encode(byte[] m, byte[] menc, int outOff, int mlen)
+    public static void encode(byte[] m, byte[] menc, int mlen)
     {
-        int i, srcIndex = 0;
+        int i, srcIndex = 0, outOff = 0;
         // Process pairs of 4-bit values
         for (i = 0; i < mlen / 2; i++)
         {
@@ -158,7 +158,6 @@ public class GF16Utils
 
     public static void gf16mMul(byte[] a, byte[] b, byte[] c, int rank)
     {
-
         for (int i = 0; i < rank; i++)
         {
             for (int j = 0; j < rank; j++)
@@ -166,6 +165,21 @@ public class GF16Utils
                 int cIndex = i * rank + j;
                 c[cIndex] = mt(getGf16m(a, i, 0, rank), getGf16m(b, 0, j, rank));
                 for (int k = 1; k < rank; ++k)
+                {
+                    c[cIndex] ^= mt(getGf16m(a, i, k, rank), getGf16m(b, k, j, rank));
+                }
+            }
+        }
+    }
+
+    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int rank)
+    {
+        for (int i = 0; i < rank; i++)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                int cIndex = i * rank + j;
+                for (int k = 0; k < rank; ++k)
                 {
                     c[cIndex] ^= mt(getGf16m(a, i, k, rank), getGf16m(b, k, j, rank));
                 }
@@ -185,21 +199,6 @@ public class GF16Utils
     {
         int middle = idx | (idx << 4);
         return ((middle & 0x41) | ((middle << 2) & 0x208));
-    }
-
-    public static void gf16mAdd(byte[] a, byte[] b, byte[] c, int rank)
-    {
-
-        for (int i = 0; i < rank; ++i)
-        {
-            for (int j = 0; j < rank; ++j)
-            {
-                int index = i * rank + j;
-                // GF16 addition is XOR operation (equivalent to GF(2^4) addition)
-                // Mask with 0x0F to ensure we only keep 4-bit values
-                c[index] = (byte)((a[index] ^ b[index]) & 0x0F);
-            }
-        }
     }
 
     public static byte mul(byte a, byte b)

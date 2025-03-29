@@ -137,7 +137,7 @@ public class SnovaEngine
         for (int a = 1; a < 16; a++)
         {
             generateASMatrix(temp, (byte)a);
-            addMatrices(temp, 0, source, off, source, off);
+            xorTo(source, off, temp);
 
             if (gf16Determinant(source, off) != 0)
             {
@@ -153,7 +153,7 @@ public class SnovaEngine
         case 2:
             return determinant2x2(matrix, off);
         case 3:
-            return determinant3x3(matrix, off, 0, 1, 2);
+            return determinant3x3(matrix, off);
         case 4:
             return determinant4x4(matrix, off);
         case 5:
@@ -165,23 +165,23 @@ public class SnovaEngine
 
     private byte determinant2x2(byte[] m, int off)
     {
-        return (byte)
-            (GF16Utils.mul(getGF16m(m, 0, off), getGF16m(m, 1, off + 1)) ^
-                GF16Utils.mul(getGF16m(m, 0, off + 1), getGF16m(m, 1, off)));
+        return (byte)(GF16Utils.mul(m[off], m[off + 3]) ^ GF16Utils.mul(m[off + 1], m[off + 2]));
     }
 
-    private byte determinant3x3(byte[] m, int off, int i0, int i1, int i2)
+    private byte determinant3x3(byte[] m, int off)
     {
-        return (byte)(
-            GF16Utils.mul(getGF16m(m, 0, off + i0), (byte)(
-                GF16Utils.mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i2)) ^
-                    GF16Utils.mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i1)))) ^
-                GF16Utils.mul(getGF16m(m, 0, off + i1), (byte)(
-                    GF16Utils.mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i2)) ^
-                        GF16Utils.mul(getGF16m(m, 1, off + i2), getGF16m(m, 2, off + i0)))) ^
-                GF16Utils.mul(getGF16m(m, 0, off + i2), (byte)(
-                    GF16Utils.mul(getGF16m(m, 1, off + i0), getGF16m(m, 2, off + i1)) ^
-                        GF16Utils.mul(getGF16m(m, 1, off + i1), getGF16m(m, 2, off + i0)))));
+        byte m00 = m[off++];
+        byte m01 = m[off++];
+        byte m02 = m[off++];
+        byte m10 = m[off++];
+        byte m11 = m[off++];
+        byte m12 = m[off++];
+        byte m20 = m[off++];
+        byte m21 = m[off++];
+        byte m22 = m[off];
+        return (byte)(GF16Utils.mul(m00, (byte)(GF16Utils.mul(m11, m22) ^ GF16Utils.mul(m12, m21))) ^
+            GF16Utils.mul(m01, (byte)(GF16Utils.mul(m10, m22) ^ GF16Utils.mul(m12, m20))) ^
+            GF16Utils.mul(m02, (byte)(GF16Utils.mul(m10, m21) ^ GF16Utils.mul(m11, m20))));
     }
 
     private byte determinant4x4(byte[] m, int off)
@@ -222,36 +222,102 @@ public class SnovaEngine
 
     private byte determinant5x5(byte[] m, int off)
     {
-        byte m30 = getGF16m(m, 3, off);
-        byte m31 = getGF16m(m, 3, off + 1);
-        byte m32 = getGF16m(m, 3, off + 2);
-        byte m33 = getGF16m(m, 3, off + 3);
-        byte m34 = getGF16m(m, 3, off + 4);
+        byte m00 = m[off++];
+        byte m01 = m[off++];
+        byte m02 = m[off++];
+        byte m03 = m[off++];
+        byte m04 = m[off++];
+        byte m10 = m[off++];
+        byte m11 = m[off++];
+        byte m12 = m[off++];
+        byte m13 = m[off++];
+        byte m14 = m[off++];
+        byte m20 = m[off++];
+        byte m21 = m[off++];
+        byte m22 = m[off++];
+        byte m23 = m[off++];
+        byte m24 = m[off++];
+        byte m30 = m[off++];
+        byte m31 = m[off++];
+        byte m32 = m[off++];
+        byte m33 = m[off++];
+        byte m34 = m[off++];
+        byte m40 = m[off++];
+        byte m41 = m[off++];
+        byte m42 = m[off++];
+        byte m43 = m[off++];
+        byte m44 = m[off];
 
-        byte m40 = getGF16m(m, 4, off);
-        byte m41 = getGF16m(m, 4, off + 1);
-        byte m42 = getGF16m(m, 4, off + 2);
-        byte m43 = getGF16m(m, 4, off + 3);
-        byte m44 = getGF16m(m, 4, off + 4);
-        byte result = GF16Utils.mul(determinant3x3(m, off, 0, 1, 2),
+        byte m10xm21_m11xm20 = (byte)(GF16Utils.mul(m10, m21) ^ GF16Utils.mul(m11, m20));
+        byte m10xm22_m12xm20 = (byte)(GF16Utils.mul(m10, m22) ^ GF16Utils.mul(m12, m20));
+        byte m10xm23_m13xm20 = (byte)(GF16Utils.mul(m10, m23) ^ GF16Utils.mul(m13, m20));
+        byte m10xm24_m14xm20 = (byte)(GF16Utils.mul(m10, m24) ^ GF16Utils.mul(m14, m20));
+        byte m11xm22_m12xm21 = (byte)(GF16Utils.mul(m11, m22) ^ GF16Utils.mul(m12, m21));
+        byte m11xm23_m13xm21 = (byte)(GF16Utils.mul(m11, m23) ^ GF16Utils.mul(m13, m21));
+        byte m11xm24_m14xm21 = (byte)(GF16Utils.mul(m11, m24) ^ GF16Utils.mul(m14, m21));
+        byte m12xm23_m13xm22 = (byte)(GF16Utils.mul(m12, m23) ^ GF16Utils.mul(m13, m22));
+        byte m12xm24_m14xm22 = (byte)(GF16Utils.mul(m12, m24) ^ GF16Utils.mul(m14, m22));
+        byte m13xm24_m14xm23 = (byte)(GF16Utils.mul(m13, m24) ^ GF16Utils.mul(m14, m23));
+
+        byte result = GF16Utils.mul(//determinant3x3(m, off, 0, 1, 2),
+            (byte)(
+                GF16Utils.mul(m00, m11xm22_m12xm21) ^
+                    GF16Utils.mul(m01, m10xm22_m12xm20) ^
+                    GF16Utils.mul(m02, m10xm21_m11xm20)),
             (byte)(GF16Utils.mul(m33, m44) ^ GF16Utils.mul(m34, m43)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 0, 1, 3),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 0, 1, 3),
+            (byte)(
+                GF16Utils.mul(m00, m11xm23_m13xm21) ^
+                    GF16Utils.mul(m01, m10xm23_m13xm20) ^
+                    GF16Utils.mul(m03, m10xm21_m11xm20)),
             (byte)(GF16Utils.mul(m32, m44) ^ GF16Utils.mul(m34, m42)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 0, 1, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 0, 1, 4),
+            (byte)(
+                GF16Utils.mul(m00, m11xm24_m14xm21) ^
+                    GF16Utils.mul(m01, m10xm24_m14xm20) ^
+                    GF16Utils.mul(m04, m10xm21_m11xm20)),
             (byte)(GF16Utils.mul(m32, m43) ^ GF16Utils.mul(m33, m42)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 0, 2, 3),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 0, 2, 3),
+            (byte)(
+                GF16Utils.mul(m00, m12xm23_m13xm22) ^
+                    GF16Utils.mul(m02, m10xm23_m13xm20) ^
+                    GF16Utils.mul(m03, m10xm22_m12xm20)),
             (byte)(GF16Utils.mul(m31, m44) ^ GF16Utils.mul(m34, m41)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 0, 2, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 0, 2, 4),
+            (byte)(
+                GF16Utils.mul(m00, m12xm24_m14xm22) ^
+                    GF16Utils.mul(m02, m10xm24_m14xm20) ^
+                    GF16Utils.mul(m04, m10xm22_m12xm20)),
             (byte)(GF16Utils.mul(m31, m43) ^ GF16Utils.mul(m33, m41)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 0, 3, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 0, 3, 4),
+            (byte)(
+                GF16Utils.mul(m00, m13xm24_m14xm23) ^
+                    GF16Utils.mul(m03, m10xm24_m14xm20) ^
+                    GF16Utils.mul(m04, m10xm23_m13xm20)),
             (byte)(GF16Utils.mul(m31, m42) ^ GF16Utils.mul(m32, m41)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 1, 2, 3),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 1, 2, 3),
+            (byte)(
+                GF16Utils.mul(m01, m12xm23_m13xm22) ^
+                    GF16Utils.mul(m02, m11xm23_m13xm21) ^
+                    GF16Utils.mul(m03, m11xm22_m12xm21)),
             (byte)(GF16Utils.mul(m30, m44) ^ GF16Utils.mul(m34, m40)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 1, 2, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 1, 2, 4),
+            (byte)(
+                GF16Utils.mul(m01, m12xm24_m14xm22) ^
+                    GF16Utils.mul(m02, m11xm24_m14xm21) ^
+                    GF16Utils.mul(m04, m11xm22_m12xm21)),
             (byte)(GF16Utils.mul(m30, m43) ^ GF16Utils.mul(m33, m40)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 1, 3, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 1, 3, 4),
+            (byte)(
+                GF16Utils.mul(m01, m13xm24_m14xm23) ^
+                    GF16Utils.mul(m03, m11xm24_m14xm21) ^
+                    GF16Utils.mul(m04, m11xm23_m13xm21)),
             (byte)(GF16Utils.mul(m30, m42) ^ GF16Utils.mul(m32, m40)));
-        result ^= GF16Utils.mul(determinant3x3(m, off, 2, 3, 4),
+        result ^= GF16Utils.mul(//determinant3x3(m, off, 2, 3, 4),
+            (byte)(
+                GF16Utils.mul(m02, m13xm24_m14xm23) ^
+                    GF16Utils.mul(m03, m12xm24_m14xm22) ^
+                    GF16Utils.mul(m04, m12xm23_m13xm22)),
             (byte)(GF16Utils.mul(m30, m41) ^ GF16Utils.mul(m31, m40)));
         return result;
     }
@@ -273,13 +339,13 @@ public class SnovaEngine
     }
 
 
-    private void addMatrices(byte[] a, int aOff, byte[] b, int bOff, byte[] c, int cOff)
+    private void xorTo(byte[] a, int aOff, byte[] b)
     {
         for (int i = 0; i < l; i++)
         {
             for (int j = 0; j < l; j++)
             {
-                setGF16m(c, i, cOff + j, (byte)(getGF16m(a, i, aOff + j) ^ getGF16m(b, i, bOff + j)));
+                setGF16m(a, i, aOff + j, (byte)(getGF16m(a, i, aOff + j) ^ getGF16m(b, i, j)));
             }
         }
     }
@@ -295,13 +361,13 @@ public class SnovaEngine
         for (int i = 1; i < l - 1; ++i)
         {
             gf16mScale(S[i], c[cOff + i], temp);
-            addMatrices(ptMatrix, off, temp, 0, ptMatrix, off);
+            xorTo(ptMatrix, off, temp);
         }
 
         // Handle last term with special case
         byte lastScalar = (byte)((c[cOff + l - 1] != 0) ? c[cOff + l - 1] : 16 - (c[cOff] + (c[cOff] == 0 ? 1 : 0)));
         gf16mScale(S[l - 1], lastScalar, temp);
-        addMatrices(ptMatrix, off, temp, 0, ptMatrix, off);
+        xorTo(ptMatrix, off, temp);
 
         // Clear temporary matrix
         //clearMatrix(temp);
@@ -342,8 +408,8 @@ public class SnovaEngine
                 {
                     for (int index = 0; index < v; index++)
                     {
-                        GF16Utils.gf16mMul(map1.p11[i][j][index], T12[index][k], temp, l);
-                        GF16Utils.gf16mAdd(map2.f12[i][j][k], temp, map2.f12[i][j][k], l);
+
+                        GF16Utils.gf16mMulTo(map1.p11[i][j][index], T12[index][k], map2.f12[i][j][k], l);
                     }
                 }
             }
@@ -358,8 +424,7 @@ public class SnovaEngine
                 {
                     for (int index = 0; index < v; index++)
                     {
-                        GF16Utils.gf16mMul(T12[index][j], map1.p11[i][index][k], temp, l);
-                        GF16Utils.gf16mAdd(map2.f21[i][j][k], temp, map2.f21[i][j][k], l);
+                        GF16Utils.gf16mMulTo(T12[index][j], map1.p11[i][index][k], map2.f21[i][j][k], l);
                     }
                 }
             }
@@ -378,11 +443,7 @@ public class SnovaEngine
             {
                 for (int k = 0; k < dim3; k++)
                 {
-                    System.arraycopy(
-                        src[i][j][k], 0,
-                        dest[i][j][k], 0,
-                        lsq
-                    );
+                    System.arraycopy(src[i][j][k], 0, dest[i][j][k], 0, lsq);
                 }
             }
         }
@@ -399,47 +460,28 @@ public class SnovaEngine
         // Initialize P22 with zeros
         byte[][][][] P22 = new byte[m][o][o][lsq];
 
-        // Temporary buffers
-        byte[] temp1 = new byte[lsq];
-        byte[] temp2 = new byte[lsq];
-
-        try
+        for (int i = 0; i < m; i++)
         {
-            for (int i = 0; i < m; i++)
+            for (int j = 0; j < o; j++)
             {
-                for (int j = 0; j < o; j++)
+                for (int k = 0; k < o; k++)
                 {
-                    for (int k = 0; k < o; k++)
+                    for (int index = 0; index < v; index++)
                     {
-                        for (int index = 0; index < v; index++)
-                        {
-                            // temp1 = T12[index][j] * F12[i][index][k]
-                            GF16Utils.gf16mMul(T12[index][j], F12[i][index][k], temp1, l);
+                        // temp1 = T12[index][j] * F12[i][index][k]
+                        GF16Utils.gf16mMulTo(T12[index][j], F12[i][index][k], P22[i][j][k], l);
 
-                            // temp2 = P21[i][j][index] * T12[index][k]
-                            GF16Utils.gf16mMul(P21[i][j][index], T12[index][k], temp2, l);
-
-                            // temp1 += temp2
-                            GF16Utils.gf16mAdd(temp1, temp2, temp1, l);
-
-                            // P22[i][j][k] += temp1
-                            GF16Utils.gf16mAdd(P22[i][j][k], temp1, P22[i][j][k], l);
-                        }
+                        // temp2 = P21[i][j][index] * T12[index][k]
+                        GF16Utils.gf16mMulTo(P21[i][j][index], T12[index][k], P22[i][j][k], l);
                     }
                 }
             }
+        }
 
-            // Convert GF16 elements to packed bytes
-            byte[] tmp = new byte[outP22.length << 1];
-            MapGroup1.copyTo(P22, tmp);
-            GF16Utils.encode(tmp, outP22, 0, tmp.length);
-        }
-        finally
-        {
-            // Secure clear temporary buffers
-            Arrays.fill(temp1, (byte)0);
-            Arrays.fill(temp2, (byte)0);
-        }
+        // Convert GF16 elements to packed bytes
+        byte[] tmp = new byte[outP22.length << 1];
+        MapGroup1.copyTo(P22, tmp);
+        GF16Utils.encode(tmp, outP22, tmp.length);
     }
 
     void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
