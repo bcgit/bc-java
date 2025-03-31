@@ -1,109 +1,9 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-public class GF16Utils
+import org.bouncycastle.util.GF16;
+
+class GF16Utils
 {
-    private static final byte[] F_STAR = {1, 2, 4, 8, 3, 6, 12, 11, 5, 10, 7, 14, 15, 13, 9};
-    private static final byte[] MT4B = new byte[256];
-    private static final byte[] INV4B = new byte[16];
-
-    static byte mt(int p, int q)
-    {
-        return MT4B[((p) << 4) ^ (q)];
-    }
-
-    static
-    {
-        // Initialize multiplication table
-        for (int i = 0; i < 15; i++)
-        {
-            for (int j = 0; j < 15; j++)
-            {
-                MT4B[(F_STAR[i] << 4) ^ F_STAR[j]] = F_STAR[(i + j) % 15];
-            }
-        }
-
-        int g = F_STAR[1], g_inv = F_STAR[14], gn = 1, gn_inv = 1;
-        // Initialize inversion table
-        INV4B[0] = 0;
-        INV4B[1] = 1;
-        for (int i = 0; i < 14; i++)
-        {
-            gn = mt(gn, g);
-            gn_inv = mt(gn_inv, g_inv);
-            INV4B[gn] = (byte)gn_inv;
-        }
-    }
-
-    /**
-     * Convert one byte of data to GF16 representation (using only half of the
-     * byte). Example: <bytes 12 34 56 78 9a bc> -> <bytes 02 01 04 03 05 ..... 0c
-     * 0b>
-     *
-     * @param m       the input byte array (each byte holds two 4-bit values)
-     * @param mdec    the output array that will hold the decoded nibbles (one per byte)
-     * @param mdecLen the total number of nibbles to decode
-     */
-    public static void decode(byte[] m, byte[] mdec, int mdecLen)
-    {
-        int i, decIndex = 0, blocks = mdecLen >> 1;
-        // Process pairs of nibbles from each byte
-        for (i = 0; i < blocks; i++)
-        {
-            // Extract the lower nibble
-            mdec[decIndex++] = (byte)(m[i] & 0x0F);
-            // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)((m[i] >> 4) & 0x0F);
-        }
-        // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((mdecLen & 1) == 1)
-        {
-            mdec[decIndex] = (byte)((m[i] & 0xFF) & 0x0F);
-        }
-    }
-
-    public static void decode(byte[] m, int mOff, byte[] mdec, int decIndex, int mdecLen)
-    {
-        // Process pairs of nibbles from each byte
-        int blocks = mdecLen >> 1;
-        for (int i = 0; i < blocks; i++)
-        {
-            // Extract the lower nibble
-            mdec[decIndex++] = (byte)(m[mOff] & 0x0F);
-            // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)((m[mOff++] >> 4) & 0x0F);
-        }
-        // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((mdecLen & 1) == 1)
-        {
-            mdec[decIndex] = (byte)(m[mOff] & 0x0F);
-        }
-    }
-
-    /**
-     * Convert two GF16 values to one byte.
-     *
-     * @param m    the input array of 4-bit values (stored as bytes, only lower 4 bits used)
-     * @param menc the output byte array that will hold the encoded bytes
-     * @param mlen the number of nibbles in the input array
-     */
-    public static void encode(byte[] m, byte[] menc, int mlen)
-    {
-        int i, srcIndex = 0, outOff = 0;
-        // Process pairs of 4-bit values
-        for (i = 0; i < mlen / 2; i++)
-        {
-            int lowerNibble = m[srcIndex] & 0x0F;
-            int upperNibble = (m[srcIndex + 1] & 0x0F) << 4;
-            menc[outOff++] = (byte)(lowerNibble | upperNibble);
-            srcIndex += 2;
-        }
-        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if ((mlen & 1) == 1)
-        {
-            menc[outOff] = (byte)(m[srcIndex] & 0x0F);
-        }
-    }
-
     public static void encodeMergeInHalf(byte[] m, int mlen, byte[] menc)
     {
         int i, half = (mlen + 1) >>> 1;
@@ -119,28 +19,6 @@ public class GF16Utils
         }
     }
 
-    /**
-     * Decodes a nibble-packed byte array into an output array.
-     *
-     * @param input       the input byte array.
-     * @param inputOffset the offset in input from which to start decoding.
-     * @param output      the output byte array to hold the decoded nibbles.
-     * @param mdecLen     the total number of nibbles to decode.
-     */
-    public static void decode(byte[] input, int inputOffset, byte[] output, int mdecLen)
-    {
-        int decIndex = 0, blocks = mdecLen >> 1;
-        for (int i = 0; i < blocks; i++)
-        {
-            output[decIndex++] = (byte)(input[inputOffset] & 0x0F);
-            output[decIndex++] = (byte)((input[inputOffset++] >> 4) & 0x0F);
-        }
-        if ((mdecLen & 1) == 1)
-        {
-            output[decIndex] = (byte)(input[inputOffset] & 0x0F);
-        }
-    }
-
     public static void decodeMergeInHalf(byte[] byteArray, byte[] gf16Array, int nGf16)
     {
         int i, half = (nGf16 + 1) >>> 1;
@@ -148,48 +26,52 @@ public class GF16Utils
         for (i = 0; i < half; i++)
         {
             gf16Array[i] = (byte)(byteArray[i] & 0x0F);
-        }
-        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        for (i = 0; i < nGf16 >>> 1; i++)
-        {
             gf16Array[i + half] = (byte)((byteArray[i] >>> 4) & 0x0F);
+        }
+    }
+
+    public static void gf16mTranMul(byte[] a, byte[] b, byte[] c, int rank)
+    {
+        for (int i = 0, cOff = 0; i < rank; i++)
+        {
+            for (int j = 0, jl = 0; j < rank; j++, jl += rank)
+            {
+                c[cOff++] = GF16.dotProduct(a, i, b, j, rank);
+            }
         }
     }
 
     public static void gf16mMul(byte[] a, byte[] b, byte[] c, int rank)
     {
-        for (int i = 0; i < rank; i++)
+        for (int i = 0, aOff = 0, cOff = 0; i < rank; i++, aOff += rank)
         {
             for (int j = 0; j < rank; j++)
             {
-                int cIndex = i * rank + j;
-                c[cIndex] = mt(getGf16m(a, i, 0, rank), getGf16m(b, 0, j, rank));
-                for (int k = 1; k < rank; ++k)
-                {
-                    c[cIndex] ^= mt(getGf16m(a, i, k, rank), getGf16m(b, k, j, rank));
-                }
+                c[cOff++] = GF16.innerProduct(a, aOff, b, j, rank);
             }
         }
     }
 
     public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int rank)
     {
-        for (int i = 0; i < rank; i++)
+        for (int i = 0, aOff = 0, cOff = 0; i < rank; i++, aOff += rank)
         {
             for (int j = 0; j < rank; j++)
             {
-                int cIndex = i * rank + j;
-                for (int k = 0; k < rank; ++k)
-                {
-                    c[cIndex] ^= mt(getGf16m(a, i, k, rank), getGf16m(b, k, j, rank));
-                }
+                c[cOff++] ^= GF16.innerProduct(a, aOff, b, j, rank);
             }
         }
     }
 
-    static byte getGf16m(byte[] gf16m, int x, int y, int rank)
+    public static void gf16mMulTo(byte[] a, byte[] b, int bOff, byte[] c, int cOff, int rank)
     {
-        return gf16m[x * rank + y];
+        for (int i = 0, aOff = 0; i < rank; i++, aOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                c[cOff++] ^= GF16.innerProduct(a, aOff, b, bOff + j, rank);
+            }
+        }
     }
 
     /**
@@ -199,16 +81,6 @@ public class GF16Utils
     {
         int middle = idx | (idx << 4);
         return ((middle & 0x41) | ((middle << 2) & 0x208));
-    }
-
-    public static byte mul(byte a, byte b)
-    {
-        return MT4B[(a & 0xF) << 4 | (b & 0xF)];
-    }
-
-    public static byte inv(byte a)
-    {
-        return INV4B[a & 0xF];
     }
 
     private static final int GF16_MASK = 0x249; // Mask for GF(2^4) reduction

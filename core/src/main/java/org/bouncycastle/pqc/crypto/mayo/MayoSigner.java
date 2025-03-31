@@ -10,6 +10,7 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
+import org.bouncycastle.util.GF16;
 import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 
@@ -134,7 +135,7 @@ public class MayoSigner
 
             // Decode the portion of S after the first param_pk_seed_bytes into O.
             // (In C, this is: decode(S + param_pk_seed_bytes, O, param_v * param_o))
-            Utils.decode(seed_pk, pk_seed_bytes, O, 0, O.length);
+            GF16.decode(seed_pk, pk_seed_bytes, O, 0, O.length);
 
             // Expand P1 and P2 into the long array P using seed_pk.
             Utils.expandP1P2(params, P, seed_pk);
@@ -186,7 +187,7 @@ public class MayoSigner
             System.arraycopy(salt, 0, tmp, digestBytes, saltBytes);
             shake.update(tmp, 0, digestBytes + saltBytes);
             shake.doFinal(tenc, 0, params.getMBytes());
-            Utils.decode(tenc, t, m);
+            GF16.decode(tenc, t, m);
             int size = v * k * mVecLimbs;
             long[] Pv = new long[size];
             byte[] Ox = new byte[v];
@@ -201,7 +202,7 @@ public class MayoSigner
                 // Decode vectors
                 for (int i = 0; i < k; i++)
                 {
-                    Utils.decode(V, i * vbytes, Vdec, i * v, v);
+                    GF16.decode(V, i * vbytes, Vdec, i * v, v);
                 }
 
                 //computeMandVPV(params, Vdec, P, params.getP1Limbs(), P, Mtmp, vPv);
@@ -224,7 +225,7 @@ public class MayoSigner
 //                    A[(i + 1) * (ok + 1) - 1] = 0;
 //                }
 
-                Utils.decode(V, k * vbytes, r, 0, ok);
+                GF16.decode(V, k * vbytes, r, 0, ok);
 
                 if (sampleSolution(A, y, r, x))
                 {
@@ -247,7 +248,7 @@ public class MayoSigner
             }
 
             // Encode and add salt
-            Utils.encode(s, sig, nk);
+            GF16.encode(s, sig, nk);
             System.arraycopy(salt, 0, sig, sig.length - saltBytes, saltBytes);
 
             return Arrays.concatenate(sig, message);
@@ -315,10 +316,10 @@ public class MayoSigner
         shake.update(tmp, 0, digestBytes);
         shake.update(signature, sigBytes - saltBytes, saltBytes);
         shake.doFinal(tEnc, 0, mBytes);
-        Utils.decode(tEnc, t, m);
+        GF16.decode(tEnc, t, m);
 
         // Decode signature
-        Utils.decode(signature, s, kn);
+        GF16.decode(signature, s, kn);
 
         // Evaluate public map
         //evalPublicMap(params, s, P1, P2, P3, y);
@@ -384,7 +385,7 @@ public class MayoSigner
                         continue;
                     }
 
-                    long product = GF16Utils.mulF(top, ft);
+                    long product = GF16.mul(top, ft);
                     if ((jj & 1) == 0)
                     {
                         tempBytes[jj >> 1] ^= (byte)(product & 0xF);
@@ -514,10 +515,10 @@ public class MayoSigner
         for (int i = 0, idx = 0; i < F_TAIL_LEN; i++)
         {
             int ft = fTailArr[i];
-            tab[idx++] = (byte)GF16Utils.mulF(ft, 1);
-            tab[idx++] = (byte)GF16Utils.mulF(ft, 2);
-            tab[idx++] = (byte)GF16Utils.mulF(ft, 4);
-            tab[idx++] = (byte)GF16Utils.mulF(ft, 8);
+            tab[idx++] = (byte)GF16.mul(ft, 1);
+            tab[idx++] = (byte)GF16.mul(ft, 2);
+            tab[idx++] = (byte)GF16.mul(ft, 4);
+            tab[idx++] = (byte)GF16.mul(ft, 8);
         }
 
         // Final processing
@@ -549,7 +550,7 @@ public class MayoSigner
             {
                 for (int i = 0; i + r < m; i++)
                 {
-                    Utils.decode(Abytes, (((r * AWidth) >> 4) + c + i) << 3,
+                    GF16.decode(Abytes, (((r * AWidth) >> 4) + c + i) << 3,
                         AOut, (r + i) * ACols + c, Math.min(16, ACols - 1 - c));
                 }
             }
@@ -797,7 +798,7 @@ public class MayoSigner
         for (int i = 0, irowLen = 0; i < nrows; i++, irowLen += rowLen)
         {
             Pack.longToLittleEndian(packedA, irowLen, len_4, bytes, 0);
-            Utils.decode(bytes, 0, A, outIndex, ncols);
+            GF16.decode(bytes, 0, A, outIndex, ncols);
             outIndex += ncols;
         }
     }
