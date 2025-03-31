@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.mayo;
 
+import org.bouncycastle.util.GF16;
+
 class GF16Utils
 {
     static final long NIBBLE_MASK_MSB = 0x7777777777777777L;
@@ -207,35 +209,16 @@ class GF16Utils
     }
 
     /**
-     * GF(16) multiplication mod x^4 + x + 1.
-     * <p>
-     * This method multiplies two elements in GF(16) (represented as integers 0–15)
-     * using carryless multiplication followed by reduction modulo x^4 + x + 1.
-     *
-     * @param a an element in GF(16) (only the lower 4 bits are used)
-     * @param b an element in GF(16) (only the lower 4 bits are used)
-     * @return the product a * b in GF(16)
-     */
-    static int mulF(int a, int b)
-    {
-        // Carryless multiply: multiply b by each bit of a and XOR.
-        int p = (-(a & 1) & b) ^ (-((a >> 1) & 1) & (b << 1)) ^ (-((a >> 2) & 1) & (b << 2)) ^ (-((a >> 3) & 1) & (b << 3));
-        // Reduce modulo f(X) = x^4 + x + 1.
-        int topP = p & 0xF0;
-        return (p ^ (topP >> 4) ^ (topP >> 3)) & 0x0F;
-    }
-
-    /**
      * Computes the multiplicative inverse in GF(16) for a GF(16) element.
      */
     static byte inverseF(int a)
     {
         // In GF(16), the inverse can be computed via exponentiation.
-        int a2 = mulF(a, a);
-        int a4 = mulF(a2, a2);
-        int a8 = mulF(a4, a4);
-        int a6 = mulF(a2, a4);
-        return (byte)mulF(a8, a6);
+        int a2 = GF16.mul(a, a);
+        int a4 = GF16.mul(a2, a2);
+        int a8 = GF16.mul(a4, a4);
+        int a6 = GF16.mul(a2, a4);
+        return (byte)GF16.mul(a8, a6);
     }
 
     /**
@@ -266,7 +249,7 @@ class GF16Utils
             byte result = 0;
             for (int k = 0; k < colrowAB; k++)
             {
-                result ^= mulF(a[aRowStart++], b[bOff + k]);
+                result ^= GF16.mul(a[aRowStart++], b[bOff + k]);
             }
             c[cOff++] = result;
         }

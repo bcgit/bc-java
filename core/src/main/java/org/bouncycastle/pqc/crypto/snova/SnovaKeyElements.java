@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.snova;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.GF16;
 
 class SnovaKeyElements
 {
@@ -34,27 +35,16 @@ class SnovaKeyElements
             SHAKEDigest shake = new SHAKEDigest(256);
             shake.update(seed, 0, seed.length);
             shake.doFinal(rngOut, 0, rngOut.length);
-            GF16Utils.decode(rngOut, fixedAbq, 2 * o * alpha * lsq);
-            GF16Utils.decode(rngOut, alpha * lsq, q12, 2 * o * alpha * l);
+            GF16.decode(rngOut, fixedAbq, 2 * o * alpha * lsq);
+            GF16.decode(rngOut, alpha * lsq, q12, 0, 2 * o * alpha * l);
             // Post-processing for invertible matrices
             for (int pi = 0; pi < o; ++pi)
             {
                 for (int a = 0; a < alpha; ++a)
                 {
                     engine.makeInvertibleByAddingAS(fixedAbq, (pi * alpha + a) * lsq);
-                }
-                for (int a = 0; a < alpha; ++a)
-                {
                     engine.makeInvertibleByAddingAS(fixedAbq, ((o + pi) * alpha + a) * lsq);
-                }
-
-                for (int a = 0; a < alpha; ++a)
-                {
                     engine.genAFqS(q12, (pi * alpha + a) * l, fixedAbq, ((2 * o + pi) * alpha + a) * lsq);
-                }
-
-                for (int a = 0; a < alpha; ++a)
-                {
                     engine.genAFqS(q12, ((o + pi) * alpha + a) * l, fixedAbq, ((3 * o + pi) * alpha + a) * lsq);
                 }
             }
@@ -78,7 +68,7 @@ class SnovaKeyElements
 
     public void skUnpack(byte[] input)
     {
-        byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength)<< 1];
+        byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
         GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
         int inOff = 0;
         inOff = copy3d(tmp, inOff, map1.aAlpha);

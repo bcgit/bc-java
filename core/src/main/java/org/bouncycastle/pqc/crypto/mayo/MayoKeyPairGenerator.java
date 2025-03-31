@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.GF16;
 import org.bouncycastle.util.Longs;
 
 /**
@@ -94,7 +95,7 @@ public class MayoKeyPairGenerator
         // o ← Decode_o(S[ param_pk_seed_bytes : param_pk_seed_bytes + O_bytes ])
         // Decode nibbles from S starting at offset param_pk_seed_bytes into O,
         // with expected output length = param_v * param_o.
-        Utils.decode(seed_pk, pkSeedBytes, O, 0,  O.length);
+        GF16.decode(seed_pk, pkSeedBytes, O, 0,  O.length);
 
         // Expand P1 and P2 into the array P using seed_pk.
         Utils.expandP1P2(p, P, seed_pk);
