@@ -204,17 +204,11 @@ public class PaddedBufferedBlockCipher
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
             inOff += gapLen;
             len -= gapLen;
-            if (in == out)
+            if (in == out && segmentsOverlap(inOff, len, outOff, length))
             {
-                int inEnd = inOff + len;
-                int outEnd = outOff + length;
-                if ((inOff <= outOff && outOff <= inEnd) ||
-                    (outOff <= inOff && inOff <= outEnd))
-                {
-                    in = new byte[len];
-                    System.arraycopy(out, inOff, in, 0, len);
-                    inOff = 0;
-                }
+                in = new byte[len];
+                System.arraycopy(out, inOff, in, 0, len);
+                inOff = 0;
             }
 
             resultLen += cipher.processBlock(buf, 0, out, outOff);

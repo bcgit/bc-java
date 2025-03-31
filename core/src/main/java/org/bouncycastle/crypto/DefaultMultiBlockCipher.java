@@ -20,7 +20,13 @@ public abstract class DefaultMultiBlockCipher
 
         int resultLen = 0;
         int blockSize = this.getMultiBlockSize();
-        
+        int len = blockCount * blockSize;
+        if (in == out && segmentsOverlap(inOff, len, outOff, len))
+        {
+            in = new byte[len];
+            System.arraycopy(out, inOff, in, 0, len);
+            inOff = 0;
+        }
         for (int i = 0; i != blockCount; i++)
         {
             resultLen += this.processBlock(in, inOff, out, outOff + resultLen);
@@ -29,5 +35,11 @@ public abstract class DefaultMultiBlockCipher
         }
 
         return resultLen;
+    }
+
+    protected boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
+    {
+        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
+        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 }

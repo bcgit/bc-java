@@ -38,6 +38,13 @@ import javax.crypto.spec.RC2ParameterSpec;
 import javax.crypto.spec.RC5ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.crypto.BufferedBlockCipher;
+import org.bouncycastle.crypto.DefaultMultiBlockCipher;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.DESEngine;
+import org.bouncycastle.crypto.paddings.PKCS7Padding;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -1740,6 +1747,8 @@ public class BlockCipherTest
         testExceptions();
         testIncorrectCipherModes();
         doFinalTest();
+        testOverlapping();
+        testOverlapping2();
     }
 
     private void doFinalTest()
@@ -1761,6 +1770,76 @@ public class BlockCipherTest
         catch (GeneralSecurityException e)
         {
             fail(e.toString());
+        }
+    }
+
+    private void testOverlapping()
+    {
+        //Skip the dofinal of the test
+        BufferedBlockCipher bc = new BufferedBlockCipher(AESEngine.newInstance());
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 2 + random.nextInt(bc.getBlockSize() - 1);
+        byte[] data = new byte[bc.getBlockSize() * 2 + offset];
+        byte[] expected = new byte[bc.getOutputSize(bc.getBlockSize() * 2)];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, expected, 0);
+        bc.init(true, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, expected, 0);
+        bc.init(false, key);
+        bc.processBytes(data, 0, bc.getBlockSize() * 2 + 1, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+    }
+
+    private void testOverlapping2()
+    {
+        //Skip the dofinal of the test
+        DefaultMultiBlockCipher bc = new AESEngine();
+        SecureRandom random = new SecureRandom();
+        byte[] keyBytes = new byte[16];
+        random.nextBytes(keyBytes);
+        KeyParameter key = new KeyParameter(keyBytes);
+
+        int offset = 2 + random.nextInt(bc.getBlockSize() - 1);
+        byte[] data = new byte[bc.getBlockSize() * 2 + offset];
+        byte[] expected = new byte[bc.getBlockSize() * 2];
+        random.nextBytes(data);
+
+        bc.init(true, key);
+        bc.processBlocks(data, 0, 2, expected, 0);
+        bc.init(true, key);
+        bc.processBlocks(data, 0, 2, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
+        }
+
+        bc.init(false, key);
+        bc.processBlocks(data, 0, 2, expected, 0);
+        bc.init(false, key);
+        bc.processBlocks(data, 0, 2, data, offset);
+
+        if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
+        {
+            fail("failed to overlapping of encryption");
         }
     }
 
