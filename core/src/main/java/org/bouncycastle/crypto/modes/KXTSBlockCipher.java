@@ -123,7 +123,12 @@ public class KXTSBlockCipher
         {
             throw new IllegalArgumentException("Partial blocks not supported");
         }
-
+        if (input == output && segmentsOverlap(inOff, len, outOff, len))
+        {
+            input = new byte[len];
+            System.arraycopy(output, inOff, input, 0, len);
+            inOff = 0;
+        }
         for (int pos = 0; pos < len; pos += blockSize)
         {
             processBlocks(input, inOff + pos, output, outOff + pos);
