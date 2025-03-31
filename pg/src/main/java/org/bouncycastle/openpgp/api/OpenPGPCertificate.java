@@ -1729,7 +1729,20 @@ public class OpenPGPCertificate
         /**
          * Verify this signature.
          *
+         * @param implementation OpenPGP implementation
+         * @throws PGPSignatureException if the signature cannot be verified successfully
+         */
+        public void verify(OpenPGPImplementation implementation)
+                throws PGPSignatureException
+        {
+            verify(implementation.pgpContentVerifierBuilderProvider(), implementation.policy());
+        }
+
+        /**
+         * Verify this signature.
+         *
          * @param contentVerifierBuilderProvider provider for verifiers
+         * @param policy algorithm policy
          * @throws PGPSignatureException if the signature cannot be verified successfully
          */
         public void verify(PGPContentVerifierBuilderProvider contentVerifierBuilderProvider,
