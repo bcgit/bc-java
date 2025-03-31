@@ -24,6 +24,7 @@ public class Grain128AEADTest
     public void performTest()
         throws Exception
     {
+        CipherTest.testOverlapping(this, 16, 12, 8, 20, new Grain128AEADEngine());
         CipherTest.implTestVectorsEngine(new Grain128AEADEngine(), "crypto", "LWC_AEAD_KAT_128_96.txt", this);
         checkAEADCipherOutputSize(this, 16, 12, 8, new Grain128AEADEngine());
         CipherTest.checkCipher(32, 12, 100, 128, new CipherTest.Instance()
@@ -38,6 +39,7 @@ public class Grain128AEADTest
 
 
         CipherTest.checkAEADParemeter(this, 16, 12, 8, 20, new Grain128AEADEngine());
+
         testSplitUpdate();
         testExceptions();
         testLongAEAD();
