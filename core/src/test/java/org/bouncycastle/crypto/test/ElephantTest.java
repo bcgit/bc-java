@@ -38,6 +38,9 @@ public class ElephantTest
         CipherTest.checkAEADParemeter(this, 16, 12, 8, 20, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
         CipherTest.checkAEADParemeter(this, 16, 12, 8, 22, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
         CipherTest.checkAEADParemeter(this, 16, 12, 16, 25, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));
+        CipherTest.testOverlapping(this, 16, 12, 8, 20, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
+        CipherTest.testOverlapping(this, 16, 12, 8, 22, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
+        CipherTest.testOverlapping(this, 16, 12, 16, 25, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 20, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant160));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 22, 8, new ElephantEngine(ElephantEngine.ElephantParameters.elephant176));
         CipherTest.checkAEADCipherOutputSize(this, 16, 12, 25, 16, new ElephantEngine(ElephantEngine.ElephantParameters.elephant200));

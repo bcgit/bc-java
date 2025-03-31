@@ -53,6 +53,7 @@ public class XoodyakTest
         testExceptions(new XoodyakDigest(), 32);
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 24, 16, new XoodyakEngine());
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 24, new XoodyakEngine());
+        CipherTest.testOverlapping(this, 16, 16, 16, 24, new XoodyakEngine());
     }
 
     private void testVectors()
