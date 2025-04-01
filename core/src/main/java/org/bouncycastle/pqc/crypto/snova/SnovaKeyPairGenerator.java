@@ -46,7 +46,7 @@ public class SnovaKeyPairGenerator
         byte[] ptPublicKeySeed = Arrays.copyOfRange(seedPair, 0, publicSeedLength);
         byte[] ptPrivateKeySeed = Arrays.copyOfRange(seedPair, publicSeedLength, seedPair.length);
 
-        SnovaKeyElements keyElements = new SnovaKeyElements(params, engine);
+        SnovaKeyElements keyElements = new SnovaKeyElements(params);
         generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed);
 
         // Pack public key components

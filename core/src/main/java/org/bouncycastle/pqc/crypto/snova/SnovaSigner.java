@@ -59,7 +59,7 @@ public class SnovaSigner
         byte[] salt = new byte[params.getSaltLength()];
         random.nextBytes(salt);
         byte[] signature = new byte[((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength()];
-        SnovaKeyElements keyElements = new SnovaKeyElements(params, engine);
+        SnovaKeyElements keyElements = new SnovaKeyElements(params);
         if (params.isSkIsSeed())
         {
             byte[] seedPair = privKey.getPrivateKey();
@@ -88,7 +88,7 @@ public class SnovaSigner
         byte[] hash = new byte[shake.getDigestSize()];
         shake.update(message, 0, message.length);
         shake.doFinal(hash, 0);
-        SnovaKeyElements keyElements = new SnovaKeyElements(params, engine);
+        SnovaKeyElements keyElements = new SnovaKeyElements(params);
         byte[] pk = pubKey.getEncoded();
         System.arraycopy(pk, 0, keyElements.publicKey.publicKeySeed, 0, SnovaKeyPairGenerator.publicSeedLength);
         System.arraycopy(pk, SnovaKeyPairGenerator.publicSeedLength, keyElements.publicKey.P22, 0, keyElements.publicKey.P22.length);

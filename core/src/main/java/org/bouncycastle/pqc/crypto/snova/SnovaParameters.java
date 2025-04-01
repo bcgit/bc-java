@@ -1,7 +1,17 @@
 package org.bouncycastle.pqc.crypto.snova;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.util.GF16;
+
 public class SnovaParameters
 {
+    static Map<Integer, byte[]> fixedAbqSet = new HashMap<Integer, byte[]>();//key is o
+    static Map<Integer, byte[][]> sSet = new HashMap<Integer, byte[][]>(); //key is l
+    static Map<Integer, int[][]> xSSet = new HashMap<Integer, int[][]>();
+
     public static final SnovaParameters SNOVA_24_5_16_4_SSK =
         new SnovaParameters("SNOVA_24_5_16_4_SSK", 24, 5, 4, true, false);
     public static final SnovaParameters SNOVA_24_5_16_4_ESK =
@@ -111,6 +121,7 @@ public class SnovaParameters
     private final int v;
     private final int o;
     private final int l;
+    private final int lsq;
     private final int alpha;
     private final boolean skIsSeed;
     private final boolean pkExpandShake;
@@ -121,9 +132,57 @@ public class SnovaParameters
         this.v = v;
         this.o = o;
         this.l = l;
-        this.alpha = l * l + l;
+        this.lsq = l * l;
+        this.alpha = lsq + l;
         this.skIsSeed = skIsSeed;
         this.pkExpandShake = pkExpandShake;
+        if (!xSSet.containsKey(l))
+        {
+            byte[][] S = new byte[l][lsq];
+            int[][] xS = new int[l][lsq];
+            SnovaEngine.be_aI(S[0], 0, (byte)1, l);
+            beTheS(S[1]);
+            for (int index = 2; index < l; ++index)
+            {
+                GF16Utils.gf16mMul(S[index - 1], S[1], S[index], l);
+            }
+
+            for (int index = 0; index < l; ++index)
+            {
+                for (int ij = 0; ij < lsq; ++ij)
+                {
+                    xS[index][ij] = GF16Utils.gf16FromNibble(S[index][ij]);
+                }
+            }
+            sSet.put(l, S);
+            xSSet.put(l, xS);
+        }
+        if (l < 4 && !fixedAbqSet.containsKey(o))
+        {
+            SnovaEngine engine = new SnovaEngine(this);
+            byte[] fixedAbq = new byte[4 * o * alpha * lsq];
+            //genABQ(byte[] abqSeed)
+            byte[] rngOut = new byte[o * alpha * (lsq + l)];
+            byte[] q12 = new byte[2 * o * alpha * l];
+            byte[] seed = "SNOVA_ABQ".getBytes();
+            SHAKEDigest shake = new SHAKEDigest(256);
+            shake.update(seed, 0, seed.length);
+            shake.doFinal(rngOut, 0, rngOut.length);
+            GF16.decode(rngOut, fixedAbq, 2 * o * alpha * lsq);
+            GF16.decode(rngOut, alpha * lsq, q12, 0, 2 * o * alpha * l);
+            // Post-processing for invertible matrices
+            for (int pi = 0; pi < o; ++pi)
+            {
+                for (int a = 0; a < alpha; ++a)
+                {
+                    engine.makeInvertibleByAddingAS(fixedAbq, (pi * alpha + a) * lsq);
+                    engine.makeInvertibleByAddingAS(fixedAbq, ((o + pi) * alpha + a) * lsq);
+                    engine.genAFqS(q12, (pi * alpha + a) * l, fixedAbq, ((2 * o + pi) * alpha + a) * lsq);
+                    engine.genAFqS(q12, ((o + pi) * alpha + a) * l, fixedAbq, ((3 * o + pi) * alpha + a) * lsq);
+                }
+            }
+            fixedAbqSet.put(o, fixedAbq);
+        }
     }
 
     // Getter methods
@@ -185,11 +244,30 @@ public class SnovaParameters
 
     public int getLsq()
     {
-        return l * l;
+        return lsq;
     }
 
     public int getSaltLength()
     {
         return 16;
+    }
+
+    void beTheS(byte[] target)
+    {
+        // Set all elements to 8 - (i + j) in GF16 (4-bit values)
+        for (int i = 0, il = 0; i < l; ++i, il += l)
+        {
+            for (int j = 0; j < l; ++j)
+            {
+                int value = 8 - (i + j);
+                target[il + j] = (byte)(value & 0x0F);  // Mask to 4 bits
+            }
+        }
+
+        // Special case for rank 5
+        if (l == 5)
+        {
+            target[24] = (byte)9;  // Set (4,4) to 9
+        }
     }
 }
