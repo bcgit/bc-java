@@ -47,12 +47,11 @@ public class SnovaKeyPairGenerator
         byte[] ptPrivateKeySeed = Arrays.copyOfRange(seedPair, publicSeedLength, seedPair.length);
 
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
-        byte[] p22 = new byte[(params.getM() * params.getO() * params.getO() * params.getL() * params.getL() + 1) >> 1];
-        generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed, p22);
+        System.arraycopy(ptPublicKeySeed, 0, pk, 0, ptPublicKeySeed.length);
+        generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed, pk, ptPublicKeySeed.length);
 
         // Pack public key components
         System.arraycopy(ptPublicKeySeed, 0, pk, 0, ptPublicKeySeed.length);
-        System.arraycopy(p22, 0, pk, ptPublicKeySeed.length, p22.length);
 
         if (params.isSkIsSeed())
         {
@@ -85,18 +84,11 @@ public class SnovaKeyPairGenerator
         );
     }
 
-    private void generateKeysCore(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed, byte[] p22)
+    private void generateKeysCore(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed, byte[] p22, int p22Off)
     {
-        // Generate T12 matrix
-        engine.genSeedsAndT12(keyElements.T12, skSeed);
-
-        // Generate map components
-        engine.genABQP(keyElements.map1, pkSeed, keyElements.fixedAbq);
-
-        // Generate F matrices
-        engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
+        engine.genMap1T12Map2(keyElements, pkSeed, skSeed);
 
         // Generate P22 matrix
-        engine.genP22(p22, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
+        engine.genP22(p22, p22Off, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
     }
 }

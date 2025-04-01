@@ -349,7 +349,7 @@ class SnovaEngine
         }
     }
 
-    public void genP22(byte[] outP22, byte[][][] T12, byte[][][][] P21, byte[][][][] F12)
+    public void genP22(byte[] outP22, int outOff, byte[][][] T12, byte[][][][] P21, byte[][][][] F12)
     {
         // Initialize P22 with zeros
         byte[] P22 = new byte[m * o * o * lsq];
@@ -374,7 +374,7 @@ class SnovaEngine
         }
 
         // Convert GF16 elements to packed bytes
-        GF16.encode(P22, outP22, P22.length);
+        GF16.encode(P22, outP22, outOff, P22.length);
     }
 
     void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
@@ -405,7 +405,7 @@ class SnovaEngine
         }
     }
 
-    void genABQP(MapGroup1 map1, byte[] pkSeed, byte[] fixedAbq)
+    void genABQP(MapGroup1 map1, byte[] pkSeed)
     {
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
         byte[] qTemp = new byte[(m * alpha * lsq + m * alpha * lsq) / l];
@@ -497,10 +497,23 @@ class SnovaEngine
         }
         else
         {
+            byte[] fixedAbq = SnovaParameters.fixedAbqSet.get(o);
             MapGroup1.fillAlpha(fixedAbq, 0, map1.aAlpha, m * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq, map1.bAlpha, (m - 1) * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq * 2, map1.qAlpha1, (m - 2) * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq * 3, map1.qAlpha2, (m - 3) * o * alpha * lsq);
         }
+    }
+
+    void genMap1T12Map2(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed)
+    {
+        // Generate T12 matrix
+        genSeedsAndT12(keyElements.T12, skSeed);
+
+        // Generate map components
+        genABQP(keyElements.map1, pkSeed);
+
+        // Generate F matrices
+        genF(keyElements.map2, keyElements.map1, keyElements.T12);
     }
 }
