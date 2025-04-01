@@ -11,7 +11,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.GF16;
 import org.bouncycastle.util.Pack;
 
-public class SnovaEngine
+class SnovaEngine
 {
     private final SnovaParameters params;
     private final int l;
@@ -517,38 +517,32 @@ public class SnovaEngine
                 System.arraycopy(blockOut, 0, prngOutput, offset, remaining);
             }
         }
+//        if ((lsq & 1) == 0)
+//        {
+//            map1.decode(prngOutput, params, (gf16sPrngPublic - qTemp.length) >> 1);
+//        }
+//        else
+//        {
         byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
         GF16.decode(prngOutput, temp, temp.length);
         map1.fill(temp);
+//        }
         if (l >= 4)
         {
-            GF16.decode(prngOutput, temp.length >> 1, qTemp, 0, qTemp.length);
-
+            GF16.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1, qTemp, 0, qTemp.length);
+            int ptArray = 0;
             // Post-processing for invertible matrices
+            int offset = m * alpha * l;
             for (int pi = 0; pi < m; ++pi)
             {
                 for (int a = 0; a < alpha; ++a)
                 {
                     makeInvertibleByAddingAS(map1.aAlpha[pi][a], 0);
                     makeInvertibleByAddingAS(map1.bAlpha[pi][a], 0);
-                }
-            }
-
-            int ptArray = 0;
-            for (int pi = 0; pi < m; ++pi)
-            {
-                for (int a = 0; a < alpha; ++a)
-                {
                     genAFqS(qTemp, ptArray, map1.qAlpha1[pi][a], 0);
                     ptArray += l;
-                }
-            }
-            for (int pi = 0; pi < m; ++pi)
-            {
-                for (int a = 0; a < alpha; ++a)
-                {
-                    genAFqS(qTemp, ptArray, map1.qAlpha2[pi][a], 0);
-                    ptArray += l;
+                    genAFqS(qTemp, offset, map1.qAlpha2[pi][a], 0);
+                    offset += l;
                 }
             }
         }

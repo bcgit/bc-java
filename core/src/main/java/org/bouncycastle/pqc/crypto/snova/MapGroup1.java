@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.snova;
 
+import org.bouncycastle.util.GF16;
+
 class MapGroup1
 {
     public final byte[][][][] p11;  // [m][v][v]
@@ -25,6 +27,102 @@ class MapGroup1
         qAlpha1 = new byte[m][alpha][lsq];
         qAlpha2 = new byte[m][alpha][lsq];
     }
+
+    public void decode(byte[] input, SnovaParameters params, int len)
+    {
+//        int m = params.getM();
+//        int v = params.getV();
+//        int o = params.getO();
+//        int alpha = params.getAlpha();
+        int lsq = params.getLsq();
+        if ((lsq & 1) == 0)
+        {
+            int inOff = decodeP(input, 0, p11, len);
+            inOff += decodeP(input, inOff, p12, len - inOff);
+            inOff += decodeP(input, inOff, p21, len - inOff);
+            inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
+            inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
+            inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
+            decodeAlpha(input, inOff, qAlpha2, len - inOff);
+        }
+//        else
+//        {
+//
+//        }
+    }
+
+//    public boolean decodeArrayLsqOdd(byte[] input, int inOff, boolean isLower, byte[] output, int lsqHalf)
+//    {
+//        int outOff = 0;
+//        if (isLower)
+//        {
+//            for (int i = 0; i < lsqHalf; ++i)
+//            {
+//                output[outOff++] = (byte)(input[inOff] & 0x0F);
+//                output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
+//            }
+//            output[outOff] = (byte)(input[inOff] & 0x0F);
+//            return false;
+//        }
+//        else
+//        {
+//            for (int i = 0; i < lsqHalf; ++i)
+//            {
+//                output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
+//                output[outOff++] = (byte)(input[inOff] & 0x0F);
+//            }
+//            output[outOff] = (byte)((input[inOff] >>> 4) & 0x0F);
+//            return true;
+//        }
+//    }
+
+    private int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
+    {
+        int rlt = 0;
+        for (int i = 0; i < p.length; ++i)
+        {
+            rlt += decodeAlpha(input, inOff + rlt, p[i], len);
+        }
+        return rlt;
+    }
+
+    private static int decodeAlpha(byte[] input, int inOff, byte[][][] alpha, int len)
+    {
+        int rlt = 0;
+        for (int i = 0; i < alpha.length; ++i)
+        {
+            for (int j = 0; j < alpha[i].length; ++j)
+            {
+                int tmp = Math.min(alpha[i][j].length, len << 1);
+                GF16.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
+                rlt += (tmp + 1) >> 1;
+                len -= (tmp + 1) >> 1;
+            }
+        }
+        return rlt;
+    }
+
+//    private int decodeP(byte[] input, int inOff, boolean isLower,byte[][][][] p, int lsqHalf)
+//    {
+//        for (int i = 0; i < p.length; ++i)
+//        {
+//            inOff = decodeAlpha(input, inOff, p[i]);
+//        }
+//        return inOff;
+//    }
+
+//    private boolean decodeAlpha(byte[] input, int inOff, boolean isLower, byte[][][] alpha, int lsqHalf)
+//    {
+//        for (int i = 0; i < alpha.length; ++i)
+//        {
+//            for (int j = 0; j < alpha[i].length; ++j)
+//            {
+//                isLower = decodeArrayLsqOdd(input, inOff, isLower, alpha[i][j], lsqHalf);
+//                inOff += lsqHalf + (isLower ? 1 : 0);
+//            }
+//        }
+//        return isLower;
+//    }
 
     public void fill(byte[] input)
     {
@@ -60,21 +158,5 @@ class MapGroup1
             }
         }
         return rlt;
-    }
-
-    static void copyTo(byte[][][][] alpha, byte[] output)
-    {
-        int outOff = 0;
-        for (int i = 0; i < alpha.length; ++i)
-        {
-            for (int j = 0; j < alpha[i].length; ++j)
-            {
-                for (int k = 0; k < alpha[i][j].length; ++k)
-                {
-                    System.arraycopy(alpha[i][j][k], 0, output, outOff, alpha[i][j][k].length);
-                    outOff += alpha[i][j][k].length;
-                }
-            }
-        }
     }
 }
