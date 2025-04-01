@@ -468,7 +468,7 @@ class SnovaEngine
         }
         if ((lsq & 1) == 0)
         {
-            map1.decode(prngOutput, params, (gf16sPrngPublic - qTemp.length) >> 1);
+            map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1);
         }
         else
         {

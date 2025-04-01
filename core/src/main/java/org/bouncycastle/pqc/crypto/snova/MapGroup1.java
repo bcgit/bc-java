@@ -28,23 +28,23 @@ class MapGroup1
         qAlpha2 = new byte[m][alpha][lsq];
     }
 
-    public void decode(byte[] input, SnovaParameters params, int len)
+    public void decode(byte[] input, int len)
     {
 //        int m = params.getM();
 //        int v = params.getV();
 //        int o = params.getO();
 //        int alpha = params.getAlpha();
-        int lsq = params.getLsq();
-        if ((lsq & 1) == 0)
-        {
-            int inOff = decodeP(input, 0, p11, len);
-            inOff += decodeP(input, inOff, p12, len - inOff);
-            inOff += decodeP(input, inOff, p21, len - inOff);
-            inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
-            inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
-            inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
-            decodeAlpha(input, inOff, qAlpha2, len - inOff);
-        }
+//        int lsq = params.getLsq();
+//        if ((lsq & 1) == 0)
+//        {
+        int inOff = decodeP(input, 0, p11, len);
+        inOff += decodeP(input, inOff, p12, len - inOff);
+        inOff += decodeP(input, inOff, p21, len - inOff);
+        inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
+        inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
+        inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
+        decodeAlpha(input, inOff, qAlpha2, len - inOff);
+//        }
 //        else
 //        {
 //
@@ -76,7 +76,7 @@ class MapGroup1
 //        }
 //    }
 
-    private int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
+    static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
     {
         int rlt = 0;
         for (int i = 0; i < p.length; ++i)
