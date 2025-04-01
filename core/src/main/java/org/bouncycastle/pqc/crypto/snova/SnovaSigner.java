@@ -66,13 +66,7 @@ public class SnovaSigner
             byte[] seedPair = privKey.getPrivateKey();
             publicKeySeed = Arrays.copyOfRange(seedPair, 0, SnovaKeyPairGenerator.publicSeedLength);
             keyElements.ptPrivateKeySeed = Arrays.copyOfRange(seedPair, SnovaKeyPairGenerator.publicSeedLength, seedPair.length);
-            engine.genSeedsAndT12(keyElements.T12, keyElements.ptPrivateKeySeed);
-
-            // Generate map components
-            engine.genABQP(keyElements.map1, publicKeySeed, keyElements.fixedAbq);
-
-            // Generate F matrices
-            engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
+            engine.genMap1T12Map2(keyElements, publicKeySeed, keyElements.ptPrivateKeySeed);
         }
         else
         {
@@ -103,11 +97,11 @@ public class SnovaSigner
         byte[] hash = new byte[shake.getDigestSize()];
         shake.update(message, 0, message.length);
         shake.doFinal(hash, 0);
-        SnovaKeyElements keyElements = new SnovaKeyElements(params);
+        MapGroup1 map1 = new MapGroup1(params);
         byte[] pk = pubKey.getEncoded();
         byte[] publicKeySeed = Arrays.copyOf(pk, SnovaKeyPairGenerator.publicSeedLength);
         byte[] p22_source = Arrays.copyOfRange(pk, SnovaKeyPairGenerator.publicSeedLength, pk.length);
-        engine.genABQP(keyElements.map1, publicKeySeed, keyElements.fixedAbq);
+        engine.genABQP(map1, publicKeySeed);
         byte[][][][] p22 = new byte[params.getM()][params.getO()][params.getO()][params.getLsq()];
         if ((params.getLsq() & 1) == 0)
         {
@@ -120,7 +114,7 @@ public class SnovaSigner
             MapGroup1.fillP(p22_gf16s, 0, p22, p22_gf16s.length);
         }
 
-        return verifySignatureCore(hash, signature, publicKeySeed, keyElements.map1, p22);
+        return verifySignatureCore(hash, signature, publicKeySeed, map1, p22);
     }
 
     public void createSignedHash(

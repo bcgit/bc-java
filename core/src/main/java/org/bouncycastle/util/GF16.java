@@ -120,24 +120,41 @@ public class GF16
      * Two 4-bit values are packed into one byte, with the first nibble stored in the lower 4 bits
      * and the second nibble stored in the upper 4 bits.
      *
-     * @param input     the input array of 4-bit values (stored as bytes, only lower 4 bits used)
-     * @param output    the output byte array that will hold the encoded bytes
-     * @param outputLen the number of nibbles in the input array
+     * @param input    the input array of 4-bit values (stored as bytes, only lower 4 bits used)
+     * @param output   the output byte array that will hold the encoded bytes
+     * @param inputLen the number of nibbles in the input array
      */
-    public static void encode(byte[] input, byte[] output, int outputLen)
+    public static void encode(byte[] input, byte[] output, int inputLen)
     {
         int i, inOff = 0;
         // Process pairs of 4-bit values
-        for (i = 0; i < outputLen / 2; i++)
+        for (i = 0; i < inputLen / 2; i++)
         {
             int lowerNibble = input[inOff++] & 0x0F;
             int upperNibble = (input[inOff++] & 0x0F) << 4;
             output[i] = (byte)(lowerNibble | upperNibble);
         }
         // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if ((outputLen & 1) == 1)
+        if ((inputLen & 1) == 1)
         {
             output[i] = (byte)(input[inOff] & 0x0F);
+        }
+    }
+
+    public static void encode(byte[] input, byte[] output, int outOff, int inputLen)
+    {
+        int i, inOff = 0;
+        // Process pairs of 4-bit values
+        for (i = 0; i < inputLen / 2; i++)
+        {
+            int lowerNibble = input[inOff++] & 0x0F;
+            int upperNibble = (input[inOff++] & 0x0F) << 4;
+            output[outOff++] = (byte)(lowerNibble | upperNibble);
+        }
+        // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
+        if ((inputLen & 1) == 1)
+        {
+            output[outOff] = (byte)(input[inOff] & 0x0F);
         }
     }
 
