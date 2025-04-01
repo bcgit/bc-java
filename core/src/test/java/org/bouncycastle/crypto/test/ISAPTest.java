@@ -88,6 +88,10 @@ public class ISAPTest
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128A));
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128));
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128A));
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new ISAPEngine(IsapType.ISAP_K_128));
+        CipherTest.testOverlapping(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128A));
+        CipherTest.testOverlapping(this, 16, 16, 16, 8, new ISAPEngine(IsapType.ISAP_A_128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128A));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 18, 16, new ISAPEngine(IsapType.ISAP_K_128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 8, 16, new ISAPEngine(IsapType.ISAP_A_128A));
