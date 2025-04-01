@@ -60,25 +60,40 @@ public class SnovaSigner
         random.nextBytes(salt);
         byte[] signature = new byte[((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength()];
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
+        byte[] publicKeySeed;
         if (params.isSkIsSeed())
         {
             byte[] seedPair = privKey.getPrivateKey();
-            keyElements.publicKey.publicKeySeed = Arrays.copyOfRange(seedPair, 0, SnovaKeyPairGenerator.publicSeedLength);
+            publicKeySeed = Arrays.copyOfRange(seedPair, 0, SnovaKeyPairGenerator.publicSeedLength);
             keyElements.ptPrivateKeySeed = Arrays.copyOfRange(seedPair, SnovaKeyPairGenerator.publicSeedLength, seedPair.length);
             engine.genSeedsAndT12(keyElements.T12, keyElements.ptPrivateKeySeed);
 
             // Generate map components
-            engine.genABQP(keyElements.map1, keyElements.publicKey.publicKeySeed, keyElements.fixedAbq);
+            engine.genABQP(keyElements.map1, publicKeySeed, keyElements.fixedAbq);
 
             // Generate F matrices
             engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
         }
         else
         {
-            keyElements.skUnpack(privKey.getPrivateKey());
+            byte[] input = privKey.getPrivateKey();
+            byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
+            GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
+            int inOff = 0;
+            inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.aAlpha);
+            inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.bAlpha);
+            inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.qAlpha1);
+            inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.qAlpha2);
+            inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.T12);
+            inOff = SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f11);
+            inOff = SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f12);
+            SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f21);
+            publicKeySeed = Arrays.copyOfRange(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, input.length - SnovaKeyPairGenerator.privateSeedLength);
+            keyElements.ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
+            System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, keyElements.ptPrivateKeySeed, 0, keyElements.ptPrivateKeySeed.length);
         }
         signDigestCore(signature, hash, salt, keyElements.map1.aAlpha, keyElements.map1.bAlpha, keyElements.map1.qAlpha1, keyElements.map1.qAlpha2,
-            keyElements.T12, keyElements.map2.f11, keyElements.map2.f12, keyElements.map2.f21, keyElements.publicKey.publicKeySeed, keyElements.ptPrivateKeySeed);
+            keyElements.T12, keyElements.map2.f11, keyElements.map2.f12, keyElements.map2.f21, publicKeySeed, keyElements.ptPrivateKeySeed);
         return Arrays.concatenate(signature, message);
     }
 
@@ -90,14 +105,22 @@ public class SnovaSigner
         shake.doFinal(hash, 0);
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
         byte[] pk = pubKey.getEncoded();
-        System.arraycopy(pk, 0, keyElements.publicKey.publicKeySeed, 0, SnovaKeyPairGenerator.publicSeedLength);
-        System.arraycopy(pk, SnovaKeyPairGenerator.publicSeedLength, keyElements.publicKey.P22, 0, keyElements.publicKey.P22.length);
-        engine.genABQP(keyElements.map1, keyElements.publicKey.publicKeySeed, keyElements.fixedAbq);
-        byte[] p22_gf16s = new byte[keyElements.publicKey.P22.length << 1];
-        GF16.decode(keyElements.publicKey.P22, p22_gf16s, p22_gf16s.length);
+        byte[] publicKeySeed = Arrays.copyOf(pk, SnovaKeyPairGenerator.publicSeedLength);
+        byte[] p22_source = Arrays.copyOfRange(pk, SnovaKeyPairGenerator.publicSeedLength, pk.length);
+        engine.genABQP(keyElements.map1, publicKeySeed, keyElements.fixedAbq);
         byte[][][][] p22 = new byte[params.getM()][params.getO()][params.getO()][params.getLsq()];
-        MapGroup1.fillP(p22_gf16s, 0, p22, p22_gf16s.length);
-        return verifySignatureCore(hash, signature, keyElements.publicKey, keyElements.map1, p22);
+        if ((params.getLsq() & 1) == 0)
+        {
+            MapGroup1.decodeP(p22_source, 0, p22, p22_source.length << 1);
+        }
+        else
+        {
+            byte[] p22_gf16s = new byte[p22_source.length << 1];
+            GF16.decode(p22_source, p22_gf16s, p22_gf16s.length);
+            MapGroup1.fillP(p22_gf16s, 0, p22, p22_gf16s.length);
+        }
+
+        return verifySignatureCore(hash, signature, publicKeySeed, keyElements.map1, p22);
     }
 
     public void createSignedHash(
@@ -326,7 +349,7 @@ public class SnovaSigner
         System.arraycopy(arraySalt, 0, ptSignature, ptSignature.length - bytesSalt, bytesSalt);
     }
 
-    public boolean verifySignatureCore(byte[] digest, byte[] signature, PublicKey pkx, MapGroup1 map1, byte[][][][] p22)
+    public boolean verifySignatureCore(byte[] digest, byte[] signature, byte[] publicKeySeed, MapGroup1 map1, byte[][][][] p22)
     {
         final int bytesHash = (params.getO() * params.getLsq() + 1) >>> 1;
         final int bytesSalt = params.getSaltLength();
@@ -339,7 +362,7 @@ public class SnovaSigner
         // Step 1: Regenerate signed hash using public key seed, digest and salt
         byte[] signedHash = new byte[bytesHash];
 
-        shake.update(pkx.publicKeySeed, 0, pkx.publicKeySeed.length);
+        shake.update(publicKeySeed, 0, publicKeySeed.length);
         shake.update(digest, 0, digest.length);
         shake.update(signature, bytesSignature, bytesSalt);
         shake.doFinal(signedHash, 0, bytesHash);

@@ -1,16 +1,12 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.util.GF16;
-
 class SnovaKeyElements
 {
     public final MapGroup1 map1;
     public final byte[][][] T12;     // [v][o]
     public final MapGroup2 map2;
-    public final PublicKey publicKey;
     public byte[] ptPrivateKeySeed;
-    private final int length;
+
     byte[] fixedAbq;
 
     public SnovaKeyElements(SnovaParameters params)
@@ -22,48 +18,47 @@ class SnovaKeyElements
         map1 = new MapGroup1(params);
         T12 = new byte[v][o][lsq];
         map2 = new MapGroup2(params);
-        publicKey = new PublicKey(params);
-        length = o * params.getAlpha() * lsq * 4 + v * o * lsq + (o * v * v + o * v * o + o * o * v) * lsq;
+
         if (l < 4)
         {
             fixedAbq = SnovaParameters.fixedAbqSet.get(o);
         }
     }
 
-    public void encodeMergerInHalf(byte[] output)
-    {
-        byte[] input = new byte[length];
-        int inOff = 0;
-        inOff = copy3d(map1.aAlpha, input, inOff);
-        inOff = copy3d(map1.bAlpha, input, inOff);
-        inOff = copy3d(map1.qAlpha1, input, inOff);
-        inOff = copy3d(map1.qAlpha2, input, inOff);
-        inOff = copy3d(T12, input, inOff);
-        inOff = copy4d(map2.f11, input, inOff);
-        inOff = copy4d(map2.f12, input, inOff);
-        copy4d(map2.f21, input, inOff);
-        GF16Utils.encodeMergeInHalf(input, length, output);
-    }
+//    public void encodeMergerInHalf(byte[] output)
+//    {
+//        byte[] input = new byte[length];
+//        int inOff = 0;
+//        inOff = copy3d(map1.aAlpha, input, inOff);
+//        inOff = copy3d(map1.bAlpha, input, inOff);
+//        inOff = copy3d(map1.qAlpha1, input, inOff);
+//        inOff = copy3d(map1.qAlpha2, input, inOff);
+//        inOff = copy3d(T12, input, inOff);
+//        inOff = copy4d(map2.f11, input, inOff);
+//        inOff = copy4d(map2.f12, input, inOff);
+//        copy4d(map2.f21, input, inOff);
+//        GF16Utils.encodeMergeInHalf(input, length, output);
+//    }
 
-    public void skUnpack(byte[] input)
-    {
-        byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
-        GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
-        int inOff = 0;
-        inOff = copy3d(tmp, inOff, map1.aAlpha);
-        inOff = copy3d(tmp, inOff, map1.bAlpha);
-        inOff = copy3d(tmp, inOff, map1.qAlpha1);
-        inOff = copy3d(tmp, inOff, map1.qAlpha2);
-        inOff = copy3d(tmp, inOff, T12);
-        inOff = copy4d(tmp, inOff, map2.f11);
-        inOff = copy4d(tmp, inOff, map2.f12);
-        copy4d(tmp, inOff, map2.f21);
-        System.arraycopy(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
-        ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
-        System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
-    }
+//    public void skUnpack(byte[] input)
+//    {
+//        byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
+//        GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
+//        int inOff = 0;
+//        inOff = copy3d(tmp, inOff, map1.aAlpha);
+//        inOff = copy3d(tmp, inOff, map1.bAlpha);
+//        inOff = copy3d(tmp, inOff, map1.qAlpha1);
+//        inOff = copy3d(tmp, inOff, map1.qAlpha2);
+//        inOff = copy3d(tmp, inOff, T12);
+//        inOff = copy4d(tmp, inOff, map2.f11);
+//        inOff = copy4d(tmp, inOff, map2.f12);
+//        copy4d(tmp, inOff, map2.f21);
+//        System.arraycopy(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, publicKey.publicKeySeed, 0, publicKey.publicKeySeed.length);
+//        ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
+//        System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
+//    }
 
-    private int copy3d(byte[][][] alpha, byte[] output, int outOff)
+    static int copy3d(byte[][][] alpha, byte[] output, int outOff)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -76,7 +71,7 @@ class SnovaKeyElements
         return outOff;
     }
 
-    private int copy4d(byte[][][][] alpha, byte[] output, int outOff)
+    static int copy4d(byte[][][][] alpha, byte[] output, int outOff)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -85,7 +80,7 @@ class SnovaKeyElements
         return outOff;
     }
 
-    private int copy3d(byte[] input, int inOff, byte[][][] alpha)
+    static int copy3d(byte[] input, int inOff, byte[][][] alpha)
     {
         for (int i = 0; i < alpha.length; ++i)
         {
@@ -98,7 +93,7 @@ class SnovaKeyElements
         return inOff;
     }
 
-    private int copy4d(byte[] input, int inOff, byte[][][][] alpha)
+    static int copy4d(byte[] input, int inOff, byte[][][][] alpha)
     {
         for (int i = 0; i < alpha.length; ++i)
         {

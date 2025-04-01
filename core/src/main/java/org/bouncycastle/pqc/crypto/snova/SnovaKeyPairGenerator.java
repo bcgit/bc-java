@@ -47,11 +47,12 @@ public class SnovaKeyPairGenerator
         byte[] ptPrivateKeySeed = Arrays.copyOfRange(seedPair, publicSeedLength, seedPair.length);
 
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
-        generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed);
+        byte[] p22 = new byte[(params.getM() * params.getO() * params.getO() * params.getL() * params.getL() + 1) >> 1];
+        generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed, p22);
 
         // Pack public key components
         System.arraycopy(ptPublicKeySeed, 0, pk, 0, ptPublicKeySeed.length);
-        System.arraycopy(keyElements.publicKey.P22, 0, pk, ptPublicKeySeed.length, keyElements.publicKey.P22.length);
+        System.arraycopy(p22, 0, pk, ptPublicKeySeed.length, p22.length);
 
         if (params.isSkIsSeed())
         {
@@ -59,7 +60,22 @@ public class SnovaKeyPairGenerator
         }
         else
         {
-            keyElements.encodeMergerInHalf(sk);
+            int o = params.getO();
+            int lsq = params.getLsq();
+            int v = params.getV();
+            int length = o * params.getAlpha() * lsq * 4 + v * o * lsq + (o * v * v + o * v * o + o * o * v) * lsq;
+            //keyElements.encodeMergerInHalf(sk);
+            byte[] input = new byte[length];
+            int inOff = 0;
+            inOff = SnovaKeyElements.copy3d(keyElements.map1.aAlpha, input, inOff);
+            inOff = SnovaKeyElements.copy3d(keyElements.map1.bAlpha, input, inOff);
+            inOff = SnovaKeyElements.copy3d(keyElements.map1.qAlpha1, input, inOff);
+            inOff = SnovaKeyElements.copy3d(keyElements.map1.qAlpha2, input, inOff);
+            inOff = SnovaKeyElements.copy3d(keyElements.T12, input, inOff);
+            inOff = SnovaKeyElements.copy4d(keyElements.map2.f11, input, inOff);
+            inOff = SnovaKeyElements.copy4d(keyElements.map2.f12, input, inOff);
+            SnovaKeyElements.copy4d(keyElements.map2.f21, input, inOff);
+            GF16Utils.encodeMergeInHalf(input, length, sk);
             System.arraycopy(seedPair, 0, sk, sk.length - seedLength, seedLength);
         }
 
@@ -69,7 +85,7 @@ public class SnovaKeyPairGenerator
         );
     }
 
-    private void generateKeysCore(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed)
+    private void generateKeysCore(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed, byte[] p22)
     {
         // Generate T12 matrix
         engine.genSeedsAndT12(keyElements.T12, skSeed);
@@ -81,6 +97,6 @@ public class SnovaKeyPairGenerator
         engine.genF(keyElements.map2, keyElements.map1, keyElements.T12);
 
         // Generate P22 matrix
-        engine.genP22(keyElements.publicKey.P22, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
+        engine.genP22(p22, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
     }
 }
