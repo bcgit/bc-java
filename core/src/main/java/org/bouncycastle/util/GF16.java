@@ -24,7 +24,6 @@ public class GF16
 
         int g = F_STAR[1], g_inv = F_STAR[14], gn = 1, gn_inv = 1;
         // Initialize inversion table
-        INV4B[0] = 0;
         INV4B[1] = 1;
         for (int i = 0; i < 14; i++)
         {
@@ -76,43 +75,43 @@ public class GF16
      * Each byte in the input contains two nibbles (4-bit values); the lower nibble is stored first,
      * followed by the upper nibble.
      *
-     * @param m       the input byte array (each byte holds two 4-bit values)
-     * @param mdec    the output array that will hold the decoded nibbles (one per byte)
-     * @param mdecLen the total number of nibbles to decode
+     * @param input     the input byte array (each byte holds two 4-bit values)
+     * @param output    the output array that will hold the decoded nibbles (one per byte)
+     * @param outputLen the total number of nibbles to decode
      */
-    public static void decode(byte[] m, byte[] mdec, int mdecLen)
+    public static void decode(byte[] input, byte[] output, int outputLen)
     {
-        int i, decIndex = 0, blocks = mdecLen >> 1;
+        int i, decIndex = 0, blocks = outputLen >> 1;
         // Process pairs of nibbles from each byte
         for (i = 0; i < blocks; i++)
         {
             // Extract the lower nibble
-            mdec[decIndex++] = (byte)(m[i] & 0x0F);
+            output[decIndex++] = (byte)(input[i] & 0x0F);
             // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)((m[i] >> 4) & 0x0F);
+            output[decIndex++] = (byte)((input[i] >>> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((mdecLen & 1) == 1)
+        if ((outputLen & 1) == 1)
         {
-            mdec[decIndex] = (byte)(m[i] & 0x0F);
+            output[decIndex] = (byte)(input[i] & 0x0F);
         }
     }
 
-    public static void decode(byte[] m, int mOff, byte[] mdec, int decIndex, int mdecLen)
+    public static void decode(byte[] input, int inOff, byte[] output, int outOff, int outputLen)
     {
         // Process pairs of nibbles from each byte
-        int blocks = mdecLen >> 1;
+        int blocks = outputLen >> 1;
         for (int i = 0; i < blocks; i++)
         {
             // Extract the lower nibble
-            mdec[decIndex++] = (byte)(m[mOff] & 0x0F);
+            output[outOff++] = (byte)(input[inOff] & 0x0F);
             // Extract the upper nibble (shift right 4 bits)
-            mdec[decIndex++] = (byte)((m[mOff++] >> 4) & 0x0F);
+            output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
         }
         // If there is an extra nibble (odd number of nibbles), decode only the lower nibble
-        if ((mdecLen & 1) == 1)
+        if ((outputLen & 1) == 1)
         {
-            mdec[decIndex] = (byte)(m[mOff] & 0x0F);
+            output[outOff] = (byte)(input[inOff] & 0x0F);
         }
     }
 
@@ -121,25 +120,24 @@ public class GF16
      * Two 4-bit values are packed into one byte, with the first nibble stored in the lower 4 bits
      * and the second nibble stored in the upper 4 bits.
      *
-     * @param m    the input array of 4-bit values (stored as bytes, only lower 4 bits used)
-     * @param menc the output byte array that will hold the encoded bytes
-     * @param mlen the number of nibbles in the input array
+     * @param input     the input array of 4-bit values (stored as bytes, only lower 4 bits used)
+     * @param output    the output byte array that will hold the encoded bytes
+     * @param outputLen the number of nibbles in the input array
      */
-    public static void encode(byte[] m, byte[] menc, int mlen)
+    public static void encode(byte[] input, byte[] output, int outputLen)
     {
-        int i, srcIndex = 0;
+        int i, inOff = 0;
         // Process pairs of 4-bit values
-        for (i = 0; i < mlen / 2; i++)
+        for (i = 0; i < outputLen / 2; i++)
         {
-            int lowerNibble = m[srcIndex] & 0x0F;
-            int upperNibble = (m[srcIndex + 1] & 0x0F) << 4;
-            menc[i] = (byte)(lowerNibble | upperNibble);
-            srcIndex += 2;
+            int lowerNibble = input[inOff++] & 0x0F;
+            int upperNibble = (input[inOff++] & 0x0F) << 4;
+            output[i] = (byte)(lowerNibble | upperNibble);
         }
         // If there is an extra nibble (odd number of nibbles), store it directly in lower 4 bits.
-        if ((mlen & 1) == 1)
+        if ((outputLen & 1) == 1)
         {
-            menc[i] = (byte)(m[srcIndex] & 0x0F);
+            output[i] = (byte)(input[inOff] & 0x0F);
         }
     }
 

@@ -134,13 +134,15 @@ public class SnovaSigner
         final int v = params.getV();
         final int o = params.getO();
         final int n = params.getN();
-        final int bytesHash = (o * lsq + 1) >>> 1;
+        final int mxlsq = m * lsq;
+        final int oxlsq = o * lsq;
+        final int bytesHash = (oxlsq + 1) >>> 1;
         final int bytesSalt = 16;
 
         // Initialize matrices and arrays
-        byte[][] Gauss = new byte[m * lsq][m * lsq + 1];
+        byte[][] Gauss = new byte[mxlsq][mxlsq + 1];
         byte[][] Temp = new byte[lsq][lsq];
-        byte[] solution = new byte[m * lsq];
+        byte[] solution = new byte[mxlsq];
 
         byte[][][][] Left = new byte[m][alpha][v][lsq];
         byte[][][][] Right = new byte[m][alpha][v][lsq];
@@ -148,7 +150,7 @@ public class SnovaSigner
         byte[] rightXtmp = new byte[lsq];
         byte[][] XInGF16Matrix = new byte[v][lsq];
         byte[][] FvvGF16Matrix = new byte[m][lsq];
-        byte[] hashInGF16 = new byte[m * lsq];
+        byte[] hashInGF16 = new byte[mxlsq];
 
         byte[] signedHash = new byte[bytesHash];
         byte[] vinegarBytes = new byte[(v * lsq + 1) / 2];
@@ -174,9 +176,9 @@ public class SnovaSigner
             numSign++;
 
             // Fill last column of Gauss matrix
-            for (int i = 0; i < m * lsq; i++)
+            for (int i = 0; i < mxlsq; i++)
             {
-                Gauss[i][m * lsq] = hashInGF16[i];
+                Gauss[i][mxlsq] = hashInGF16[i];
             }
 
             // Generate vinegar values
@@ -227,24 +229,22 @@ public class SnovaSigner
                 }
             }
 
-            int idx2 = m * lsq;
             // Gaussian elimination setup
-            for (int i = 0; i < m; i++)
+            for (int i = 0, ixlsq = 0; i < m; i++, ixlsq += lsq)
             {
-                for (int j = 0; j < l; j++)
+                for (int j = 0, jxl = 0; j < l; j++, jxl += l)
                 {
-                    for (int k = 0; k < l; k++)
+                    for (int k = 0, jxl_k = jxl; k < l; k++, jxl_k++)
                     {
-                        int idx1 = i * lsq + j * l + k;
-                        Gauss[idx1][idx2] ^= FvvGF16Matrix[i][j * l + k];
+                        Gauss[ixlsq + jxl_k][mxlsq] ^= FvvGF16Matrix[i][jxl_k];
                     }
                 }
             }
 
             // Compute the coefficients of Xo and put into Gauss matrix and compute the coefficients of Xo^t and add into Gauss matrix
-            for (int mi = 0; mi < m; ++mi)
+            for (int mi = 0, mixlsq = 0; mi < m; ++mi, mixlsq += lsq)
             {
-                for (int index = 0; index < o; ++index)
+                for (int index = 0, idxlsq = 0; index < o; ++index, idxlsq += lsq)
                 {
                     for (int a = 0; a < alpha; ++a)
                     {
@@ -297,32 +297,30 @@ public class SnovaSigner
                         {
                             for (int tj = 0; tj < lsq; ++tj)
                             {
-                                int gaussRow = mi * lsq + ti;
-                                int gaussCol = index * lsq + tj;
-                                Gauss[gaussRow][gaussCol] ^= Temp[ti][tj];
+                                Gauss[mixlsq + ti][idxlsq + tj] ^= Temp[ti][tj];
                             }
                         }
                     }
                 }
             }
             // Gaussian elimination implementation
-            flagRedo = performGaussianElimination(Gauss, solution, m * lsq);
+            flagRedo = performGaussianElimination(Gauss, solution, mxlsq);
         }
         while (flagRedo != 0);
 
         // Copy vinegar variables
         byte[] tmp = new byte[n * lsq];
-        for (int idx = 0; idx < v; idx++)
+        for (int idx = 0, idxlsq = 0; idx < v; idx++, idxlsq += lsq)
         {
-            System.arraycopy(XInGF16Matrix[idx], 0, tmp, idx * lsq, lsq);
-            for (int i = 0; i < o; i++)
+            System.arraycopy(XInGF16Matrix[idx], 0, tmp, idxlsq, lsq);
+            for (int i = 0, ixlsq = 0; i < o; i++, ixlsq += lsq)
             {
-                GF16Utils.gf16mMulTo(T12[idx][i], solution, i * lsq, tmp, idx * lsq, l);
+                GF16Utils.gf16mMulTo(T12[idx][i], solution, ixlsq, tmp, idxlsq, l);
             }
         }
 
         // Copy remaining oil variables
-        System.arraycopy(solution, 0, tmp, v * lsq, lsq * o);
+        System.arraycopy(solution, 0, tmp, v * lsq, oxlsq);
         GF16.encode(tmp, ptSignature, tmp.length);
 
         System.arraycopy(arraySalt, 0, ptSignature, ptSignature.length - bytesSalt, bytesSalt);
