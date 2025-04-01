@@ -15,6 +15,12 @@ class SnovaEngine
 {
     private final SnovaParameters params;
     private final int l;
+    private final int lsq;
+    private final int m;
+    private final int v;
+    private final int o;
+    private final int alpha;
+    private final int n;
     final byte[][] S;
     final int[][] xS;
 
@@ -22,29 +28,19 @@ class SnovaEngine
     {
         this.params = params;
         this.l = params.getL();
-        int lsq = l * l;
-        S = new byte[l][lsq];
-        xS = new int[l][lsq];
-        be_aI(S[0], 0, (byte)1);
-        beTheS(S[1]);
-        for (int index = 2; index < l; ++index)
-        {
-            GF16Utils.gf16mMul(S[index - 1], S[1], S[index], l);
-        }
-
-        for (int index = 0; index < l; ++index)
-        {
-            for (int ij = 0; ij < lsq; ++ij)
-            {
-                xS[index][ij] = GF16Utils.gf16FromNibble(S[index][ij]);
-            }
-        }
+        this.lsq = params.getLsq();
+        this.m = params.getM();
+        this.v = params.getV();
+        this.o = params.getO();
+        this.alpha = params.getAlpha();
+        this.n = params.getN();
+        S = SnovaParameters.sSet.get(l);
+        xS = SnovaParameters.xSSet.get(l);
     }
 
-    public void be_aI(byte[] target, int off, byte a)
+    static void be_aI(byte[] target, int off, byte a, int l)
     {
-//        // Mask 'a' to ensure it's a valid 4-bit GF16 element
-//        a = (byte)(a & 0x0F);
+        // Ensure 'a' iss a valid 4-bit GF16 element
         int l1 = l + 1;
         for (int i = 0; i < l; ++i, off += l1)
         {
@@ -52,29 +48,9 @@ class SnovaEngine
         }
     }
 
-    private void beTheS(byte[] target)
-    {
-        // Set all elements to 8 - (i + j) in GF16 (4-bit values)
-        for (int i = 0, il = 0; i < l; ++i, il += l)
-        {
-            for (int j = 0; j < l; ++j)
-            {
-                int value = 8 - (i + j);
-                target[il + j] = (byte)(value & 0x0F);  // Mask to 4 bits
-            }
-        }
-
-        // Special case for rank 5
-        if (l == 5)
-        {
-            target[24] = (byte)9;  // Set (4,4) to 9
-        }
-    }
-
     // Constant-time GF16 matrix generation
     public void genAFqSCT(byte[] c, int cOff, byte[] ptMatrix)
     {
-        int lsq = l * l;
         int[] xTemp = new int[lsq];
         int l1 = l + 1;
         // Initialize diagonal with c[0]
@@ -102,11 +78,6 @@ class SnovaEngine
         for (int ij = 0; ij < lsq; ij++)
         {
             xTemp[ij] ^= cX * xS[l - 1][ij];
-        }
-
-        // Convert to nibbles and clear temp
-        for (int ij = 0; ij < lsq; ij++)
-        {
             ptMatrix[ij] = GF16Utils.gf16ToNibble(xTemp[ij]);
         }
         Arrays.fill(xTemp, 0); // Secure clear
@@ -298,7 +269,7 @@ class SnovaEngine
 
     private void generateASMatrixTo(byte[] target, int off, byte a)
     {
-        for (int i = 0; i < l; i++)
+        for (int i = 0, ixl = off; i < l; i++, ixl += l)
         {
             for (int j = 0; j < l; j++)
             {
@@ -307,7 +278,7 @@ class SnovaEngine
                 {
                     coefficient = 9;
                 }
-                target[i * l + j + off] ^= GF16.mul(coefficient, a);
+                target[ixl + j] ^= GF16.mul(coefficient, a);
             }
         }
     }
@@ -315,7 +286,7 @@ class SnovaEngine
     public void genAFqS(byte[] c, int cOff, byte[] ptMatrix, int off)
     {
         // Initialize with be_aI
-        be_aI(ptMatrix, off, c[cOff]);
+        be_aI(ptMatrix, off, c[cOff], l);
 
         // Process middle terms
         for (int i = 1; i < l - 1; ++i)
@@ -341,12 +312,6 @@ class SnovaEngine
 
     public void genF(MapGroup2 map2, MapGroup1 map1, byte[][][] T12)
     {
-        int m = params.getM();
-        int v = params.getV();
-        int o = params.getO();
-        int l = params.getL();
-        int lsq = l * l;
-
         // Copy initial matrices
         copy4DMatrix(map1.p11, map2.f11, m, v, v, lsq);
         copy4DMatrix(map1.p12, map2.f12, m, v, o, lsq);
@@ -386,12 +351,6 @@ class SnovaEngine
 
     public void genP22(byte[] outP22, byte[][][] T12, byte[][][][] P21, byte[][][][] F12)
     {
-        int m = params.getM();
-        int o = params.getO();
-        int v = params.getV();
-        int l = params.getL();
-        int lsq = l * l;
-
         // Initialize P22 with zeros
         byte[] P22 = new byte[m * o * o * lsq];
 
@@ -420,8 +379,8 @@ class SnovaEngine
 
     void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
     {
-        int bytesPrngPrivate = (params.getV() * params.getO() * params.getL() + 1) >>> 1;
-        int gf16sPrngPrivate = params.getV() * params.getO() * params.getL();
+        int bytesPrngPrivate = (v * o * l + 1) >>> 1;
+        int gf16sPrngPrivate = v * o * l;
         byte[] prngOutput = new byte[bytesPrngPrivate];
 
         // Generate PRNG output using SHAKE-256
@@ -435,10 +394,9 @@ class SnovaEngine
 
         // Generate T12 matrices
         int ptArray = 0;
-        int l = params.getL();
-        for (int j = 0; j < params.getV(); j++)
+        for (int j = 0; j < v; j++)
         {
-            for (int k = 0; k < params.getO(); k++)
+            for (int k = 0; k < o; k++)
             {
                 //gen_a_FqS_ct
                 genAFqSCT(gf16PrngOutput, ptArray, T12[j][k]);
@@ -449,14 +407,6 @@ class SnovaEngine
 
     void genABQP(MapGroup1 map1, byte[] pkSeed, byte[] fixedAbq)
     {
-        int l = params.getL();
-        int lsq = l * l;
-        int m = params.getM();
-        int alpha = params.getAlpha();
-        int v = params.getV();
-        int o = params.getO();
-        int n = v + o;
-
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
         byte[] qTemp = new byte[(m * alpha * lsq + m * alpha * lsq) / l];
         byte[] prngOutput = new byte[(gf16sPrngPublic + 1) >> 1];
@@ -500,7 +450,6 @@ class SnovaEngine
             ctrCipher.init(true, params);
             int blockSize = ctrCipher.getBlockSize(); // typically 16 bytes
             byte[] zeroBlock = new byte[blockSize];     // block of zeros
-            byte[] blockOut = new byte[blockSize];
 
             int offset = 0;
             // Process full blocks
@@ -512,21 +461,21 @@ class SnovaEngine
             // Process any remaining partial block.
             if (offset < prngOutput.length)
             {
-                ctrCipher.processBlock(zeroBlock, 0, blockOut, 0);
+                ctrCipher.processBlock(zeroBlock, 0, zeroBlock, 0);
                 int remaining = prngOutput.length - offset;
-                System.arraycopy(blockOut, 0, prngOutput, offset, remaining);
+                System.arraycopy(zeroBlock, 0, prngOutput, offset, remaining);
             }
         }
-//        if ((lsq & 1) == 0)
-//        {
-//            map1.decode(prngOutput, params, (gf16sPrngPublic - qTemp.length) >> 1);
-//        }
-//        else
-//        {
-        byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
-        GF16.decode(prngOutput, temp, temp.length);
-        map1.fill(temp);
-//        }
+        if ((lsq & 1) == 0)
+        {
+            map1.decode(prngOutput, params, (gf16sPrngPublic - qTemp.length) >> 1);
+        }
+        else
+        {
+            byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
+            GF16.decode(prngOutput, temp, temp.length);
+            map1.fill(temp);
+        }
         if (l >= 4)
         {
             GF16.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1, qTemp, 0, qTemp.length);
