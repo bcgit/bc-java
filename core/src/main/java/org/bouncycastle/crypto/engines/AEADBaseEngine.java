@@ -587,6 +587,12 @@ abstract class AEADBaseEngine
         @Override
         public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         {
+            if (input == output && segmentsOverlap(inOff, len, outOff, processor.getUpdateOutputSize(len)))
+            {
+                input = new byte[len];
+                System.arraycopy(output, inOff, input, 0, len);
+                inOff = 0;
+            }
             boolean forEncryption = checkData(false);
             if (forEncryption)
             {
@@ -733,9 +739,16 @@ abstract class AEADBaseEngine
             m_bufPos += len;
             return 0;
         }
-        resultLength = processor.getUpdateOutputSize(len) + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
+        int length = processor.getUpdateOutputSize(len);
+        resultLength = length + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
         ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
         resultLength = 0;
+        if (input == output && segmentsOverlap(inOff, len, outOff, length))
+        {
+            input = new byte[len];
+            System.arraycopy(output, inOff, input, 0, len);
+            inOff = 0;
+        }
         if (forEncryption)
         {
             if (m_bufPos > 0)
@@ -746,6 +759,7 @@ abstract class AEADBaseEngine
                 processBufferEncrypt(m_buf, 0, output, outOff);
                 resultLength = BlockSize;
             }
+
             // The function is just an operator >= or >
             while (processor.isLengthExceedingBlockSize(len, BlockSize))
             {
@@ -1011,6 +1025,12 @@ abstract class AEADBaseEngine
 
         m_aadPos = 0;
         m_state = nextState;
+    }
+
+    private boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
+    {
+        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
+        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 
     protected abstract void finishAAD(State nextState, boolean isDoFinal);
