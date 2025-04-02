@@ -50,6 +50,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
+import org.junit.Assert;
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -848,6 +849,61 @@ public class BlockCipherTest
         if (!areEqual(bytes, output))
         {
             fail("" + algorithm + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
+        }
+
+        //
+        // Try the doFinal - same input/output same index, index
+        //
+        byte[] data = Arrays.concatenate(input, new byte[2 * in.getBlockSize()]);
+        int len = 0;
+        try
+        {
+            if (algorithm.indexOf("GCM") > 0)
+            {
+                out = Cipher.getInstance(algorithm, "BC");
+                out.init(Cipher.ENCRYPT_MODE, key, rand);
+            }
+
+            len = out.doFinal(data, 0, input.length, data, 0);
+        }
+        catch (Exception e)
+        {
+            Assert.fail(e.toString());
+        }
+
+        if (!Arrays.areEqual(data, 0, len, output, 0, output.length))
+        {
+            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+        }
+
+        //
+        // Try the doFinal - same input/output shifted offset
+        //
+        data = Arrays.concatenate(input, new byte[2 * in.getBlockSize()]);
+        len = 0;
+        try
+        {
+
+            if (algorithm.indexOf("GCM") > 0)
+            {
+                out = Cipher.getInstance(algorithm, "BC");
+                out.init(Cipher.ENCRYPT_MODE, key, rand);
+            }
+
+            len = out.doFinal(data, 0, input.length, data, 1);
+
+//            System.out.println(Hex.toHexString(output));
+//            System.out.println(Hex.toHexString(Arrays.copyOfRange(data, 1, 1 + len)));
+//            System.out.println(len + " " + output.length);
+        }
+        catch (Exception e)
+        {
+            Assert.fail(e.toString());
+        }
+
+        if (!Arrays.areEqual(data, 1, 1 + len, output, 0, output.length))
+        {
+            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
