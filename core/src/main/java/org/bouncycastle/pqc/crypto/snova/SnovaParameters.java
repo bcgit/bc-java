@@ -12,110 +12,110 @@ public class SnovaParameters
     static Map<Integer, byte[][]> sSet = new HashMap<Integer, byte[][]>(); //key is l
     static Map<Integer, int[][]> xSSet = new HashMap<Integer, int[][]>();
 
-    public static final SnovaParameters SNOVA_24_5_16_4_SSK =
-        new SnovaParameters("SNOVA_24_5_16_4_SSK", 24, 5, 4, true, false);
-    public static final SnovaParameters SNOVA_24_5_16_4_ESK =
-        new SnovaParameters("SNOVA_24_5_16_4_ESK", 24, 5, 4, false, false);
-    public static final SnovaParameters SNOVA_24_5_16_4_SHAKE_SSK =
-        new SnovaParameters("SNOVA_24_5_16_4_SHAKE_SSK", 24, 5, 4, true, true);
-    public static final SnovaParameters SNOVA_24_5_16_4_SHAKE_ESK =
-        new SnovaParameters("SNOVA_24_5_16_4_SHAKE_ESK", 24, 5, 4, false, true);
+    public static final SnovaParameters SNOVA_24_5_4_SSK =
+        new SnovaParameters("SNOVA_24_5_4_SSK", 24, 5, 4, true, false);
+    public static final SnovaParameters SNOVA_24_5_4_ESK =
+        new SnovaParameters("SNOVA_24_5_4_ESK", 24, 5, 4, false, false);
+    public static final SnovaParameters SNOVA_24_5_4_SHAKE_SSK =
+        new SnovaParameters("SNOVA_24_5_4_SHAKE_SSK", 24, 5, 4, true, true);
+    public static final SnovaParameters SNOVA_24_5_4_SHAKE_ESK =
+        new SnovaParameters("SNOVA_24_5_4_SHAKE_ESK", 24, 5, 4, false, true);
 
-    public static final SnovaParameters SNOVA_24_5_16_5_SSK =
-        new SnovaParameters("SNOVA_24_5_16_5_SSK", 24, 5, 5, true, false);
-    public static final SnovaParameters SNOVA_24_5_16_5_ESK =
-        new SnovaParameters("SNOVA_24_5_16_5_ESK", 24, 5, 5, false, false);
-    public static final SnovaParameters SNOVA_24_5_16_5_SHAKE_SSK =
-        new SnovaParameters("SNOVA_24_5_16_5_SHAKE_SSK", 24, 5, 5, true, true);
-    public static final SnovaParameters SNOVA_24_5_16_5_SHAKE_ESK =
-        new SnovaParameters("SNOVA_24_5_16_5_SHAKE_ESK", 24, 5, 5, false, true);
+    public static final SnovaParameters SNOVA_24_5_5_SSK =
+        new SnovaParameters("SNOVA_24_5_5_SSK", 24, 5, 5, true, false);
+    public static final SnovaParameters SNOVA_24_5_5_ESK =
+        new SnovaParameters("SNOVA_24_5_5_ESK", 24, 5, 5, false, false);
+    public static final SnovaParameters SNOVA_24_5_5_SHAKE_SSK =
+        new SnovaParameters("SNOVA_24_5_5_SHAKE_SSK", 24, 5, 5, true, true);
+    public static final SnovaParameters SNOVA_24_5_5_SHAKE_ESK =
+        new SnovaParameters("SNOVA_24_5_5_SHAKE_ESK", 24, 5, 5, false, true);
 
-    public static final SnovaParameters SNOVA_25_8_16_3_SSK =
-        new SnovaParameters("SNOVA_25_8_16_3_SSK", 25, 8, 3, true, false);
-    public static final SnovaParameters SNOVA_25_8_16_3_ESK =
-        new SnovaParameters("SNOVA_25_8_16_3_ESK", 25, 8, 3, false, false);
-    public static final SnovaParameters SNOVA_25_8_16_3_SHAKE_SSK =
-        new SnovaParameters("SNOVA_25_8_16_3_SHAKE_SSK", 25, 8, 3, true, true);
-    public static final SnovaParameters SNOVA_25_8_16_3_SHAKE_ESK =
-        new SnovaParameters("SNOVA_25_8_16_3_SHAKE_ESK", 25, 8, 3, false, true);
+    public static final SnovaParameters SNOVA_25_8_3_SSK =
+        new SnovaParameters("SNOVA_25_8_3_SSK", 25, 8, 3, true, false);
+    public static final SnovaParameters SNOVA_25_8_3_ESK =
+        new SnovaParameters("SNOVA_25_8_3_ESK", 25, 8, 3, false, false);
+    public static final SnovaParameters SNOVA_25_8_3_SHAKE_SSK =
+        new SnovaParameters("SNOVA_25_8_3_SHAKE_SSK", 25, 8, 3, true, true);
+    public static final SnovaParameters SNOVA_25_8_3_SHAKE_ESK =
+        new SnovaParameters("SNOVA_25_8_3_SHAKE_ESK", 25, 8, 3, false, true);
 
-    public static final SnovaParameters SNOVA_29_6_16_5_SSK =
-        new SnovaParameters("SNOVA_29_6_16_5_SSK", 29, 6, 5, true, false);
-    public static final SnovaParameters SNOVA_29_6_16_5_ESK =
-        new SnovaParameters("SNOVA_29_6_16_5_ESK", 29, 6, 5, false, false);
-    public static final SnovaParameters SNOVA_29_6_16_5_SHAKE_SSK =
-        new SnovaParameters("SNOVA_29_6_16_5_SHAKE_SSK", 29, 6, 5, true, true);
-    public static final SnovaParameters SNOVA_29_6_16_5_SHAKE_ESK =
-        new SnovaParameters("SNOVA_29_6_16_5_SHAKE_ESK", 29, 6, 5, false, true);
+    public static final SnovaParameters SNOVA_29_6_5_SSK =
+        new SnovaParameters("SNOVA_29_6_5_SSK", 29, 6, 5, true, false);
+    public static final SnovaParameters SNOVA_29_6_5_ESK =
+        new SnovaParameters("SNOVA_29_6_5_ESK", 29, 6, 5, false, false);
+    public static final SnovaParameters SNOVA_29_6_5_SHAKE_SSK =
+        new SnovaParameters("SNOVA_29_6_5_SHAKE_SSK", 29, 6, 5, true, true);
+    public static final SnovaParameters SNOVA_29_6_5_SHAKE_ESK =
+        new SnovaParameters("SNOVA_29_6_5_SHAKE_ESK", 29, 6, 5, false, true);
 
-    public static final SnovaParameters SNOVA_37_8_16_4_SSK =
-        new SnovaParameters("SNOVA_37_8_16_4_SSK", 37, 8, 4, true, false);
-    public static final SnovaParameters SNOVA_37_8_16_4_ESK =
-        new SnovaParameters("SNOVA_37_8_16_4_ESK", 37, 8, 4, false, false);
-    public static final SnovaParameters SNOVA_37_8_16_4_SHAKE_SSK =
-        new SnovaParameters("SNOVA_37_8_16_4_SHAKE_SSK", 37, 8, 4, true, true);
-    public static final SnovaParameters SNOVA_37_8_16_4_SHAKE_ESK =
-        new SnovaParameters("SNOVA_37_8_16_4_SHAKE_ESK", 37, 8, 4, false, true);
+    public static final SnovaParameters SNOVA_37_8_4_SSK =
+        new SnovaParameters("SNOVA_37_8_4_SSK", 37, 8, 4, true, false);
+    public static final SnovaParameters SNOVA_37_8_4_ESK =
+        new SnovaParameters("SNOVA_37_8_4_ESK", 37, 8, 4, false, false);
+    public static final SnovaParameters SNOVA_37_8_4_SHAKE_SSK =
+        new SnovaParameters("SNOVA_37_8_4_SHAKE_SSK", 37, 8, 4, true, true);
+    public static final SnovaParameters SNOVA_37_8_4_SHAKE_ESK =
+        new SnovaParameters("SNOVA_37_8_4_SHAKE_ESK", 37, 8, 4, false, true);
 
-    // SNOVA_37_17_16_2 variants
-    public static final SnovaParameters SNOVA_37_17_16_2_SSK =
-        new SnovaParameters("SNOVA_37_17_16_2_SSK", 37, 17, 2, true, false);
-    public static final SnovaParameters SNOVA_37_17_16_2_ESK =
-        new SnovaParameters("SNOVA_37_17_16_2_ESK", 37, 17, 2, false, false);
-    public static final SnovaParameters SNOVA_37_17_16_2_SHAKE_SSK =
-        new SnovaParameters("SNOVA_37_17_16_2_SHAKE_SSK", 37, 17, 2, true, true);
-    public static final SnovaParameters SNOVA_37_17_16_2_SHAKE_ESK =
-        new SnovaParameters("SNOVA_37_17_16_2_SHAKE_ESK", 37, 17, 2, false, true);
+    // SNOVA_37_17_2 variants
+    public static final SnovaParameters SNOVA_37_17_2_SSK =
+        new SnovaParameters("SNOVA_37_17_2_SSK", 37, 17, 2, true, false);
+    public static final SnovaParameters SNOVA_37_17_2_ESK =
+        new SnovaParameters("SNOVA_37_17_2_ESK", 37, 17, 2, false, false);
+    public static final SnovaParameters SNOVA_37_17_2_SHAKE_SSK =
+        new SnovaParameters("SNOVA_37_17_2_SHAKE_SSK", 37, 17, 2, true, true);
+    public static final SnovaParameters SNOVA_37_17_2_SHAKE_ESK =
+        new SnovaParameters("SNOVA_37_17_2_SHAKE_ESK", 37, 17, 2, false, true);
 
-    // SNOVA_49_11_16_3 variants
-    public static final SnovaParameters SNOVA_49_11_16_3_SSK =
-        new SnovaParameters("SNOVA_49_11_16_3_SSK", 49, 11, 3, true, false);
-    public static final SnovaParameters SNOVA_49_11_16_3_ESK =
-        new SnovaParameters("SNOVA_49_11_16_3_ESK", 49, 11, 3, false, false);
-    public static final SnovaParameters SNOVA_49_11_16_3_SHAKE_SSK =
-        new SnovaParameters("SNOVA_49_11_16_3_SHAKE_SSK", 49, 11, 3, true, true);
-    public static final SnovaParameters SNOVA_49_11_16_3_SHAKE_ESK =
-        new SnovaParameters("SNOVA_49_11_16_3_SHAKE_ESK", 49, 11, 3, false, true);
+    // SNOVA_49_11_3 variants
+    public static final SnovaParameters SNOVA_49_11_3_SSK =
+        new SnovaParameters("SNOVA_49_11_3_SSK", 49, 11, 3, true, false);
+    public static final SnovaParameters SNOVA_49_11_3_ESK =
+        new SnovaParameters("SNOVA_49_11_3_ESK", 49, 11, 3, false, false);
+    public static final SnovaParameters SNOVA_49_11_3_SHAKE_SSK =
+        new SnovaParameters("SNOVA_49_11_3_SHAKE_SSK", 49, 11, 3, true, true);
+    public static final SnovaParameters SNOVA_49_11_3_SHAKE_ESK =
+        new SnovaParameters("SNOVA_49_11_3_SHAKE_ESK", 49, 11, 3, false, true);
 
-    // SNOVA_56_25_16_2 variants
-    public static final SnovaParameters SNOVA_56_25_16_2_SSK =
-        new SnovaParameters("SNOVA_56_25_16_2_SSK", 56, 25, 2, true, false);
-    public static final SnovaParameters SNOVA_56_25_16_2_ESK =
-        new SnovaParameters("SNOVA_56_25_16_2_ESK", 56, 25, 2, false, false);
-    public static final SnovaParameters SNOVA_56_25_16_2_SHAKE_SSK =
-        new SnovaParameters("SNOVA_56_25_16_2_SHAKE_SSK", 56, 25, 2, true, true);
-    public static final SnovaParameters SNOVA_56_25_16_2_SHAKE_ESK =
-        new SnovaParameters("SNOVA_56_25_16_2_SHAKE_ESK", 56, 25, 2, false, true);
+    // SNOVA_56_25_2 variants
+    public static final SnovaParameters SNOVA_56_25_2_SSK =
+        new SnovaParameters("SNOVA_56_25_2_SSK", 56, 25, 2, true, false);
+    public static final SnovaParameters SNOVA_56_25_2_ESK =
+        new SnovaParameters("SNOVA_56_25_2_ESK", 56, 25, 2, false, false);
+    public static final SnovaParameters SNOVA_56_25_2_SHAKE_SSK =
+        new SnovaParameters("SNOVA_56_25_2_SHAKE_SSK", 56, 25, 2, true, true);
+    public static final SnovaParameters SNOVA_56_25_2_SHAKE_ESK =
+        new SnovaParameters("SNOVA_56_25_2_SHAKE_ESK", 56, 25, 2, false, true);
 
-    // SNOVA_60_10_16_4 variants
-    public static final SnovaParameters SNOVA_60_10_16_4_SSK =
-        new SnovaParameters("SNOVA_60_10_16_4_SSK", 60, 10, 4, true, false);
-    public static final SnovaParameters SNOVA_60_10_16_4_ESK =
-        new SnovaParameters("SNOVA_60_10_16_4_ESK", 60, 10, 4, false, false);
-    public static final SnovaParameters SNOVA_60_10_16_4_SHAKE_SSK =
-        new SnovaParameters("SNOVA_60_10_16_4_SHAKE_SSK", 60, 10, 4, true, true);
-    public static final SnovaParameters SNOVA_60_10_16_4_SHAKE_ESK =
-        new SnovaParameters("SNOVA_60_10_16_4_SHAKE_ESK", 60, 10, 4, false, true);
+    // SNOVA_60_10_4 variants
+    public static final SnovaParameters SNOVA_60_10_4_SSK =
+        new SnovaParameters("SNOVA_60_10_4_SSK", 60, 10, 4, true, false);
+    public static final SnovaParameters SNOVA_60_10_4_ESK =
+        new SnovaParameters("SNOVA_60_10_4_ESK", 60, 10, 4, false, false);
+    public static final SnovaParameters SNOVA_60_10_4_SHAKE_SSK =
+        new SnovaParameters("SNOVA_60_10_4_SHAKE_SSK", 60, 10, 4, true, true);
+    public static final SnovaParameters SNOVA_60_10_4_SHAKE_ESK =
+        new SnovaParameters("SNOVA_60_10_4_SHAKE_ESK", 60, 10, 4, false, true);
 
-    // SNOVA_66_15_16_4 variants
-    public static final SnovaParameters SNOVA_66_15_16_3_SSK =
-        new SnovaParameters("SNOVA_66_15_16_3_SSK", 66, 15, 3, true, false);
-    public static final SnovaParameters SNOVA_66_15_16_3_ESK =
-        new SnovaParameters("SNOVA_66_15_16_3_ESK", 66, 15, 3, false, false);
-    public static final SnovaParameters SNOVA_66_15_16_3_SHAKE_SSK =
-        new SnovaParameters("SNOVA_66_15_16_3_SHAKE_SSK", 66, 15, 3, true, true);
-    public static final SnovaParameters SNOVA_66_15_16_3_SHAKE_ESK =
-        new SnovaParameters("SNOVA_66_15_16_3_SHAKE_ESK", 66, 15, 3, false, true);
+    // SNOVA_66_15_4 variants
+    public static final SnovaParameters SNOVA_66_15_3_SSK =
+        new SnovaParameters("SNOVA_66_15_3_SSK", 66, 15, 3, true, false);
+    public static final SnovaParameters SNOVA_66_15_3_ESK =
+        new SnovaParameters("SNOVA_66_15_3_ESK", 66, 15, 3, false, false);
+    public static final SnovaParameters SNOVA_66_15_3_SHAKE_SSK =
+        new SnovaParameters("SNOVA_66_15_3_SHAKE_SSK", 66, 15, 3, true, true);
+    public static final SnovaParameters SNOVA_66_15_3_SHAKE_ESK =
+        new SnovaParameters("SNOVA_66_15_3_SHAKE_ESK", 66, 15, 3, false, true);
 
-    // SNOVA_75_33_16_2 variants
-    public static final SnovaParameters SNOVA_75_33_16_2_SSK =
-        new SnovaParameters("SNOVA_75_33_16_2_SSK", 75, 33, 2, true, false);
-    public static final SnovaParameters SNOVA_75_33_16_2_ESK =
-        new SnovaParameters("SNOVA_75_33_16_2_ESK", 75, 33, 2, false, false);
-    public static final SnovaParameters SNOVA_75_33_16_2_SHAKE_SSK =
-        new SnovaParameters("SNOVA_75_33_16_2_SHAKE_SSK", 75, 33, 2, true, true);
-    public static final SnovaParameters SNOVA_75_33_16_2_SHAKE_ESK =
-        new SnovaParameters("SNOVA_75_33_16_2_SHAKE_ESK", 75, 33, 2, false, true);
+    // SNOVA_75_33_2 variants
+    public static final SnovaParameters SNOVA_75_33_2_SSK =
+        new SnovaParameters("SNOVA_75_33_2_SSK", 75, 33, 2, true, false);
+    public static final SnovaParameters SNOVA_75_33_2_ESK =
+        new SnovaParameters("SNOVA_75_33_2_ESK", 75, 33, 2, false, false);
+    public static final SnovaParameters SNOVA_75_33_2_SHAKE_SSK =
+        new SnovaParameters("SNOVA_75_33_2_SHAKE_SSK", 75, 33, 2, true, true);
+    public static final SnovaParameters SNOVA_75_33_2_SHAKE_ESK =
+        new SnovaParameters("SNOVA_75_33_2_SHAKE_ESK", 75, 33, 2, false, true);
 
     private final String name;
     private final int v;
