@@ -649,6 +649,18 @@ public class PGPSignature
         return identifiers;
     }
 
+    public boolean hasKeyIdentifier(KeyIdentifier identifier)
+    {
+        for (KeyIdentifier id : getKeyIdentifiers())
+        {
+            if (id.matches(identifier))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Return a list of all {@link KeyIdentifier KeyIdentifiers} that could be derived from
      * any {@link IssuerFingerprint} or {@link IssuerKeyID} subpackets of the hashed signature
