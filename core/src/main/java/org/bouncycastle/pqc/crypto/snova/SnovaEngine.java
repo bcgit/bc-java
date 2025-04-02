@@ -352,22 +352,24 @@ class SnovaEngine
     public void genP22(byte[] outP22, int outOff, byte[][][] T12, byte[][][][] P21, byte[][][][] F12)
     {
         // Initialize P22 with zeros
-        byte[] P22 = new byte[m * o * o * lsq];
+        int oxlsq = o * lsq;
+        int oxoxlsq = oxlsq * o;
+        byte[] P22 = new byte[m * oxoxlsq];
 
-        for (int i = 0; i < m; i++)
+        for (int i = 0, ixoxolsq = 0; i < m; i++, ixoxolsq += oxoxlsq)
         {
-            for (int j = 0; j < o; j++)
+            for (int j = 0, jxoxlsq = ixoxolsq; j < o; j++, jxoxlsq += oxlsq)
             {
-                for (int k = 0; k < o; k++)
+                for (int k = 0, kxlsq = jxoxlsq; k < o; k++, kxlsq += lsq)
                 {
+                    //int idx = ((i * o + j) * o + k) * lsq;
                     for (int index = 0; index < v; index++)
                     {
-                        int idx = ((i * o + j) * o + k) * lsq;
                         // P22[i][j][k] ^= T12[index][j] * F12[i][index][k]
-                        GF16Utils.gf16mMulTo(T12[index][j], F12[i][index][k], 0, P22, idx, l);
+                        GF16Utils.gf16mMulTo(T12[index][j], F12[i][index][k], 0, P22, kxlsq, l);
 
                         // P22[i][j][k] ^= P21[i][j][index] * T12[index][k]
-                        GF16Utils.gf16mMulTo(P21[i][j][index], T12[index][k], 0, P22, idx, l);
+                        GF16Utils.gf16mMulTo(P21[i][j][index], T12[index][k], 0, P22, kxlsq, l);
                     }
                 }
             }
@@ -379,8 +381,8 @@ class SnovaEngine
 
     void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
     {
-        int bytesPrngPrivate = (v * o * l + 1) >>> 1;
         int gf16sPrngPrivate = v * o * l;
+        int bytesPrngPrivate = (gf16sPrngPrivate + 1) >>> 1;
         byte[] prngOutput = new byte[bytesPrngPrivate];
 
         // Generate PRNG output using SHAKE-256
@@ -408,7 +410,7 @@ class SnovaEngine
     void genABQP(MapGroup1 map1, byte[] pkSeed)
     {
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
-        byte[] qTemp = new byte[(m * alpha * lsq + m * alpha * lsq) / l];
+        byte[] qTemp = new byte[(m * alpha * l) << 1];
         byte[] prngOutput = new byte[(gf16sPrngPublic + 1) >> 1];
 
         if (params.isPkExpandShake())
@@ -468,13 +470,13 @@ class SnovaEngine
         }
         if ((lsq & 1) == 0)
         {
-            map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1);
+            map1.decode(prngOutput, (gf16sPrngPublic - qTemp.length) >> 1, l >= 4);
         }
         else
         {
             byte[] temp = new byte[gf16sPrngPublic - qTemp.length];
             GF16.decode(prngOutput, temp, temp.length);
-            map1.fill(temp);
+            map1.fill(temp, l >= 4);
         }
         if (l >= 4)
         {

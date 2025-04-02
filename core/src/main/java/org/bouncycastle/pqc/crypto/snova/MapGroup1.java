@@ -28,7 +28,7 @@ class MapGroup1
         qAlpha2 = new byte[m][alpha][lsq];
     }
 
-    public void decode(byte[] input, int len)
+    public void decode(byte[] input, int len, boolean isl4or5)
     {
 //        int m = params.getM();
 //        int v = params.getV();
@@ -37,13 +37,17 @@ class MapGroup1
 //        int lsq = params.getLsq();
 //        if ((lsq & 1) == 0)
 //        {
+
         int inOff = decodeP(input, 0, p11, len);
         inOff += decodeP(input, inOff, p12, len - inOff);
         inOff += decodeP(input, inOff, p21, len - inOff);
-        inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
-        inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
-        inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
-        decodeAlpha(input, inOff, qAlpha2, len - inOff);
+        if (isl4or5)
+        {
+            inOff += decodeAlpha(input, inOff, aAlpha, len - inOff);
+            inOff += decodeAlpha(input, inOff, bAlpha, len - inOff);
+            inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
+            decodeAlpha(input, inOff, qAlpha2, len - inOff);
+        }
 //        }
 //        else
 //        {
@@ -91,13 +95,21 @@ class MapGroup1
         int rlt = 0;
         for (int i = 0; i < alpha.length; ++i)
         {
-            for (int j = 0; j < alpha[i].length; ++j)
-            {
-                int tmp = Math.min(alpha[i][j].length, len << 1);
-                GF16.decode(input, inOff + rlt, alpha[i][j], 0, tmp);
-                rlt += (tmp + 1) >> 1;
-                len -= (tmp + 1) >> 1;
-            }
+            rlt += decodeArray(input, inOff + rlt, alpha[i], len - rlt);
+        }
+        return rlt;
+    }
+
+    static int decodeArray(byte[] input, int inOff, byte[][] array, int len)
+    {
+        int rlt = 0;
+        for (int j = 0; j < array.length; ++j)
+        {
+            int tmp = Math.min(array[j].length, len << 1);
+            GF16.decode(input, inOff + rlt, array[j], 0, tmp);
+            tmp = (tmp + 1) >> 1;
+            rlt += tmp;
+            len -= tmp;
         }
         return rlt;
     }
@@ -124,15 +136,18 @@ class MapGroup1
 //        return isLower;
 //    }
 
-    public void fill(byte[] input)
+    public void fill(byte[] input, boolean isl4or5)
     {
         int inOff = fillP(input, 0, p11, input.length);
         inOff += fillP(input, inOff, p12, input.length - inOff);
         inOff += fillP(input, inOff, p21, input.length - inOff);
-        inOff += fillAlpha(input, inOff, aAlpha, input.length - inOff);
-        inOff += fillAlpha(input, inOff, bAlpha, input.length - inOff);
-        inOff += fillAlpha(input, inOff, qAlpha1, input.length - inOff);
-        fillAlpha(input, inOff, qAlpha2, input.length - inOff);
+        if (isl4or5)
+        {
+            inOff += fillAlpha(input, inOff, aAlpha, input.length - inOff);
+            inOff += fillAlpha(input, inOff, bAlpha, input.length - inOff);
+            inOff += fillAlpha(input, inOff, qAlpha1, input.length - inOff);
+            fillAlpha(input, inOff, qAlpha2, input.length - inOff);
+        }
     }
 
     static int fillP(byte[] input, int inOff, byte[][][][] p, int len)

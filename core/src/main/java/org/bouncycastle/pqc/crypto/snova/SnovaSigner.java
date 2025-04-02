@@ -205,9 +205,16 @@ public class SnovaSigner
             shake.update(arraySalt, 0, arraySalt.length);
             shake.update(numSign);
             shake.doFinal(vinegarBytes, 0, vinegarBytes.length);
-            byte[] tmp = new byte[vinegarBytes.length << 1];
-            GF16.decode(vinegarBytes, tmp, tmp.length);
-            fill(tmp, XInGF16Matrix, tmp.length);
+            if ((lsq & 1) == 1)
+            {
+                byte[] tmp = new byte[vinegarBytes.length << 1];
+                GF16.decode(vinegarBytes, tmp, tmp.length);
+                fill(tmp, XInGF16Matrix, tmp.length);
+            }
+            else
+            {
+                MapGroup1.decodeArray(vinegarBytes, 0, XInGF16Matrix, vinegarBytes.length);
+            }
 
             // Evaluate vinegar part of central map
             for (int mi = 0; mi < m; mi++)
@@ -369,9 +376,16 @@ public class SnovaSigner
 
         // Step 2: Convert signature to GF16 matrices
         byte[][] signatureGF16Matrix = new byte[n][lsq];
-        byte[] decodedSig = new byte[n * lsq];
-        GF16.decode(signature, 0, decodedSig, 0, decodedSig.length);
-        fill(decodedSig, signatureGF16Matrix, decodedSig.length);
+        if ((lsq & 1) == 1)
+        {
+            byte[] decodedSig = new byte[n * lsq];
+            GF16.decode(signature, 0, decodedSig, 0, decodedSig.length);
+            fill(decodedSig, signatureGF16Matrix, decodedSig.length);
+        }
+        else
+        {
+            MapGroup1.decodeArray(signature, 0, signatureGF16Matrix, signature.length);
+        }
 
         // Step 3: Evaluate signature using public key
         byte[] computedHashBytes = new byte[m * lsq];
