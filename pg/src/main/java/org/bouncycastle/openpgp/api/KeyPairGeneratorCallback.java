@@ -19,4 +19,43 @@ public interface KeyPairGeneratorCallback
      */
     PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
         throws PGPException;
+
+    static KeyPairGeneratorCallback primaryKey()
+    {
+        return new KeyPairGeneratorCallback()
+        {
+            @Override
+            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+            {
+                return generator.generatePrimaryKey();
+            }
+        };
+    }
+
+    static KeyPairGeneratorCallback encryptionKey()
+    {
+        return new KeyPairGeneratorCallback()
+        {
+            @Override
+            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+            {
+                return generator.generateEncryptionSubkey();
+            }
+        };
+    }
+
+    static KeyPairGeneratorCallback signingKey()
+    {
+        return new KeyPairGeneratorCallback()
+        {
+            @Override
+            public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+            {
+                return generator.generateSigningSubkey();
+            }
+        };
+    }
 }
