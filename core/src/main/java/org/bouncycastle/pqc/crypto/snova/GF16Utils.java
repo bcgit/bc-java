@@ -4,7 +4,7 @@ import org.bouncycastle.util.GF16;
 
 class GF16Utils
 {
-    public static void encodeMergeInHalf(byte[] m, int mlen, byte[] menc)
+    static void encodeMergeInHalf(byte[] m, int mlen, byte[] menc)
     {
         int i, half = (mlen + 1) >>> 1;
         // Process pairs of 4-bit values
@@ -19,7 +19,7 @@ class GF16Utils
         }
     }
 
-    public static void decodeMergeInHalf(byte[] byteArray, byte[] gf16Array, int nGf16)
+    static void decodeMergeInHalf(byte[] byteArray, byte[] gf16Array, int nGf16)
     {
         int i, half = (nGf16 + 1) >>> 1;
         // Process pairs of 4-bit values
@@ -30,15 +30,15 @@ class GF16Utils
         }
     }
 
-    public static void gf16mTranMulMul(byte[] sign, byte[] a, byte[] b, byte[] q1, byte[] q2, byte[] tmp,
-                                       byte[] left, byte[] right, int rank)
+    static void gf16mTranMulMul(byte[] sign, int signOff, byte[] a, byte[] b, byte[] q1, byte[] q2, byte[] tmp,
+                                byte[] left, byte[] right, int rank)
     {
         for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
         {
             for (int j = 0; j < rank; j++)
             {
                 byte result = 0;
-                for (int k = 0, aOff = j, bOff = i; k < rank; ++k, aOff += rank, bOff += rank)
+                for (int k = 0, aOff = signOff + j, bOff = i; k < rank; ++k, aOff += rank, bOff += rank)
                 {
                     result ^= GF16.mul(sign[aOff], q1[bOff]);
                 }
@@ -56,7 +56,7 @@ class GF16Utils
             }
             for (int j = 0; j < rank; j++)
             {
-                tmp[j] = GF16.innerProduct(q2, leftOff, sign, j, rank);
+                tmp[j] = GF16.innerProduct(q2, leftOff, sign, signOff + j, rank);
             }
 
             for (int j = 0; j < rank; j++)
@@ -67,7 +67,7 @@ class GF16Utils
     }
 
     // tmp = a * b, d = tmp * c -> d = (a * b) * c
-    public static void gf16mMulMul(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
+    static void gf16mMulMul(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
     {
         for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
         {
@@ -83,7 +83,7 @@ class GF16Utils
         }
     }
 
-    public static void gf16mMul(byte[] a, byte[] b, byte[] c, int rank)
+    static void gf16mMul(byte[] a, byte[] b, byte[] c, int rank)
     {
         for (int i = 0, aOff = 0, cOff = 0; i < rank; i++, aOff += rank)
         {
@@ -94,7 +94,7 @@ class GF16Utils
         }
     }
 
-    public static void gf16mMulMulTo(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
+    static void gf16mMulMulTo(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
     {
         for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
         {
@@ -110,7 +110,7 @@ class GF16Utils
         }
     }
 
-    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int rank)
+    static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int rank)
     {
         for (int i = 0, aOff = 0, cOff = 0; i < rank; i++, aOff += rank)
         {
@@ -122,7 +122,7 @@ class GF16Utils
     }
 
     // d = a * b, e = b * c
-    public static void gf16mMulToTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int rank)
+    static void gf16mMulToTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int rank)
     {
         for (int i = 0, leftOff = 0, outOff = 0; i < rank; i++, leftOff += rank)
         {
@@ -134,7 +134,7 @@ class GF16Utils
         }
     }
 
-    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int cOff, int rank)
+    static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int cOff, int rank)
     {
         for (int i = 0, aOff = 0; i < rank; i++, aOff += rank)
         {
@@ -146,7 +146,7 @@ class GF16Utils
     }
 
     // d ^= a * b + c * d
-    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int eOff, int rank)
+    static void gf16mMulTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int eOff, int rank)
     {
         for (int i = 0, leftOff = 0; i < rank; i++, leftOff += rank)
         {
@@ -157,7 +157,7 @@ class GF16Utils
         }
     }
 
-    public static void gf16mMulTo(byte[] a, byte[] b, int bOff, byte[] c, int cOff, int rank)
+    static void gf16mMulTo(byte[] a, byte[] b, int bOff, byte[] c, int cOff, int rank)
     {
         for (int i = 0, aOff = 0; i < rank; i++, aOff += rank)
         {
@@ -171,7 +171,7 @@ class GF16Utils
     /**
      * Conversion 4 bit -> 32 bit representation
      */
-    public static int gf16FromNibble(int idx)
+    static int gf16FromNibble(int idx)
     {
         int middle = idx | (idx << 4);
         return ((middle & 0x41) | ((middle << 2) & 0x208));
