@@ -68,7 +68,7 @@ public class BCMayoPublicKey
     }
 
     /**
-     * @return name of the algorithm - "BIKE"
+     * @return name of the algorithm - "Mayo[1|2|3|5]"
      */
     public final String getAlgorithm()
     {

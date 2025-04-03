@@ -53,26 +53,25 @@ public class SnovaSigner
     @Override
     public byte[] generateSignature(byte[] message)
     {
-        byte[] hash = new byte[shake.getDigestSize()];
-        shake.update(message, 0, message.length);
-        shake.doFinal(hash, 0);
+        byte[] hash = getMessageHash(message);
         byte[] salt = new byte[params.getSaltLength()];
         random.nextBytes(salt);
         byte[] signature = new byte[((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength()];
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
         byte[] publicKeySeed;
+        byte[] ptPrivateKeySeed;
         if (params.isSkIsSeed())
         {
             byte[] seedPair = privKey.getPrivateKey();
             publicKeySeed = Arrays.copyOfRange(seedPair, 0, SnovaKeyPairGenerator.publicSeedLength);
-            keyElements.ptPrivateKeySeed = Arrays.copyOfRange(seedPair, SnovaKeyPairGenerator.publicSeedLength, seedPair.length);
-            engine.genMap1T12Map2(keyElements, publicKeySeed, keyElements.ptPrivateKeySeed);
+            ptPrivateKeySeed = Arrays.copyOfRange(seedPair, SnovaKeyPairGenerator.publicSeedLength, seedPair.length);
+            engine.genMap1T12Map2(keyElements, publicKeySeed, ptPrivateKeySeed);
         }
         else
         {
-            byte[] input = privKey.getPrivateKey();
-            byte[] tmp = new byte[(input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
-            GF16Utils.decodeMergeInHalf(input, tmp, tmp.length);
+            byte[] privateKey = privKey.getPrivateKey();
+            byte[] tmp = new byte[(privateKey.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength) << 1];
+            GF16Utils.decodeMergeInHalf(privateKey, tmp, tmp.length);
             int inOff = 0;
             inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.aAlpha);
             inOff = SnovaKeyElements.copy3d(tmp, inOff, keyElements.map1.bAlpha);
@@ -82,21 +81,18 @@ public class SnovaSigner
             inOff = SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f11);
             inOff = SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f12);
             SnovaKeyElements.copy4d(tmp, inOff, keyElements.map2.f21);
-            publicKeySeed = Arrays.copyOfRange(input, input.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, input.length - SnovaKeyPairGenerator.privateSeedLength);
-            keyElements.ptPrivateKeySeed = new byte[SnovaKeyPairGenerator.privateSeedLength];
-            System.arraycopy(input, input.length - SnovaKeyPairGenerator.privateSeedLength, keyElements.ptPrivateKeySeed, 0, keyElements.ptPrivateKeySeed.length);
+            publicKeySeed = Arrays.copyOfRange(privateKey, privateKey.length - SnovaKeyPairGenerator.publicSeedLength - SnovaKeyPairGenerator.privateSeedLength, privateKey.length - SnovaKeyPairGenerator.privateSeedLength);
+            ptPrivateKeySeed = Arrays.copyOfRange(privateKey, privateKey.length - SnovaKeyPairGenerator.privateSeedLength, privateKey.length);
         }
         signDigestCore(signature, hash, salt, keyElements.map1.aAlpha, keyElements.map1.bAlpha, keyElements.map1.qAlpha1, keyElements.map1.qAlpha2,
-            keyElements.T12, keyElements.map2.f11, keyElements.map2.f12, keyElements.map2.f21, publicKeySeed, keyElements.ptPrivateKeySeed);
+            keyElements.T12, keyElements.map2.f11, keyElements.map2.f12, keyElements.map2.f21, publicKeySeed, ptPrivateKeySeed);
         return Arrays.concatenate(signature, message);
     }
 
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        byte[] hash = new byte[shake.getDigestSize()];
-        shake.update(message, 0, message.length);
-        shake.doFinal(hash, 0);
+        byte[] hash = getMessageHash(message);
         MapGroup1 map1 = new MapGroup1(params);
         byte[] pk = pubKey.getEncoded();
         byte[] publicKeySeed = Arrays.copyOf(pk, SnovaKeyPairGenerator.publicSeedLength);
@@ -117,10 +113,10 @@ public class SnovaSigner
         return verifySignatureCore(hash, signature, publicKeySeed, map1, p22);
     }
 
-    public void createSignedHash(
-        byte[] digest, int bytesDigest,
+    void createSignedHash(
         byte[] ptPublicKeySeed, int seedLengthPublic,
-        byte[] arraySalt, int bytesSalt,
+        byte[] digest, int bytesDigest,
+        byte[] arraySalt, int saltOff, int bytesSalt,
         byte[] signedHashOut, int bytesHash)
     {
         // 1. Absorb public key seed
@@ -130,18 +126,18 @@ public class SnovaSigner
         shake.update(digest, 0, bytesDigest);
 
         // 3. Absorb salt
-        shake.update(arraySalt, 0, bytesSalt);
+        shake.update(arraySalt, saltOff, bytesSalt);
 
         // 4. Finalize absorption and squeeze output
         shake.doFinal(signedHashOut, 0, bytesHash);
     }
 
-    public void signDigestCore(byte[] ptSignature, byte[] digest, byte[] arraySalt,
-                               byte[][][] Aalpha, byte[][][] Balpha,
-                               byte[][][] Qalpha1, byte[][][] Qalpha2,
-                               byte[][][] T12, byte[][][][] F11,
-                               byte[][][][] F12, byte[][][][] F21,
-                               byte[] ptPublicKeySeed, byte[] ptPrivateKeySeed)
+    void signDigestCore(byte[] ptSignature, byte[] digest, byte[] arraySalt,
+                        byte[][][] Aalpha, byte[][][] Balpha,
+                        byte[][][] Qalpha1, byte[][][] Qalpha2,
+                        byte[][][] T12, byte[][][][] F11,
+                        byte[][][][] F12, byte[][][][] F21,
+                        byte[] ptPublicKeySeed, byte[] ptPrivateKeySeed)
     {
         // Initialize constants from parameters
         final int m = params.getM();
@@ -161,26 +157,26 @@ public class SnovaSigner
         byte[][] Temp = new byte[lsq][lsq];
         byte[] solution = new byte[mxlsq];
 
-        byte[][][][] Left = new byte[m][alpha][v][lsq];
-        byte[][][][] Right = new byte[m][alpha][v][lsq];
+        byte[][][] Left = new byte[alpha][v][lsq];
+        byte[][][] Right = new byte[alpha][v][lsq];
         byte[] leftXTmp = new byte[lsq];
         byte[] rightXtmp = new byte[lsq];
         byte[][] XInGF16Matrix = new byte[v][lsq];
-        byte[][] FvvGF16Matrix = new byte[m][lsq];
+        byte[] FvvGF16Matrix = new byte[lsq];
         byte[] hashInGF16 = new byte[mxlsq];
-
+        byte[] vinegarGf16 = new byte[n * lsq];
         byte[] signedHash = new byte[bytesHash];
-        byte[] vinegarBytes = new byte[(v * lsq + 1) / 2];
+        byte[] vinegarBytes = new byte[(v * lsq + 1) >>> 1];
 
         // Temporary matrices
-        byte[] gf16mTemp0 = new byte[lsq];
+        byte[] gf16mTemp0 = new byte[l];
 
         int flagRedo;
         byte numSign = 0;
         byte valLeft, valB, valA, valRight;
         // Step 1: Create signed hash
-        createSignedHash(digest, digest.length, ptPublicKeySeed, ptPublicKeySeed.length,
-            arraySalt, arraySalt.length, signedHash, bytesHash);
+        createSignedHash(ptPublicKeySeed, ptPublicKeySeed.length, digest, digest.length,
+            arraySalt, 0, arraySalt.length, signedHash, bytesHash);
         GF16.decode(signedHash, 0, hashInGF16, 0, hashInGF16.length);
 
         do
@@ -199,80 +195,55 @@ public class SnovaSigner
             }
 
             // Generate vinegar values
-
             shake.update(ptPrivateKeySeed, 0, ptPrivateKeySeed.length);
             shake.update(digest, 0, digest.length);
             shake.update(arraySalt, 0, arraySalt.length);
             shake.update(numSign);
             shake.doFinal(vinegarBytes, 0, vinegarBytes.length);
-            if ((lsq & 1) == 1)
-            {
-                byte[] tmp = new byte[vinegarBytes.length << 1];
-                GF16.decode(vinegarBytes, tmp, tmp.length);
-                fill(tmp, XInGF16Matrix, tmp.length);
-            }
-            else
-            {
-                MapGroup1.decodeArray(vinegarBytes, 0, XInGF16Matrix, vinegarBytes.length);
-            }
 
-            // Evaluate vinegar part of central map
-            for (int mi = 0; mi < m; mi++)
+            GF16.decode(vinegarBytes, vinegarGf16, vinegarBytes.length << 1);
+            fill(vinegarGf16, XInGF16Matrix, vinegarBytes.length << 1);
+
+            for (int i = 0, ixlsq = 0; i < m; i++, ixlsq += lsq)
             {
+                Arrays.fill(FvvGF16Matrix, (byte)0);
+                // Evaluate vinegar part of central map
                 for (int a = 0; a < alpha; a++)
                 {
-                    for (int idx = 0; idx < v; idx++)
-                    {
-                        GF16Utils.gf16mTranMul(XInGF16Matrix[idx], Qalpha1[mi][a], gf16mTemp0, l);
-                        GF16Utils.gf16mMul(Aalpha[mi][a], gf16mTemp0, Left[mi][a][idx], l);
-
-                        GF16Utils.gf16mMul(Qalpha2[mi][a], XInGF16Matrix[idx], gf16mTemp0, l);
-                        GF16Utils.gf16mMul(gf16mTemp0, Balpha[mi][a], Right[mi][a][idx], l);
-                    }
-                }
-            }
-
-            // Matrix operations for Fvv
-            for (int i = 0; i < FvvGF16Matrix.length; ++i)
-            {
-                Arrays.fill(FvvGF16Matrix[i], (byte)0);
-            }
-            for (int mi = 0; mi < m; mi++)
-            {
-                for (int a = 0; a < alpha; a++)
-                {
-                    int miPrime = iPrime(mi, a);
+                    int miPrime = iPrime(i, a);
                     for (int j = 0; j < v; j++)
                     {
+                        GF16Utils.gf16mTranMulMul(XInGF16Matrix[j], Aalpha[i][a], Balpha[i][a], Qalpha1[i][a],
+                            Qalpha2[i][a], gf16mTemp0, Left[a][j], Right[a][j], l);
+                    }
+
+                    for (int j = 0; j < v; j++)
+                    {
+                        // Gaussian elimination setup
                         for (int k = 0; k < v; k++)
                         {
-                            GF16Utils.gf16mMul(Left[mi][a][j], F11[miPrime][j][k], gf16mTemp0, l);
-                            GF16Utils.gf16mMulTo(gf16mTemp0, Right[mi][a][k], FvvGF16Matrix[mi], l);
+                            GF16Utils.gf16mMulMulTo(Left[a][j], F11[miPrime][j][k], Right[a][k], gf16mTemp0, FvvGF16Matrix, l);
                         }
                     }
                 }
-            }
 
-            // Gaussian elimination setup
-            for (int i = 0, ixlsq = 0; i < m; i++, ixlsq += lsq)
-            {
-                for (int j = 0, jxl = 0; j < l; j++, jxl += l)
+                for (int j = 0, off = 0; j < l; j++)
                 {
-                    for (int k = 0, jxl_k = jxl; k < l; k++, jxl_k++)
+                    for (int k = 0; k < l; k++)
                     {
-                        Gauss[ixlsq + jxl_k][mxlsq] ^= FvvGF16Matrix[i][jxl_k];
+                        Gauss[ixlsq + off][mxlsq] ^= FvvGF16Matrix[off++];
                     }
                 }
-            }
-
-            // Compute the coefficients of Xo and put into Gauss matrix and compute the coefficients of Xo^t and add into Gauss matrix
-            for (int mi = 0, mixlsq = 0; mi < m; ++mi, mixlsq += lsq)
-            {
+//            }
+//            // TODO: think about how this two loops can merge together?
+//            // Compute the coefficients of Xo and put into Gauss matrix and compute the coefficients of Xo^t and add into Gauss matrix
+//            for (int i = 0, ixlsq = 0; i < m; ++i, ixlsq += lsq)
+//            {
                 for (int index = 0, idxlsq = 0; index < o; ++index, idxlsq += lsq)
                 {
                     for (int a = 0; a < alpha; ++a)
                     {
-                        int mi_prime = iPrime(mi, a);
+                        int mi_prime = iPrime(i, a);
                         // Initialize Temp to zero
                         for (int ti = 0; ti < lsq; ++ti)
                         {
@@ -281,10 +252,8 @@ public class SnovaSigner
                         // Process each j for Left part
                         for (int j = 0; j < v; ++j)
                         {
-                            GF16Utils.gf16mMul(Left[mi][a][j], F12[mi_prime][j][index], gf16mTemp0, l);
-                            GF16Utils.gf16mMul(gf16mTemp0, Qalpha2[mi][a], leftXTmp, l);
-                            GF16Utils.gf16mMul(Qalpha1[mi][a], F21[mi_prime][index][j], gf16mTemp0, l);
-                            GF16Utils.gf16mMul(gf16mTemp0, Right[mi][a][j], rightXtmp, l);
+                            GF16Utils.gf16mMulMul(Left[a][j], F12[mi_prime][j][index], Qalpha2[i][a], gf16mTemp0, leftXTmp, l);
+                            GF16Utils.gf16mMulMul(Qalpha1[i][a], F21[mi_prime][index][j], Right[a][j], gf16mTemp0, rightXtmp, l);
                             // Accumulate into Temp from leftXTmp and Balpha[mi][a]
                             // rlra_l is short for "rowLeft_rowA times l"
                             for (int ti = 0, colB_colRight = 0, rlraxl = 0; ti < lsq; ++ti, ++colB_colRight)
@@ -310,8 +279,8 @@ public class SnovaSigner
                                         valLeft = leftXTmp[rlraxl + colLeft_rowRight];
                                         valRight = rightXtmp[clrrxl + colB_colRight];
                                     }
-                                    valB = Balpha[mi][a][rbcaxl + colB_colRight];
-                                    valA = Aalpha[mi][a][rlraxl + rowB_colA];
+                                    valB = Balpha[i][a][rbcaxl + colB_colRight];
+                                    valA = Aalpha[i][a][rlraxl + rowB_colA];
                                     Temp[ti][tj] ^= GF16.mul(valLeft, valB) ^ GF16.mul(valA, valRight);
                                 }
                             }
@@ -321,7 +290,7 @@ public class SnovaSigner
                         {
                             for (int tj = 0; tj < lsq; ++tj)
                             {
-                                Gauss[mixlsq + ti][idxlsq + tj] ^= Temp[ti][tj];
+                                Gauss[ixlsq + ti][idxlsq + tj] ^= Temp[ti][tj];
                             }
                         }
                     }
@@ -333,24 +302,22 @@ public class SnovaSigner
         while (flagRedo != 0);
 
         // Copy vinegar variables
-        byte[] tmp = new byte[n * lsq];
         for (int idx = 0, idxlsq = 0; idx < v; idx++, idxlsq += lsq)
         {
-            System.arraycopy(XInGF16Matrix[idx], 0, tmp, idxlsq, lsq);
             for (int i = 0, ixlsq = 0; i < o; i++, ixlsq += lsq)
             {
-                GF16Utils.gf16mMulTo(T12[idx][i], solution, ixlsq, tmp, idxlsq, l);
+                GF16Utils.gf16mMulTo(T12[idx][i], solution, ixlsq, vinegarGf16, idxlsq, l);
             }
         }
 
         // Copy remaining oil variables
-        System.arraycopy(solution, 0, tmp, v * lsq, oxlsq);
-        GF16.encode(tmp, ptSignature, tmp.length);
+        System.arraycopy(solution, 0, vinegarGf16, v * lsq, oxlsq);
+        GF16.encode(vinegarGf16, ptSignature, vinegarGf16.length);
 
         System.arraycopy(arraySalt, 0, ptSignature, ptSignature.length - bytesSalt, bytesSalt);
     }
 
-    public boolean verifySignatureCore(byte[] digest, byte[] signature, byte[] publicKeySeed, MapGroup1 map1, byte[][][][] p22)
+    boolean verifySignatureCore(byte[] digest, byte[] signature, byte[] publicKeySeed, MapGroup1 map1, byte[][][][] p22)
     {
         final int bytesHash = (params.getO() * params.getLsq() + 1) >>> 1;
         final int bytesSalt = params.getSaltLength();
@@ -362,14 +329,11 @@ public class SnovaSigner
 
         // Step 1: Regenerate signed hash using public key seed, digest and salt
         byte[] signedHash = new byte[bytesHash];
-
-        shake.update(publicKeySeed, 0, publicKeySeed.length);
-        shake.update(digest, 0, digest.length);
-        shake.update(signature, bytesSignature, bytesSalt);
-        shake.doFinal(signedHash, 0, bytesHash);
+        createSignedHash(publicKeySeed, publicKeySeed.length, digest, digest.length,
+            signature, bytesSignature, bytesSalt, signedHash, bytesHash);
 
         // Handle odd-length adjustment (if needed)
-        if ((o * lsq) % 2 != 0)
+        if (((o * lsq) & 1) != 0)
         {
             signedHash[bytesHash - 1] &= 0x0F;
         }
@@ -405,33 +369,27 @@ public class SnovaSigner
         final int alpha = params.getAlpha();
         final int n = params.getN();
         final int l = params.getL();
-        final int lsq = l * l;
+        final int lsq = params.getLsq();
 
-        byte[][][][] Left = new byte[m][alpha][n][lsq];
-        byte[][][][] Right = new byte[m][alpha][n][lsq];
+        byte[][][] Left = new byte[alpha][n][lsq];
+        byte[][][] Right = new byte[alpha][n][lsq];
         byte[] temp = new byte[lsq];
 
         // Evaluate Left and Right matrices
-        for (int mi = 0; mi < m; mi++)
+        for (int mi = 0, mixlsq = 0; mi < m; mi++, mixlsq += lsq)
         {
             for (int si = 0; si < n; si++)
             {
                 for (int a = 0; a < alpha; a++)
                 {
                     // Left[mi][a][si] = Aalpha * (sig^T * Qalpha1)
-                    GF16Utils.gf16mTranMul(signature[si], map1.qAlpha1[mi][a], temp, l);
-                    GF16Utils.gf16mMul(map1.aAlpha[mi][a], temp, Left[mi][a][si], l);
-
                     // Right[mi][a][si] = (Qalpha2 * sig) * Balpha
-                    GF16Utils.gf16mMul(map1.qAlpha2[mi][a], signature[si], temp, l);
-                    GF16Utils.gf16mMul(temp, map1.bAlpha[mi][a], Right[mi][a][si], l);
+                    GF16Utils.gf16mTranMulMul(signature[si], map1.aAlpha[mi][a], map1.bAlpha[mi][a], map1.qAlpha1[mi][a],
+                        map1.qAlpha2[mi][a], temp, Left[a][si], Right[a][si], l);
                 }
             }
-        }
 
-        // Process P matrices and accumulate results
-        for (int mi = 0; mi < m; mi++)
-        {
+            // Process P matrices and accumulate results
             for (int a = 0; a < alpha; a++)
             {
                 int miPrime = iPrime(mi, a);
@@ -439,15 +397,15 @@ public class SnovaSigner
                 {
                     // sum_t0 = sum(P[miPrime][ni][nj] * Right[mi][a][nj])
                     byte[] p = getPMatrix(map1, p22, miPrime, ni, 0);
-                    GF16Utils.gf16mMul(p, Right[mi][a][0], temp, l);
+                    GF16Utils.gf16mMul(p, Right[a][0], temp, l);
                     for (int nj = 1; nj < n; nj++)
                     {
                         p = getPMatrix(map1, p22, miPrime, ni, nj);
-                        GF16Utils.gf16mMulTo(p, Right[mi][a][nj], temp, l);
+                        GF16Utils.gf16mMulTo(p, Right[a][nj], temp, l);
                     }
 
                     // hashMatrix += Left[mi][a][ni] * temp
-                    GF16Utils.gf16mMulTo(Left[mi][a][ni], temp, 0, hashMatrix, mi * lsq, l);
+                    GF16Utils.gf16mMulTo(Left[a][ni], temp, hashMatrix, mixlsq, l);
                 }
             }
         }
@@ -531,11 +489,12 @@ public class SnovaSigner
         // Back substitution
         for (int i = size - 1; i >= 0; i--)
         {
-            solution[i] = Gauss[i][size];
+            byte tmp = Gauss[i][size];
             for (int j = i + 1; j < size; j++)
             {
-                solution[i] ^= GF16.mul(Gauss[i][j], solution[j]);
+                tmp ^= GF16.mul(Gauss[i][j], solution[j]);
             }
+            solution[i] = tmp;
         }
         return 0;
     }
@@ -555,5 +514,13 @@ public class SnovaSigner
             System.arraycopy(input, rlt, output[i], 0, tmp);
             rlt += tmp;
         }
+    }
+
+    private byte[] getMessageHash(byte[] message)
+    {
+        byte[] hash = new byte[shake.getDigestSize()];
+        shake.update(message, 0, message.length);
+        shake.doFinal(hash, 0);
+        return hash;
     }
 }

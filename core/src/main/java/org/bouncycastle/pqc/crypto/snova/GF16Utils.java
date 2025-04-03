@@ -30,13 +30,55 @@ class GF16Utils
         }
     }
 
-    public static void gf16mTranMul(byte[] a, byte[] b, byte[] c, int rank)
+    public static void gf16mTranMulMul(byte[] sign, byte[] a, byte[] b, byte[] q1, byte[] q2, byte[] tmp,
+                                       byte[] left, byte[] right, int rank)
     {
-        for (int i = 0, cOff = 0; i < rank; i++)
+        for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
         {
-            for (int j = 0, jl = 0; j < rank; j++, jl += rank)
+            for (int j = 0; j < rank; j++)
             {
-                c[cOff++] = GF16.dotProduct(a, i, b, j, rank);
+                byte result = 0;
+                for (int k = 0, aOff = j, bOff = i; k < rank; ++k, aOff += rank, bOff += rank)
+                {
+                    result ^= GF16.mul(sign[aOff], q1[bOff]);
+                }
+                tmp[j] = result;
+            }
+
+            for (int j = 0, jxl = 0; j < rank; j++, jxl += rank)
+            {
+                byte result = 0;
+                for (int k = 0; k < rank; ++k)
+                {
+                    result ^= GF16.mul(a[jxl + k], tmp[k]);
+                }
+                left[i + jxl] = result;
+            }
+            for (int j = 0; j < rank; j++)
+            {
+                tmp[j] = GF16.innerProduct(q2, leftOff, sign, j, rank);
+            }
+
+            for (int j = 0; j < rank; j++)
+            {
+                right[dOff++] = GF16.innerProduct(tmp, 0, b, j, rank);
+            }
+        }
+    }
+
+    // tmp = a * b, d = tmp * c -> d = (a * b) * c
+    public static void gf16mMulMul(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
+    {
+        for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                tmp[j] = GF16.innerProduct(a, leftOff, b, j, rank);
+            }
+
+            for (int j = 0; j < rank; j++)
+            {
+                d[dOff++] = GF16.innerProduct(tmp, 0, c, j, rank);
             }
         }
     }
@@ -52,6 +94,22 @@ class GF16Utils
         }
     }
 
+    public static void gf16mMulMulTo(byte[] a, byte[] b, byte[] c, byte[] tmp, byte[] d, int rank)
+    {
+        for (int i = 0, leftOff = 0, dOff = 0; i < rank; i++, leftOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                tmp[j] = GF16.innerProduct(a, leftOff, b, j, rank);
+            }
+
+            for (int j = 0; j < rank; j++)
+            {
+                d[dOff++] ^= GF16.innerProduct(tmp, 0, c, j, rank);
+            }
+        }
+    }
+
     public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int rank)
     {
         for (int i = 0, aOff = 0, cOff = 0; i < rank; i++, aOff += rank)
@@ -59,6 +117,42 @@ class GF16Utils
             for (int j = 0; j < rank; j++)
             {
                 c[cOff++] ^= GF16.innerProduct(a, aOff, b, j, rank);
+            }
+        }
+    }
+
+    // d = a * b, e = b * c
+    public static void gf16mMulToTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int rank)
+    {
+        for (int i = 0, leftOff = 0, outOff = 0; i < rank; i++, leftOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                d[outOff] ^= GF16.innerProduct(a, leftOff, b, j, rank);
+                e[outOff++] ^= GF16.innerProduct(b, leftOff, c, j, rank);
+            }
+        }
+    }
+
+    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, int cOff, int rank)
+    {
+        for (int i = 0, aOff = 0; i < rank; i++, aOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                c[cOff++] ^= GF16.innerProduct(a, aOff, b, j, rank);
+            }
+        }
+    }
+
+    // d ^= a * b + c * d
+    public static void gf16mMulTo(byte[] a, byte[] b, byte[] c, byte[] d, byte[] e, int eOff, int rank)
+    {
+        for (int i = 0, leftOff = 0; i < rank; i++, leftOff += rank)
+        {
+            for (int j = 0; j < rank; j++)
+            {
+                e[eOff++] ^= GF16.innerProduct(a, leftOff, b, j, rank) ^ GF16.innerProduct(c, leftOff, d, j, rank);
             }
         }
     }
