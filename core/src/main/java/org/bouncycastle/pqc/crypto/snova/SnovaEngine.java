@@ -1,6 +1,8 @@
 package org.bouncycastle.pqc.crypto.snova;
 
-import org.bouncycastle.crypto.BlockCipher;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.CTRModeCipher;
@@ -13,6 +15,9 @@ import org.bouncycastle.util.Pack;
 
 class SnovaEngine
 {
+    private final static Map<Integer, byte[]> fixedAbqSet = new HashMap<Integer, byte[]>();//key is o
+    private final static Map<Integer, byte[][]> sSet = new HashMap<Integer, byte[][]>(); //key is l
+    private final static Map<Integer, int[][]> xSSet = new HashMap<Integer, int[][]>(); //key is l
     private final SnovaParameters params;
     private final int l;
     private final int lsq;
@@ -34,11 +39,79 @@ class SnovaEngine
         this.o = params.getO();
         this.alpha = params.getAlpha();
         this.n = params.getN();
-        S = SnovaParameters.sSet.get(l);
-        xS = SnovaParameters.xSSet.get(l);
+        if (!xSSet.containsKey(l))
+        {
+            byte[][] S = new byte[l][lsq];
+            int[][] xS = new int[l][lsq];
+            be_aI(S[0], 0, (byte)1);
+            beTheS(S[1]);
+            for (int index = 2; index < l; ++index)
+            {
+                GF16Utils.gf16mMul(S[index - 1], S[1], S[index], l);
+            }
+
+            for (int index = 0; index < l; ++index)
+            {
+                for (int ij = 0; ij < lsq; ++ij)
+                {
+                    xS[index][ij] = GF16Utils.gf16FromNibble(S[index][ij]);
+                }
+            }
+            sSet.put(l, S);
+            xSSet.put(l, xS);
+        }
+        S = sSet.get(l);
+        xS = xSSet.get(l);
+        if (l < 4 && !fixedAbqSet.containsKey(o))
+        {
+            int alphaxl = alpha * l;
+            int alphaxlsq = alphaxl * l;
+            int oxalphaxl = o * alphaxl;
+            int oxalphaxlsq = o * alphaxlsq;
+            byte[] fixedAbq = new byte[oxalphaxlsq << 2];
+            byte[] rngOut = new byte[oxalphaxlsq + oxalphaxl];
+            byte[] q12 = new byte[oxalphaxl << 2];
+            byte[] seed = "SNOVA_ABQ".getBytes();
+            SHAKEDigest shake = new SHAKEDigest(256);
+            shake.update(seed, 0, seed.length);
+            shake.doFinal(rngOut, 0, rngOut.length);
+            GF16.decode(rngOut, fixedAbq, oxalphaxlsq << 1);
+            GF16.decode(rngOut, alphaxlsq, q12, 0, oxalphaxl << 1);
+            // Post-processing for invertible matrices
+            for (int pi = 0, pixAlphaxlsq = 0, pixalphaxl = 0; pi < o; ++pi, pixAlphaxlsq += alphaxlsq, pixalphaxl += alphaxl)
+            {
+                for (int a = 0, axl = pixalphaxl, axlsq = pixAlphaxlsq; a < alpha; ++a, axl += l, axlsq += lsq)
+                {
+                    makeInvertibleByAddingAS(fixedAbq, axlsq);
+                    makeInvertibleByAddingAS(fixedAbq, oxalphaxlsq + axlsq);
+                    genAFqS(q12, axl, fixedAbq, (oxalphaxlsq << 1) + axlsq);
+                    genAFqS(q12, oxalphaxl + axl, fixedAbq, (oxalphaxlsq << 1) + oxalphaxlsq + axlsq);
+                }
+            }
+            fixedAbqSet.put(o, fixedAbq);
+        }
     }
 
-    static void be_aI(byte[] target, int off, byte a, int l)
+    private void beTheS(byte[] target)
+    {
+        // Set all elements to 8 - (i + j) in GF16 (4-bit values)
+        for (int i = 0, il = 0; i < l; ++i, il += l)
+        {
+            for (int j = 0; j < l; ++j)
+            {
+                int value = 8 - (i + j);
+                target[il + j] = (byte)(value & 0x0F);  // Mask to 4 bits
+            }
+        }
+
+        // Special case for rank 5
+        if (l == 5)
+        {
+            target[24] = (byte)9;  // Set (4,4) to 9
+        }
+    }
+
+    private void be_aI(byte[] target, int off, byte a)
     {
         // Ensure 'a' iss a valid 4-bit GF16 element
         int l1 = l + 1;
@@ -49,7 +122,7 @@ class SnovaEngine
     }
 
     // Constant-time GF16 matrix generation
-    public void genAFqSCT(byte[] c, int cOff, byte[] ptMatrix)
+    private void genAFqSCT(byte[] c, int cOff, byte[] ptMatrix)
     {
         int[] xTemp = new int[lsq];
         int l1 = l + 1;
@@ -83,7 +156,7 @@ class SnovaEngine
         Arrays.fill(xTemp, 0); // Secure clear
     }
 
-    public void makeInvertibleByAddingAS(byte[] source, int off)
+    private void makeInvertibleByAddingAS(byte[] source, int off)
     {
         if (gf16Determinant(source, off) != 0)
         {
@@ -283,10 +356,10 @@ class SnovaEngine
         }
     }
 
-    public void genAFqS(byte[] c, int cOff, byte[] ptMatrix, int off)
+    private void genAFqS(byte[] c, int cOff, byte[] ptMatrix, int off)
     {
         // Initialize with be_aI
-        be_aI(ptMatrix, off, c[cOff], l);
+        be_aI(ptMatrix, off, c[cOff]);
 
         // Process middle terms
         for (int i = 1; i < l - 1; ++i)
@@ -310,7 +383,7 @@ class SnovaEngine
         }
     }
 
-    public void genF(MapGroup2 map2, MapGroup1 map1, byte[][][] T12)
+    private void genF(MapGroup2 map2, MapGroup1 map1, byte[][][] T12)
     {
         // Copy initial matrices
         copy4DMatrix(map1.p11, map2.f11, m, v, v, lsq);
@@ -325,10 +398,7 @@ class SnovaEngine
                 {
                     for (int index = 0; index < v; index++)
                     {
-                        // First matrix operation sequence
-                        GF16Utils.gf16mMulTo(map1.p11[i][j][index], T12[index][k], map2.f12[i][j][k], l);
-                        // Second matrix operation sequence
-                        GF16Utils.gf16mMulTo(T12[index][k], map1.p11[i][index][j], map2.f21[i][k][j], l);
+                        GF16Utils.gf16mMulToTo(map1.p11[i][j][index], T12[index][k], map1.p11[i][index][j], map2.f12[i][j][k], map2.f21[i][k][j], l);
                     }
                 }
             }
@@ -362,14 +432,10 @@ class SnovaEngine
             {
                 for (int k = 0, kxlsq = jxoxlsq; k < o; k++, kxlsq += lsq)
                 {
-                    //int idx = ((i * o + j) * o + k) * lsq;
                     for (int index = 0; index < v; index++)
                     {
-                        // P22[i][j][k] ^= T12[index][j] * F12[i][index][k]
-                        GF16Utils.gf16mMulTo(T12[index][j], F12[i][index][k], 0, P22, kxlsq, l);
-
-                        // P22[i][j][k] ^= P21[i][j][index] * T12[index][k]
-                        GF16Utils.gf16mMulTo(P21[i][j][index], T12[index][k], 0, P22, kxlsq, l);
+                        //  P22[i][j][k] ^= (T12[index][j] * F12[i][index][k]) ^ (P21[i][j][index] * T12[index][k])
+                        GF16Utils.gf16mMulTo(T12[index][j], F12[i][index][k], P21[i][j][index], T12[index][k], P22, kxlsq, l);
                     }
                 }
             }
@@ -379,7 +445,7 @@ class SnovaEngine
         GF16.encode(P22, outP22, outOff, P22.length);
     }
 
-    void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
+    private void genSeedsAndT12(byte[][][] T12, byte[] skSeed)
     {
         int gf16sPrngPrivate = v * o * l;
         int bytesPrngPrivate = (gf16sPrngPrivate + 1) >>> 1;
@@ -407,7 +473,7 @@ class SnovaEngine
         }
     }
 
-    void genABQP(MapGroup1 map1, byte[] pkSeed)
+    public void genABQP(MapGroup1 map1, byte[] pkSeed)
     {
         int gf16sPrngPublic = lsq * (2 * m * alpha + m * (n * n - m * m)) + l * 2 * m * alpha;
         byte[] qTemp = new byte[(m * alpha * l) << 1];
@@ -445,11 +511,9 @@ class SnovaEngine
             byte[] iv = new byte[16]; // automatically zero-initialized
             // AES-CTR-based expansion
             // Set up AES engine in CTR (SIC) mode.
-            BlockCipher aesEngine = AESEngine.newInstance();
             // SICBlockCipher implements CTR mode for AES.
-            CTRModeCipher ctrCipher = SICBlockCipher.newInstance(aesEngine);
-            ParametersWithIV params = new ParametersWithIV(new KeyParameter(pkSeed), iv);
-            ctrCipher.init(true, params);
+            CTRModeCipher ctrCipher = SICBlockCipher.newInstance(AESEngine.newInstance());
+            ctrCipher.init(true, new ParametersWithIV(new KeyParameter(pkSeed), iv));
             int blockSize = ctrCipher.getBlockSize(); // typically 16 bytes
             byte[] zeroBlock = new byte[blockSize];     // block of zeros
 
@@ -491,15 +555,15 @@ class SnovaEngine
                     makeInvertibleByAddingAS(map1.aAlpha[pi][a], 0);
                     makeInvertibleByAddingAS(map1.bAlpha[pi][a], 0);
                     genAFqS(qTemp, ptArray, map1.qAlpha1[pi][a], 0);
-                    ptArray += l;
                     genAFqS(qTemp, offset, map1.qAlpha2[pi][a], 0);
+                    ptArray += l;
                     offset += l;
                 }
             }
         }
         else
         {
-            byte[] fixedAbq = SnovaParameters.fixedAbqSet.get(o);
+            byte[] fixedAbq = fixedAbqSet.get(o);
             MapGroup1.fillAlpha(fixedAbq, 0, map1.aAlpha, m * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq, map1.bAlpha, (m - 1) * o * alpha * lsq);
             MapGroup1.fillAlpha(fixedAbq, o * alpha * lsq * 2, map1.qAlpha1, (m - 2) * o * alpha * lsq);
@@ -507,7 +571,7 @@ class SnovaEngine
         }
     }
 
-    void genMap1T12Map2(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed)
+    public void genMap1T12Map2(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed)
     {
         // Generate T12 matrix
         genSeedsAndT12(keyElements.T12, skSeed);

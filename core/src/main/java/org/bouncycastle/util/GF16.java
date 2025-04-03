@@ -167,14 +167,4 @@ public class GF16
         }
         return result;
     }
-
-    public static byte dotProduct(byte[] a, int aOff, byte[] b, int bOff, int rank)
-    {
-        byte result = 0;
-        for (int k = 0; k < rank; ++k, aOff += rank, bOff += rank)
-        {
-            result ^= mul(a[aOff], b[bOff]);
-        }
-        return result;
-    }
 }

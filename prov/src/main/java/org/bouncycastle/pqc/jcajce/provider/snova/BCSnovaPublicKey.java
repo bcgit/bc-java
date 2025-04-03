@@ -3,47 +3,44 @@ package org.bouncycastle.pqc.jcajce.provider.snova;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
+import java.security.PublicKey;
 
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.SnovaKey;
 import org.bouncycastle.pqc.jcajce.spec.SnovaParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class BCSnovaPrivateKey
-    implements PrivateKey, SnovaKey
+public class BCSnovaPublicKey
+    implements PublicKey, SnovaKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient SnovaPrivateKeyParameters params;
-    private transient ASN1Set attributes;
+    private transient SnovaPublicKeyParameters params;
 
-    public BCSnovaPrivateKey(
-        SnovaPrivateKeyParameters params)
+    public BCSnovaPublicKey(
+        SnovaPublicKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCSnovaPrivateKey(PrivateKeyInfo keyInfo)
+    public BCSnovaPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
     }
 
-    private void init(PrivateKeyInfo keyInfo)
+    private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.attributes = keyInfo.getAttributes();
-        this.params = (SnovaPrivateKeyParameters) PrivateKeyFactory.createKey(keyInfo);
+        this.params = (SnovaPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
-     * Compare this private key with another object.
+     * Compare this BIKE public key with another object.
      *
      * @param o the other object
      * @return the result of the comparison
@@ -55,9 +52,9 @@ public class BCSnovaPrivateKey
             return true;
         }
 
-        if (o instanceof BCSnovaPrivateKey)
+        if (o instanceof BCSnovaPublicKey)
         {
-            BCSnovaPrivateKey otherKey = (BCSnovaPrivateKey)o;
+            BCSnovaPublicKey otherKey = (BCSnovaPublicKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -80,10 +77,9 @@ public class BCSnovaPrivateKey
 
     public byte[] getEncoded()
     {
-
         try
         {
-            PrivateKeyInfo pki = PrivateKeyInfoFactory.createPrivateKeyInfo(params, attributes);
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(params);
 
             return pki.getEncoded();
         }
@@ -93,17 +89,17 @@ public class BCSnovaPrivateKey
         }
     }
 
+    public String getFormat()
+    {
+        return "X.509";
+    }
+
     public SnovaParameterSpec getParameterSpec()
     {
         return SnovaParameterSpec.fromName(params.getParameters().getName());
     }
 
-    public String getFormat()
-    {
-        return "PKCS#8";
-    }
-
-    SnovaPrivateKeyParameters getKeyParams()
+    SnovaPublicKeyParameters getKeyParams()
     {
         return params;
     }
@@ -116,7 +112,7 @@ public class BCSnovaPrivateKey
 
         byte[] enc = (byte[])in.readObject();
 
-        init(PrivateKeyInfo.getInstance(enc));
+        init(SubjectPublicKeyInfo.getInstance(enc));
     }
 
     private void writeObject(

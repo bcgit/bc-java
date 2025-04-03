@@ -11,7 +11,7 @@ class MapGroup2
         int m = params.getM();
         int v = params.getV();
         int o = params.getO();
-        int lsq = params.getL() * params.getL();
+        int lsq = params.getLsq();
         f11 = new byte[m][v][v][lsq];
         f12 = new byte[m][v][o][lsq];
         f21 = new byte[m][o][v][lsq];

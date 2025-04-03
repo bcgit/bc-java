@@ -28,16 +28,9 @@ class MapGroup1
         qAlpha2 = new byte[m][alpha][lsq];
     }
 
-    public void decode(byte[] input, int len, boolean isl4or5)
+    void decode(byte[] input, int len, boolean isl4or5)
     {
-//        int m = params.getM();
-//        int v = params.getV();
-//        int o = params.getO();
-//        int alpha = params.getAlpha();
-//        int lsq = params.getLsq();
-//        if ((lsq & 1) == 0)
-//        {
-
+        //TODO: when (lsq & 1) == 1
         int inOff = decodeP(input, 0, p11, len);
         inOff += decodeP(input, inOff, p12, len - inOff);
         inOff += decodeP(input, inOff, p21, len - inOff);
@@ -48,37 +41,7 @@ class MapGroup1
             inOff += decodeAlpha(input, inOff, qAlpha1, len - inOff);
             decodeAlpha(input, inOff, qAlpha2, len - inOff);
         }
-//        }
-//        else
-//        {
-//
-//        }
     }
-
-//    public boolean decodeArrayLsqOdd(byte[] input, int inOff, boolean isLower, byte[] output, int lsqHalf)
-//    {
-//        int outOff = 0;
-//        if (isLower)
-//        {
-//            for (int i = 0; i < lsqHalf; ++i)
-//            {
-//                output[outOff++] = (byte)(input[inOff] & 0x0F);
-//                output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
-//            }
-//            output[outOff] = (byte)(input[inOff] & 0x0F);
-//            return false;
-//        }
-//        else
-//        {
-//            for (int i = 0; i < lsqHalf; ++i)
-//            {
-//                output[outOff++] = (byte)((input[inOff++] >>> 4) & 0x0F);
-//                output[outOff++] = (byte)(input[inOff] & 0x0F);
-//            }
-//            output[outOff] = (byte)((input[inOff] >>> 4) & 0x0F);
-//            return true;
-//        }
-//    }
 
     static int decodeP(byte[] input, int inOff, byte[][][][] p, int len)
     {
@@ -114,29 +77,7 @@ class MapGroup1
         return rlt;
     }
 
-//    private int decodeP(byte[] input, int inOff, boolean isLower,byte[][][][] p, int lsqHalf)
-//    {
-//        for (int i = 0; i < p.length; ++i)
-//        {
-//            inOff = decodeAlpha(input, inOff, p[i]);
-//        }
-//        return inOff;
-//    }
-
-//    private boolean decodeAlpha(byte[] input, int inOff, boolean isLower, byte[][][] alpha, int lsqHalf)
-//    {
-//        for (int i = 0; i < alpha.length; ++i)
-//        {
-//            for (int j = 0; j < alpha[i].length; ++j)
-//            {
-//                isLower = decodeArrayLsqOdd(input, inOff, isLower, alpha[i][j], lsqHalf);
-//                inOff += lsqHalf + (isLower ? 1 : 0);
-//            }
-//        }
-//        return isLower;
-//    }
-
-    public void fill(byte[] input, boolean isl4or5)
+    void fill(byte[] input, boolean isl4or5)
     {
         int inOff = fillP(input, 0, p11, input.length);
         inOff += fillP(input, inOff, p12, input.length - inOff);

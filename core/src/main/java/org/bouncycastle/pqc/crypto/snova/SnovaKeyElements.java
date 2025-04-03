@@ -5,14 +5,12 @@ class SnovaKeyElements
     public final MapGroup1 map1;
     public final byte[][][] T12;     // [v][o]
     public final MapGroup2 map2;
-    public byte[] ptPrivateKeySeed;
 
     public SnovaKeyElements(SnovaParameters params)
     {
         int o = params.getO();
-        int l = params.getL();
         int v = params.getV();
-        int lsq = l * l;
+        int lsq = params.getLsq();
         map1 = new MapGroup1(params);
         T12 = new byte[v][o][lsq];
         map2 = new MapGroup2(params);

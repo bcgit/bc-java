@@ -48,7 +48,11 @@ public class SnovaKeyPairGenerator
 
         SnovaKeyElements keyElements = new SnovaKeyElements(params);
         System.arraycopy(ptPublicKeySeed, 0, pk, 0, ptPublicKeySeed.length);
-        generateKeysCore(keyElements, ptPublicKeySeed, ptPrivateKeySeed, pk, ptPublicKeySeed.length);
+        engine.genMap1T12Map2(keyElements, ptPublicKeySeed, ptPrivateKeySeed);
+
+        // Generate P22 matrix
+        engine.genP22(pk, ptPublicKeySeed.length, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
+
 
         // Pack public key components
         System.arraycopy(ptPublicKeySeed, 0, pk, 0, ptPublicKeySeed.length);
@@ -63,7 +67,7 @@ public class SnovaKeyPairGenerator
             int lsq = params.getLsq();
             int v = params.getV();
             int length = o * params.getAlpha() * lsq * 4 + v * o * lsq + (o * v * v + o * v * o + o * o * v) * lsq;
-            //keyElements.encodeMergerInHalf(sk);
+
             byte[] input = new byte[length];
             int inOff = 0;
             inOff = SnovaKeyElements.copy3d(keyElements.map1.aAlpha, input, inOff);
@@ -82,13 +86,5 @@ public class SnovaKeyPairGenerator
             new SnovaPublicKeyParameters(params, pk),
             new SnovaPrivateKeyParameters(params, sk)
         );
-    }
-
-    private void generateKeysCore(SnovaKeyElements keyElements, byte[] pkSeed, byte[] skSeed, byte[] p22, int p22Off)
-    {
-        engine.genMap1T12Map2(keyElements, pkSeed, skSeed);
-
-        // Generate P22 matrix
-        engine.genP22(p22, p22Off, keyElements.T12, keyElements.map1.p21, keyElements.map2.f12);
     }
 }
