@@ -762,7 +762,7 @@ public class MayoSigner
             }
 
             // Multiply the pivot row by the inverse of the pivot element.
-            vecMulAddU64(rowLen, pivotRow, GF16Utils.inverseF(pivot), pivotRow2);
+            vecMulAddU64(rowLen, pivotRow, GF16.inv((byte)pivot), pivotRow2);
 
             // Conditionally write the pivot row back into the correct row (if pivot is nonzero).
             for (int row = lowerBound, rowRowLen = lowerBound * rowLen; row <= upperBound; row++, rowRowLen += rowLen)

@@ -65,9 +65,17 @@ public class GF16
         return MT4B[a << 4 | b];
     }
 
+    /**
+     * Computes the multiplicative inverse in GF(16) for a GF(16) element.
+     */
     public static byte inv(byte a)
     {
         return INV4B[a & 0xF];
+//        int a2 = GF16.mul(a, a);
+//        int a4 = GF16.mul(a2, a2);
+//        int a8 = GF16.mul(a4, a4);
+//        int a6 = GF16.mul(a2, a4);
+//        return (byte)GF16.mul(a8, a6);
     }
 
     /**
