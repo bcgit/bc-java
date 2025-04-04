@@ -134,9 +134,9 @@ public class GF16
      */
     public static void encode(byte[] input, byte[] output, int inputLen)
     {
-        int i, inOff = 0;
+        int i, inOff = 0, blocks = inputLen >> 1;
         // Process pairs of 4-bit values
-        for (i = 0; i < inputLen / 2; i++)
+        for (i = 0; i < blocks; i++)
         {
             int lowerNibble = input[inOff++] & 0x0F;
             int upperNibble = (input[inOff++] & 0x0F) << 4;
@@ -151,9 +151,9 @@ public class GF16
 
     public static void encode(byte[] input, byte[] output, int outOff, int inputLen)
     {
-        int i, inOff = 0;
+        int i, inOff = 0, blocks = inputLen >> 1;
         // Process pairs of 4-bit values
-        for (i = 0; i < inputLen / 2; i++)
+        for (i = 0; i < blocks; i++)
         {
             int lowerNibble = input[inOff++] & 0x0F;
             int upperNibble = (input[inOff++] & 0x0F) << 4;
