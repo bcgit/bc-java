@@ -37,6 +37,7 @@ import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -111,6 +112,9 @@ class Utils
 
     static final Map mayoOids = new HashMap<ASN1ObjectIdentifier, MayoParameters>();
     static final Map mayoParams = new HashMap<MayoParameters, ASN1ObjectIdentifier>();
+
+    static final Map snovaOids = new HashMap<ASN1ObjectIdentifier, SnovaParameters>();
+    static final Map snovaParams = new HashMap<SnovaParameters, ASN1ObjectIdentifier>();
 
     static
     {
@@ -490,6 +494,96 @@ class Utils
         mayoParams.put(BCObjectIdentifiers.mayo2, MayoParameters.mayo2);
         mayoParams.put(BCObjectIdentifiers.mayo3, MayoParameters.mayo3);
         mayoParams.put(BCObjectIdentifiers.mayo5, MayoParameters.mayo5);
+
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SSK, BCObjectIdentifiers.snova_24_5_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_ESK, BCObjectIdentifiers.snova_24_5_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SHAKE_SSK, BCObjectIdentifiers.snova_24_5_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SHAKE_ESK, BCObjectIdentifiers.snova_24_5_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SSK, BCObjectIdentifiers.snova_24_5_5_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_ESK, BCObjectIdentifiers.snova_24_5_5_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SHAKE_SSK, BCObjectIdentifiers.snova_24_5_5_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SHAKE_ESK, BCObjectIdentifiers.snova_24_5_5_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SSK, BCObjectIdentifiers.snova_25_8_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_ESK, BCObjectIdentifiers.snova_25_8_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SHAKE_SSK, BCObjectIdentifiers.snova_25_8_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SHAKE_ESK, BCObjectIdentifiers.snova_25_8_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SSK, BCObjectIdentifiers.snova_29_6_5_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_ESK, BCObjectIdentifiers.snova_29_6_5_esk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SHAKE_SSK, BCObjectIdentifiers.snova_29_6_5_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SHAKE_ESK, BCObjectIdentifiers.snova_29_6_5_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SSK, BCObjectIdentifiers.snova_37_8_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_ESK, BCObjectIdentifiers.snova_37_8_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SHAKE_SSK, BCObjectIdentifiers.snova_37_8_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SHAKE_ESK, BCObjectIdentifiers.snova_37_8_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SSK, BCObjectIdentifiers.snova_37_17_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_ESK, BCObjectIdentifiers.snova_37_17_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SHAKE_SSK, BCObjectIdentifiers.snova_37_17_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SHAKE_ESK, BCObjectIdentifiers.snova_37_17_2_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SSK, BCObjectIdentifiers.snova_49_11_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_ESK, BCObjectIdentifiers.snova_49_11_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SHAKE_SSK, BCObjectIdentifiers.snova_49_11_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SHAKE_ESK, BCObjectIdentifiers.snova_49_11_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SSK, BCObjectIdentifiers.snova_56_25_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_ESK, BCObjectIdentifiers.snova_56_25_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SHAKE_SSK, BCObjectIdentifiers.snova_56_25_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SHAKE_ESK, BCObjectIdentifiers.snova_56_25_2_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SSK, BCObjectIdentifiers.snova_60_10_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_ESK, BCObjectIdentifiers.snova_60_10_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SHAKE_SSK, BCObjectIdentifiers.snova_60_10_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SHAKE_ESK, BCObjectIdentifiers.snova_60_10_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SSK, BCObjectIdentifiers.snova_66_15_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_ESK, BCObjectIdentifiers.snova_66_15_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SHAKE_SSK, BCObjectIdentifiers.snova_66_15_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SHAKE_ESK, BCObjectIdentifiers.snova_66_15_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SSK, BCObjectIdentifiers.snova_75_33_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_ESK, BCObjectIdentifiers.snova_75_33_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SHAKE_SSK, BCObjectIdentifiers.snova_75_33_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SHAKE_ESK, BCObjectIdentifiers.snova_75_33_2_shake_esk);
+
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_ssk, SnovaParameters.SNOVA_24_5_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_esk, SnovaParameters.SNOVA_24_5_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_shake_ssk, SnovaParameters.SNOVA_24_5_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_shake_esk, SnovaParameters.SNOVA_24_5_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_ssk, SnovaParameters.SNOVA_24_5_5_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_esk, SnovaParameters.SNOVA_24_5_5_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_shake_ssk, SnovaParameters.SNOVA_24_5_5_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_shake_esk, SnovaParameters.SNOVA_24_5_5_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_ssk, SnovaParameters.SNOVA_25_8_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_esk, SnovaParameters.SNOVA_25_8_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_shake_ssk, SnovaParameters.SNOVA_25_8_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_shake_esk, SnovaParameters.SNOVA_25_8_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_ssk, SnovaParameters.SNOVA_29_6_5_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_esk, SnovaParameters.SNOVA_29_6_5_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_shake_ssk, SnovaParameters.SNOVA_29_6_5_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_shake_esk, SnovaParameters.SNOVA_29_6_5_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_ssk, SnovaParameters.SNOVA_37_8_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_esk, SnovaParameters.SNOVA_37_8_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_shake_ssk, SnovaParameters.SNOVA_37_8_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_shake_esk, SnovaParameters.SNOVA_37_8_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_ssk, SnovaParameters.SNOVA_37_17_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_esk, SnovaParameters.SNOVA_37_17_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_shake_ssk, SnovaParameters.SNOVA_37_17_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_shake_esk, SnovaParameters.SNOVA_37_17_2_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_ssk, SnovaParameters.SNOVA_49_11_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_esk, SnovaParameters.SNOVA_49_11_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_shake_ssk, SnovaParameters.SNOVA_49_11_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_shake_esk, SnovaParameters.SNOVA_49_11_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_ssk, SnovaParameters.SNOVA_56_25_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_esk, SnovaParameters.SNOVA_56_25_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_shake_ssk, SnovaParameters.SNOVA_56_25_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_shake_esk, SnovaParameters.SNOVA_56_25_2_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_ssk, SnovaParameters.SNOVA_60_10_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_esk, SnovaParameters.SNOVA_60_10_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_shake_ssk, SnovaParameters.SNOVA_60_10_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_shake_esk, SnovaParameters.SNOVA_60_10_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_ssk, SnovaParameters.SNOVA_66_15_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_esk, SnovaParameters.SNOVA_66_15_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_shake_ssk, SnovaParameters.SNOVA_66_15_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_shake_esk, SnovaParameters.SNOVA_66_15_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_ssk, SnovaParameters.SNOVA_75_33_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_esk, SnovaParameters.SNOVA_75_33_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
     }
 
     static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
@@ -810,6 +904,16 @@ class Utils
     static MayoParameters mayoParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (MayoParameters)mayoParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier snovaOidLookup(SnovaParameters params)
+    {
+        return (ASN1ObjectIdentifier)snovaOids.get(params);
+    }
+
+    static SnovaParameters snovaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SnovaParameters)snovaParams.get(oid);
     }
 
     private static boolean isRaw(byte[] data)
