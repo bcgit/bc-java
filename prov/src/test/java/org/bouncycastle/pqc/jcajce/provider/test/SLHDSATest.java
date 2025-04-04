@@ -151,14 +151,14 @@ public class SLHDSATest
             NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256,
             NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
         };
-        
-        for (int i = 0; i != 1; i++)
+
+        for (int i = 0; i != names.length; i++)
         {
             KeyPairGenerator kpGen = KeyPairGenerator.getInstance(names[i]);
             KeyPair kp = kpGen.generateKeyPair();
-             System.err.println(names[i]);
+
             tryKeyFact(KeyFactory.getInstance(names[i], "BC"), kp, kp44, "2.16.840.1.101.3.4.3.17");
-           // tryKeyFact(KeyFactory.getInstance(oids[i].toString(), "BC"), kp, kp44, "2.16.840.1.101.3.4.3.17");
+            tryKeyFact(KeyFactory.getInstance(oids[i].toString(), "BC"), kp, kp44, "2.16.840.1.101.3.4.3.17");
         }
     }
 
