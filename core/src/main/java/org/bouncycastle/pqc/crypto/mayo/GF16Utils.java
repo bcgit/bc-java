@@ -209,19 +209,6 @@ class GF16Utils
     }
 
     /**
-     * Computes the multiplicative inverse in GF(16) for a GF(16) element.
-     */
-    static byte inverseF(int a)
-    {
-        // In GF(16), the inverse can be computed via exponentiation.
-        int a2 = GF16.mul(a, a);
-        int a4 = GF16.mul(a2, a2);
-        int a8 = GF16.mul(a4, a4);
-        int a6 = GF16.mul(a2, a4);
-        return (byte)GF16.mul(a8, a6);
-    }
-
-    /**
      * Performs a GF(16) carryless multiplication of a nibble (lower 4 bits of a)
      * with a 64-bit word b, then reduces modulo the polynomial x⁴ + x + 1 on each byte.
      *
