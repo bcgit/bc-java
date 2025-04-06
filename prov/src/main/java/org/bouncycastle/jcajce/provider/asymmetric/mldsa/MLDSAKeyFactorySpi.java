@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -54,9 +53,9 @@ public class MLDSAKeyFactorySpi
         this.isHashOnly = false;
     }
 
-    public MLDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid, ASN1ObjectIdentifier seedOid)
+    public MLDSAKeyFactorySpi(ASN1ObjectIdentifier keyOid)
     {
-        super(setOf(keyOid, seedOid));
+        super(keyOid);
 
         this.isHashOnly = (keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512)
             || keyOid.equals(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512)
@@ -227,7 +226,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA44()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_44, BCObjectIdentifiers.id_id_alg_ml_dsa_44_seed);
+            super(NISTObjectIdentifiers.id_ml_dsa_44);
         }
     }
 
@@ -236,7 +235,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA65()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_65, BCObjectIdentifiers.id_id_alg_ml_dsa_65_seed);
+            super(NISTObjectIdentifiers.id_ml_dsa_65);
         }
     }
 
@@ -245,7 +244,7 @@ public class MLDSAKeyFactorySpi
     {
         public MLDSA87()
         {
-            super(NISTObjectIdentifiers.id_ml_dsa_87, BCObjectIdentifiers.id_id_alg_ml_dsa_87_seed);
+            super(NISTObjectIdentifiers.id_ml_dsa_87);
         }
     }
 
@@ -263,7 +262,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA44()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_44_seed);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
         }
     }
 
@@ -272,7 +271,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA65()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_65_seed);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
         }
     }
 
@@ -281,7 +280,7 @@ public class MLDSAKeyFactorySpi
     {
         public HashMLDSA87()
         {
-            super(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, BCObjectIdentifiers.id_id_alg_ml_dsa_87_seed);
+            super(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
         }
     }
 }
