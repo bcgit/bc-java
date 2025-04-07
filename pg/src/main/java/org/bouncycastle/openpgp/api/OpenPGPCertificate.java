@@ -2889,6 +2889,38 @@ public class OpenPGPCertificate
         }
 
         /**
+         * Return the first revocation signature in the chain, or null if the chain does not contain any revocations.
+         *
+         * @return first revocation signature
+         */
+        public OpenPGPComponentSignature getRevocation()
+        {
+            for (OpenPGPComponentSignature signature : getSignatures())
+            {
+                if (signature.isRevocation())
+                {
+                    return signature;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Return a List of all signatures in the chain.
+         *
+         * @return list of signatures
+         */
+        public List<OpenPGPComponentSignature> getSignatures()
+        {
+            List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+            for (Link link : chainLinks)
+            {
+                signatures.add(link.getSignature());
+            }
+            return signatures;
+        }
+
+        /**
          * Return an NEW instance of the {@link OpenPGPSignatureChain} with the new link appended.
          *
          * @param sig signature
