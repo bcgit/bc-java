@@ -202,73 +202,61 @@ public interface BCObjectIdentifiers
 
     ASN1ObjectIdentifier sphincsPlus_interop = new ASN1ObjectIdentifier("1.3.9999.6");
 
+    /** 1.3.9999.6.4.13 OQS_OID_SPHINCSSHA2128FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_128f = new ASN1ObjectIdentifier("1.3.9999.6.4.13");
+    /** 1.3.9999.6.4.16 OQS_OID_SPHINCSSHA2128SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_128s = new ASN1ObjectIdentifier("1.3.9999.6.4.16");
+    /** 1.3.9999.6.5.10 OQS_OID_SPHINCSSHA2192FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_192f = new ASN1ObjectIdentifier("1.3.9999.6.5.10");
+    /** 1.3.9999.6.5.12 OQS_OID_SPHINCSSHA2192SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_192s = new ASN1ObjectIdentifier("1.3.9999.6.5.12");
+    /** 1.3.9999.6.6.10 OQS_OID_SPHINCSSHA2256FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_256f = new ASN1ObjectIdentifier("1.3.9999.6.6.10");
+    /** 1.3.9999.6.6.12 OQS_OID_SPHINCSSHA2256SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_sha2_256s = new ASN1ObjectIdentifier("1.3.9999.6.6.12");
 
+    /** 1.3.9999.6.7.13 OQS_OID_SPHINCSSHAKE128FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_128f = new ASN1ObjectIdentifier("1.3.9999.6.7.13");
+    /** 1.3.9999.6.7.16 OQS_OID_SPHINCSSHAKE128SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_128s = new ASN1ObjectIdentifier("1.3.9999.6.7.16");
+    /** 1.3.9999.6.8.10 OQS_OID_SPHINCSSHAKE192FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_192f = new ASN1ObjectIdentifier("1.3.9999.6.8.10");
+    /** 1.3.9999.6.8.12 OQS_OID_SPHINCSSHAKE192SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_192s = new ASN1ObjectIdentifier("1.3.9999.6.8.12");
+    /** 1.3.9999.6.9.10 OQS_OID_SPHINCSSHAKE256FSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_256f = new ASN1ObjectIdentifier("1.3.9999.6.9.10");
+    /** 1.3.9999.6.9.12 OQS_OID_SPHINCSSHAKE256SSIMPLE */
     ASN1ObjectIdentifier sphincsPlus_shake_256s = new ASN1ObjectIdentifier("1.3.9999.6.9.12");
-    /** 1.3.9999.6.4.13 OQS_OID_SPHINCSSHA2128FSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.13");
     /** 1.3.9999.6.4.14 OQS_OID_P256_SPHINCSSHA2128FSIMPLE */
     ASN1ObjectIdentifier p256_sphincs_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.14");
     /** 1.3.9999.6.4.15 OQS_OID_RSA3072_SPHINCSSHA2128FSIMPLE */
     ASN1ObjectIdentifier rsa_3072_sphincs_sha2_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.15");
-    /** 1.3.9999.6.4.16 OQS_OID_SPHINCSSHA2128SSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha_2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.16");
     /** 1.3.9999.6.4.17 OQS_OID_P256_SPHINCSSHA2128SSIMPLE */
     ASN1ObjectIdentifier p256_sphincs_sha2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.17");
     /** 1.3.9999.6.4.18 OQS_OID_RSA3072_SPHINCSSHA2128SSIMPLE */
     ASN1ObjectIdentifier rsa_3072_sphincs_sha2_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.4.18");
-    /** 1.3.9999.6.5.10 OQS_OID_SPHINCSSHA2192FSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha2_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.10");
     /** 1.3.9999.6.5.11 OQS_OID_P384_SPHINCSSHA2192FSIMPLE */
     ASN1ObjectIdentifier p384_sphincs_sha2_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.11");
-    /** 1.3.9999.6.5.12 OQS_OID_SPHINCSSHA2192SSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha2_192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.12");
     /** 1.3.9999.6.5.13 OQS_OID_P384_SPHINCSSHA2192SSIMPLE */
     ASN1ObjectIdentifier p384_sphincs_sha2192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.5.13");
-    /** 1.3.9999.6.6.10 OQS_OID_SPHINCSSHA2256FSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha2_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.10");
     /** 1.3.9999.6.6.11 OQS_OID_P521_SPHINCSSHA2256FSIMPLE */
     ASN1ObjectIdentifier p521_sphincs_sha2_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.11");
-    /** 1.3.9999.6.6.12 OQS_OID_SPHINCSSHA2256SSIMPLE */
-    ASN1ObjectIdentifier sphincs_sha2_256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.12");
     /** 1.3.9999.6.6.13 OQS_OID_P521_SPHINCSSHA2256SSIMPLE */
     ASN1ObjectIdentifier p521_sphincs_sha2_256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.6.13");
-    /** 1.3.9999.6.7.13 OQS_OID_SPHINCSSHAKE128FSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.13");
     /** 1.3.9999.6.7.14 OQS_OID_P256_SPHINCSSHAKE128FSIMPLE */
     ASN1ObjectIdentifier p256_sphincs_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.14");
     /** 1.3.9999.6.7.15 OQS_OID_RSA3072_SPHINCSSHAKE128FSIMPLE */
     ASN1ObjectIdentifier rsa_3072_sphincs_shake_128f_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.15");
-    /** 1.3.9999.6.7.16 OQS_OID_SPHINCSSHAKE128SSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.16");
     /** 1.3.9999.6.7.17 OQS_OID_P256_SPHINCSSHAKE128SSIMPLE */
     ASN1ObjectIdentifier p256_sphincs_shake_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.17");
     /** 1.3.9999.6.7.18 OQS_OID_RSA3072_SPHINCSSHAKE128SSIMPLE */
     ASN1ObjectIdentifier rsa_3072_sphincs_shake_128s_simple = new ASN1ObjectIdentifier("1.3.9999.6.7.18");
-    /** 1.3.9999.6.8.10 OQS_OID_SPHINCSSHAKE192FSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.10");
     /** 1.3.9999.6.8.11 OQS_OID_P384_SPHINCSSHAKE192FSIMPLE */
     ASN1ObjectIdentifier p384_sphincs_shake_192f_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.11");
-    /** 1.3.9999.6.8.12 OQS_OID_SPHINCSSHAKE192SSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.12");
     /** 1.3.9999.6.8.13 OQS_OID_P384_SPHINCSSHAKE192SSIMPLE */
     ASN1ObjectIdentifier p384_sphincs_shake_192s_simple = new ASN1ObjectIdentifier("1.3.9999.6.8.13");
-    /** 1.3.9999.6.9.10 OQS_OID_SPHINCSSHAKE256FSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.10");
     /** 1.3.9999.6.9.11 OQS_OID_P521_SPHINCSSHAKE256FSIMPLE */
     ASN1ObjectIdentifier p521_sphincs_shake256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.11");
-    /** 1.3.9999.6.9.12 OQS_OID_SPHINCSSHAKE256SSIMPLE */
-    ASN1ObjectIdentifier sphincs_shake_256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.12");
     /** 1.3.9999.6.9.13 OQS_OID_P521_SPHINCSSHAKE256SSIMPLE */
     ASN1ObjectIdentifier p521_sphincs_shake256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.13");
     /**
