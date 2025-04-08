@@ -2,15 +2,10 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 class FalconCodec
 {
-
-    FalconCodec()
-    {
-    }
-
     /* see inner.h */
-    int modq_encode(
-        byte[] srcout, int out, int max_out_len,
-        short[] srcx, int x, int logn)
+    static int modq_encode(
+        byte[] srcout, int max_out_len,
+        short[] srcx, int logn)
     {
         int n, out_len, u;
         int buf;
@@ -20,7 +15,7 @@ class FalconCodec
         n = 1 << logn;
         for (u = 0; u < n; u++)
         {
-            if ((srcx[x + u] & 0x0000ffff) >= 12289)
+            if ((srcx[u] & 0x0000ffff) >= 12289)
             {
                 return 0;
             }
@@ -34,12 +29,12 @@ class FalconCodec
         {
             return 0;
         }
-        buf = out;
+        buf = 1;
         acc = 0;
         acc_len = 0;
         for (u = 0; u < n; u++)
         {
-            acc = (acc << 14) | (srcx[x + u] & 0xffff);
+            acc = (acc << 14) | (srcx[u] & 0xffff);
             acc_len += 14;
             while (acc_len >= 8)
             {
@@ -55,9 +50,9 @@ class FalconCodec
     }
 
     /* see inner.h */
-    int modq_decode(
-        short[] srcx, int x, int logn,
-        byte[] srcin, int in, int max_in_len)
+    static int modq_decode(
+        short[] srcx, int logn,
+        byte[] srcin, int max_in_len)
     {
         int n, in_len, u;
         int buf;
@@ -70,7 +65,7 @@ class FalconCodec
         {
             return 0;
         }
-        buf = in;
+        buf = 0;
         acc = 0;
         acc_len = 0;
         u = 0;
@@ -88,7 +83,7 @@ class FalconCodec
                 {
                     return 0;
                 }
-                srcx[x + u] = (short)w;
+                srcx[u] = (short)w;
                 u++;
             }
         }
@@ -100,9 +95,116 @@ class FalconCodec
     }
 
     /* see inner.h */
-    int trim_i16_encode(
+//    int trim_i16_encode(
+//        byte[] srcout, int out, int max_out_len,
+//        short[] srcx, int x, int logn, int bits)
+//    {
+//        int n, u, out_len;
+//        int minv, maxv;
+//        int buf;
+//        int acc, mask;
+//        int acc_len;
+//
+//        n = 1 << logn;
+//        maxv = (1 << (bits - 1)) - 1;
+//        minv = -maxv;
+//        for (u = 0; u < n; u++)
+//        {
+//            if (srcx[x + u] < minv || srcx[x + u] > maxv)
+//            {
+//                return 0;
+//            }
+//        }
+//        out_len = ((n * bits) + 7) >> 3;
+//        if (srcout == null)
+//        {
+//            return out_len;
+//        }
+//        if (out_len > max_out_len)
+//        {
+//            return 0;
+//        }
+//        buf = out;
+//        acc = 0;
+//        acc_len = 0;
+//        mask = (1 << bits) - 1;
+//        for (u = 0; u < n; u++)
+//        {
+//            acc = (acc << bits) | ((srcx[x + u] & 0xfff) & mask);
+//            acc_len += bits;
+//            while (acc_len >= 8)
+//            {
+//                acc_len -= 8;
+//                srcout[buf++] = (byte)(acc >> acc_len);
+//            }
+//        }
+//        if (acc_len > 0)
+//        {
+//            srcout[buf++] = (byte)(acc << (8 - acc_len));
+//        }
+//        return out_len;
+//    }
+
+    /* see inner.h */
+//    int trim_i16_decode(
+//        short[] srcx, int x, int logn, int bits,
+//        byte[] srcin, int in, int max_in_len)
+//    {
+//        int n, in_len;
+//        int buf;
+//        int u;
+//        int acc, mask1, mask2;
+//        int acc_len;
+//
+//        n = 1 << logn;
+//        in_len = ((n * bits) + 7) >> 3;
+//        if (in_len > max_in_len)
+//        {
+//            return 0;
+//        }
+//        buf = in;
+//        u = 0;
+//        acc = 0;
+//        acc_len = 0;
+//        mask1 = (1 << bits) - 1;
+//        mask2 = 1 << (bits - 1);
+//        while (u < n)
+//        {
+//            acc = (acc << 8) | (srcin[buf++] & 0xff);
+//            acc_len += 8;
+//            while (acc_len >= bits && u < n)
+//            {
+//                int w;
+//
+//                acc_len -= bits;
+//                w = (acc >>> acc_len) & mask1;
+//                w |= -(w & mask2);
+//                if (w == -mask2)
+//                {
+//                    /*
+//                     * The -2^(bits-1) value is forbidden.
+//                     */
+//                    return 0;
+//                }
+//                w |= -(w & mask2);
+//                srcx[x + u] = (short)w;
+//                u++;
+//            }
+//        }
+//        if ((acc & ((1 << acc_len) - 1)) != 0)
+//        {
+//            /*
+//             * Extra bits in the last byte must be zero.
+//             */
+//            return 0;
+//        }
+//        return in_len;
+//    }
+
+    /* see inner.h */
+    static int trim_i8_encode(
         byte[] srcout, int out, int max_out_len,
-        short[] srcx, int x, int logn, int bits)
+        byte[] srcx, int logn, int bits)
     {
         int n, u, out_len;
         int minv, maxv;
@@ -115,7 +217,7 @@ class FalconCodec
         minv = -maxv;
         for (u = 0; u < n; u++)
         {
-            if (srcx[x + u] < minv || srcx[x + u] > maxv)
+            if (srcx[u] < minv || srcx[u] > maxv)
             {
                 return 0;
             }
@@ -135,114 +237,7 @@ class FalconCodec
         mask = (1 << bits) - 1;
         for (u = 0; u < n; u++)
         {
-            acc = (acc << bits) | ((srcx[x + u] & 0xfff) & mask);
-            acc_len += bits;
-            while (acc_len >= 8)
-            {
-                acc_len -= 8;
-                srcout[buf++] = (byte)(acc >> acc_len);
-            }
-        }
-        if (acc_len > 0)
-        {
-            srcout[buf++] = (byte)(acc << (8 - acc_len));
-        }
-        return out_len;
-    }
-
-    /* see inner.h */
-    int trim_i16_decode(
-        short[] srcx, int x, int logn, int bits,
-        byte[] srcin, int in, int max_in_len)
-    {
-        int n, in_len;
-        int buf;
-        int u;
-        int acc, mask1, mask2;
-        int acc_len;
-
-        n = 1 << logn;
-        in_len = ((n * bits) + 7) >> 3;
-        if (in_len > max_in_len)
-        {
-            return 0;
-        }
-        buf = in;
-        u = 0;
-        acc = 0;
-        acc_len = 0;
-        mask1 = (1 << bits) - 1;
-        mask2 = 1 << (bits - 1);
-        while (u < n)
-        {
-            acc = (acc << 8) | (srcin[buf++] & 0xff);
-            acc_len += 8;
-            while (acc_len >= bits && u < n)
-            {
-                int w;
-
-                acc_len -= bits;
-                w = (acc >>> acc_len) & mask1;
-                w |= -(w & mask2);
-                if (w == -mask2)
-                {
-                    /*
-                     * The -2^(bits-1) value is forbidden.
-                     */
-                    return 0;
-                }
-                w |= -(w & mask2);
-                srcx[x + u] = (short)w;
-                u++;
-            }
-        }
-        if ((acc & ((1 << acc_len) - 1)) != 0)
-        {
-            /*
-             * Extra bits in the last byte must be zero.
-             */
-            return 0;
-        }
-        return in_len;
-    }
-
-    /* see inner.h */
-    int trim_i8_encode(
-        byte[] srcout, int out, int max_out_len,
-        byte[] srcx, int x, int logn, int bits)
-    {
-        int n, u, out_len;
-        int minv, maxv;
-        int buf;
-        int acc, mask;
-        int acc_len;
-
-        n = 1 << logn;
-        maxv = (1 << (bits - 1)) - 1;
-        minv = -maxv;
-        for (u = 0; u < n; u++)
-        {
-            if (srcx[x + u] < minv || srcx[x + u] > maxv)
-            {
-                return 0;
-            }
-        }
-        out_len = ((n * bits) + 7) >> 3;
-        if (srcout == null)
-        {
-            return out_len;
-        }
-        if (out_len > max_out_len)
-        {
-            return 0;
-        }
-        buf = out;
-        acc = 0;
-        acc_len = 0;
-        mask = (1 << bits) - 1;
-        for (u = 0; u < n; u++)
-        {
-            acc = (acc << bits) | ((srcx[x + u] & 0xffff) & mask);
+            acc = (acc << bits) | ((srcx[u] & 0xffff) & mask);
             acc_len += bits;
             while (acc_len >= 8)
             {
@@ -252,14 +247,14 @@ class FalconCodec
         }
         if (acc_len > 0)
         {
-            srcout[buf++] = (byte)(acc << (8 - acc_len));
+            srcout[buf] = (byte)(acc << (8 - acc_len));
         }
         return out_len;
     }
 
     /* see inner.h */
-    int trim_i8_decode(
-        byte[] srcx, int x, int logn, int bits,
+    static int trim_i8_decode(
+        byte[] srcx, int logn, int bits,
         byte[] srcin, int in, int max_in_len)
     {
         int n, in_len;
@@ -298,7 +293,7 @@ class FalconCodec
                      */
                     return 0;
                 }
-                srcx[x + u] = (byte)w;
+                srcx[u] = (byte)w;
                 u++;
             }
         }
@@ -313,9 +308,9 @@ class FalconCodec
     }
 
     /* see inner.h */
-    int comp_encode(
-        byte[] srcout, int out, int max_out_len,
-        short[] srcx, int x, int logn)
+    static int comp_encode(
+        byte[] srcout, int max_out_len,
+        short[] srcx, int logn)
     {
         int buf;
         int n, u, v;
@@ -323,14 +318,14 @@ class FalconCodec
         int acc_len;
 
         n = 1 << logn;
-        buf = out;
+        buf = 0;
 
         /*
          * Make sure that all values are within the -2047..+2047 range.
          */
         for (u = 0; u < n; u++)
         {
-            if (srcx[x + u] < -2047 || srcx[x + u] > +2047)
+            if (srcx[u] < -2047 || srcx[u] > 2047)
             {
                 return 0;
             }
@@ -349,7 +344,7 @@ class FalconCodec
              * sign bit.
              */
             acc <<= 1;
-            t = srcx[x + u];
+            t = srcx[u];
             if (t < 0)
             {
                 t = -t;
@@ -419,9 +414,9 @@ class FalconCodec
     }
 
     /* see inner.h */
-    int comp_decode(
-        short[] srcx, int x, int logn,
-        byte[] srcin, int in, int max_in_len)
+    static int comp_decode(
+        short[] srcx, int logn,
+        byte[] srcin, int max_in_len)
     {
         int buf;
         int n, u, v;
@@ -429,7 +424,7 @@ class FalconCodec
         int acc_len;
 
         n = 1 << logn;
-        buf = in;
+        buf = 0;
         acc = 0;
         acc_len = 0;
         v = 0;
@@ -486,7 +481,7 @@ class FalconCodec
                 return 0;
             }
 
-            srcx[x + u] = (short)(s != 0 ? -m : m);
+            srcx[u] = (short)(s != 0 ? -m : m);
         }
 
         /*
@@ -532,7 +527,7 @@ class FalconCodec
      * of max_fg_bits[] and max_FG_bits[] shall be greater than 8.
      */
 
-    final byte[] max_fg_bits = {
+    static final byte[] max_fg_bits = {
         0, /* unused */
         8,
         8,
@@ -546,7 +541,7 @@ class FalconCodec
         5
     };
 
-    final byte[] max_FG_bits = {
+    static final byte[] max_FG_bits = {
         0, /* unused */
         8,
         8,
@@ -588,18 +583,18 @@ class FalconCodec
      * in -2047..2047, i.e. 12 bits.
      */
 
-    final byte[] max_sig_bits = {
-        0, /* unused */
-        10,
-        11,
-        11,
-        12,
-        12,
-        12,
-        12,
-        12,
-        12,
-        12
-    };
+//    final byte[] max_sig_bits = {
+//        0, /* unused */
+//        10,
+//        11,
+//        11,
+//        12,
+//        12,
+//        12,
+//        12,
+//        12,
+//        12,
+//        12
+//    };
 
 }
