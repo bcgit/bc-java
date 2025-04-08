@@ -39,6 +39,8 @@ public class KeyIdentifierTest
         testWildcardIdentifier();
         testIdentifierFromKeyId();
 
+        testIdentifierFromLongKeyId();
+
         testIdentifierFromV4Fingerprint();
         testIdentifierFromV6Fingerprint();
 
@@ -57,6 +59,9 @@ public class KeyIdentifierTest
                 wildcard.isWildcard());
 
         isEquals("*", wildcard.toString());
+
+        KeyIdentifier id = new KeyIdentifier(0L);
+        isTrue(id.isWildcard());
     }
 
     private void testIdentifierFromKeyId()
@@ -68,6 +73,17 @@ public class KeyIdentifierTest
                 identifier.getFingerprint() == null);
 
         isEquals("1234", identifier.toString());
+    }
+
+    private void testIdentifierFromLongKeyId()
+    {
+        isEquals(5145070902336167606L, new KeyIdentifier("4766F6B9D5F21EB6").getKeyId());
+        isEquals(5145070902336167606L, new KeyIdentifier("4766f6b9d5f21eb6").getKeyId());
+
+        isEquals(5507497285755629956L, new KeyIdentifier("4C6E8F99F6E47184").getKeyId());
+        isEquals(1745434690267590572L, new KeyIdentifier("1839079A640B2FAC").getKeyId());
+
+        isTrue(new KeyIdentifier("1839079A640B2FAC").getFingerprint() == null);
     }
 
     private void testIdentifierFromV4Fingerprint()
