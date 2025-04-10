@@ -7,7 +7,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -32,16 +31,6 @@ public abstract class BaseKeyFactorySpi
     {
         this.keyOid = keyOid;
         this.keyOids = null;
-    }
-
-    protected static Set setOf(ASN1ObjectIdentifier oid1, ASN1ObjectIdentifier oid2)
-    {
-        Set hashSet = new HashSet(2);
-
-        hashSet.add(oid1);
-        hashSet.add(oid2);
-
-        return hashSet;
     }
 
     public PrivateKey engineGeneratePrivate(KeySpec keySpec)
