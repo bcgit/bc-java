@@ -1,7 +1,6 @@
 package org.bouncycastle.cms.test;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,7 +31,6 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -985,10 +983,7 @@ public class NewSignedDataTest
 
         CMSSignedData s = gen.generate(msg, true);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
-        
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certs = s.getCertificates();
 
@@ -1041,10 +1036,7 @@ public class NewSignedDataTest
            
         s = gen.generate(msg, true);
 
-        bIn = new ByteArrayInputStream(s.getEncoded());
-        aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certs = s.getCertificates();
 
@@ -1851,6 +1843,20 @@ public class NewSignedDataTest
             expectedDigAlgId);
     }
 
+    public void testEd25519Detached()
+        throws Exception
+    {
+        /*
+         * RFC 8419 3.1. When signing with Ed25519, the digestAlgorithm MUST be id-sha512, and the algorithm
+         * parameters field MUST be absent.
+         * 
+         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+         */
+        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+
+        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, expectedDigAlgId);
+    }
+
     public void testEd448()
         throws Exception
     {
@@ -1867,16 +1873,20 @@ public class NewSignedDataTest
         encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
     }
 
-    public void testDetachedEd25519()
+    public void testEd448Detached()
         throws Exception
     {
-        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
-    }
+        /*
+         * RFC 8419 3.1. When signing with Ed448, the digestAlgorithm MUST be id-shake256-len, the algorithm
+         * parameters field MUST be present, and the parameter MUST contain 512, encoded as a positive integer
+         * value.
+         * 
+         * We confirm here that our implementation defaults to id-shake256-len/512 for the digest algorithm.
+         */
+        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len,
+            new ASN1Integer(512));
 
-    public void testEdDetached448()
-        throws Exception
-    {
-        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
+        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
     }
 
     public void testEd25519WithNoAttr()
@@ -2519,11 +2529,8 @@ public class NewSignedDataTest
         CMSSignedData s = gen.generate(msg, true);
 
         assertEquals(3, s.getVersion());
-        
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
 
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certStore = s.getCertificates();
 
@@ -2563,10 +2570,7 @@ public class NewSignedDataTest
 
         s = gen.generate(msg, true);
 
-        bIn = new ByteArrayInputStream(s.getEncoded());
-        aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certStore = s.getCertificates();
 
@@ -2641,7 +2645,7 @@ public class NewSignedDataTest
 
         CMSSignedData s = gen.generate(msg, true);
 
-        s = new CMSSignedData(ContentInfo.getInstance(s.getEncoded()));
+        s = new CMSSignedData(s.getEncoded());
 
         Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
 
@@ -2720,7 +2724,7 @@ public class NewSignedDataTest
 
         s = gen.generate(msg, true);
 
-        s = new CMSSignedData(ContentInfo.getInstance(s.getEncoded()));
+        s = new CMSSignedData(s.getEncoded());
 
         certStore = s.getCertificates();
         crlStore = s.getCRLs();
@@ -2776,12 +2780,9 @@ public class NewSignedDataTest
 
         gen.addCertificates(certs);
 
-        CMSSignedData s = gen.generate(msg, true);
+        CMSSignedData s = gen.generate(msg);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(msg, ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(msg, s.getEncoded());
 
         Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
 
@@ -2948,10 +2949,7 @@ public class NewSignedDataTest
 
         CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
-        
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         verifySignatures(s);
     }

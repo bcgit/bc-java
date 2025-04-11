@@ -615,23 +615,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            MLKEMParameters kyberParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            MLKEMParameters parameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             try
             {
                 ASN1Primitive obj = keyInfo.parsePublicKey();
                 KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
 
-                return new MLKEMPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
+                return new MLKEMPublicKeyParameters(parameters, kyberKey.getT(), kyberKey.getRho());
             }
             catch (Exception e)
             {
                 // we're a raw encoding
-                return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
+                return new MLKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
             }
         }
 
-        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters dilithiumParams, ASN1BitString publicKeyData)
+        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters parameters, ASN1BitString publicKeyData)
         {
             try
             {
@@ -640,7 +640,7 @@ public class PublicKeyFactory
                 {
                     ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
-                    return new MLKEMPublicKeyParameters(dilithiumParams,
+                    return new MLKEMPublicKeyParameters(parameters,
                         ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
                         ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
                 }
@@ -648,13 +648,13 @@ public class PublicKeyFactory
                 {
                     byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
 
-                    return new MLKEMPublicKeyParameters(dilithiumParams, encKey);
+                    return new MLKEMPublicKeyParameters(parameters, encKey);
                 }
             }
             catch (Exception e)
             {
                 // we're a raw encoding
-                return new MLKEMPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
+                return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
             }
         }
     }
@@ -737,7 +737,7 @@ public class PublicKeyFactory
             return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
         }
 
-        static MLDSAPublicKeyParameters getPublicKeyParams(MLDSAParameters dilithiumParams, ASN1BitString publicKeyData)
+        static MLDSAPublicKeyParameters getPublicKeyParams(MLDSAParameters mlDsaParams, ASN1BitString publicKeyData)
         {
             try
             {
@@ -746,7 +746,7 @@ public class PublicKeyFactory
                 {
                     ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
-                    return new MLDSAPublicKeyParameters(dilithiumParams,
+                    return new MLDSAPublicKeyParameters(mlDsaParams,
                         ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
                         ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
                 }
@@ -754,13 +754,13 @@ public class PublicKeyFactory
                 {
                     byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
 
-                    return new MLDSAPublicKeyParameters(dilithiumParams, encKey);
+                    return new MLDSAPublicKeyParameters(mlDsaParams, encKey);
                 }
             }
             catch (Exception e)
             {
                 // we're a raw encoding
-                return new MLDSAPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
+                return new MLDSAPublicKeyParameters(mlDsaParams, publicKeyData.getOctets());
             }
         }
     }
