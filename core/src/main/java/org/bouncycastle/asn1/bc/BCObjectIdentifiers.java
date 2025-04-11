@@ -438,4 +438,53 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mayo2 = mayo.branch("2");
     ASN1ObjectIdentifier mayo3 = mayo.branch("3");
     ASN1ObjectIdentifier mayo5 = mayo.branch("4");
+
+    /**
+     * Snova
+     */
+    ASN1ObjectIdentifier snova = bc_sig.branch("11");
+    ASN1ObjectIdentifier snova_24_5_4_ssk = snova.branch("1");
+    ASN1ObjectIdentifier snova_24_5_4_esk = snova.branch("2");
+    ASN1ObjectIdentifier snova_24_5_4_shake_ssk = snova.branch("3");
+    ASN1ObjectIdentifier snova_24_5_4_shake_esk = snova.branch("4");
+    ASN1ObjectIdentifier snova_24_5_5_ssk = snova.branch("5");
+    ASN1ObjectIdentifier snova_24_5_5_esk = snova.branch("6");
+    ASN1ObjectIdentifier snova_24_5_5_shake_ssk = snova.branch("7");
+    ASN1ObjectIdentifier snova_24_5_5_shake_esk = snova.branch("8");
+    ASN1ObjectIdentifier snova_25_8_3_ssk = snova.branch("9");
+    ASN1ObjectIdentifier snova_25_8_3_esk = snova.branch("10");
+    ASN1ObjectIdentifier snova_25_8_3_shake_ssk = snova.branch("11");
+    ASN1ObjectIdentifier snova_25_8_3_shake_esk = snova.branch("12");
+    ASN1ObjectIdentifier snova_29_6_5_ssk = snova.branch("13");
+    ASN1ObjectIdentifier snova_29_6_5_esk = snova.branch("14");
+    ASN1ObjectIdentifier snova_29_6_5_shake_ssk = snova.branch("15");
+    ASN1ObjectIdentifier snova_29_6_5_shake_esk = snova.branch("16");
+    ASN1ObjectIdentifier snova_37_8_4_ssk = snova.branch("17");
+    ASN1ObjectIdentifier snova_37_8_4_esk = snova.branch("18");
+    ASN1ObjectIdentifier snova_37_8_4_shake_ssk = snova.branch("19");
+    ASN1ObjectIdentifier snova_37_8_4_shake_esk = snova.branch("20");
+    ASN1ObjectIdentifier snova_37_17_2_ssk = snova.branch("21");
+    ASN1ObjectIdentifier snova_37_17_2_esk = snova.branch("22");
+    ASN1ObjectIdentifier snova_37_17_2_shake_ssk = snova.branch("23");
+    ASN1ObjectIdentifier snova_37_17_2_shake_esk = snova.branch("24");
+    ASN1ObjectIdentifier snova_49_11_3_ssk = snova.branch("25");
+    ASN1ObjectIdentifier snova_49_11_3_esk = snova.branch("26");
+    ASN1ObjectIdentifier snova_49_11_3_shake_ssk = snova.branch("27");
+    ASN1ObjectIdentifier snova_49_11_3_shake_esk = snova.branch("28");
+    ASN1ObjectIdentifier snova_56_25_2_ssk = snova.branch("29");
+    ASN1ObjectIdentifier snova_56_25_2_esk = snova.branch("30");
+    ASN1ObjectIdentifier snova_56_25_2_shake_ssk = snova.branch("31");
+    ASN1ObjectIdentifier snova_56_25_2_shake_esk = snova.branch("32");
+    ASN1ObjectIdentifier snova_60_10_4_ssk = snova.branch("33");
+    ASN1ObjectIdentifier snova_60_10_4_esk = snova.branch("34");
+    ASN1ObjectIdentifier snova_60_10_4_shake_ssk = snova.branch("35");
+    ASN1ObjectIdentifier snova_60_10_4_shake_esk = snova.branch("36");
+    ASN1ObjectIdentifier snova_66_15_3_ssk = snova.branch("37");
+    ASN1ObjectIdentifier snova_66_15_3_esk = snova.branch("38");
+    ASN1ObjectIdentifier snova_66_15_3_shake_ssk = snova.branch("39");
+    ASN1ObjectIdentifier snova_66_15_3_shake_esk = snova.branch("40");
+    ASN1ObjectIdentifier snova_75_33_2_ssk = snova.branch("41");
+    ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42");
+    ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
+    ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
 }
