@@ -32,7 +32,8 @@ public class MirathParameters
         17,                               // challenge2Bytes
         2,                                // hash2MaskBytes
         0x01,                             // hash2Mask
-        118                               // tOpen
+        118,                               // tOpen
+        true
     );
 
     public static final MirathParameters mirath_1a_short = new MirathParameters(
@@ -65,7 +66,8 @@ public class MirathParameters
         17,                              // challenge2Bytes
         1,                               // hash2MaskBytes
         0x7F,                            // hash2Mask
-        116                              // tOpen
+        116,                              // tOpen
+        true
     );
 
     public static final MirathParameters mirath_1b_fast = new MirathParameters(
@@ -98,7 +100,8 @@ public class MirathParameters
         17,                             // challenge2Bytes
         2,                              // hash2MaskBytes
         0x01,                           // hash2Mask
-        118                             // tOpen
+        118,                             // tOpen
+        false
     );
 
     public static final MirathParameters mirath_1b_short = new MirathParameters(
@@ -131,7 +134,8 @@ public class MirathParameters
         17,                            // challenge2Bytes
         1,                             // hash2MaskBytes
         0x7F,                          // hash2Mask
-        116                            // tOpen
+        116,                            // tOpen
+        false
     );
 
     public static final MirathParameters mirath_3a_fast = new MirathParameters(
@@ -164,7 +168,8 @@ public class MirathParameters
         26,                           // challenge2Bytes
         2,                            // hash2MaskBytes
         0x03,                         // hash2Mask
-        184                           // tOpen
+        184,                           // tOpen
+        true
     );
 
     public static final MirathParameters mirath_3a_short = new MirathParameters(
@@ -197,7 +202,8 @@ public class MirathParameters
         26,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x1f,                         // hash2Mask
-        174                           // tOpen
+        174,                           // tOpen
+        true
     );
 
     public static final MirathParameters mirath_3b_fast = new MirathParameters(
@@ -230,7 +236,8 @@ public class MirathParameters
         26,                           // challenge2Bytes
         2,                            // hash2MaskBytes
         0x03,                         // hash2Mask
-        184                           // tOpen
+        184,                           // tOpen
+        false
     );
 
     public static final MirathParameters mirath_3b_short = new MirathParameters(
@@ -263,7 +270,8 @@ public class MirathParameters
         26,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x1f,                         // hash2Mask
-        174                           // tOpen
+        174,                           // tOpen
+        false
     );
 
     public static final MirathParameters mirath_5a_fast = new MirathParameters(
@@ -296,7 +304,8 @@ public class MirathParameters
         36,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x0f,                         // hash2Mask
-        244                           // tOpen
+        244,                           // tOpen
+        true
     );
 
     public static final MirathParameters mirath_5a_short = new MirathParameters(
@@ -329,7 +338,8 @@ public class MirathParameters
         35,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x07,                         // hash2Mask
-        232                           // tOpen
+        232,                           // tOpen
+        true
     );
 
     public static final MirathParameters mirath_5b_fast = new MirathParameters(
@@ -362,7 +372,8 @@ public class MirathParameters
         36,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x0f,                         // hash2Mask
-        244                           // tOpen
+        244,                           // tOpen
+        false
     );
 
     public static final MirathParameters mirath_5b_short = new MirathParameters(
@@ -395,7 +406,8 @@ public class MirathParameters
         35,                           // challenge2Bytes
         1,                            // hash2MaskBytes
         0x07,                         // hash2Mask
-        232                           // tOpen
+        232,                           // tOpen
+        false
     );
 
     private final String name;
@@ -429,13 +441,15 @@ public class MirathParameters
     private final int hash2Mask;
     private final int tOpen;
 
+    private final boolean isA;
+
     private MirathParameters(String name, int securityLevel, int securityLevelBytes, int saltBytes,
                              int secretKeyBytes, int publicKeyBytes, int signatureBytes,
                              int q, int m, int k, int n, int r,
                              int n1, int n2, int n1Bits, int n2Bits, int n1Bytes, int n2Bytes,
                              int n1Mask, int n2Mask, int tau, int tau1, int tau2,
                              int rho, int mu, int treeLeaves,
-                             int challenge2Bytes, int hash2MaskBytes, int hash2Mask, int tOpen)
+                             int challenge2Bytes, int hash2MaskBytes, int hash2Mask, int tOpen, boolean isA)
     {
         this.name = name;
         this.securityLevel = securityLevel;
@@ -467,6 +481,7 @@ public class MirathParameters
         this.hash2MaskBytes = hash2MaskBytes;
         this.hash2Mask = hash2Mask;
         this.tOpen = tOpen;
+        this.isA = isA;
     }
 
     // Getters for all fields
@@ -618,5 +633,10 @@ public class MirathParameters
     public int getTOpen()
     {
         return tOpen;
+    }
+
+    boolean isA()
+    {
+        return isA;
     }
 }
