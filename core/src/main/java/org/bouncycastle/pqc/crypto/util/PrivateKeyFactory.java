@@ -240,24 +240,28 @@ public class PrivateKeyFactory
                 pubParams = PublicKeyFactory.MLKEMConverter.getPublicKeyParams(mlkemParams, keyInfo.getPublicKeyData());
             }
 
-            if (mlkemKey instanceof ASN1Sequence)
+            if (mlkemKey instanceof ASN1OctetString)
             {
-                ASN1Sequence keySeq = ASN1Sequence.getInstance(mlkemKey);
+                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
+                return new MLKEMPrivateKeyParameters(mlkemParams, ((ASN1OctetString)mlkemKey).getOctets(), pubParams);
+            }
+            else if (mlkemKey instanceof ASN1Sequence)
+            {
+                ASN1Sequence keySeq = (ASN1Sequence)mlkemKey;
+                byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
+                byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
 
-                MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(), pubParams);
-                if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets()))
+                // TODO This should only allow seed but is length-flexible
+                MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
+                if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), encoding))
                 {
-                    throw new IllegalStateException("seed/expanded-key mismatch");
+                    throw new IllegalArgumentException("inconsistent " + mlkemParams.getName() + " private key");
                 }
 
                 return mlkemPriv;
             }
-            else if (mlkemKey instanceof ASN1OctetString)
-            {
-                return new MLKEMPrivateKeyParameters(mlkemParams, ASN1OctetString.getInstance(mlkemKey).getOctets());
-            }
 
-            throw new IllegalArgumentException("unknown key format");
+            throw new IllegalArgumentException("invalid " + mlkemParams.getName() + " private key");
         }
         else if (algOID.on(BCObjectIdentifiers.pqc_kem_ntrulprime))
         {
@@ -286,37 +290,37 @@ public class PrivateKeyFactory
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {
-            ASN1Encodable keyObj = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
-            MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
+            ASN1Encodable mldsaKey = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
+            MLDSAParameters mldsaParams = Utils.mldsaParamsLookup(algOID);
 
             MLDSAPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
             {
-                pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+                pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(mldsaParams, keyInfo.getPublicKeyData());
             }
 
-            if (keyObj instanceof ASN1OctetString)
+            if (mldsaKey instanceof ASN1OctetString)
             {
-                byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
-
-                return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
+                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
+                return new MLDSAPrivateKeyParameters(mldsaParams, ((ASN1OctetString)mldsaKey).getOctets(), pubParams);
             }
-            else if (keyObj instanceof ASN1Sequence)
+            else if (mldsaKey instanceof ASN1Sequence)
             {
-                ASN1Sequence keySeq = ASN1Sequence.getInstance(keyObj);
+                ASN1Sequence keySeq = (ASN1Sequence)mldsaKey;
+                byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
+                byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
 
-                MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(), pubParams);
-                if (!Arrays.constantTimeAreEqual(mldsaPriv.getEncoded(), ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets()))
+                // TODO This should only allow seed but is length-flexible
+                MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(mldsaParams, seed, pubParams);
+                if (!Arrays.constantTimeAreEqual(mldsaPriv.getEncoded(), encoding))
                 {
-                    throw new IllegalStateException("seed/expanded-key mismatch");
+                    throw new IllegalArgumentException("inconsistent " + mldsaParams.getName() + " private key");
                 }
 
                 return mldsaPriv;
             }
-            else
-            {
-                throw new IOException("not supported");
-            }
+
+            throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key");
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
             || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
