@@ -1,12 +1,11 @@
 package org.bouncycastle.tsp;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.cmp.PKIFailureInfo;
 import org.bouncycastle.asn1.cmp.PKIFreeText;
@@ -22,18 +21,50 @@ import org.bouncycastle.util.Arrays;
  */
 public class TimeStampResponse
 {
-    TimeStampResp   resp;
-    TimeStampToken  timeStampToken;
+    private static TimeStampResp parseTimeStampResp(byte[] encoding) 
+        throws IOException, TSPException
+    {
+        try
+        {
+            return TimeStampResp.getInstance(encoding);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
+    }
+
+    private static TimeStampResp parseTimeStampResp(InputStream in) 
+        throws IOException, TSPException
+    {
+        try
+        {
+            return TimeStampResp.getInstance(new ASN1InputStream(in).readObject());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new TSPException("malformed timestamp response: " + e, e);
+        }
+    }
+
+    private final TimeStampResp resp;
+    private final TimeStampToken timeStampToken;
 
     public TimeStampResponse(TimeStampResp resp)
         throws TSPException, IOException
     {
         this.resp = resp;
-        
-        if (resp.getTimeStampToken() != null)
-        {
-            timeStampToken = new TimeStampToken(resp.getTimeStampToken());
-        }
+
+        ContentInfo timeStampToken = resp.getTimeStampToken();
+        this.timeStampToken = timeStampToken == null ? null : new TimeStampToken(timeStampToken);
     }
 
     /**
@@ -46,7 +77,7 @@ public class TimeStampResponse
     public TimeStampResponse(byte[] resp)
         throws TSPException, IOException
     {
-        this(new ByteArrayInputStream(resp));
+        this(parseTimeStampResp(resp));
     }
 
     /**
@@ -59,7 +90,7 @@ public class TimeStampResponse
     public TimeStampResponse(InputStream in)
         throws TSPException, IOException
     {
-        this(readTimeStampResp(in));
+        this(parseTimeStampResp(in));
     }
 
     TimeStampResponse(DLSequence dlSequence)
@@ -80,45 +111,25 @@ public class TimeStampResponse
         }
     }
 
-    private static TimeStampResp readTimeStampResp(
-        InputStream in) 
-        throws IOException, TSPException
-    {
-        try
-        {
-            return TimeStampResp.getInstance(new ASN1InputStream(in).readObject());
-        }
-        catch (IllegalArgumentException e)
-        {
-            throw new TSPException("malformed timestamp response: " + e, e);
-        }
-        catch (ClassCastException e)
-        {
-            throw new TSPException("malformed timestamp response: " + e, e);
-        }
-    }
-    
     public int getStatus()
     {
-        return resp.getStatus().getStatus().intValue();
+        return resp.getStatus().getStatusObject().intValueExact();
     }
 
     public String getStatusString()
     {
-        if (resp.getStatus().getStatusString() != null)
-        {
-            StringBuffer statusStringBuf = new StringBuffer();
-            PKIFreeText text = resp.getStatus().getStatusString();
-            for (int i = 0; i != text.size(); i++)
-            {
-                statusStringBuf.append(text.getStringAtUTF8(i).getString());
-            }
-            return statusStringBuf.toString();
-        }
-        else
+        if (resp.getStatus().getStatusString() == null)
         {
             return null;
         }
+
+        StringBuffer statusStringBuf = new StringBuffer();
+        PKIFreeText text = resp.getStatus().getStatusString();
+        for (int i = 0; i != text.size(); i++)
+        {
+            statusStringBuf.append(text.getStringAtUTF8(i).getString());
+        }
+        return statusStringBuf.toString();
     }
 
     public PKIFailureInfo getFailInfo()
@@ -152,7 +163,7 @@ public class TimeStampResponse
         
         if (tok != null)
         {
-            TimeStampTokenInfo  tstInfo = tok.getTimeStampInfo();
+            TimeStampTokenInfo tstInfo = tok.getTimeStampInfo();
             
             if (request.getNonce() != null && !request.getNonce().equals(tstInfo.getNonce()))
             {
@@ -163,15 +174,16 @@ public class TimeStampResponse
             {
                 throw new TSPValidationException("time stamp token found in failed request.");
             }
-            
-            if (!Arrays.constantTimeAreEqual(request.getMessageImprintDigest(), tstInfo.getMessageImprintDigest()))
-            {
-                throw new TSPValidationException("response for different message imprint digest.");
-            }
-            
+
+            // TODO Should be (absent-parameters-flexible) equality of the whole AlgorithmIdentifier?
             if (!tstInfo.getMessageImprintAlgOID().equals(request.getMessageImprintAlgOID()))
             {
                 throw new TSPValidationException("response for different message imprint algorithm.");
+            }
+
+            if (!Arrays.constantTimeAreEqual(request.getMessageImprintDigest(), tstInfo.getMessageImprintDigest()))
+            {
+                throw new TSPValidationException("response for different message imprint digest.");
             }
 
             Attribute scV1 = tok.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate);
@@ -216,16 +228,13 @@ public class TimeStampResponse
      */
     public byte[] getEncoded(String encoding) throws IOException
     {
+        ASN1Object asn1Object = resp;
         if (ASN1Encoding.DL.equals(encoding))
         {
-            if (timeStampToken == null)
-            {
-                return new DLSequence(resp.getStatus()).getEncoded(encoding);
-            }
-
-            return new DLSequence(new ASN1Encodable[] { resp.getStatus(),
-                timeStampToken.toCMSSignedData().toASN1Structure() }).getEncoded(encoding);
+            asn1Object = timeStampToken == null
+                ? new DLSequence(resp.getStatus())
+                : new DLSequence(resp.getStatus(), timeStampToken.toCMSSignedData().toASN1Structure());
         }
-        return resp.getEncoded(encoding);
+        return asn1Object.getEncoded(encoding);
     }
 }
