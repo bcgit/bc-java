@@ -195,7 +195,7 @@ public class TimeStampToken
             cOut.write(certHolder.getEncoded());
             cOut.close();
 
-            if (!Arrays.constantTimeAreEqual(certID.getCertHash(), calc.getDigest()))
+            if (!Arrays.constantTimeAreEqual(certID.getCertHashObject().getOctets(), calc.getDigest()))
             {
                 throw new TSPValidationException("certificate hash does not match certID hash.");
             }

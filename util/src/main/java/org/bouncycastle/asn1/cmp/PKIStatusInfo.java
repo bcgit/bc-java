@@ -110,6 +110,11 @@ public class PKIStatusInfo
         return status.getValue();
     }
 
+    public ASN1Integer getStatusObject()
+    {
+        return status;
+    }
+
     public PKIFreeText getStatusString()
     {
         return statusString;

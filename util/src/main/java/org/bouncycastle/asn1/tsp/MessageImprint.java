@@ -62,12 +62,17 @@ public class MessageImprint
     {
         return hashAlgorithm;
     }
-    
+
     public byte[] getHashedMessage()
     {
         return Arrays.clone(hashedMessage);
     }
-    
+
+    public int getHashedMessageLength()
+    {
+        return hashedMessage.length;
+    }
+
     /**
      * <pre>
      *    MessageImprint ::= SEQUENCE  {
