@@ -263,7 +263,7 @@ class MirathEngine
 
         if (offPtr == 8)
         {  // Start new byte
-            result[ptr] = 0;
+            //result[ptr] = 0;
             offPtr = 0;
         }
 
@@ -307,73 +307,84 @@ class MirathEngine
     private void horizontalConcat(byte[] result, byte[] matrix1, byte[] matrix2,
                                   int nRows, int nCols1, int nCols2)
     {
-        int bytesPerCol = mirathMatrixFfBytesPerColumn(nRows);
-        int onCol = 8 - ((8 * bytesPerCol) - ((isA ? 4 : 1) * nRows));
+//        int bytesPerCol = mirathMatrixFfBytesPerColumn(nRows);
+//        int onCol = 8 - ((8 * bytesPerCol) - ((isA ? 4 : 1) * nRows));
+//
+//        // Use arrays to simulate ref parameters
+//        int[] ptrHolder = new int[1];
+//        int[] offPtrHolder = new int[]{8};  //8// Start with empty byte
+//
+//        // Process matrix1
+//        processColumns(result, matrix1, nCols1, bytesPerCol, nRows, ptrHolder, offPtrHolder, onCol);
+//
+//        // Process matrix2
+//        processColumns(result, matrix2, nCols2, bytesPerCol, nRows, ptrHolder, offPtrHolder, onCol);
+        int ptrIndex = 0;
+        int offPtr = 8;
 
-        // Use arrays to simulate ref parameters
-        int[] ptrHolder = new int[1];
-        int[] offPtrHolder = new int[]{8};  //8// Start with empty byte
+        int nRowsBytes = mirathMatrixFfBytesPerColumn(nRows);
+        int onCol = 8 - ((8 * nRowsBytes) - nRows);
+
+        int colIndex;
 
         // Process matrix1
-        processColumns(result, matrix1, nCols1, bytesPerCol, nRows, ptrHolder, offPtrHolder, onCol);
+        colIndex = 0;
+        for (int j = 0; j < nCols1; j++)
+        {
+            result[ptrIndex] |= (matrix1[colIndex] << (8 - offPtr));
+
+            for (int i = 0; i < nRowsBytes - 1; i++)
+            {
+                ptrIndex++;
+                result[ptrIndex] = (byte)((matrix1[colIndex] & 0xFF) >>> offPtr);
+                colIndex++;
+                result[ptrIndex] |= (matrix1[colIndex] << (8 - offPtr));
+            }
+
+            if (offPtr <= onCol)
+            {
+                ptrIndex++;
+                result[ptrIndex] = (byte)((matrix1[colIndex] & 0xFF) >>> offPtr);
+            }
+            colIndex++;
+            offPtr = (8 - ((onCol - offPtr) % 8));
+            if (offPtr > 8)
+            {
+                offPtr -= 8;
+            }
+        }
 
         // Process matrix2
-        processColumns(result, matrix2, nCols2, bytesPerCol, nRows, ptrHolder, offPtrHolder, onCol);
-    }
-
-    private void processColumns(byte[] result, byte[] matrix, int colCount,
-                                int bytesPerCol, int nRows, int[] ptrHolder,
-                                int[] offPtrHolder, int onCol)
-    {
-        for (int j = 0; j < colCount; j++)
+        colIndex = 0;
+        for (int j = 0; j < nCols2; j++)
         {
-            int colStart = j * bytesPerCol;
-            byte[] column = Arrays.copyOfRange(matrix, colStart, colStart + bytesPerCol);
+            result[ptrIndex] |= (matrix2[colIndex] << (8 - offPtr));
 
-            // Convert column to bit array (1 bit per element)
-            boolean[] bits = new boolean[nRows];
-            for (int i = 0; i < nRows; i++)
+            for (int i = 0; i < nRowsBytes - 1; i++)
             {
-                int byteIdx = i / 8;
-                int bitIdx = 7 - (i % 8);  // MSB first
-                bits[i] = ((column[byteIdx] >> bitIdx) & 1) != 0;
+                ptrIndex++;
+                result[ptrIndex] = (byte)((matrix2[colIndex] & 0xFF) >>> offPtr);
+                colIndex++;
+                result[ptrIndex] |= (matrix2[colIndex] << (8 - offPtr));
             }
 
-            // Store bits in result with proper bit packing
-            int ptr = ptrHolder[0];
-            int offPtr = offPtrHolder[0];
-
-            for (boolean bit : bits)
+            if (offPtr <= onCol)
             {
-                if (offPtr == 8)
+                ptrIndex++;
+                if (offPtr < onCol)
                 {
-                    ptr++;
-                    offPtr = 0;
-                    if (ptr >= result.length)
-                    {
-                        result = Arrays.copyOf(result, result.length + 1);
-                    }
-                    result[ptr] = 0;
+                    result[ptrIndex] = (byte)((matrix2[colIndex] & 0xFF) >>> offPtr);
                 }
-
-                if (bit)
-                {
-                    result[ptr] |= (1 << (7 - offPtr));
-                }
-                offPtr++;
             }
-
-            // Handle column alignment
-            if (offPtr > onCol)
+            colIndex++;
+            offPtr = (8 - ((onCol - offPtr) % 8));
+            if (offPtr > 8)
             {
-                ptr++;
-                offPtr = 8 - (onCol - (offPtr - 8));
+                offPtr -= 8;
             }
-
-            ptrHolder[0] = ptr;
-            offPtrHolder[0] = offPtr;
         }
     }
+
 
 //    private void processColumns(byte[] result, byte[] matrix, int colCount,
 //                                int bytesPerCol, int nRows, int[] ptrHolder,
@@ -382,23 +393,77 @@ class MirathEngine
 //        for (int j = 0; j < colCount; j++)
 //        {
 //            int colStart = j * bytesPerCol;
-//            for (int i = 0; i < bytesPerCol; i++)
+//            byte[] column = Arrays.copyOfRange(matrix, colStart, colStart + bytesPerCol);
+//
+//            // Convert column to bit array (1 bit per element)
+//            boolean[] bits = new boolean[nRows];
+//            for (int i = 0; i < nRows; i++)
 //            {
-//                byte current = matrix[colStart + i];
-//
-//                // Process upper nibble
-//                byte nibble = (byte)((current & 0xF0) >>> 4);
-//                processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
-//
-//                // Process lower nibble if needed
-//                if (i < bytesPerCol - 1 || (nRows % 2 == 0))
-//                {
-//                    nibble = (byte)(current & 0x0F);
-//                    processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
-//                }
+//                int byteIdx = i / 8;
+//                int bitIdx = 7 - (i % 8);  // MSB first
+//                bits[i] = ((column[byteIdx] >> bitIdx) & 1) != 0;
 //            }
+//
+//            // Store bits in result with proper bit packing
+//            int ptr = ptrHolder[0];
+//            int offPtr = offPtrHolder[0];
+//
+//            for (boolean bit : bits)
+//            {
+//                if (offPtr == 8)
+//                {
+//                    ptr++;
+//                    offPtr = 0;
+//                    if (ptr >= result.length)
+//                    {
+//                        result = Arrays.copyOf(result, result.length + 1);
+//                    }
+//                    result[ptr] = 0;
+//                }
+//
+//                if (bit)
+//                {
+//                    result[ptr] |= (1 << (7 - offPtr));
+//                }
+//                offPtr++;
+//            }
+//
+//            // Handle column alignment
+//            if (offPtr > onCol)
+//            {
+//                ptr++;
+//                offPtr = 8 - (onCol - (offPtr - 8));
+//            }
+//
+//            ptrHolder[0] = ptr;
+//            offPtrHolder[0] = offPtr;
 //        }
 //    }
+
+    private void processColumns(byte[] result, byte[] matrix, int colCount,
+                                int bytesPerCol, int nRows, int[] ptrHolder,
+                                int[] offPtrHolder, int onCol)
+    {
+        for (int j = 0; j < colCount; j++)
+        {
+            int colStart = j * bytesPerCol;
+            for (int i = 0; i < bytesPerCol; i++)
+            {
+                byte current = matrix[colStart + i];
+
+                // Process upper nibble
+                byte nibble = (byte)((current & 0xF0) >>> 4);
+                processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
+
+                // Process lower nibble if needed
+                if (i < bytesPerCol - 1 || (nRows % 2 == 0))
+                {
+                    nibble = (byte)(current & 0x0F);
+                    processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
+                }
+            }
+        }
+    }
 
     private static void vectorAdd(byte[] result, byte[] a, byte[] b)
     {
@@ -437,15 +502,34 @@ class MirathEngine
 
     private void mirathMatrixSetToFF(byte[] matrix, int nRows, int nCols)
     {
-        if ((nRows & (isA ? 1 : 7)) != 0)
+        if (isA)
         {
-            int matrixHeight = mirathMatrixFfBytesPerColumn(nRows);
-            int matrixHeightX = matrixHeight - 1;
-
-            for (int i = 0; i < nCols; i++)
+            if ((nRows & 1) != 0)
             {
-                int index = i * matrixHeight + matrixHeightX;
-                matrix[index] &= 0x0F; // Clear upper 4 bits
+                int matrixHeight = mirathMatrixFfBytesPerColumn(nRows);
+                int matrixHeightX = matrixHeight - 1;
+
+                for (int i = 0; i < nCols; i++)
+                {
+                    int index = i * matrixHeight + matrixHeightX;
+                    matrix[index] &= 0x0F; // Clear upper 4 bits
+                }
+            }
+        }
+        else
+        {
+            if ((nRows & 7) != 0)
+            {
+                int matrixHeight = mirathMatrixFfBytesPerColumn(nRows);
+                int matrixHeightX = matrixHeight - 1;
+
+                byte mask = (byte)(0xff >>> (8 - (nRows % 8)));
+
+                for (int i = 0; i < nCols; i++)
+                {
+                    int index = i * matrixHeight + matrixHeightX;
+                    matrix[index] &= mask; // Clear upper 4 bits
+                }
             }
         }
     }

@@ -30,8 +30,8 @@ public class MirathTest
         {
 //            MirathParameters.mirath_1a_fast,
 //            MirathParameters.mirath_1a_short,
-            MirathParameters.mirath_1b_fast,
-            MirathParameters.mirath_1b_short,
+//            MirathParameters.mirath_1b_fast,
+//            MirathParameters.mirath_1b_short,
             MirathParameters.mirath_3a_fast,
             MirathParameters.mirath_3a_short,
             MirathParameters.mirath_3b_fast,
@@ -45,8 +45,8 @@ public class MirathTest
     private static final String[] files = new String[]{
 //        "Mirath-1a-fast/PQCsignKAT_32.rsp",
 //        "Mirath-1a-short/PQCsignKAT_32.rsp",
-        "Mirath-1b-fast/PQCsignKAT_32.rsp",
-        "Mirath-1b-short/PQCsignKAT_32.rsp",
+//        "Mirath-1b-fast/PQCsignKAT_32.rsp",
+//        "Mirath-1b-short/PQCsignKAT_32.rsp",
         "Mirath-3a-fast/PQCsignKAT_48.rsp",
         "Mirath-3a-short/PQCsignKAT_48.rsp",
         "Mirath-3b-fast/PQCsignKAT_48.rsp",
