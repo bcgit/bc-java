@@ -937,6 +937,19 @@ abstract class JsseUtils
         return s;
     }
 
+    static String stripTrailingDot(String s)
+    {
+        if (s != null && s.endsWith("."))
+        {
+            int sLast = s.length() - 1;
+            if (sLast >= 0 && s.charAt(sLast) == '.')
+            {
+                return s.substring(0, sLast);
+            }
+        }
+        return s;
+    }
+
     static boolean useCompatibilityMode()
     {
         return provTlsUseCompatibilityMode;
