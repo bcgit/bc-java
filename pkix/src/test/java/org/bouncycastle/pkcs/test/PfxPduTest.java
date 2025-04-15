@@ -1158,6 +1158,10 @@ public class PfxPduTest
         assertTrue(pfx.hasMac());
         assertTrue(pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), passwd));
         assertFalse(pfx.isMacValid(new BcPKCS12PBMac1CalculatorBuilderProvider(), "not right".toCharArray()));
+
+        KeyStore pkcs12 = KeyStore.getInstance("PKCS12", "BC");
+
+        pkcs12.load(new ByteArrayInputStream(pfx.getEncoded()), passwd);
     }
 
     public void testPfxPduPBMac1PBKdf2()

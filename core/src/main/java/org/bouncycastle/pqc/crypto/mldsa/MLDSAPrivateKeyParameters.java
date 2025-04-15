@@ -113,10 +113,28 @@ public class MLDSAPrivateKeyParameters
 
     public MLDSAPrivateKeyParameters getParametersWithFormat(int format)
     {
-        if (this.seed == null && format == SEED_ONLY)
+        if (this.prefFormat == format)
         {
-            throw new IllegalArgumentException("no seed available");
+            return this;
         }
+
+        switch (format)
+        {
+        case BOTH:
+        case SEED_ONLY:
+        {
+            if (this.seed == null)
+            {
+                throw new IllegalStateException("no seed available");
+            }
+            break;
+        }
+        case EXPANDED_KEY:
+            break;
+        default:
+            throw new IllegalArgumentException("unknown format");
+        }
+
         return new MLDSAPrivateKeyParameters(this, format);
     }
 
