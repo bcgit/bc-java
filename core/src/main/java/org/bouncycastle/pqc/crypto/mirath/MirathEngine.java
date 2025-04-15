@@ -52,7 +52,7 @@ class MirathEngine
 
     public void mirathMatrixExpandSeedSecretMatrix(byte[] S, byte[] C, byte[] seedSk)
     {
-        SHAKEDigest prng = new SHAKEDigest(128);
+        SHAKEDigest prng = new SHAKEDigest(securityBytes == 16 ? 128 : 256);
         mirathPrngInit(prng, null, seedSk, securityBytes);
 
         // Generate all bytes for S and C in one go
@@ -68,7 +68,7 @@ class MirathEngine
 
     public void mirathMatrixExpandSeedPublicMatrix(byte[] H, byte[] seedPk)
     {
-        SHAKEDigest prng = new SHAKEDigest(128);
+        SHAKEDigest prng = new SHAKEDigest(securityBytes == 16 ? 128 : 256);
         mirathPrngInit(prng, null, seedPk, securityBytes);
 
         int rows = m * m - k;
@@ -88,7 +88,7 @@ class MirathEngine
 
         // Calculate intermediate matrices
         byte[] T = new byte[calculateMatrixBytes(m, n - r)];
-        byte[] E = new byte[isA ? calculateMatrixBytes(m, n) : calculateMatrixBytes(m * n, 1)];
+        byte[] E = new byte[calculateMatrixBytes(m * n, 1)];
 
         matrixProduct(T, S, C, m, r, n - r);
         horizontalConcat(E, S, T, m, r, n - r);
@@ -132,7 +132,7 @@ class MirathEngine
     private void matrixProduct(byte[] result, byte[] matrix1, byte[] matrix2,
                                int nRows1, int nCols1, int nCols2)
     {
-        int matrixHeight = mirathMatrixFfBytesPerColumn(nRows1);
+//        int matrixHeight = mirathMatrixFfBytesPerColumn(nRows1);
 
         for (int i = 0; i < nRows1; i++)
         {
@@ -151,14 +151,14 @@ class MirathEngine
             }
         }
 
-        if ((nRows1 & 1) != 0)
-        {
-            int matrixHeightX = matrixHeight - 1;
-            for (int i = 0; i < nCols2; i++)
-            {
-                result[i * matrixHeight + matrixHeightX] &= 0x0F;
-            }
-        }
+//        if ((nRows1 & 1) != 0)
+//        {
+//            int matrixHeightX = matrixHeight - 1;
+//            for (int i = 0; i < nCols2; i++)
+//            {
+//                result[i * matrixHeight + matrixHeightX] &= 0x0F;
+//            }
+//        }
     }
 
     private byte getMatrixEntry(byte[] matrix, int nRows, int i, int j)
@@ -323,7 +323,7 @@ class MirathEngine
         int offPtr = 8;
 
         int nRowsBytes = mirathMatrixFfBytesPerColumn(nRows);
-        int onCol = 8 - ((8 * nRowsBytes) - nRows);
+        int onCol = 8 - ((8 * nRowsBytes) - ((isA ? 4 : 1) * nRows));
 
         int colIndex;
 
