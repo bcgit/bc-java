@@ -157,6 +157,31 @@ public class NewSignedDataTest
     private static KeyPair         _signMLDsa87KP;
     private static X509Certificate _signMLDsa87Cert;
 
+    private static KeyPair         _signSlhDsa_Sha2_128f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_128f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_128s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_128s_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_192f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_192f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_192s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_192s_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_256f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_256f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_256s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_256s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_128f_KP;
+    private static X509Certificate _signSlhDsa_Shake_128f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_128s_KP;
+    private static X509Certificate _signSlhDsa_Shake_128s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_192f_KP;
+    private static X509Certificate _signSlhDsa_Shake_192f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_192s_KP;
+    private static X509Certificate _signSlhDsa_Shake_192s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_256f_KP;
+    private static X509Certificate _signSlhDsa_Shake_256f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_256s_KP;
+    private static X509Certificate _signSlhDsa_Shake_256s_Cert;
+
     private static String          _reciDN;
     private static KeyPair         _reciKP;
     private static X509Certificate _reciCert;
@@ -743,6 +768,18 @@ public class NewSignedDataTest
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
         noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
     }
 
     public NewSignedDataTest(String name)
@@ -823,6 +860,42 @@ public class NewSignedDataTest
 
             _signMLDsa87KP   = CMSTestUtil.makeMLDsa87KeyPair();
             _signMLDsa87Cert = CMSTestUtil.makeCertificate(_signMLDsa87KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_128f_KP   = CMSTestUtil.makeSlhDsa_Sha2_128f_KeyPair();
+            _signSlhDsa_Sha2_128f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_128f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_128s_KP   = CMSTestUtil.makeSlhDsa_Sha2_128s_KeyPair();
+            _signSlhDsa_Sha2_128s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_128s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_192f_KP   = CMSTestUtil.makeSlhDsa_Sha2_192f_KeyPair();
+            _signSlhDsa_Sha2_192f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_192f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_192s_KP   = CMSTestUtil.makeSlhDsa_Sha2_192s_KeyPair();
+            _signSlhDsa_Sha2_192s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_192s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_256f_KP   = CMSTestUtil.makeSlhDsa_Sha2_256f_KeyPair();
+            _signSlhDsa_Sha2_256f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_256f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_256s_KP   = CMSTestUtil.makeSlhDsa_Sha2_256s_KeyPair();
+            _signSlhDsa_Sha2_256s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_256s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_128f_KP   = CMSTestUtil.makeSlhDsa_Shake_128f_KeyPair();
+            _signSlhDsa_Shake_128f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_128f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_128s_KP   = CMSTestUtil.makeSlhDsa_Shake_128s_KeyPair();
+            _signSlhDsa_Shake_128s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_128s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_192f_KP   = CMSTestUtil.makeSlhDsa_Shake_192f_KeyPair();
+            _signSlhDsa_Shake_192f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_192f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_192s_KP   = CMSTestUtil.makeSlhDsa_Shake_192s_KeyPair();
+            _signSlhDsa_Shake_192s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_192s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_256f_KP   = CMSTestUtil.makeSlhDsa_Shake_256f_KeyPair();
+            _signSlhDsa_Shake_256f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_256f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_256s_KP   = CMSTestUtil.makeSlhDsa_Shake_256s_KeyPair();
+            _signSlhDsa_Shake_256s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_256s_KP, _signDN, _origKP, _origDN);
 
             _reciDN   = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP   = CMSTestUtil.makeKeyPair();
@@ -2381,6 +2454,210 @@ public class NewSignedDataTest
 //
 //        encapsulatedTest(_signMLDsa87KP, _signMLDsa87Cert, "ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87,
 //            expectedDigAlgId);
+//    }
+
+//    public void testSlhDsa_Sha2_128f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+//
+//        detachedTest(_signSlhDsa_Sha2_128f_KP, _signSlhDsa_Sha2_128f_Cert, "SLH-DSA-SHA2-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_128f_KP, _signSlhDsa_Sha2_128f_Cert, "SLH-DSA-SHA2-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_128s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+//
+//        detachedTest(_signSlhDsa_Sha2_128s_KP, _signSlhDsa_Sha2_128s_Cert, "SLH-DSA-SHA2-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_128s_KP, _signSlhDsa_Sha2_128s_Cert, "SLH-DSA-SHA2-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_192f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, "SLH-DSA-SHA2-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, "SLH-DSA-SHA2-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_192s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_192s_KP, _signSlhDsa_Sha2_192s_Cert, "SLH-DSA-SHA2-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_192s_KP, _signSlhDsa_Sha2_192s_Cert, "SLH-DSA-SHA2-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_256f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_256f_KP, _signSlhDsa_Sha2_256f_Cert, "SLH-DSA-SHA2-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_256f_KP, _signSlhDsa_Sha2_256f_Cert, "SLH-DSA-SHA2-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_256s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_256s_KP, _signSlhDsa_Sha2_256s_Cert, "SLH-DSA-SHA2-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_256s_KP, _signSlhDsa_Sha2_256s_Cert, "SLH-DSA-SHA2-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_128f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-128 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+//
+//        detachedTest(_signSlhDsa_Shake_128f_KP, _signSlhDsa_Shake_128f_Cert, "SLH-DSA-SHAKE-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_128f_KP, _signSlhDsa_Shake_128f_Cert, "SLH-DSA-SHAKE-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_128s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-128 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+//
+//        detachedTest(_signSlhDsa_Shake_128s_KP, _signSlhDsa_Shake_128s_Cert, "SLH-DSA-SHAKE-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_128s_KP, _signSlhDsa_Shake_128s_Cert, "SLH-DSA-SHAKE-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_192f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_192f_KP, _signSlhDsa_Shake_192f_Cert, "SLH-DSA-SHAKE-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_192f_KP, _signSlhDsa_Shake_192f_Cert, "SLH-DSA-SHAKE-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_192s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_192s_KP, _signSlhDsa_Shake_192s_Cert, "SLH-DSA-SHAKE-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_192s_KP, _signSlhDsa_Shake_192s_Cert, "SLH-DSA-SHAKE-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_256f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_256f_KP, _signSlhDsa_Shake_256f_Cert, "SLH-DSA-SHAKE-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_256f_KP, _signSlhDsa_Shake_256f_Cert, "SLH-DSA-SHAKE-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_256s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_256s_KP, _signSlhDsa_Shake_256s_Cert, "SLH-DSA-SHAKE-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_256s_KP, _signSlhDsa_Shake_256s_Cert, "SLH-DSA-SHAKE-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256s, expectedDigAlgId);
 //    }
 
     private void rsaPSSTest(String signatureAlgorithmName)
