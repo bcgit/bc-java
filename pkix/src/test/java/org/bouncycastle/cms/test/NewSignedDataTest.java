@@ -1839,22 +1839,10 @@ public class NewSignedDataTest
          */
         AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
 
+        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, expectedDigAlgId);
+
         encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519,
             expectedDigAlgId);
-    }
-
-    public void testEd25519Detached()
-        throws Exception
-    {
-        /*
-         * RFC 8419 3.1. When signing with Ed25519, the digestAlgorithm MUST be id-sha512, and the algorithm
-         * parameters field MUST be absent.
-         * 
-         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
-         */
-        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
-
-        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, expectedDigAlgId);
     }
 
     public void testEd448()
@@ -1870,23 +1858,9 @@ public class NewSignedDataTest
         AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len,
             new ASN1Integer(512));
 
-        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
-    }
-
-    public void testEd448Detached()
-        throws Exception
-    {
-        /*
-         * RFC 8419 3.1. When signing with Ed448, the digestAlgorithm MUST be id-shake256-len, the algorithm
-         * parameters field MUST be present, and the parameter MUST contain 512, encoded as a positive integer
-         * value.
-         * 
-         * We confirm here that our implementation defaults to id-shake256-len/512 for the digest algorithm.
-         */
-        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len,
-            new ASN1Integer(512));
-
         detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
+
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
     }
 
     public void testEd25519WithNoAttr()
@@ -2362,6 +2336,9 @@ public class NewSignedDataTest
 //         */
 //        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
 //
+//        detachedTest(_signMLDsa44KP, _signMLDsa44Cert, "ML-DSA-44", NISTObjectIdentifiers.id_ml_dsa_44,
+//            expectedDigAlgId);
+//
 //        encapsulatedTest(_signMLDsa44KP, _signMLDsa44Cert, "ML-DSA-44", NISTObjectIdentifiers.id_ml_dsa_44,
 //            expectedDigAlgId);
 //    }
@@ -2379,6 +2356,9 @@ public class NewSignedDataTest
 //         */
 //        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
 //
+//        detachedTest(_signMLDsa65KP, _signMLDsa65Cert, "ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65,
+//            expectedDigAlgId);
+//
 //        encapsulatedTest(_signMLDsa65KP, _signMLDsa65Cert, "ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65,
 //            expectedDigAlgId);
 //    }
@@ -2395,6 +2375,9 @@ public class NewSignedDataTest
 //         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
 //         */
 //        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signMLDsa87KP, _signMLDsa87Cert, "ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87,
+//            expectedDigAlgId);
 //
 //        encapsulatedTest(_signMLDsa87KP, _signMLDsa87Cert, "ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87,
 //            expectedDigAlgId);
