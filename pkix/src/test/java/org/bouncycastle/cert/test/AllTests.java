@@ -35,6 +35,7 @@ public class AllTests
             new GOSTR3410_2012_256GenerateCertificate(),
             new MLDSACredentialsTest(),
             new PKCS10Test(),
+            new SLHDSACredentialsTest(),
             new X509ExtensionUtilsTest(),
         };
 
