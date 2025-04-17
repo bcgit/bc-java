@@ -174,7 +174,11 @@ class ProvTlsClient
             List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (null == sniServerNames)
             {
-                String peerHostSNI = manager.getPeerHostSNI();
+                /*
+                 * A fully qualified domain name (FQDN) may contain a trailing dot. We remove it for the
+                 * purpose of SNI and endpoint ID checks (e.g. SNIHostName doesn't permit it).
+                 */
+                String peerHostSNI = JsseUtils.stripTrailingDot(manager.getPeerHostSNI());
 
                 /*
                  * TODO[jsse] Consider removing the restriction that the name must contain a '.'
