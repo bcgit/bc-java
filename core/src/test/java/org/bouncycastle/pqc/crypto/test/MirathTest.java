@@ -13,7 +13,7 @@ import org.bouncycastle.pqc.crypto.mirath.MirathKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mirath.MirathParameters;
 import org.bouncycastle.pqc.crypto.mirath.MirathPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mirath.MirathPublicKeyParameters;
-//import org.bouncycastle.pqc.crypto.mirath.MirathSigner;
+import org.bouncycastle.pqc.crypto.mirath.MirathSigner;
 
 public class MirathTest
     extends TestCase
@@ -28,10 +28,10 @@ public class MirathTest
 
     private static final MirathParameters[] PARAMETER_SETS = new MirathParameters[]
         {
-//            MirathParameters.mirath_1a_fast,
-//            MirathParameters.mirath_1a_short,
-//            MirathParameters.mirath_1b_fast,
-//            MirathParameters.mirath_1b_short,
+            MirathParameters.mirath_1a_fast,
+            MirathParameters.mirath_1a_short,
+            MirathParameters.mirath_1b_fast,
+            MirathParameters.mirath_1b_short,
             MirathParameters.mirath_3a_fast,
             MirathParameters.mirath_3a_short,
             MirathParameters.mirath_3b_fast,
@@ -43,10 +43,10 @@ public class MirathTest
         };
 
     private static final String[] files = new String[]{
-//        "Mirath-1a-fast/PQCsignKAT_32.rsp",
-//        "Mirath-1a-short/PQCsignKAT_32.rsp",
-//        "Mirath-1b-fast/PQCsignKAT_32.rsp",
-//        "Mirath-1b-short/PQCsignKAT_32.rsp",
+        "Mirath-1a-fast/PQCsignKAT_32.rsp",
+        "Mirath-1a-short/PQCsignKAT_32.rsp",
+        "Mirath-1b-fast/PQCsignKAT_32.rsp",
+        "Mirath-1b-short/PQCsignKAT_32.rsp",
         "Mirath-3a-fast/PQCsignKAT_48.rsp",
         "Mirath-3a-short/PQCsignKAT_48.rsp",
         "Mirath-3b-fast/PQCsignKAT_48.rsp",
@@ -101,7 +101,7 @@ public class MirathTest
             @Override
             public MessageSigner getMessageSigner()
             {
-                return null;//return new MirathSigner();
+                return new MirathSigner();
             }
         });
         long end = System.currentTimeMillis();
