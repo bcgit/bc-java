@@ -104,6 +104,8 @@ public class CertStatus
      *                  good        [0]     IMPLICIT NULL,
      *                  revoked     [1]     IMPLICIT RevokedInfo,
      *                  unknown     [2]     IMPLICIT UnknownInfo }
+     *
+     * UnknownInfo ::= NULL
      * </pre>
      */
     public ASN1Primitive toASN1Primitive()
