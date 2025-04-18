@@ -115,14 +115,19 @@ public class X9Curve
         }
     }
 
-    public ECCurve  getCurve()
+    public ECCurve getCurve()
     {
         return curve;
     }
 
-    public byte[]   getSeed()
+    public byte[] getSeed()
     {
         return Arrays.clone(seed);
+    }
+
+    public boolean hasSeed()
+    {
+        return seed != null;
     }
 
     /**
