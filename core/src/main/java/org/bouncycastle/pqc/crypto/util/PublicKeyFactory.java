@@ -61,6 +61,8 @@ import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
@@ -260,6 +262,51 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.mayo2, new MayoConverter());
         converters.put(BCObjectIdentifiers.mayo3, new MayoConverter());
         converters.put(BCObjectIdentifiers.mayo5, new MayoConverter());
+
+        converters.put(BCObjectIdentifiers.snova_24_5_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
     }
 
     /**
@@ -866,6 +913,20 @@ public class PublicKeyFactory
             MayoParameters mayoParams = Utils.mayoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new MayoPublicKeyParameters(mayoParams, keyEnc);
+        }
+    }
+
+    private static class SnovaConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SnovaPublicKeyParameters(snovaParams, keyEnc);
         }
     }
 }

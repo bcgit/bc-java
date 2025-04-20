@@ -1,12 +1,10 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.Assert;
 
@@ -55,7 +53,7 @@ class TestUtils
             String name = files[fileIndex];
             InputStream src = TestResourceFinder.findTestResource(homeDir, name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-
+            //System.out.println(files[fileIndex]);
             String line;
             HashMap<String, String> buf = new HashMap<String, String>();
             while ((line = bin.readLine()) != null)
@@ -70,7 +68,7 @@ class TestUtils
                 {
                     if (buf.size() > 0)
                     {
-//                        int count = Integer.parseInt(buf.get("count"));
+                        int count = Integer.parseInt(buf.get("count"));
 //                        if (count == 99)
 //                        {
 //                            System.out.println("break");
@@ -138,7 +136,7 @@ class TestUtils
                             signer.init(false, pubParams);
                             Assert.assertTrue(signer.verifySignature(message, sigGenerated));
                         }
-                        //System.out.println("Count " + count + " pass");
+                        System.out.println("Count " + count + " pass");
                     }
                     buf.clear();
                     continue;
