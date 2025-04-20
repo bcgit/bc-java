@@ -4,6 +4,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 
@@ -46,8 +47,6 @@ public class AllTests
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCTest.class);
-        suite.addTestSuite(RainbowVectorTest.class);
-        suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
         suite.addTestSuite(SLHDSATest.class);

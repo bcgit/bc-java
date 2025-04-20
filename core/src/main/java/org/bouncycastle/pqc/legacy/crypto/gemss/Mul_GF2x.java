@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gemss;
+package org.bouncycastle.pqc.legacy.crypto.gemss;
 
 abstract class Mul_GF2x
 {
