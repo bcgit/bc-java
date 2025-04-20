@@ -10,8 +10,7 @@ public class RegressionTest
         new McElieceFujisakiCipherTest(),
         new McElieceKobaraImaiCipherTest(),
         new McElieceCipherTest(),
-        new McEliecePointchevalCipherTest(),
-        new RainbowSignerTest() ,
+        new McEliecePointchevalCipherTest()
     };
 
     public static void main(String[] args)

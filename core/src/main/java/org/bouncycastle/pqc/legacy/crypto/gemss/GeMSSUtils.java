@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.gemss;
+package org.bouncycastle.pqc.legacy.crypto.gemss;
 
 public class GeMSSUtils
 {
