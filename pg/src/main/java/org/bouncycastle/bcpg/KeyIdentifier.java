@@ -2,6 +2,7 @@ package org.bouncycastle.bcpg;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -31,6 +32,14 @@ public class KeyIdentifier
      */
     public KeyIdentifier(byte[] fingerprint)
     {
+        // Long KeyID
+        if (fingerprint.length == 8)
+        {
+            keyId = FingerprintUtil.longFromRightMostBytes(fingerprint);
+            this.fingerprint = null;
+            return;
+        }
+
         this.fingerprint = Arrays.clone(fingerprint);
 
         // v4
@@ -69,7 +78,16 @@ public class KeyIdentifier
      */
     public KeyIdentifier(long keyId)
     {
-        this(null, keyId);
+        if (keyId == 0L)
+        {
+            this.keyId = 0L;
+            this.fingerprint = new byte[0];
+        }
+        else
+        {
+            this.keyId = keyId;
+            this.fingerprint = null;
+        }
     }
 
     /**
@@ -77,7 +95,7 @@ public class KeyIdentifier
      */
     private KeyIdentifier()
     {
-        this(new byte[0], 0L);
+        this(0L);
     }
 
     /**
@@ -123,7 +141,7 @@ public class KeyIdentifier
      */
     public boolean isWildcard()
     {
-        return keyId == 0L && fingerprint.length == 0;
+        return keyId == 0L && (fingerprint == null || fingerprint.length == 0);
     }
 
     /**
@@ -247,6 +265,19 @@ public class KeyIdentifier
         }
 
         // -DM Hex.toHexString
-        return Hex.toHexString(fingerprint).toUpperCase();
+        return Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault());
+    }
+
+    public String toPrettyPrint()
+    {
+        if (isWildcard())
+        {
+            return "*";
+        }
+        if (fingerprint == null)
+        {
+            return "0x" + Long.toHexString(keyId).toUpperCase(Locale.getDefault());
+        }
+        return FingerprintUtil.prettifyFingerprint(fingerprint);
     }
 }
