@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.mayo;
+package org.bouncycastle.pqc.jcajce.provider.snova;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -6,28 +6,28 @@ import java.io.ObjectOutputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
 import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.MayoKey;
-import org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec;
+import org.bouncycastle.pqc.jcajce.interfaces.SnovaKey;
+import org.bouncycastle.pqc.jcajce.spec.SnovaParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
-public class BCMayoPublicKey
-    implements PublicKey, MayoKey
+public class BCSnovaPublicKey
+    implements PublicKey, SnovaKey
 {
     private static final long serialVersionUID = 1L;
 
-    private transient MayoPublicKeyParameters params;
+    private transient SnovaPublicKeyParameters params;
 
-    public BCMayoPublicKey(
-        MayoPublicKeyParameters params)
+    public BCSnovaPublicKey(
+        SnovaPublicKeyParameters params)
     {
         this.params = params;
     }
 
-    public BCMayoPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCSnovaPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -36,7 +36,7 @@ public class BCMayoPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.params = (MayoPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
+        this.params = (SnovaPublicKeyParameters) PublicKeyFactory.createKey(keyInfo);
     }
 
     /**
@@ -52,9 +52,9 @@ public class BCMayoPublicKey
             return true;
         }
 
-        if (o instanceof BCMayoPublicKey)
+        if (o instanceof BCSnovaPublicKey)
         {
-            BCMayoPublicKey otherKey = (BCMayoPublicKey)o;
+            BCSnovaPublicKey otherKey = (BCSnovaPublicKey)o;
 
             return Arrays.areEqual(params.getEncoded(), otherKey.params.getEncoded());
         }
@@ -68,7 +68,7 @@ public class BCMayoPublicKey
     }
 
     /**
-     * @return name of the algorithm - "Mayo[1|2|3|5]"
+     * @return name of the algorithm - "Snova_[v]_[o]_[l]"
      */
     public final String getAlgorithm()
     {
@@ -94,12 +94,12 @@ public class BCMayoPublicKey
         return "X.509";
     }
 
-    public MayoParameterSpec getParameterSpec()
+    public SnovaParameterSpec getParameterSpec()
     {
-        return MayoParameterSpec.fromName(params.getParameters().getName());
+        return SnovaParameterSpec.fromName(params.getParameters().getName());
     }
 
-    MayoPublicKeyParameters getKeyParams()
+    SnovaPublicKeyParameters getKeyParams()
     {
         return params;
     }
@@ -124,4 +124,5 @@ public class BCMayoPublicKey
         out.writeObject(this.getEncoded());
     }
 }
+
 

@@ -41,7 +41,7 @@ public class BouncyCastlePQCProvider
             "SPHINCS", "LMS", "NH", "XMSS", "SPHINCSPlus",
             "CMCE", "Frodo", "SABER", "Picnic", "NTRU", "Falcon", "Kyber",
             "Dilithium", "NTRUPrime", "BIKE", "HQC", "Rainbow",
-            "Mayo"
+            "Mayo", "Snova"
         };
 
     /**

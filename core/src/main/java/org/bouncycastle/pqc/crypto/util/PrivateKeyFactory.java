@@ -66,6 +66,8 @@ import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPrivateKeyParameters;
@@ -490,6 +492,12 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             MayoParameters mayoParams = Utils.mayoParamsLookup(algOID);
             return new MayoPrivateKeyParameters(mayoParams, keyEnc);
+        }
+        else if (algOID.on(BCObjectIdentifiers.snova))
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
+            SnovaParameters snovaParams = Utils.snovaParamsLookup(algOID);
+            return new SnovaPrivateKeyParameters(snovaParams, keyEnc);
         }
         else
         {

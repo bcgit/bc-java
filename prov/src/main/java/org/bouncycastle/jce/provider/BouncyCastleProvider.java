@@ -42,6 +42,7 @@ import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincsplus.SPHINCSPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
@@ -443,6 +444,47 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.mayo2, new MayoKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mayo3, new MayoKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.mayo5, new MayoKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_4_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_4_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_4_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_4_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_5_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_5_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_5_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_24_5_5_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_25_8_3_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_25_8_3_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_25_8_3_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_25_8_3_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_8_4_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_8_4_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_8_4_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_8_4_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_17_2_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_17_2_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_17_2_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_37_17_2_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_49_11_3_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_49_11_3_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_49_11_3_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_49_11_3_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_56_25_2_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_56_25_2_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_56_25_2_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_56_25_2_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_60_10_4_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_60_10_4_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_60_10_4_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_60_10_4_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_66_15_3_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_66_15_3_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_66_15_3_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_66_15_3_shake_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
