@@ -43,9 +43,25 @@ public class HandshakeType
     public static final short message_hash = 254;
 
     /*
+     * RFC 8870 
+     */
+    public static final short ekt_key = 26;
+
+    /*
      * RFC 8879 
      */
     public static final short compressed_certificate = 25;
+
+    /*
+     * RFC 9147 
+     */
+    public static final short request_connection_id = 9;
+    public static final short new_connection_id = 10;
+
+    /*
+     * RFC 9261 
+     */
+    public static final short client_certificate_request = 17;
 
     public static String getName(short handshakeType)
     {
@@ -91,8 +107,16 @@ public class HandshakeType
             return "key_update";
         case message_hash:
             return "message_hash";
+        case ekt_key:
+            return "ekt_key";
         case compressed_certificate:
             return "compressed_certificate";
+        case request_connection_id:
+            return "request_connection_id";
+        case new_connection_id:
+            return "new_connection_id";
+        case client_certificate_request:
+            return "client_certificate_request";
         default:
             return "UNKNOWN";
         }
@@ -127,7 +151,11 @@ public class HandshakeType
         case encrypted_extensions:
         case key_update:
         case message_hash:
+        case ekt_key:
         case compressed_certificate:
+        case request_connection_id:
+        case new_connection_id:
+        case client_certificate_request:
             return true;
         default:
             return false;

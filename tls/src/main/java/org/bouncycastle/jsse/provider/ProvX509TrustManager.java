@@ -427,6 +427,13 @@ class ProvX509TrustManager
         BCExtendedSSLSession sslSession) throws CertificateException
     {
         String peerHost = sslSession.getPeerHost();
+
+        /*
+         * A fully qualified domain name (FQDN) may contain a trailing dot. We remove it for the purpose of
+         * SNI and endpoint ID checks (e.g. SNIHostName doesn't permit it).
+         */
+        peerHost = JsseUtils.stripTrailingDot(peerHost);
+
         if (checkServerTrusted)
         {
             BCSNIHostName sniHostName = JsseUtils.getSNIHostName(sslSession.getRequestedServerNames());

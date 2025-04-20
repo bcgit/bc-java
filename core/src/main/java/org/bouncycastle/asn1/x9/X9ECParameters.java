@@ -14,7 +14,6 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.field.FiniteField;
 import org.bouncycastle.math.field.PolynomialExtensionField;
-import org.bouncycastle.util.Arrays;
 
 /**
  * ASN.1 def for Elliptic-Curve ECParameters structure. See
@@ -27,11 +26,10 @@ public class X9ECParameters
     private static final BigInteger   ONE = BigInteger.valueOf(1);
 
     private X9FieldID           fieldID;
-    private ECCurve             curve;
+    private X9Curve             curve;
     private X9ECPoint           g;
     private BigInteger          n;
     private BigInteger          h;
-    private byte[]              seed;
 
     private X9ECParameters(
         ASN1Sequence  seq)
@@ -49,11 +47,10 @@ public class X9ECParameters
             this.h = ((ASN1Integer)seq.getObjectAt(5)).getValue();
         }
 
-        X9Curve x9c = new X9Curve(
-            X9FieldID.getInstance(seq.getObjectAt(1)), n, h,
-            ASN1Sequence.getInstance(seq.getObjectAt(2)));
+        this.fieldID = X9FieldID.getInstance(seq.getObjectAt(1));
 
-        this.curve = x9c.getCurve();
+        this.curve = new X9Curve(fieldID, n, h, ASN1Sequence.getInstance(seq.getObjectAt(2)));
+
         Object p = seq.getObjectAt(3);
 
         if (p instanceof X9ECPoint)
@@ -62,10 +59,8 @@ public class X9ECParameters
         }
         else
         {
-            this.g = new X9ECPoint(curve, (ASN1OctetString)p);
+            this.g = new X9ECPoint(curve.getCurve(), (ASN1OctetString)p);
         }
-
-        this.seed = x9c.getSeed();
     }
 
     public static X9ECParameters getInstance(Object obj)
@@ -107,11 +102,10 @@ public class X9ECParameters
         BigInteger  h,
         byte[]      seed)
     {
-        this.curve = curve;
+        this.curve = new X9Curve(curve, seed);
         this.g = g;
         this.n = n;
         this.h = h;
-        this.seed = Arrays.clone(seed);
 
         FiniteField field = curve.getField();
         if (ECAlgorithms.isFpField(field))
@@ -143,7 +137,7 @@ public class X9ECParameters
 
     public ECCurve getCurve()
     {
-        return curve;
+        return curve.getCurve();
     }
 
     public ECPoint getG()
@@ -163,12 +157,12 @@ public class X9ECParameters
 
     public byte[] getSeed()
     {
-        return Arrays.clone(seed);
+        return curve.getSeed();
     }
 
     public boolean hasSeed()
     {
-        return null != seed;
+        return curve.hasSeed();
     }
 
     /**
@@ -178,7 +172,7 @@ public class X9ECParameters
      */
     public X9Curve getCurveEntry()
     {
-        return new X9Curve(curve, seed);
+        return curve;
     }
 
     /**
@@ -220,7 +214,7 @@ public class X9ECParameters
 
         v.add(new ASN1Integer(ONE));
         v.add(fieldID);
-        v.add(new X9Curve(curve, seed));
+        v.add(curve);
         v.add(g);
         v.add(new ASN1Integer(n));
 

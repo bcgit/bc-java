@@ -4,7 +4,6 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.util.encoders.Hex;
 
 public class FalconSigner
     implements MessageSigner
@@ -47,7 +46,7 @@ public class FalconSigner
     {
         byte[] sm = new byte[nist.CRYPTO_BYTES];
 
-        return nist.crypto_sign(false, sm, message, 0, message.length, encodedkey, 0);
+        return nist.crypto_sign(sm, message, message.length, encodedkey);
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
@@ -60,7 +59,6 @@ public class FalconSigner
         byte[] sig = new byte[signature.length - nist.NONCELEN - 1];
         System.arraycopy(signature, 1, nonce, 0, nist.NONCELEN);
         System.arraycopy(signature, nist.NONCELEN + 1, sig, 0, signature.length - nist.NONCELEN - 1);
-        boolean res = nist.crypto_sign_open(false, sig,nonce,message,encodedkey,0) == 0;
-        return res;
+        return nist.crypto_sign_open(sig,nonce,message,encodedkey) == 0;
     }
 }

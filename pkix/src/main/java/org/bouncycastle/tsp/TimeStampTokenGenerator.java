@@ -32,6 +32,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.tsp.Accuracy;
 import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TSTInfo;
+import org.bouncycastle.asn1.tsp.TimeStampReq;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -371,8 +372,9 @@ public class TimeStampTokenGenerator
         Extensions          additionalExtensions)
         throws TSPException
     {
-        AlgorithmIdentifier algID = request.getMessageImprintAlgID();
-        MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
+        TimeStampReq timeStampReq = request.toASN1Structure();
+
+        MessageImprint messageImprint = timeStampReq.getMessageImprint();
 
         Accuracy accuracy = null;
         if (accuracySeconds > 0 || accuracyMillis > 0 || accuracyMicros > 0)
@@ -404,16 +406,12 @@ public class TimeStampTokenGenerator
             derOrdering = ASN1Boolean.getInstance(ordering);
         }
 
-        ASN1Integer nonce = null;
-        if (request.getNonce() != null)
-        {
-            nonce = new ASN1Integer(request.getNonce());
-        }
+        ASN1Integer nonce = timeStampReq.getNonce();
 
-        ASN1ObjectIdentifier tsaPolicy = tsaPolicyOID;
-        if (request.getReqPolicy() != null)
+        ASN1ObjectIdentifier tsaPolicy = timeStampReq.getReqPolicy();
+        if (tsaPolicy == null)
         {
-            tsaPolicy = request.getReqPolicy();
+            tsaPolicy = this.tsaPolicyOID;
         }
 
         Extensions respExtensions = request.getExtensions();
