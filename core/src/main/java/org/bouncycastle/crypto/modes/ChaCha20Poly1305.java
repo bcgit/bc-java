@@ -307,6 +307,12 @@ public class ChaCha20Poly1305
         {
             throw new IllegalArgumentException("'outOff' cannot be negative");
         }
+        if (in == out && segmentsOverlap(inOff, len, outOff, getUpdateOutputSize(len)))
+        {
+            in = new byte[len];
+            System.arraycopy(out, inOff, in, 0, len);
+            inOff = 0;
+        }
 
         checkData();
 
@@ -610,5 +616,11 @@ public class ChaCha20Poly1305
         {
             processAADBytes(initialAAD, 0, initialAAD.length);
         }
+    }
+
+    protected boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
+    {
+        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
+        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 }
