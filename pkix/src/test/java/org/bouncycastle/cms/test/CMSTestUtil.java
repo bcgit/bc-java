@@ -68,6 +68,18 @@ public class CMSTestUtil
     public static KeyPairGenerator mlKem768Kpg;
     public static KeyPairGenerator mlKem1024Kpg;
     public static KeyPairGenerator ntruKpg;
+    public static KeyPairGenerator slhDsa_Sha2_128f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_128s_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_192f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_192s_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_256f_Kpg;
+    public static KeyPairGenerator slhDsa_Sha2_256s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_128f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_128s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_192f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_192s_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_256f_Kpg;
+    public static KeyPairGenerator slhDsa_Shake_256s_Kpg;
     public static KeyGenerator     aes192kg;
     public static KeyGenerator     desede128kg;
     public static KeyGenerator     desede192kg;
@@ -181,6 +193,19 @@ public class CMSTestUtil
             mlKem512Kpg = KeyPairGenerator.getInstance("ML-KEM-512", "BC");
             mlKem768Kpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
             mlKem1024Kpg = KeyPairGenerator.getInstance("ML-KEM-1024", "BC");
+
+            slhDsa_Sha2_128f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-128F", "BC");
+            slhDsa_Sha2_128s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-128S", "BC");
+            slhDsa_Sha2_192f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-192F", "BC");
+            slhDsa_Sha2_192s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-192S", "BC");
+            slhDsa_Sha2_256f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-256F", "BC");
+            slhDsa_Sha2_256s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHA2-256S", "BC");
+            slhDsa_Shake_128f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-128F", "BC");
+            slhDsa_Shake_128s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-128S", "BC");
+            slhDsa_Shake_192f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-192F", "BC");
+            slhDsa_Shake_192s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-192S", "BC");
+            slhDsa_Shake_256f_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-256F", "BC");
+            slhDsa_Shake_256s_Kpg = KeyPairGenerator.getInstance("SLH-DSA-SHAKE-256S", "BC");
 
             aes192kg = KeyGenerator.getInstance("AES", "BC");
             aes192kg.init(192, rand);
@@ -321,6 +346,66 @@ public class CMSTestUtil
     public static KeyPair makeMLDsa87KeyPair()
     {
         return mlDsa87Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_128f_KeyPair()
+    {
+        return slhDsa_Sha2_128f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_128s_KeyPair()
+    {
+        return slhDsa_Sha2_128s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_192f_KeyPair()
+    {
+        return slhDsa_Sha2_192f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_192s_KeyPair()
+    {
+        return slhDsa_Sha2_192s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_256f_KeyPair()
+    {
+        return slhDsa_Sha2_256f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Sha2_256s_KeyPair()
+    {
+        return slhDsa_Sha2_256s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_128f_KeyPair()
+    {
+        return slhDsa_Shake_128f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_128s_KeyPair()
+    {
+        return slhDsa_Shake_128s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_192f_KeyPair()
+    {
+        return slhDsa_Shake_192f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_192s_KeyPair()
+    {
+        return slhDsa_Shake_192s_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_256f_KeyPair()
+    {
+        return slhDsa_Shake_256f_Kpg.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsa_Shake_256s_KeyPair()
+    {
+        return slhDsa_Shake_256s_Kpg.generateKeyPair();
     }
 
     public static SecretKey makeDesede128Key()

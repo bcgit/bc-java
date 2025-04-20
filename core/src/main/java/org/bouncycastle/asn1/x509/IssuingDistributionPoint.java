@@ -84,6 +84,12 @@ public class IssuingDistributionPoint
         boolean indirectCRL,
         boolean onlyContainsAttributeCerts)
     {
+        if ((onlyContainsCACerts && (onlyContainsUserCerts || onlyContainsAttributeCerts))
+            || (onlyContainsUserCerts && onlyContainsAttributeCerts))
+        {
+            throw new IllegalArgumentException("only one of onlyContainsCACerts, onlyContainsUserCerts, or onlyContainsAttributeCerts can be true");
+        }
+
         this.distributionPoint = distributionPoint;
         this.indirectCRL = indirectCRL;
         this.onlyContainsAttributeCerts = onlyContainsAttributeCerts;
