@@ -8,10 +8,20 @@ import org.bouncycastle.util.Arrays;
 abstract class BufferBaseDigest
     implements ExtendedDigest
 {
-    protected enum ProcessingBufferType
+    protected static class ProcessingBufferType
     {
-        Buffered,
-        Immediate,
+        public static final int BUFFERED = 0;
+        public static final int IMMEDIATE = 1;
+
+        public static final ProcessingBufferType Buffered = new ProcessingBufferType(BUFFERED);
+        public static final ProcessingBufferType Immediate = new ProcessingBufferType(IMMEDIATE);
+
+        private final int ord;
+
+        ProcessingBufferType(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
     protected int DigestSize;
@@ -25,12 +35,12 @@ abstract class BufferBaseDigest
     {
         this.BlockSize = BlockSize;
         m_buf = new byte[BlockSize];
-        switch (type)
+        switch (type.ord)
         {
-        case Buffered:
+        case ProcessingBufferType.BUFFERED:
             processor = new BufferedProcessor();
             break;
-        case Immediate:
+        case ProcessingBufferType.IMMEDIATE:
             processor = new ImmediateProcessor();
             break;
         }
