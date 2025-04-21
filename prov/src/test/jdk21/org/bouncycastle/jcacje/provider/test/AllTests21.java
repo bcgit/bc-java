@@ -21,6 +21,7 @@ public class AllTests21
         suite.addTestSuite(NTRUKEMTest.class);
         suite.addTestSuite(SNTRUPrimeKEMTest.class);
         suite.addTestSuite(MLKEMTest.class);
+        suite.addTestSuite(HQCTest.class);
         return suite;
     }
 }
