@@ -13,11 +13,22 @@ import org.bouncycastle.util.Bytes;
 public class RomulusEngine
     extends AEADBaseEngine
 {
-    public enum RomulusParameters
+    public static class RomulusParameters
     {
-        RomulusM,
-        RomulusN,
-        RomulusT,
+        public static final int ROMULUS_M = 0;
+        public static final int ROMULUS_N = 1;
+        public static final int ROMULUS_T = 2;
+
+        public static final RomulusParameters RomulusM = new RomulusParameters(ROMULUS_M);
+        public static final RomulusParameters RomulusN = new RomulusParameters(ROMULUS_N);
+        public static final RomulusParameters RomulusT = new RomulusParameters(ROMULUS_T);
+
+        private final int ord;
+
+        RomulusParameters(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
     private byte[] k;
@@ -81,17 +92,17 @@ public class RomulusEngine
     {
         KEY_SIZE = IV_SIZE = MAC_SIZE = BlockSize = AADBufferSize = 16;
         CNT = new byte[7];
-        switch (romulusParameters)
+        switch (romulusParameters.ord)
         {
-        case RomulusM:
+        case RomulusParameters.ROMULUS_M:
             algorithmName = "Romulus-M";
             instance = new RomulusM();
             break;
-        case RomulusN:
+        case RomulusParameters.ROMULUS_N:
             algorithmName = "Romulus-N";
             instance = new RomulusN();
             break;
-        case RomulusT:
+        case RomulusParameters.ROMULUS_T:
             algorithmName = "Romulus-T";
             AADBufferSize = 32;
             instance = new RomulusT();

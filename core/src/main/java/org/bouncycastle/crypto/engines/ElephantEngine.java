@@ -396,23 +396,23 @@ public class ElephantEngine
     @Override
     public int getUpdateOutputSize(int len)
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case Uninitialized:
+        case State.UNINITIALIZED:
             throw new IllegalArgumentException(algorithmName + " needs call init function before getUpdateOutputSize");
-        case DecFinal:
-        case EncFinal:
+        case State.DEC_FINAL:
+        case State.ENC_FINAL:
             return 0;
-        case EncAad:
-        case EncData:
-        case EncInit:
+        case State.ENC_AAD:
+        case State.ENC_DATA:
+        case State.ENC_INIT:
         {
             int total = m_bufPos + len;
             return total - total % BlockSize;
         }
-        case DecAad:
-        case DecData:
-        case DecInit:
+        case State.DEC_AAD:
+        case State.DEC_DATA:
+        case State.DEC_INIT:
         {
             int total = Math.max(0, m_bufPos + len - MAC_SIZE);
             return total - total % BlockSize;
@@ -424,16 +424,16 @@ public class ElephantEngine
     @Override
     public int getOutputSize(int len)
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case Uninitialized:
+        case State.UNINITIALIZED:
             throw new IllegalArgumentException(algorithmName + " needs call init function before getUpdateOutputSize");
-        case DecFinal:
-        case EncFinal:
+        case State.DEC_FINAL:
+        case State.ENC_FINAL:
             return 0;
-        case EncAad:
-        case EncData:
-        case EncInit:
+        case State.ENC_AAD:
+        case State.ENC_DATA:
+        case State.ENC_INIT:
             return len + m_bufPos + MAC_SIZE;
         }
         return Math.max(0, len + m_bufPos - MAC_SIZE);
@@ -454,10 +454,10 @@ public class ElephantEngine
             adlen = aadOperator.getLen();
             aadOperator.reset();
         }
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case EncInit:
-        case DecInit:
+        case State.ENC_INIT:
+        case State.DEC_INIT:
             processAADBytes(tag_buffer);
             break;
         }
@@ -474,13 +474,13 @@ public class ElephantEngine
 
     protected void checkAAD()
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecData:
+        case State.DEC_DATA:
             throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the plaintext to be processed exceeds the a block size");
-        case EncData:
+        case State.ENC_DATA:
             throw new IllegalArgumentException(algorithmName + " cannot process AAD when the length of the ciphertext to be processed exceeds the a block size");
-        case EncFinal:
+        case State.ENC_FINAL:
             throw new IllegalArgumentException(algorithmName + " cannot be reused for encryption");
         default:
             break;
@@ -489,17 +489,17 @@ public class ElephantEngine
 
     protected boolean checkData(boolean isDofinal)
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
-        case DecData:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
+        case State.DEC_DATA:
             return false;
-        case EncInit:
-        case EncAad:
-        case EncData:
+        case State.ENC_INIT:
+        case State.ENC_AAD:
+        case State.ENC_DATA:
             return true;
-        case EncFinal:
+        case State.ENC_FINAL:
             throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
@@ -509,22 +509,22 @@ public class ElephantEngine
     private void processAADBytes(byte[] output)
     {
         int len = 0;
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
+        case State.DEC_INIT:
             System.arraycopy(expanded_key, 0, current_mask, 0, BlockSize);
             System.arraycopy(npub, 0, output, 0, IV_SIZE);
             len += IV_SIZE;
             m_state = State.DecAad;
             break;
-        case EncInit:
+        case State.ENC_INIT:
             System.arraycopy(expanded_key, 0, current_mask, 0, BlockSize);
             System.arraycopy(npub, 0, output, 0, IV_SIZE);
             len += IV_SIZE;
             m_state = State.EncAad;
             break;
-        case DecAad:
-        case EncAad:
+        case State.DEC_AAD:
+        case State.ENC_AAD:
             // If adlen is divisible by BLOCK_SIZE, add an additional padding block
             if (adOff == adlen)
             {
@@ -551,12 +551,12 @@ public class ElephantEngine
             }
             Arrays.fill(output, len + r_adlen, len + r_outlen, (byte)0);
             output[len + r_adlen] = 0x01;
-            switch (m_state)
+            switch (m_state.ord)
             {
-            case DecAad:
+            case State.DEC_AAD:
                 m_state = State.DecData;
                 break;
-            case EncAad:
+            case State.ENC_AAD:
                 m_state = State.EncData;
                 break;
             }
