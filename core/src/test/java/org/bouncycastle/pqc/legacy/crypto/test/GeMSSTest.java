@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.crypto.test;
+package org.bouncycastle.pqc.legacy.crypto.test;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -12,12 +12,13 @@ import java.util.Random;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSParameters;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.gemss.GeMSSSigner;
+import org.bouncycastle.pqc.crypto.test.NISTSecureRandom;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSKeyGenerationParameters;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSKeyPairGenerator;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSParameters;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.gemss.GeMSSSigner;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;

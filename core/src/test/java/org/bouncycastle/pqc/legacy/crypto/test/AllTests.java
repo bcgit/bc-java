@@ -29,6 +29,7 @@ public class AllTests
         suite.addTestSuite(NTRUSignerTest.class);
         suite.addTestSuite(NTRUSigningParametersTest.class);
         suite.addTestSuite(QTESLATest.class);
+        suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(SimpleTestTest.class);
 
         return new BCTestSetup(suite);

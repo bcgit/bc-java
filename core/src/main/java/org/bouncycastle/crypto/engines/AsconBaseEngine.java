@@ -23,10 +23,10 @@ abstract class AsconBaseEngine
     protected void finishAAD(State nextState, boolean isDofinal)
     {
         // State indicates whether we ever received AAD
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecAad:
-        case EncAad:
+        case State.DEC_AAD:
+        case State.ENC_AAD:
             this.processFinalAAD();
             p.p(nr);
             break;

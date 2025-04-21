@@ -17,38 +17,88 @@ import org.bouncycastle.util.Arrays;
 abstract class AEADBaseEngine
     implements AEADCipher
 {
-    protected enum ProcessingBufferType
+    protected static class ProcessingBufferType
     {
-        Buffered, // Store a (aad) block size of input and process after the input size exceeds the buffer size
-        Immediate, //process the input immediately when the input size is equal or greater than the block size
+        public static final int BUFFERED = 0;   // Store a (aad) block size of input and process after the input size exceeds the buffer size
+        public static final int IMMEDIATE = 1;  //process the input immediately when the input size is equal or greater than the block size
+
+        public static final ProcessingBufferType Buffered = new ProcessingBufferType(BUFFERED);
+        public static final ProcessingBufferType Immediate = new ProcessingBufferType(IMMEDIATE);
+
+        private final int ord;
+
+        ProcessingBufferType(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
-    protected enum AADOperatorType
+    protected static class AADOperatorType
     {
-        Default,
-        Counter,//add a counter to count the size of AAD
-        Stream //process AAD data during the process data, used for elephant
+        public static final int DEFAULT = 0;
+        public static final int COUNTER = 1;//add a counter to count the size of AAD
+        public static final int STREAM = 2; //process AAD data during the process data, used for elephant
+
+        public static final AADOperatorType Default = new AADOperatorType(DEFAULT);
+        public static final AADOperatorType Counter = new AADOperatorType(COUNTER);
+        public static final AADOperatorType Stream = new AADOperatorType(STREAM);
+
+        private final int ord;
+
+        AADOperatorType(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
-    protected enum DataOperatorType
+    protected static class DataOperatorType
     {
-        Default,
-        Counter,
-        Stream,
-        StreamCipher
+        public static final int DEFAULT = 0;
+        public static final int COUNTER = 1;
+        public static final int STREAM = 2;
+        public static final int STREAM_CIPHER = 3;
+
+        public static final DataOperatorType Default = new DataOperatorType(DEFAULT);
+        public static final DataOperatorType Counter = new DataOperatorType(COUNTER);
+        public static final DataOperatorType Stream = new DataOperatorType(STREAM);
+        public static final DataOperatorType StreamCipher = new DataOperatorType(STREAM_CIPHER);
+
+        private final int ord;
+
+        DataOperatorType(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
-    protected enum State
+    protected static class State
     {
-        Uninitialized,
-        EncInit,
-        EncAad, // can process AAD
-        EncData, // cannot process AAD
-        EncFinal,
-        DecInit,
-        DecAad, // can process AAD
-        DecData, // cannot process AAD
-        DecFinal,
+        public static final int UNINITIALIZED = 0;
+        public static final int ENC_INIT = 1;
+        public static final int ENC_AAD = 2; // can process AAD
+        public static final int ENC_DATA = 3; // cannot process AAD
+        public static final int ENC_FINAL = 4;
+        public static final int DEC_INIT = 5;
+        public static final int DEC_AAD = 6; // can process AAD
+        public static final int DEC_DATA = 7; // cannot process AAD
+        public static final int DEC_FINAL = 8;
+
+        public static final State Uninitialized = new State(UNINITIALIZED);
+        public static final State EncInit = new State(ENC_INIT);
+        public static final State EncAad = new State(ENC_AAD);
+        public static final State EncData = new State(ENC_DATA);
+        public static final State EncFinal = new State(ENC_FINAL);
+        public static final State DecInit = new State(DEC_INIT);
+        public static final State DecAad = new State(DEC_AAD);
+        public static final State DecData = new State(DEC_DATA);
+        public static final State DecFinal = new State(DEC_FINAL);
+
+        final int ord;
+
+        State(int ord)
+        {
+            this.ord = ord;
+        }
     }
 
     protected boolean forEncryption;
@@ -174,19 +224,19 @@ abstract class AEADBaseEngine
             Arrays.fill(m_aad, (byte)0);
             m_aadPos = 0;
         }
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case EncInit:
+        case State.DEC_INIT:
+        case State.ENC_INIT:
             break;
-        case DecAad:
-        case DecData:
-        case DecFinal:
+        case State.DEC_AAD:
+        case State.DEC_DATA:
+        case State.DEC_FINAL:
             m_state = State.DecFinal;
             break;
-        case EncAad:
-        case EncData:
-        case EncFinal:
+        case State.ENC_AAD:
+        case State.ENC_DATA:
+        case State.ENC_FINAL:
             m_state = State.EncFinal;
             return;
         default:
@@ -198,49 +248,49 @@ abstract class AEADBaseEngine
 
     protected void setInnerMembers(ProcessingBufferType type, AADOperatorType aadOperatorType, DataOperatorType dataOperatorType)
     {
-        switch (type)
+        switch (type.ord)
         {
-        case Buffered:
+        case ProcessingBufferType.BUFFERED:
             processor = new BufferedAADProcessor();
             break;
-        case Immediate:
+        case ProcessingBufferType.IMMEDIATE:
             processor = new ImmediateAADProcessor();
             break;
         }
 
         m_bufferSizeDecrypt = BlockSize + MAC_SIZE;
 
-        switch (aadOperatorType)
+        switch (aadOperatorType.ord)
         {
-        case Default:
+        case AADOperatorType.DEFAULT:
             m_aad = new byte[AADBufferSize];
             aadOperator = new DefaultAADOperator();
             break;
-        case Counter:
+        case AADOperatorType.COUNTER:
             m_aad = new byte[AADBufferSize];
             aadOperator = new CounterAADOperator();
             break;
-        case Stream:
+        case AADOperatorType.STREAM:
             AADBufferSize = 0;
             aadOperator = new StreamAADOperator();
             break;
         }
 
-        switch (dataOperatorType)
+        switch (dataOperatorType.ord)
         {
-        case Default:
+        case DataOperatorType.DEFAULT:
             m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new DefaultDataOperator();
             break;
-        case Counter:
+        case DataOperatorType.COUNTER:
             m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new CounterDataOperator();
             break;
-        case Stream:
+        case DataOperatorType.STREAM:
             m_buf = new byte[MAC_SIZE];
             dataOperator = new StreamDataOperator();
             break;
-        case StreamCipher:
+        case DataOperatorType.STREAM_CIPHER:
             BlockSize = 0;
             m_buf = new byte[m_bufferSizeDecrypt];
             dataOperator = new StreamCipherOperator();
@@ -862,16 +912,16 @@ abstract class AEADBaseEngine
     protected int getTotalBytesForUpdate(int len)
     {
         int total = processor.getUpdateOutputSize(len);
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
-        case DecData:
-        case DecFinal:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
+        case State.DEC_DATA:
+        case State.DEC_FINAL:
             total = Math.max(0, total + m_bufPos - MAC_SIZE);
             break;
-        case EncData:
-        case EncFinal:
+        case State.ENC_DATA:
+        case State.ENC_FINAL:
             total = Math.max(0, total + m_bufPos);
             break;
         default:
@@ -884,15 +934,15 @@ abstract class AEADBaseEngine
     {
         int total = Math.max(0, len);
 
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
-        case DecData:
-        case DecFinal:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
+        case State.DEC_DATA:
+        case State.DEC_FINAL:
             return Math.max(0, total + m_bufPos - MAC_SIZE);
-        case EncData:
-        case EncFinal:
+        case State.ENC_DATA:
+        case State.ENC_FINAL:
             return total + m_bufPos + MAC_SIZE;
         default:
             return total + MAC_SIZE;
@@ -901,18 +951,18 @@ abstract class AEADBaseEngine
 
     protected void checkAAD()
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
+        case State.DEC_INIT:
             m_state = State.DecAad;
             break;
-        case EncInit:
+        case State.ENC_INIT:
             m_state = State.EncAad;
             break;
-        case DecAad:
-        case EncAad:
+        case State.DEC_AAD:
+        case State.ENC_AAD:
             break;
-        case EncFinal:
+        case State.ENC_FINAL:
             throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
@@ -921,21 +971,21 @@ abstract class AEADBaseEngine
 
     protected boolean checkData(boolean isDoFinal)
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
             finishAAD(State.DecData, isDoFinal);
             return false;
-        case EncInit:
-        case EncAad:
+        case State.ENC_INIT:
+        case State.ENC_AAD:
             finishAAD(State.EncData, isDoFinal);
             return true;
-        case DecData:
+        case State.DEC_DATA:
             return false;
-        case EncData:
+        case State.ENC_DATA:
             return true;
-        case EncFinal:
+        case State.ENC_FINAL:
             throw new IllegalStateException(getAlgorithmName() + " cannot be reused for encryption");
         default:
             throw new IllegalStateException(getAlgorithmName() + " needs to be initialized");
@@ -969,12 +1019,12 @@ abstract class AEADBaseEngine
     // Used for Grain128 AEAD and Romulus Engine
     protected void finishAAD1(State nextState)
     {
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
-        case EncInit:
-        case EncAad:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
+        case State.ENC_INIT:
+        case State.ENC_AAD:
         {
             processFinalAAD();
             break;
@@ -989,10 +1039,10 @@ abstract class AEADBaseEngine
     protected void finishAAD2(State nextState)
     {
         // State indicates whether we ever received AAD
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecAad:
-        case EncAad:
+        case State.DEC_AAD:
+        case State.ENC_AAD:
         {
             processFinalAAD();
             break;
@@ -1009,16 +1059,16 @@ abstract class AEADBaseEngine
     protected void finishAAD3(State nextState, boolean isDoFinal)
     {
         // State indicates whether we ever received AAD
-        switch (m_state)
+        switch (m_state.ord)
         {
-        case DecInit:
-        case DecAad:
+        case State.DEC_INIT:
+        case State.DEC_AAD:
             if (!isDoFinal && dataOperator.getLen() <= MAC_SIZE)
             {
                 return;
             }
-        case EncInit:
-        case EncAad:
+        case State.ENC_INIT:
+        case State.ENC_AAD:
             processFinalAAD();
             break;
         }
