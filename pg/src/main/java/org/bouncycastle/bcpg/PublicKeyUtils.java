@@ -32,7 +32,6 @@ public class PublicKeyUtils
 
 //    /**
 //     * Return true, if the public key algorithm that corresponds to the given ID is capable of encryption.
-//     *
 //     * @param publicKeyAlgorithm public key algorithm id
 //     * @return true if algorithm can encrypt
 //     */
