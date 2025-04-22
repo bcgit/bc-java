@@ -20,8 +20,8 @@ class MirathEngine
     public final int m;
     public final int r;
     public final int n;
-     final int n2;
-     final int n1;
+    final int n2;
+    final int n1;
     public final int k;
     final int tau;
     public final int tau1;
@@ -54,6 +54,7 @@ class MirathEngine
     private static final int domainSeparatorHash1 = 1;
     private static final int domainSeparatorHash2Partial = 2;
     private static final int domainSeparatorHash2 = 3;
+    private static final byte domainSeparatorCmt = 3;
 
     // GF(16) multiplication table (replace with actual implementation if different)
     private static final byte[] MIRATH_FF_MULT_TABLE = new byte[]{
@@ -528,106 +529,6 @@ class MirathEngine
         }
     }
 
-//    private void horizontalConcat(byte[] result, byte[] matrix1, byte[] matrix2,
-//                                         int nRows, int nCols1, int nCols2)
-//    {
-//        int bytesPerCol = bytesPerColumn(nRows);
-//        int onCol = 8 - ((8 * bytesPerCol) - (4 * nRows));
-//
-//        int ptr = 0;
-//        int offPtr = 8;  // Tracks bits remaining in current byte (starts empty)
-//
-//        // Process matrix1 columns
-//        for (int j = 0; j < nCols1; j++)
-//        {
-//            int colStart = j * bytesPerCol;
-//            for (int i = 0; i < bytesPerCol; i++)
-//            {
-//                byte current = matrix1[colStart + i];
-//
-//                // Process upper nibble (4 bits)
-//                byte nibble = (byte)((current & 0xF0) >>> 4);
-//                processNibble(result, nibble, ref ptr, ref offPtr, onCol);
-//
-//                // Process lower nibble (4 bits) if not last byte or if there's space
-//                if (i < bytesPerCol - 1 || (nRows % 2 == 0))
-//                {
-//                    nibble = (byte)(current & 0x0F);
-//                    processNibble(result, nibble, ref ptr, ref offPtr, onCol);
-//                }
-//            }
-//        }
-//
-//        // Process matrix2 columns
-//        for (int j = 0; j < nCols2; j++)
-//        {
-//            int colStart = j * bytesPerCol;
-//            for (int i = 0; i < bytesPerCol; i++)
-//            {
-//                byte current = matrix2[colStart + i];
-//
-//                // Process upper nibble
-//                byte nibble = (byte)((current & 0xF0) >>> 4);
-//                processNibble(result, nibble, ref ptr, ref offPtr, onCol);
-//
-//                // Process lower nibble
-//                if (i < bytesPerCol - 1 || (nRows % 2 == 0))
-//                {
-//                    nibble = (byte)(current & 0x0F);
-//                    processNibble(result, nibble, ref ptr, ref offPtr, onCol);
-//                }
-//            }
-//        }
-//    }
-
-//    private void processNibble(byte[] result, byte nibble,
-//                               int[] ptrHolder, int[] offPtrHolder, int onCol)
-//    {
-//        int ptr = ptrHolder[0];
-//        int offPtr = offPtrHolder[0];
-//
-////        if (offPtr == 8)
-////        {  // Start new byte
-////            //result[ptr] = 0;
-////            offPtr = 0;
-////        }
-//
-//        // Calculate available space in current byte
-//        int shift = 4 - offPtr;
-//        if (shift >= 0)
-//        {
-//            // Fits in current byte
-//            result[ptr] |= (byte)((nibble & 0x0F) << (4 - offPtr));
-//            offPtr += 4;
-//        }
-//        else
-//        {
-//            // Split across bytes
-//            result[ptr] |= (byte)((nibble & 0x0F) >>> (-shift));
-//            ptr++;
-//            result[ptr] = (byte)((nibble & 0x0F) << (8 + shift));
-//            offPtr = 4 + shift;
-//        }
-//
-//        // Check if byte is full
-//        if (offPtr >= 8)
-//        {
-//            ptr++;
-//            offPtr %= 8;
-//        }
-//
-//        // Handle special column alignment
-//        if (offPtr > onCol)
-//        {
-//            ptr++;
-//            offPtr = 8 - (onCol - (offPtr - 8));
-//        }
-//
-//        // Update holder arrays
-//        ptrHolder[0] = ptr;
-//        offPtrHolder[0] = offPtr;
-//    }
-
     // Modified horizontalConcat caller
     private void horizontalConcat(byte[] result, byte[] matrix1, byte[] matrix2,
                                   int nRows, int nCols1, int nCols2)
@@ -709,86 +610,6 @@ class MirathEngine
             }
         }
     }
-
-
-//    private void processColumns(byte[] result, byte[] matrix, int colCount,
-//                                int bytesPerCol, int nRows, int[] ptrHolder,
-//                                int[] offPtrHolder, int onCol)
-//    {
-//        for (int j = 0; j < colCount; j++)
-//        {
-//            int colStart = j * bytesPerCol;
-//            byte[] column = Arrays.copyOfRange(matrix, colStart, colStart + bytesPerCol);
-//
-//            // Convert column to bit array (1 bit per element)
-//            boolean[] bits = new boolean[nRows];
-//            for (int i = 0; i < nRows; i++)
-//            {
-//                int byteIdx = i / 8;
-//                int bitIdx = 7 - (i % 8);  // MSB first
-//                bits[i] = ((column[byteIdx] >> bitIdx) & 1) != 0;
-//            }
-//
-//            // Store bits in result with proper bit packing
-//            int ptr = ptrHolder[0];
-//            int offPtr = offPtrHolder[0];
-//
-//            for (boolean bit : bits)
-//            {
-//                if (offPtr == 8)
-//                {
-//                    ptr++;
-//                    offPtr = 0;
-//                    if (ptr >= result.length)
-//                    {
-//                        result = Arrays.copyOf(result, result.length + 1);
-//                    }
-//                    result[ptr] = 0;
-//                }
-//
-//                if (bit)
-//                {
-//                    result[ptr] |= (1 << (7 - offPtr));
-//                }
-//                offPtr++;
-//            }
-//
-//            // Handle column alignment
-//            if (offPtr > onCol)
-//            {
-//                ptr++;
-//                offPtr = 8 - (onCol - (offPtr - 8));
-//            }
-//
-//            ptrHolder[0] = ptr;
-//            offPtrHolder[0] = offPtr;
-//        }
-//    }
-
-//    private void processColumns(byte[] result, byte[] matrix, int colCount,
-//                                int bytesPerCol, int nRows, int[] ptrHolder,
-//                                int[] offPtrHolder, int onCol)
-//    {
-//        for (int j = 0; j < colCount; j++)
-//        {
-//            int colStart = j * bytesPerCol;
-//            for (int i = 0; i < bytesPerCol; i++)
-//            {
-//                byte current = matrix[colStart + i];
-//
-//                // Process upper nibble
-//                byte nibble = (byte)((current & 0xF0) >>> 4);
-//                processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
-//
-//                // Process lower nibble if needed
-//                if (i < bytesPerCol - 1 || (nRows % 2 == 0))
-//                {
-//                    nibble = (byte)(current & 0x0F);
-//                    processNibble(result, nibble, ptrHolder, offPtrHolder, onCol);
-//                }
-//            }
-//        }
-//    }
 
     private static void vectorAdd(byte[] result, byte[] a, byte[] b)
     {
@@ -931,10 +752,7 @@ class MirathEngine
             }
         }
 
-        // Finalize hash
-        byte[] tempHash = new byte[hash.getDigestSize()];
-        hash.doFinal(tempHash, 0);
-        System.arraycopy(tempHash, 0, hCom, 0, securityBytes);
+        hash.doFinal(hCom, 0);
     }
 
     private void mirathGGMTreeExpand(byte[][] tree, byte[] salt)
@@ -970,6 +788,33 @@ class MirathEngine
         // Process second block
         msg[0] ^= 0x01;
         aes.processBlock(msg, 0, pairNode[1], 0);
+
+    }
+
+    public void mirathCommit(byte[][] pairNode, byte[] salt, int idx, byte[] seed)
+    {
+        SHA3Digest digest = getSHA3Digest();
+
+        // Initialize hash with domain separator
+        digest.update(domainSeparatorCmt);
+
+        // Update with salt
+        digest.update(salt, 0, saltBytes);
+
+        // Update with index i (big-endian 4 bytes)
+        byte[] iBytes = Pack.longToLittleEndian(idx);
+        digest.update(iBytes, 0, 4);
+
+        // Update with seed
+        digest.update(seed, 0, securityBytes);
+
+        // Finalize hash into pairNode
+        byte[] hashResult = new byte[64]; // 2 * MIRATH_SECURITY_BYTES
+        digest.doFinal(hashResult, 0);
+
+        // Split hash result into two parts
+        System.arraycopy(hashResult, 0, pairNode[0], 0, securityBytes);
+        System.arraycopy(hashResult, securityBytes, pairNode[1], 0, securityBytes);
     }
 
     private void mirathGGMTreeGetLeaves(byte[][] output, byte[][] tree)
@@ -997,13 +842,13 @@ class MirathEngine
     private void mirathTcithCommit(byte[] commit, byte[] salt, int e, int i, byte[] seed)
     {
         int idx = mirathTcithPsi(i, e);
-        mirathCommit(commit, salt, treeLeaves + idx, seed);
+        mirathCommit(commit, salt, idx, seed);
     }
 
     private void mirathCommit(byte[] commit, byte[] salt, int idx, byte[] seed)
     {
         byte[][] pairNode = new byte[2][securityBytes];
-        mirathExpandSeed(pairNode, salt, idx, seed);
+        mirathCommit(pairNode, salt, idx, seed);
         System.arraycopy(pairNode[0], 0, commit, 0, securityBytes);
         System.arraycopy(pairNode[1], 0, commit, securityBytes, securityBytes);
     }
@@ -1287,11 +1132,8 @@ class MirathEngine
 
         // Extract components from sample
         byte[] S_rnd = extractComponent(sample, 0, ffSBytes);
-        byte[] C_rnd = extractComponent(sample, ffSBytes,
-            ffCBytes);
-        byte[] v_rnd = extractComponent(sample,
-            ffSBytes + ffCBytes,
-            rho);
+        byte[] C_rnd = extractComponent(sample, ffSBytes, ffCBytes);
+        byte[] v_rnd = extractComponent(sample, ffSBytes + ffCBytes, rho);
 
         // Update accumulated values
         updateAccumulators(S_acc, C_acc, v[e], S_rnd, C_rnd, v_rnd);
@@ -1373,9 +1215,9 @@ class MirathEngine
         System.arraycopy(C_diff, 0, aux[e], S_diff.length, C_diff.length);
     }
 
-    private static void computeFinalHash(byte[] hSh, byte[] salt, byte[] hCom, byte[][] aux)
+    private void computeFinalHash(byte[] hSh, byte[] salt, byte[] hCom, byte[][] aux)
     {
-        SHA3Digest digest = new SHA3Digest(512);
+        SHA3Digest digest = getSHA3Digest();
         digest.update((byte)0x03); // DOMAIN_SEPARATOR_HASH1
         digest.update(salt, 0, salt.length);
         digest.update(hCom, 0, hCom.length);
@@ -1573,7 +1415,7 @@ class MirathEngine
     private static byte ffMuMultiply(byte a, byte b)
     {
         // Implementation using precomputed table
-        return MIRATH_FF_MULT_TABLE[(a & 0xFF) * 256 + (b & 0xFF)];
+        return MIRATH_FF_MULT_TABLE[(a & 0xF) + 16 * (b & 0xF)];
     }
 
     public void splitCodewordFFMu(byte[] e_A, byte[] e_B, byte[] in_X, byte[] in_Y)
@@ -1678,7 +1520,7 @@ class MirathEngine
                                    byte[] msg, byte[] hSh,
                                    byte[][] alphaMid, byte[][] alphaBase)
     {
-        SHAKEDigest digest = new SHAKEDigest(256);
+        SHA3Digest digest = getSHA3Digest();
         byte domainSeparator = (byte)domainSeparatorHash2Partial;
 
         // Initialize hash
@@ -1713,7 +1555,7 @@ class MirathEngine
         vGrinding[hash2MaskBytes - 1] &= 0x0F; // Example mask
 
         // Process challenges (simplified)
-        System.arraycopy(random, 0, challenge, 0, challenge2Bytes);
+        Pack.littleEndianToInt(random, 0, challenge, 0, challenge2Bytes);
         shiftRightArray(random, challenge2Bytes);
     }
 
