@@ -175,6 +175,11 @@ public abstract class PGPEncryptedData
         return (encData instanceof SymmetricEncIntegrityPacket);
     }
 
+    public InputStreamPacket getEncData()
+    {
+        return encData;
+    }
+
     /**
      * Checks whether the packet is protected using an AEAD algorithm.
      *
