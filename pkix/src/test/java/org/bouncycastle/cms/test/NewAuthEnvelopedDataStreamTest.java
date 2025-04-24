@@ -8,8 +8,10 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 
@@ -23,16 +25,26 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAttributeTableGenerationException;
+import org.bouncycastle.cms.CMSAttributeTableGenerator;
+import org.bouncycastle.cms.CMSAuthEnvelopedData;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataParser;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
+import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
 import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
+import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.cms.KEKRecipientId;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
+import org.bouncycastle.cms.PasswordRecipient;
+import org.bouncycastle.cms.PasswordRecipientInformation;
 import org.bouncycastle.cms.RecipientId;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
@@ -46,8 +58,12 @@ import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.JceKeyTransAuthEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
+import org.bouncycastle.cms.jcajce.JcePasswordAuthEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JcePasswordRecipientInfoGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OutputAEADEncryptor;
+import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class NewAuthEnvelopedDataStreamTest
@@ -212,7 +228,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         for (int i = 0; i != 2000; i++)
         {
@@ -234,7 +250,7 @@ public class NewAuthEnvelopedDataStreamTest
 
         bOut = new ByteArrayOutputStream();
 
-        out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         BufferedOutputStream bfOut = new BufferedOutputStream(out, 300);
 
@@ -267,7 +283,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         for (int i = 0; i != 2000; i++)
         {
@@ -308,7 +324,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         for (int i = 0; i != data.length; i++)
         {
@@ -329,7 +345,7 @@ public class NewAuthEnvelopedDataStreamTest
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
             CMSTypedStream recData = recipient.getContentStream(
-                    new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
             InputStream dataStream = recData.getContentStream();
             ByteArrayOutputStream dataOut = new ByteArrayOutputStream();
@@ -372,7 +388,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         out.write(data);
 
@@ -396,7 +412,7 @@ public class NewAuthEnvelopedDataStreamTest
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
             CMSTypedStream recData = recipient.getContentStream(
-                    new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+                new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
             assertTrue(Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
         }
@@ -416,7 +432,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         out.write(data);
 
@@ -460,7 +476,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
 
         out.write(data);
 
@@ -471,6 +487,48 @@ public class NewAuthEnvelopedDataStreamTest
         RecipientInformationStore recipients = ep.getRecipientInfos();
 
         assertEquals(ep.getEncAlgOID(), CMSAlgorithm.AES128_GCM.getId());
+
+        Collection<RecipientInformation> c = recipients.getRecipients();
+        Iterator<RecipientInformation> it = c.iterator();
+
+        while (it.hasNext())
+        {
+            RecipientInformation recipient = it.next();
+
+            CMSTypedStream recData = recipient.getContentStream(new JceKEKAuthEnvelopedRecipient(kek).setProvider(BC));
+
+            assertTrue(Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+        }
+
+        ep.close();
+    }
+
+    public void testChaCha20Poly1305KEK()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        SecretKey kek = CMSTestUtil.makeAES192Key();
+
+        CMSAuthEnvelopedDataStreamGenerator edGen = new CMSAuthEnvelopedDataStreamGenerator();
+
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+
+        edGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.ChaCha20Poly1305);
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
+
+        out.write(data);
+
+        out.close();
+
+        CMSAuthEnvelopedDataParser ep = new CMSAuthEnvelopedDataParser(bOut.toByteArray());
+
+        RecipientInformationStore recipients = ep.getRecipientInfos();
+
+        assertEquals(ep.getEncAlgOID(), CMSAlgorithm.ChaCha20Poly1305.getId());
 
         Collection<RecipientInformation> c = recipients.getRecipients();
         Iterator<RecipientInformation> it = c.iterator();
@@ -505,7 +563,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
         out.write(data);
 
         out.close();
@@ -535,8 +593,8 @@ public class NewAuthEnvelopedDataStreamTest
         CMSAuthEnvelopedDataStreamGenerator edGen = new CMSAuthEnvelopedDataStreamGenerator();
 
         JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(
-                CMSAlgorithm.ECDH_SHA1KDF, _origEcKP.getPrivate(), _origEcKP.getPublic(),
-                CMSAlgorithm.AES128_WRAP).setProvider(BC);
+            CMSAlgorithm.ECDH_SHA1KDF, _origEcKP.getPrivate(), _origEcKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).setProvider(BC);
 
         recipientGenerator.addRecipient(_reciEcCert);
 
@@ -545,7 +603,7 @@ public class NewAuthEnvelopedDataStreamTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
-        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor) encryptorBuilder.setProvider(BC).build());
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
         out.write(data);
 
         out.close();
@@ -561,11 +619,113 @@ public class NewAuthEnvelopedDataStreamTest
         RecipientInformation recipient = recipients.get(recSel);
 
         CMSTypedStream recData = recipient.getContentStream(
-                new JceKeyAgreeAuthEnvelopedRecipient(_reciEcKP.getPrivate()).setProvider(BC));
+            new JceKeyAgreeAuthEnvelopedRecipient(_reciEcKP.getPrivate()).setProvider(BC));
 
         assertEquals(true, Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
 
         ep.close();
+    }
+
+    public void testECKeyAgreeChacha20Poly1305()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSAuthEnvelopedDataStreamGenerator edGen = new CMSAuthEnvelopedDataStreamGenerator();
+
+        JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(
+            CMSAlgorithm.ECDH_SHA1KDF, _origEcKP.getPrivate(), _origEcKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).setProvider(BC);
+
+        recipientGenerator.addRecipient(_reciEcCert);
+
+        edGen.addRecipientInfoGenerator(recipientGenerator);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        JceCMSContentEncryptorBuilder encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.ChaCha20Poly1305);
+        OutputStream out = edGen.open(bOut, (OutputAEADEncryptor)encryptorBuilder.setProvider(BC).build());
+        out.write(data);
+
+        out.close();
+
+        CMSAuthEnvelopedDataParser ep = new CMSAuthEnvelopedDataParser(bOut.toByteArray());
+
+        RecipientInformationStore recipients = ep.getRecipientInfos();
+
+        assertEquals(ep.getEncAlgOID(), CMSAlgorithm.ChaCha20Poly1305.getId());
+
+        RecipientId recSel = new JceKeyAgreeRecipientId(_reciEcCert);
+
+        RecipientInformation recipient = recipients.get(recSel);
+
+        CMSTypedStream recData = recipient.getContentStream(
+            new JceKeyAgreeAuthEnvelopedRecipient(_reciEcKP.getPrivate()).setProvider(BC));
+
+        assertEquals(true, Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
+
+        ep.close();
+    }
+
+    public void testPasswordChaCha20Poly1305()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(CMSAlgorithm.ChaCha20Poly1305).setProvider(BC).build();
+
+        assertEquals(CMSAlgorithm.ChaCha20Poly1305, candidate.getAlgorithmIdentifier().getAlgorithm());
+        //assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                    new DERSet(new Time(new Date())));
+                attrs.put(testAttr.getAttrType(), testAttr);
+                return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JcePasswordRecipientInfoGenerator(new ASN1ObjectIdentifier(CMSAuthenticatedDataGenerator.AES256_CBC),
+            "password".toCharArray()).setProvider(BC).setSaltAndIterationCount(new byte[20], 5));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        Collection c = recipients.getRecipients();
+        Iterator it = c.iterator();
+
+        if (it.hasNext())
+        {
+            PasswordRecipientInformation recipient = (PasswordRecipientInformation)it.next();
+
+            PasswordRecipient pbeRep = new JcePasswordAuthEnvelopedRecipient("password".toCharArray()).setProvider(BC);
+
+            byte[] recData = recipient.getContent(pbeRep);
+
+            assertTrue(Arrays.equals(message, recData));
+            assertTrue(Arrays.equals(authData.getMac(), recipient.getMac()));
+        }
+        else
+        {
+            fail("no recipient found");
+        }
     }
 
     public static Test suite()
@@ -573,4 +733,15 @@ public class NewAuthEnvelopedDataStreamTest
     {
         return new CMSTestSetup(new TestSuite(NewAuthEnvelopedDataStreamTest.class));
     }
+
+//    public static void main(String[] args)
+//        throws Exception
+//    {
+//        NewAuthEnvelopedDataStreamTest test = new NewAuthEnvelopedDataStreamTest();
+//        test.setUp();
+//        test.testPasswordChaCha20Poly1305();
+//        test.testECKeyAgreeChacha20Poly1305();
+//        test.testChaCha20Poly1305KEK();
+//        System.out.println("OK");
+//    }
 }
