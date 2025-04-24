@@ -83,7 +83,7 @@ public class CheckNameConstraintsTest
         PKIXBuilderParameters buildParams = new PKIXBuilderParameters(Collections.singleton(new TrustAnchor(rootCert, null)), pathConstraints);
 
         buildParams.addCertStore(store);
-        buildParams.setDate(new Date());
+        buildParams.setDate(new Date(1744869361113L)); // 17th April 2025
         buildParams.setRevocationEnabled(false);
         
         PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
@@ -116,6 +116,7 @@ public class CheckNameConstraintsTest
         CertPathValidator cpv = CertPathValidator.getInstance("PKIX", "BC");
         PKIXParameters param = new PKIXParameters(trust);
         param.setRevocationEnabled(false);
+        param.setDate(new Date(1744869361113L)); // 17th April 2025
 
         cpv.validate(certPath, param);
     }
