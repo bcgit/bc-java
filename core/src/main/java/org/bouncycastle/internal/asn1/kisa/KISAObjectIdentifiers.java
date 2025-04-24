@@ -31,4 +31,7 @@ public interface KISAObjectIdentifiers
 
     /** RFC 9708 MTS-HashSig-2013; OID 1.2.840.113549.1.9.16.0.64 */
     static final ASN1ObjectIdentifier id_mod_mts_hashsig_2013 = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.64");
+
+    /** RFC 8103 id-mod-CMS-AEADChaCha20Poly1305; OID 1.2.840.113549.1.9.16.0.66 */
+    static final ASN1ObjectIdentifier id_mod_CMS_AEADChaCha20Poly1305 = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.66");
 }

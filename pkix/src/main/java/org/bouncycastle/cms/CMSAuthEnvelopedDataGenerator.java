@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 
 public class CMSAuthEnvelopedDataGenerator
@@ -36,10 +37,17 @@ public class CMSAuthEnvelopedDataGenerator
         try
         {
             OutputStream cOut = contentEncryptor.getOutputStream(bOut);
-
-            content.write(cOut);
-
-            authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+            if (contentEncryptor.getAlgorithmIdentifier().getAlgorithm().equals(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305))
+            {
+                // AEAD Ciphers process AAD at first
+                authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+                content.write(cOut);
+            }
+            else
+            {
+                content.write(cOut);
+                authenticatedAttrSet = CMSUtils.processAuthAttrSet(authAttrsGenerator, contentEncryptor);
+            }
 
             cOut.close();
         }
@@ -66,7 +74,7 @@ public class CMSAuthEnvelopedDataGenerator
      * generate an auth-enveloped object that contains an CMS Enveloped Data
      * object using the given provider.
      *
-     * @param content the content to be encrypted
+     * @param content          the content to be encrypted
      * @param contentEncryptor the symmetric key based encryptor to encrypt the content with.
      */
     public CMSAuthEnvelopedData generate(
