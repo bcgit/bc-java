@@ -41,16 +41,13 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultMultiBlockCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.paddings.PKCS7Padding;
-import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
-import org.junit.Assert;
+
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -868,12 +865,12 @@ public class BlockCipherTest
         }
         catch (Exception e)
         {
-            Assert.fail(e.toString());
+            fail(e.toString());
         }
 
         if (!Arrays.areEqual(data, 0, len, output, 0, output.length))
         {
-            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
@@ -898,12 +895,12 @@ public class BlockCipherTest
         }
         catch (Exception e)
         {
-            Assert.fail(e.toString());
+            fail(e.toString());
         }
 
         if (!Arrays.areEqual(data, 1, 1 + len, output, 0, output.length))
         {
-            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
