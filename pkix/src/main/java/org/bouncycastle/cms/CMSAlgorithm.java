@@ -105,4 +105,5 @@ public class CMSAlgorithm
 
     public static final ASN1ObjectIdentifier  SHAKE128_LEN = NISTObjectIdentifiers.id_shake128_len.intern();
     public static final ASN1ObjectIdentifier  SHAKE256_LEN = NISTObjectIdentifiers.id_shake256_len.intern();
+    public static final ASN1ObjectIdentifier ChaCha20Poly1305 = PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.intern();
 }

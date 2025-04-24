@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
@@ -189,6 +190,53 @@ public class AuthEnvelopedDataTest
                      new DERSet(new Time(new Date())));
                  attrs.put(testAttr.getAttrType(), testAttr);
                  return new AttributeTable(attrs);
+            }
+        });
+
+        authGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert));
+
+        CMSAuthEnvelopedData authData = authGen.generate(new CMSProcessableByteArray(message), macProvider);
+
+        CMSAuthEnvelopedData encAuthData = new CMSAuthEnvelopedData(authData.getEncoded());
+
+        RecipientInformationStore recipients = encAuthData.getRecipientInfos();
+
+        RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertEquals("Hello, world!", Strings.fromByteArray(recData));
+    }
+
+    public void testChacha20Poly1305()
+        throws Exception
+    {
+        if (!CMSTestUtil.isAeadAvailable())
+        {
+            return;
+        }
+        byte[] message = Strings.toByteArray("Hello, world!");
+        OutputEncryptor candidate = new JceCMSContentEncryptorBuilder(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305).setProvider(BC).build();
+
+        assertEquals(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305, candidate.getAlgorithmIdentifier().getAlgorithm());
+        //assertNotNull(GCMParameters.getInstance(candidate.getAlgorithmIdentifier().getParameters()));
+
+        assertTrue(candidate instanceof OutputAEADEncryptor);
+
+        OutputAEADEncryptor macProvider = (OutputAEADEncryptor)candidate;
+
+        CMSAuthEnvelopedDataGenerator authGen = new CMSAuthEnvelopedDataGenerator();
+
+        authGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                Hashtable<ASN1ObjectIdentifier, Attribute> attrs = new Hashtable<ASN1ObjectIdentifier, Attribute>();
+                Attribute testAttr = new Attribute(CMSAttributes.signingTime,
+                    new DERSet(new Time(new Date())));
+                attrs.put(testAttr.getAttrType(), testAttr);
+                return new AttributeTable(attrs);
             }
         });
 
