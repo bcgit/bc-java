@@ -12,29 +12,30 @@ import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.KeyFlags;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.KeyPairGeneratorCallback;
-import org.bouncycastle.openpgp.api.OpenPGPV6KeyGenerator;
+import org.bouncycastle.openpgp.api.OpenPGPApi;
+import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
+import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPV6KeyGenerator;
-import org.bouncycastle.openpgp.api.jcajce.JcaOpenPGPV6KeyGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
-import org.bouncycastle.openpgp.test.AbstractPgpKeyPairTest;
 
 public class OpenPGPV6KeyGeneratorTest
-    extends AbstractPgpKeyPairTest
+    extends APITest
 {
     @Override
     public String getName()
@@ -43,59 +44,32 @@ public class OpenPGPV6KeyGeneratorTest
     }
 
     @Override
-    public void performTest()
-        throws Exception
-    {
-        // Run tests using the BC implementation
-        performTests(new APIProvider()
-        {
-            @Override
-            public OpenPGPV6KeyGenerator getKeyGenerator(int signatureHashAlgorithm,
-                                                         Date creationTime,
-                                                         boolean aeadProtection)
-            {
-                return new BcOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection);
-            }
-        });
-
-        // Run tests using the JCA/JCE implementation
-        performTests(new APIProvider()
-        {
-            @Override
-            public OpenPGPV6KeyGenerator getKeyGenerator(int signatureHashAlgorithm,
-                                                         Date creationTime,
-                                                         boolean aeadProtection)
-                throws PGPException
-            {
-                return new JcaOpenPGPV6KeyGenerator(signatureHashAlgorithm, creationTime, aeadProtection,
-                    new BouncyCastleProvider());
-            }
-        });
-    }
-
-    private void performTests(APIProvider apiProvider)
+    protected void performTestWith(OpenPGPApi api)
         throws PGPException, IOException
     {
-        testGenerateCustomKey(apiProvider);
+        testGenerateCustomKey(api);
+        testGenerateMinimalKey(api);
 
-        testGenerateSignOnlyKeyBaseCase(apiProvider);
-        testGenerateAEADProtectedSignOnlyKey(apiProvider);
-        testGenerateCFBProtectedSignOnlyKey(apiProvider);
+        testGenerateSignOnlyKeyBaseCase(api);
+        testGenerateAEADProtectedSignOnlyKey(api);
+        testGenerateCFBProtectedSignOnlyKey(api);
 
-        testGenerateClassicKeyBaseCase(apiProvider);
-        testGenerateProtectedTypicalKey(apiProvider);
+        testGenerateClassicKeyBaseCase(api);
+        testGenerateProtectedTypicalKey(api);
 
-        testGenerateEd25519x25519Key(apiProvider);
-        testGenerateEd448x448Key(apiProvider);
+        testGenerateEd25519x25519Key(api);
+        testGenerateEd448x448Key(api);
 
-        testEnforcesPrimaryOrSubkeyType(apiProvider);
+        testEnforcesPrimaryOrSubkeyType(api);
+        testGenerateKeyWithoutSignatures(api);
     }
 
-    private void testGenerateSignOnlyKeyBaseCase(APIProvider apiProvider)
+    private void testGenerateSignOnlyKeyBaseCase(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator();
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey(null);
+        OpenPGPKeyGenerator generator = api.generateKey();
+        OpenPGPKey key = generator.signOnlyKey().build();
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -118,11 +92,12 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals("Key MUST be unprotected", SecretKeyPacket.USAGE_NONE, primaryKey.getS2KUsage());
     }
 
-    private void testGenerateAEADProtectedSignOnlyKey(APIProvider apiProvider)
+    private void testGenerateAEADProtectedSignOnlyKey(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(true);
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
+        OpenPGPKeyGenerator generator = api.generateKey(new Date(), true);
+        OpenPGPKey key = generator.signOnlyKey().build("passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -135,11 +110,12 @@ public class OpenPGPV6KeyGeneratorTest
                     .build("passphrase".toCharArray())));
     }
 
-    private void testGenerateCFBProtectedSignOnlyKey(APIProvider apiProvider)
+    private void testGenerateCFBProtectedSignOnlyKey(OpenPGPApi api)
         throws PGPException
     {
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(false);
-        PGPSecretKeyRing secretKeys = generator.signOnlyKey("passphrase".toCharArray());
+        OpenPGPKeyGenerator generator = api.generateKey(new Date(), false);
+        OpenPGPKey key = generator.signOnlyKey().build("passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> it = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)it.next();
@@ -152,13 +128,14 @@ public class OpenPGPV6KeyGeneratorTest
                     .build("passphrase".toCharArray())));
     }
 
-    private void testGenerateClassicKeyBaseCase(APIProvider apiProvider)
+    private void testGenerateClassicKeyBaseCase(OpenPGPApi api)
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
-        PGPSecretKeyRing secretKeys = generator
-            .classicKey("Alice <alice@example.com>", null);
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime);
+        OpenPGPKey key = generator
+            .classicKey("Alice <alice@example.com>").build();
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> keys = secretKeys.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)keys.next();
@@ -207,25 +184,26 @@ public class OpenPGPV6KeyGeneratorTest
         // Test all keys are unprotected
         for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
-            PGPSecretKey key = (PGPSecretKey)it.next();
-            isEquals("(Sub-)keys MUST be unprotected", SecretKeyPacket.USAGE_NONE, key.getS2KUsage());
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            isEquals("(Sub-)keys MUST be unprotected", SecretKeyPacket.USAGE_NONE, k.getS2KUsage());
         }
     }
 
-    private void testGenerateProtectedTypicalKey(APIProvider apiProvider)
+    private void testGenerateProtectedTypicalKey(OpenPGPApi api)
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
-        PGPSecretKeyRing secretKeys = generator
-            .classicKey("Alice <alice@example.com>", "passphrase".toCharArray());
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime);
+        OpenPGPKey key = generator
+            .classicKey("Alice <alice@example.com>").build("passphrase".toCharArray());
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
 
         // Test creation time
         for (Iterator it = secretKeys.toCertificate().iterator(); it.hasNext();)
         {
-            PGPPublicKey key = (PGPPublicKey)it.next();
-            isEquals(creationTime, key.getCreationTime());
-            for (Iterator<PGPSignature> its = key.getSignatures(); its.hasNext(); )
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            isEquals(creationTime, k.getCreationTime());
+            for (Iterator<PGPSignature> its = k.getSignatures(); its.hasNext(); )
             {
                 PGPSignature sig = (PGPSignature)its.next();
                 isEquals(creationTime, sig.getCreationTime());
@@ -240,19 +218,21 @@ public class OpenPGPV6KeyGeneratorTest
 
         for (Iterator it = secretKeys.getSecretKeys(); it.hasNext();)
         {
-            PGPSecretKey key = (PGPSecretKey)it.next();
-            isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, key.getS2KUsage());
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            isEquals("(Sub-)keys MUST be protected", SecretKeyPacket.USAGE_AEAD, k.getS2KUsage());
+
         }
     }
 
-    private void testGenerateEd25519x25519Key(APIProvider apiProvider)
+    private void testGenerateEd25519x25519Key(OpenPGPApi api)
             throws PGPException
     {
         Date currentTime = currentTimeRounded();
         String userId = "Foo <bar@baz>";
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
+        OpenPGPKeyGenerator generator = api.generateKey(currentTime);
 
-        PGPSecretKeyRing secretKey = generator.ed25519x25519Key(userId, null);
+        OpenPGPKey key = generator.ed25519x25519Key(userId).build();
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
@@ -292,14 +272,15 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, hashedSubpackets.getKeyFlags());
     }
 
-    private void testGenerateEd448x448Key(APIProvider apiProvider)
+    private void testGenerateEd448x448Key(OpenPGPApi api)
             throws PGPException
     {
         Date currentTime = currentTimeRounded();
         String userId = "Foo <bar@baz>";
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(currentTime);
+        OpenPGPKeyGenerator generator = api.generateKey(currentTime);
 
-        PGPSecretKeyRing secretKey = generator.ed448x448Key(userId, null);
+        OpenPGPKey key = generator.ed448x448Key(userId).build();
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
 
         Iterator<PGPSecretKey> iterator = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)iterator.next();
@@ -339,61 +320,61 @@ public class OpenPGPV6KeyGeneratorTest
         isEquals(KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE, hashedSubpackets.getKeyFlags());
     }
 
-    private void testGenerateCustomKey(APIProvider apiProvider)
+    private void testGenerateCustomKey(OpenPGPApi api)
         throws PGPException
     {
         Date creationTime = currentTimeRounded();
-        OpenPGPV6KeyGenerator generator = apiProvider.getKeyGenerator(creationTime);
+        OpenPGPKeyGenerator generator = api.generateKey(creationTime, false);
 
-        PGPSecretKeyRing secretKey = generator
+        OpenPGPKey key = generator
             .withPrimaryKey(
-                new KeyPairGeneratorCallback()
-                {
-                    public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                        throws PGPException
+                    new KeyPairGeneratorCallback()
                     {
-                        return generator.generateRsaKeyPair(4096);
-                    }
-                },
-                new SignatureSubpacketsFunction()
-                {
-                    public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                        public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                throws PGPException
+                        {
+                            return generator.generateRsaKeyPair(4096);
+                        }
+                    },
+                    SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                     {
-                        subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
-                        subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER);
+                        @Override
+                        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                        {
+                            subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
+                            subpackets.setKeyFlags(KeyFlags.CERTIFY_OTHER);
 
-                        subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
-                        subpackets.setFeature(false, Features.FEATURE_SEIPD_V2);
+                            subpackets.removePacketsOfType(SignatureSubpacketTags.FEATURES);
+                            subpackets.setFeature(false, Features.FEATURE_SEIPD_V2);
 
-                        subpackets.addNotationData(false, true,
-                            "notation@example.com", "CYBER");
+                            subpackets.addNotationData(false, true,
+                                    "notation@example.com", "CYBER");
 
-                        subpackets.setPreferredKeyServer(false, "https://example.com/openpgp/cert.asc");
-                        return subpackets;
-                    }
-                },
-                "primary-key-passphrase".toCharArray())
-            .addUserId("Alice <alice@example.com>", PGPSignature.DEFAULT_CERTIFICATION, null)
+                            subpackets.setPreferredKeyServer(false, "https://example.com/openpgp/cert.asc");
+                            return subpackets;
+                        }
+                    }))
+            .addUserId("Alice <alice@example.com>")
             .addSigningSubkey(
-                new KeyPairGeneratorCallback()
-                {
-                    public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
-                        throws PGPException
+                    new KeyPairGeneratorCallback()
                     {
-                        return generator.generateEd448KeyPair();
-                    }
-                },
-                new SignatureSubpacketsFunction()
-                {
-                    public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator bindingSubpackets)
+                        public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                                throws PGPException
+                        {
+                            return generator.generateEd448KeyPair();
+                        }
+                    },
+                    SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                     {
-                        bindingSubpackets.addNotationData(false, true,
-                            "notation@example.com", "ZAUBER");
-                        return bindingSubpackets;
-                    }
-                },
-                null,
-                "signing-key-passphrase".toCharArray())
+                        @Override
+                        public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                        {
+                            subpackets.addNotationData(false, true,
+                                    "notation@example.com", "ZAUBER");
+                            return subpackets;
+                        }
+                    }),
+                    null)
             .addEncryptionSubkey(
                 new KeyPairGeneratorCallback()
                 {
@@ -402,10 +383,22 @@ public class OpenPGPV6KeyGeneratorTest
                     {
                         return generator.generateX448KeyPair();
                     }
-                },
-                "encryption-key-passphrase".toCharArray())
-            .build();
+                })
+            .build("primary-key-passphrase".toCharArray());
+        OpenPGPCertificate.OpenPGPComponentKey encryptionKey = key.getEncryptionKeys().get(0);
+        OpenPGPCertificate.OpenPGPComponentKey signingKey = key.getSigningKeys().get(0);
+        key = api.editKey(key, "primary-key-passphrase".toCharArray())
+                .changePassphrase(encryptionKey.getKeyIdentifier(),
+                        "primary-key-passphrase".toCharArray(),
+                        "encryption-key-passphrase".toCharArray(),
+                        false)
+                .changePassphrase(signingKey.getKeyIdentifier(),
+                        "primary-key-passphrase".toCharArray(),
+                        "signing-key-passphrase".toCharArray(),
+                        false)
+                .done();
 
+        PGPSecretKeyRing secretKey = key.getPGPKeyRing();
         Iterator<PGPSecretKey> keyIt = secretKey.getSecretKeys();
         PGPSecretKey primaryKey = (PGPSecretKey)keyIt.next();
         isEquals("Primary key MUST be RSA_GENERAL",
@@ -428,7 +421,7 @@ public class OpenPGPV6KeyGeneratorTest
         isFalse("Unexpected additional UID", uids.hasNext());
         PGPSignature uidSig = (PGPSignature)primaryKey.getPublicKey().getSignaturesForID(uid).next();
         isEquals("UID binding sig type mismatch",
-            PGPSignature.DEFAULT_CERTIFICATION, uidSig.getSignatureType());
+            PGPSignature.POSITIVE_CERTIFICATION, uidSig.getSignatureType());
 
         PGPSecretKey signingSubkey = (PGPSecretKey)keyIt.next();
         isEquals("Subkey MUST be Ed448",
@@ -469,7 +462,55 @@ public class OpenPGPV6KeyGeneratorTest
             encryptionSubkey.extractPrivateKey(keyDecryptorBuilder.build("encryption-key-passphrase".toCharArray())));
     }
 
-    private void testEnforcesPrimaryOrSubkeyType(final APIProvider apiProvider)
+    private void testGenerateMinimalKey(OpenPGPApi api)
+            throws PGPException
+    {
+        Date creationTime = currentTimeRounded();
+        OpenPGPKeyGenerator gen = api.generateKey(creationTime, false);
+        OpenPGPKey key = gen.withPrimaryKey(
+                new KeyPairGeneratorCallback()
+                {
+                    @Override
+                    public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                        throws PGPException
+                    {
+                        return generator.generateEd25519KeyPair();
+                    }
+                },
+                SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                {
+                    @Override
+                    public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
+                    {
+                        subpackets.addNotationData(false, true, "foo@bouncycastle.org", "bar");
+                        return subpackets;
+                    }
+                }))
+                .addUserId("Alice <alice@example.org>")
+                .addEncryptionSubkey()
+                .addSigningSubkey()
+                .build();
+        PGPSecretKeyRing secretKeys = key.getPGPKeyRing();
+
+        // Test creation time
+        for(Iterator it = secretKeys.toCertificate().iterator(); it.hasNext(); )
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            isEquals(creationTime, k.getCreationTime());
+            for (Iterator<PGPSignature> itSign = k.getSignatures(); itSign.hasNext(); ) {
+                PGPSignature sig = itSign.next();
+                isEquals(creationTime, sig.getCreationTime());
+            }
+        }
+
+        PGPPublicKey primaryKey = secretKeys.getPublicKey();
+        // Test UIDs
+        Iterator<String> uids = primaryKey.getUserIDs();
+        isEquals("Alice <alice@example.org>", uids.next());
+        isFalse(uids.hasNext());
+    }
+
+    private void testEnforcesPrimaryOrSubkeyType(final OpenPGPApi api)
         throws PGPException
     {
         isNotNull(testException(
@@ -481,7 +522,7 @@ public class OpenPGPV6KeyGeneratorTest
                 public void operation()
                     throws Exception
                 {
-                    apiProvider.getKeyGenerator().withPrimaryKey(
+                    api.generateKey().withPrimaryKey(
                         new KeyPairGeneratorCallback()
                         {
                             public PGPKeyPair generateFrom(PGPKeyPairGenerator keyGenCallback)
@@ -504,10 +545,12 @@ public class OpenPGPV6KeyGeneratorTest
                 public void operation()
                     throws Exception
                 {
-                    apiProvider.getKeyGenerator().withPrimaryKey()
-                        .addEncryptionSubkey(new BcPGPKeyPairGeneratorProvider()
-                            .get(6, new Date())
-                            .generateX25519KeyPair(), null, null); // primary key as subkey is illegal
+                    api.generateKey().withPrimaryKey()
+                        .addEncryptionSubkey(
+                                new BcPGPKeyPairGeneratorProvider()
+                                        .get(6, new Date())
+                                        .generateX25519KeyPair(),
+                                null); // primary key as subkey is illegal
                 }
             }
         ));
@@ -521,37 +564,76 @@ public class OpenPGPV6KeyGeneratorTest
                 public void operation()
                     throws Exception
                 {
-                    apiProvider.getKeyGenerator().withPrimaryKey()
-                        .addSigningSubkey(new BcPGPKeyPairGeneratorProvider()
-                            .get(6, new Date())
-                            .generateEd25519KeyPair(), null, null, null); // primary key as subkey is illegal
+                    api.generateKey().withPrimaryKey()
+                        .addSigningSubkey(
+                                new BcPGPKeyPairGeneratorProvider()
+                                        .get(6, new Date())
+                                        .generateEd25519KeyPair(),
+                                null,
+                                null); // primary key as subkey is illegal
                 }
             }
         ));
     }
 
-    private abstract static class APIProvider
+    private void testGenerateKeyWithoutSignatures(OpenPGPApi api)
+            throws PGPException
     {
-        public OpenPGPV6KeyGenerator getKeyGenerator()
-            throws PGPException
-        {
-            return getKeyGenerator(new Date());
-        }
+        OpenPGPKey key = api.generateKey()
+                .withPrimaryKey(
+                        KeyPairGeneratorCallback.primaryKey(),
+                        // No direct-key sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters) {
+                                return null;
+                            }
+                        })
+                .addSigningSubkey(
+                        KeyPairGeneratorCallback.signingKey(),
+                        // No subkey binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        },
+                        // No primary key binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        })
+                .addEncryptionSubkey(
+                        KeyPairGeneratorCallback.encryptionKey(),
+                        // No subkey binding sig
+                        new SignatureParameters.Callback()
+                        {
+                            @Override
+                            public SignatureParameters apply(SignatureParameters parameters)
+                            {
+                                return null;
+                            }
+                        })
+                .build();
 
-        public OpenPGPV6KeyGenerator getKeyGenerator(Date creationTime)
-            throws PGPException
-        {
-            return getKeyGenerator(OpenPGPV6KeyGenerator.DEFAULT_SIGNATURE_HASH_ALGORITHM, creationTime, true);
-        }
+        PGPPublicKeyRing publicKeys = key.getPGPPublicKeyRing();
+        Iterator<PGPPublicKey> it = publicKeys.getPublicKeys();
 
-        public OpenPGPV6KeyGenerator getKeyGenerator(boolean aeadProtection)
-            throws PGPException
-        {
-            return getKeyGenerator(OpenPGPV6KeyGenerator.DEFAULT_SIGNATURE_HASH_ALGORITHM, new Date(), aeadProtection);
-        }
+        PGPPublicKey primaryKey = it.next();
+        isFalse(primaryKey.getSignatures().hasNext());
 
-        public abstract OpenPGPV6KeyGenerator getKeyGenerator(int signatureHashAlgorithm, Date creationTime, boolean aeadProtection)
-            throws PGPException;
+        PGPPublicKey signingSubkey = it.next();
+        isFalse(signingSubkey.getSignatures().hasNext());
+
+        PGPPublicKey encryptionSubkey = it.next();
+        isFalse(encryptionSubkey.getSignatures().hasNext());
     }
 
     public static void main(String[] args)
