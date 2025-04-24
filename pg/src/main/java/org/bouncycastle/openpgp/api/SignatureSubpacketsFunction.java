@@ -5,7 +5,7 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 
 /**
  * Callback to modify the contents of a {@link PGPSignatureSubpacketGenerator}.
- * The {@link OpenPGPV6KeyGenerator} already prepopulates the hashed subpacket areas of signatures during
+ * The {@link OpenPGPKeyGenerator} already prepopulates the hashed subpacket areas of signatures during
  * key generation. This callback is useful to apply custom changes to the hashed subpacket area during the
  * generation process.
  */

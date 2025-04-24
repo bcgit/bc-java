@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.operator.bc;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptorFactory;
@@ -19,6 +18,16 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 public class BcCFBSecretKeyEncryptorFactory
         implements PBESecretKeyEncryptorFactory
 {
+    private final int symmetricKeyAlgorithm;
+    private final int iterationCount;
+
+    public BcCFBSecretKeyEncryptorFactory(int symmetricKeyAlgorithm,
+                                          int iterationCount)
+    {
+        this.symmetricKeyAlgorithm = symmetricKeyAlgorithm;
+        this.iterationCount = iterationCount;
+    }
+
     @Override
     public PBESecretKeyEncryptor build(char[] passphrase, PublicKeyPacket pubKeyPacket)
     {
@@ -38,9 +47,9 @@ public class BcCFBSecretKeyEncryptorFactory
         }
 
         return new BcPBESecretKeyEncryptorBuilder(
-            SymmetricKeyAlgorithmTags.AES_256,
+            symmetricKeyAlgorithm,
             checksumCalc,
-            0xff) // MAX iteration count
+            iterationCount) // MAX iteration count
             .build(passphrase);
     }
 }
