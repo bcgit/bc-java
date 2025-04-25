@@ -2707,6 +2707,16 @@ public class TlsUtils
         return v;
     }
 
+    public static Vector vectorFromArray(Object[] array)
+    {
+        Vector v = new Vector(array.length);
+        for (Object obj: array)
+        {
+            v.addElement(obj);
+        }
+        return v;
+    }
+
     public static int getCipherType(int cipherSuite)
     {
         int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);

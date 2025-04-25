@@ -419,15 +419,73 @@ public abstract class AbstractTlsClient
         {
             return null;
         }
+
+        Integer firstKemNamedGroup = null;
+        int firstKemNamedGroupIndex = -1;
+
+        for (int i = 0; i < supportedGroups.size(); i++)
+        {
+            Integer group = (Integer) supportedGroups.elementAt(i);
+            if (NamedGroup.refersToASpecificKem(group))
+            {
+                firstKemNamedGroup = group;
+                firstKemNamedGroupIndex = i;
+                break;
+            }
+        }
+
+        Integer firstNonKemNamedGroup = null;
+        int firstNonKemNamedGroupIndex = -1;
+
         if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
+            firstNonKemNamedGroup = Integers.valueOf(NamedGroup.x25519);
+            firstNonKemNamedGroupIndex = supportedGroups.indexOf(firstNonKemNamedGroup);
         }
-        if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
+        else if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
+            firstNonKemNamedGroup = Integers.valueOf(NamedGroup.secp256r1);
+            firstNonKemNamedGroupIndex = supportedGroups.indexOf(firstNonKemNamedGroup);
         }
-        return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
+        else
+        {
+            for (int i = 0; i < supportedGroups.size(); i++)
+            {
+                Integer group = (Integer) supportedGroups.elementAt(i);
+                if (!NamedGroup.refersToASpecificKem(group))
+                {
+                    firstNonKemNamedGroup = group;
+                    firstNonKemNamedGroupIndex = i;
+                    break;
+                }
+            }
+        }
+
+        Vector<Integer> earlyKeyShareGroups = new Vector<>();
+
+        if (firstKemNamedGroupIndex != -1 && firstNonKemNamedGroupIndex != -1)
+        {
+            if (firstKemNamedGroupIndex < firstNonKemNamedGroupIndex)
+            {
+                earlyKeyShareGroups.add(firstKemNamedGroup);
+                earlyKeyShareGroups.add(firstNonKemNamedGroup);
+            }
+            else
+            {
+                earlyKeyShareGroups.add(firstNonKemNamedGroup);
+                earlyKeyShareGroups.add(firstKemNamedGroup);
+            }
+        }
+        else if (firstKemNamedGroup != null)
+        {
+            earlyKeyShareGroups.add(firstKemNamedGroup);
+        }
+        else if (firstNonKemNamedGroup != null)
+        {
+            earlyKeyShareGroups.add(firstNonKemNamedGroup);
+        }
+
+        return TlsUtils.vectorFromArray(earlyKeyShareGroups.toArray());
     }
 
     public boolean shouldUseCompatibilityMode()
