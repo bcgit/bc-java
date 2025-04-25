@@ -4,23 +4,28 @@ import java.io.IOException;
 
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PublicKeyParameters;
 
 /**
  * Factory to create ASN.1 subject public key info objects from lightweight public keys.
@@ -42,12 +47,29 @@ public class SubjectPublicKeyInfoFactory
     public static SubjectPublicKeyInfo createSubjectPublicKeyInfo(AsymmetricKeyParameter publicKey)
         throws IOException
     {
-        if (publicKey instanceof NHPublicKeyParameters)
+        if (publicKey instanceof SPHINCSPublicKeyParameters)
+        {
+            SPHINCSPublicKeyParameters params = (SPHINCSPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.sphincs256,
+                new SPHINCS256KeyParams(Utils.sphincs256LookupTreeAlgID(params.getTreeDigest())));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getKeyData());
+        }
+        else if (publicKey instanceof NHPublicKeyParameters)
         {
             NHPublicKeyParameters params = (NHPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.newHope);
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getPubData());
+        }
+        else if (publicKey instanceof SLHDSAPublicKeyParameters)
+        {
+            SLHDSAPublicKeyParameters params = (SLHDSAPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof CMCEPublicKeyParameters)
         {
@@ -58,6 +80,14 @@ public class SubjectPublicKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
+        }
+        else if (publicKey instanceof McElieceCCA2PublicKeyParameters)
+        {
+            McElieceCCA2PublicKeyParameters pub = (McElieceCCA2PublicKeyParameters)publicKey;
+            McElieceCCA2PublicKey mcEliecePub = new McElieceCCA2PublicKey(pub.getN(), pub.getT(), pub.getG(), Utils.getAlgorithmIdentifier(pub.getDigest()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.mcElieceCca2);
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, mcEliecePub);
         }
         else if (publicKey instanceof FrodoPublicKeyParameters)
         {
@@ -101,11 +131,11 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
         }
-        else if (publicKey instanceof KyberPublicKeyParameters)
+        else if (publicKey instanceof MLKEMPublicKeyParameters)
         {
-            KyberPublicKeyParameters params = (KyberPublicKeyParameters)publicKey;
+            MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }
@@ -114,6 +144,14 @@ public class SubjectPublicKeyInfoFactory
             DilithiumPublicKeyParameters params = (DilithiumPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof MLDSAPublicKeyParameters)
+        {
+            MLDSAPublicKeyParameters params = (MLDSAPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }

@@ -29,7 +29,6 @@ sourceSets {
 }
 
 dependencies {
-    implementation project(':core')
     implementation project(':util')
     implementation project(':pkix')
     implementation project(':prov')
@@ -60,14 +59,14 @@ dependencies {
 //    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 //    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 //    implementation "com.google.protobuf:protobuf-java-util:${protocVersion}"
-
-    java9Implementation files("$bc_prov")
-    java9Implementation files("$bc_util")
-    java9Implementation files("$bc_pkix")
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }
 }
+
+evaluationDependsOn(":prov")
+evaluationDependsOn(":util")
+evaluationDependsOn(":pkix")
 
 def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
 def protocVersion = '3.22.3'
@@ -78,8 +77,7 @@ checkstyleMain {
 }
 
 compileJava {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    options.release = 8
 
     options.errorprone.disableWarningsInGeneratedCode = true
     options.errorprone.errorproneArgs = ["-Xep:IgnoredPureGetter:OFF"]
@@ -87,13 +85,15 @@ compileJava {
 }
 
 compileJava9Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 9
-    targetCompatibility = 9
+
+    options.release = 9
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+    def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
+
+
     options.compilerArgs += [
-            '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}${File.pathSeparator}${bc_pkix}"
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
@@ -186,4 +186,26 @@ artifacts {
     archives jar
     archives javadocJar
     archives sourcesJar
+}
+
+test {
+    jvmArgs = ['-Dtest.java.version.prefix=any']
+}
+
+compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcmls-$vmrange"
+            from components.java
+
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+
+    }
 }

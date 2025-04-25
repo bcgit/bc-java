@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -63,7 +64,7 @@ public class JcaKeyFingerprintCalculator
     {
         BCPGKey key = publicPk.getKey();
 
-        if (publicPk.getVersion() <= 3)
+        if (publicPk.getVersion() <= PublicKeyPacket.VERSION_3)
         {
             RSAPublicBCPGKey rK = (RSAPublicBCPGKey)key;
 
@@ -79,11 +80,7 @@ public class JcaKeyFingerprintCalculator
 
                 return digest.digest();
             }
-            catch (NoSuchAlgorithmException e)
-            {
-                throw new PGPException("can't find MD5", e);
-            }
-            catch (NoSuchProviderException e)
+            catch (GeneralSecurityException e)
             {
                 throw new PGPException("can't find MD5", e);
             }
@@ -92,7 +89,7 @@ public class JcaKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else if (publicPk.getVersion() == 4)
+        else if (publicPk.getVersion() == PublicKeyPacket.VERSION_4)
         {
             try
             {
@@ -107,11 +104,7 @@ public class JcaKeyFingerprintCalculator
 
                 return digest.digest();
             }
-            catch (NoSuchAlgorithmException e)
-            {
-                throw new PGPException("can't find SHA1", e);
-            }
-            catch (NoSuchProviderException e)
+            catch (GeneralSecurityException e)
             {
                 throw new PGPException("can't find SHA1", e);
             }
@@ -120,7 +113,7 @@ public class JcaKeyFingerprintCalculator
                 throw new PGPException("can't encode key components: " + e.getMessage(), e);
             }
         }
-        else if (publicPk.getVersion() == 6)
+        else if (publicPk.getVersion() == PublicKeyPacket.LIBREPGP_5 || publicPk.getVersion() == PublicKeyPacket.VERSION_6)
         {
             try
             {
@@ -128,7 +121,7 @@ public class JcaKeyFingerprintCalculator
 
                 MessageDigest digest = helper.createMessageDigest("SHA-256");
 
-                digest.update((byte)0x9b);
+                digest.update((byte) (publicPk.getVersion() == PublicKeyPacket.VERSION_6 ? 0x9b : 0x9a));
 
                 digest.update((byte)(kBytes.length >> 24));
                 digest.update((byte)(kBytes.length >> 16));

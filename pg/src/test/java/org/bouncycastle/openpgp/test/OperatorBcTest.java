@@ -16,8 +16,11 @@ import java.util.Iterator;
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Wrapper;
@@ -25,8 +28,10 @@ import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.RFC3394WrapEngine;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
@@ -48,12 +53,20 @@ import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
+import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcAEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
@@ -98,14 +111,158 @@ public class OperatorBcTest
     public void performTest()
         throws Exception
     {
+        testPGPKeyEncryptionMethodGenerator();
+        testBcAEADSecretKeyEncryptorBuilder();
         testX25519HKDF();
         testKeyRings();
         testBcPGPKeyPair();
-//        testBcPGPDataEncryptorBuilder();
+        testBcPGPDataEncryptorBuilder();
         testBcPGPContentVerifierBuilderProvider();
-        //testBcPBESecretKeyDecryptorBuilder();
+        testBcPBESecretKeyDecryptorBuilder();
         testBcKeyFingerprintCalculator();
         testBcStandardDigests();
+    }
+
+    private void testPGPKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        v4PBEKeyEncryptionMethodGenerator();
+        v5PBEKeyEncryptionMethodGenerator();
+        v6PBEKeyEncryptionMethodGenerator();
+
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X448");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X25519");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "ECDH");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X448, "X448");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X25519, "X25519");
+        v6PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
+
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X448");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "X25519");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.ECDH, "ECDH");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X448, "X448");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.X25519, "X25519");
+        v3PublicKeyKeyEncryptionMethodGenerator(PublicKeyAlgorithmTags.RSA_GENERAL, "RSA");
+
+    }
+
+    private void v3PublicKeyKeyEncryptionMethodGenerator(int publicKeyID, String algorithmName)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithmName, "BC");
+        if (publicKeyID == PublicKeyAlgorithmTags.ECDH && algorithmName.equals("ECDH"))
+        {
+            kpGen.initialize(new ECNamedCurveGenParameterSpec("brainpoolP256r1"));
+        }
+        PGPKdfParameters parameters = null;
+        if (algorithmName.equals("X448"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        }
+        else if (algorithmName.equals("X25519"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        }
+        PGPKeyPair pgpKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, publicKeyID,
+            parameters, kpGen.generateKeyPair(), new Date());
+
+        BcPublicKeyKeyEncryptionMethodGenerator methodGenerator = new BcPublicKeyKeyEncryptionMethodGenerator(pgpKeyPair.getPublicKey());
+        int symAlgId = SymmetricKeyAlgorithmTags.CAST5;
+        BcPGPDataEncryptorBuilder v4 = new BcPGPDataEncryptorBuilder(symAlgId);
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PublicKeyEncSessionPacket packet = (PublicKeyEncSessionPacket)methodGenerator.generate(v4, sessionKey);
+        BcPublicKeyDataDecryptorFactory decryptorFactory = new BcPublicKeyDataDecryptorFactory(pgpKeyPair.getPrivateKey());
+        byte[] data = decryptorFactory.recoverSessionData(publicKeyID, packet.getEncSessionKey(), PublicKeyEncSessionPacket.VERSION_3);
+        if (publicKeyID == PublicKeyAlgorithmTags.X448 || publicKeyID == PublicKeyAlgorithmTags.X25519)
+        {
+            isTrue(Arrays.areEqual(sessionKey, data));
+        }
+        else
+        {
+            isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 1, data.length - 2)));
+        }
+    }
+
+    private void v6PublicKeyKeyEncryptionMethodGenerator(int publicKeyID, String algorithmName)
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(algorithmName, "BC");
+        if (publicKeyID == PublicKeyAlgorithmTags.ECDH && algorithmName.equals("ECDH"))
+        {
+            kpGen.initialize(new ECNamedCurveGenParameterSpec("brainpoolP256r1"));
+        }
+        PGPKdfParameters parameters = null;
+        if (algorithmName.equals("X448"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
+        }
+        else if (algorithmName.equals("X25519"))
+        {
+            parameters = new PGPKdfParameters(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
+        }
+        PGPKeyPair pgpKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, publicKeyID,
+            parameters, kpGen.generateKeyPair(), new Date());
+
+        BcPublicKeyKeyEncryptionMethodGenerator methodGenerator = new BcPublicKeyKeyEncryptionMethodGenerator(pgpKeyPair.getPublicKey());
+
+        BcPGPDataEncryptorBuilder v6 = (BcPGPDataEncryptorBuilder)new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 8);
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PublicKeyEncSessionPacket packet = (PublicKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
+        BcPublicKeyDataDecryptorFactory decryptorFactory = new BcPublicKeyDataDecryptorFactory(pgpKeyPair.getPrivateKey());
+        byte[] data = decryptorFactory.recoverSessionData(publicKeyID, packet.getEncSessionKey(), PublicKeyEncSessionPacket.VERSION_6);
+        if (publicKeyID == PublicKeyAlgorithmTags.X448 || publicKeyID == PublicKeyAlgorithmTags.X25519)
+        {
+            isTrue(Arrays.areEqual(sessionKey, data));
+        }
+        else
+        {
+            isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 0, data.length - 2)));
+        }
+    }
+
+    private void v4PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+
+        BcPBEKeyEncryptionMethodGenerator methodGenerator = new BcPBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        BcPGPDataEncryptorBuilder v4 = new BcPGPDataEncryptorBuilder(symAlgId);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v4, sessionKey);
+        BcPBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverSessionData(packet.getEncAlgorithm(), key, packet.getSecKeyData());
+        isTrue(Arrays.areEqual(sessionKey, Arrays.copyOfRange(data, 1, data.length)));
+    }
+
+    private void v5PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+        BcPBEKeyEncryptionMethodGenerator methodGenerator = new BcPBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PGPDataEncryptorBuilder v5 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV5AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v5, sessionKey);
+        BcPBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverAEADEncryptedSessionData(packet, key);
+        isTrue(Arrays.areEqual(sessionKey, data));
+    }
+
+    private void v6PBEKeyEncryptionMethodGenerator()
+        throws Exception
+    {
+        int symAlgId = SymmetricKeyAlgorithmTags.CAMELLIA_128;
+
+        BcPBEKeyEncryptionMethodGenerator methodGenerator = new BcPBEKeyEncryptionMethodGenerator("password".toCharArray());
+        byte[] sessionKey = PGPUtil.makeRandomKey(symAlgId, new SecureRandom());
+        PGPDataEncryptorBuilder v6 = new BcPGPDataEncryptorBuilder(symAlgId).setUseV6AEAD().setWithAEAD(AEADAlgorithmTags.OCB, 10);
+        SymmetricKeyEncSessionPacket packet = (SymmetricKeyEncSessionPacket)methodGenerator.generate(v6, sessionKey);
+        BcPBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory("password".toCharArray(), new BcPGPDigestCalculatorProvider());
+        byte[] key = pbeDataDecryptorFactory.makeKeyFromPassPhrase(packet.getEncAlgorithm(), packet.getS2K());
+        byte[] data = pbeDataDecryptorFactory.recoverAEADEncryptedSessionData(packet, key);
+        isTrue(Arrays.areEqual(sessionKey, data));
     }
 
     private void testBcStandardDigests()
@@ -145,12 +302,13 @@ public class OperatorBcTest
         KeyPairGenerator kpGen = KeyPairGenerator.getInstance("RSA", "BC");
         kpGen.initialize(1024);
         KeyPair kp = kpGen.generateKeyPair();
+        Date creationTime = new Date(1000 * (new Date().getTime() / 1000));
 
         JcaPGPKeyConverter converter = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
-        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), new Date());
+        final PGPPublicKey pubKey = converter.getPGPPublicKey(PublicKeyPacket.VERSION_4, PublicKeyAlgorithmTags.RSA_GENERAL, kp.getPublic(), creationTime);
 
-        PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
-        byte[] output = calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey()));
+        PublicKeyPacket pubKeyPacket = new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey());
+        byte[] output = calculator.calculateFingerprint(new PublicKeyPacket(6, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey()));
         byte[] kBytes = pubKeyPacket.getEncodedContents();
         SHA256Digest digest = new SHA256Digest();
 
@@ -167,24 +325,32 @@ public class OperatorBcTest
         digest.doFinal(digBuf, 0);
         isTrue(areEqual(output, digBuf));
 
-        final PublicKeyPacket pubKeyPacket2 = new PublicKeyPacket(5, PublicKeyAlgorithmTags.RSA_GENERAL, new Date(), pubKey.getPublicKeyPacket().getKey());
-        testException("Unsupported PGP key version: ", "UnsupportedPacketVersionException", new TestExceptionOperation()
-        {
-            @Override
-            public void operation()
-                throws Exception
-            {
-                calculator.calculateFingerprint(pubKeyPacket2);
-            }
-        });
+        final PublicKeyPacket pubKeyPacket2 = new PublicKeyPacket(5, PublicKeyAlgorithmTags.RSA_GENERAL, creationTime, pubKey.getPublicKeyPacket().getKey());
+        kBytes = pubKeyPacket2.getEncodedContents();
+        output = calculator.calculateFingerprint(pubKeyPacket2);
+
+        digest = new SHA256Digest();
+
+        digest.update((byte)0x9a);
+
+        digest.update((byte)(kBytes.length >> 24));
+        digest.update((byte)(kBytes.length >> 16));
+        digest.update((byte)(kBytes.length >> 8));
+        digest.update((byte)kBytes.length);
+
+        digest.update(kBytes, 0, kBytes.length);
+        digBuf = new byte[digest.getDigestSize()];
+
+        digest.doFinal(digBuf, 0);
+        isTrue(areEqual(output, digBuf));
     }
 
-//    public void testBcPBESecretKeyDecryptorBuilder()
-//        throws PGPException
-//    {
-//        final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
-//        decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.CAMELLIA_256, new byte[32], new byte[12], new byte[16], 0, 16);
-//    }
+    public void testBcPBESecretKeyDecryptorBuilder()
+        throws PGPException
+    {
+        final PBESecretKeyDecryptor decryptor = new BcPBESecretKeyDecryptorBuilder(new BcPGPDigestCalculatorProvider()).build(BcPGPDSAElGamalTest.pass);
+        decryptor.recoverKeyData(SymmetricKeyAlgorithmTags.CAMELLIA_256, new byte[32], new byte[12], new byte[16], 0, 16);
+    }
 
     public void testBcPGPContentVerifierBuilderProvider()
         throws Exception
@@ -204,7 +370,6 @@ public class OperatorBcTest
     {
         testException("null cipher specified", "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -214,7 +379,6 @@ public class OperatorBcTest
 
         testException("AEAD algorithms can only be used with AES", "IllegalStateException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -224,7 +388,6 @@ public class OperatorBcTest
 
         testException("minimum chunkSize is 6", "IllegalArgumentException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -234,7 +397,6 @@ public class OperatorBcTest
 
         testException("invalid parameters:", "PGPException", new TestExceptionOperation()
         {
-            @Override
             public void operation()
                 throws Exception
             {
@@ -284,7 +446,6 @@ public class OperatorBcTest
     {
         testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
@@ -297,20 +458,18 @@ public class OperatorBcTest
     {
         testCreateKeyPair(algorithm1, algorithm2, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
             }
         });
     }
-    
+
     private void testCreateKeyPairEC(int algorithm, String name, final String curveName)
         throws Exception
     {
         testCreateKeyPair(algorithm, name, new KeyPairGeneratorOperation()
         {
-            @Override
             public void initialize(KeyPairGenerator gen)
                 throws Exception
             {
@@ -381,6 +540,7 @@ public class OperatorBcTest
     public void testKeyRings()
         throws Exception
     {
+        keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X448", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed448", PublicKeyAlgorithmTags.Ed448, "XDH", "X448", PublicKeyAlgorithmTags.X448, HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256);
         keyringTest("EdDSA", "Ed25519", PublicKeyAlgorithmTags.EDDSA_LEGACY, "XDH", "X25519", PublicKeyAlgorithmTags.ECDH, HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
 
@@ -415,13 +575,13 @@ public class OperatorBcTest
 
         edKp.initialize(new ECNamedCurveGenParameterSpec(ed_str));
 
-        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(ed_num, edKp.generateKeyPair(), new Date());
+        PGPKeyPair dsaKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, ed_num, edKp.generateKeyPair(), new Date());
 
         KeyPairGenerator dhKp = KeyPairGenerator.getInstance(algorithmName2, "BC");
 
         dhKp.initialize(new ECNamedCurveGenParameterSpec(x_str));
 
-        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
+        PGPKeyPair dhKeyPair = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, x_num, new PGPKdfParameters(hashAlgorithm, symmetricWrapAlgorithm), dhKp.generateKeyPair(), new Date());
 
         encryptDecryptTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
         encryptDecryptBcTest(dhKeyPair.getPublicKey(), dhKeyPair.getPrivateKey());
@@ -464,7 +624,7 @@ public class OperatorBcTest
             {
                 count++;
                 sig.init(new JcaPGPContentVerifierBuilderProvider().setProvider("BC"), vKey);
-                   // TODO: appears to be failing on CI system
+                // TODO: appears to be failing on CI system
                 if (!sig.verifyCertification(vKey, sKey))
                 {
                     fail("failed to verify sub-key signature.");
@@ -632,6 +792,40 @@ public class OperatorBcTest
         isTrue(Arrays.areEqual(output, expectedDecryptedSessionKey));
     }
 
+    public void testBcAEADSecretKeyEncryptorBuilder()
+        throws Exception
+    {
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new SecureRandom()));
+        AsymmetricCipherKeyPair kp = gen.generateKeyPair();
+        Date creationTime = new Date();
+        SecureRandom random = new SecureRandom();
+        int[] versions = {PublicKeyPacket.VERSION_4, PublicKeyPacket.VERSION_6};
+        for (int i = 0; i != versions.length; i++)
+        {
+            int version = versions[i];
+            PGPKeyPair keyPair = new BcPGPKeyPair(version, PublicKeyAlgorithmTags.Ed25519, kp, creationTime);
 
+            BcAEADSecretKeyEncryptorBuilder bcEncBuilder = new BcAEADSecretKeyEncryptorBuilder(
+                AEADAlgorithmTags.OCB, SymmetricKeyAlgorithmTags.AES_256,
+                S2K.Argon2Params.memoryConstrainedParameters());
+
+            bcEncBuilder.build(
+                "passphrase".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            PBESecretKeyEncryptor encryptor = bcEncBuilder.build(
+                "Yin".toCharArray(),
+                keyPair.getPublicKey().getPublicKeyPacket());
+            byte[] key = new byte[16];
+            random.nextBytes(key);
+            byte[] input1 = new byte[64];
+            random.nextBytes(input1);
+
+            byte[] input2 = Arrays.copyOfRange(input1, 32, 64);
+            byte[] output1 = encryptor.encryptKeyData(key, input1, 32, 32);
+            byte[] output2 = encryptor.encryptKeyData(key, input2, 0, 32);
+            isTrue(Arrays.areEqual(output1, output2));
+        }
+    }
 
 }

@@ -46,6 +46,8 @@ public class AllTests
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(SphincsPlusTest.class);
         suite.addTestSuite(SphincsPlusKeyPairGeneratorTest.class);
+        suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
+        suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(PicnicTest.class);
         suite.addTestSuite(PicnicKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
@@ -63,14 +65,19 @@ public class AllTests
         suite.addTestSuite(SNTRUPrimeKeyPairGeneratorTest.class);
         suite.addTestSuite(KyberTest.class);
         suite.addTestSuite(KyberKeyPairGeneratorTest.class);
+        suite.addTestSuite(MLKEMTest.class);
+        suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumKeyPairGeneratorTest.class);
         suite.addTestSuite(DilithiumTest.class);
+        suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
+        suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCKeyPairGeneratorTest.class);
         suite.addTestSuite(HQCTest.class);
-        suite.addTestSuite(RainbowKeyPairGeneratorTest.class);
-        suite.addTestSuite(RainbowTest.class);
+        suite.addTestSuite(MayoKeyPairGeneratorTest.class);
+        suite.addTestSuite(MayoTest.class);
+        suite.addTestSuite(SnovaTest.class);
 
         return new BCTestSetup(suite);
     }

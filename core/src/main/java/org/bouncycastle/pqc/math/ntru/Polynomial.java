@@ -12,7 +12,7 @@ public abstract class Polynomial
      */
     // TODO: maybe the maths library needs to move.
     public short[] coeffs;
-    
+
     protected NTRUParameterSet params;
 
     public Polynomial(NTRUParameterSet params)
@@ -141,30 +141,40 @@ public abstract class Polynomial
     public byte[] s3ToBytes(int messageSize)
     {
         byte[] msg = new byte[messageSize];
-        byte c;
-
-        for (int i = 0; i < params.packDegree() / 5; i++)
-        {
-            c = (byte)(this.coeffs[5 * i + 4] & 255);
-            c = (byte)(3 * c + this.coeffs[5 * i + 3] & 255);
-            c = (byte)(3 * c + this.coeffs[5 * i + 2] & 255);
-            c = (byte)(3 * c + this.coeffs[5 * i + 1] & 255);
-            c = (byte)(3 * c + this.coeffs[5 * i + 0] & 255);
-            msg[i] = c;
-        }
-
-        // if 5 does not divide NTRU_N-1
-        if (params.packDegree() > (params.packDegree() / 5) * 5)
-        {
-            int i = params.packDegree() / 5;
-            c = 0;
-            for (int j = params.packDegree() - (5 * i) - 1; j >= 0; j--)
-            {
-                c = (byte)(3 * c + this.coeffs[5 * i + j] & 255);
-            }
-            msg[i] = c;
-        }
+        s3ToBytes(msg, 0);
         return msg;
+    }
+
+    public void s3ToBytes(byte[] msg, int msgOff)
+    {
+        int degree = params.packDegree(), limit = degree - 5;
+
+        int i = 0;
+        while (i <= limit)
+        {
+            int c0 = (coeffs[i + 0] & 0xFF);
+            int c1 = (coeffs[i + 1] & 0xFF) * 3;
+            int c2 = (coeffs[i + 2] & 0xFF) * 9;
+            int c3 = (coeffs[i + 3] & 0xFF) * 27;
+            int c4 = (coeffs[i + 4] & 0xFF) * 81;
+
+            msg[msgOff++] = (byte)(c0 + c1 + c2 + c3 + c4);
+            i += 5;
+        }
+
+        if (i < degree)
+        {
+            int j = degree - 1;
+            int c = coeffs[j] & 0xFF;
+
+            while (--j >= i)
+            {
+                c *= 3;
+                c += coeffs[j] & 0xFF;
+            }
+
+            msg[msgOff++] = (byte)c;
+        }
     }
 
     /**
@@ -388,7 +398,7 @@ public abstract class Polynomial
         c.coeffs[0] += 2;
         this.rqMul(c, s);
     }
-    
+
     void s3Inv(Polynomial a, Polynomial f, Polynomial g, Polynomial v, Polynomial w)
     {
         int n = this.coeffs.length;

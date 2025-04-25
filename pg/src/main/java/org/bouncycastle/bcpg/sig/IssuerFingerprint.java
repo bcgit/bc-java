@@ -1,11 +1,18 @@
 package org.bouncycastle.bcpg.sig;
 
+import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Arrays;
 
 /**
- * packet giving the issuer key fingerprint.
+ * Signature Subpacket containing the fingerprint of the issuers signing (sub-) key.
+ * This packet supersedes the {@link IssuerKeyID} subpacket.
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-issuer-fingerprint">
+ *     RFC9580 - Issuer Fingerprint</a>
  */
 public class IssuerFingerprint
     extends SignatureSubpacket
@@ -35,5 +42,27 @@ public class IssuerFingerprint
     public byte[] getFingerprint()
     {
         return Arrays.copyOfRange(data, 1, data.length);
+    }
+
+    public long getKeyID()
+    {
+        if (getKeyVersion() == PublicKeyPacket.VERSION_4)
+        {
+            return FingerprintUtil.keyIdFromV4Fingerprint(getFingerprint());
+        }
+        if (getKeyVersion() == PublicKeyPacket.LIBREPGP_5)
+        {
+            return FingerprintUtil.keyIdFromLibrePgpFingerprint(getFingerprint());
+        }
+        if (getKeyVersion() == PublicKeyPacket.VERSION_6)
+        {
+            return FingerprintUtil.keyIdFromV6Fingerprint(getFingerprint());
+        }
+        return 0;
+    }
+
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(getFingerprint());
     }
 }

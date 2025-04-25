@@ -37,6 +37,9 @@ class SignatureSchemeInfo
     private static final String PROPERTY_CLIENT_SIGNATURE_SCHEMES = "jdk.tls.client.SignatureSchemes";
     private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES = "jdk.tls.server.SignatureSchemes";
 
+    private static final String PROPERTY_CLIENT_SIGNATURE_SCHEMES_CERT = "org.bouncycastle.jsse.client.SignatureSchemesCert";
+    private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES_CERT = "org.bouncycastle.jsse.server.SignatureSchemesCert";
+
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
     private enum All
     {
@@ -67,6 +70,11 @@ class SignatureSchemeInfo
         rsa_pkcs1_sha512(SignatureScheme.rsa_pkcs1_sha512, "SHA512withRSA", "RSA", true),
 
         sm2sig_sm3(SignatureScheme.sm2sig_sm3, "SM3withSM2", "EC"),
+
+        // TODO[tls] Need mechanism for restricting signature schemes to TLS 1.3+ before adding
+//        DRAFT_mldsa44(SignatureScheme.DRAFT_mldsa44, "ML-DSA-44", "ML-DSA-44"),
+//        DRAFT_mldsa65(SignatureScheme.DRAFT_mldsa65, "ML-DSA-65", "ML-DSA-65"),
+//        DRAFT_mldsa87(SignatureScheme.DRAFT_mldsa87, "ML-DSA-87", "ML-DSA-87"),
 
         /*
          * Legacy/Historical: mostly not supported in 1.3, except ecdsa_sha1 and rsa_pkcs1_sha1 are
@@ -148,23 +156,22 @@ class SignatureSchemeInfo
         private final AtomicReference<List<SignatureSchemeInfo>> peerSigSchemes;
         private final AtomicReference<List<SignatureSchemeInfo>> peerSigSchemesCert;
 
-        PerConnection(List<SignatureSchemeInfo> localSigSchemes)
+        PerConnection(List<SignatureSchemeInfo> localSigSchemes, List<SignatureSchemeInfo> localSigSchemesCert)
         {
-            // TODO[tls13] No JSSE API to configure localSigSchemesCert?)
             this.localSigSchemes = localSigSchemes;
-            this.localSigSchemesCert = null;
+            this.localSigSchemesCert = localSigSchemesCert;
             this.peerSigSchemes = new AtomicReference<List<SignatureSchemeInfo>>();
             this.peerSigSchemesCert = new AtomicReference<List<SignatureSchemeInfo>>();
         }
 
         String[] getLocalJcaSignatureAlgorithms()
         {
-            return getJcaSignatureAlgorithms(getLocalJcaSigSchemesCert());
+            return getJcaSignatureAlgorithms(getLocalSigSchemesCert());
         }
 
         String[] getLocalJcaSignatureAlgorithmsBC()
         {
-            return getJcaSignatureAlgorithmsBC(getLocalJcaSigSchemesCert());
+            return getJcaSignatureAlgorithmsBC(getLocalSigSchemesCert());
         }
 
         Vector<SignatureAndHashAlgorithm> getLocalSignatureAndHashAlgorithms()
@@ -177,19 +184,36 @@ class SignatureSchemeInfo
             return getSignatureAndHashAlgorithms(localSigSchemesCert);
         }
 
+        List<SignatureSchemeInfo> getLocalSigSchemes()
+        {
+            return localSigSchemes;
+        }
+
+        List<SignatureSchemeInfo> getLocalSigSchemesCert()
+        {
+            return localSigSchemesCert != null ? localSigSchemesCert : getLocalSigSchemes();
+        }
+
         String[] getPeerJcaSignatureAlgorithms()
         {
-            return getJcaSignatureAlgorithms(getPeerJcaSigSchemesCert());
+            return getJcaSignatureAlgorithms(getPeerSigSchemesCert());
         }
 
         String[] getPeerJcaSignatureAlgorithmsBC()
         {
-            return getJcaSignatureAlgorithmsBC(getPeerJcaSigSchemesCert());
+            return getJcaSignatureAlgorithmsBC(getPeerSigSchemesCert());
         }
 
-        Iterable<SignatureSchemeInfo> getPeerSigSchemes()
+        List<SignatureSchemeInfo> getPeerSigSchemes()
         {
             return peerSigSchemes.get();
+        }
+
+        List<SignatureSchemeInfo> getPeerSigSchemesCert()
+        {
+            List<SignatureSchemeInfo> sigSchemesCert = peerSigSchemesCert.get();
+
+            return sigSchemesCert != null ? sigSchemesCert : getPeerSigSchemes();
         }
 
         boolean hasLocalSignatureScheme(SignatureSchemeInfo signatureSchemeInfo)
@@ -202,30 +226,22 @@ class SignatureSchemeInfo
             peerSigSchemes.set(sigSchemes);
             peerSigSchemesCert.set(sigSchemesCert);
         }
-
-        private List<SignatureSchemeInfo> getLocalJcaSigSchemesCert()
-        {
-            return localSigSchemesCert == null ? localSigSchemes : localSigSchemesCert;
-        }
-
-        private List<SignatureSchemeInfo> getPeerJcaSigSchemesCert()
-        {
-            List<SignatureSchemeInfo> sigSchemesCert = peerSigSchemesCert.get();
-
-            return sigSchemesCert == null ? peerSigSchemes.get() : sigSchemesCert;
-        }
     }
 
     static class PerContext
     {
         private final Map<Integer, SignatureSchemeInfo> index;
         private final int[] candidatesClient, candidatesServer;
+        private final int[] candidatesCertClient, candidatesCertServer;
 
-        PerContext(Map<Integer, SignatureSchemeInfo> index, int[] candidatesClient, int[] candidatesServer)
+        PerContext(Map<Integer, SignatureSchemeInfo> index, int[] candidatesClient, int[] candidatesServer,
+            int[] candidatesCertClient, int[] candidatesCertServer)
         {
             this.index = index;
             this.candidatesClient = candidatesClient;
             this.candidatesServer = candidatesServer;
+            this.candidatesCertClient = candidatesCertClient;
+            this.candidatesCertServer = candidatesCertServer;
         }
     }
 
@@ -235,7 +251,7 @@ class SignatureSchemeInfo
         ProtocolVersion latest = ProtocolVersion.getLatestTLS(activeProtocolVersions);
         if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(latest))
         {
-            return new PerConnection(null);
+            return new PerConnection(null, null);
         }
 
         ProtocolVersion earliest = ProtocolVersion.getEarliestTLS(activeProtocolVersions);
@@ -248,7 +264,7 @@ class SignatureSchemeInfo
     {
         if (!TlsUtils.isSignatureAlgorithmsExtensionAllowed(negotiatedVersion))
         {
-            return new PerConnection(null);
+            return new PerConnection(null, null);
         }
 
         return createPerConnection(perContext, true, sslParameters, negotiatedVersion, negotiatedVersion, namedGroups);
@@ -257,47 +273,96 @@ class SignatureSchemeInfo
     private static PerConnection createPerConnection(PerContext perContext, boolean isServer, ProvSSLParameters sslParameters,
         ProtocolVersion earliest, ProtocolVersion latest, NamedGroupInfo.PerConnection namedGroups)
     {
-        String[] signatureSchemes = sslParameters.getSignatureSchemes();
-
         int[] candidates;
-        if (signatureSchemes == null)
         {
-            candidates = isServer ? perContext.candidatesServer : perContext.candidatesClient;
+            String[] signatureSchemes = sslParameters.getSignatureSchemes();
+
+            if (signatureSchemes == null)
+            {
+                candidates = isServer ? perContext.candidatesServer : perContext.candidatesClient;
+
+                if (candidates == null)
+                {
+                    candidates = CANDIDATES_DEFAULT;
+                }
+            }
+            else
+            {
+                candidates = createCandidates(perContext.index, signatureSchemes, "SSLParameters.signatureSchemes");
+            }
         }
-        else
+
+        int[] candidatesCert;
         {
-            candidates = createCandidates(perContext.index, signatureSchemes, "SSLParameters.signatureSchemes");
+            String[] signatureSchemesCert = sslParameters.getSignatureSchemesCert();
+
+            if (signatureSchemesCert == null)
+            {
+                candidatesCert = isServer ? perContext.candidatesCertServer : perContext.candidatesCertClient;
+            }
+            else
+            {
+                candidatesCert = createCandidates(perContext.index, signatureSchemesCert,
+                    "SSLParameters.signatureSchemesCert");
+            }
         }
 
         BCAlgorithmConstraints algorithmConstraints = sslParameters.getAlgorithmConstraints();
         boolean post13Active = TlsUtils.isTLSv13(latest);
         boolean pre13Active = !TlsUtils.isTLSv13(earliest);
 
-        int count = candidates.length;
-        ArrayList<SignatureSchemeInfo> localSigSchemes = new ArrayList<SignatureSchemeInfo>(count);
-        for (int i = 0; i < count; ++i)
+        ArrayList<SignatureSchemeInfo> localSigSchemes;
         {
-            Integer candidate = Integers.valueOf(candidates[i]);
-            SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(candidate);
-
-            if (null != signatureSchemeInfo
-                && signatureSchemeInfo.isActiveCerts(algorithmConstraints, post13Active, pre13Active, namedGroups))
+            int count = candidates.length;
+            localSigSchemes = new ArrayList<SignatureSchemeInfo>(count);
+            for (int i = 0; i < count; ++i)
             {
-                localSigSchemes.add(signatureSchemeInfo);
+                Integer candidate = Integers.valueOf(candidates[i]);
+                SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(candidate);
+
+                if (null != signatureSchemeInfo
+                    && signatureSchemeInfo.isActiveCerts(algorithmConstraints, post13Active, pre13Active, namedGroups))
+                {
+                    localSigSchemes.add(signatureSchemeInfo);
+                }
             }
+            localSigSchemes.trimToSize();
         }
-        localSigSchemes.trimToSize();
-        return new PerConnection(localSigSchemes);
+
+        ArrayList<SignatureSchemeInfo> localSigSchemesCert = null;
+        if (candidatesCert != null)
+        {
+            int count = candidatesCert.length;
+            localSigSchemesCert = new ArrayList<SignatureSchemeInfo>(count);
+            for (int i = 0; i < count; ++i)
+            {
+                Integer candidate = Integers.valueOf(candidatesCert[i]);
+                SignatureSchemeInfo signatureSchemeInfo = perContext.index.get(candidate);
+
+                if (null != signatureSchemeInfo
+                    && signatureSchemeInfo.isActiveCerts(algorithmConstraints, post13Active, pre13Active, namedGroups))
+                {
+                    localSigSchemesCert.add(signatureSchemeInfo);
+                }
+            }
+            localSigSchemesCert.trimToSize();
+        }
+
+        return new PerConnection(localSigSchemes, localSigSchemesCert);
     }
 
     static PerContext createPerContext(boolean isFipsContext, JcaTlsCrypto crypto,
         NamedGroupInfo.PerContext namedGroups)
     {
         Map<Integer, SignatureSchemeInfo> index = createIndex(isFipsContext, crypto, namedGroups);
+
         int[] candidatesClient = createCandidatesFromProperty(index, PROPERTY_CLIENT_SIGNATURE_SCHEMES);
         int[] candidatesServer = createCandidatesFromProperty(index, PROPERTY_SERVER_SIGNATURE_SCHEMES);
 
-        return new PerContext(index, candidatesClient, candidatesServer);
+        int[] candidatesCertClient = createCandidatesFromProperty(index, PROPERTY_CLIENT_SIGNATURE_SCHEMES_CERT);
+        int[] candidatesCertServer = createCandidatesFromProperty(index, PROPERTY_SERVER_SIGNATURE_SCHEMES_CERT);
+
+        return new PerContext(index, candidatesClient, candidatesServer, candidatesCertClient, candidatesCertServer);
     }
 
     private static String[] getJcaSignatureAlgorithms(Collection<SignatureSchemeInfo> infos)
@@ -458,7 +523,7 @@ class SignatureSchemeInfo
         String[] names = PropertyUtils.getStringArraySystemProperty(propertyName);
         if (null == names)
         {
-            return CANDIDATES_DEFAULT;
+            return null;
         }
 
         return createCandidates(index, names, propertyName);
@@ -649,6 +714,7 @@ class SignatureSchemeInfo
         return all.text;
     }
 
+    // TODO Refactor to use this in non-cert contexts (careful for signatureSchemesCert defaulting case)
 //    private boolean isActive(BCAlgorithmConstraints algorithmConstraints, boolean post13Active, boolean pre13Active,
 //        NamedGroupInfo.PerConnection namedGroupInfos)
 //    {

@@ -4,15 +4,15 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.util.Strings;
 
 public class KyberParameterSpec
     implements AlgorithmParameterSpec
 {
-    public static final KyberParameterSpec kyber512 = new KyberParameterSpec(KyberParameters.kyber512);
-    public static final KyberParameterSpec kyber768 = new KyberParameterSpec(KyberParameters.kyber768);
-    public static final KyberParameterSpec kyber1024 = new KyberParameterSpec(KyberParameters.kyber1024);
+    public static final KyberParameterSpec kyber512 = new KyberParameterSpec(MLKEMParameters.ml_kem_512);
+    public static final KyberParameterSpec kyber768 = new KyberParameterSpec(MLKEMParameters.ml_kem_768);
+    public static final KyberParameterSpec kyber1024 = new KyberParameterSpec(MLKEMParameters.ml_kem_1024);
 
     private static Map parameters = new HashMap();
 
@@ -25,7 +25,7 @@ public class KyberParameterSpec
 
     private final String name;
 
-    private KyberParameterSpec(KyberParameters parameters)
+    private KyberParameterSpec(MLKEMParameters parameters)
     {
         this.name = Strings.toUpperCase(parameters.getName());
     }

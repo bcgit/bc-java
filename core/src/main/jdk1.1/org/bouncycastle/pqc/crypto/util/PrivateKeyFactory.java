@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -29,19 +30,26 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
+import org.bouncycastle.pqc.legacy.crypto.mceliece.McElieceCCA2PrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
@@ -103,9 +111,21 @@ public class PrivateKeyFactory
         AlgorithmIdentifier algId = keyInfo.getPrivateKeyAlgorithm();
         ASN1ObjectIdentifier algOID = algId.getAlgorithm();
 
-        if (algOID.equals(PQCObjectIdentifiers.newHope))
+        if (algOID.equals(PQCObjectIdentifiers.sphincs256))
+        {
+            return new SPHINCSPrivateKeyParameters(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets(),
+                Utils.sphincs256LookupTreeAlgName(SPHINCS256KeyParams.getInstance(algId.getParameters())));
+        }
+        else if (algOID.equals(PQCObjectIdentifiers.newHope))
         {
             return new NHPrivateKeyParameters(convert(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets()));
+        }
+        else if (Utils.shldsaParams.containsKey(algOID))
+        {
+            SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
+
+            ASN1Encodable obj = keyInfo.parsePrivateKey();
+            return new SLHDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
         }
         else if (algOID.on(BCObjectIdentifiers.picnic))
         {
@@ -135,18 +155,19 @@ public class PrivateKeyFactory
 
             return new SABERPrivateKeyParameters(spParams, keyEnc);
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_kyber))
+        else if (algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_512) ||
+            algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
+            algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
             ASN1OctetString kyberKey = ASN1OctetString.getInstance(keyInfo.parsePrivateKey());
-            KyberParameters kyberParams = Utils.kyberParamsLookup(algOID);
+            MLKEMParameters kyberParams = Utils.mlkemParamsLookup(algOID);
 
-            return new KyberPrivateKeyParameters(kyberParams, kyberKey.getOctets());
+            return new MLKEMPrivateKeyParameters(kyberParams, kyberKey.getOctets());
         }
-        else if (algOID.equals(BCObjectIdentifiers.dilithium2)
-            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+        else if (Utils.mldsaParams.containsKey(algOID))
         {
             ASN1Encodable keyObj = keyInfo.parsePrivateKey();
-            DilithiumParameters spParams = Utils.dilithiumParamsLookup(algOID);
+            MLDSAParameters spParams = Utils.mldsaParamsLookup(algOID);
 
             if (keyObj instanceof ASN1Sequence)
             {
@@ -160,9 +181,9 @@ public class PrivateKeyFactory
 
                 if (keyInfo.getPublicKeyData() != null)
                 {
-                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+                    MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
 
-                    return new DilithiumPrivateKeyParameters(spParams,
+                    return new MLDSAPrivateKeyParameters(spParams,
                         ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
@@ -173,7 +194,7 @@ public class PrivateKeyFactory
                 }
                 else
                 {
-                    return new DilithiumPrivateKeyParameters(spParams,
+                    return new MLDSAPrivateKeyParameters(spParams,
                         ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                         ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
@@ -188,10 +209,66 @@ public class PrivateKeyFactory
                 byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
                 if (keyInfo.getPublicKeyData() != null)
                 {
-                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
-                    return new DilithiumPrivateKeyParameters(spParams, data, pubParams);
+                    MLDSAPublicKeyParameters pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(spParams, keyInfo.getPublicKeyData());
+                    return new MLDSAPrivateKeyParameters(spParams, data, pubParams);
                 }
-                return new DilithiumPrivateKeyParameters(spParams, data, null);
+                return new MLDSAPrivateKeyParameters(spParams, data);
+            }
+            else
+            {
+                throw new IOException("not supported");
+            }
+        }
+        else if (algOID.equals(BCObjectIdentifiers.dilithium2)
+            || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))
+        {
+            ASN1Encodable keyObj = keyInfo.parsePrivateKey();
+            DilithiumParameters dilParams = Utils.dilithiumParamsLookup(algOID);
+
+            if (keyObj instanceof ASN1Sequence)
+            {
+                ASN1Sequence keyEnc = ASN1Sequence.getInstance(keyObj);
+
+                int version = ASN1Integer.getInstance(keyEnc.getObjectAt(0)).intValueExact();
+                if (version != 0)
+                {
+                    throw new IOException("unknown private key version: " + version);
+                }
+
+                if (keyInfo.getPublicKeyData() != null)
+                {
+                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(dilParams, keyInfo.getPublicKeyData());
+
+                    return new DilithiumPrivateKeyParameters(dilParams,
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                        pubParams.getT1()); // encT1
+                }
+                else
+                {
+                    return new DilithiumPrivateKeyParameters(dilParams,
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(1)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(4)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(5)).getOctets(),
+                        ASN1BitString.getInstance(keyEnc.getObjectAt(6)).getOctets(),
+                        null);
+                }
+            }
+            else if (keyObj instanceof DEROctetString)
+            {
+                byte[] data = ASN1OctetString.getInstance(keyObj).getOctets();
+                if (keyInfo.getPublicKeyData() != null)
+                {
+                    DilithiumPublicKeyParameters pubParams = PublicKeyFactory.DilithiumConverter.getPublicKeyParams(dilParams, keyInfo.getPublicKeyData());
+                    return new DilithiumPrivateKeyParameters(dilParams, data, pubParams);
+                }
+                return new DilithiumPrivateKeyParameters(dilParams, data, null);
             }
             else
             {
@@ -221,6 +298,12 @@ public class PrivateKeyFactory
             HQCParameters hqcParams = Utils.hqcParamsLookup(algOID);
 
             return new HQCPrivateKeyParameters(hqcParams, keyEnc);
+        }
+        else if (algOID.equals(PQCObjectIdentifiers.mcElieceCca2))
+        {
+            McElieceCCA2PrivateKey mKey = McElieceCCA2PrivateKey.getInstance(keyInfo.parsePrivateKey());
+
+            return new McElieceCCA2PrivateKeyParameters(mKey.getN(), mKey.getK(), mKey.getField(), mKey.getGoppaPoly(), mKey.getP(), Utils.getDigestName(mKey.getDigest().getAlgorithm()));
         }
         else
         {

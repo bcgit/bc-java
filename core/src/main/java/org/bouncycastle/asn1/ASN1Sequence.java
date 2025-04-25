@@ -153,6 +153,25 @@ public abstract class ASN1Sequence
     }
 
     /**
+     * Create a SEQUENCE containing two objects.
+     * @param element1 the first object to be put in the SEQUENCE.
+     * @param element2 the second object to be put in the SEQUENCE.
+     */
+    protected ASN1Sequence(ASN1Encodable element1, ASN1Encodable element2)
+    {
+        if (null == element1)
+        {
+            throw new NullPointerException("'element1' cannot be null");
+        }
+        if (null == element2)
+        {
+            throw new NullPointerException("'element2' cannot be null");
+        }
+
+        this.elements = new ASN1Encodable[]{ element1, element2 };
+    }
+
+    /**
      * Create a SEQUENCE containing a vector of objects.
      * @param elementVector the vector of objects to be put in the SEQUENCE.
      */

@@ -39,7 +39,6 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DEROctetString;
@@ -78,6 +77,7 @@ abstract class X509CertificateImpl
     protected boolean[] keyUsage;
     protected String sigAlgName;
     protected byte[] sigAlgParams;
+
     X509CertificateImpl(JcaJceHelper bcHelper, org.bouncycastle.asn1.x509.Certificate c,
         BasicConstraints basicConstraints, boolean[] keyUsage, String sigAlgName, byte[] sigAlgParams)
     {
@@ -271,10 +271,10 @@ abstract class X509CertificateImpl
         return Arrays.clone(keyUsage);
     }
 
-    public List getExtendedKeyUsage() 
+    public List getExtendedKeyUsage()
         throws CertificateParsingException
     {
-        byte[] extOctets = getExtensionOctets(c, "2.5.29.37");
+        byte[] extOctets = getExtensionOctets(c, Extension.extendedKeyUsage);
         if (null == extOctets)
         {
             return null;
@@ -282,7 +282,7 @@ abstract class X509CertificateImpl
 
         try
         {
-            ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(extOctets));
+            ASN1Sequence seq = ASN1Sequence.getInstance(extOctets);
 
             List list = new ArrayList();
             for (int i = 0; i != seq.size(); i++)
@@ -316,13 +316,13 @@ abstract class X509CertificateImpl
     public Collection getSubjectAlternativeNames()
         throws CertificateParsingException
     {
-        return getAlternativeNames(c, Extension.subjectAlternativeName.getId());
+        return getAlternativeNames(c, Extension.subjectAlternativeName);
     }
 
     public Collection getIssuerAlternativeNames()
         throws CertificateParsingException
     {
-        return getAlternativeNames(c, Extension.issuerAlternativeName.getId());
+        return getAlternativeNames(c, Extension.issuerAlternativeName);
     }
 
     public Set getCriticalExtensionOIDs() 
@@ -330,7 +330,7 @@ abstract class X509CertificateImpl
         if (this.getVersion() == 3)
         {
             Set             set = new HashSet();
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
+            Extensions  extensions = c.getExtensions();
 
             if (extensions != null)
             {
@@ -356,20 +356,7 @@ abstract class X509CertificateImpl
 
     public byte[] getExtensionValue(String oid) 
     {
-        ASN1OctetString extValue = getExtensionValue(c, oid);
-        if (null != extValue)
-        {
-            try
-            {
-                return extValue.getEncoded();
-            }
-            catch (Exception e)
-            {
-                throw Exceptions.illegalStateException("error parsing " + e.getMessage(), e);
-            }
-        }
-
-        return null;
+        return X509SignatureUtil.getExtensionValue(c.getExtensions(), oid);
     }
 
     public Set getNonCriticalExtensionOIDs() 
@@ -377,7 +364,7 @@ abstract class X509CertificateImpl
         if (this.getVersion() == 3)
         {
             Set             set = new HashSet();
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
+            Extensions  extensions = c.getExtensions();
 
             if (extensions != null)
             {
@@ -403,35 +390,32 @@ abstract class X509CertificateImpl
 
     public boolean hasUnsupportedCriticalExtension()
     {
-        if (this.getVersion() == 3)
+        if (getVersion() == 3)
         {
-            Extensions  extensions = c.getTBSCertificate().getExtensions();
-
+            Extensions extensions = c.getExtensions();
             if (extensions != null)
             {
-                Enumeration     e = extensions.oids();
-
+                Enumeration e = extensions.oids();
                 while (e.hasMoreElements())
                 {
                     ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
 
-                    if (oid.equals(Extension.keyUsage)
-                     || oid.equals(Extension.certificatePolicies)
-                     || oid.equals(Extension.policyMappings)
-                     || oid.equals(Extension.inhibitAnyPolicy)
-                     || oid.equals(Extension.cRLDistributionPoints)
-                     || oid.equals(Extension.issuingDistributionPoint)
-                     || oid.equals(Extension.deltaCRLIndicator)
-                     || oid.equals(Extension.policyConstraints)
-                     || oid.equals(Extension.basicConstraints)
-                     || oid.equals(Extension.subjectAlternativeName)
-                     || oid.equals(Extension.nameConstraints))
+                    if (Extension.keyUsage.equals(oid) ||
+                        Extension.certificatePolicies.equals(oid) ||
+                        Extension.policyMappings.equals(oid) ||
+                        Extension.inhibitAnyPolicy.equals(oid) ||
+                        Extension.cRLDistributionPoints.equals(oid) ||
+                        Extension.issuingDistributionPoint.equals(oid) ||
+                        Extension.deltaCRLIndicator.equals(oid) ||
+                        Extension.policyConstraints.equals(oid) ||
+                        Extension.basicConstraints.equals(oid) ||
+                        Extension.subjectAlternativeName.equals(oid) ||
+                        Extension.nameConstraints.equals(oid))
                     {
                         continue;
                     }
 
-                    Extension       ext = extensions.getExtension(oid);
-
+                    Extension ext = extensions.getExtension(oid);
                     if (ext.isCritical())
                     {
                         return true;
@@ -471,7 +455,7 @@ abstract class X509CertificateImpl
 
         X509SignatureUtil.prettyPrintSignature(this.getSignature(), buf, nl);
 
-        Extensions extensions = c.getTBSCertificate().getExtensions();
+        Extensions extensions = c.getExtensions();
 
         if (extensions != null)
         {
@@ -778,7 +762,7 @@ abstract class X509CertificateImpl
         }
     }
 
-    private static Collection getAlternativeNames(org.bouncycastle.asn1.x509.Certificate c, String oid)
+    private static Collection getAlternativeNames(org.bouncycastle.asn1.x509.Certificate c, ASN1ObjectIdentifier oid)
         throws CertificateParsingException
     {
         byte[] extOctets = getExtensionOctets(c, oid);
@@ -844,27 +828,10 @@ abstract class X509CertificateImpl
         }
     }
 
-    protected static byte[] getExtensionOctets(org.bouncycastle.asn1.x509.Certificate c, String oid)
+    static byte[] getExtensionOctets(org.bouncycastle.asn1.x509.Certificate c, ASN1ObjectIdentifier oid)
     {
-        ASN1OctetString extValue = getExtensionValue(c, oid);
-        if (null != extValue)
-        {
-            return extValue.getOctets();
-        }
-        return null;
-    }
+        ASN1OctetString extValue = Extensions.getExtensionValue(c.getExtensions(), oid);
 
-    protected static ASN1OctetString getExtensionValue(org.bouncycastle.asn1.x509.Certificate c, String oid)
-    {
-        Extensions exts = c.getTBSCertificate().getExtensions();
-        if (null != exts)
-        {
-            Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-            if (null != ext)
-            {
-                return ext.getExtnValue();
-            }
-        }
-        return null;
+        return extValue == null ? null : extValue.getOctets();
     }
 }

@@ -90,14 +90,14 @@ class ProvKeyManagerFactorySpi
         return new KeyStoreConfig(ks, ksPassword);
     }
 
-    protected final boolean isInFipsMode;
+    protected final boolean fipsMode;
     protected final JcaJceHelper helper;
 
     protected BCX509ExtendedKeyManager x509KeyManager;
 
-    ProvKeyManagerFactorySpi(boolean isInFipsMode, JcaJceHelper helper)
+    ProvKeyManagerFactorySpi(boolean fipsMode, JcaJceHelper helper)
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
     }
 
@@ -117,7 +117,7 @@ class ProvKeyManagerFactorySpi
         throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException
     {
         // NOTE: When key store is null, we do not try to load defaults
-        this.x509KeyManager = new ProvX509KeyManagerSimple(isInFipsMode, helper, ks, ksPassword);
+        this.x509KeyManager = new ProvX509KeyManagerSimple(fipsMode, helper, ks, ksPassword);
     }
 
     @Override
@@ -127,7 +127,7 @@ class ProvKeyManagerFactorySpi
         if (managerFactoryParameters instanceof KeyStoreBuilderParameters)
         {
             List<KeyStore.Builder> builders = ((KeyStoreBuilderParameters)managerFactoryParameters).getParameters();
-            this.x509KeyManager = new ProvX509KeyManager(isInFipsMode, helper, builders);
+            this.x509KeyManager = new ProvX509KeyManager(fipsMode, helper, builders);
         }
         else
         {

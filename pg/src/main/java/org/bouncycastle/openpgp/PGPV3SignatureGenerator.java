@@ -19,45 +19,51 @@ public class PGPV3SignatureGenerator
 {
     private PGPContentSignerBuilder contentSignerBuilder;
     private PGPContentSigner contentSigner;
-    private int              providedKeyAlgorithm = -1;
+//    private int              providedKeyAlgorithm = -1;
 
     /**
      * Create a signature generator built on the passed in contentSignerBuilder.
      *
-     * @param contentSignerBuilder  builder to produce PGPContentSigner objects for generating signatures.
+     * @param contentSignerBuilder builder to produce PGPContentSigner objects for generating signatures.
      */
     public PGPV3SignatureGenerator(
         PGPContentSignerBuilder contentSignerBuilder)
     {
+        super(SignaturePacket.VERSION_3);
         this.contentSignerBuilder = contentSignerBuilder;
     }
-    
+
     /**
      * Initialise the generator for signing.
-     * 
+     *
      * @param signatureType
      * @param key
      * @throws PGPException
      */
     public void init(
-        int           signatureType,
+        int signatureType,
         PGPPrivateKey key)
         throws PGPException
     {
+        if (signatureType == 0xFF)
+        {
+            throw new PGPException("Illegal signature type 0xFF provided.");
+        }
+        
         contentSigner = contentSignerBuilder.build(signatureType, key);
         sigOut = contentSigner.getOutputStream();
         sigType = contentSigner.getType();
         lastb = 0;
 
-        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
-        {
-            throw new PGPException("key algorithm mismatch");
-        }
+//        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
+//        {
+//            throw new PGPException("key algorithm mismatch");
+//        }
     }
 
     /**
      * Return the one pass header associated with the current signature.
-     * 
+     *
      * @param isNested
      * @return PGPOnePassSignature
      * @throws PGPException
@@ -68,10 +74,10 @@ public class PGPV3SignatureGenerator
     {
         return new PGPOnePassSignature(new OnePassSignaturePacket(sigType, contentSigner.getHashAlgorithm(), contentSigner.getKeyAlgorithm(), contentSigner.getKeyID(), isNested));
     }
-    
+
     /**
      * Return a V3 signature object containing the current signature state.
-     * 
+     *
      * @return PGPSignature
      * @throws PGPException
      */
@@ -95,7 +101,7 @@ public class PGPV3SignatureGenerator
         MPInteger[] sigValues;
         if (contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_SIGN
             || contentSigner.getKeyAlgorithm() == PublicKeyAlgorithmTags.RSA_GENERAL)
-            // an RSA signature
+        // an RSA signature
         {
             sigValues = new MPInteger[1];
             sigValues[0] = new MPInteger(new BigInteger(1, contentSigner.getSignature()));

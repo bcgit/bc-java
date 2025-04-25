@@ -68,9 +68,9 @@ public class DilithiumKeyPairGeneratorTest
                         DilithiumParameterSpec.dilithium3,
                         DilithiumParameterSpec.dilithium5,
                 };
-        kf = KeyFactory.getInstance("Dilithium", "BC");
+        kf = KeyFactory.getInstance("Dilithium", "BCPQC");
 
-        kpg = KeyPairGenerator.getInstance("Dilithium", "BC");
+        kpg = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
 
         for (int i = 0; i != specs.length; i++)
         {

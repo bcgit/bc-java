@@ -2,7 +2,7 @@ package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 import org.bouncycastle.util.Arrays;
 
 import javax.crypto.DecapsulateException;
@@ -56,22 +56,9 @@ class SNTRUPrimeDecapsulatorSpi
 
         // Only use KDF when ktsParameterSpec is provided
         // Considering any ktsParameterSpec with "Generic" as ktsParameterSpec not provided
-        boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
-
         byte[] secret = kemExt.extractSecret(encapsulation);
 
-        if (useKDF)
-        {
-            try
-            {
-                secret = Util.makeKeyBytes(parameterSpec, secret);
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
         return new SecretKeySpec(secretKey, algorithm);
     }

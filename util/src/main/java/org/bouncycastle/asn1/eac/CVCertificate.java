@@ -1,10 +1,8 @@
 package org.bouncycastle.asn1.eac;
 
-
 import java.io.IOException;
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -16,7 +14,6 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.util.Arrays;
-
 
 /**
  * an iso7816Certificate structure.
@@ -199,12 +196,10 @@ public class CVCertificate
      */
     public ASN1Primitive toASN1Primitive()
     {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
+        DERSequence seq = new DERSequence(certificateBody,
+            EACTagged.create(EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, signature));
 
-        v.add(certificateBody);
-        v.add(EACTagged.create(EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP, signature));
-
-        return EACTagged.create(EACTags.CARDHOLDER_CERTIFICATE, new DERSequence(v));
+        return EACTagged.create(EACTags.CARDHOLDER_CERTIFICATE, seq);
     }
 
     /**

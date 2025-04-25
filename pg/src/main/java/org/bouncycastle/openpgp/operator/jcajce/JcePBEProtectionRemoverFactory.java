@@ -27,6 +27,7 @@ public class JcePBEProtectionRemoverFactory
 
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private PGPDigestCalculatorProvider calculatorProvider;
+    private JceAEADUtil aeadUtil = new JceAEADUtil(helper);
 
     private JcaPGPDigestCalculatorProviderBuilder calculatorProviderBuilder;
 
@@ -45,6 +46,7 @@ public class JcePBEProtectionRemoverFactory
     public JcePBEProtectionRemoverFactory setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -57,6 +59,7 @@ public class JcePBEProtectionRemoverFactory
     public JcePBEProtectionRemoverFactory setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -105,6 +108,13 @@ public class JcePBEProtectionRemoverFactory
                         throw new PGPException("invalid key: " + e.getMessage(), e);
                     }
                 }
+
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData) 
+                    throws PGPException
+                {
+                    return JceAEADUtil.processAeadKeyData(aeadUtil, Cipher.DECRYPT_MODE, encAlgorithm, aeadAlgorithm, s2kKey, iv, packetTag, keyVersion, keyData, 0, keyData.length, pubkeyData);
+                }
             };
         }
         else
@@ -137,6 +147,13 @@ public class JcePBEProtectionRemoverFactory
                     {
                         throw new PGPException("invalid key: " + e.getMessage(), e);
                     }
+                }
+
+                @Override
+                public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData) 
+                    throws PGPException
+                {
+                    return JceAEADUtil.processAeadKeyData(aeadUtil, Cipher.DECRYPT_MODE, encAlgorithm, aeadAlgorithm, s2kKey, iv, packetTag, keyVersion, keyData, 0, keyData.length, pubkeyData);
                 }
             };
 

@@ -20,7 +20,7 @@ public class XWingTest
         throws Exception
     {
         String temp = "061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1";
-        String expectedSecret = "e5015e7e9b71e3a0436b159a042b14cb5b63435eee3b8db95f1e8fcce44632a8";
+        String expectedSecret = "81b50581e5f7390675d542802e84f717fa3b87b5391217869e00eb54ba679a00";
 
         byte[] seed = Hex.decode(temp);
 

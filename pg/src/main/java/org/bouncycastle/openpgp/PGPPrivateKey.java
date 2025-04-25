@@ -1,7 +1,9 @@
 package org.bouncycastle.openpgp;
 
 import org.bouncycastle.bcpg.BCPGKey;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 
 /**
  * general class to contain a private key for use with other openPGP
@@ -43,6 +45,13 @@ public class PGPPrivateKey
         return keyID;
     }
 
+    public KeyIdentifier getKeyIdentifier(KeyFingerPrintCalculator fingerprintCalculator)
+        throws PGPException
+    {
+        byte[] fingerprint = fingerprintCalculator.calculateFingerprint(publicKeyPacket);
+        return new KeyIdentifier(fingerprint, PublicKeyPacket.getKeyID(publicKeyPacket, fingerprint));
+    }
+    
     /**
      * Return the public key packet associated with this private key, if available.
      *

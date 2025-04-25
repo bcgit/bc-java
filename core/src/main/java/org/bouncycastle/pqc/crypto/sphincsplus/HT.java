@@ -87,7 +87,7 @@ class HT
         ADRS adrs = new ADRS(paramAdrs);
 
         // compute WOTS+ pk from WOTS+ sig
-        adrs.setType(ADRS.WOTS_HASH);
+        adrs.setTypeAndClear(ADRS.WOTS_HASH);
         adrs.setKeyPairAddress(idx);
         byte[] sig = sig_xmss.getWOTSSig();
         byte[][] AUTH = sig_xmss.getXMSSAUTH();
@@ -96,7 +96,7 @@ class HT
         byte[] node1 = null;
 
         // compute root from WOTS+ pk and AUTH
-        adrs.setType(ADRS.TREE);
+        adrs.setTypeAndClear(ADRS.TREE);
         adrs.setTreeIndex(idx);
         for (int k = 0; k < engine.H_PRIME; k++)
         {
@@ -125,18 +125,18 @@ class HT
 
         ADRS adrs = new ADRS(paramAdrs);
 
-        adrs.setType(ADRS.TREE);
+        adrs.setTypeAndClear(ADRS.TREE);
         adrs.setLayerAddress(paramAdrs.getLayerAddress());
         adrs.setTreeAddress(paramAdrs.getTreeAddress());
 
         // build authentication path
         for (int j = 0; j < engine.H_PRIME; j++)
         {
-            int k = (idx / (1 << j)) ^ 1;
-            AUTH[j] = treehash(skSeed, k * (1 << j), j, pkSeed, adrs);
+            int k = (idx >>> j) ^ 1;
+            AUTH[j] = treehash(skSeed, k << j, j, pkSeed, adrs);
         }
         adrs = new ADRS(paramAdrs);
-        adrs.setType(ADRS.WOTS_PK);
+        adrs.setTypeAndClear(ADRS.WOTS_HASH);
         adrs.setKeyPairAddress(idx);
 
         byte[] sig = wots.sign(M, skSeed, pkSeed, adrs);
@@ -144,46 +144,47 @@ class HT
         return new SIG_XMSS(sig, AUTH);
     }
 
-    //
-    // Input: Secret seed SK.seed, start index s, target node height z, public seed
-    //PK.seed, address ADRS
+    // Input: Secret seed SK.seed, start index s, target node height z, public seed PK.seed, address ADRS
     // Output: n-byte root node - top node on Stack
     byte[] treehash(byte[] skSeed, int s, int z, byte[] pkSeed, ADRS adrsParam)
     {
-        ADRS adrs = new ADRS(adrsParam);
-
-        LinkedList<NodeEntry> stack = new LinkedList<NodeEntry>();
-
-        if (s % (1 << z) != 0)
+        if ((s >>> z) << z != s)
         {
             return null;
         }
 
+        LinkedList<NodeEntry> stack = new LinkedList<NodeEntry>();
+        ADRS adrs = new ADRS(adrsParam);
+
         for (int idx = 0; idx < (1 << z); idx++)
         {
-            adrs.setType(ADRS.WOTS_HASH);
+            adrs.setTypeAndClear(ADRS.WOTS_HASH);
             adrs.setKeyPairAddress(s + idx);
             byte[] node = wots.pkGen(skSeed, pkSeed, adrs);
 
-            adrs.setType(ADRS.TREE);
+            adrs.setTypeAndClear(ADRS.TREE);
             adrs.setTreeHeight(1);
             adrs.setTreeIndex(s + idx);
 
-            // while ( Top node on Stack has same height as node )
-            while (!stack.isEmpty()
-                && ((NodeEntry)stack.get(0)).nodeHeight == adrs.getTreeHeight())
-            {
-                adrs.setTreeIndex((adrs.getTreeIndex() - 1) / 2);
-                NodeEntry current = ((NodeEntry)stack.remove(0));
+            int adrsTreeHeight = 1;
+            int adrsTreeIndex = s + idx;
 
+            // while ( Top node on Stack has same height as node )
+            while (!stack.isEmpty() && ((NodeEntry)stack.get(0)).nodeHeight == adrsTreeHeight)
+            {
+                adrsTreeIndex = (adrsTreeIndex - 1) / 2;
+                adrs.setTreeIndex(adrsTreeIndex);
+
+                NodeEntry current = ((NodeEntry)stack.remove(0));
                 node = engine.H(pkSeed, adrs, current.nodeValue, node);
-                //topmost node is now one layer higher
-                adrs.setTreeHeight(adrs.getTreeHeight() + 1);
+
+                // topmost node is now one layer higher
+                adrs.setTreeHeight(++adrsTreeHeight);
             }
 
-            stack.add(0, new NodeEntry(node, adrs.getTreeHeight()));
+            stack.add(0, new NodeEntry(node, adrsTreeHeight));
         }
- 
+
         return ((NodeEntry)stack.get(0)).nodeValue;
     }
 

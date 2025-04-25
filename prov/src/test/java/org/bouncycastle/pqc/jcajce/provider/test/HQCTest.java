@@ -16,10 +16,14 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 
 /**
  * KEM tests for HQC with the BCPQC provider.
@@ -36,7 +40,7 @@ public class HQCTest
     }
 
     public void testBasicKEMAES()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc128, new SecureRandom());
@@ -51,7 +55,7 @@ public class HQCTest
     }
 
     public void testBasicKEMCamellia()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc128, new SecureRandom());
@@ -61,7 +65,7 @@ public class HQCTest
     }
 
     public void testBasicKEMSEED()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc128, new SecureRandom());
@@ -70,7 +74,7 @@ public class HQCTest
     }
 
     public void testBasicKEMARIA()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc128, new SecureRandom());
@@ -80,7 +84,7 @@ public class HQCTest
     }
 
     private void performKEMScipher(KeyPair kp, String algorithm, KEMParameterSpec ktsParameterSpec)
-            throws Exception
+        throws Exception
     {
         Cipher w1 = Cipher.getInstance(algorithm, "BCPQC");
 
@@ -109,7 +113,7 @@ public class HQCTest
     }
 
     public void testGenerateAES()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc128, new SecureRandom());
@@ -123,7 +127,7 @@ public class HQCTest
         SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
 
         assertEquals("AES", secEnc1.getAlgorithm());
-        assertEquals(16, secEnc1.getEncoded().length);
+        assertEquals(32, secEnc1.getEncoded().length);
 
         keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
 
@@ -135,7 +139,7 @@ public class HQCTest
     }
 
     public void testGenerateAES256()
-            throws Exception
+        throws Exception
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
         kpg.initialize(HQCParameterSpec.hqc256, new SecureRandom());
@@ -159,4 +163,45 @@ public class HQCTest
 
         assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
     }
+
+    public void testReedSolomon()
+        throws Exception
+    {
+        byte[] seed = Hex.decode("416a32ada1c7a569c34d5334273a781c340aac25eb7614271aa6930d0358fb30fd87e111336a29e165dc60d9643a3e9b");//b
+        byte[] kemSeed = Hex.decode("13f36c0636ff93af6d702f7774097c185bf67cddc9b09f9b584d736c4faf40e073b0499efa0c926e9a44fec1e45ee4cf");
+        //HQCKeyPairGenerator kpg = new HQCKeyPairGenerator();
+        //kpg.init(new HQCKeyGenerationParameters();
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("HQC", "BCPQC");
+        SecureRandom random = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(seed)});
+        SecureRandom kemRandom = new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(kemSeed)});
+        kpg.initialize(HQCParameterSpec.hqc128, random);
+        KeyPair kp = kpg.generateKeyPair();
+        String algorithm = "HQC";
+        KEMParameterSpec ktsParameterSpec = new KEMParameterSpec("ARIA-KWP");
+        Cipher w1 = Cipher.getInstance(algorithm, "BCPQC");
+
+        byte[] keyBytes;
+        if (algorithm.endsWith("KWP"))
+        {
+            keyBytes = Hex.decode("000102030405060708090a0b0c0d0e0faa");
+        }
+        else
+        {
+            keyBytes = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        }
+        SecretKey key = new SecretKeySpec(keyBytes, "AES");
+
+        w1.init(Cipher.WRAP_MODE, kp.getPublic(), ktsParameterSpec, kemRandom);
+
+        byte[] data = w1.wrap(key);
+
+        Cipher w2 = Cipher.getInstance(algorithm, "BCPQC");
+
+        w2.init(Cipher.UNWRAP_MODE, kp.getPrivate(), ktsParameterSpec);
+
+        Key k = w2.unwrap(data, "AES", Cipher.SECRET_KEY);
+
+        assertTrue(Arrays.areEqual(keyBytes, k.getEncoded()));
+    }
+
 }

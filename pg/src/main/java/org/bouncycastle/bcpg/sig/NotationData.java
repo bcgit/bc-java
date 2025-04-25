@@ -7,8 +7,13 @@ import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.util.Strings;
 
 /**
- * Class provided a NotationData object according to
- * RFC2440, Chapter 5.2.3.15. Notation Data
+ * Signature Subpacket encoding custom notations.
+ * Notations are key-value pairs.
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/html/rfc4880#section-5.2.3.16">
+ *     RFC4880 - Notation Data</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-notation-data">
+ *     RFC9580 - Notation Data</a>
  */
 public class NotationData
     extends SignatureSubpacket

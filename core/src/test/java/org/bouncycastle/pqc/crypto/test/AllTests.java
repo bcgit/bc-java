@@ -4,6 +4,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
 
@@ -19,6 +20,8 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("Lightweight PQ Crypto Tests");
 
+        suite.addTestSuite(LMSTest.class);
+        suite.addTestSuite(HSSTest.class);
         suite.addTestSuite(XMSSMTPrivateKeyTest.class);
         suite.addTestSuite(XMSSMTPublicKeyTest.class);
         suite.addTestSuite(XMSSMTSignatureTest.class);
@@ -37,17 +40,18 @@ public class AllTests
         suite.addTestSuite(NTRUTest.class);
         suite.addTestSuite(NTRUParametersTest.class);
         suite.addTestSuite(FalconTest.class);
-        suite.addTestSuite(CrystalsKyberTest.class);
+        suite.addTestSuite(MLKEMTest.class);
         suite.addTestSuite(CrystalsDilithiumTest.class);
+        suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(NTRULPRimeTest.class);
         suite.addTestSuite(SNTRUPrimeTest.class);
         suite.addTestSuite(BIKETest.class);
         suite.addTestSuite(HQCTest.class);
-        suite.addTestSuite(RainbowVectorTest.class);
-        suite.addTestSuite(GeMSSTest.class);
         suite.addTestSuite(XWingTest.class);
         suite.addTestSuite(AllTests.SimpleTestTest.class);
-
+        suite.addTestSuite(SLHDSATest.class);
+        suite.addTestSuite(MayoTest.class);
+        suite.addTestSuite(SnovaTest.class);
         return new BCTestSetup(suite);
     }
 

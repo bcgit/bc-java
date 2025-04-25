@@ -1,16 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
-import java.io.ByteArrayOutputStream;
-
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.DataLengthException;
-import org.bouncycastle.crypto.InvalidCipherTextException;
-import org.bouncycastle.crypto.OutputLengthException;
-import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
-import org.bouncycastle.crypto.modes.AEADCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -21,7 +12,7 @@ import org.bouncycastle.util.Pack;
  * </p>
  */
 public class ISAPEngine
-    implements AEADCipher
+    extends AEADBaseEngine
 {
 
     public enum IsapType
@@ -34,6 +25,7 @@ public class ISAPEngine
 
     public ISAPEngine(IsapType isapType)
     {
+        KEY_SIZE = IV_SIZE = MAC_SIZE = 16;
         switch (isapType)
         {
         case ISAP_A_128A:
@@ -52,39 +44,37 @@ public class ISAPEngine
             ISAPAEAD = new ISAPAEAD_K_128();
             algorithmName = "ISAP-K-128 AEAD";
             break;
+        default:
+            throw new IllegalArgumentException("Incorrect ISAP parameter");
         }
+        AADBufferSize = BlockSize;
+        setInnerMembers(ProcessingBufferType.Immediate, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
-    private String algorithmName;
-    private boolean forEncryption;
-    private boolean initialised;
-    final int CRYPTO_KEYBYTES = 16;
-    final int CRYPTO_NPUBBYTES = 16;
-    final int ISAP_STATE_SZ = 40;
+    private static final int ISAP_STATE_SZ = 40;
     private byte[] k;
-    private byte[] c;
-    private byte[] ad;
     private byte[] npub;
-    private byte[] mac;
-    private ByteArrayOutputStream aadData = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream message = new ByteArrayOutputStream();
-    private final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     private int ISAP_rH;
-    private int ISAP_rH_SZ;
-    private ISAP_AEAD ISAPAEAD;
+    private final ISAP_AEAD ISAPAEAD;
 
     private interface ISAP_AEAD
     {
-        void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen);
-
         void init();
 
-        void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff);
-
         void reset();
+
+        void absorbMacBlock(byte[] input, int inOff);
+
+        void absorbFinalAADBlock();
+
+        void processEncBlock(byte[] input, int inOff, byte[] output, int outOff);
+
+        void processEncFinalBlock(byte[] output, int outOff);
+
+        void processMACFinal(byte[] input, int inOff, int len, byte[] tag);
     }
 
-    public abstract class ISAPAEAD_A
+    private abstract class ISAPAEAD_A
         implements ISAP_AEAD
     {
         protected long[] k64;
@@ -92,176 +82,111 @@ public class ISAPEngine
         protected long ISAP_IV1_64;
         protected long ISAP_IV2_64;
         protected long ISAP_IV3_64;
-        protected long x0, x1, x2, x3, x4, t0, t1, t2, t3, t4;
+        AsconPermutationFriend.AsconPermutation p;
+        AsconPermutationFriend.AsconPermutation mac;
 
         public ISAPAEAD_A()
         {
             ISAP_rH = 64;
-            ISAP_rH_SZ = (ISAP_rH + 7) >> 3;
+            BlockSize = (ISAP_rH + 7) >> 3;
+            p = new AsconPermutationFriend.AsconPermutation();
+            mac = new AsconPermutationFriend.AsconPermutation();
         }
 
         public void init()
         {
             npub64 = new long[getLongSize(npub.length)];
-            Pack.littleEndianToLong(npub, 0, npub64, 0, npub64.length);
-            npub64[0] = U64BIG(npub64[0]);
-            npub64[1] = U64BIG(npub64[1]);
             k64 = new long[getLongSize(k.length)];
-            Pack.littleEndianToLong(k, 0, k64, 0, k64.length);
-            k64[0] = U64BIG(k64[0]);
-            k64[1] = U64BIG(k64[1]);
-            reset();
+            Pack.bigEndianToLong(npub, 0, npub64);
+            Pack.bigEndianToLong(k, 0, k64);
         }
 
-        protected abstract void PX1();
+        protected abstract void PX1(AsconPermutationFriend.AsconPermutation p);
 
-        protected abstract void PX2();
+        protected abstract void PX2(AsconPermutationFriend.AsconPermutation p);
 
-        protected void ABSORB_MAC(byte[] src, int len)
+        public void absorbMacBlock(byte[] input, int inOff)
         {
-            long[] src64 = new long[src.length >> 3];
-            Pack.littleEndianToLong(src, 0, src64, 0, src64.length);
-            int idx = 0;
-            while (len >= ISAP_rH_SZ)
+            mac.x0 ^= Pack.bigEndianToLong(input, inOff);
+            mac.p(12);
+        }
+
+        public void absorbFinalAADBlock()
+        {
+            for (int i = 0; i < m_aadPos; ++i)
             {
-                x0 ^= U64BIG(src64[idx++]);
-                P12();
-                len -= ISAP_rH_SZ;
+                mac.x0 ^= (m_aad[i] & 0xFFL) << ((7 - i) << 3);
             }
-            /* Absorb final ad block */
+            mac.x0 ^= 0x80L << ((7 - m_aadPos) << 3);
+            mac.p(12);
+            mac.x4 ^= 1L;
+        }
+
+        public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
+        {
             for (int i = 0; i < len; ++i)
             {
-                x0 ^= (src[(idx << 3) + i] & 0xFFL) << ((7 - i) << 3);
+                mac.x0 ^= (input[inOff++] & 0xFFL) << ((7 - i) << 3);
             }
-            x0 ^= 0x80L << ((7 - len) << 3);
-            P12();
-        }
-
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
-        {
-            // Init State
-            x0 = npub64[0];
-            x1 = npub64[1];
-            x2 = ISAP_IV1_64;
-            x3 = x4 = 0;
-            P12();
-            ABSORB_MAC(ad, adlen);
-            // Domain seperation
-            x4 ^= 1L;
-            ABSORB_MAC(c, clen);
+            mac.x0 ^= 0x80L << ((7 - len) << 3);
+            mac.p(12);
             // Derive K*
-            Pack.longToLittleEndian(U64BIG(x0), tag, 0);
-            Pack.longToLittleEndian(U64BIG(x1), tag, 8);
-            long tmp_x2 = x2, tmp_x3 = x3, tmp_x4 = x4;
-            isap_rk(ISAP_IV2_64, tag, CRYPTO_KEYBYTES);
-            x2 = tmp_x2;
-            x3 = tmp_x3;
-            x4 = tmp_x4;
+            Pack.longToBigEndian(mac.x0, tag, 0);
+            Pack.longToBigEndian(mac.x1, tag, 8);
+            long tmp_x2 = mac.x2, tmp_x3 = mac.x3, tmp_x4 = mac.x4;
+            isap_rk(mac, ISAP_IV2_64, tag, KEY_SIZE);
+            mac.x2 = tmp_x2;
+            mac.x3 = tmp_x3;
+            mac.x4 = tmp_x4;
             // Squeeze tag
-            P12();
-            Pack.longToLittleEndian(U64BIG(x0), tag, tagOff);
-            Pack.longToLittleEndian(U64BIG(x1), tag, tagOff + 8);
+            mac.p(12);
+            Pack.longToBigEndian(mac.x0, tag, 0);
+            Pack.longToBigEndian(mac.x1, tag, 8);
         }
 
-        public void isap_rk(long iv64, byte[] y, int ylen)
+        private void isap_rk(AsconPermutationFriend.AsconPermutation p, long iv64, byte[] y, int ylen)
         {
             // Init state
-            x0 = k64[0];
-            x1 = k64[1];
-            x2 = iv64;
-            x3 = x4 = 0;
-            P12();
+            p.set(k64[0], k64[1], iv64, 0L, 0L);
+            p.p(12);
             // Absorb Y
             for (int i = 0; i < (ylen << 3) - 1; i++)
             {
-                x0 ^= ((((y[i >>> 3] >>> (7 - (i & 7))) & 0x01) << 7) & 0xFFL) << 56;
-                PX2();
+                p.x0 ^= ((((y[i >>> 3] >>> (7 - (i & 7))) & 0x01) << 7) & 0xFFL) << 56;
+                PX2(p);
             }
-            x0 ^= (((y[ylen - 1]) & 0x01L) << 7) << 56;
-            P12();
+            p.x0 ^= (((y[ylen - 1]) & 0x01L) << 7) << 56;
+            p.p(12);
         }
 
-        public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
+        public void processEncBlock(byte[] input, int inOff, byte[] output, int outOff)
         {
-            /* Encrypt m */
-            long[] m64 = new long[mlen >> 3];
-            Pack.littleEndianToLong(m, mOff, m64, 0, m64.length);
-            long[] c64 = new long[m64.length];
-            int idx = 0;
-            while (mlen >= ISAP_rH_SZ)
-            {
-                c64[idx] = U64BIG(x0) ^ m64[idx];
-                PX1();
-                idx++;
-                mlen -= ISAP_rH_SZ;
-            }
-            Pack.longToLittleEndian(c64, 0, c64.length, c, cOff);
+            Pack.longToBigEndian(Pack.bigEndianToLong(input, inOff) ^ p.x0, output, outOff);
+            PX1(p);
+        }
+
+        public void processEncFinalBlock(byte[] output, int outOff)
+        {
             /* Encrypt final m block */
-            byte[] xo = Pack.longToLittleEndian(x0);
-            while (mlen > 0)
-            {
-                c[(idx << 3) + cOff + mlen - 1] = (byte)(xo[ISAP_rH_SZ - mlen] ^ m[(idx << 3) + mOff + --mlen]);
-            }
+            byte[] xo = Pack.longToLittleEndian(p.x0);
+            Bytes.xor(m_bufPos, xo, BlockSize - m_bufPos, m_buf, 0, output, outOff);
         }
 
         public void reset()
         {
             // Init state
-            isap_rk(ISAP_IV3_64, npub, CRYPTO_NPUBBYTES);
-            x3 = npub64[0];
-            x4 = npub64[1];
-            PX1();
+            isap_rk(p, ISAP_IV3_64, npub, IV_SIZE);
+            p.x3 = npub64[0];
+            p.x4 = npub64[1];
+            PX1(p);
+            // Init State for mac
+            mac.set(npub64[0], npub64[1], ISAP_IV1_64, 0L, 0L);
+            mac.p(12);
         }
 
         private int getLongSize(int x)
         {
-            return (x >>> 3) + ((x & 7) != 0 ? 1 : 0);
-        }
-
-        private long ROTR(long x, long n)
-        {
-            return (x >>> n) | (x << (64 - n));
-        }
-
-        protected long U64BIG(long x)
-        {
-            return ((ROTR(x, 8) & (0xFF000000FF000000L)) | (ROTR(x, 24) & (0x00FF000000FF0000L)) |
-                (ROTR(x, 40) & (0x0000FF000000FF00L)) | (ROTR(x, 56) & (0x000000FF000000FFL)));
-        }
-
-        protected void ROUND(long C)
-        {
-            t0 = x0 ^ x1 ^ x2 ^ x3 ^ C ^ (x1 & (x0 ^ x2 ^ x4 ^ C));
-            t1 = x0 ^ x2 ^ x3 ^ x4 ^ C ^ ((x1 ^ x2 ^ C) & (x1 ^ x3));
-            t2 = x1 ^ x2 ^ x4 ^ C ^ (x3 & x4);
-            t3 = x0 ^ x1 ^ x2 ^ C ^ ((~x0) & (x3 ^ x4));
-            t4 = x1 ^ x3 ^ x4 ^ ((x0 ^ x4) & x1);
-            x0 = t0 ^ ROTR(t0, 19) ^ ROTR(t0, 28);
-            x1 = t1 ^ ROTR(t1, 39) ^ ROTR(t1, 61);
-            x2 = ~(t2 ^ ROTR(t2, 1) ^ ROTR(t2, 6));
-            x3 = t3 ^ ROTR(t3, 10) ^ ROTR(t3, 17);
-            x4 = t4 ^ ROTR(t4, 7) ^ ROTR(t4, 41);
-        }
-
-        public void P12()
-        {
-            ROUND(0xf0);
-            ROUND(0xe1);
-            ROUND(0xd2);
-            ROUND(0xc3);
-            ROUND(0xb4);
-            ROUND(0xa5);
-            P6();
-        }
-
-        protected void P6()
-        {
-            ROUND(0x96);
-            ROUND(0x87);
-            ROUND(0x78);
-            ROUND(0x69);
-            ROUND(0x5a);
-            ROUND(0x4b);
+            return ((x + 7) >>> 3);
         }
     }
 
@@ -275,14 +200,14 @@ public class ISAPEngine
             ISAP_IV3_64 = 252271952373286412L;
         }
 
-        protected void PX1()
+        protected void PX1(AsconPermutationFriend.AsconPermutation p)
         {
-            P6();
+            p.p(6);
         }
 
-        protected void PX2()
+        protected void PX2(AsconPermutationFriend.AsconPermutation p)
         {
-            ROUND(0x4b);
+            p.round(0x4bL);
         }
     }
 
@@ -296,21 +221,21 @@ public class ISAPEngine
             ISAP_IV3_64 = 252271952374008844L;
         }
 
-        protected void PX1()
+        protected void PX1(AsconPermutationFriend.AsconPermutation p)
         {
-            P12();
+            p.p(12);
         }
 
-        protected void PX2()
+        protected void PX2(AsconPermutationFriend.AsconPermutation p)
         {
-            P12();
+            p.p(12);
         }
     }
 
     private abstract class ISAPAEAD_K
         implements ISAP_AEAD
     {
-        final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - CRYPTO_NPUBBYTES;
+        protected final int ISAP_STATE_SZ_CRYPTO_NPUBBYTES = ISAP_STATE_SZ - IV_SIZE;
         protected short[] ISAP_IV1_16;
         protected short[] ISAP_IV2_16;
         protected short[] ISAP_IV3_16;
@@ -319,33 +244,38 @@ public class ISAPEngine
         private final int[] KeccakF400RoundConstants = {0x0001, 0x8082, 0x808a, 0x8000, 0x808b, 0x0001, 0x8081, 0x8009,
             0x008a, 0x0088, 0x8009, 0x000a, 0x808b, 0x008b, 0x8089, 0x8003, 0x8002, 0x0080, 0x800a, 0x000a};
         protected short[] SX = new short[25];
+        protected short[] macSX = new short[25];
         protected short[] E = new short[25];
         protected short[] C = new short[5];
+        protected short[] macE = new short[25];
+        protected short[] macC = new short[5];
 
         public ISAPAEAD_K()
         {
             ISAP_rH = 144;
-            ISAP_rH_SZ = (ISAP_rH + 7) >> 3;
+            BlockSize = (ISAP_rH + 7) >> 3;
         }
 
         public void init()
         {
             k16 = new short[k.length >> 1];
-            byteToShort(k, k16, k16.length);
+            Pack.littleEndianToShort(k, 0, k16, 0, k16.length);
             iv16 = new short[npub.length >> 1];
-            byteToShort(npub, iv16, iv16.length);
-            reset();
+            Pack.littleEndianToShort(npub, 0, iv16, 0, iv16.length);
         }
 
         public void reset()
         {
             // Init state
-            SX = new short[25];
-            E = new short[25];
-            C = new short[5];
-            isap_rk(ISAP_IV3_16, npub, CRYPTO_NPUBBYTES, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
+            Arrays.fill(SX, (byte)0);
+            isap_rk(ISAP_IV3_16, npub, IV_SIZE, SX, ISAP_STATE_SZ_CRYPTO_NPUBBYTES, C);
             System.arraycopy(iv16, 0, SX, 17, 8);
             PermuteRoundsKX(SX, E, C);
+            // Init state for mac
+            Arrays.fill(macSX, 12, 25, (short)0);
+            System.arraycopy(iv16, 0, macSX, 0, 8);
+            System.arraycopy(ISAP_IV1_16, 0, macSX, 8, 4);
+            PermuteRoundsHX(macSX, macE, macC);
         }
 
         protected abstract void PermuteRoundsHX(short[] SX, short[] E, short[] C);
@@ -354,38 +284,23 @@ public class ISAPEngine
 
         protected abstract void PermuteRoundsBX(short[] SX, short[] E, short[] C);
 
-        protected void ABSORB_MAC(short[] SX, byte[] src, int len, short[] E, short[] C)
+        public void absorbMacBlock(byte[] input, int inOff)
         {
-            int rem_bytes = len;
-            int idx = 0;
-            while (true)
+            byteToShortXor(input, inOff, macSX, BlockSize >> 1);
+            PermuteRoundsHX(macSX, macE, macC);
+        }
+
+        public void absorbFinalAADBlock()
+        {
+            for (int i = 0; i < m_aadPos; i++)
             {
-                if (rem_bytes > ISAP_rH_SZ)
-                {
-                    byteToShortXor(src, SX, ISAP_rH_SZ >> 1);
-                    idx += ISAP_rH_SZ;
-                    rem_bytes -= ISAP_rH_SZ;
-                    PermuteRoundsHX(SX, E, C);
-                }
-                else if (rem_bytes == ISAP_rH_SZ)
-                {
-                    byteToShortXor(src, SX, ISAP_rH_SZ >> 1);
-                    PermuteRoundsHX(SX, E, C);
-                    SX[0] ^= 0x80;
-                    PermuteRoundsHX(SX, E, C);
-                    break;
-                }
-                else
-                {
-                    for (int i = 0; i < rem_bytes; i++)
-                    {
-                        SX[i >> 1] ^= (src[idx++] & 0xFF) << ((i & 1) << 3);
-                    }
-                    SX[rem_bytes >> 1] ^= 0x80 << ((rem_bytes & 1) << 3);
-                    PermuteRoundsHX(SX, E, C);
-                    break;
-                }
+                macSX[i >> 1] ^= (m_aad[i] & 0xFF) << ((i & 1) << 3);
             }
+            macSX[m_aadPos >> 1] ^= 0x80 << ((m_aadPos & 1) << 3);
+            PermuteRoundsHX(macSX, macE, macC);
+
+            // Domain seperation
+            macSX[24] ^= 0x0100;
         }
 
         public void isap_rk(short[] iv16, byte[] y, int ylen, short[] out16, int outlen, short[] C)
@@ -408,75 +323,47 @@ public class ISAPEngine
             System.arraycopy(SX, 0, out16, 0, outlen == ISAP_STATE_SZ_CRYPTO_NPUBBYTES ? 17 : 8);
         }
 
-        public void isap_mac(byte[] ad, int adlen, byte[] c, int clen, byte[] tag, int tagOff)
+        public void processMACFinal(byte[] input, int inOff, int len, byte[] tag)
         {
-            SX = new short[25];
-            // Init state
-            System.arraycopy(iv16, 0, SX, 0, 8);
-            System.arraycopy(ISAP_IV1_16, 0, SX, 8, 4);
-            PermuteRoundsHX(SX, E, C);
-            // Absorb AD
-            ABSORB_MAC(SX, ad, adlen, E, C);
-            // Domain seperation
-            SX[24] ^= 0x0100;
-            // Absorb C
-            ABSORB_MAC(SX, c, clen, E, C);
+            // Absorb C final block
+            for (int i = 0; i < len; i++)
+            {
+                macSX[i >> 1] ^= (input[inOff++] & 0xFF) << ((i & 1) << 3);
+            }
+
+            macSX[len >> 1] ^= 0x80 << ((len & 1) << 3);
+            PermuteRoundsHX(macSX, macE, macC);
             // Derive K*
-            shortToByte(SX, tag, tagOff);
-            isap_rk(ISAP_IV2_16, tag, CRYPTO_KEYBYTES, SX, CRYPTO_KEYBYTES, C);
+            Pack.shortToLittleEndian(macSX, 0, 8, tag, 0);
+            isap_rk(ISAP_IV2_16, tag, KEY_SIZE, macSX, KEY_SIZE, macC);
             // Squeeze tag
-            PermuteRoundsHX(SX, E, C);
-            shortToByte(SX, tag, tagOff);
+            PermuteRoundsHX(macSX, macE, macC);
+            Pack.shortToLittleEndian(macSX, 0, 8, tag, 0);
         }
 
-        public void isap_enc(byte[] m, int mOff, int mlen, byte[] c, int cOff, int clen)
+        public void processEncBlock(byte[] input, int inOff, byte[] output, int outOff)
         {
-            // Squeeze key stream
-            while (true)
+            for (int i = 0; i < BlockSize; ++i)
             {
-                if (mlen >= ISAP_rH_SZ)
-                {
-                    // Squeeze full lane and continue
-                    for (int i = 0; i < ISAP_rH_SZ; ++i)
-                    {
-                        c[cOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[mOff++]);
-                    }
-                    mlen -= ISAP_rH_SZ;
-                    PermuteRoundsKX(SX, E, C);
-                }
-                else
-                {
-                    // Squeeze full or partial lane and stop
-                    for (int i = 0; i < mlen; ++i)
-                    {
-                        c[cOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m[mOff++]);
-                    }
-                    break;
-                }
+                output[outOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ input[inOff++]);
+            }
+            PermuteRoundsKX(SX, E, C);
+        }
+
+        public void processEncFinalBlock(byte[] output, int outOff)
+        {
+            // Squeeze full or partial lane and stop
+            for (int i = 0; i < m_bufPos; ++i)
+            {
+                output[outOff++] = (byte)((SX[i >> 1] >>> ((i & 1) << 3)) ^ m_buf[i]);
             }
         }
 
-        private void byteToShortXor(byte[] input, short[] output, int outLen)
+        private void byteToShortXor(byte[] input, int inOff, short[] output, int outLen)
         {
             for (int i = 0; i < outLen; ++i)
             {
-                output[i] ^= Pack.littleEndianToShort(input, (i << 1));
-            }
-        }
-
-        private void byteToShort(byte[] input, short[] output, int outLen)
-        {
-            for (int i = 0; i < outLen; ++i)
-            {
-                output[i] = Pack.littleEndianToShort(input, (i << 1));
-            }
-        }
-
-        private void shortToByte(short[] input, byte[] output, int outOff)
-        {
-            for (int i = 0; i < 8; ++i)
-            {
-                Pack.shortToLittleEndian(input[i], output, outOff + (i << 1));
+                output[i] ^= Pack.littleEndianToShort(input, inOff + (i << 1));
             }
         }
 
@@ -789,212 +676,59 @@ public class ISAPEngine
     }
 
     @Override
-    public void init(boolean forEncryption, CipherParameters params)
+    protected void init(byte[] key, byte[] iv)
         throws IllegalArgumentException
     {
-        this.forEncryption = forEncryption;
-        if (!(params instanceof ParametersWithIV))
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD init parameters must include an IV");
-        }
-
-        ParametersWithIV ivParams = (ParametersWithIV)params;
-
-        byte[] iv = ivParams.getIV();
-
-        if (iv == null || iv.length != 16)
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD requires exactly 12 bytes of IV");
-        }
-
-        if (!(ivParams.getParameters() instanceof KeyParameter))
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD init parameters must include a key");
-        }
-
-        KeyParameter key = (KeyParameter)ivParams.getParameters();
-        byte[] keyBytes = key.getKey();
-        if (keyBytes.length != 16)
-        {
-            throw new IllegalArgumentException(
-                "ISAP AEAD key must be 128 bits long");
-        }
-
-        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(
-            this.getAlgorithmName(), 128, params, Utils.getPurpose(forEncryption)));
-
-        /*
-         * Initialize variables.
-         */
-        npub = new byte[iv.length];
-        k = new byte[keyBytes.length];
-        System.arraycopy(iv, 0, npub, 0, iv.length);
-        System.arraycopy(keyBytes, 0, k, 0, keyBytes.length);
+        npub = iv;
+        k = key;
         ISAPAEAD.init();
-        initialised = true;
-        reset();
+    }
+
+    protected void processBufferAAD(byte[] input, int inOff)
+    {
+        ISAPAEAD.absorbMacBlock(input, inOff);
+    }
+
+    protected void processFinalAAD()
+    {
+        ISAPAEAD.absorbFinalAADBlock();
     }
 
     @Override
-    public String getAlgorithmName()
+    protected void finishAAD(State nextState, boolean isDoFinal)
     {
-        return algorithmName;
+        finishAAD3(nextState, isDoFinal);
+    }
+
+    protected void processBufferEncrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        ISAPAEAD.processEncBlock(input, inOff, output, outOff);
+        ISAPAEAD.absorbMacBlock(output, outOff);
+    }
+
+    protected void processBufferDecrypt(byte[] input, int inOff, byte[] output, int outOff)
+    {
+        ISAPAEAD.processEncBlock(input, inOff, output, outOff);
+        ISAPAEAD.absorbMacBlock(input, inOff);
     }
 
     @Override
-    public void processAADByte(byte in)
+    protected void processFinalBlock(byte[] output, int outOff)
     {
-        aadData.write(in);
-    }
-
-    @Override
-    public void processAADBytes(byte[] in, int inOff, int len)
-    {
-        if ((inOff + len) > in.length)
-        {
-            throw new DataLengthException("input buffer too short" + (forEncryption ? "encryption" : "decryption"));
-        }
-
-        aadData.write(in, inOff, len);
-    }
-
-    @Override
-    public int processByte(byte in, byte[] out, int outOff)
-        throws DataLengthException
-    {
-        return processBytes(new byte[]{in}, 0, 1, out, outOff);
-    }
-
-    @Override
-    public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
-        throws DataLengthException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        if ((inOff + len) > input.length)
-        {
-            throw new DataLengthException("input buffer too short");
-        }
-        message.write(input, inOff, len);
+        ISAPAEAD.processEncFinalBlock(output, outOff);
         if (forEncryption)
         {
-            if (message.size() >= ISAP_rH_SZ)
-            {
-                len = message.size() / ISAP_rH_SZ * ISAP_rH_SZ;
-                if (outOff + len > output.length)
-                {
-                    throw new OutputLengthException("output buffer is too short");
-                }
-                byte[] enc_input = message.toByteArray();
-                ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
-                outputStream.write(output, outOff, len);
-                message.reset();
-                message.write(enc_input, len, enc_input.length - len);
-                return len;
-            }
-        }
-        return 0;
-    }
-
-    @Override
-    public int doFinal(byte[] output, int outOff)
-        throws IllegalStateException, InvalidCipherTextException
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        int len;
-        if (forEncryption)
-        {
-            byte[] enc_input = message.toByteArray();
-            len = enc_input.length;
-            if (outOff + len + 16 > output.length)
-            {
-                throw new OutputLengthException("output buffer is too short");
-            }
-            ISAPAEAD.isap_enc(enc_input, 0, len, output, outOff, output.length);
-            outputStream.write(output, outOff, len);
-            outOff += len;
-            ad = aadData.toByteArray();
-            c = outputStream.toByteArray();
-            mac = new byte[16];
-            ISAPAEAD.isap_mac(ad, ad.length, c, c.length, mac, 0);
-            System.arraycopy(mac, 0, output, outOff, 16);
-            len += 16;
+            ISAPAEAD.processMACFinal(output, outOff, m_bufPos, mac);
         }
         else
         {
-            ad = aadData.toByteArray();
-            c = message.toByteArray();
-            mac = new byte[16];
-            len = c.length - mac.length;
-            if (len + outOff > output.length)
-            {
-                throw new OutputLengthException("output buffer is too short");
-            }
-            ISAPAEAD.isap_mac(ad, ad.length, c, len, mac, 0);
-            ISAPAEAD.reset();
-            for (int i = 0; i < 16; ++i)
-            {
-                if (mac[i] != c[len + i])
-                {
-                    throw new IllegalArgumentException("Mac does not match");
-                }
-            }
-            ISAPAEAD.isap_enc(c, 0, len, output, outOff, output.length);
+            ISAPAEAD.processMACFinal(m_buf, 0, m_bufPos, mac);
         }
-        return len;
     }
 
-    @Override
-    public byte[] getMac()
+    protected void reset(boolean clearMac)
     {
-        return mac;
-    }
-
-    @Override
-    public int getUpdateOutputSize(int len)
-    {
-        return len;
-    }
-
-    @Override
-    public int getOutputSize(int len)
-    {
-        return len + 16;
-    }
-
-    @Override
-    public void reset()
-    {
-        if (!initialised)
-        {
-            throw new IllegalArgumentException("Need call init function before encryption/decryption");
-        }
-        aadData.reset();
+        super.reset(clearMac);
         ISAPAEAD.reset();
-        message.reset();
-        outputStream.reset();
-    }
-
-    public int getKeyBytesSize()
-    {
-        return CRYPTO_KEYBYTES;
-    }
-
-    public int getIVBytesSize()
-    {
-        return CRYPTO_NPUBBYTES;
-    }
-
-    public int getBlockSize()
-    {
-        return ISAP_rH_SZ;
     }
 }

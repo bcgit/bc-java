@@ -7,19 +7,21 @@ buildscript {
 
 }
 
+
 plugins {
     id "io.spring.nohttp" version "0.0.11"
     id "checkstyle"
     id "jacoco"
     id "net.ltgt.errorprone" version "3.1.0"
+    id 'maven-publish'
 }
 
 println("Environment setup:")
-["BC_JDK8", "BC_JDK11", "BC_JDK17", "BC_JDK21"].each({ it ->
+["BC_JDK8", "BC_JDK11", "BC_JDK17"].each({ it ->
     println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
-    if (System.getenv(it) == null) {
-        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
-    }
+//    if (System.getenv(it) == null) {
+//        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
+//    }
 })
 
 
@@ -160,6 +162,7 @@ allprojects {
         }
     }
 
+
 }
 
 task printProperties {
@@ -178,25 +181,26 @@ ext {
         ext.vmrange = 'jdk18on'
     }
 
-    bc_prov = "${rootProject.projectDir}/prov/build/libs/bcprov-${vmrange}-${version}.jar"
-    bc_util = "${rootProject.projectDir}/util/build/libs/bcutil-${vmrange}-${version}.jar"
-    bc_pkix = "${rootProject.projectDir}/pkix/build/libs/bcpkix-${vmrange}-${version}.jar"
-
 }
-
-
 
 
 subprojects {
     apply plugin: 'eclipse'
+    apply plugin: 'maven-publish'
+
 
     JavaVersion current = JavaVersion.current();
+    int releaseVersion = 8;
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
-        sourceCompatibility = 1.5
-        targetCompatibility = 1.5
-    } else {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+        releaseVersion = 5
+    }
+
+    compileJava {
+        options.release = releaseVersion;
+    }
+
+    compileTestJava {
+        options.release = 8;
     }
 
 
@@ -220,11 +224,9 @@ subprojects {
         maxParallelForks = 1;
         systemProperty 'bc.test.data.home', bcTestDataHome
         maxHeapSize = "1536m"
-        testLogging.showStandardStreams = true
+        testLogging.showStandardStreams = false
 
-        javaLauncher = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(8)
-        }
+        jvmArgs = ['-Dtest.java.version.prefix=any']
 
         finalizedBy jacocoTestReport
 
@@ -235,6 +237,7 @@ subprojects {
             }
         }
     }
+
 
 
     dependencies {
@@ -250,7 +253,10 @@ subprojects {
     }
 
     nohttp {
+        source.exclude '**/*.asc'
+        source.exclude '**/*.pem'
         source.exclude '**/*.rsp'
+        source.exclude '**/*.jar'
     }
 
     jacocoTestReport {
@@ -262,7 +268,7 @@ subprojects {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = false;
+        options.debug = true;
     }
 
     tasks.withType(Test).configureEach {
@@ -270,6 +276,18 @@ subprojects {
             junitXml.outputLocation = layout.buildDirectory.dir("test-results")
         }
     }
+
+//    tasks.withType(JavaCompile).configureEach {
+//        javaCompiler = javaToolchains.compilerFor {
+//            languageVersion = JavaLanguageVersion.of(21)
+//        }
+//    }
+
 }
 
-test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test17', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test21', ':pkix:test', 'pg:test', ':tls:test', 'mls:test', 'mail:test', 'jmail:test'])
+
+
+
+

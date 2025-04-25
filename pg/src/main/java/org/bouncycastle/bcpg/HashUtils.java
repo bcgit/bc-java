@@ -6,8 +6,8 @@ public class HashUtils
     /**
      * Return the length of the salt per hash algorithm, used in OpenPGP v6 signatures.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#hash-algorithms-registry">
-     *     Salt Size declarations</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#hash-algorithms-registry">
+     *     OpenPGP - Salt Size declarations</a>
      * @param hashAlgorithm hash algorithm tag
      * @return size of the salt for the given hash algorithm in bytes
      */

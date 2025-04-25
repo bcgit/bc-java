@@ -4,7 +4,7 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
-import org.bouncycastle.pqc.jcajce.provider.Util;
+import org.bouncycastle.pqc.jcajce.provider.util.KdfUtil;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
@@ -60,19 +60,7 @@ public class NTRUDecapsulatorSpi
         boolean useKDF = parameterSpec.getKdfAlgorithm() != null;
 
         byte[] secret = kemExt.extractSecret(encapsulation);
-
-        if (useKDF)
-        {
-            try
-            {
-                secret = Util.makeKeyBytes(parameterSpec, secret);
-            }
-            catch (InvalidKeyException e)
-            {
-                throw new IllegalStateException(e);
-            }
-        }
-        byte[] secretKey = Arrays.copyOfRange(secret, from, to);
+        byte[] secretKey = Arrays.copyOfRange(KdfUtil.makeKeyBytes(parameterSpec, secret), from, to);
 
         return new SecretKeySpec(secretKey, algorithm);
     }

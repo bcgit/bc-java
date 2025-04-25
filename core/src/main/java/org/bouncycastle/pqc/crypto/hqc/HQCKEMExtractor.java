@@ -30,12 +30,11 @@ public class HQCKEMExtractor
 
         engine.decaps(session_key, encapsulation, sk);
 
-        return Arrays.copyOfRange(session_key, 0, key.getParameters().getK());
+        return Arrays.copyOfRange(session_key, 0, 32);
     }
 
     public int getEncapsulationLength()
-    {
-                                                                                        // Hash + salt
-        return key.getParameters().getN_BYTES() + key.getParameters().getN1N2_BYTES() + 64 + 16;
+    {         // Hash + salt
+        return key.getParameters().getN_BYTES() + key.getParameters().getN1N2_BYTES() + 16;
     }
 }

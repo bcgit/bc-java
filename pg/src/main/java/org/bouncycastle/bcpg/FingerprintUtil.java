@@ -1,9 +1,34 @@
 package org.bouncycastle.bcpg;
 
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.encoders.Hex;
 
 public class FingerprintUtil
 {
+
+    /**
+     * Derive a key-id from the given key fingerprint.
+     * This method can derive key-ids from v4, v5 (LibrePGP) and v6 keys.
+     * For keys with other versions (2,3) it will return 0.
+     *
+     * @param keyVersion version of the key
+     * @param fingerprint fingerprint of the key
+     * @return derived key-id
+     */
+    public static long keyIdFromFingerprint(int keyVersion, byte[] fingerprint)
+    {
+        switch (keyVersion)
+        {
+            case PublicKeyPacket.VERSION_4:
+                return keyIdFromV4Fingerprint(fingerprint);
+            case PublicKeyPacket.LIBREPGP_5:
+                return keyIdFromLibrePgpFingerprint(fingerprint);
+            case PublicKeyPacket.VERSION_6:
+                return keyIdFromV6Fingerprint(fingerprint);
+            default:
+                return 0;
+        }
+    }
 
     /**
      * Derive a 64 bit key-id from a version 6 OpenPGP fingerprint.
@@ -111,5 +136,56 @@ public class FingerprintUtil
     public static void writeKeyID(long keyID, byte[] bytes)
     {
         writeKeyID(keyID, bytes, 0);
+    }
+
+    public static String prettifyFingerprint(byte[] fingerprint)
+    {
+        // -DM Hex.toHexString
+        char[] hex = Hex.toHexString(fingerprint).toUpperCase().toCharArray();
+        StringBuilder sb = new StringBuilder();
+        switch (hex.length)
+        {
+            case 32:
+                // v3 keys
+                for (int i = 0; i < 4; i++)
+                {
+                    sb.append(hex, i * 4, 4).append(' ');
+                }
+                sb.append(' ');
+                for (int i = 4; i < 7; i++)
+                {
+                    sb.append(hex, i * 4, 4).append(' ');
+                }
+                sb.append(hex, 28, 4);
+                return sb.toString();
+            case 40:
+                // v4 keys
+                for (int i = 0; i <= 4; i++)
+                {
+                    sb.append(hex, i * 4, 4).append(' ');
+                }
+                sb.append(' ');
+                for (int i = 5; i <= 8; i++)
+                { 
+                    sb.append(hex, i * 4, 4).append(' ');
+                }
+                sb.append(hex, 36, 4);
+                return sb.toString();
+            case 64:
+                // v5, v6 keys
+                for (int i = 0; i < 4; i++)
+                {
+                    sb.append(hex, i * 8, 8).append(' ');
+                }
+                sb.append(' ');
+                for (int i = 4; i < 7; i++)
+                {
+                    sb.append(hex, i * 8, 8).append(' ');
+                }
+                sb.append(hex, 56, 8);
+                return sb.toString();
+            default:
+                return new String(hex);
+        }
     }
 }

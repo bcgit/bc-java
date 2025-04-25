@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -38,6 +39,11 @@ public class Extensions
     public static ASN1Encodable getExtensionParsedValue(Extensions extensions, ASN1ObjectIdentifier oid)
     {
         return null == extensions ? null : extensions.getExtensionParsedValue(oid);
+    }
+
+    public static ASN1OctetString getExtensionValue(Extensions extensions, ASN1ObjectIdentifier oid)
+    {
+        return null == extensions ? null : extensions.getExtensionValue(oid);
     }
 
     public static Extensions getInstance(
@@ -141,8 +147,7 @@ public class Extensions
      *
      * @return the extension if it's present, null otherwise.
      */
-    public Extension getExtension(
-        ASN1ObjectIdentifier oid)
+    public Extension getExtension(ASN1ObjectIdentifier oid)
     {
         return (Extension)extensions.get(oid);
     }
@@ -155,14 +160,19 @@ public class Extensions
      */
     public ASN1Encodable getExtensionParsedValue(ASN1ObjectIdentifier oid)
     {
-        Extension ext = this.getExtension(oid);
+        Extension ext = getExtension(oid);
+        return ext == null ? null : ext.getParsedValue();
+    }
 
-        if (ext != null)
-        {
-            return ext.getParsedValue();
-        }
-
-        return null;
+    /**
+     * return the value of the extension represented by the object identifier passed in.
+     *
+     * @return the value of the extension if it's present, null otherwise.
+     */
+    public ASN1OctetString getExtensionValue(ASN1ObjectIdentifier oid)
+    {
+        Extension ext = getExtension(oid);
+        return ext == null ? null : ext.getExtnValue();
     }
 
     /**
@@ -227,6 +237,21 @@ public class Extensions
     public ASN1ObjectIdentifier[] getCriticalExtensionOIDs()
     {
         return getExtensionOIDs(true);
+    }
+
+    public boolean hasAnyCriticalExtensions()
+    {
+        for (int i = 0; i != ordering.size(); i++)
+        {
+            Object oid = ordering.elementAt(i);
+
+            if (((Extension)extensions.get(oid)).isCritical())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private ASN1ObjectIdentifier[] getExtensionOIDs(boolean isCritical)

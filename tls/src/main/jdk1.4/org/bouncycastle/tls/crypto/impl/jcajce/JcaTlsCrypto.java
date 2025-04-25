@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -69,6 +70,7 @@ import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6Server;
 import org.bouncycastle.tls.crypto.impl.jcajce.srp.SRP6VerifierGenerator;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Strings;
 
 /**
  * Class for providing cryptographic services for TLS based on implementations in the JCA/JCE.
@@ -441,6 +443,22 @@ public class JcaTlsCrypto
         {
             return DHUtil.getAlgorithmParameters(this, TlsDHUtils.getNamedDHGroup(namedGroup));
         }
+        else if (NamedGroup.refersToASpecificKem(namedGroup))
+        {
+            switch (namedGroup)
+            {
+            /*
+             * TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
+             */
+            case NamedGroup.OQS_mlkem512:
+            case NamedGroup.OQS_mlkem768:
+            case NamedGroup.OQS_mlkem1024:
+            case NamedGroup.MLKEM512:
+            case NamedGroup.MLKEM768:
+            case NamedGroup.MLKEM1024:
+                return null;
+            }
+        }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
     }
@@ -564,12 +582,12 @@ public class JcaTlsCrypto
     {
         return true;
     }
-
+    
     public boolean hasKemAgreement()
     {
         return true;
     }
-    
+
     public boolean hasEncryptionAlgorithm(int encryptionAlgorithm)
     {
         final Integer key = Integers.valueOf(encryptionAlgorithm);
@@ -758,6 +776,10 @@ public class JcaTlsCrypto
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
+        // TODO[tls] Implement before adding            
+        case SignatureScheme.DRAFT_mldsa44:
+        case SignatureScheme.DRAFT_mldsa65:
+        case SignatureScheme.DRAFT_mldsa87:
             return false;
         default:
         {
@@ -835,12 +857,12 @@ public class JcaTlsCrypto
             return new JceTlsECDomain(this, ecConfig);
         }
     }
-
+    
     public TlsKemDomain createKemDomain(TlsKemConfig kemConfig)
     {
         return new JceTlsMLKemDomain(this, kemConfig);
     }
-    
+
     public TlsSecret hkdfInit(int cryptoHashAlgorithm)
     {
         return adoptLocalSecret(new byte[TlsCryptoUtils.getHashOutputSize(cryptoHashAlgorithm)]);
@@ -906,7 +928,7 @@ public class JcaTlsCrypto
     protected TlsHash createHash(String digestName)
         throws GeneralSecurityException
     {
-        return new JcaTlsHash(helper.createMessageDigest(digestName));
+        return new JcaTlsHash(helper.createDigest(digestName));
     }
 
     /**
@@ -940,20 +962,39 @@ public class JcaTlsCrypto
             SecureRandom random = needsRandom ? getSecureRandom() : null;
 
             JcaJceHelper helper = getHelper();
-            if (null != parameter)
-            {
-                Signature dummySigner = helper.createSignature(algorithmName);
-                dummySigner.initSign(privateKey, random);
-                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
-            }
 
-            Signature signer = helper.createSignature(algorithmName);
-            if (null != parameter)
+            try
             {
-                signer.setParameter(parameter);
+                if (null != parameter)
+                {
+                    Signature dummySigner = helper.createSignature(algorithmName);
+                    dummySigner.initSign(privateKey, random);
+                    helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+                }
+
+                Signature signer = helper.createSignature(algorithmName);
+                if (null != parameter)
+                {
+                    signer.setParameter(parameter);
+                }
+                signer.initSign(privateKey, random);
+                return new JcaTlsStreamSigner(signer);
             }
-            signer.initSign(privateKey, random);
-            return new JcaTlsStreamSigner(signer);
+            catch (InvalidKeyException e)
+            {
+                // not a concern in 1.4 it's all over if we get here.
+//                String upperAlg = Strings.toUpperCase(algorithmName);
+//                if (upperAlg.endsWith("MGF1"))
+//                {
+//                    // ANDMGF1 has vanished from the Sun PKCS11 provider.
+//                    algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
+//                    return createStreamSigner(algorithmName, parameter, privateKey, needsRandom);
+//                }
+//                else
+//                {
+                    throw e;
+//                }
+            }
         }
         catch (GeneralSecurityException e)
         {
@@ -1015,39 +1056,6 @@ public class JcaTlsCrypto
             }
             verifier.initVerify(publicKey);
             return new JcaTls13Verifier(verifier);
-        }
-        catch (GeneralSecurityException e)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error, e);
-        }
-    }
-
-    protected TlsStreamSigner createVerifyingStreamSigner(SignatureAndHashAlgorithm algorithm, PrivateKey privateKey,
-        boolean needsRandom, PublicKey publicKey) throws IOException
-    {
-        String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
-
-        return createVerifyingStreamSigner(algorithmName, null, privateKey, needsRandom, publicKey);
-    }
-
-    protected TlsStreamSigner createVerifyingStreamSigner(String algorithmName, AlgorithmParameterSpec parameter,
-        PrivateKey privateKey, boolean needsRandom, PublicKey publicKey) throws IOException
-    {
-        try
-        {
-            Signature signer = getHelper().createSignature(algorithmName);
-            Signature verifier = getHelper().createSignature(algorithmName);
-
-            if (null != parameter)
-            {
-                signer.setParameter(parameter);
-                verifier.setParameter(parameter);
-            }
-
-            signer.initSign(privateKey, needsRandom ? getSecureRandom() : null);
-            verifier.initVerify(publicKey);
-
-            return new JcaVerifyingStreamSigner(signer, verifier);
         }
         catch (GeneralSecurityException e)
         {
@@ -1149,6 +1157,11 @@ public class JcaTlsCrypto
                     return Boolean.TRUE;
                 }
                 }
+            }
+            else if (NamedGroup.refersToASpecificKem(namedGroup))
+            {
+                // TODO[tls-kem] When implemented via provider, need to check for support dynamically
+                return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {

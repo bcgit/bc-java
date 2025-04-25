@@ -1,5 +1,6 @@
 package org.bouncycastle.test;
 
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class DumpUtil
@@ -29,6 +30,8 @@ public class DumpUtil
         {
             return "<null>";
         }
+
+        // -DM Hex.toHexString
         String hex = Hex.toHexString(array);
         StringBuilder withWhiteSpace = new StringBuilder();
         // shift the dump a number of octets to the right
@@ -41,10 +44,13 @@ public class DumpUtil
 
         StringBuilder out = new StringBuilder();
         int l = 0;
+        byte[] counterLabel = new byte[4];
+
         while (l < octets.length)
         {
             // index row
-            out.append(String.format("%08X", l)).append("  ");
+            Pack.intToBigEndian(l, counterLabel, 0);
+            out.append(Hex.toHexString(counterLabel)).append("  ");
             // first 8 octets of a line
             for (int i = l ; i < l + 8 && i < octets.length; i++)
             {

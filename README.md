@@ -1,7 +1,5 @@
 # The Bouncy Castle Crypto Package For Java
 
-[![Build Status](https://travis-ci.org/bcgit/bc-java.svg?branch=master)](https://travis-ci.org/bcgit/bc-java)
-
 The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms, it was developed by the Legion of the Bouncy Castle, a registered Australian Charity, with a little help! The Legion, and the latest goings on with this package, can be found at [https://www.bouncycastle.org](https://www.bouncycastle.org).
 
 The Legion also gratefully acknowledges the contributions made to this package by others (see [here](https://www.bouncycastle.org/contributors.html) for the current list). If you would like to contribute to our efforts please feel free to get in touch with us or visit our [donations page](https://www.bouncycastle.org/donate), sponsor some specific work, or purchase a support contract through [Crypto Workshop](https://www.keyfactor.com/platform/bouncy-castle-support/) (now part of Keyfactor).
@@ -12,17 +10,39 @@ Except where otherwise stated, this software is distributed under a license base
 
 **Note**: this source tree is not the FIPS version of the APIs - if you are interested in our FIPS version please contact us directly at  [office@bouncycastle.org](mailto:office@bouncycastle.org).
 
+## Maven Public Key
+
+The file [bc_maven_public_key.asc](bc_maven_public_key.asc) contains the public key used to sign our artifacts on Maven Central. You will need to use 
+
+```
+gpg -o bc_maven_public_key.gpg --dearmor bc_maven_public_key.asc
+```
+
+to dearmor the key before use. Once that is done, a file can be verified by using:
+
+```
+gpg --no-default-keyring --keyring ./bc_maven_public_key.gpg --verify  file_name.jar.asc file_name.jar
+```
+
+Note: the ./ is required in front of the key file name to tell gpg to look locally.
+
+## Building overview
+
+This project can now be built and tested with JDK21. 
+
+If the build script detects BC_JDK8, BC_JDK11, BC_JDK17 it will add to the usual test task a dependency on test tasks 
+that specifically use the JVMs addressed by those environmental variables. The script relies on JAVA_HOME for picking up Java 21 if it is use.
+
+We support testing on specific JVMs as it is the only way to be certain the library is compatible.
 
 ## Environmental Variables
 
-Before invoking gradlew you need to ensure the following environmental variables are defined and point
-to valid JAVA_HOMEs for each JVM version:
+The following environmental variables can optionally point to the JAVA_HOME for each JVM version.
 
 ```
 export BC_JDK8=/path/to/java8
 export BC_JDK11=/path/to/java11
 export BC_JDK17=/path/to/java17
-export BC_JDK21=/path/to/java21
 ```
 
 ## Building
@@ -32,7 +52,8 @@ The project now uses ```gradlew``` which can be invoked for example:
 ```
 # from the root of the project
 
-# Ensure JAVA_HOME points to JDK 17 or higher JAVA_HOME
+# Ensure JAVA_HOME points to JDK 21 or higher JAVA_HOME or that
+# gradlew can find a java 21 installation to use.
 
 
 ./gradlew clean build
@@ -43,18 +64,16 @@ The gradle script will endeavour to verify their existence but not the correctne
 
 
 ## Multi-release jars and testing
-Some subprojects produce multi-release jars and these jars are tested in different jvm versions.
-Default testing on these projects is done on java 1.8 and there are specific test tasks for other versions.
+Some subprojects produce multi-release jars and these jars are can be tested on different jvm versions specifically.
 
-1. test11 test on java 11 JVM
-2. test17 test on java 17 JVM
-3. test21 test on java 21 JVM
-
-To run all of them:
-
+If the env vars are defined:
 ```
-./gradlew clean build test11 test17 test21
+export BC_JDK8=/path/to/java8
+export BC_JDK11=/path/to/java11
+export BC_JDK17=/path/to/java17
 ```
+
+If only a Java 21 JDK is present then the normal test task and test21 are run only.
 
 
 ## Code Organisation

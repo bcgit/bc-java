@@ -30,6 +30,8 @@ public final class TlsAEADCipher
     private static final int NONCE_RFC7905 = 2;
     private static final long SEQUENCE_NUMBER_PLACEHOLDER = -1L;
 
+    private static final byte[] EPOCH_1 = { 0x00, 0x01 };
+
     private final TlsCryptoParameters cryptoParams;
     private final int keySize;
     private final int macSize;
@@ -43,9 +45,18 @@ public final class TlsAEADCipher
 
     private final boolean isTLSv13;
     private final int nonceMode;
+    private final AEADNonceGenerator nonceGenerator;
 
-    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher, TlsAEADCipherImpl decryptCipher,
-        int keySize, int macSize, int aeadType) throws IOException
+    /** @deprecated Use version with extra 'nonceGeneratorFactory' parameter */ 
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
+        TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType) throws IOException
+    {
+        this(cryptoParams, encryptCipher, decryptCipher, keySize, macSize, aeadType, null);
+    }
+
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
+        TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType,
+        AEADNonceGeneratorFactory nonceGeneratorFactory) throws IOException
     {
         final SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
@@ -91,6 +102,7 @@ public final class TlsAEADCipher
         final boolean isServer = cryptoParams.isServer();
         if (isTLSv13)
         {
+            nonceGenerator = null;
             rekeyCipher(securityParameters, decryptCipher, decryptNonce, !isServer);
             rekeyCipher(securityParameters, encryptCipher, encryptNonce, isServer);
             return;
@@ -120,6 +132,28 @@ public final class TlsAEADCipher
         if (keyBlockSize != pos)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (AEAD_GCM == aeadType && nonceGeneratorFactory != null)
+        {
+            int nonceLength = fixed_iv_length + record_iv_length;
+            byte[] baseNonce = Arrays.copyOf(encryptNonce, nonceLength);
+            int counterSizeInBits;
+            if (negotiatedVersion.isDTLS())
+            {
+                counterSizeInBits = (record_iv_length - 2) * 8; // 48
+                baseNonce[baseNonce.length - 8] ^= EPOCH_1[0];
+                baseNonce[baseNonce.length - 7] ^= EPOCH_1[1];
+            }
+            else
+            {
+                counterSizeInBits = record_iv_length * 8; // 64
+            }
+            nonceGenerator = nonceGeneratorFactory.create(baseNonce, counterSizeInBits);
+        }
+        else
+        {
+            nonceGenerator = null;
         }
     }
 
@@ -156,22 +190,29 @@ public final class TlsAEADCipher
     {
         byte[] nonce = new byte[encryptNonce.length + record_iv_length];
 
-        switch (nonceMode)
+        if (null != nonceGenerator)
         {
-        case NONCE_RFC5288:
-            System.arraycopy(encryptNonce, 0, nonce, 0, encryptNonce.length);
-            // RFC 5288/6655: The nonce_explicit MAY be the 64-bit sequence number.
-            TlsUtils.writeUint64(seqNo, nonce, encryptNonce.length);
-            break;
-        case NONCE_RFC7905:
-            TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
-            for (int i = 0; i < encryptNonce.length; ++i)
+            nonceGenerator.generateNonce(nonce);
+        }
+        else
+        {
+            switch (nonceMode)
             {
-                nonce[i] ^= encryptNonce[i];
+            case NONCE_RFC5288:
+                System.arraycopy(encryptNonce, 0, nonce, 0, encryptNonce.length);
+                // RFC 5288/6655: The nonce_explicit MAY be the 64-bit sequence number.
+                TlsUtils.writeUint64(seqNo, nonce, encryptNonce.length);
+                break;
+            case NONCE_RFC7905:
+                TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
+                for (int i = 0; i < encryptNonce.length; ++i)
+                {
+                    nonce[i] ^= encryptNonce[i];
+                }
+                break;
+            default:
+                throw new TlsFatalAlert(AlertDescription.internal_error);
             }
-            break;
-        default:
-            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
         // TODO[tls13, cid] If we support adding padding to (D)TLSInnerPlaintext, this will need review

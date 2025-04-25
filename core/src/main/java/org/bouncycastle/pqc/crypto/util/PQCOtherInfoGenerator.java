@@ -4,27 +4,19 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
-import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.DEROtherInfo;
-import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.ExchangePair;
 import org.bouncycastle.pqc.crypto.KEMParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.newhope.NHAgreement;
-import org.bouncycastle.pqc.crypto.newhope.NHExchangePairGenerator;
-import org.bouncycastle.pqc.crypto.newhope.NHKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
@@ -79,15 +71,15 @@ public class PQCOtherInfoGenerator
         {
             super(algorithmID, partyUInfo, partyVInfo, random);
 
-            if (kemParams instanceof KyberParameters)
+            if (kemParams instanceof MLKEMParameters)
             {
-                KyberKeyPairGenerator kPg = new KyberKeyPairGenerator();
+                MLKEMKeyPairGenerator kPg = new MLKEMKeyPairGenerator();
 
-                kPg.init(new KyberKeyGenerationParameters(random, (KyberParameters)kemParams));
+                kPg.init(new MLKEMKeyGenerationParameters(random, (MLKEMParameters)kemParams));
 
                 aKp = kPg.generateKeyPair();
 
-                encSE = new KyberKEMExtractor((KyberPrivateKeyParameters)aKp.getPrivate());
+                encSE = new MLKEMExtractor((MLKEMPrivateKeyParameters)aKp.getPrivate());
             }
             else if (kemParams instanceof NTRUParameters)
             {
@@ -152,9 +144,9 @@ public class PQCOtherInfoGenerator
         {
             super(algorithmID, partyUInfo, partyVInfo, random);
 
-            if (kemParams instanceof KyberParameters)
+            if (kemParams instanceof MLKEMParameters)
             {
-                encSG = new KyberKEMGenerator(random);
+                encSG = new MLKEMGenerator(random);
             }
             else if (kemParams instanceof NTRUParameters)
             {

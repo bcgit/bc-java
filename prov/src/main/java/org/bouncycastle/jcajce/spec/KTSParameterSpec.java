@@ -11,13 +11,10 @@ import org.bouncycastle.util.Arrays;
  * Parameter spec for doing KTS based wrapping via the Cipher API.
  */
 public class KTSParameterSpec
+    extends KEMKDFSpec
     implements AlgorithmParameterSpec
 {
-    private final String wrappingKeyAlgorithm;
-    private final int keySizeInBits;
     private final AlgorithmParameterSpec parameterSpec;
-    private final AlgorithmIdentifier kdfAlgorithm;
-    private byte[] otherInfo;
 
     /**
      * Builder class for creating a KTSParameterSpec.
@@ -91,6 +88,11 @@ public class KTSParameterSpec
          */
         public Builder withKdfAlgorithm(AlgorithmIdentifier kdfAlgorithm)
         {
+            if (kdfAlgorithm == null)
+            {
+                throw new NullPointerException("kdfAlgorithm cannot be null");
+            }
+
             this.kdfAlgorithm = kdfAlgorithm;
 
             return this;
@@ -111,31 +113,9 @@ public class KTSParameterSpec
         String wrappingKeyAlgorithm, int keySizeInBits,
         AlgorithmParameterSpec parameterSpec, AlgorithmIdentifier kdfAlgorithm, byte[] otherInfo)
     {
-        this.wrappingKeyAlgorithm = wrappingKeyAlgorithm;
-        this.keySizeInBits = keySizeInBits;
+        super(kdfAlgorithm, otherInfo, wrappingKeyAlgorithm, keySizeInBits);
+
         this.parameterSpec = parameterSpec;
-        this.kdfAlgorithm = kdfAlgorithm;
-        this.otherInfo = otherInfo;
-    }
-
-    /**
-     * Return the name of the algorithm for the wrapping key this key spec should use.
-     *
-     * @return the key algorithm.
-     */
-    public String getKeyAlgorithmName()
-    {
-        return wrappingKeyAlgorithm;
-    }
-
-    /**
-     * Return the size of the key (in bits) for the wrapping key this key spec should use.
-     *
-     * @return length in bits of the key to be calculated.
-     */
-    public int getKeySize()
-    {
-        return keySizeInBits;
     }
 
     /**
@@ -146,25 +126,5 @@ public class KTSParameterSpec
     public AlgorithmParameterSpec getParameterSpec()
     {
         return parameterSpec;
-    }
-
-    /**
-     * Return the AlgorithmIdentifier for the KDF to do key derivation after extracting the secret.
-     *
-     * @return the AlgorithmIdentifier for the SecretKeyFactory's KDF.
-     */
-    public AlgorithmIdentifier getKdfAlgorithm()
-    {
-        return kdfAlgorithm;
-    }
-
-    /**
-     * Return the otherInfo data for initialising the KDF.
-     *
-     * @return the otherInfo data.
-     */
-    public byte[] getOtherInfo()
-    {
-        return Arrays.clone(otherInfo);
     }
 }

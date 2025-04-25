@@ -1,7 +1,5 @@
 package java.security.cert;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.PublicKey;
@@ -20,18 +18,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1OutputStream;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
-import org.bouncycastle.asn1.ASN1GeneralizedTime;
-import org.bouncycastle.asn1.DERGeneralizedTime;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -79,10 +74,8 @@ import org.bouncycastle.util.Integers;
  * <b>TODO: implement name constraints</b>
  * <b>TODO: implement match check for path to names</b><br />
  * <br />
- * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
- * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
+ * Uses {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
  * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
- * {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
  * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
  * {@link org.bouncycastle.asn1.OIDTokenizer OIDTokenizer},
  * {@link org.bouncycastle.asn1.x509.X509Name X509Name},
@@ -286,8 +279,7 @@ public class X509CertSelector implements CertSelector
      * Note that the byte array specified here is cloned to protect against
      * subsequent modifications.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
-     * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
+     * Uses {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
      * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
      * {@link org.bouncycastle.asn1.x509.X509Name X509Name}
      * 
@@ -307,9 +299,7 @@ public class X509CertSelector implements CertSelector
         }
         else
         {
-            ByteArrayInputStream inStream = new ByteArrayInputStream(issuerDN);
-            ASN1InputStream derInStream = new ASN1InputStream(inStream);
-            ASN1Object obj = derInStream.readObject();
+            ASN1Object obj = ASN1Primitive.fromByteArray(issuerDN);
             if (obj instanceof ASN1Sequence)
             {
                 this.issuerDNX509 = new X509Name((ASN1Sequence)obj);
@@ -373,8 +363,7 @@ public class X509CertSelector implements CertSelector
      * the ASN.1 notation for this structure, see
      * {@link #setIssuer(byte []) setIssuer(byte [] issuerDN)}.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
-     * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
+     * Uses {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
      * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
      * {@link org.bouncycastle.asn1.x509.X509Name X509Name}
      * 
@@ -394,10 +383,7 @@ public class X509CertSelector implements CertSelector
         }
         else
         {
-            ByteArrayInputStream inStream = new ByteArrayInputStream(subjectDN);
-            ASN1InputStream derInStream = new ASN1InputStream(inStream);
-            ASN1Object obj = derInStream.readObject();
-
+            ASN1Object obj = ASN1Primitive.fromByteArray(subjectDN);
             if (obj instanceof ASN1Sequence)
             {
                 this.subjectDNX509 = new X509Name((ASN1Sequence)obj);
@@ -589,8 +575,15 @@ public class X509CertSelector implements CertSelector
      */
     public void setSubjectPublicKeyAlgID(String oid) throws IOException
     {
-        CertUtil.parseOID(oid);
-        subjectKeyAlgID = new ASN1ObjectIdentifier(oid);
+        if (oid != null)
+        {
+            CertUtil.parseOID(oid);
+            subjectKeyAlgID = new ASN1ObjectIdentifier(oid);
+        }
+        else
+        {
+            subjectKeyAlgID = null;
+        }
     }
 
     /**
@@ -730,11 +723,11 @@ public class X509CertSelector implements CertSelector
     {
         if (keyPurposeSet == null || keyPurposeSet.isEmpty())
         {
-            this.keyPurposeSet = keyPurposeSet;
+            this.keyPurposeSet = null;
         }
         else
         {
-            this.keyPurposeSet = new HashSet();
+            HashSet checkKeyPurposeSet = new HashSet();
             Iterator iter = keyPurposeSet.iterator();
             Object obj;
             KeyPurposeId purposeID;
@@ -743,15 +736,16 @@ public class X509CertSelector implements CertSelector
                 obj = iter.next();
                 if (obj instanceof String)
                 {
-                    purposeID = (KeyPurposeId)keyPurposeIdMap.get((String)obj);
+                    String str = (String)obj;
+                    purposeID = (KeyPurposeId)keyPurposeIdMap.get(str);
                     if (purposeID == null)
                     {
-                        throw new IOException("unknown purposeID "
-                                + (String)obj);
+                        throw new IOException("unknown purposeID " + str);
                     }
-                    this.keyPurposeSet.add(purposeID);
+                    checkKeyPurposeSet.add(purposeID);
                 }
             }
+            this.keyPurposeSet = Collections.unmodifiableSet(checkKeyPurposeSet);
         }
     }
 
@@ -851,8 +845,7 @@ public class X509CertSelector implements CertSelector
                     }
                     else
                     {
-                        throw new IOException(
-                                "parsing error: unknown data type");
+                        throw new IOException("parsing error: unknown data type");
                     }
                 }
             }
@@ -903,6 +896,7 @@ public class X509CertSelector implements CertSelector
         tmpList.add(Integers.valueOf(type));
         tmpList.add(name);
         subjectAltNames.add(tmpList);
+        // FIXME Surely this affects the entry we just added to subjectAltNames??
         tmpList.set(1, encoded);
         subjectAltNamesByte.add(tmpList);
     }
@@ -1089,7 +1083,7 @@ public class X509CertSelector implements CertSelector
         }
         else
         {
-            policyOID = new HashSet();
+            HashSet checkPolicyOID = new HashSet();
             Iterator iter = certPolicySet.iterator();
             Object item;
             while (iter.hasNext())
@@ -1098,15 +1092,15 @@ public class X509CertSelector implements CertSelector
                 if (item instanceof String)
                 {
                     CertUtil.parseOID((String)item);
-                    policyOID.add(new ASN1ObjectIdentifier((String)item));
+                    checkPolicyOID.add(new ASN1ObjectIdentifier((String)item));
                 }
                 else
                 {
-                    throw new IOException(
-                            "certPolicySet contains null values or non String objects");
+                    throw new IOException("certPolicySet contains null values or non String objects");
                 }
             }
-            policy = new HashSet(certPolicySet);
+            this.policy = Collections.unmodifiableSet(new HashSet(certPolicySet));
+            this.policyOID = Collections.unmodifiableSet(checkPolicyOID);
         }
     }
 
@@ -1192,8 +1186,7 @@ public class X509CertSelector implements CertSelector
                     }
                     else
                     {
-                        throw new IOException(
-                                "parsing error: unknown data type");
+                        throw new IOException("parsing error: unknown data type");
                     }
                 }
             }
@@ -1243,6 +1236,7 @@ public class X509CertSelector implements CertSelector
         tmpList.add(Integers.valueOf(type));
         tmpList.add(name);
         pathToNames.add(tmpList);
+        // FIXME Surely this affects the entry we just added to pathToNames??
         tmpList.set(1, encoded);
         pathToNamesByte.add(tmpList);
         throw new UnsupportedOperationException();
@@ -1335,7 +1329,7 @@ public class X509CertSelector implements CertSelector
     {
         if (issuerDN instanceof String)
         {
-            return new String((String)issuerDN);
+            return (String)issuerDN;
         }
         else if (issuerDNX509 != null)
         {
@@ -1359,8 +1353,7 @@ public class X509CertSelector implements CertSelector
      * Note that the byte array returned is cloned to protect against subsequent
      * modifications.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
-     * {@link org.bouncycastle.asn1.x509.X509Name X509Name} to gnerate byte[]
+     * Uses {@link org.bouncycastle.asn1.x509.X509Name X509Name} to generate byte[]
      * output for String issuerDN.
      * 
      * @return a byte array containing the required issuer distinguished name in
@@ -1377,13 +1370,7 @@ public class X509CertSelector implements CertSelector
         }
         else if (issuerDNX509 != null)
         {
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-
-            derOutStream.writeObject(issuerDNX509.toASN1Primitive());
-            derOutStream.close();
-
-            return outStream.toByteArray();
+            return issuerDNX509.getEncoded(ASN1Encoding.DER);
         }
 
         return null;
@@ -1408,7 +1395,7 @@ public class X509CertSelector implements CertSelector
     {
         if (subjectDN instanceof String)
         {
-            return new String((String)subjectDN);
+            return (String)subjectDN;
         }
         else if (subjectDNX509 != null)
         {
@@ -1432,8 +1419,7 @@ public class X509CertSelector implements CertSelector
      * Note that the byte array returned is cloned to protect against subsequent
      * modifications.<br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1OutputStream DEROutputStream},
-     * {@link org.bouncycastle.asn1.x509.X509Name X509Name} to gnerate byte[]
+     * Uses {@link org.bouncycastle.asn1.x509.X509Name X509Name} to generate byte[]
      * output for String subjectDN.
      * 
      * @return a byte array containing the required subject distinguished name
@@ -1450,13 +1436,7 @@ public class X509CertSelector implements CertSelector
         }
         else if (subjectDNX509 != null)
         {
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-            ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-
-            derOutStream.writeObject(subjectDNX509.toASN1Primitive());
-            derOutStream.close();
-
-            return outStream.toByteArray();
+            return subjectDNX509.getEncoded(ASN1Encoding.DER);
         }
 
         return null;
@@ -1629,19 +1609,7 @@ public class X509CertSelector implements CertSelector
      */
     public Set getExtendedKeyUsage()
     {
-        if (keyPurposeSet == null || keyPurposeSet.isEmpty())
-        {
-            return keyPurposeSet;
-        }
-
-        Set returnSet = new HashSet();
-        Iterator iter = keyPurposeSet.iterator();
-        while (iter.hasNext())
-        {
-            returnSet.add(iter.next().toString());
-        }
-
-        return Collections.unmodifiableSet(returnSet);
+        return keyPurposeSet;
     }
 
     /**
@@ -1699,7 +1667,7 @@ public class X509CertSelector implements CertSelector
      */
     public Collection getSubjectAlternativeNames()
     {
-        if (subjectAltNames != null)
+        if (subjectAltNames == null)
         {
             return null;
         }
@@ -1708,19 +1676,18 @@ public class X509CertSelector implements CertSelector
         List returnList;
         Iterator iter = subjectAltNames.iterator();
         List obj;
+        Object data;
         while (iter.hasNext())
         {
             obj = (List)iter.next();
             returnList = new ArrayList();
             returnList.add(obj.get(0));
-            if (obj.get(1) instanceof byte[])
+            data = obj.get(1);
+            if (data instanceof byte[])
             {
-                returnList.add(((byte[])obj.get(1)).clone());
+                data = org.bouncycastle.util.Arrays.clone((byte[])data);
             }
-            else
-            {
-                returnList.add(obj.get(1));
-            }
+            returnList.add(data);
             returnAltNames.add(returnList);
         }
 
@@ -1790,12 +1757,7 @@ public class X509CertSelector implements CertSelector
      */
     public Set getPolicy()
     {
-        if (policy == null)
-        {
-            return null;
-        }
-
-        return Collections.unmodifiableSet(policy);
+        return policy;
     }
 
     /**
@@ -1838,20 +1800,18 @@ public class X509CertSelector implements CertSelector
         List returnList;
         Iterator iter = pathToNames.iterator();
         List obj;
-
+        Object data;
         while (iter.hasNext())
         {
             obj = (List)iter.next();
             returnList = new ArrayList();
             returnList.add(obj.get(0));
-            if (obj.get(1) instanceof byte[])
+            data = obj.get(1);
+            if (data instanceof byte[])
             {
-                returnList.add(((byte[])obj.get(1)).clone());
+                data = org.bouncycastle.util.Arrays.clone((byte[])data);
             }
-            else
-            {
-                returnList.add(obj.get(1));
-            }
+            returnList.add(data);
             returnPathToNames.add(returnList);
         }
 
@@ -1864,8 +1824,7 @@ public class X509CertSelector implements CertSelector
      * <b>TODO: implement output for currently unsupported options(name
      * constraints)</b><br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
-     * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
+     * Uses {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
      * {@link org.bouncycastle.asn1.x509.KeyPurposeId KeyPurposeId}
      * 
      * @return a <code>String</code> describing the contents of the
@@ -1895,19 +1854,13 @@ public class X509CertSelector implements CertSelector
         {
             if (subjectKeyID != null)
             {
-                ByteArrayInputStream inStream = new ByteArrayInputStream(
-                        subjectKeyID);
-                ASN1InputStream derInStream = new ASN1InputStream(inStream);
-                ASN1Object derObject = derInStream.readObject();
+                ASN1Object derObject = ASN1Primitive.fromByteArray(subjectKeyID);
                 sb.append("  Subject Key Identifier: ")
                        .append(ASN1Dump.dumpAsString(derObject)).append('\n');
             }
             if (authorityKeyID != null)
             {
-                ByteArrayInputStream inStream = new ByteArrayInputStream(
-                        authorityKeyID);
-                ASN1InputStream derInStream = new ASN1InputStream(inStream);
-                ASN1Object derObject = derInStream.readObject();
+                ASN1Object derObject = ASN1Primitive.fromByteArray(authorityKeyID);
                 sb.append("  Authority Key Identifier: ")
                        .append(ASN1Dump.dumpAsString(derObject)).append('\n');
             }
@@ -1960,10 +1913,7 @@ public class X509CertSelector implements CertSelector
                 while (iter.hasNext())
                 {
                     obj = (List)iter.next();
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(
-                            (byte[])obj.get(1));
-                    ASN1InputStream derInStream = new ASN1InputStream(inStream);
-                    ASN1Object derObject = derInStream.readObject();
+                    ASN1Object derObject = ASN1Primitive.fromByteArray((byte[])obj.get(1)); 
                     sb.append("  Type: ").append(obj.get(0)).append(" Data: ")
                            .append(ASN1Dump.dumpAsString(derObject)).append('\n');
                 }
@@ -1984,10 +1934,7 @@ public class X509CertSelector implements CertSelector
                 while (iter.hasNext())
                 {
                     obj = (List)iter.next();
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(
-                            (byte[])obj.get(1));
-                    ASN1InputStream derInStream = new ASN1InputStream(inStream);
-                    ASN1Object derObject = derInStream.readObject();
+                    ASN1Object derObject = ASN1Primitive.fromByteArray((byte[])obj.get(1)); 
                     sb.append("  Type: ").append(obj.get(0)).append(" Data: ")
                            .append(ASN1Dump.dumpAsString(derObject)).append('\n');
                 }
@@ -2007,11 +1954,10 @@ public class X509CertSelector implements CertSelector
      * <br />
      * <b>TODO: implement missing tests (name constraints and path to names)</b><br />
      * <br />
-     * Uses {@link org.bouncycastle.asn1.ASN1InputStream ASN1InputStream},
-     * {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
+     * Uses {@link org.bouncycastle.asn1.ASN1Sequence ASN1Sequence},
      * {@link org.bouncycastle.asn1.ASN1ObjectIdentifier ASN1ObjectIdentifier},
      * {@link org.bouncycastle.asn1.ASN1Object ASN1Object},
-     * {@link org.bouncycastle.asn1.DERGeneralizedTime DERGeneralizedTime},
+     * {@link org.bouncycastle.asn1.ASN1GeneralizedTime ASN1GeneralizedTime},
      * {@link org.bouncycastle.asn1.x509.X509Name X509Name},
      * {@link org.bouncycastle.asn1.x509.X509Extensions X509Extensions},
      * {@link org.bouncycastle.asn1.x509.ExtendedKeyUsage ExtendedKeyUsage},
@@ -2042,8 +1988,7 @@ public class X509CertSelector implements CertSelector
         {
             return false;
         }
-        if (serialNumber != null
-                && !serialNumber.equals(certX509.getSerialNumber()))
+        if (serialNumber != null && !serialNumber.equals(certX509.getSerialNumber()))
         {
             return false;
         }
@@ -2051,16 +1996,14 @@ public class X509CertSelector implements CertSelector
         {
             if (issuerDNX509 != null)
             {
-                if (!issuerDNX509.equals(PrincipalUtil
-                        .getIssuerX509Principal(certX509), true))
+                if (!issuerDNX509.equals(PrincipalUtil.getIssuerX509Principal(certX509), true))
                 {
                     return false;
                 }
             }
             if (subjectDNX509 != null)
             {
-                if (!subjectDNX509.equals(PrincipalUtil
-                        .getSubjectX509Principal(certX509), true))
+                if (!subjectDNX509.equals(PrincipalUtil.getSubjectX509Principal(certX509), true))
                 {
                     return false;
                 }
@@ -2072,50 +2015,40 @@ public class X509CertSelector implements CertSelector
         }
         if (subjectKeyID != null)
         {
-            byte[] data = certX509
-                    .getExtensionValue(X509Extensions.SubjectKeyIdentifier
-                            .getId());
+            byte[] data = certX509.getExtensionValue(X509Extensions.SubjectKeyIdentifier.getId());
             if (data == null)
             {
                 return false;
             }
             try
             {
-                ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-                ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                byte[] testData = ((ASN1OctetString)derInputStream.readObject())
-                        .getOctets();
+                byte[] testData = ASN1OctetString.getInstance(data).getOctets();
                 if (!Arrays.equals(subjectKeyID, testData))
                 {
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
         }
         if (authorityKeyID != null)
         {
-            byte[] data = certX509
-                    .getExtensionValue(X509Extensions.AuthorityKeyIdentifier
-                            .getId());
+            byte[] data = certX509.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
             if (data == null)
             {
                 return false;
             }
             try
             {
-                ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-                ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                byte[] testData = ((ASN1OctetString)derInputStream.readObject())
-                        .getOctets();
+                byte[] testData = ASN1OctetString.getInstance(data).getOctets();
                 if (!Arrays.equals(authorityKeyID, testData))
                 {
                     return false;
                 }
             }
-            catch (IOException ex)
+            catch (Exception ex)
             {
                 return false;
             }
@@ -2137,31 +2070,19 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                byte[] data = certX509
-                        .getExtensionValue(X509Extensions.PrivateKeyUsagePeriod
-                                .getId());
+                byte[] data = certX509.getExtensionValue(X509Extensions.PrivateKeyUsagePeriod.getId());
                 if (data != null)
                 {
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(
-                            data);
-                    ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                    inStream = new ByteArrayInputStream(
-                            ((ASN1OctetString)derInputStream.readObject())
-                                    .getOctets());
-                    derInputStream = new ASN1InputStream(inStream);
                     // TODO fix this, Sequence contains tagged objects
-                    ASN1Sequence derObject = (ASN1Sequence)derInputStream
-                            .readObject();
-                    ASN1GeneralizedTime derDate = DERGeneralizedTime
-                            .getInstance(derObject.getObjectAt(0));
-                    SimpleDateFormat dateF = new SimpleDateFormat(
-                            "yyyyMMddHHmmssZ");
+                    ASN1Sequence derObject = ASN1Sequence.getInstance(
+                        ASN1OctetString.getInstance(data).getOctets());
+                    ASN1GeneralizedTime derDate = ASN1GeneralizedTime.getInstance(derObject.getObjectAt(0));
+                    SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmssZ");
                     if (privateKeyValid.before(dateF.parse(derDate.getTime())))
                     {
                         return false;
                     }
-                    derDate = DERGeneralizedTime.getInstance(derObject
-                            .getObjectAt(1));
+                    derDate = ASN1GeneralizedTime.getInstance(derObject.getObjectAt(1));
                     if (privateKeyValid.after(dateF.parse(derDate.getTime())))
                     {
                         return false;
@@ -2177,7 +2098,8 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(certX509.getPublicKey().getEncoded());
+                SubjectPublicKeyInfo publicKeyInfo = SubjectPublicKeyInfo.getInstance(
+                    certX509.getPublicKey().getEncoded());
                 AlgorithmIdentifier algInfo = publicKeyInfo.getAlgorithmId();
                 if (!algInfo.getAlgorithm().equals(subjectKeyAlgID))
                 {
@@ -2191,8 +2113,7 @@ public class X509CertSelector implements CertSelector
         }
         if (subjectPublicKeyByte != null)
         {
-            if (!Arrays.equals(subjectPublicKeyByte, certX509.getPublicKey()
-                    .getEncoded()))
+            if (!Arrays.equals(subjectPublicKeyByte, certX509.getPublicKey().getEncoded()))
             {
                 return false;
             }
@@ -2223,21 +2144,14 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                byte[] data = certX509
-                        .getExtensionValue(X509Extensions.ExtendedKeyUsage
-                                .getId());
+                byte[] data = certX509.getExtensionValue(X509Extensions.ExtendedKeyUsage.getId());
                 if (data != null)
                 {
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(
-                            data);
-                    ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                    ExtendedKeyUsage extendedKeyUsage = ExtendedKeyUsage.getInstance(
-                            (ASN1Sequence)derInputStream.readObject());
+                    ExtendedKeyUsage extendedKeyUsage = ExtendedKeyUsage.getInstance(data);
                     tempIter = keyPurposeSet.iterator();
                     while (tempIter.hasNext())
                     {
-                        if (!extendedKeyUsage
-                                .hasKeyPurposeId((KeyPurposeId)tempIter.next()))
+                        if (!extendedKeyUsage.hasKeyPurposeId((KeyPurposeId)tempIter.next()))
                         {
                             return false;
                         }
@@ -2265,30 +2179,21 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                byte[] data = certX509
-                        .getExtensionValue(X509Extensions.CertificatePolicies
-                                .getId());
+                byte[] data = certX509.getExtensionValue(X509Extensions.CertificatePolicies.getId());
                 if (data == null)
                 {
                     return false;
                 }
                 if (!policyOID.isEmpty())
                 {
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(
-                            data);
-                    ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                    inStream = new ByteArrayInputStream(
-                            ((ASN1OctetString)derInputStream.readObject())
-                                    .getOctets());
-                    derInputStream = new ASN1InputStream(inStream);
-                    Enumeration policySequence = ((ASN1Sequence)derInputStream
-                            .readObject()).getObjects();
+                    ASN1Sequence seq = ASN1Sequence.getInstance(
+                        ASN1OctetString.getInstance(data).getOctets());
+                    Enumeration policySequence = seq.getObjects(); 
                     ASN1Sequence policyObject;
                     boolean test = false;
                     while (policySequence.hasMoreElements() && !test)
                     {
-                        policyObject = (ASN1Sequence)policySequence
-                                .nextElement();
+                        policyObject = (ASN1Sequence)policySequence.nextElement();
                         if (policyOID.contains(policyObject.getObjectAt(0)))
                         {
                             test = true;
@@ -2309,20 +2214,14 @@ public class X509CertSelector implements CertSelector
         {
             try
             {
-                byte[] data = certX509
-                        .getExtensionValue(X509Extensions.SubjectAlternativeName
-                                .getId());
+                byte[] data = certX509.getExtensionValue(X509Extensions.SubjectAlternativeName.getId());
                 if (data == null)
                 {
                     return false;
                 }
-                ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-                ASN1InputStream derInputStream = new ASN1InputStream(inStream);
-                inStream = new ByteArrayInputStream(
-                        ((ASN1OctetString)derInputStream.readObject())
-                                .getOctets());
-                derInputStream = new ASN1InputStream(inStream);
-                Enumeration altNamesSequence = ((ASN1Sequence)derInputStream.readObject()).getObjects();
+                ASN1Sequence seq = ASN1Sequence.getInstance(
+                    ASN1OctetString.getInstance(data).getOctets());
+                Enumeration altNamesSequence = seq.getObjects();
                 boolean test = false;
                 Set testSet = new HashSet(subjectAltNamesByte);
                 while (altNamesSequence.hasMoreElements() && !test)
@@ -2386,8 +2285,7 @@ public class X509CertSelector implements CertSelector
             }
             if (subjectPublicKeyByte != null)
             {
-                copy.subjectPublicKeyByte = (byte[])subjectPublicKeyByte
-                        .clone();
+                copy.subjectPublicKeyByte = (byte[])subjectPublicKeyByte.clone();
             }
             if (keyUsage != null)
             {
@@ -2395,22 +2293,16 @@ public class X509CertSelector implements CertSelector
             }
             if (keyPurposeSet != null)
             {
-                copy.keyPurposeSet = new HashSet(keyPurposeSet);
+                copy.keyPurposeSet = keyPurposeSet;
             }
             if (policy != null)
             {
-                copy.policy = new HashSet(policy);
-                copy.policyOID = new HashSet();
-                Iterator iter = policyOID.iterator();
-                while (iter.hasNext())
-                {
-                    copy.policyOID.add(new ASN1ObjectIdentifier(
-                            ((ASN1ObjectIdentifier)iter.next()).getId()));
-                }
+                copy.policy = policy;
+                copy.policyOID = policyOID;
             }
             if (subjectAltNames != null)
             {
-                copy.subjectAltNames = new HashSet(getSubjectAlternativeNames());
+                copy.subjectAltNames = (Set)getSubjectAlternativeNames();
                 Iterator iter = subjectAltNamesByte.iterator();
                 List obj;
                 List cloneObj;
@@ -2425,7 +2317,7 @@ public class X509CertSelector implements CertSelector
             }
             if (pathToNames != null)
             {
-                copy.pathToNames = new HashSet(getPathToNames());
+                copy.pathToNames = (Set)getPathToNames();
                 Iterator iter = pathToNamesByte.iterator();
                 List obj;
                 List cloneObj;

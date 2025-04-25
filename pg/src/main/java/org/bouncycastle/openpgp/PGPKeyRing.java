@@ -9,7 +9,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -124,12 +126,18 @@ public abstract class PGPKeyRing
      */
     public abstract PGPPublicKey getPublicKey(byte[] fingerprint);
 
+    public abstract PGPPublicKey getPublicKey(KeyIdentifier identifier);
+
+    public abstract Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier);
+
     /**
      * Return an iterator containing all the public keys carrying signatures issued from key keyID.
      *
      * @return an iterator (possibly empty) of the public keys associated with keyID.
      */
     public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(long keyID);
+
+    public abstract Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier);
 
     /**
      * Return the number of keys in the key ring.
@@ -142,6 +150,9 @@ public abstract class PGPKeyRing
         throws IOException;
 
     public abstract byte[] getEncoded()
+        throws IOException;
+
+    public abstract byte[] getEncoded(PacketFormat format)
         throws IOException;
 
     private static boolean isUserTag(int tag)

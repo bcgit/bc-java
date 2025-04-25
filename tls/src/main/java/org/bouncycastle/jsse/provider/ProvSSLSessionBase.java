@@ -30,7 +30,7 @@ abstract class ProvSSLSessionBase
     protected final Map<String, Object> valueMap = Collections.synchronizedMap(new HashMap<String, Object>());
 
     protected final AtomicReference<ProvSSLSessionContext> sslSessionContext;
-    protected final boolean isFips;
+    protected final boolean fipsMode;
     protected final JcaTlsCrypto crypto;
     protected final String peerHost;
     protected final int peerPort;
@@ -41,8 +41,8 @@ abstract class ProvSSLSessionBase
     ProvSSLSessionBase(ProvSSLSessionContext sslSessionContext, String peerHost, int peerPort)
     {
         this.sslSessionContext = new AtomicReference<ProvSSLSessionContext>(sslSessionContext);
-        this.isFips = (null == sslSessionContext) ? false : sslSessionContext.getSSLContext().isFips();
-        this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getCrypto();
+        this.fipsMode = (null == sslSessionContext) ? false : sslSessionContext.getContextData().isFipsMode();
+        this.crypto = (null == sslSessionContext) ? null : sslSessionContext.getContextData().getCrypto();
         this.peerHost = peerHost;
         this.peerPort = peerPort;
         this.creationTime = System.currentTimeMillis();
@@ -266,7 +266,7 @@ abstract class ProvSSLSessionBase
 
     public boolean isFipsMode()
     {
-        return isFips;
+        return fipsMode;
     }
 
     public boolean isValid()

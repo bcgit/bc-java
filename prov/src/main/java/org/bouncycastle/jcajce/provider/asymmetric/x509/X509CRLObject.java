@@ -144,7 +144,7 @@ class X509CRLObject
     {
         try
         {
-            byte[] extOctets = getExtensionOctets(c, Extension.issuingDistributionPoint.getId());
+            byte[] extOctets = getExtensionOctets(c, Extension.issuingDistributionPoint);
             if (null == extOctets)
             {
                 return false;

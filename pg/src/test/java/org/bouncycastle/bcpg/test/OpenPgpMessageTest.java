@@ -1,17 +1,23 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.LiteralDataPacket;
+import org.bouncycastle.bcpg.OnePassSignaturePacket;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 public class OpenPgpMessageTest
         extends AbstractPacketTest
@@ -19,7 +25,7 @@ public class OpenPgpMessageTest
 
     /*
     Inline-signed message using a version 6 signature
-    see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
+    see https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-inline-signed-messag
     */
     public static final String INLINE_SIGNED = "-----BEGIN PGP MESSAGE-----\n" +
             "\n" +
@@ -34,7 +40,7 @@ public class OpenPgpMessageTest
 
     /*
     Cleartext-signed message using a version 6 signature
-    see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-cleartext-signed-mes
+    see https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-cleartext-signed-mes
      */
     public static final String CLEARTEXT_SIGNED = "-----BEGIN PGP SIGNED MESSAGE-----\n" +
             "\n" +
@@ -67,7 +73,7 @@ public class OpenPgpMessageTest
     private void testParseV6CleartextSignedMessage()
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(CLEARTEXT_SIGNED.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(CLEARTEXT_SIGNED));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
 
         isNull("The ASCII armored input stream MUST NOT hallucinate headers where there are non",
@@ -92,7 +98,7 @@ public class OpenPgpMessageTest
     private void testParseV6InlineSignedMessage()
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(INLINE_SIGNED.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(INLINE_SIGNED));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
 
@@ -125,7 +131,7 @@ public class OpenPgpMessageTest
         isEquals("LiteralDataPacket mod data mismatch",
                 0, lit.getModificationTime());
         byte[] content = lit.getInputStream().readAll();
-        String contentString = new String(content, StandardCharsets.UTF_8);
+        String contentString = Strings.fromUTF8ByteArray(content);
         isEquals("LiteralDataPacket content mismatch",
                 CONTENT, contentString);
     }

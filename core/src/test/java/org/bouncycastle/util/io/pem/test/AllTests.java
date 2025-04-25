@@ -122,6 +122,34 @@ public class AllTests
         }
     }
 
+    public void testRegularBlobEndLaxParsing()
+        throws IOException
+    {
+        String original = System.setProperty(PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, "true");
+        PemReader rd = new PemReader(new StringReader(blob4));
+
+        PemObject obj;
+        try
+        {
+            obj = rd.readPemObject();
+        }
+        finally
+        {
+            if (original != null)
+            {
+                System.setProperty(PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, original);
+            }
+            else
+            {
+                System.setProperty(PemReader.LAX_PEM_PARSING_SYSTEM_PROPERTY_NAME, "");
+            }
+        }
+
+        assertEquals("BLOB", obj.getType());
+        assertTrue(Arrays.areEqual(new byte[64], obj.getContent()));
+
+    }
+
     private void lengthTest(String type, List headers, byte[] data)
         throws IOException
     {

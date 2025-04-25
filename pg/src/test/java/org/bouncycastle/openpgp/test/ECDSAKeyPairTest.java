@@ -1,22 +1,32 @@
 package org.bouncycastle.openpgp.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+
+import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.ECDSAPublicBCPGKey;
+import org.bouncycastle.bcpg.ECSecretBCPGKey;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
-import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRing;
 import org.bouncycastle.openpgp.jcajce.JcaPGPSecretKeyRing;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.util.Date;
+import org.bouncycastle.util.Strings;
 
 public class ECDSAKeyPairTest
         extends AbstractPgpKeyPairTest
@@ -119,7 +129,8 @@ public class ECDSAKeyPairTest
         byte[] privEnc = parsed.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
 
         JcaPGPKeyPair j1 = new JcaPGPKeyPair(
-                parsed.getPublicKey().getAlgorithm(),
+            PublicKeyPacket.VERSION_4,
+            parsed.getPublicKey().getAlgorithm(),
                 new KeyPair(c.getPublicKey(parsed.getPublicKey()),
                         c.getPrivateKey(parsed.getPrivateKey())),
                 parsed.getPublicKey().getCreationTime());
@@ -159,7 +170,8 @@ public class ECDSAKeyPairTest
         byte[] privEnc = parsed.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
 
         BcPGPKeyPair b1 = new BcPGPKeyPair(
-                parsed.getPublicKey().getAlgorithm(),
+            PublicKeyPacket.VERSION_4,
+            parsed.getPublicKey().getAlgorithm(),
                 new AsymmetricCipherKeyPair(
                         c.getPublicKey(parsed.getPublicKey()),
                         c.getPrivateKey(parsed.getPrivateKey())),
@@ -184,7 +196,7 @@ public class ECDSAKeyPairTest
     private PGPKeyPair parseJca(String armored)
             throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armored));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         JcaPGPSecretKeyRing ring = new JcaPGPSecretKeyRing(pIn);
@@ -195,7 +207,7 @@ public class ECDSAKeyPairTest
     private PGPKeyPair parseBc(String armored)
             throws IOException, PGPException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armored.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armored));
         ArmoredInputStream aIn = new ArmoredInputStream(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         BcPGPSecretKeyRing ring = new BcPGPSecretKeyRing(pIn);
@@ -206,16 +218,18 @@ public class ECDSAKeyPairTest
     private void testConversionOfFreshJcaKeyPair()
             throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, PGPException, IOException
     {
-        for (String curve : new String[] {
+        String[] curves  = new String[] {
                 "prime256v1",
                 "secp384r1",
                 "secp521r1",
                 "brainpoolP256r1",
                 "brainpoolP384r1",
                 "brainpoolP512r1"
-        })
+        };
+
+        for (int i = 0; i != curves.length; i++)
         {
-            testConversionOfFreshJcaKeyPair(curve);
+            testConversionOfFreshJcaKeyPair(curves[i]);
         }
     }
 
@@ -227,7 +241,7 @@ public class ECDSAKeyPairTest
         gen.initialize(new ECNamedCurveGenParameterSpec(curve));
         KeyPair kp = gen.generateKeyPair();
 
-        JcaPGPKeyPair j1 = new JcaPGPKeyPair(PublicKeyAlgorithmTags.ECDSA, kp, date);
+        JcaPGPKeyPair j1 = new JcaPGPKeyPair(PublicKeyPacket.VERSION_4, PublicKeyAlgorithmTags.ECDSA, kp, date);
         byte[] pubEnc = j1.getPublicKey().getEncoded();
         byte[] privEnc = j1.getPrivateKey().getPrivateKeyDataPacket().getEncoded();
         isTrue("Legacy ECDSA public key MUST be instanceof ECDSAPublicBCPGKey",

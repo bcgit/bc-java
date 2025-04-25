@@ -83,30 +83,41 @@ abstract class X509CRLImpl
         this.isIndirect = isIndirect;
     }
 
-    /**
-     * Will return true if any extensions are present and marked
-     * as critical as we currently dont handle any extensions!
-     */
     public boolean hasUnsupportedCriticalExtension()
     {
-        Set extns = getCriticalExtensionOIDs();
-
-        if (extns == null)
+        if (getVersion() == 2)
         {
-            return false;
+            Extensions extensions = c.getExtensions();
+            if (extensions != null)
+            {
+                Enumeration e = extensions.oids();
+                while (e.hasMoreElements())
+                {
+                    ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
+
+                    if (Extension.issuingDistributionPoint.equals(oid) ||
+                        Extension.deltaCRLIndicator.equals(oid))
+                    {
+                        continue;
+                    }
+
+                    Extension ext = extensions.getExtension(oid);
+                    if (ext.isCritical())
+                    {
+                        return true;
+                    }
+                }
+            }
         }
 
-        extns.remove(Extension.issuingDistributionPoint.getId());
-        extns.remove(Extension.deltaCRLIndicator.getId());
-
-        return !extns.isEmpty();
+        return false;
     }
 
     private Set getExtensionOIDs(boolean critical)
     {
         if (this.getVersion() == 2)
         {
-            Extensions extensions = c.getTBSCertList().getExtensions();
+            Extensions extensions = c.getExtensions();
 
             if (extensions != null)
             {
@@ -143,19 +154,7 @@ abstract class X509CRLImpl
 
     public byte[] getExtensionValue(String oid)
     {
-        ASN1OctetString extValue = getExtensionValue(c, oid);
-        if (null != extValue)
-        {
-            try
-            {
-                return extValue.getEncoded();
-            }
-            catch (Exception e)
-            {
-                throw new IllegalStateException("error parsing " + e.toString());
-            }
-        }
-        return null;
+        return X509SignatureUtil.getExtensionValue(c.getExtensions(), oid);
     }
 
     public void verify(PublicKey key)
@@ -540,7 +539,7 @@ abstract class X509CRLImpl
 
         X509SignatureUtil.prettyPrintSignature(this.getSignature(), buf, nl);
 
-        Extensions extensions = c.getTBSCertList().getExtensions();
+        Extensions extensions = c.getExtensions();
 
         if (extensions != null)
         {
@@ -698,28 +697,10 @@ abstract class X509CRLImpl
         return false;
     }
 
-    protected static byte[] getExtensionOctets(CertificateList c, String oid)
+    static byte[] getExtensionOctets(CertificateList c, ASN1ObjectIdentifier oid)
     {
-        ASN1OctetString extValue = getExtensionValue(c, oid);
-        if (null != extValue)
-        {
-            return extValue.getOctets();
-        }
-        return null;
-    }
+        ASN1OctetString extValue = Extensions.getExtensionValue(c.getExtensions(), oid);
 
-    protected static ASN1OctetString getExtensionValue(CertificateList c, String oid)
-    {
-        Extensions exts = c.getTBSCertList().getExtensions();
-        if (null != exts)
-        {
-            Extension ext = exts.getExtension(new ASN1ObjectIdentifier(oid));
-            if (null != ext)
-            {
-                return ext.getExtnValue();
-            }
-        }
-        return null;
+        return extValue == null ? null : extValue.getOctets();
     }
 }
-

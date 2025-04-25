@@ -5,8 +5,8 @@ import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -14,12 +14,12 @@ public class XWingKEMExtractor
     implements EncapsulatedSecretExtractor
 {
     private final XWingPrivateKeyParameters key;
-    private final KyberKEMExtractor kemExtractor;
+    private final MLKEMExtractor kemExtractor;
 
     public XWingKEMExtractor(XWingPrivateKeyParameters privParams)
     {
         this.key = privParams;
-        this.kemExtractor = new KyberKEMExtractor((KyberPrivateKeyParameters)key.getKyberPrivateKey());
+        this.kemExtractor = new MLKEMExtractor((MLKEMPrivateKeyParameters)key.getKyberPrivateKey());
     }
 
     @Override

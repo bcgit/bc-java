@@ -19,13 +19,15 @@ import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.Composer;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
@@ -33,6 +35,8 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
@@ -89,7 +93,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof HSSPublicKeyParameters)
         {
@@ -98,7 +102,16 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
+        }
+        else if (publicKey instanceof SLHDSAPublicKeyParameters)
+        {
+            SLHDSAPublicKeyParameters params = (SLHDSAPublicKeyParameters)publicKey;
+
+            byte[] encoding = params.getEncoded();
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof SPHINCSPlusPublicKeyParameters)
         {
@@ -185,7 +198,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.saberOidLookup(params.getParameters()));
-            
+
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DERSequence(new DEROctetString(encoding)));
         }
         else if (publicKey instanceof PicnicPublicKeyParameters)
@@ -204,7 +217,7 @@ public class SubjectPublicKeyInfoFactory
             byte[] encoding = params.getEncoded();
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.ntruOidLookup(params.getParameters()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof FalconPublicKeyParameters)
         {
@@ -219,11 +232,11 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
         }
-        else if (publicKey instanceof KyberPublicKeyParameters)
+        else if (publicKey instanceof MLKEMPublicKeyParameters)
         {
-            KyberPublicKeyParameters params = (KyberPublicKeyParameters)publicKey;
+            MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
 
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.kyberOidLookup(params.getParameters()));
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }
@@ -253,9 +266,17 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }
+        else if (publicKey instanceof MLDSAPublicKeyParameters)
+        {
+            MLDSAPublicKeyParameters params = (MLDSAPublicKeyParameters)publicKey;
+
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
+
+            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
         else if (publicKey instanceof BIKEPublicKeyParameters)
         {
-            BIKEPublicKeyParameters params = (BIKEPublicKeyParameters) publicKey;
+            BIKEPublicKeyParameters params = (BIKEPublicKeyParameters)publicKey;
 
             byte[] encoding = params.getEncoded();
 
@@ -281,6 +302,20 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.rainbowOidLookup(params.getParameters()));
 
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof MayoPublicKeyParameters)
+        {
+            MayoPublicKeyParameters params = (MayoPublicKeyParameters)publicKey;
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mayoOidLookup(params.getParameters()));
+            return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
+        }
+        else if (publicKey instanceof SnovaPublicKeyParameters)
+        {
+            SnovaPublicKeyParameters params = (SnovaPublicKeyParameters)publicKey;
+            byte[] encoding = params.getEncoded();
+            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.snovaOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, new DEROctetString(encoding));
         }
         else

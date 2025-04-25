@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
@@ -25,6 +26,7 @@ import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.math.ec.rfc8032.Ed25519;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
@@ -45,7 +47,10 @@ import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.PGPV3SignatureGenerator;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
@@ -546,12 +551,13 @@ public class PGPSignatureTest
 
         int[] criticalHashed = hashedPcks.getCriticalTags();
 
-        if (criticalHashed.length != 1)
+        // SignerUserID and SignatureCreationTime are critical.
+        if (criticalHashed.length != 2)
         {
             fail("wrong number of critical packets found.");
         }
 
-        if (criticalHashed[0] != SignatureSubpacketTags.SIGNER_USER_ID)
+        if (criticalHashed[1] != SignatureSubpacketTags.SIGNER_USER_ID)
         {
             fail("wrong critical packet found in tag list.");
         }
@@ -762,6 +768,8 @@ public class PGPSignatureTest
         testSignatureTarget();
         testUserAttributeEncoding();
         testExportNonExportableSignature();
+        testRejectionOfIllegalSignatureType0xFF();
+        testGetSignatureOfLegacyEd25519KeyWithShortMPIs();
     }
 
     private void testUserAttributeEncoding()
@@ -1365,6 +1373,66 @@ public class PGPSignatureTest
         PGPSignature nonExportableSig = readSignatures(NONEXPORTABLESIGNATURE).get(0);
         isTrue(!Arrays.areEqual(nonExportableSig.getEncoded(), nonExportableSig.getEncoded(true)));
         isTrue(nonExportableSig.getEncoded(true).length == 0);
+    }
+
+    private void testRejectionOfIllegalSignatureType0xFF()
+        throws PGPException, IOException
+    {
+        PGPSecretKeyRing pgpPriv = new PGPSecretKeyRing(rsaKeyRing, new JcaKeyFingerprintCalculator());
+        PGPSecretKey secretKey = pgpPriv.getSecretKey();
+        PGPPrivateKey pgpPrivKey = secretKey.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider("BC").build(rsaPass));
+
+        PGPContentSignerBuilder sigBuilder = new BcPGPContentSignerBuilder(
+            PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA512);
+        PGPSignatureGenerator generator = new PGPSignatureGenerator(sigBuilder);
+        try
+        {
+            generator.init(0xFF, pgpPrivKey);
+            fail("Generating signature of type 0xff MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // Expected
+        }
+
+        PGPV3SignatureGenerator generatorV3 = new PGPV3SignatureGenerator(sigBuilder);
+        try
+        {
+            generatorV3.init(0xFF, pgpPrivKey);
+            fail("Generating V3 signature of type 0xff MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // Expected
+        }
+
+        PGPContentVerifierBuilderProvider verifBuilder = new BcPGPContentVerifierBuilderProvider();
+
+        // signature of type 0xff (illegal)
+        byte[] hexSig = Hex.decode("889c04ff010a000605026655fdbe000a0910b3c272c907c7f7b2133604008dc801695e0905a21a03b832dfd576d66dc23a6ac8715128aaa5cee941b36660efd3c47618c5e880b2dc5e8a34638f10061ae6a9724a2306b66eeb4aec79b49ce4ec48f6de0b5119fc7911e9e2a7677bc4a1f6dd783ce15949457872246e0b415c6f8e3390da90597b059009dcc64723adbc45530a1db0ef70fcffbfc97af6b6");
+        ByteArrayInputStream bIn = new ByteArrayInputStream(hexSig);
+        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        PGPSignature s = new PGPSignature(pIn);
+        try
+        {
+            s.init(verifBuilder, secretKey.getPublicKey());
+            fail("Verifying signature of type 0xff MUST fail.");
+        }
+        catch (PGPException e)
+        {
+            // expected
+        }
+    }
+
+    private void testGetSignatureOfLegacyEd25519KeyWithShortMPIs()
+            throws PGPException, IOException
+    {
+        String ed25519KeyWithShortSignatureMPIs = "88740401160a00270502666a2d4009105ac5b83f1a5ad687162104229cfc85fe0ca2e3718b022c5ac5b83f1a5ad6870000a16b00f7754c1d14b068ae5e6816c376367569b1ae984587e8e5ec3cc54b811549a4920100ca2159e5965bf7d8655385449994aead14ccf05c3f33335b98d305c0f20ef50e";
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Hex.decode(ed25519KeyWithShortSignatureMPIs));
+        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        PGPSignature signature = new PGPSignature(pIn);
+        isEquals("Short MPIs in LegacyEd25519 signature MUST be properly parsed",
+                Ed25519.SIGNATURE_SIZE, signature.getSignature().length);
     }
 
     private PGPSignatureList readSignatures(String armored)

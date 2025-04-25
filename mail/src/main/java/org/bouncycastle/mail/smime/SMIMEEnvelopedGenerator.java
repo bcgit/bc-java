@@ -62,9 +62,9 @@ public class SMIMEEnvelopedGenerator
     public static final String  SEED_WRAP       = CMSEnvelopedDataGenerator.SEED_WRAP;
     
     public static final String  ECDH_SHA1KDF    = CMSEnvelopedDataGenerator.ECDH_SHA1KDF;
-
-    private static final String ENCRYPTED_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data";
     
+    static final String ENVELOPED_DATA_CONTENT_TYPE = "application/pkcs7-mime; name=\"smime.p7m\"; smime-type=enveloped-data";
+
     private EnvelopedGenerator fact;
 
     static
@@ -112,7 +112,26 @@ public class SMIMEEnvelopedGenerator
         fact.setBEREncodeRecipients(berEncodeRecipientSet);
     }
 
-     /**
+    /**
+     * return encrypted content type for enveloped data.
+     */
+    protected String getEncryptedContentType()
+    {
+        return ENVELOPED_DATA_CONTENT_TYPE;
+    }
+
+    /**
+     * return content encryptor.
+     */
+    protected SMIMEStreamingProcessor getContentEncryptor(
+            MimeBodyPart    content,
+            OutputEncryptor encryptor)
+            throws SMIMEException
+    {
+        return new ContentEncryptor(content, encryptor);
+    }
+
+    /**
      * if we get here we expect the Mime body part to be well defined.
      */
     private MimeBodyPart make(
@@ -124,8 +143,8 @@ public class SMIMEEnvelopedGenerator
         {
             MimeBodyPart data = new MimeBodyPart();
 
-            data.setContent(new ContentEncryptor(content, encryptor), ENCRYPTED_CONTENT_TYPE);
-            data.addHeader("Content-Type", ENCRYPTED_CONTENT_TYPE);
+            data.setContent(getContentEncryptor(content, encryptor), getEncryptedContentType());
+            data.addHeader("Content-Type", getEncryptedContentType());
             data.addHeader("Content-Disposition", "attachment; filename=\"smime.p7m\"");
             data.addHeader("Content-Description", "S/MIME Encrypted Message");
             data.addHeader("Content-Transfer-Encoding", encoding);
@@ -249,7 +268,7 @@ public class SMIMEEnvelopedGenerator
         }
     }
 
-    private static class WrappingIOException
+    protected static class WrappingIOException
         extends IOException
     {
         private Throwable cause;

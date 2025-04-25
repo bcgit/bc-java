@@ -1,9 +1,19 @@
 package org.bouncycastle.bcpg.sig;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
+/**
+ * Signature Subpacket containing the AEAD cipher suites (AEAD algorithm, Symmetric Key Algorithm pairs)
+ * preferred by the key holder's implementation.
+ *
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
+ *     OpenPGP - Preferred AEAD Ciphersuites</a>
+ */
 public class PreferredAEADCiphersuites
     extends PreferredAlgorithms
 {
@@ -13,10 +23,17 @@ public class PreferredAEADCiphersuites
     /**
      * AES-128 + OCB is a MUST implement and is therefore implicitly supported.
      *
-     * @see <a href="https://openpgp-wg.gitlab.io/rfc4880bis/#name-preferred-aead-ciphersuites">
-     * Crypto-Refresh § 5.2.3.15. Preferred AEAD Ciphersuites</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-preferred-aead-ciphersuites">
+     * OpenPGP - Preferred AEAD Ciphersuites</a>
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html">
+     * OpenPGP - Preferred AEAD Ciphersuites</a>
      */
     private static final Combination AES_128_OCB = new Combination(SymmetricKeyAlgorithmTags.AES_128, AEADAlgorithmTags.OCB);
+
+    public static PreferredAEADCiphersuites DEFAULT()
+    {
+        return new PreferredAEADCiphersuites(false, new Combination[]{AES_128_OCB});
+    }
 
     /**
      * Create a new PreferredAEADAlgorithms signature subpacket from raw data.
@@ -142,6 +159,51 @@ public class PreferredAEADCiphersuites
             throw new IllegalArgumentException("Even number of bytes expected.");
         }
         return encodedCombinations;
+    }
+
+    /**
+     * Return a {@link Builder} for constructing a {@link PreferredAEADCiphersuites} packet.
+     * @param isCritical true if the packet is considered critical.
+     * @return builder
+     */
+    public static Builder builder(boolean isCritical)
+    {
+        return new Builder(isCritical);
+    }
+
+    public static final class Builder
+    {
+
+        private final List<Combination> combinations = new ArrayList<Combination>();
+        private final boolean isCritical;
+
+        private Builder(boolean isCritical)
+        {
+            this.isCritical = isCritical;
+        }
+
+        /**
+         * Add a combination of cipher- and AEAD algorithm to the list of supported ciphersuites.
+         * @see SymmetricKeyAlgorithmTags for cipher algorithms
+         * @see AEADAlgorithmTags for AEAD algorithms
+         * @param symmetricAlgorithmId symmetric cipher algorithm ID
+         * @param aeadAlgorithmId AEAD algorithm ID
+         * @return builder
+         */
+        public Builder addCombination(int symmetricAlgorithmId, int aeadAlgorithmId)
+        {
+            combinations.add(new Combination(symmetricAlgorithmId, aeadAlgorithmId));
+            return this;
+        }
+
+        /**
+         * Build a {@link PreferredAEADCiphersuites} from this builder.
+         * @return finished packet
+         */
+        public PreferredAEADCiphersuites build()
+        {
+            return new PreferredAEADCiphersuites(isCritical, (Combination[])combinations.toArray(new Combination[0]));
+        }
     }
 
     /**

@@ -12,10 +12,12 @@ import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
+import org.bouncycastle.bcpg.sig.PreferredKeyServer;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
 import org.bouncycastle.bcpg.sig.Revocable;
@@ -68,33 +70,17 @@ public class SignatureSubpacketInputStream
     public SignatureSubpacket readPacket()
         throws IOException
     {
-        int l = this.read();
-        int bodyLen = 0;
-
-        if (l < 0)
+        boolean[] flags = new boolean[3];
+        int bodyLen = StreamUtil.readBodyLen(this, flags);
+        if (flags[StreamUtil.flag_eof])
         {
             return null;
         }
-
-        boolean isLongLength = false;
-
-        if (l < 192)
-        {
-            bodyLen = l;
-        }
-        else if (l <= 223)
-        {
-            bodyLen = ((l - 192) << 8) + (in.read()) + 192;
-        }
-        else if (l == 255)
-        {
-            isLongLength = true;
-            bodyLen = (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
-        }
-        else
+        else if (flags[StreamUtil.flag_partial])
         {
             throw new IOException("unexpected length header");
         }
+        boolean isLongLength = flags[StreamUtil.flag_isLongLength];
 
         int tag = in.read();
 
@@ -166,8 +152,12 @@ public class SignatureSubpacketInputStream
         case PREFERRED_HASH_ALGS:
         case PREFERRED_SYM_ALGS:
             return new PreferredAlgorithms(type, isCritical, isLongLength, data);
+        case LIBREPGP_PREFERRED_ENCRYPTION_MODES:
+            return new LibrePGPPreferredEncryptionModes(isCritical, isLongLength, data);
         case PREFERRED_AEAD_ALGORITHMS:
             return new PreferredAEADCiphersuites(isCritical, isLongLength, data);
+        case PREFERRED_KEY_SERV:
+            return new PreferredKeyServer(isCritical, isLongLength, data);
         case KEY_FLAGS:
             return new KeyFlags(isCritical, isLongLength, data);
         case POLICY_URL:

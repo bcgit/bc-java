@@ -174,7 +174,11 @@ class ProvTlsClient
             List<BCSNIServerName> sniServerNames = sslParameters.getServerNames();
             if (null == sniServerNames)
             {
-                String peerHostSNI = manager.getPeerHostSNI();
+                /*
+                 * A fully qualified domain name (FQDN) may contain a trailing dot. We remove it for the
+                 * purpose of SNI and endpoint ID checks (e.g. SNIHostName doesn't permit it).
+                 */
+                String peerHostSNI = JsseUtils.stripTrailingDot(manager.getPeerHostSNI());
 
                 /*
                  * TODO[jsse] Consider removing the restriction that the name must contain a '.'
@@ -210,8 +214,7 @@ class ProvTlsClient
     @Override
     protected int[] getSupportedCipherSuites()
     {
-        return manager.getContextData().getContext().getActiveCipherSuites(getCrypto(), sslParameters,
-            getProtocolVersions());
+        return manager.getContextData().getActiveCipherSuites(getCrypto(), sslParameters, getProtocolVersions());
     }
 
     @Override
@@ -237,7 +240,7 @@ class ProvTlsClient
     @Override
     protected ProtocolVersion[] getSupportedVersions()
     {
-        return manager.getContextData().getContext().getActiveProtocolVersions(sslParameters);
+        return manager.getContextData().getActiveProtocolVersions(sslParameters);
     }
 
     @Override
@@ -478,9 +481,9 @@ class ProvTlsClient
     {
         super.notifyConnectionClosed();
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " disconnected from " + JsseUtils.getPeerReport(manager));
         }
     }
 
@@ -489,9 +492,9 @@ class ProvTlsClient
     {
         super.notifyHandshakeBeginning();
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " opening connection to " + JsseUtils.getPeerReport(manager));
         }
 
         ContextData contextData = manager.getContextData();
@@ -510,9 +513,9 @@ class ProvTlsClient
 
         this.handshakeComplete = true;
 
-        if (LOG.isLoggable(Level.INFO))
+        if (LOG.isLoggable(Level.FINE))
         {
-            LOG.info(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
+            LOG.fine(clientID + " established connection with " + JsseUtils.getPeerReport(manager));
         }
 
         TlsSession connectionTlsSession = context.getSession();
@@ -552,8 +555,9 @@ class ProvTlsClient
     @Override
     public void notifySelectedCipherSuite(int selectedCipherSuite)
     {
-        String selectedCipherSuiteName = manager.getContextData().getContext()
-            .validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
+        final ContextData contextData = manager.getContextData();
+
+        String selectedCipherSuiteName = contextData.validateNegotiatedCipherSuite(sslParameters, selectedCipherSuite);
 
         if (LOG.isLoggable(Level.FINE))
         {
@@ -566,7 +570,7 @@ class ProvTlsClient
     @Override
     public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
     {
-        String serverVersionName = manager.getContextData().getContext().validateNegotiatedProtocol(sslParameters,
+        String serverVersionName = manager.getContextData().validateNegotiatedProtocol(sslParameters,
             serverVersion);
 
         if (LOG.isLoggable(Level.FINE))

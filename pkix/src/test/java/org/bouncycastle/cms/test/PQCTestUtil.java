@@ -15,14 +15,20 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jcajce.interfaces.MLDSAKey;
+import org.bouncycastle.jcajce.interfaces.SLHDSAKey;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
+import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.bouncycastle.pqc.jcajce.interfaces.DilithiumKey;
+import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.interfaces.FalconKey;
+import org.bouncycastle.pqc.jcajce.interfaces.LMSKey;
 import org.bouncycastle.pqc.jcajce.interfaces.PicnicKey;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.PicnicParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
@@ -49,6 +55,16 @@ public class PQCTestUtil
         return kpGen.generateKeyPair();
     }
 
+    public static KeyPair makeLmsKeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BCPQC");
+
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1), new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
     public static KeyPair makeFalconKeyPair()
         throws Exception
     {
@@ -69,12 +85,22 @@ public class PQCTestUtil
         return kpGen.generateKeyPair();
     }
 
-    public static KeyPair makeDilithiumKeyPair()
+    public static KeyPair makeMlDsaKeyPair()
             throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("Dilithium", "BCPQC");
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("ML-DSA", "BC");
         //TODO: divide into two with cases with digest and with parametersets
-        kpGen.initialize(DilithiumParameterSpec.dilithium2, new SecureRandom());
+        kpGen.initialize(MLDSAParameterSpec.ml_dsa_65, new SecureRandom());
+
+        return kpGen.generateKeyPair();
+    }
+
+    public static KeyPair makeSlhDsaKeyPair()
+            throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SLH-DSA", "BC");
+        //TODO: divide into two with cases with digest and with parametersets
+        kpGen.initialize(SLHDSAParameterSpec.slh_dsa_sha2_128f, new SecureRandom());
 
         return kpGen.generateKeyPair();
     }
@@ -96,10 +122,17 @@ public class PQCTestUtil
 //            sigGen = new JcaContentSignerBuilder(((PicnicKey)issPriv).getParameterSpec().getName()).setProvider("BCPQC").build(issPriv);
             sigGen = new JcaContentSignerBuilder("PICNIC").setProvider("BCPQC").build(issPriv);
         }
-        else if (issPriv instanceof DilithiumKey)
+        else if (issPriv instanceof MLDSAKey)
         {
-//            sigGen = new JcaContentSignerBuilder(((PicnicKey)issPriv).getParameterSpec().getName()).setProvider("BCPQC").build(issPriv);
-            sigGen = new JcaContentSignerBuilder("Dilithium").setProvider("BCPQC").build(issPriv);
+            sigGen = new JcaContentSignerBuilder("ML-DSA").setProvider("BC").build(issPriv);
+        }
+        else if (issPriv instanceof SLHDSAKey)
+        {
+            sigGen = new JcaContentSignerBuilder("SLH-DSA").setProvider("BC").build(issPriv);
+        }
+        else if (issPriv instanceof LMSKey)
+        {
+            sigGen = new JcaContentSignerBuilder("LMS").setProvider("BC").build(issPriv);
         }
         else
         {

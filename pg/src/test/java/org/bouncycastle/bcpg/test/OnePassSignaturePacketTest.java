@@ -1,13 +1,19 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
-import org.bouncycastle.openpgp.PGPSignature;
-import org.bouncycastle.util.encoders.Hex;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
+
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.FingerprintUtil;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.OnePassSignaturePacket;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.util.encoders.Hex;
 
 public class OnePassSignaturePacketTest
         extends AbstractPacketTest
@@ -18,7 +24,7 @@ public class OnePassSignaturePacketTest
             throws IOException
     {
         // Version 6 OnePassSignature packet
-        // extracted from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
+        // extracted from https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-inline-signed-messag
         byte[] encOPS = Hex.decode("c44606010a1b2076495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbaccb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc901");
         // Issuer of the message
         byte[] issuerFp = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
@@ -36,6 +42,7 @@ public class OnePassSignaturePacketTest
                 issuerFp, ops.getFingerprint());
         isTrue("OPS packet key-ID mismatch",
                 // key-ID are the first 8 octets of the fingerprint
+                // -DM Hex.toHexString
                 Hex.toHexString(issuerFp).startsWith(Long.toHexString(ops.getKeyID())));
         isEncodingEqual("OPS packet salt mismatch",
                 salt, ops.getSalt());
@@ -77,8 +84,10 @@ public class OnePassSignaturePacketTest
         isNull("OPS v3 MUST NOT have salt",
                 before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -145,8 +154,10 @@ public class OnePassSignaturePacketTest
         isTrue("non-nested OPS is expected to be containing",
                 before.isContaining());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -197,8 +208,10 @@ public class OnePassSignaturePacketTest
         isEncodingEqual("Salt mismatch",
                 salt, before.getSalt());
 
-        for (boolean newTypeIdFormat : new boolean[] {true, false})
+        for (int idx = 0; idx != 2; idx++)
         {
+            boolean newTypeIdFormat = (idx == 0) ?  true : false;
+            
             // round-trip the packet by encoding and decoding it
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             BCPGOutputStream pOut = new BCPGOutputStream(bOut, newTypeIdFormat);
@@ -254,7 +267,7 @@ public class OnePassSignaturePacketTest
     {
         // Version 6 OnePassSignature packet with truncated fingerprint field (20 bytes instead of 32)
         // This error would happen, if a v6 OPS packet was generated with a v4 fingerprint.
-        // extracted from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
+        // extracted from https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-inline-signed-messag
         byte[] encOPS = Hex.decode("c44606010a1b2076495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbaccb186c4f0609a697e4d52dfa6c722b0c1f1e27c101");
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(encOPS);

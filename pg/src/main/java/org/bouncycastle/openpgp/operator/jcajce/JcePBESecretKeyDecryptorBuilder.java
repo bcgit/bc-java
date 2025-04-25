@@ -15,12 +15,15 @@ import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
 
 public class JcePBESecretKeyDecryptorBuilder
+        implements PBESecretKeyDecryptorBuilder
 {
     private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
     private PGPDigestCalculatorProvider calculatorProvider;
+    private JceAEADUtil aeadUtil = new JceAEADUtil(helper);
 
     private JcaPGPDigestCalculatorProviderBuilder calculatorProviderBuilder;
 
@@ -37,6 +40,7 @@ public class JcePBESecretKeyDecryptorBuilder
     public JcePBESecretKeyDecryptorBuilder setProvider(Provider provider)
     {
         this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -49,6 +53,7 @@ public class JcePBESecretKeyDecryptorBuilder
     public JcePBESecretKeyDecryptorBuilder setProvider(String providerName)
     {
         this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
         {
@@ -95,6 +100,13 @@ public class JcePBESecretKeyDecryptorBuilder
                 {
                     throw new PGPException("invalid key: " + e.getMessage(), e);
                 }
+            }
+
+            @Override
+            public byte[] recoverKeyData(int encAlgorithm, int aeadAlgorithm, byte[] s2kKey, byte[] iv, int packetTag, int keyVersion, byte[] keyData, byte[] pubkeyData)
+                throws PGPException
+            {
+                return JceAEADUtil.processAeadKeyData(aeadUtil, Cipher.DECRYPT_MODE, encAlgorithm, aeadAlgorithm, s2kKey, iv, packetTag, keyVersion, keyData, 0, keyData.length, pubkeyData);
             }
         };
     }

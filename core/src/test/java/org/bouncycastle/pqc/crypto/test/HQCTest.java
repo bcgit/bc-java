@@ -42,9 +42,9 @@ public class HQCTest
         String[] files;
         // test cases
         files = new String[]{
-                "hqc-128_kat.rsp",
-                "hqc-192_kat.rsp",
-                "hqc-256_kat.rsp",
+                "HQC-128.rsp",
+                "HQC-192.rsp",
+                "HQC-256.rsp",
         };
 
         HQCParameters[] listParams = new HQCParameters[]{

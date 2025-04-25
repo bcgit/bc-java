@@ -16,12 +16,12 @@ import java.math.BigInteger;
  * If you want to be compatible with legacy applications however, you should use this class instead.
  * Note though, that for v6 keys, {@link X25519SecretBCPGKey} or {@link X448SecretBCPGKey} MUST be used for X25519, X448.
  *
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ecd">
- *     Crypto-Refresh - Algorithm-Specific Parts for ECDH Keys</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-algorithm-specific-part-for-ec">
- *     Crypto-Refresh - Algorithm-Specific Parts for ECDSA Keys</a>
- * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-curve25519legacy-ecdh-secre">
- *     Crypto-Refresh - Curve25519Legacy ECDH Secret Key Material (deprecated)</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-algorithm-specific-part-for-ecd">
+ *     OpenPGP - Algorithm-Specific Parts for ECDH Keys</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-algorithm-specific-part-for-ec">
+ *     OpenPGP - Algorithm-Specific Parts for ECDSA Keys</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9580.html#name-curve25519legacy-ecdh-secre">
+ *     OpenPGP - Curve25519Legacy ECDH Secret Key Material (deprecated)</a>
  */
 public class ECSecretBCPGKey
     extends BCPGObject

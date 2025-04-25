@@ -452,7 +452,7 @@ public class S2K
 
             // log_2(p) = log_e(p) / log_e(2)
             //double log2_p = Math.log((double)parallelism) / Math.log(2.0);
-            // see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-05.html#section-3.7.1.4-5
+            // see https://www.rfc-editor.org/rfc/rfc9580.html#section-3.7.1.4-5
             //if (memSizeExp < (3 + Math.ceil(log2_p)) || memSizeExp > 31)
             //{
                 //throw new IllegalArgumentException("Memory size exponent MUST be between 3+ceil(log_2(parallelism)) and 31");

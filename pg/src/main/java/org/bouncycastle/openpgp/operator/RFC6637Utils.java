@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
@@ -37,14 +38,15 @@ public class RFC6637Utils
             return "X448withSHA512CKDF";
         }
         ECDHPublicBCPGKey ecKey = (ECDHPublicBCPGKey)pubKeyData.getKey();
+        String curve = ecKey.getCurveOID().equals(EdECObjectIdentifiers.id_X448) ? "X448" : "X25519";
         switch (ecKey.getHashAlgorithm())
         {
         case HashAlgorithmTags.SHA256:
-            return "X25519withSHA256CKDF";
+            return curve + "withSHA256CKDF";
         case HashAlgorithmTags.SHA384:
-            return "X25519withSHA384CKDF";
+            return curve + "withSHA384CKDF";
         case HashAlgorithmTags.SHA512:
-            return "X25519withSHA512CKDF";
+            return curve + "withSHA512CKDF";
         default:
             throw new IllegalArgumentException("Unknown hash algorithm specified: " + ecKey.getHashAlgorithm());
         }
@@ -113,8 +115,15 @@ public class RFC6637Utils
         pOut.write(ecKey.getHashAlgorithm());
         pOut.write(ecKey.getSymmetricKeyAlgorithm());
         pOut.write(ANONYMOUS_SENDER);
-        pOut.write(fingerPrintCalculator.calculateFingerprint(pubKeyData));
-
+        byte[] fp = fingerPrintCalculator.calculateFingerprint(pubKeyData);
+        if (pubKeyData.getVersion() == PublicKeyPacket.LIBREPGP_5)
+        {
+            pOut.write(fp, 0, 20);
+        }
+        else
+        {
+            pOut.write(fp);
+        }
         return pOut.toByteArray();
     }
 

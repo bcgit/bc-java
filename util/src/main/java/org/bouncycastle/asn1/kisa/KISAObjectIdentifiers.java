@@ -25,7 +25,4 @@ public interface KISAObjectIdentifiers
 
     /** RFC 4010: id-npki-app-cmsSeed-wrap; OID 1.2.410.200004.7.1.1.1 */
     static final ASN1ObjectIdentifier id_npki_app_cmsSeed_wrap = new ASN1ObjectIdentifier("1.2.410.200004.7.1.1.1");
-
-    /** RFC 4010: SeedEncryptionAlgorithmInCMS; OID 1.2.840.113549.1.9.16.0.24 */
-    static final ASN1ObjectIdentifier id_mod_cms_seed = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.24");
 }

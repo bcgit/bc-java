@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.ocsp;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -7,6 +8,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
@@ -16,7 +18,7 @@ public class CertID
     AlgorithmIdentifier    hashAlgorithm;
     ASN1OctetString        issuerNameHash;
     ASN1OctetString        issuerKeyHash;
-    ASN1Integer             serialNumber;
+    ASN1Integer            serialNumber;
 
     public CertID(
         AlgorithmIdentifier hashAlgorithm,
@@ -79,6 +81,72 @@ public class CertID
     public ASN1Integer getSerialNumber()
     {
         return serialNumber;
+    }
+
+    public boolean equals(Object o)
+    {
+        if (this == o)
+        {
+            return true;
+        }
+
+        if (o instanceof ASN1Encodable)
+        {
+            try
+            {
+                CertID other = CertID.getInstance(o);
+
+                if (!this.hashAlgorithm.getAlgorithm().equals(other.hashAlgorithm.getAlgorithm()))
+                {
+                    return false;
+                }
+                if (!isEqual(this.hashAlgorithm.getParameters(), other.hashAlgorithm.getParameters()))
+                {
+                    return false;
+                }
+
+                return issuerNameHash.equals(other.issuerNameHash)
+                    && issuerKeyHash.equals(other.issuerKeyHash)
+                    && serialNumber.equals(other.serialNumber);
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public int hashCode()
+    {
+        ASN1Encodable params = hashAlgorithm.getParameters();
+        int hashCode = (params == null || DERNull.INSTANCE.equals(params)) ? 0 : params.hashCode();
+
+        return hashCode + 7 * (hashAlgorithm.getAlgorithm().hashCode()
+            + 7 * (issuerNameHash.hashCode() + 7 * (issuerKeyHash.hashCode() + 7 * serialNumber.hashCode())));
+    }
+
+    private boolean isEqual(ASN1Encodable a, ASN1Encodable b)
+    {
+        if (a == b)
+        {
+            return true;
+        }
+
+        if (a == null)
+        {
+            return DERNull.INSTANCE.equals(b);
+        }
+        else
+        {
+            if (DERNull.INSTANCE.equals(a) && b == null)
+            {
+                return true;
+            }
+
+            return a.equals(b);
+        }
     }
 
     /**

@@ -237,12 +237,19 @@ public class DefaultBufferedBlockCipher
         if (len > gapLen)
         {
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
+            inOff += gapLen;
+            len -= gapLen;
+            if (in == out && segmentsOverlap(inOff, len, outOff, length))
+            {
+                in = new byte[len];
+                System.arraycopy(out, inOff, in, 0, len);
+                inOff = 0;
+            }
 
             resultLen += cipher.processBlock(buf, 0, out, outOff);
 
             bufOff = 0;
-            len -= gapLen;
-            inOff += gapLen;
+
 
             if (mbCipher != null)
             {

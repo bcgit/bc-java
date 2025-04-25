@@ -294,7 +294,6 @@ public class OpenSSHKeyParsingTests
             doECSigTest(new ECPublicKeyParameters(q, privKey.getParameters()), privKey);
         }
 
-
         for (int i = 0; i != pairs.length; i++)
         {
             String[] pair = pairs[i];
@@ -333,6 +332,14 @@ public class OpenSSHKeyParsingTests
             isTrue("ECDSA test post encoded / decode", signer.verifySignature(originalMessage, rs[0], rs[1]));
         }
 
+    }
+
+    private void testFido2Keys()
+    {
+        // P-256 ECDSA Key
+        byte[] decode = Base64.decode("AAAAInNrLWVjZHNhLXNoYTItbmlzdHAyNTZAb3BlbnNzaC5jb20AAAAIbmlzdHAyNTYAAABBBPnfX2RzzEvD5CEX/0G3LLXrDWjrir9jZ2omSoxNyNT44cSiOP2v/WodnYpQdJsLIZn5bGNI0UxzxTuFzdizrWkAAAAEc3NoOg==");
+
+        CipherParameters xpubSpec = OpenSSHPublicKeyUtil.parsePublicKey(decode);
     }
 
     private void doECSigTest(CipherParameters pubSpec, CipherParameters privSpec)
@@ -470,6 +477,7 @@ public class OpenSSHKeyParsingTests
         testRSA();
         testED25519();
         testFailures();
+        testFido2Keys();
     }
 
     public void testRSA()

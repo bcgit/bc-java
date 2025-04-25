@@ -12,6 +12,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.PublicKeyPacket;
@@ -68,7 +70,7 @@ class JcaJcePGPUtil
     static HybridValueParameterSpec getHybridValueParameterSpecWithPrepend(byte[] ephmeralPublicKey, PublicKeyPacket pkp, String algorithmName)
         throws IOException
     {
-        return new HybridValueParameterSpec(Arrays.concatenate(ephmeralPublicKey, pkp.getEncoded()), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP " + algorithmName)));
+        return new HybridValueParameterSpec(Arrays.concatenate(ephmeralPublicKey, pkp.getKey().getEncoded()), true, new UserKeyingMaterialSpec(Strings.toByteArray("OpenPGP " + algorithmName)));
     }
 
     static Key getSecret(OperatorHelper helper, PublicKey cryptoPublicKey, String keyEncryptionOID, String agreementName, AlgorithmParameterSpec ukmSpec, Key privKey)
@@ -78,5 +80,10 @@ class JcaJcePGPUtil
         agreement.init(privKey, ukmSpec);
         agreement.doPhase(cryptoPublicKey, true);
         return agreement.generateSecret(keyEncryptionOID);
+    }
+
+    static boolean isX25519(ASN1ObjectIdentifier curveID)
+    {
+        return curveID.equals(CryptlibObjectIdentifiers.curvey25519) || curveID.equals(EdECObjectIdentifiers.id_X25519);
     }
 }

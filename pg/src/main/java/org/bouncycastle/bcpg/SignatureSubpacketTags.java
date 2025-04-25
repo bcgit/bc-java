@@ -30,8 +30,9 @@ public interface SignatureSubpacketTags
     int SIGNATURE_TARGET = 31;     // signature target
     int EMBEDDED_SIGNATURE = 32;   // embedded signature
     int ISSUER_FINGERPRINT = 33;   // issuer key fingerprint
-//  public static final int PREFERRED_AEAD_ALGORITHMS = 34; // RESERVED since crypto-refresh-05
-int INTENDED_RECIPIENT_FINGERPRINT = 35;   // intended recipient fingerprint
+    int LIBREPGP_PREFERRED_ENCRYPTION_MODES = 34;
+//  public static final int PREFERRED_AEAD_ALGORITHMS = 34;// RESERVED since rfc9580
+    int INTENDED_RECIPIENT_FINGERPRINT = 35;   // intended recipient fingerprint
     int ATTESTED_CERTIFICATIONS = 37;   // attested certifications (RESERVED)
     int KEY_BLOCK = 38;            // Key Block (RESERVED)
     int PREFERRED_AEAD_ALGORITHMS = 39;   // preferred AEAD algorithms

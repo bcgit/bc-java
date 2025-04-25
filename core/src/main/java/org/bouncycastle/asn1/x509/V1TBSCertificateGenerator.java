@@ -1,9 +1,7 @@
 package org.bouncycastle.asn1.x509;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1UTCTime;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
 
@@ -29,6 +27,7 @@ public class V1TBSCertificateGenerator
     ASN1Integer              serialNumber;
     AlgorithmIdentifier     signature;
     X500Name                issuer;
+    Validity                validity;
     Time                    startDate, endDate;
     X500Name                subject;
     SubjectPublicKeyInfo    subjectPublicKeyInfo;
@@ -64,28 +63,33 @@ public class V1TBSCertificateGenerator
         this.issuer = issuer;
     }
 
-    public void setStartDate(
-        Time startDate)
+    public void setValidity(Validity validity)
     {
+        this.validity = validity;
+        this.startDate = null;
+        this.endDate = null;
+    }
+
+    public void setStartDate(Time startDate)
+    {
+        this.validity = null;
         this.startDate = startDate;
     }
 
-    public void setStartDate(
-        ASN1UTCTime startDate)
+    public void setStartDate(ASN1UTCTime startDate)
     {
-        this.startDate = new Time(startDate);
+        setStartDate(new Time(startDate));
     }
 
-    public void setEndDate(
-        Time endDate)
+    public void setEndDate(Time endDate)
     {
+        this.validity = null;
         this.endDate = endDate;
     }
 
-    public void setEndDate(
-        ASN1UTCTime endDate)
+    public void setEndDate(ASN1UTCTime endDate)
     {
-        this.endDate = new Time(endDate);
+        setEndDate(new Time(endDate));
     }
 
     /**
@@ -111,35 +115,15 @@ public class V1TBSCertificateGenerator
 
     public TBSCertificate generateTBSCertificate()
     {
-        if ((serialNumber == null) || (signature == null)
-            || (issuer == null) || (startDate == null) || (endDate == null)
-            || (subject == null) || (subjectPublicKeyInfo == null))
+        if ((serialNumber == null) || (signature == null) || (issuer == null) ||
+            (validity == null && (startDate == null || endDate == null)) ||
+            (subject == null) || (subjectPublicKeyInfo == null))
         {
             throw new IllegalStateException("not all mandatory fields set in V1 TBScertificate generator");
         }
 
-        ASN1EncodableVector seq = new ASN1EncodableVector(6);
-
-        // seq.add(version); - not required as default value.
-        seq.add(serialNumber);
-        seq.add(signature);
-        seq.add(issuer);
-
-        //
-        // before and after dates
-        //
-        {
-            ASN1EncodableVector validity = new ASN1EncodableVector(2);
-            validity.add(startDate);
-            validity.add(endDate);
-
-            seq.add(new DERSequence(validity));
-        }
-
-        seq.add(subject);
-
-        seq.add(subjectPublicKeyInfo);
-
-        return TBSCertificate.getInstance(new DERSequence(seq));
+        return new TBSCertificate(new ASN1Integer(0), serialNumber, signature, issuer,
+            validity != null ? validity : new Validity(startDate, endDate), subject, subjectPublicKeyInfo, null,
+            null, null);
     }
 }

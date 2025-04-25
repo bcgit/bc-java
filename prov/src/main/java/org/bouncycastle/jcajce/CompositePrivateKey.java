@@ -3,7 +3,6 @@ package org.bouncycastle.jcajce;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,9 +13,10 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeSignaturesConstants;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -75,7 +75,7 @@ public class CompositePrivateKey implements PrivateKey
         ASN1ObjectIdentifier keyInfoIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
         try
         {
-            if (!Arrays.asList(CompositeSignaturesConstants.supportedIdentifiers).contains(keyInfoIdentifier))
+            if (!CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
             {
                 throw new IllegalStateException("Unable to create CompositePrivateKey from PrivateKeyInfo");
             }
@@ -108,7 +108,7 @@ public class CompositePrivateKey implements PrivateKey
 
     public String getAlgorithm()
     {
-        return CompositeSignaturesConstants.ASN1IdentifierAlgorithmNameMap.get(this.algorithmIdentifier).getId();
+        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier);
     }
 
     public ASN1ObjectIdentifier getAlgorithmIdentifier()
@@ -132,18 +132,40 @@ public class CompositePrivateKey implements PrivateKey
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        for (int i = 0; i < keys.size(); i++)
+        if (algorithmIdentifier.equals(MiscObjectIdentifiers.id_composite_key))
         {
-            v.add(PrivateKeyInfo.getInstance(keys.get(i).getEncoded()));
-        }
+            for (int i = 0; i < keys.size(); i++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                v.add(info);
+            }
 
-        try
-        {
-            return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            try
+            {
+                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), new DERSequence(v)).getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            }
         }
-        catch (IOException e)
+        else
         {
-            throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            byte[] keyEncoding = null;
+            for (int i = 0; i < keys.size(); i++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfo.getInstance(keys.get(i).getEncoded());
+                keyEncoding = Arrays.concatenate(keyEncoding, info.getPrivateKey().getOctets());
+            }
+
+            try
+            {
+                return new PrivateKeyInfo(new AlgorithmIdentifier(this.algorithmIdentifier), keyEncoding).getEncoded(ASN1Encoding.DER);
+            }
+            catch (IOException e)
+            {
+                throw new IllegalStateException("unable to encode composite private key: " + e.getMessage());
+            }
         }
     }
 

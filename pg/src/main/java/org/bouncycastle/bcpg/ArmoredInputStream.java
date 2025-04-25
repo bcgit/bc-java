@@ -24,7 +24,7 @@ import org.bouncycastle.util.Strings;
 public class ArmoredInputStream
     extends InputStream
 {
-    /*
+    /**
      * set up the decoding table.
      */
     private static final byte[] decodingTable;
@@ -268,7 +268,16 @@ public class ArmoredInputStream
                 }
                 if (c == '\r' || (last != '\r' && c == '\n'))
                 {
-                    String line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    String line;
+
+                    try
+                    {
+                        line = Strings.fromUTF8ByteArray(buf.toByteArray());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ArmoredInputException(e.getMessage());
+                    }
                     if (line.trim().length() == 0)
                     {
                         break;

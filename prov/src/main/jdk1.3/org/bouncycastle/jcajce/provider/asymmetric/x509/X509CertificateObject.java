@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PKCS12BagAttributeCarrierImpl;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -232,7 +233,7 @@ class X509CertificateObject
     {
         try
         {
-            byte[] extOctets = getExtensionOctets(c, "2.5.29.19");
+            byte[] extOctets = getExtensionOctets(c, Extension.basicConstraints);
             if (null == extOctets)
             {
                 return null;
@@ -250,7 +251,7 @@ class X509CertificateObject
     {
         try
         {
-            byte[] extOctets = getExtensionOctets(c, "2.5.29.15");
+            byte[] extOctets = getExtensionOctets(c, Extension.keyUsage);
             if (null == extOctets)
             {
                 return null;

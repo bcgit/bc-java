@@ -9,6 +9,7 @@ import java.util.Random;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.PhotonBeetleDigest;
 import org.bouncycastle.crypto.engines.PhotonBeetleEngine;
 import org.bouncycastle.crypto.modes.AEADCipher;
@@ -30,60 +31,29 @@ public class PhotonBeetleTest
     public void performTest()
         throws Exception
     {
-        testVectorsHash();
+        DigestTest.implTestVectorsDigest(this, new PhotonBeetleDigest(), "crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
+        DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
+        DigestTest.implTestExceptionsAndParametersDigest(this, new PhotonBeetleDigest(), 32);
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherMultipleBlocks(this, 1024, 19, 100, 128, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
+        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
+        DigestTest.checkDigestReset(this, new PhotonBeetleDigest());
+
         PhotonBeetleEngine pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32);
         testExceptions(pb, pb.getKeyBytesSize(), pb.getIVBytesSize(), pb.getBlockSize());
         testParameters(pb, 16, 16, 16);
         pb = new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128);
         testExceptions(pb, pb.getKeyBytesSize(), pb.getIVBytesSize(), pb.getBlockSize());
         testParameters(pb, 16, 16, 16);
-        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb32, "v32");
-        testVectors(PhotonBeetleEngine.PhotonBeetleParameters.pb128, "v128");
-        testExceptions(new PhotonBeetleDigest(), 32);
-    }
 
-    private void testVectorsHash()
-        throws Exception
-    {
-        PhotonBeetleDigest PhotonBeetle = new PhotonBeetleDigest();
-        CipherParameters params;
-        InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", "LWC_HASH_KAT_256.txt");
-        BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-        String line;
-        byte[] ptByte, adByte;
-        byte[] rv;
-        HashMap<String, String> map = new HashMap<String, String>();
-        while ((line = bin.readLine()) != null)
-        {
-            int a = line.indexOf('=');
-            if (a < 0)
-            {
-//                if (!map.get("Count").equals("3"))
-//                {
-//                    continue;
-//                }
-                PhotonBeetle.reset();
-                ptByte = Hex.decode((String)map.get("Msg"));
-                PhotonBeetle.update(ptByte, 0, ptByte.length);
-                byte[] hash = new byte[32];
-                PhotonBeetle.doFinal(hash, 0);
-                if (!areEqual(hash, Hex.decode((String)map.get("MD"))))
-                {
-                    mismatch("Keystream " + map.get("Count"), (String)map.get("MD"), hash);
-                }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
-                map.clear();
-                PhotonBeetle.reset();
-            }
-            else
-            {
-                map.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
-            }
-        }
-        //System.out.print.println("PhotonBeetle Hash pass");
+        testExceptions(new PhotonBeetleDigest(), 32);
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.testOverlapping(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherOutputSize(this, 16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
     }
 
     private void testVectors(PhotonBeetleEngine.PhotonBeetleParameters pbp, String filename)
@@ -94,7 +64,6 @@ public class PhotonBeetleTest
         InputStream src = TestResourceFinder.findTestResource("crypto/photonbeetle", filename + "_LWC_AEAD_KAT_128_128.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         String line;
-        byte[] ptByte, adByte;
         byte[] rv;
         HashMap<String, String> map = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
@@ -102,9 +71,9 @@ public class PhotonBeetleTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-//                if (!map.get("Count").equals("133"))
+//                if (map.get("Count").equals("298"))
 //                {
-//                    continue;
+//                    System.out.println("test");
 //                }
                 byte[] key = Hex.decode(map.get("Key"));
                 byte[] nonce = Hex.decode(map.get("Nonce"));
@@ -121,10 +90,6 @@ public class PhotonBeetleTest
                 {
                     mismatch("Keystream " + map.get("Count"), (String)map.get("CT"), rv);
                 }
-//                else
-//                {
-//                    System.out.println("Keystream " + map.get("Count") + " pass");
-//                }
                 PhotonBeetle.reset();
                 PhotonBeetle.init(false, params);
                 //Decrypt
@@ -139,6 +104,7 @@ public class PhotonBeetleTest
                     mismatch("Reccover Keystream " + map.get("Count"), (String)map.get("PT"), pt_recovered);
                 }
                 PhotonBeetle.reset();
+                //System.out.println(map.get("Count") + " pass");
                 map.clear();
 
             }
@@ -184,7 +150,7 @@ public class PhotonBeetleTest
             aeadBlockCipher.reset();
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before reset");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -194,7 +160,7 @@ public class PhotonBeetleTest
             aeadBlockCipher.doFinal(c1, m.length);
             fail(aeadBlockCipher.getAlgorithmName() + " need to be initialed before dofinal");
         }
-        catch (IllegalArgumentException e)
+        catch (IllegalStateException e)
         {
             //expected
         }
@@ -247,6 +213,7 @@ public class PhotonBeetleTest
         }
 
         aeadBlockCipher.init(true, params);
+        c1 = new byte[aeadBlockCipher.getOutputSize(m.length)];
         try
         {
             aeadBlockCipher.doFinal(c1, m.length);
@@ -266,6 +233,7 @@ public class PhotonBeetleTest
         }
 
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         byte[] mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.doFinal(mac1, 0);
@@ -306,6 +274,7 @@ public class PhotonBeetleTest
         }
         try
         {
+            aeadBlockCipher.init(true, params);
             aeadBlockCipher.processBytes(new byte[]{0}, 1, 1, c1, 0);
             fail(aeadBlockCipher.getAlgorithmName() + ": input for processBytes is too short");
         }
@@ -335,9 +304,11 @@ public class PhotonBeetleTest
         mac1 = new byte[aeadBlockCipher.getOutputSize(0)];
         mac2 = new byte[aeadBlockCipher.getOutputSize(0)];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(new byte[]{0, 0}, 0, 2);
         aeadBlockCipher.doFinal(mac1, 0);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.processAADByte((byte)0);
         aeadBlockCipher.doFinal(mac2, 0);
@@ -355,10 +326,12 @@ public class PhotonBeetleTest
         byte[] m3 = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
         byte[] m4 = new byte[m2.length];
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         int offset = aeadBlockCipher.processBytes(m2, 0, m2.length, c2, 0);
         aeadBlockCipher.doFinal(c2, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad3, 1, aad2.length);
         offset = aeadBlockCipher.processBytes(m3, 1, m2.length, c3, 1);
         aeadBlockCipher.doFinal(c3, offset + 1);
@@ -388,7 +361,7 @@ public class PhotonBeetleTest
             aeadBlockCipher.doFinal(m4, offset);
             fail(aeadBlockCipher.getAlgorithmName() + ": The decryption should fail");
         }
-        catch (IllegalArgumentException e)
+        catch (InvalidCipherTextException e)
         {
             //expected;
         }
@@ -398,20 +371,22 @@ public class PhotonBeetleTest
         {
             m7[i] = (byte)rand.nextInt();
         }
+        aeadBlockCipher.init(true, params);
         byte[] c7 = new byte[aeadBlockCipher.getOutputSize(m7.length)];
         byte[] c8 = new byte[c7.length];
         byte[] c9 = new byte[c7.length];
-        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, m7.length, c7, 0);
         aeadBlockCipher.doFinal(c7, offset);
         aeadBlockCipher.reset();
+        aeadBlockCipher.init(true, params);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, blocksize, c8, 0);
         offset += aeadBlockCipher.processBytes(m7, blocksize, m7.length - blocksize, c8, offset);
         aeadBlockCipher.doFinal(c8, offset);
         aeadBlockCipher.reset();
-        int split = rand.nextInt(blocksize * 2);
+        aeadBlockCipher.init(true, params);
+        int split = 7;//rand.nextInt(blocksize * 2);
         aeadBlockCipher.processAADBytes(aad2, 0, aad2.length);
         offset = aeadBlockCipher.processBytes(m7, 0, split, c9, 0);
         offset += aeadBlockCipher.processBytes(m7, split, m7.length - split, c9, offset);

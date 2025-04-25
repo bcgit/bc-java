@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class ASN1RelativeOID
     extends ASN1Primitive
@@ -229,6 +230,11 @@ public class ASN1RelativeOID
 
     static boolean isValidContents(byte[] contents)
     {
+        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
+        {
+            return true;
+        }
+
         if (contents.length < 1)
         {
             return false;

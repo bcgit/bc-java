@@ -18,7 +18,6 @@ import javax.net.ssl.SSLSessionContext;
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 
 class ProvSSLSessionContext
     implements SSLSessionContext
@@ -55,14 +54,9 @@ class ProvSSLSessionContext
         this.contextData = contextData;
     }
 
-    ProvSSLContextSpi getSSLContext()
+    ContextData getContextData()
     {
-        return contextData.getContext();
-    }
-
-    JcaTlsCrypto getCrypto()
-    {
-        return contextData.getCrypto();
+        return contextData;
     }
 
     synchronized ProvSSLSession getSessionImpl(byte[] sessionID)

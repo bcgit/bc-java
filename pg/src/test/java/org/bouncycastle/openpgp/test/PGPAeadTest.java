@@ -46,9 +46,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBEKeyEncryptionMethodGenerat
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -174,11 +172,9 @@ public class PGPAeadTest
         throws IOException, PGPException
     {
         // test known-good V5 test vectors
-        System.out.println("Test V5 BC Decryption");
         testBcDecryption(V5_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V5_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V5_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-        System.out.println("Test V5 JCA Decryption");
         testJceDecryption(V5_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testJceDecryption(V5_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testJceDecryption(V5_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
@@ -187,12 +183,10 @@ public class PGPAeadTest
     private void knownV6TestVectorDecryptionTests()
         throws IOException, PGPException
     {
-        // Test known-good V6 test vectors    TODO: decryption tests should be working...
-        System.out.println("Test V6 BC Decryption");
+        // Test known-good V6 test vectors    TODO: decryption tests
         testBcDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testBcDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
-        System.out.println("Test V6 JCA Decryption");
         testJceDecryption(V6_EAX_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testJceDecryption(V6_OCB_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
         testJceDecryption(V6_GCM_PACKET_SEQUENCE, PASSWORD, PLAINTEXT);
@@ -201,36 +195,28 @@ public class PGPAeadTest
     private void testBcRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        System.out.println("Test BC RoundTrip " + (v5AEAD ? "V5" : "V6") + " " + algNames(aeadAlg, symAlg));
         String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
-        System.out.println(armored);
         testBcDecryption(armored, password, plaintext);
     }
 
     private void testJceRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        System.out.println("Test JCE RoundTrip " + (v5AEAD ? "V5" : "V6") + " " + algNames(aeadAlg, symAlg));
         String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
-        System.out.println(armored);
         testJceDecryption(armored, password, plaintext);
     }
 
     private void testBcJceRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        System.out.println("Test BC encrypt, JCE decrypt " + (v5AEAD ? "V5" : "V6") + " " + algNames(aeadAlg, symAlg));
         String armored = testBcEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
-        System.out.println(armored);
         testJceDecryption(armored, password, plaintext);
     }
 
     private void testJceBcRoundTrip(boolean v5AEAD, int aeadAlg, int symAlg, byte[] plaintext, char[] password)
         throws PGPException, IOException
     {
-        System.out.println("Test JCE encrypt, BC decrypt " + (v5AEAD ? "V5" : "V6") + " " + algNames(aeadAlg, symAlg));
         String armored = testJceEncryption(v5AEAD, aeadAlg, symAlg, plaintext, password);
-        System.out.println(armored);
         testBcDecryption(armored, password, plaintext);
     }
 
@@ -365,7 +351,9 @@ public class PGPAeadTest
 
                     if (o != null)
                     {
+                        // -DM System.out.println
                         System.out.println("Unexpected trailing packet.");
+                        // -DM System.out.println
                         System.out.println(o);
                     }
                 }
@@ -421,7 +409,9 @@ public class PGPAeadTest
 
                     if (o != null)
                     {
+                        // -DM System.out.println
                         System.out.println("Unexpected trailing packet.");
+                        // -DM System.out.println
                         System.out.println(o);
                     }
                 }
@@ -435,30 +425,8 @@ public class PGPAeadTest
 
     public static void printHex(byte[] bytes)
     {
-        boolean separate = true;
-        boolean prefix = true;
-        String hex = Hex.toHexString(bytes);
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < hex.length() / 2; i++)
-        {
-            if (prefix && i % 8 == 0)
-            {
-                sb.append("0x").append(Hex.toHexString(Pack.intToBigEndian(i & 0xFFFFF))).append("   ");
-            }
-            sb.append(hex.substring(i * 2, i * 2 + 2));
-            if (separate)
-            {
-                if ((i + 1) % 8 == 0)
-                {
-                    sb.append('\n');
-                }
-                else
-                {
-                    sb.append(' ');
-                }
-            }
-        }
-        System.out.println(sb);
+        // -DM System.out.println
+        //System.out.println(DumpUtil.hexdump(bytes));
     }
 
     private static String algNames(int aeadAlg, int symAlg)

@@ -17,7 +17,10 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.TrustPacket;
@@ -192,6 +195,35 @@ public class PGPPublicKeyRing
         return null;
     }
 
+    @Override
+    public PGPPublicKey getPublicKey(KeyIdentifier identifier)
+    {
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> matches = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
     /**
      * Return any keys carrying a signature issued by the key represented by keyID.
      *
@@ -217,6 +249,22 @@ public class PGPPublicKeyRing
         return keysWithSigs.iterator();
     }
 
+    @Override
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
+        return keysWithSigs.iterator();
+    }
+
     /**
      * Return an iterator containing all the public keys.
      *
@@ -238,10 +286,16 @@ public class PGPPublicKeyRing
     public byte[] getEncoded()
         throws IOException
     {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    @Override
+    public byte[] getEncoded(PacketFormat format) throws IOException
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        this.encode(bOut);
-
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        this.encode(pOut);
+        pOut.close();
         return bOut.toByteArray();
     }
 

@@ -7,9 +7,9 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 
 public class XWingKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -24,9 +24,9 @@ public class XWingKeyPairGenerator
 
     private AsymmetricCipherKeyPair genKeyPair()
     {
-        KyberKeyPairGenerator kyberKeyGen = new KyberKeyPairGenerator();
+        MLKEMKeyPairGenerator kyberKeyGen = new MLKEMKeyPairGenerator();
 
-        kyberKeyGen.init(new KyberKeyGenerationParameters(random, KyberParameters.kyber768));
+        kyberKeyGen.init(new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_768));
 
         X25519KeyPairGenerator x25519KeyGen = new X25519KeyPairGenerator();
 

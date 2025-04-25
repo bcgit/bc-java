@@ -84,16 +84,16 @@ class ProvX509TrustManager
         return Collections.unmodifiableMap(keyUsages);
     }
 
-    private final boolean isInFipsMode;
+    private final boolean fipsMode;
     private final JcaJceHelper helper;
     private final Set<X509Certificate> trustedCerts;
     private final PKIXBuilderParameters pkixParametersTemplate;
     private final X509TrustManager exportX509TrustManager;
 
-    ProvX509TrustManager(boolean isInFipsMode, JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
+    ProvX509TrustManager(boolean fipsMode, JcaJceHelper helper, Set<TrustAnchor> trustAnchors)
         throws InvalidAlgorithmParameterException
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(trustAnchors);
 
@@ -111,10 +111,10 @@ class ProvX509TrustManager
         this.exportX509TrustManager = X509TrustManagerUtil.exportX509TrustManager(this);
     }
 
-    ProvX509TrustManager(boolean isInFipsMode, JcaJceHelper helper, PKIXParameters baseParameters)
+    ProvX509TrustManager(boolean fipsMode, JcaJceHelper helper, PKIXParameters baseParameters)
         throws InvalidAlgorithmParameterException
     {
-        this.isInFipsMode = isInFipsMode;
+        this.fipsMode = fipsMode;
         this.helper = helper;
         this.trustedCerts = getTrustedCerts(baseParameters.getTrustAnchors());
 
@@ -157,12 +157,14 @@ class ProvX509TrustManager
         checkTrusted(chain, authType, null, false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         checkTrusted(chain, authType, TransportData.from(socket), false);
     }
 
+    @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
@@ -175,12 +177,14 @@ class ProvX509TrustManager
         checkTrusted(chain, authType, null, true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket)
         throws CertificateException
     {
         checkTrusted(chain, authType, TransportData.from(socket), true);
     }
 
+    @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine)
         throws CertificateException
     {
@@ -232,7 +236,7 @@ class ProvX509TrustManager
         }
 
         PKIXBuilderParameters pkixParameters = (PKIXBuilderParameters)pkixParametersTemplate.clone();
-        pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(isInFipsMode, helper, algorithmConstraints));
+        pkixParameters.addCertPathChecker(new ProvAlgorithmChecker(fipsMode, helper, algorithmConstraints));
         pkixParameters.addCertStore(certStore);
         pkixParameters.setTargetCertConstraints(
             createTargetCertConstraints(eeCert, pkixParameters.getTargetCertConstraints()));
@@ -423,6 +427,13 @@ class ProvX509TrustManager
         BCExtendedSSLSession sslSession) throws CertificateException
     {
         String peerHost = sslSession.getPeerHost();
+
+        /*
+         * A fully qualified domain name (FQDN) may contain a trailing dot. We remove it for the purpose of
+         * SNI and endpoint ID checks (e.g. SNIHostName doesn't permit it).
+         */
+        peerHost = JsseUtils.stripTrailingDot(peerHost);
+
         if (checkServerTrusted)
         {
             BCSNIHostName sniHostName = JsseUtils.getSNIHostName(sslSession.getRequestedServerNames());

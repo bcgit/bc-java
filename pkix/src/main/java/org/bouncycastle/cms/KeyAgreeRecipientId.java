@@ -6,15 +6,11 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.selector.X509CertificateHolderSelector;
 
 public class KeyAgreeRecipientId
-    extends RecipientId
+    extends PKIXRecipientId
 {
-    private X509CertificateHolderSelector baseSelector;
-
     private KeyAgreeRecipientId(X509CertificateHolderSelector baseSelector)
     {
-        super(keyAgree);
-
-        this.baseSelector = baseSelector;
+        super(keyAgree, baseSelector);
     }
 
     /**
@@ -24,7 +20,7 @@ public class KeyAgreeRecipientId
      */
     public KeyAgreeRecipientId(byte[] subjectKeyId)
     {
-        this(null, null, subjectKeyId);
+        super(keyAgree, null, null, subjectKeyId);
     }
 
     /**
@@ -36,12 +32,12 @@ public class KeyAgreeRecipientId
      */
     public KeyAgreeRecipientId(X500Name issuer, BigInteger serialNumber)
     {
-        this(issuer, serialNumber, null);
+        super(keyAgree, issuer, serialNumber, null);
     }
 
     public KeyAgreeRecipientId(X500Name issuer, BigInteger serialNumber, byte[] subjectKeyId)
     {
-        this(new X509CertificateHolderSelector(issuer, serialNumber, subjectKeyId));
+        super(keyAgree, issuer, serialNumber, subjectKeyId);
     }
 
     public X500Name getIssuer()

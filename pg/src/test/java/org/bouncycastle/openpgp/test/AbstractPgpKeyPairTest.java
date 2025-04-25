@@ -10,11 +10,29 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 
 import java.security.KeyPair;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 public abstract class AbstractPgpKeyPairTest
         extends AbstractPacketTest
 {
+
+    public static Date parseUTCTimestamp(String timestamp)
+    {
+        // Not thread safe, so we use a local variable
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        try
+        {
+            return dateFormat.parse(timestamp);
+        }
+        catch (ParseException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     public Date currentTimeRounded()
     {
@@ -26,7 +44,7 @@ public abstract class AbstractPgpKeyPairTest
             throws PGPException
     {
         BcPGPKeyConverter c = new BcPGPKeyConverter();
-        return new BcPGPKeyPair(keyPair.getPublicKey().getAlgorithm(),
+        return new BcPGPKeyPair(keyPair.getPublicKey().getVersion(), keyPair.getPublicKey().getAlgorithm(),
                 new AsymmetricCipherKeyPair(
                         c.getPublicKey(keyPair.getPublicKey()),
                         c.getPrivateKey(keyPair.getPrivateKey())),
@@ -37,7 +55,7 @@ public abstract class AbstractPgpKeyPairTest
             throws PGPException
     {
         JcaPGPKeyConverter c = new JcaPGPKeyConverter().setProvider(new BouncyCastleProvider());
-        return new JcaPGPKeyPair(keyPair.getPublicKey().getAlgorithm(),
+        return new JcaPGPKeyPair(keyPair.getPublicKey().getVersion(), keyPair.getPublicKey().getAlgorithm(),
                 new KeyPair(
                         c.getPublicKey(keyPair.getPublicKey()),
                         c.getPrivateKey(keyPair.getPrivateKey())),

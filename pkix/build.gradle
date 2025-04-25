@@ -11,8 +11,11 @@ sourceSets {
     }
 }
 
+evaluationDependsOn(":prov")
+evaluationDependsOn(":util")
+
 dependencies {
-    implementation project(':core')
+
     implementation project(':prov')
     implementation project(':util')
 
@@ -26,26 +29,24 @@ dependencies {
 }
 
 compileJava {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    targetCompatibility = 1.8;
-    sourceCompatibility = 1.8;
+    options.release = 8
 }
 
 
+
 compileJava9Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 9
-    targetCompatibility = 9
+    options.release = 9
+
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+
     options.compilerArgs += [
-            '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}"
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
 }
+
 
 
 jar.archiveBaseName = "bcpkix-$vmrange"
@@ -96,4 +97,21 @@ artifacts {
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    jvmArgs = ['-Dtest.java.version.prefix=any']
+}
+
+compileJava9Java.dependsOn([":prov:jar", ":util:jar"])
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bcpkix-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
 }

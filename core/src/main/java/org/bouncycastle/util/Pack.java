@@ -104,6 +104,16 @@ public abstract class Pack
         }
     }
 
+    public static long bigEndianToLong(byte[] bs, int off, int len)
+    {
+        long x = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            x |= (bs[i + off] & 0xFFL) << ((7 - i) << 3);
+        }
+        return x;
+    }
+
     public static byte[] longToBigEndian(long n)
     {
         byte[] bs = new byte[8];
@@ -163,6 +173,15 @@ public abstract class Pack
         int n = bs[off] & 0xff;
         n |= (bs[++off] & 0xff) << 8;
         return (short)n;
+    }
+
+    public static void littleEndianToShort(byte[] bs, int bOff, short[] ns, int nOff, int count)
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            ns[nOff + i] = littleEndianToShort(bs, bOff);
+            bOff += 2;
+        }
     }
 
     public static int littleEndianToInt(byte[] bs, int off)
@@ -235,6 +254,14 @@ public abstract class Pack
         bs[++off] = (byte)(n >>> 8);
     }
 
+    public static void shortToLittleEndian(short[] ns, int nsOff, int nsLen, byte[] bs, int bsOff)
+    {
+        for (int i = 0; i < nsLen; ++i)
+        {
+            shortToLittleEndian(ns[nsOff + i], bs, bsOff);
+            bsOff += 2;
+        }
+    }
 
     public static byte[] shortToBigEndian(short n)
     {
@@ -306,6 +333,16 @@ public abstract class Pack
         }
     }
 
+    public static long littleEndianToLong(byte[] input, int off, int len)
+    {
+        long result = 0;
+        for (int i = 0; i < len; ++i)
+        {
+            result |= (input[off + i] & 0xFFL) << (i << 3);
+        }
+        return result;
+    }
+
     public static void littleEndianToLong(byte[] bs, int bsOff, long[] ns, int nsOff, int nsLen)
     {
         for (int i = 0; i < nsLen; ++i)
@@ -324,6 +361,14 @@ public abstract class Pack
         {
             pos -= 8;
             bs[off + i] = (byte)(n >>> pos);
+        }
+    }
+
+    public static void longToLittleEndian(long n, byte[] bs, int off, int len)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            bs[off + i] = (byte)(n >>> (i << 3));
         }
     }
 
@@ -386,4 +431,6 @@ public abstract class Pack
             bsOff += 8;
         }
     }
+
+
 }

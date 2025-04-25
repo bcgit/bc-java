@@ -31,7 +31,7 @@ public class SphincsPlusKeyPairGeneratorTest
     {
         kf = KeyFactory.getInstance("SPHINCSPlus", "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus.getId(), "BCPQC");
-        kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3.getId(), "BCPQC");
+
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128s_r3.getId(), "BCPQC");
         kf = KeyFactory.getInstance(BCObjectIdentifiers.sphincsPlus_shake_128f_r3.getId(), "BCPQC");

@@ -11,6 +11,7 @@ import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -37,27 +38,6 @@ public class PSSTest
             System.arraycopy(vals, 0, bytes, 0, vals.length);
         }
     }
-
-    private boolean arrayEquals(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     private RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(
         new BigInteger("a56e4a0e701017589a5187dc7ea841d156f2ec0e36ad52a44dfeb1e61f7ad991d8c51056ffedb162b4c0f283a12a88a394dff526ab7291cbb307ceabfce0b1dfd5cd9508096d5b2b8b6df5d671ef6377c0921cb23c270a70e2598e6ff89d19f105acc2d3f0cb35f29280e1386b6f64c4ef22e1e1f20d0ce8cffb2249bd9a2137",16),
@@ -98,7 +78,7 @@ public class PSSTest
             s.update(msg1a);
             byte[] sig = s.sign();
 
-            if (!arrayEquals(sig1a, sig))
+            if (!Arrays.areEqual(sig1a, sig))
             {
                 return new SimpleTestResult(false, "PSS Sign test expected " + new String(Hex.encode(sig1a)) + " got " + new String(Hex.encode(sig)));
             }
@@ -118,7 +98,7 @@ public class PSSTest
             s.update(msg1a);
             sig = s.sign();
 
-            if (!arrayEquals(sig1b, sig))
+            if (!Arrays.areEqual(sig1b, sig))
             {
                 return new SimpleTestResult(false, "PSS Sign test expected " + new String(Hex.encode(sig1b)) + " got " + new String(Hex.encode(sig)));
             }

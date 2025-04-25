@@ -16,6 +16,14 @@ public class Bytes
         }
     }
 
+    public static void xor(int len, byte[] x, int xOff, byte[] y, byte[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff++] = (byte)(x[xOff++] ^ y[i]);
+        }
+    }
+
     public static void xor(int len, byte[] x, int xOff, byte[] y, int yOff, byte[] z, int zOff)
     {
         for (int i = 0; i < len; ++i)
@@ -24,11 +32,35 @@ public class Bytes
         }
     }
 
+    public static void xor(int len, byte[] x, byte[] y, byte[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff++] = (byte)(x[i] ^ y[i]);
+        }
+    }
+
+    public static void xor(int len, byte[] x, byte[] y, int yOff, byte[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff++] = (byte)(x[i] ^ y[yOff++]);
+        }
+    }
+
     public static void xorTo(int len, byte[] x, byte[] z)
     {
         for (int i = 0; i < len; ++i)
         {
             z[i] ^= x[i];
+        }
+    }
+
+    public static void xorTo(int len, byte[] x, int xOff, byte[] z)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[i] ^= x[xOff++];
         }
     }
 

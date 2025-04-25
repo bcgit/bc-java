@@ -49,6 +49,14 @@ public abstract class BaseKeyFactorySpi
 
                 return generatePrivate(keyInfo);
             }
+            catch (InvalidKeySpecException e)
+            {
+                throw e;
+            }
+            catch (IllegalStateException e)
+            {
+                throw new InvalidKeySpecException(e.getMessage());
+            }
             catch (Exception e)
             {
                 throw new InvalidKeySpecException(e.toString());
@@ -75,6 +83,10 @@ public abstract class BaseKeyFactorySpi
                 checkAlgorithm(keyInfo.getAlgorithm().getAlgorithm());
 
                 return generatePublic(keyInfo);
+            }
+            catch (InvalidKeySpecException e)
+            {
+                throw e;
             }
             catch (Exception e)
             {

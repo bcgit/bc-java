@@ -12,9 +12,11 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMExtractor;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 public class KyberKeyGeneratorSpi
         extends KeyGeneratorSpi
@@ -22,6 +24,17 @@ public class KyberKeyGeneratorSpi
     private KEMGenerateSpec genSpec;
     private SecureRandom random;
     private KEMExtractSpec extSpec;
+    private MLKEMParameters kyberParameters;
+
+    public KyberKeyGeneratorSpi()
+    {
+        this(null);
+    }
+
+    protected KyberKeyGeneratorSpi(MLKEMParameters kyberParameters)
+    {
+        this.kyberParameters = kyberParameters;
+    }
 
     protected void engineInit(SecureRandom secureRandom)
     {
@@ -36,11 +49,27 @@ public class KyberKeyGeneratorSpi
         {
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
+            if (kyberParameters != null)
+            {
+                String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+                if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
+                }
+            }
         }
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
             this.genSpec = null;
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
+            if (kyberParameters != null)
+            {
+                String canonicalAlgName = Strings.toUpperCase(kyberParameters.getName());
+                if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
+                {
+                    throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
+                }
+            }
         }
         else
         {
@@ -58,11 +87,16 @@ public class KyberKeyGeneratorSpi
         if (genSpec != null)
         {
             BCKyberPublicKey pubKey = (BCKyberPublicKey)genSpec.getPublicKey();
-            KyberKEMGenerator kemGen = new KyberKEMGenerator(random);
+            MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] sharedSecret = secEnc.getSecret();
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
 
             try
             {
@@ -78,16 +112,46 @@ public class KyberKeyGeneratorSpi
         else
         {
             BCKyberPrivateKey privKey = (BCKyberPrivateKey)extSpec.getPrivateKey();
-            KyberKEMExtractor kemExt = new KyberKEMExtractor(privKey.getKeyParams());
+            MLKEMExtractor kemExt = new MLKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] secret = kemExt.extractSecret(encapsulation);
+            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
+            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+
+            Arrays.clear(sharedSecret);
 
             SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
 
             Arrays.clear(secret);
 
             return rv;
+        }
+    }
+
+    public static class Kyber512
+        extends KyberKeyGeneratorSpi
+    {
+        public Kyber512()
+        {
+            super(MLKEMParameters.ml_kem_512);
+        }
+    }
+
+    public static class Kyber768
+        extends KyberKeyGeneratorSpi
+    {
+        public Kyber768()
+        {
+            super(MLKEMParameters.ml_kem_768);
+        }
+    }
+
+    public static class Kyber1024
+        extends KyberKeyGeneratorSpi
+    {
+        public Kyber1024()
+        {
+            super(MLKEMParameters.ml_kem_1024);
         }
     }
 }

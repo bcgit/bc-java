@@ -3,6 +3,7 @@ package org.bouncycastle.operator.test;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
@@ -36,11 +37,25 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
+import org.bouncycastle.operator.KemEncapsulationLengthProvider;
 import org.bouncycastle.operator.jcajce.JceAsymmetricKeyWrapper;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
+import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -138,6 +153,36 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA"},
             new Object[]{BCObjectIdentifiers.falcon_512, "FALCON"},
             new Object[]{BCObjectIdentifiers.falcon_1024, "FALCON"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_44, "ML-DSA-44"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_65, "ML-DSA-65"},
+            new Object[]{NISTObjectIdentifiers.id_ml_dsa_87, "ML-DSA-87"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, "ML-DSA-44-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, "ML-DSA-65-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, "ML-DSA-87-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA-SHA2-128S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA-SHA2-128F"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA-SHA2-192S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_192f, "SLH-DSA-SHA2-192F"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_256s, "SLH-DSA-SHA2-256S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_256f, "SLH-DSA-SHA2-256F"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_128s, "SLH-DSA-SHAKE-128S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_128f, "SLH-DSA-SHAKE-128F"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_192s, "SLH-DSA-SHAKE-192S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_192f, "SLH-DSA-SHAKE-192F"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_256s, "SLH-DSA-SHAKE-256S"},
+            new Object[]{NISTObjectIdentifiers.id_slh_dsa_shake_256f, "SLH-DSA-SHAKE-256F"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256, "SLH-DSA-SHA2-128S-WITH-SHA256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256, "SLH-DSA-SHA2-128F-WITH-SHA256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, "SLH-DSA-SHA2-192S-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, "SLH-DSA-SHA2-192F-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512, "SLH-DSA-SHA2-256S-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512, "SLH-DSA-SHA2-256F-WITH-SHA512"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128, "SLH-DSA-SHAKE-128S-WITH-SHAKE128"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128, "SLH-DSA-SHAKE-128F-WITH-SHAKE128"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, "SLH-DSA-SHAKE-192S-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, "SLH-DSA-SHAKE-192F-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, "SLH-DSA-SHAKE-256S-WITH-SHAKE256"},
+            new Object[]{NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, "SLH-DSA-SHAKE-256F-WITH-SHAKE256"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCS+"},
@@ -175,6 +220,7 @@ public class AllTests
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCS+"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
+            new Object[]{PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS"},
 
             new Object[]{PKCSObjectIdentifiers.RC2_CBC, "RC2/CBC"},
             new Object[]{PKCSObjectIdentifiers.des_EDE3_CBC, "DESEDE-3KEY/CBC"},
@@ -231,7 +277,7 @@ public class AllTests
             //
             DefaultAlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
             assertEquals("default name finder has same number of entries as test case",
-                nameFinder.getOIDSet().size(), values.length);
+                values.length, nameFinder.getOIDSet().size());
 
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)((Object[])value)[0];
             String name = ((Object[])value)[1].toString();
@@ -421,5 +467,71 @@ public class AllTests
         Assert.assertEquals(new AlgorithmIdentifier(digestOid, DERNull.INSTANCE), oaepParams.getMaskGenAlgorithm().getParameters());
         Assert.assertEquals(PKCSObjectIdentifiers.id_pSpecified, oaepParams.getPSourceAlgorithm().getAlgorithm());
         Assert.assertEquals(new DEROctetString(Hex.decode("beef")), oaepParams.getPSourceAlgorithm().getParameters());
+    }
+
+    public void testDefaultKemEncapsulationLengthProvider()
+    {
+        KemEncapsulationLengthProvider lengthProvider = new DefaultKemEncapsulationLengthProvider();
+        SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
+
+        ASN1ObjectIdentifier[] mlKemOids = new ASN1ObjectIdentifier[]
+            {
+                NISTObjectIdentifiers.id_alg_ml_kem_512,
+                NISTObjectIdentifiers.id_alg_ml_kem_768,
+                NISTObjectIdentifiers.id_alg_ml_kem_1024
+            };
+
+        MLKEMParameters[] mlKemParams = new MLKEMParameters[]
+            {
+                MLKEMParameters.ml_kem_512,
+                MLKEMParameters.ml_kem_768,
+                MLKEMParameters.ml_kem_1024
+            };
+
+        for (int i = 0; i != mlKemOids.length; i++)
+        {
+            MLKEMKeyPairGenerator kpg = new MLKEMKeyPairGenerator();
+
+            kpg.init(new MLKEMKeyGenerationParameters(random, mlKemParams[i]));
+
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            MLKEMExtractor ext = new MLKEMExtractor((MLKEMPrivateKeyParameters)kp.getPrivate());
+
+            assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(mlKemOids[i])));
+        }
+
+        ASN1ObjectIdentifier[] ntruOids = new ASN1ObjectIdentifier[]
+            {
+                BCObjectIdentifiers.ntruhps2048509,
+                BCObjectIdentifiers.ntruhps2048677,
+                BCObjectIdentifiers.ntruhps4096821,
+                BCObjectIdentifiers.ntruhps40961229,
+                BCObjectIdentifiers.ntruhrss701,
+                BCObjectIdentifiers.ntruhrss1373,
+            };
+
+        NTRUParameters[] ntruParams = new NTRUParameters[]
+            {
+                NTRUParameters.ntruhps2048509,
+                NTRUParameters.ntruhps2048677,
+                NTRUParameters.ntruhps4096821,
+                NTRUParameters.ntruhps40961229,
+                NTRUParameters.ntruhrss701,
+                NTRUParameters.ntruhrss1373
+            };
+
+        for (int i = 0; i != ntruOids.length; i++)
+        {
+            NTRUKeyPairGenerator kpg = new NTRUKeyPairGenerator();
+
+            kpg.init(new NTRUKeyGenerationParameters(random, ntruParams[i]));
+
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            NTRUKEMExtractor ext = new NTRUKEMExtractor((NTRUPrivateKeyParameters)kp.getPrivate());
+
+            assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(ntruOids[i])));
+        }
     }
 }

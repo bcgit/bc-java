@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.operator.ContentSigner;
@@ -34,7 +35,6 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
-import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -195,13 +195,13 @@ public class PKCS10Test
         p256Kpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
         KeyPair p256Kp = p256Kpg.generateKeyPair();
 
-        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
-        dilKpg.initialize(DilithiumParameterSpec.dilithium2);
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
         KeyPair dilKp = dilKpg.generateKeyPair();
 
         JcaPKCS10CertificationRequestBuilder jcaPkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), p256Kp.getPublic());
 
-        ContentSigner altSigner = new JcaContentSignerBuilder("Dilithium2").setProvider("BC").build(dilKp.getPrivate());
+        ContentSigner altSigner = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate());
         
         PKCS10CertificationRequest request = jcaPkcs10Builder.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(p256Kp.getPrivate()), dilKp.getPublic(), altSigner);
 
@@ -219,13 +219,13 @@ public class PKCS10Test
         p256Kpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
         KeyPair p256Kp = p256Kpg.generateKeyPair();
 
-        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("Dilithium", "BC");
-        dilKpg.initialize(DilithiumParameterSpec.dilithium2);
+        KeyPairGenerator dilKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        dilKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
         KeyPair dilKp = dilKpg.generateKeyPair();
 
         PKCS10CertificationRequestBuilder pkcs10Builder = new JcaPKCS10CertificationRequestBuilder(new X500Name("CN=Test"), p256Kp.getPublic());
 
-        ContentSigner deltaSigner = new JcaContentSignerBuilder("Dilithium2").setProvider("BC").build(dilKp.getPrivate());
+        ContentSigner deltaSigner = new JcaContentSignerBuilder("ML-DSA-44").setProvider("BC").build(dilKp.getPrivate());
 
         DeltaCertificateRequestAttributeValueBuilder deltaAttrBldr = new DeltaCertificateRequestAttributeValueBuilder(
             SubjectPublicKeyInfo.getInstance(dilKp.getPublic().getEncoded()));

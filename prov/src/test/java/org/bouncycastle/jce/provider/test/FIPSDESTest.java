@@ -16,6 +16,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -54,26 +55,6 @@ public class FIPSDESTest
         return "FIPSDESTest";
     }
 
-    private boolean equalArray(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public TestResult test(
         String      algorithm,
         byte[]      input,
@@ -89,8 +70,6 @@ public class FIPSDESTest
 
         try
         {
-            String  baseAlgorithm;
-
             key = new SecretKeySpec(Hex.decode("0123456789abcdef"), "DES");
 
             in = Cipher.getInstance(algorithm, "BC");
@@ -151,7 +130,7 @@ public class FIPSDESTest
 
         bytes = bOut.toByteArray();
 
-        if (!equalArray(bytes, output))
+        if (!Arrays.areEqual(bytes, output))
         {
             return new SimpleTestResult(false, getName() + ": " + algorithm + " failed encryption - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(bytes)));
         }
@@ -174,13 +153,14 @@ public class FIPSDESTest
                 bytes[i] = (byte)dIn.read();
             }
             dIn.readFully(bytes, input.length / 2, bytes.length - input.length / 2);
+            dIn.close();
         }
         catch (Exception e)
         {
             return new SimpleTestResult(false, getName() + ": " + algorithm + " failed encryption - " + e.toString());
         }
 
-        if (!equalArray(bytes, input))
+        if (!Arrays.areEqual(bytes, input))
         {
             return new SimpleTestResult(false, getName() + ": " + algorithm + " failed decryption - expected " + new String(Hex.encode(input)) + " got " + new String(Hex.encode(bytes)));
         }

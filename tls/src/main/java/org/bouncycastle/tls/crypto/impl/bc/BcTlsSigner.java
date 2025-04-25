@@ -1,5 +1,7 @@
 package org.bouncycastle.tls.crypto.impl.bc;
 
+import java.io.IOException;
+
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsSigner;
@@ -28,6 +30,11 @@ public abstract class BcTlsSigner
 
         this.crypto = crypto;
         this.privateKey = privateKey;
+    }
+
+    public byte[] generateRawSignature(SignatureAndHashAlgorithm algorithm, byte[] hash) throws IOException
+    {
+        throw new UnsupportedOperationException();
     }
 
     public TlsStreamSigner getStreamSigner(SignatureAndHashAlgorithm algorithm)

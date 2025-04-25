@@ -26,6 +26,7 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTestResult;
 import org.bouncycastle.util.test.Test;
@@ -252,7 +253,7 @@ public class DHTest
             // a and a2 should be equivalent!
             byte[] encodeParams_2 = a2.getEncoded();
 
-            if (!arrayEquals(encodeParams, encodeParams_2))
+            if (!Arrays.areEqual(encodeParams, encodeParams_2))
             {
                 return new SimpleTestResult(false, this.getName() + ": encode/decode parameters failed");
             }
@@ -474,27 +475,6 @@ public class DHTest
 
         return new SimpleTestResult(true, this.getName() + ": Okay");
     }
-    
-    private boolean arrayEquals(
-        byte[]  a,
-        byte[]  b)
-    {
-        if (a.length != b.length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i != a.length; i++)
-        {
-            if (a[i] != b[i])
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
 
     public TestResult perform()
     {

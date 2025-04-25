@@ -20,8 +20,7 @@ class HQCEngine
 
     private int SEED_SIZE = 40;
     private byte G_FCT_DOMAIN = 3;
-    private byte H_FCT_DOMAIN = 4;
-    private byte K_FCT_DOMAIN = 5;
+    private byte K_FCT_DOMAIN = 4;
 
     private int N_BYTE;
     private int n1n2;
@@ -87,10 +86,12 @@ class HQCEngine
     {
         // Randomly generate seeds for secret keys and public keys
         byte[] secretKeySeed = new byte[SEED_SIZE];
+        byte[] sigma = new byte[K_BYTE];
 
         KeccakRandomGenerator randomGenerator = new KeccakRandomGenerator(256);
         randomGenerator.randomGeneratorInit(seed, null, seed.length, 0);
         randomGenerator.squeeze(secretKeySeed, 40);
+        randomGenerator.squeeze(sigma, K_BYTE);
 
         // 1. Randomly generate secret keys x, y
         KeccakRandomGenerator secretKeySeedExpander = new KeccakRandomGenerator(256);
@@ -99,8 +100,8 @@ class HQCEngine
         long[] xLongBytes = new long[N_BYTE_64];
         long[] yLongBytes = new long[N_BYTE_64];
 
-        generateRandomFixedWeight(xLongBytes, secretKeySeedExpander, w);
         generateRandomFixedWeight(yLongBytes, secretKeySeedExpander, w);
+        generateRandomFixedWeight(xLongBytes, secretKeySeedExpander, w);
 
         // 2. Randomly generate h
         byte[] publicKeySeed = new byte[SEED_SIZE];
@@ -120,7 +121,7 @@ class HQCEngine
         Utils.fromLongArrayToByteArray(sBytes, s);
 
         byte[] tmpPk = Arrays.concatenate(publicKeySeed, sBytes);
-        byte[] tmpSk = Arrays.concatenate(secretKeySeed, tmpPk);
+        byte[] tmpSk = Arrays.concatenate(secretKeySeed, sigma, tmpPk);
 
         System.arraycopy(tmpPk, 0, pk, 0, tmpPk.length);
         System.arraycopy(tmpSk, 0, sk, 0, tmpSk.length);
@@ -133,12 +134,11 @@ class HQCEngine
      *
      * @param u    u
      * @param v    v
-     * @param d    d
      * @param K    session key
      * @param pk   public key
      * @param seed seed
      **/
-    public void encaps(byte[] u, byte[] v, byte[] K, byte[] d, byte[] pk, byte[] seed, byte[] salt)
+    public void encaps(byte[] u, byte[] v, byte[] K, byte[] pk, byte[] seed, byte[] salt)
     {
         // 1. Randomly generate m
         byte[] m = new byte[K_BYTE];
@@ -148,6 +148,9 @@ class HQCEngine
         randomGenerator.randomGeneratorInit(seed, null, seed.length, 0);
         randomGenerator.squeeze(secretKeySeed, 40);
 
+        byte[] sigma = new byte[K_BYTE];
+        randomGenerator.squeeze(sigma, K_BYTE);
+
         byte[] publicKeySeed = new byte[SEED_SIZE];
         randomGenerator.squeeze(publicKeySeed, 40);
 
@@ -156,12 +159,12 @@ class HQCEngine
 
         // 2. Generate theta
         byte[] theta = new byte[SHA512_BYTES];
-        byte[] tmp = new byte[K_BYTE + SEED_SIZE + SALT_SIZE_BYTES];
+        byte[] tmp = new byte[K_BYTE + (SALT_SIZE_BYTES * 2) + SALT_SIZE_BYTES];
         randomGenerator.squeeze(salt, SALT_SIZE_BYTES);
 
         System.arraycopy(m, 0, tmp, 0, m.length);
-        System.arraycopy(pk, 0, tmp, K_BYTE, SEED_SIZE);
-        System.arraycopy(salt, 0, tmp, K_BYTE + SEED_SIZE, SALT_SIZE_BYTES);
+        System.arraycopy(pk, 0, tmp, K_BYTE, SALT_SIZE_BYTES * 2);
+        System.arraycopy(salt, 0, tmp, K_BYTE + (SALT_SIZE_BYTES * 2), SALT_SIZE_BYTES);
         KeccakRandomGenerator shakeDigest = new KeccakRandomGenerator(256);
         shakeDigest.SHAKE256_512_ds(theta, tmp, tmp.length, new byte[]{G_FCT_DOMAIN});
 
@@ -176,13 +179,8 @@ class HQCEngine
 
         Utils.fromLongArrayToByteArray(v, vTmp);
 
-        // 4. Compute d
-        shakeDigest.SHAKE256_512_ds(d, m, m.length, new byte[]{H_FCT_DOMAIN});
-
         // 5. Compute session key K
-        byte[] hashInputK = new byte[K_BYTE + N_BYTE + N1N2_BYTE];
-        hashInputK = Arrays.concatenate(m, u);
-        hashInputK = Arrays.concatenate(hashInputK, v);
+        byte[] hashInputK = Arrays.concatenate(m, u, v);
         shakeDigest.SHAKE256_512_ds(K, hashInputK, hashInputK.length, new byte[]{K_FCT_DOMAIN});
     }
 
@@ -194,32 +192,32 @@ class HQCEngine
      * @param ss session key
      * @param ct ciphertext
      * @param sk secret key
+     * @return 0 if decapsulation is successful, -1 otherwise
      **/
-    public void decaps(byte[] ss, byte[] ct, byte[] sk)
+    public int decaps(byte[] ss, byte[] ct, byte[] sk)
     {
         //Extract Y and Public Keys from sk
-        long[] x = new long[N_BYTE_64];
         long[] y = new long[N_BYTE_64];
         byte[] pk = new byte[40 + N_BYTE];
-        extractKeysFromSecretKeys(x, y, pk, sk);
+        byte[] sigma = new byte[K_BYTE];
+        extractKeysFromSecretKeys(y, sigma, pk, sk);
 
         // Extract u, v, d from ciphertext
         byte[] u = new byte[N_BYTE];
         byte[] v = new byte[N1N2_BYTE];
-        byte[] d = new byte[SHA512_BYTES];
         byte[] salt = new byte[SALT_SIZE_BYTES];
-        extractCiphertexts(u, v, d, salt, ct);
+        extractCiphertexts(u, v, salt, ct);
 
         // 1. Decrypt -> m'
         byte[] mPrimeBytes = new byte[k];
-        decrypt(mPrimeBytes, mPrimeBytes, u, v, y);
+        int result = decrypt(mPrimeBytes, mPrimeBytes, sigma, u, v, y);
 
         // 2. Compute theta'
         byte[] theta = new byte[SHA512_BYTES];
-        byte[] tmp = new byte[K_BYTE + SALT_SIZE_BYTES + SEED_SIZE];
+        byte[] tmp = new byte[K_BYTE + (SALT_SIZE_BYTES * 2) + SALT_SIZE_BYTES];
         System.arraycopy(mPrimeBytes, 0, tmp, 0, mPrimeBytes.length);
-        System.arraycopy(pk, 0, tmp, K_BYTE, SEED_SIZE);
-        System.arraycopy(salt, 0, tmp, K_BYTE + SEED_SIZE, SALT_SIZE_BYTES);
+        System.arraycopy(pk, 0, tmp, K_BYTE, SALT_SIZE_BYTES * 2);
+        System.arraycopy(salt, 0, tmp, K_BYTE + (SALT_SIZE_BYTES * 2), SALT_SIZE_BYTES);
 
         KeccakRandomGenerator shakeDigest = new KeccakRandomGenerator(256);
         shakeDigest.SHAKE256_512_ds(theta, tmp, tmp.length, new byte[]{G_FCT_DOMAIN});
@@ -236,40 +234,32 @@ class HQCEngine
         encrypt(u2Bytes, vTmp, h, s, mPrimeBytes, theta);
         Utils.fromLongArrayToByteArray(v2Bytes, vTmp);
 
-        // 4. Compute d' = H(m')
-        byte[] dPrime = new byte[SHA512_BYTES];
-        shakeDigest.SHAKE256_512_ds(dPrime, mPrimeBytes, mPrimeBytes.length, new byte[]{H_FCT_DOMAIN});
-
         // 5. Compute session key KPrime
         byte[] hashInputK = new byte[K_BYTE + N_BYTE + N1N2_BYTE];
-        hashInputK = Arrays.concatenate(mPrimeBytes, u);
-        hashInputK = Arrays.concatenate(hashInputK, v);
+
+        // Compare u, v, d
+        if (!Arrays.constantTimeAreEqual(u, u2Bytes))
+        {
+            result = 1;
+        }
+
+        if (!Arrays.constantTimeAreEqual(v, v2Bytes))
+        {
+            result = 1;
+        }
+
+        result -= 1;
+
+        for (int i = 0; i < K_BYTE; i++)
+        {
+            hashInputK[i] = (byte)(((mPrimeBytes[i] & result) ^ (sigma[i] & ~result)) & 0xff);
+        }
+        System.arraycopy(u, 0, hashInputK, K_BYTE, N_BYTE);
+        System.arraycopy(v, 0, hashInputK, K_BYTE + N_BYTE, N1N2_BYTE);
+
         shakeDigest.SHAKE256_512_ds(ss, hashInputK, hashInputK.length, new byte[]{K_FCT_DOMAIN});
 
-        int result = 1;
-        // Compare u, v, d
-        if (!Arrays.areEqual(u, u2Bytes))
-        {
-            result = 0;
-        }
-
-        if (!Arrays.areEqual(v, v2Bytes))
-        {
-            result = 0;
-        }
-
-        if (!Arrays.areEqual(d, dPrime))
-        {
-            result = 0;
-        }
-
-        if (result == 0)
-        { //abort
-            for (int i = 0; i < getSessionKeySize(); i++)
-            {
-                ss[i] = 0;
-            }
-        }
+        return -result;
     }
 
     int getSessionKeySize()
@@ -296,9 +286,9 @@ class HQCEngine
         long[] e = new long[N_BYTE_64];
         long[] r1 = new long[N_BYTE_64];
         long[] r2 = new long[N_BYTE_64];
-        generateRandomFixedWeight(r1, randomGenerator, wr);
         generateRandomFixedWeight(r2, randomGenerator, wr);
         generateRandomFixedWeight(e, randomGenerator, we);
+        generateRandomFixedWeight(r1, randomGenerator, wr);
 
         // Calculate u
         long[] uLong = new long[N_BYTE_64];
@@ -327,7 +317,7 @@ class HQCEngine
         Utils.resizeArray(v, n1n2, tmpLong, n, N1N2_BYTE_64, N1N2_BYTE_64);
     }
 
-    private void decrypt(byte[] output, byte[] m, byte[] u, byte[] v, long[] y)
+    private int decrypt(byte[] output, byte[] m, byte[] sigma, byte[] u, byte[] v, long[] y)
     {
         long[] uLongs = new long[N_BYTE_64];
         Utils.fromByteArrayToLongArray(uLongs, u);
@@ -348,6 +338,7 @@ class HQCEngine
         ReedSolomon.decode(m, tmp, n1, fft, delta, k, g);
 
         System.arraycopy(m, 0, output, 0, output.length);
+        return 0;
     }
 
     private void generateRandomFixedWeight(long[] output, KeccakRandomGenerator random, int weight)
@@ -427,26 +418,25 @@ class HQCEngine
         System.arraycopy(pk, 40, s, 0, s.length);
     }
 
-    private void extractKeysFromSecretKeys(long[] x, long[] y, byte[] pk, byte[] sk)
+    private void extractKeysFromSecretKeys(long[] y, byte[] sigma, byte[] pk, byte[] sk)
     {
         byte[] secretKeySeed = new byte[SEED_SIZE];
         System.arraycopy(sk, 0, secretKeySeed, 0, secretKeySeed.length);
+        System.arraycopy(sk, SEED_SIZE, sigma, 0, K_BYTE);
 
         // Randomly generate secret keys x, y
         KeccakRandomGenerator secretKeySeedExpander = new KeccakRandomGenerator(256);
         secretKeySeedExpander.seedExpanderInit(secretKeySeed, secretKeySeed.length);
 
-        generateRandomFixedWeight(x, secretKeySeedExpander, w);
         generateRandomFixedWeight(y, secretKeySeedExpander, w);
 
-        System.arraycopy(sk, SEED_SIZE, pk, 0, pk.length);
+        System.arraycopy(sk, SEED_SIZE + K_BYTE, pk, 0, pk.length);
     }
 
-    private void extractCiphertexts(byte[] u, byte[] v, byte[] d, byte[] salt, byte[] ct)
+    private void extractCiphertexts(byte[] u, byte[] v, byte[] salt, byte[] ct)
     {
         System.arraycopy(ct, 0, u, 0, u.length);
         System.arraycopy(ct, u.length, v, 0, v.length);
-        System.arraycopy(ct, u.length + v.length, d, 0, d.length);
-        System.arraycopy(ct, u.length + v.length + d.length, salt, 0, salt.length);
+        System.arraycopy(ct, u.length + v.length, salt, 0, salt.length);
     }
 }

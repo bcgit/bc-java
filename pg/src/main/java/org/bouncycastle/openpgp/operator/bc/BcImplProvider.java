@@ -102,10 +102,7 @@ class BcImplProvider
             {
                 return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
             }
-            else
-            {
-                return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
-            }
+            return new EdDsaSigner(new Ed448Signer(new byte[0]), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed25519:
             return new EdDsaSigner(new Ed25519Signer(), createDigest(hashAlgorithm));
         case PublicKeyAlgorithmTags.Ed448:

@@ -10,6 +10,8 @@
     <property name="src.dir" value="${build.dir}/${jdk.name}" />
     <property name="target.prefix" value="jdk15to18" />
     <property name="javadoc.args" value="-breakiterator" />
+    <property name="jmail.present" value="true" />
+    <property name="junit.maxmemory" value="1536m" />
 
     <target name="clean">
         <delete dir="${build.dir}" />
@@ -39,14 +41,10 @@
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
             <fileset dir="tls/src/main/java" includes="**/*.java" />
-            <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="tls/src/main/javadoc" includes="**/*.html" />
             <fileset dir="tls/src/test/java" includes="**/*.java" />
-            <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />
-            <fileset dir="tls/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
-            <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pkix/src/main/resources" includes="**/*.properties" />
             <fileset dir="pkix/src/test/java" includes="**/*.java" />
@@ -54,7 +52,6 @@
             <fileset dir="pkix/src/test/resources" includes="**/*.*" />
 
             <fileset dir="pg/src/main/java" includes="**/*.java" />
-            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
             <fileset dir="pg/src/main/javadoc" includes="**/*.html" />
             <fileset dir="pg/src/main/java" includes="**/*.properties" />
             <fileset dir="pg/src/test/java" includes="**/*.java" />
@@ -74,6 +71,16 @@
             <fileset dir="mail/src/test/resources" includes="**/*.*" />
 
         </copy>
+        <copy todir="${src.dir}" overwrite="true">
+            <fileset dir="prov/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="prov/src/test/jdk1.5" includes="**/*.java" />
+            <fileset dir="pkix/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="tls/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="tls/src/test/jdk1.5" includes="**/*.java" />
+            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java" />
+            <fileset dir="pg/src/test/jdk1.5" includes="**/*.java" />
+        </copy>
+
         <available classname="com.puppycrawl.tools.checkstyle.CheckStyleTask" property="checkstyle.on" />
     </target>
 

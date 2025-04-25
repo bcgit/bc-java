@@ -5,6 +5,7 @@ import java.io.InputStream;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.InputStreamPacket;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
@@ -52,10 +53,22 @@ public class PGPPublicKeyEncryptedData
      * Return the keyID for the key used to encrypt the data.
      *
      * @return long
+     * @deprecated use {@link #getKeyIdentifier()} instead
      */
+    @Deprecated
     public long getKeyID()
     {
         return keyData.getKeyID();
+    }
+
+    /**
+     * Return a {@link KeyIdentifier} for the key used to encrypt the data.
+     *
+     * @return key identifier
+     */
+    public KeyIdentifier getKeyIdentifier()
+    {
+        return new KeyIdentifier(keyData.getKeyFingerprint(), keyData.getKeyID());
     }
 
     /**
@@ -72,13 +85,13 @@ public class PGPPublicKeyEncryptedData
     {
         if (keyData.getVersion() == PublicKeyEncSessionPacket.VERSION_3)
         {
-            byte[] plain = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
+            byte[] plain = dataDecryptorFactory.recoverSessionData(keyData, encData);
             // symmetric cipher algorithm is stored in first octet of session data
             return plain[0];
         }
         else if (keyData.getVersion() == PublicKeyEncSessionPacket.VERSION_6)
         {
-            // PKESK v5 stores the cipher algorithm in the SEIPD v2 packet fields.
+            // PKESK v6 stores the cipher algorithm in the SEIPD v2 packet fields.
             return ((SymmetricEncIntegrityPacket)encData).getCipherAlgorithm();
         }
         else
@@ -98,16 +111,57 @@ public class PGPPublicKeyEncryptedData
         PublicKeyDataDecryptorFactory dataDecryptorFactory)
         throws PGPException
     {
-        byte[] sessionData = dataDecryptorFactory.recoverSessionData(keyData.getAlgorithm(), keyData.getEncSessionKey());
-        if (keyData.getAlgorithm() == PublicKeyAlgorithmTags.X25519 || keyData.getAlgorithm() == PublicKeyAlgorithmTags.X448)
+        byte[] sessionInfo = dataDecryptorFactory.recoverSessionData(keyData, encData);
+
+        // Confirm and discard checksum
+        if (containsChecksum(keyData.getAlgorithm()))
         {
-            return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length));
+            if (!confirmCheckSum(sessionInfo))
+            {
+                throw new PGPException("Key checksum failed.");
+            }
+            sessionInfo = Arrays.copyOf(sessionInfo, sessionInfo.length - 2);
         }
-        if (!confirmCheckSum(sessionData))
+
+        byte[] sessionKey = Arrays.copyOfRange(sessionInfo, 1, sessionInfo.length);
+        int algorithm;
+
+        // OCB (LibrePGP v5 style AEAD)
+        if (encData instanceof AEADEncDataPacket)
         {
-            throw new PGPKeyValidationException("key checksum failed");
+            algorithm = ((AEADEncDataPacket) encData).getAlgorithm();
         }
-        return new PGPSessionKey(sessionData[0] & 0xff, Arrays.copyOfRange(sessionData, 1, sessionData.length - 2));
+
+        // SEIPD (OpenPGP v4 / OpenPGP v6)
+        else if (encData instanceof SymmetricEncIntegrityPacket)
+        {
+            SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
+            if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
+            {
+                algorithm = sessionInfo[0];
+            }
+            else if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_2)
+            {
+                algorithm = seipd.getCipherAlgorithm();
+            }
+            else
+            {
+                throw new UnsupportedPacketVersionException("Unsupported SEIPD packet version: " + seipd.getVersion());
+            }
+        }
+        // SED (Legacy, no integrity protection!)
+        else
+        {
+            algorithm = sessionInfo[0];
+        }
+
+        return new PGPSessionKey(algorithm & 0xff, sessionKey);
+    }
+
+    private boolean containsChecksum(int algorithm)
+    {
+        return algorithm != PublicKeyAlgorithmTags.X25519 &&
+                algorithm != PublicKeyAlgorithmTags.X448;
     }
 
     /**
@@ -169,13 +223,38 @@ public class PGPPublicKeyEncryptedData
                 }
                 else
                 {
-                    boolean withIntegrityPacket = encData instanceof SymmetricEncIntegrityPacket;
 
-                    PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(withIntegrityPacket, sessionKey.getAlgorithm(), sessionKey.getKey());
+                    if (encData instanceof SymmetricEncIntegrityPacket)
+                    {
+                        SymmetricEncIntegrityPacket seipd = (SymmetricEncIntegrityPacket) encData;
+                        // SEIPD v1 (OpenPGP v4)
+                        if (seipd.getVersion() == SymmetricEncIntegrityPacket.VERSION_1)
+                        {
+                            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(true, sessionKey.getAlgorithm(), sessionKey.getKey());
 
-                    BCPGInputStream encIn = encData.getInputStream();
+                            BCPGInputStream encIn = encData.getInputStream();
 
-                    processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn);
+                            processSymmetricEncIntegrityPacketDataStream(true, dataDecryptor, encIn);
+                        }
+                        // SEIPD v2 (OpenPGP v6 AEAD)
+                        else
+                        {
+                            PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(seipd, sessionKey);
+
+                            BCPGInputStream encIn = encData.getInputStream();
+
+                            encStream = new BCPGInputStream(dataDecryptor.getInputStream(encIn));
+                        }
+                    }
+                    // SED (Symmetrically Encrypted Data without Integrity Protection; Deprecated)
+                    else
+                    {
+                        PGPDataDecryptor dataDecryptor = dataDecryptorFactory.createDataDecryptor(false, sessionKey.getAlgorithm(), sessionKey.getKey());
+
+                        BCPGInputStream encIn = encData.getInputStream();
+
+                        processSymmetricEncIntegrityPacketDataStream(false, dataDecryptor, encIn);
+                    }
 
                     //
                     // some versions of PGP appear to produce 0 for the extra

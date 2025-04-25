@@ -81,7 +81,7 @@ public class BcPGPKeyConverter
     }
 
     /**
-     * Create a PGPPublicKey from the passed in JCA one.
+     * Create a version 4 PGPPublicKey from the passed in JCA one.
      * <p>
      * Note: the time passed in affects the value of the key's keyID, so you probably only want
      * to do this once for a JCA key, or make sure you keep track of the time you used.
@@ -91,13 +91,34 @@ public class BcPGPKeyConverter
      * @param pubKey    actual public key to associate.
      * @param time      date of creation.
      * @throws PGPException on key creation problem.
+     * @deprecated use versioned {@link #getPGPPublicKey(int, int, PGPAlgorithmParameters, AsymmetricKeyParameter, Date)} instead
      */
+    @Deprecated
     public PGPPublicKey getPGPPublicKey(int algorithm, PGPAlgorithmParameters algorithmParameters, AsymmetricKeyParameter pubKey, Date time)
+        throws PGPException
+    {
+        return getPGPPublicKey(PublicKeyPacket.VERSION_4, algorithm, algorithmParameters, pubKey, time);
+    }
+
+    /**
+     * Create a PGPPublicKey from the passed in JCA one.
+     * <p>
+     * Note: the time passed in affects the value of the key's keyID, so you probably only want
+     * to do this once for a JCA key, or make sure you keep track of the time you used.
+     * </p>
+     *
+     * @param version   key version.
+     * @param algorithm asymmetric algorithm type representing the public key.
+     * @param pubKey    actual public key to associate.
+     * @param time      date of creation.
+     * @throws PGPException on key creation problem.
+     */
+    public PGPPublicKey getPGPPublicKey(int version, int algorithm, PGPAlgorithmParameters algorithmParameters, AsymmetricKeyParameter pubKey, Date time)
         throws PGPException
     {
         BCPGKey bcpgKey = getPublicBCPGKey(algorithm, algorithmParameters, pubKey);
 
-        return new PGPPublicKey(new PublicKeyPacket(algorithm, time, bcpgKey), new BcKeyFingerprintCalculator());
+        return new PGPPublicKey(new PublicKeyPacket(version, algorithm, time, bcpgKey), new BcKeyFingerprintCalculator());
     }
 
     public AsymmetricKeyParameter getPrivateKey(PGPPrivateKey privKey)
@@ -124,7 +145,7 @@ public class BcPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (CryptlibObjectIdentifiers.curvey25519.equals(ecdhPub.getCurveOID()))
+                if (BcUtil.isX25519(ecdhPub.getCurveOID()))
                 {
                     return PrivateKeyFactory.createKey(getPrivateKeyInfo(EdECObjectIdentifiers.id_X25519,
                         Arrays.reverseInPlace(BigIntegers.asUnsignedByteArray(((ECSecretBCPGKey)privPk).getX()))));
@@ -229,7 +250,7 @@ public class BcPGPKeyConverter
 
                 // Legacy XDH on Curve25519 (legacy X25519)
                 // 1.3.6.1.4.1.3029.1.5.1 & 1.3.101.110
-                if (ecdhK.getCurveOID().equals(CryptlibObjectIdentifiers.curvey25519))
+                if (BcUtil.isX25519(ecdhK.getCurveOID()))
                 {
                     byte[] pEnc = BigIntegers.asUnsignedByteArray(ecdhK.getEncodedPoint());
                     // skip the 0x40 header byte.

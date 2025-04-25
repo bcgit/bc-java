@@ -12,16 +12,21 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
+ * <p>
+ * Defined in <a href="https://datatracker.ietf.org/doc/rfc9629/">RFC 9629</a>.
+ * </p>
+ * <pre>
  *   KEMRecipientInfo ::= SEQUENCE {
  *     version CMSVersion,  -- always set to 0
  *     rid RecipientIdentifier,
  *     kem KEMAlgorithmIdentifier,
  *     kemct OCTET STRING,
  *     kdf KeyDerivationAlgorithmIdentifier,
- *     kekLength INTEGER (1..MAX),
+ *     kekLength INTEGER (1..65535),
  *     ukm [0] EXPLICIT UserKeyingMaterial OPTIONAL,
  *     wrap KeyEncryptionAlgorithmIdentifier,
  *     encryptedKey EncryptedKey }
+ * </pre>
  */
 public class KEMRecipientInfo
     extends ASN1Object
@@ -46,6 +51,10 @@ public class KEMRecipientInfo
         if (wrap == null)
         {
             throw new NullPointerException("wrap cannot be null");
+        }
+        if (kekLength.intValueExact() > 65535)
+        {
+            throw new IllegalArgumentException("kekLength must be <= 65535");
         }
         this.cmsVersion = new ASN1Integer(0);
         this.rid = rid;
@@ -76,7 +85,7 @@ public class KEMRecipientInfo
     {
         if (seq.size() < 8 || seq.size() > 9)
         {
-            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+            throw new IllegalArgumentException("bad sequence size: " + seq.size());
         }
 
         cmsVersion = ASN1Integer.getInstance(seq.getObjectAt(0));
@@ -85,6 +94,11 @@ public class KEMRecipientInfo
         kemct = ASN1OctetString.getInstance(seq.getObjectAt(3));
         kdf = AlgorithmIdentifier.getInstance(seq.getObjectAt(4));
         kekLength = ASN1Integer.getInstance(seq.getObjectAt(5));
+
+        if (kekLength.intValueExact() > 65535)
+        {
+            throw new IllegalArgumentException("kekLength must be <= 65535");
+        }
 
         int elt = 6;
         if (seq.getObjectAt(6) instanceof ASN1TaggedObject)
@@ -125,14 +139,14 @@ public class KEMRecipientInfo
     }
 
     public byte[] getUkm()
-     {
-         if (ukm == null)
-         {
-             return null;
-         }
+    {
+        if (ukm == null)
+        {
+            return null;
+        }
 
-         return ukm.getOctets();
-     }
+        return ukm.getOctets();
+    }
 
     public ASN1OctetString getEncryptedKey()
     {

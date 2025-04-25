@@ -15,6 +15,9 @@ import java.util.logging.Logger;
 
 import org.bouncycastle.bcpg.ArmoredInputException;
 import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
@@ -254,6 +257,80 @@ public class PGPSecretKeyRing
         return null;
     }
 
+    @Override
+    public PGPPublicKey getPublicKey(KeyIdentifier identifier)
+    {
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            {
+                return k.getPublicKey();
+            }
+        }
+
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getPublicKeys(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> matches = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            {
+                matches.add(k.getPublicKey());
+            }
+        }
+
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
+    public PGPSecretKey getSecretKey(KeyIdentifier identifier)
+    {
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                return k;
+            }
+        }
+        return null;
+    }
+
+    public Iterator<PGPSecretKey> getSecretKeys(KeyIdentifier identifier)
+    {
+        List<PGPSecretKey> matches = new ArrayList<PGPSecretKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (identifier.matches(k.getKeyIdentifier()))
+            {
+                matches.add(k);
+            }
+        }
+        return matches.iterator();
+    }
+
     /**
      * Return any keys carrying a signature issued by the key represented by keyID.
      *
@@ -276,6 +353,35 @@ public class PGPSecretKeyRing
             }
         }
 
+        return keysWithSigs.iterator();
+    }
+
+    @Override
+    public Iterator<PGPPublicKey> getKeysWithSignaturesBy(KeyIdentifier identifier)
+    {
+        List<PGPPublicKey> keysWithSigs = new ArrayList<PGPPublicKey>();
+        for (Iterator it = keys.iterator(); it.hasNext();)
+        {
+            PGPSecretKey k = (PGPSecretKey)it.next();
+            if (k.getPublicKey() == null)
+            {
+                continue;
+            }
+            Iterator<PGPSignature> sigIt = k.getPublicKey().getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k.getPublicKey());
+            }
+        }
+        for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
+        {
+            PGPPublicKey k = (PGPPublicKey)it.next();
+            Iterator<PGPSignature> sigIt = k.getSignaturesForKey(identifier);
+            if (sigIt.hasNext())
+            {
+                keysWithSigs.add(k);
+            }
+        }
         return keysWithSigs.iterator();
     }
 
@@ -386,13 +492,36 @@ public class PGPSecretKeyRing
         return keys.size();
     }
 
+    /**
+     * Return the OpenPGP certificate (Transferable Public Key) of this key.
+     *
+     * @return certificate
+     */
+    public PGPPublicKeyRing toCertificate()
+    {
+        List<PGPPublicKey> pubKeys = new ArrayList<PGPPublicKey>();
+        Iterator<PGPPublicKey> it = getPublicKeys();
+        while (it.hasNext())
+        {
+            pubKeys.add(it.next());
+        }
+        return new PGPPublicKeyRing(pubKeys);
+    }
+
     public byte[] getEncoded()
         throws IOException
     {
+        return getEncoded(PacketFormat.ROUNDTRIP);
+    }
+
+    @Override
+    public byte[] getEncoded(PacketFormat format)
+        throws IOException
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
-        this.encode(bOut);
-
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
+        this.encode(pOut);
+        pOut.close();
         return bOut.toByteArray();
     }
 

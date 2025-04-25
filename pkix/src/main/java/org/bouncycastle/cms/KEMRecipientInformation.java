@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.Arrays;
 
 public class KEMRecipientInformation
     extends RecipientInformation
@@ -26,14 +27,29 @@ public class KEMRecipientInformation
         {
             ASN1OctetString octs = ASN1OctetString.getInstance(r.getId());
 
-            rid = new KeyTransRecipientId(octs.getOctets());   // TODO: should be KEM
+            rid = new KEMRecipientId(octs.getOctets());
         }
         else
         {
             IssuerAndSerialNumber iAnds = IssuerAndSerialNumber.getInstance(r.getId());
 
-            rid = new KeyTransRecipientId(iAnds.getName(), iAnds.getSerialNumber().getValue());    // TODO:
+            rid = new KEMRecipientId(iAnds.getName(), iAnds.getSerialNumber().getValue());
         }
+    }
+
+    public AlgorithmIdentifier getKdfAlgorithm()
+    {
+        return info.getKdf();
+    }
+
+    public byte[] getUkm()
+    {
+        return Arrays.clone(info.getUkm());
+    }
+
+    public byte[] getEncapsulation()
+    {
+        return Arrays.clone(info.getKemct().getOctets());
     }
 
     protected RecipientOperator getRecipientOperator(Recipient recipient)

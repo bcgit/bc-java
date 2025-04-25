@@ -75,6 +75,8 @@ import org.bouncycastle.crypto.params.RC5Parameters;
 import org.bouncycastle.internal.asn1.cms.GCMParameters;
 import org.bouncycastle.jcajce.PBKDF1Key;
 import org.bouncycastle.jcajce.PBKDF1KeyWithParameters;
+import org.bouncycastle.jcajce.PBKDF2Key;
+import org.bouncycastle.jcajce.PBKDF2KeyWithParameters;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
@@ -157,8 +159,27 @@ public class BaseBlockCipher
     }
 
     protected BaseBlockCipher(
+        int keySizeInBits,
+        BlockCipherProvider provider)
+    {
+        baseEngine = provider.get();
+        engineProvider = provider;
+        this.keySizeInBits = keySizeInBits;
+
+        cipher = new BufferedGenericBlockCipher(provider.get());
+    }
+
+    protected BaseBlockCipher(
         AEADBlockCipher engine)
     {
+        this(0, engine);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine)
+    {
+        this.keySizeInBits = keySizeInBits;
         this.baseEngine = engine.getUnderlyingCipher();
         if (engine.getAlgorithmName().indexOf("GCM") >= 0)
         {
@@ -187,6 +208,16 @@ public class BaseBlockCipher
         boolean fixedIv,
         int ivLength)
     {
+        this(0, engine, fixedIv, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        AEADBlockCipher engine,
+        boolean fixedIv,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
         this.baseEngine = engine.getUnderlyingCipher();
         this.fixedIv = fixedIv;
         this.ivLength = ivLength;
@@ -198,6 +229,19 @@ public class BaseBlockCipher
         int ivLength)
     {
         this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        org.bouncycastle.crypto.BlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine;
+
+        this.fixedIv = true;
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.ivLength = ivLength / 8;
     }
 
     protected BaseBlockCipher(
@@ -217,6 +261,19 @@ public class BaseBlockCipher
         int ivLength)
     {
         this(engine, true, ivLength);
+    }
+
+    protected BaseBlockCipher(
+        int keySizeInBits,
+        BufferedBlockCipher engine,
+        int ivLength)
+    {
+        this.keySizeInBits = keySizeInBits;
+        baseEngine = engine.getUnderlyingCipher();
+
+        this.cipher = new BufferedGenericBlockCipher(engine);
+        this.fixedIv = true;
+        this.ivLength = ivLength / 8;
     }
 
     protected BaseBlockCipher(
@@ -391,7 +448,7 @@ public class BaseBlockCipher
             {
                 throw new NoSuchAlgorithmException("no mode support for " + modeName);
             }
-            
+
             ivLength = baseEngine.getBlockSize();
             cipher = new BufferedGenericBlockCipher(
                 new PGPCFBBlockCipher(baseEngine, inlineIV));
@@ -577,7 +634,7 @@ public class BaseBlockCipher
     protected void engineInit(
         int opmode,
         Key key,
-        final AlgorithmParameterSpec params,
+        final AlgorithmParameterSpec paramSpec,
         SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
@@ -599,7 +656,7 @@ public class BaseBlockCipher
         //
         // for RC5-64 we must have some default parameters
         //
-        if (params == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
+        if (paramSpec == null && (baseEngine != null && baseEngine.getAlgorithmName().startsWith("RC5-64")))
         {
             throw new InvalidAlgorithmParameterException("RC5 requires an RC5ParametersSpec to be passed in.");
         }
@@ -619,9 +676,9 @@ public class BaseBlockCipher
                 throw new InvalidKeyException("PKCS12 requires a SecretKey/PBEKey");
             }
 
-            if (params instanceof PBEParameterSpec)
+            if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
+                pbeSpec = (PBEParameterSpec)paramSpec;
             }
 
             if (k instanceof PBEKey && pbeSpec == null)
@@ -670,9 +727,9 @@ public class BaseBlockCipher
         {
             PBKDF1Key k = (PBKDF1Key)key;
 
-            if (params instanceof PBEParameterSpec)
+            if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
+                pbeSpec = (PBEParameterSpec)paramSpec;
             }
             if (k instanceof PBKDF1KeyWithParameters && pbeSpec == null)
             {
@@ -680,6 +737,25 @@ public class BaseBlockCipher
             }
 
             param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S1, digest, keySizeInBits, ivLength * 8, pbeSpec, cipher.getAlgorithmName());
+            if (param instanceof ParametersWithIV)
+            {
+                ivParam = (ParametersWithIV)param;
+            }
+        }
+        else if (key instanceof PBKDF2Key)
+        {
+            PBKDF2Key k = (PBKDF2Key)key;
+
+            if (paramSpec instanceof PBEParameterSpec)
+            {
+                pbeSpec = (PBEParameterSpec)paramSpec;
+            }
+            if (k instanceof PBKDF2KeyWithParameters && pbeSpec == null)
+            {
+                pbeSpec = new PBEParameterSpec(((PBKDF2KeyWithParameters)k).getSalt(), ((PBKDF2KeyWithParameters)k).getIterationCount());
+            }
+
+            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S2, PBE.SHA512, keySizeInBits, 0, pbeSpec, cipher.getAlgorithmName());
             if (param instanceof ParametersWithIV)
             {
                 ivParam = (ParametersWithIV)param;
@@ -700,12 +776,12 @@ public class BaseBlockCipher
 
             if (k.getParam() != null)
             {
-                param = adjustParameters(params, k.getParam());
+                param = adjustParameters(paramSpec, k.getParam());
             }
-            else if (params instanceof PBEParameterSpec)
+            else if (paramSpec instanceof PBEParameterSpec)
             {
-                pbeSpec = (PBEParameterSpec)params;
-                param = PBE.Util.makePBEParameters(k, params, cipher.getUnderlyingCipher().getAlgorithmName());
+                pbeSpec = (PBEParameterSpec)paramSpec;
+                param = PBE.Util.makePBEParameters(k, paramSpec, cipher.getUnderlyingCipher().getAlgorithmName());
             }
             else
             {
@@ -720,7 +796,7 @@ public class BaseBlockCipher
         else if (key instanceof PBEKey)
         {
             PBEKey k = (PBEKey)key;
-            pbeSpec = (PBEParameterSpec)params;
+            pbeSpec = (PBEParameterSpec)paramSpec;
             if (k instanceof PKCS12KeyWithParameters && pbeSpec == null)
             {
                 pbeSpec = new PBEParameterSpec(k.getSalt(), k.getIterationCount());
@@ -743,6 +819,18 @@ public class BaseBlockCipher
         else
         {
             param = null;
+        }
+
+        AlgorithmParameterSpec params = paramSpec;
+        if (paramSpec instanceof PBEParameterSpec)
+        {
+            params = ((PBEParameterSpec)paramSpec).getParameterSpec();
+            // If params.getIv() returns an empty byte array, ivParam will be assigned an IV generated by PBE.Util.makePBEParameters
+            // according to RFC 7292. This behavior is intended for Jasypt users who choose to use NoIvGenerator.
+            if (params instanceof IvParameterSpec && ((IvParameterSpec)params).getIV().length == 0)
+            {
+                params = paramSpec;
+            }
         }
 
         if (params instanceof AEADParameterSpec)

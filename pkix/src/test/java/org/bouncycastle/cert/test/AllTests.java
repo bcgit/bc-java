@@ -13,10 +13,31 @@ import org.bouncycastle.util.test.SimpleTestResult;
 public class AllTests
     extends TestCase
 {
+    public void setUp()
+    {
+        if (Security.getProvider("BC") == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+    
     public void testSimpleTests()
     {
-        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[] { new CertTest(), new DANETest(), new PKCS10Test(), new AttrCertSelectorTest(), new AttrCertTest(), new X509ExtensionUtilsTest(),
-            new CertPathLoopTest(), new GOST3410_2012CMSTest(), new ExternalKeyTest() };
+        org.bouncycastle.util.test.Test[] tests = new org.bouncycastle.util.test.Test[]
+        {
+            new AttrCertSelectorTest(),
+            new AttrCertTest(),
+            new CertPathLoopTest(),
+            new CertTest(),
+            new DANETest(),
+            new ExternalKeyTest(),
+            new GOST3410_2012CMSTest(),
+            new GOSTR3410_2012_256GenerateCertificate(),
+            new MLDSACredentialsTest(),
+            new PKCS10Test(),
+            new SLHDSACredentialsTest(),
+            new X509ExtensionUtilsTest(),
+        };
 
         for (int i = 0; i != tests.length; i++)
         {
@@ -53,6 +74,7 @@ public class AllTests
         suite.addTestSuite(BcAttrCertTest.class);
         suite.addTestSuite(BcCertTest.class);
         suite.addTestSuite(BcPKCS10Test.class);
+        suite.addTestSuite(PQCPKCS10Test.class);
         suite.addTest(ConverterTest.suite());
 
         return new BCTestSetup(suite);

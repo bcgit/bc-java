@@ -2,6 +2,7 @@ package org.bouncycastle.openpgp;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -15,8 +16,10 @@ import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.KeyFlags;
+import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.bcpg.sig.PolicyURI;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.RegularExpression;
@@ -34,6 +37,33 @@ import org.bouncycastle.bcpg.sig.TrustSignature;
  */
 public class PGPSignatureSubpacketVector
 {
+    /**
+     * Create a new {@link PGPSignatureSubpacketVector} from the given {@link Collection} of
+     * {@link SignatureSubpacket} items.
+     * If the collection is <pre>null</pre>, return an empty {@link PGPSignatureSubpacketVector}.
+     *
+     * @param packets collection of items or null
+     * @return PGPSignatureSubpacketVector
+     */
+    public static PGPSignatureSubpacketVector fromSubpackets(Collection<SignatureSubpacket> packets)
+    {
+        if (packets == null)
+        {
+            return fromSubpackets((SignatureSubpacket[]) null);
+        }
+        else
+        {
+            return fromSubpackets((SignatureSubpacket[])packets.toArray(new SignatureSubpacket[0]));
+        }
+    }
+
+    /**
+     * Create a new {@link PGPSignatureSubpacketVector} from the given {@link SignatureSubpacket[]}.
+     * If the array is <pre>null</pre>, return an empty {@link PGPSignatureSubpacketVector}.
+     *
+     * @param packets array of items or null
+     * @return PGPSignatureSubpacketVector
+     */
     public static PGPSignatureSubpacketVector fromSubpackets(SignatureSubpacket[] packets)
     {
         if (packets == null)
@@ -257,6 +287,13 @@ public class PGPSignatureSubpacketVector
         return ((PreferredAlgorithms)p).getPreferences();
     }
 
+    /**
+     * This method is BROKEN!
+     * @deprecated use {@link #getPreferredAEADCiphersuites()} or {@link #getPreferredLibrePgpEncryptionModes()}
+     * instead.
+     * @return preferred AEAD Algorithms
+     */
+    @Deprecated
     public int[] getPreferredAEADAlgorithms()
     {
         SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
@@ -267,6 +304,40 @@ public class PGPSignatureSubpacketVector
         }
 
         return ((PreferredAlgorithms)p).getPreferences();
+    }
+
+    /**
+     * Return the preferred AEAD ciphersuites denoted in the signature.
+     *
+     * @return OpenPGP AEAD ciphersuites
+     */
+    public PreferredAEADCiphersuites getPreferredAEADCiphersuites()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+        return (PreferredAEADCiphersuites) p;
+    }
+
+    /**
+     * Return the preferred LibrePGP encryption modes denoted in the signature.
+     * Note: The LibrePGP spec states that this subpacket shall be ignored and the application
+     * shall instead assume {@link org.bouncycastle.bcpg.AEADAlgorithmTags#OCB}.
+     *
+     * @return LibrePGP encryption modes
+     */
+    public int[] getPreferredLibrePgpEncryptionModes()
+    {
+        SignatureSubpacket p = this.getSubpacket(SignatureSubpacketTags.PREFERRED_AEAD_ALGORITHMS);
+
+        if (p == null)
+        {
+            return null;
+        }
+        return ((LibrePGPPreferredEncryptionModes) p).getPreferences();
     }
 
     public int getKeyFlags()

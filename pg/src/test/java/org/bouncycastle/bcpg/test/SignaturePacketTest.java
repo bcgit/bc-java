@@ -1,15 +1,20 @@
 package org.bouncycastle.bcpg.test;
 
-import org.bouncycastle.bcpg.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.sig.IssuerFingerprint;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 public class SignaturePacketTest
         extends AbstractPacketTest
@@ -33,7 +38,7 @@ public class SignaturePacketTest
             throws IOException
     {
         // Hex-encoded OpenPGP v6 signature packet
-        // Extracted from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-inline-signed-messag
+        // Extracted from https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-inline-signed-messag
         byte[] encSigPacket = Hex.decode("c29806011b0a0000002905826398a363222106cb186c4f0609a697e4d52dfa6c722b0c1f1e27c18a56708f6525ec27bad9acc90000000069362076495f50218890f7f5e2ee3c1822514f70500f551d86e5c921e404e34a53fbac27d06fb80aa8fc5bcb16e19631b280740f9ea6aed5e073ad00f9415a653c40e77a6ae77e692ba71d069a109fa24c58cfd8e316d0a06b34ad9acb8e5c5f521501");
         // Issuer of the message
         byte[] issuerFP = Hex.decode("CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9");
@@ -87,7 +92,7 @@ public class SignaturePacketTest
             throws IOException
     {
         // Hex-encoded v4 test signature
-        //  see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#name-sample-v4-ed25519legacy-sig
+        //  see https://www.rfc-editor.org/rfc/rfc9580.html#name-sample-v4-ed25519legacy-sig
         byte[] encSigPacket = Hex.decode("885e040016080006050255f95f95000a09108cfde12197965a9af62200ff56f90cca98e2102637bd983fdb16c131dfd27ed82bf4dde5606e0d756aed33660100d09c4fa11527f038e0f57f2201d82f2ea2c9033265fa6ceb489e854bae61b404");
         ByteArrayInputStream bIn = new ByteArrayInputStream(encSigPacket);
         BCPGInputStream pIn = new BCPGInputStream(bIn);
@@ -137,12 +142,11 @@ public class SignaturePacketTest
         // Hex-encoded signature with version 0x99
         byte[] encSigPacket = Hex.decode("885e990016080006050255f95f95000a09108cfde12197965a9af62200ff56f90cca98e2102637bd983fdb16c131dfd27ed82bf4dde5606e0d756aed33660100d09c4fa11527f038e0f57f2201d82f2ea2c9033265fa6ceb489e854bae61b404");
         ByteArrayInputStream bIn = new ByteArrayInputStream(encSigPacket);
-        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        final BCPGInputStream pIn = new BCPGInputStream(bIn);
         Exception ex = testException("unsupported version: 153",
                 "UnsupportedPacketVersionException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {

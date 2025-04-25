@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.AEADEncDataPacket;
@@ -11,6 +13,7 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.io.CipherInputStream;
@@ -100,6 +103,21 @@ public class BcUtil
         return c;
     }
 
+    static byte[] processBufferedBlockCipher(boolean forEncryption, BlockCipher engine, byte[] key, byte[] iv, byte[] msg, int msgOff, int msgLen)
+        throws InvalidCipherTextException
+
+    {
+        BufferedBlockCipher cipher = BcUtil.createSymmetricKeyWrapper(forEncryption, engine, key, iv);
+
+        byte[] out = new byte[msgLen];
+
+        int len = cipher.processBytes(msg, msgOff, msgLen, out, 0);
+
+        len += cipher.doFinal(out, len);
+
+        return out;
+    }
+
     static X9ECParameters getX9Parameters(ASN1ObjectIdentifier curveOID)
     {
         X9ECParameters x9 = CustomNamedCurves.getByOID(curveOID);
@@ -124,5 +142,10 @@ public class BcUtil
         byte[] secret = new byte[agreement.getAgreementSize()];
         agreement.calculateAgreement(ephPub, secret, 0);
         return secret;
+    }
+
+    static boolean isX25519(ASN1ObjectIdentifier curveID)
+    {
+        return curveID.equals(CryptlibObjectIdentifiers.curvey25519) || curveID.equals(EdECObjectIdentifiers.id_X25519);
     }
 }

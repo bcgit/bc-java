@@ -8,8 +8,25 @@ application {
     mainClass.set("org.bouncycastle.crypto.fpe.SP80038GMicroBenchmark")
 }
 
+jar.archiveBaseName = "bccore-$vmrange"
 
 test {
     forkEvery = 1;
     maxParallelForks = 8;
+    jvmArgs = ['-Dtest.java.version.prefix=any']
+}
+
+compileJava {
+    options.release = 8
+}
+
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bccore-$vmrange"
+            from components.java
+        }
+    }
 }

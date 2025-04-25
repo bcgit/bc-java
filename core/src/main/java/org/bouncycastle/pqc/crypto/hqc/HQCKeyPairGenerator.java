@@ -45,7 +45,7 @@ public class HQCKeyPairGenerator
     {
         HQCEngine engine = hqcKeyGenerationParameters.getParameters().getEngine();
         byte[] pk = new byte[40 + N_BYTE];
-        byte[] sk = new byte[40 + 40 + N_BYTE];
+        byte[] sk = new byte[40 + 40 + k + N_BYTE];
 
         engine.genKeyPair(pk, sk, seed);
 

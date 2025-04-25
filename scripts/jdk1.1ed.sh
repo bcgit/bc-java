@@ -186,7 +186,8 @@ done
 for f in org/bouncycastle/pqc/crypto/*/*.java org/bouncycastle/pqc/crypto/*/*/*.java
 do
 ed $f <<%%
-g/ final /s/final//
+g/private final /s/final//
+g/    final /s/final//
 w
 q
 %%
@@ -721,3 +722,8 @@ w
 q
 %
 
+ed org/bouncycastle/cms/PKIXRecipientId.java <<%
+g/protected.*final.*;/s/final//
+w
+q
+%

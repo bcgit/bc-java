@@ -1,9 +1,15 @@
 package org.bouncycastle.pqc.crypto.util;
 
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -18,16 +24,20 @@ import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.bike.BIKEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.picnic.PicnicParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
@@ -73,9 +83,6 @@ class Utils
     static final Map falconOids = new HashMap();
     static final Map falconParams = new HashMap();
 
-    static final Map kyberOids = new HashMap();
-    static final Map kyberParams = new HashMap();
-
     static final Map ntruprimeOids = new HashMap();
     static final Map ntruprimeParams = new HashMap();
 
@@ -93,6 +100,21 @@ class Utils
 
     static final Map rainbowOids = new HashMap();
     static final Map rainbowParams = new HashMap();
+
+    static final Map mlkemOids = new HashMap<ASN1ObjectIdentifier, MLKEMParameters>();
+    static final Map mlkemParams = new HashMap<MLKEMParameters, ASN1ObjectIdentifier>();
+
+    static final Map mldsaOids = new HashMap<ASN1ObjectIdentifier, MLDSAParameters>();
+    static final Map mldsaParams = new HashMap<MLDSAParameters, ASN1ObjectIdentifier>();
+
+    static final Map slhdsaOids = new HashMap<ASN1ObjectIdentifier, SLHDSAParameters>();
+    static final Map slhdsaParams = new HashMap<SLHDSAParameters, ASN1ObjectIdentifier>();
+
+    static final Map mayoOids = new HashMap<ASN1ObjectIdentifier, MayoParameters>();
+    static final Map mayoParams = new HashMap<MayoParameters, ASN1ObjectIdentifier>();
+
+    static final Map snovaOids = new HashMap<ASN1ObjectIdentifier, SnovaParameters>();
+    static final Map snovaParams = new HashMap<SnovaParameters, ASN1ObjectIdentifier>();
 
     static
     {
@@ -220,13 +242,13 @@ class Utils
         falconParams.put(BCObjectIdentifiers.falcon_512, FalconParameters.falcon_512);
         falconParams.put(BCObjectIdentifiers.falcon_1024, FalconParameters.falcon_1024);
 
-        kyberOids.put(KyberParameters.kyber512, BCObjectIdentifiers.kyber512);
-        kyberOids.put(KyberParameters.kyber768, BCObjectIdentifiers.kyber768);
-        kyberOids.put(KyberParameters.kyber1024, BCObjectIdentifiers.kyber1024);
+        mlkemOids.put(MLKEMParameters.ml_kem_512, NISTObjectIdentifiers.id_alg_ml_kem_512);
+        mlkemOids.put(MLKEMParameters.ml_kem_768, NISTObjectIdentifiers.id_alg_ml_kem_768);
+        mlkemOids.put(MLKEMParameters.ml_kem_1024, NISTObjectIdentifiers.id_alg_ml_kem_1024);
 
-        kyberParams.put(BCObjectIdentifiers.kyber512, KyberParameters.kyber512);
-        kyberParams.put(BCObjectIdentifiers.kyber768, KyberParameters.kyber768);
-        kyberParams.put(BCObjectIdentifiers.kyber1024, KyberParameters.kyber1024);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_512, MLKEMParameters.ml_kem_512);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_768, MLKEMParameters.ml_kem_768);
+        mlkemParams.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, MLKEMParameters.ml_kem_1024);
 
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr653, BCObjectIdentifiers.ntrulpr653);
         ntruprimeOids.put(NTRULPRimeParameters.ntrulpr761, BCObjectIdentifiers.ntrulpr761);
@@ -255,6 +277,20 @@ class Utils
         sntruprimeParams.put(BCObjectIdentifiers.sntrup953, SNTRUPrimeParameters.sntrup953);
         sntruprimeParams.put(BCObjectIdentifiers.sntrup1013, SNTRUPrimeParameters.sntrup1013);
         sntruprimeParams.put(BCObjectIdentifiers.sntrup1277, SNTRUPrimeParameters.sntrup1277);
+
+        mldsaOids.put(MLDSAParameters.ml_dsa_44, NISTObjectIdentifiers.id_ml_dsa_44);
+        mldsaOids.put(MLDSAParameters.ml_dsa_65, NISTObjectIdentifiers.id_ml_dsa_65);
+        mldsaOids.put(MLDSAParameters.ml_dsa_87, NISTObjectIdentifiers.id_ml_dsa_87);
+        mldsaOids.put(MLDSAParameters.ml_dsa_44_with_sha512, NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512);
+        mldsaOids.put(MLDSAParameters.ml_dsa_65_with_sha512, NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512);
+        mldsaOids.put(MLDSAParameters.ml_dsa_87_with_sha512, NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512);
+
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_44, MLDSAParameters.ml_dsa_44);
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_65, MLDSAParameters.ml_dsa_65);
+        mldsaParams.put(NISTObjectIdentifiers.id_ml_dsa_87, MLDSAParameters.ml_dsa_87);
+        mldsaParams.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, MLDSAParameters.ml_dsa_44_with_sha512);
+        mldsaParams.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, MLDSAParameters.ml_dsa_65_with_sha512);
+        mldsaParams.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, MLDSAParameters.ml_dsa_87_with_sha512);
 
         dilithiumOids.put(DilithiumParameters.dilithium2, BCObjectIdentifiers.dilithium2);
         dilithiumOids.put(DilithiumParameters.dilithium3, BCObjectIdentifiers.dilithium3);
@@ -294,6 +330,71 @@ class Utils
         rainbowOids.put(RainbowParameters.rainbowVcircumzenithal, BCObjectIdentifiers.rainbow_V_circumzenithal);
         rainbowOids.put(RainbowParameters.rainbowVcompressed, BCObjectIdentifiers.rainbow_V_compressed);
 
+        slhdsaOids.put(SLHDSAParameters.sha2_128s, NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        slhdsaOids.put(SLHDSAParameters.sha2_128f, NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        slhdsaOids.put(SLHDSAParameters.sha2_192s, NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        slhdsaOids.put(SLHDSAParameters.sha2_192f, NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        slhdsaOids.put(SLHDSAParameters.sha2_256s, NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        slhdsaOids.put(SLHDSAParameters.sha2_256f, NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        slhdsaOids.put(SLHDSAParameters.shake_128s, NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        slhdsaOids.put(SLHDSAParameters.shake_128f, NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        slhdsaOids.put(SLHDSAParameters.shake_192s, NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        slhdsaOids.put(SLHDSAParameters.shake_192f, NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        slhdsaOids.put(SLHDSAParameters.shake_256s, NISTObjectIdentifiers.id_slh_dsa_shake_256s);
+        slhdsaOids.put(SLHDSAParameters.shake_256f, NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+
+        slhdsaOids.put(SLHDSAParameters.sha2_128s_with_sha256, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256);
+        slhdsaOids.put(SLHDSAParameters.sha2_128f_with_sha256, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256);
+        slhdsaOids.put(SLHDSAParameters.sha2_192s_with_sha512, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512);
+        slhdsaOids.put(SLHDSAParameters.sha2_192f_with_sha512, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512);
+        slhdsaOids.put(SLHDSAParameters.sha2_256s_with_sha512, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512);
+        slhdsaOids.put(SLHDSAParameters.sha2_256f_with_sha512, NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512);
+        slhdsaOids.put(SLHDSAParameters.shake_128s_with_shake128, NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128);
+        slhdsaOids.put(SLHDSAParameters.shake_128f_with_shake128, NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128);
+        slhdsaOids.put(SLHDSAParameters.shake_192s_with_shake256, NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256);
+        slhdsaOids.put(SLHDSAParameters.shake_192f_with_shake256, NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256);
+        slhdsaOids.put(SLHDSAParameters.shake_256s_with_shake256, NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256);
+        slhdsaOids.put(SLHDSAParameters.shake_256f_with_shake256, NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256);
+
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, SLHDSAParameters.sha2_128s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, SLHDSAParameters.sha2_128f);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, SLHDSAParameters.sha2_192s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, SLHDSAParameters.sha2_192f);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, SLHDSAParameters.sha2_256s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, SLHDSAParameters.sha2_256f);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, SLHDSAParameters.shake_128s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, SLHDSAParameters.shake_128f);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, SLHDSAParameters.shake_192s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, SLHDSAParameters.shake_192f);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, SLHDSAParameters.shake_256s);
+        slhdsaParams.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, SLHDSAParameters.shake_256f);
+
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256, SLHDSAParameters.sha2_128s_with_sha256);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256, SLHDSAParameters.sha2_128f_with_sha256);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, SLHDSAParameters.sha2_192s_with_sha512);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, SLHDSAParameters.sha2_192f_with_sha512);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512, SLHDSAParameters.sha2_256s_with_sha512);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512, SLHDSAParameters.sha2_256f_with_sha512);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128, SLHDSAParameters.shake_128s_with_shake128);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128, SLHDSAParameters.shake_128f_with_shake128);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, SLHDSAParameters.shake_192s_with_shake256);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, SLHDSAParameters.shake_192f_with_shake256);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, SLHDSAParameters.shake_256s_with_shake256);
+        slhdsaParams.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, SLHDSAParameters.shake_256f_with_shake256);
+
+        sphincsPlusOids.put(SLHDSAParameters.sha2_128s, BCObjectIdentifiers.sphincsPlus_sha2_128s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_128f, BCObjectIdentifiers.sphincsPlus_sha2_128f);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_192s, BCObjectIdentifiers.sphincsPlus_sha2_192s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_192f, BCObjectIdentifiers.sphincsPlus_sha2_192f);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_256s, BCObjectIdentifiers.sphincsPlus_sha2_256s);
+        sphincsPlusOids.put(SLHDSAParameters.sha2_256f, BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f);
+        sphincsPlusOids.put(SLHDSAParameters.shake_256s, BCObjectIdentifiers.sphincsPlus_shake_256s);
+        sphincsPlusOids.put(SLHDSAParameters.shake_256f, BCObjectIdentifiers.sphincsPlus_shake_256f);
+
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s_robust, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f_robust, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s_robust, BCObjectIdentifiers.sphincsPlus_shake_128s_r3);
@@ -312,27 +413,26 @@ class Utils
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_256f_robust, BCObjectIdentifiers.sphincsPlus_shake_256f_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256s, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256f, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3);
-
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_128s_simple, BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_128f_simple, BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_192s_simple, BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_192f_simple, BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256s_simple, BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple);
         sphincsPlusOids.put(SPHINCSPlusParameters.haraka_256f_simple, BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple);
-        
+
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128s, BCObjectIdentifiers.sphincsPlus_sha2_128s);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_128f, BCObjectIdentifiers.sphincsPlus_sha2_128f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192s, BCObjectIdentifiers.sphincsPlus_sha2_192s);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_192f, BCObjectIdentifiers.sphincsPlus_sha2_192f);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s);
-        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256s, BCObjectIdentifiers.sphincsPlus_sha2_256s);
         sphincsPlusOids.put(SPHINCSPlusParameters.sha2_256f, BCObjectIdentifiers.sphincsPlus_sha2_256f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128s, BCObjectIdentifiers.sphincsPlus_shake_128s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_128f, BCObjectIdentifiers.sphincsPlus_shake_128f);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192s, BCObjectIdentifiers.sphincsPlus_shake_192s);
+        sphincsPlusOids.put(SPHINCSPlusParameters.shake_192f, BCObjectIdentifiers.sphincsPlus_shake_192f);
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_256s, BCObjectIdentifiers.sphincsPlus_shake_256s);
         sphincsPlusOids.put(SPHINCSPlusParameters.shake_256f, BCObjectIdentifiers.sphincsPlus_shake_256f);
-                      
+
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128s, SPHINCSPlusParameters.sha2_128s);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128f, SPHINCSPlusParameters.sha2_128f);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128s, SPHINCSPlusParameters.shake_128s);
@@ -345,7 +445,6 @@ class Utils
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_256f, SPHINCSPlusParameters.sha2_256f);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256s, SPHINCSPlusParameters.shake_256s);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256f, SPHINCSPlusParameters.shake_256f);
-        
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, SPHINCSPlusParameters.sha2_128s_robust);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, SPHINCSPlusParameters.sha2_128f_robust);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, SPHINCSPlusParameters.shake_128s_robust);
@@ -364,7 +463,6 @@ class Utils
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, SPHINCSPlusParameters.shake_256f_robust);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, SPHINCSPlusParameters.haraka_256s);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, SPHINCSPlusParameters.haraka_256f);
-
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, SPHINCSPlusParameters.sha2_128s);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, SPHINCSPlusParameters.sha2_128f);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, SPHINCSPlusParameters.shake_128s);
@@ -383,6 +481,116 @@ class Utils
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, SPHINCSPlusParameters.shake_256f);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, SPHINCSPlusParameters.haraka_256s_simple);
         sphincsPlusParams.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, SPHINCSPlusParameters.haraka_256f_simple);
+
+        mayoOids.put(MayoParameters.mayo1, BCObjectIdentifiers.mayo1);
+        mayoOids.put(MayoParameters.mayo2, BCObjectIdentifiers.mayo2);
+        mayoOids.put(MayoParameters.mayo3, BCObjectIdentifiers.mayo3);
+        mayoOids.put(MayoParameters.mayo5, BCObjectIdentifiers.mayo5);
+
+        mayoParams.put(BCObjectIdentifiers.mayo1, MayoParameters.mayo1);
+        mayoParams.put(BCObjectIdentifiers.mayo2, MayoParameters.mayo2);
+        mayoParams.put(BCObjectIdentifiers.mayo3, MayoParameters.mayo3);
+        mayoParams.put(BCObjectIdentifiers.mayo5, MayoParameters.mayo5);
+
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SSK, BCObjectIdentifiers.snova_24_5_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_ESK, BCObjectIdentifiers.snova_24_5_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SHAKE_SSK, BCObjectIdentifiers.snova_24_5_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_4_SHAKE_ESK, BCObjectIdentifiers.snova_24_5_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SSK, BCObjectIdentifiers.snova_24_5_5_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_ESK, BCObjectIdentifiers.snova_24_5_5_esk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SHAKE_SSK, BCObjectIdentifiers.snova_24_5_5_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_24_5_5_SHAKE_ESK, BCObjectIdentifiers.snova_24_5_5_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SSK, BCObjectIdentifiers.snova_25_8_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_ESK, BCObjectIdentifiers.snova_25_8_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SHAKE_SSK, BCObjectIdentifiers.snova_25_8_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_25_8_3_SHAKE_ESK, BCObjectIdentifiers.snova_25_8_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SSK, BCObjectIdentifiers.snova_29_6_5_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_ESK, BCObjectIdentifiers.snova_29_6_5_esk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SHAKE_SSK, BCObjectIdentifiers.snova_29_6_5_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_29_6_5_SHAKE_ESK, BCObjectIdentifiers.snova_29_6_5_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SSK, BCObjectIdentifiers.snova_37_8_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_ESK, BCObjectIdentifiers.snova_37_8_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SHAKE_SSK, BCObjectIdentifiers.snova_37_8_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_8_4_SHAKE_ESK, BCObjectIdentifiers.snova_37_8_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SSK, BCObjectIdentifiers.snova_37_17_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_ESK, BCObjectIdentifiers.snova_37_17_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SHAKE_SSK, BCObjectIdentifiers.snova_37_17_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_37_17_2_SHAKE_ESK, BCObjectIdentifiers.snova_37_17_2_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SSK, BCObjectIdentifiers.snova_49_11_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_ESK, BCObjectIdentifiers.snova_49_11_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SHAKE_SSK, BCObjectIdentifiers.snova_49_11_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_49_11_3_SHAKE_ESK, BCObjectIdentifiers.snova_49_11_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SSK, BCObjectIdentifiers.snova_56_25_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_ESK, BCObjectIdentifiers.snova_56_25_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SHAKE_SSK, BCObjectIdentifiers.snova_56_25_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_56_25_2_SHAKE_ESK, BCObjectIdentifiers.snova_56_25_2_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SSK, BCObjectIdentifiers.snova_60_10_4_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_ESK, BCObjectIdentifiers.snova_60_10_4_esk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SHAKE_SSK, BCObjectIdentifiers.snova_60_10_4_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_60_10_4_SHAKE_ESK, BCObjectIdentifiers.snova_60_10_4_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SSK, BCObjectIdentifiers.snova_66_15_3_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_ESK, BCObjectIdentifiers.snova_66_15_3_esk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SHAKE_SSK, BCObjectIdentifiers.snova_66_15_3_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_66_15_3_SHAKE_ESK, BCObjectIdentifiers.snova_66_15_3_shake_esk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SSK, BCObjectIdentifiers.snova_75_33_2_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_ESK, BCObjectIdentifiers.snova_75_33_2_esk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SHAKE_SSK, BCObjectIdentifiers.snova_75_33_2_shake_ssk);
+        snovaOids.put(SnovaParameters.SNOVA_75_33_2_SHAKE_ESK, BCObjectIdentifiers.snova_75_33_2_shake_esk);
+
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_ssk, SnovaParameters.SNOVA_24_5_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_esk, SnovaParameters.SNOVA_24_5_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_shake_ssk, SnovaParameters.SNOVA_24_5_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_4_shake_esk, SnovaParameters.SNOVA_24_5_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_ssk, SnovaParameters.SNOVA_24_5_5_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_esk, SnovaParameters.SNOVA_24_5_5_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_shake_ssk, SnovaParameters.SNOVA_24_5_5_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_24_5_5_shake_esk, SnovaParameters.SNOVA_24_5_5_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_ssk, SnovaParameters.SNOVA_25_8_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_esk, SnovaParameters.SNOVA_25_8_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_shake_ssk, SnovaParameters.SNOVA_25_8_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_25_8_3_shake_esk, SnovaParameters.SNOVA_25_8_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_ssk, SnovaParameters.SNOVA_29_6_5_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_esk, SnovaParameters.SNOVA_29_6_5_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_shake_ssk, SnovaParameters.SNOVA_29_6_5_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_29_6_5_shake_esk, SnovaParameters.SNOVA_29_6_5_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_ssk, SnovaParameters.SNOVA_37_8_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_esk, SnovaParameters.SNOVA_37_8_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_shake_ssk, SnovaParameters.SNOVA_37_8_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_8_4_shake_esk, SnovaParameters.SNOVA_37_8_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_ssk, SnovaParameters.SNOVA_37_17_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_esk, SnovaParameters.SNOVA_37_17_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_shake_ssk, SnovaParameters.SNOVA_37_17_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_37_17_2_shake_esk, SnovaParameters.SNOVA_37_17_2_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_ssk, SnovaParameters.SNOVA_49_11_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_esk, SnovaParameters.SNOVA_49_11_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_shake_ssk, SnovaParameters.SNOVA_49_11_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_49_11_3_shake_esk, SnovaParameters.SNOVA_49_11_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_ssk, SnovaParameters.SNOVA_56_25_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_esk, SnovaParameters.SNOVA_56_25_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_shake_ssk, SnovaParameters.SNOVA_56_25_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_56_25_2_shake_esk, SnovaParameters.SNOVA_56_25_2_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_ssk, SnovaParameters.SNOVA_60_10_4_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_esk, SnovaParameters.SNOVA_60_10_4_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_shake_ssk, SnovaParameters.SNOVA_60_10_4_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_60_10_4_shake_esk, SnovaParameters.SNOVA_60_10_4_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_ssk, SnovaParameters.SNOVA_66_15_3_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_esk, SnovaParameters.SNOVA_66_15_3_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_shake_ssk, SnovaParameters.SNOVA_66_15_3_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_66_15_3_shake_esk, SnovaParameters.SNOVA_66_15_3_SHAKE_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_ssk, SnovaParameters.SNOVA_75_33_2_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_esk, SnovaParameters.SNOVA_75_33_2_ESK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, SnovaParameters.SNOVA_75_33_2_SHAKE_SSK);
+        snovaParams.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, SnovaParameters.SNOVA_75_33_2_SHAKE_ESK);
+    }
+
+    static ASN1ObjectIdentifier slhdsaOidLookup(SLHDSAParameters params)
+    {
+        return (ASN1ObjectIdentifier)slhdsaOids.get(params);
+    }
+
+    static SLHDSAParameters slhdsaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SLHDSAParameters)slhdsaParams.get(oid);
     }
 
     static int qTeslaLookupSecurityCategory(AlgorithmIdentifier algorithm)
@@ -605,14 +813,14 @@ class Utils
         return (NTRUParameters)ntruParams.get(oid);
     }
 
-    static ASN1ObjectIdentifier kyberOidLookup(KyberParameters params)
+    static ASN1ObjectIdentifier mlkemOidLookup(MLKEMParameters params)
     {
-        return (ASN1ObjectIdentifier)kyberOids.get(params);
+        return (ASN1ObjectIdentifier)mlkemOids.get(params);
     }
 
-    static KyberParameters kyberParamsLookup(ASN1ObjectIdentifier oid)
+    static MLKEMParameters mlkemParamsLookup(ASN1ObjectIdentifier oid)
     {
-        return (KyberParameters)kyberParams.get(oid);
+        return (MLKEMParameters)mlkemParams.get(oid);
     }
 
     static ASN1ObjectIdentifier ntrulprimeOidLookup(NTRULPRimeParameters params)
@@ -633,6 +841,16 @@ class Utils
     static SNTRUPrimeParameters sntruprimeParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (SNTRUPrimeParameters)sntruprimeParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier mldsaOidLookup(MLDSAParameters params)
+    {
+        return (ASN1ObjectIdentifier)mldsaOids.get(params);
+    }
+
+    static MLDSAParameters mldsaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (MLDSAParameters)mldsaParams.get(oid);
     }
 
     static ASN1ObjectIdentifier dilithiumOidLookup(DilithiumParameters params)
@@ -673,5 +891,101 @@ class Utils
     static RainbowParameters rainbowParamsLookup(ASN1ObjectIdentifier oid)
     {
         return (RainbowParameters)rainbowParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier mayoOidLookup(MayoParameters params)
+    {
+        return (ASN1ObjectIdentifier)mayoOids.get(params);
+    }
+
+    static MayoParameters mayoParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (MayoParameters)mayoParams.get(oid);
+    }
+
+    static ASN1ObjectIdentifier snovaOidLookup(SnovaParameters params)
+    {
+        return (ASN1ObjectIdentifier)snovaOids.get(params);
+    }
+
+    static SnovaParameters snovaParamsLookup(ASN1ObjectIdentifier oid)
+    {
+        return (SnovaParameters)snovaParams.get(oid);
+    }
+
+    private static boolean isRaw(byte[] data)
+    {
+        // check well-formed first
+        ByteArrayInputStream bIn = new ByteArrayInputStream(data);
+
+        int tag = bIn.read();
+        int len = readLen(bIn);
+        if (len != bIn.available())
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    static ASN1OctetString parseOctetData(byte[] data)
+    {
+        // check well-formed first
+        if (!isRaw(data))
+        {
+            if (data[0] == BERTags.OCTET_STRING)
+            {
+                return ASN1OctetString.getInstance(data);
+            }
+        }
+
+        return null;
+    }
+
+    static ASN1Primitive parseData(byte[] data)
+    {
+        // check well-formed first
+        if (!isRaw(data))
+        {
+            if (data[0] == (BERTags.SEQUENCE | BERTags.CONSTRUCTED))
+            {
+                return ASN1Sequence.getInstance(data);
+            }
+
+            if (data[0] == BERTags.OCTET_STRING)
+            {
+                return ASN1OctetString.getInstance(data);
+            }
+
+            if ((data[0] & 0xff) == BERTags.TAGGED)
+            {
+                return ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(data), false);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * ASN.1 length reader.
+     */
+    static int readLen(ByteArrayInputStream bIn)
+    {
+        int length = bIn.read();
+        if (length < 0)
+        {
+            return -1;
+        }
+        if (length != (length & 0x7f))
+        {
+            int count = length & 0x7f;
+            length = 0;
+            while (count-- != 0)
+            {
+                length = (length << 8) + bIn.read();
+            }
+        }
+
+        return length;
     }
 }

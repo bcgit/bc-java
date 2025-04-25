@@ -103,29 +103,29 @@ public class BCStyle
     /**
      * RFC 3039 DateOfBirth - GeneralizedTime - YYYYMMDD000000Z
      */
-    public static final ASN1ObjectIdentifier DATE_OF_BIRTH = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.9.1").intern();
+    public static final ASN1ObjectIdentifier DATE_OF_BIRTH = X509ObjectIdentifiers.id_pda.branch("1").intern();
 
     /**
      * RFC 3039 PlaceOfBirth - DirectoryString(SIZE(1..128)
      */
-    public static final ASN1ObjectIdentifier PLACE_OF_BIRTH = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.9.2").intern();
+    public static final ASN1ObjectIdentifier PLACE_OF_BIRTH = X509ObjectIdentifiers.id_pda.branch("2").intern();
 
     /**
      * RFC 3039 Gender - PrintableString (SIZE(1)) -- "M", "F", "m" or "f"
      */
-    public static final ASN1ObjectIdentifier GENDER = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.9.3").intern();
+    public static final ASN1ObjectIdentifier GENDER = X509ObjectIdentifiers.id_pda.branch("3").intern();
 
     /**
      * RFC 3039 CountryOfCitizenship - PrintableString (SIZE (2)) -- ISO 3166
      * codes only
      */
-    public static final ASN1ObjectIdentifier COUNTRY_OF_CITIZENSHIP = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.9.4").intern();
+    public static final ASN1ObjectIdentifier COUNTRY_OF_CITIZENSHIP = X509ObjectIdentifiers.id_pda.branch("4").intern();
 
     /**
      * RFC 3039 CountryOfResidence - PrintableString (SIZE (2)) -- ISO 3166
      * codes only
      */
-    public static final ASN1ObjectIdentifier COUNTRY_OF_RESIDENCE = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.9.5").intern();
+    public static final ASN1ObjectIdentifier COUNTRY_OF_RESIDENCE = X509ObjectIdentifiers.id_pda.branch("5").intern();
 
 
     /**
@@ -291,9 +291,9 @@ public class BCStyle
         DefaultLookUp.put("telephonenumber", TELEPHONE_NUMBER);
         DefaultLookUp.put("name", NAME);
         DefaultLookUp.put("organizationidentifier", ORGANIZATION_IDENTIFIER);
-        DefaultLookUp.put("jurisdictionCountry", JURISDICTION_C);
-        DefaultLookUp.put("jurisdictionState", JURISDICTION_ST);
-        DefaultLookUp.put("jurisdictionLocality", JURISDICTION_L);
+        DefaultLookUp.put("jurisdictioncountry", JURISDICTION_C);
+        DefaultLookUp.put("jurisdictionstate", JURISDICTION_ST);
+        DefaultLookUp.put("jurisdictionlocality", JURISDICTION_L);
     }
 
     /**

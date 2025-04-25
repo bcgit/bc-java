@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 public class ASN1RelativeOID
     extends ASN1Primitive
@@ -245,6 +246,11 @@ public class ASN1RelativeOID
 
     static boolean isValidContents(byte[] contents)
     {
+        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
+        {
+            return true;
+        }
+
         if (contents.length < 1)
         {
             return false;
@@ -254,7 +260,9 @@ public class ASN1RelativeOID
         for (int i = 0; i < contents.length; ++i)
         {
             if (subIDStart && (contents[i] & 0xff) == 0x80)
+            {
                 return false;
+            }
 
             subIDStart = (contents[i] & 0x80) == 0;
         }
@@ -300,7 +308,7 @@ public class ASN1RelativeOID
 
     static String parseContents(byte[] contents)
     {
-        StringBuffer objId = new StringBuffer();
+        StringBuilder objId = new StringBuilder();
         long value = 0;
         BigInteger bigValue = null;
         boolean first = true;

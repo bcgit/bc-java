@@ -20,6 +20,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.LocaleUtil;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.ess.ESSCertID;
@@ -31,6 +32,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.tsp.Accuracy;
 import org.bouncycastle.asn1.tsp.MessageImprint;
 import org.bouncycastle.asn1.tsp.TSTInfo;
+import org.bouncycastle.asn1.tsp.TimeStampReq;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
@@ -175,19 +177,28 @@ public class TimeStampTokenGenerator
         X509CertificateHolder assocCert = signerInfoGen.getAssociatedCertificate();
         TSPUtil.validateCertificate(assocCert);
 
+        AlgorithmIdentifier digestAlgID = digestCalculator.getAlgorithmIdentifier();
+        ASN1ObjectIdentifier digestAlgOid = digestAlgID.getAlgorithm();
+
         try
         {
             OutputStream dOut = digestCalculator.getOutputStream();
-
             dOut.write(assocCert.getEncoded());
-
             dOut.close();
 
-            if (digestCalculator.getAlgorithmIdentifier().getAlgorithm().equals(OIWObjectIdentifiers.idSHA1))
+            DEROctetString certHash = new DEROctetString(digestCalculator.getDigest());
+
+            IssuerSerial issuerSerial = null;
+            if (isIssuerSerialIncluded)
             {
-                final ESSCertID essCertid = new ESSCertID(digestCalculator.getDigest(),
-                                            isIssuerSerialIncluded ? new IssuerSerial(new GeneralNames(new GeneralName(assocCert.getIssuer())), assocCert.getSerialNumber())
-                                                                   : null);
+                GeneralNames issuer = new GeneralNames(new GeneralName(assocCert.getIssuer()));
+                ASN1Integer serial = assocCert.toASN1Structure().getSerialNumber();
+                issuerSerial = new IssuerSerial(issuer, serial);
+            }
+
+            if (OIWObjectIdentifiers.idSHA1.equals(digestAlgOid))
+            {
+                final ESSCertID essCertID = new ESSCertID(certHash, issuerSerial);
 
                 this.signerInfoGen = new SignerInfoGenerator(signerInfoGen, new CMSAttributeTableGenerator()
                 {
@@ -198,7 +209,8 @@ public class TimeStampTokenGenerator
 
                         if (table.get(PKCSObjectIdentifiers.id_aa_signingCertificate) == null)
                         {
-                            return table.add(PKCSObjectIdentifiers.id_aa_signingCertificate, new SigningCertificate(essCertid));
+                            return table.add(PKCSObjectIdentifiers.id_aa_signingCertificate,
+                                new SigningCertificate(essCertID));
                         }
 
                         return table;
@@ -207,10 +219,9 @@ public class TimeStampTokenGenerator
             }
             else
             {
-                AlgorithmIdentifier digAlgID = new AlgorithmIdentifier(digestCalculator.getAlgorithmIdentifier().getAlgorithm());
-                final ESSCertIDv2   essCertid = new ESSCertIDv2(digAlgID, digestCalculator.getDigest(),
-                                                    isIssuerSerialIncluded ? new IssuerSerial(new GeneralNames(new GeneralName(assocCert.getIssuer())), new ASN1Integer(assocCert.getSerialNumber()))
-                                                                           : null);
+                digestAlgID = new AlgorithmIdentifier(digestAlgOid);
+
+                final ESSCertIDv2 essCertIDv2 = new ESSCertIDv2(digestAlgID, certHash, issuerSerial);
 
                 this.signerInfoGen = new SignerInfoGenerator(signerInfoGen, new CMSAttributeTableGenerator()
                 {
@@ -221,7 +232,8 @@ public class TimeStampTokenGenerator
 
                         if (table.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2) == null)
                         {
-                            return table.add(PKCSObjectIdentifiers.id_aa_signingCertificateV2, new SigningCertificateV2(essCertid));
+                            return table.add(PKCSObjectIdentifiers.id_aa_signingCertificateV2,
+                                new SigningCertificateV2(essCertIDv2));
                         }
 
                         return table;
@@ -360,8 +372,9 @@ public class TimeStampTokenGenerator
         Extensions          additionalExtensions)
         throws TSPException
     {
-        AlgorithmIdentifier algID = request.getMessageImprintAlgID();
-        MessageImprint messageImprint = new MessageImprint(algID, request.getMessageImprintDigest());
+        TimeStampReq timeStampReq = request.toASN1Structure();
+
+        MessageImprint messageImprint = timeStampReq.getMessageImprint();
 
         Accuracy accuracy = null;
         if (accuracySeconds > 0 || accuracyMillis > 0 || accuracyMicros > 0)
@@ -393,16 +406,12 @@ public class TimeStampTokenGenerator
             derOrdering = ASN1Boolean.getInstance(ordering);
         }
 
-        ASN1Integer nonce = null;
-        if (request.getNonce() != null)
-        {
-            nonce = new ASN1Integer(request.getNonce());
-        }
+        ASN1Integer nonce = timeStampReq.getNonce();
 
-        ASN1ObjectIdentifier tsaPolicy = tsaPolicyOID;
-        if (request.getReqPolicy() != null)
+        ASN1ObjectIdentifier tsaPolicy = timeStampReq.getReqPolicy();
+        if (tsaPolicy == null)
         {
-            tsaPolicy = request.getReqPolicy();
+            tsaPolicy = this.tsaPolicyOID;
         }
 
         Extensions respExtensions = request.getExtensions();

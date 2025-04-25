@@ -75,8 +75,7 @@ public class SPHINCSPlus
             provider.addAlgorithm("Alg.Alias.Signature.SPHINCS+", "SPHINCSPLUS");
 
             AsymmetricKeyInfoConverter keyFact = new SPHINCSPlusKeyFactorySpi();
-
-//            registerOid(provider, BCObjectIdentifiers.sphincsPlus, "SPHINCSPLUS", keyFact);
+            
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, "SPHINCSPLUS", keyFact);
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, "SPHINCSPLUS", keyFact);
             registerKeyFactoryOid(provider, BCObjectIdentifiers.sphincsPlus_shake_128s_r3, "SPHINCSPLUS", keyFact);

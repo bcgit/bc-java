@@ -1,17 +1,15 @@
 package java.security.cert;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
 
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OutputStream;
 import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.OIDTokenizer;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.util.Strings;
@@ -336,12 +334,7 @@ class CertUtil
         {
             throw new IOException("token: " + token + ": " + ex.toString());
         }
-        ASN1Object derData = new ASN1ObjectIdentifier(oid);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-        derOutStream.writeObject(derData);
-        derOutStream.close();
-        return outStream.toByteArray();
+        return new ASN1ObjectIdentifier(oid).getEncoded(ASN1Encoding.DER);
     }
 
     /**
@@ -452,12 +445,7 @@ class CertUtil
     private static byte[] parseURI(String data) throws IOException
     {
         // TODO do parsing test
-        ASN1Object derData = new DERIA5String(data);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-        derOutStream.writeObject(derData);
-        derOutStream.close();
-        return outStream.toByteArray();
+        return new DERIA5String(data).getEncoded(ASN1Encoding.DER);
     }
 
     /**
@@ -479,13 +467,8 @@ class CertUtil
         {
             throw new IOException("wrong format of rfc822Name:" + data);
         }
-        // TODO more test for illegal charateers
-        ASN1Object derData = new DERIA5String(data);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-        derOutStream.writeObject(derData);
-        derOutStream.close();
-        return outStream.toByteArray();
+        // TODO more test for illegal characters
+        return new DERIA5String(data).getEncoded(ASN1Encoding.DER);
     }
 
     /**
@@ -502,13 +485,8 @@ class CertUtil
      */
     private static byte[] parseDNSName(String data) throws IOException
     {
-        // TODO more test for illegal charateers
-        ASN1Object derData = new DERIA5String(data);
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-        derOutStream.writeObject(derData);
-        derOutStream.close();
-        return outStream.toByteArray();
+        // TODO more test for illegal characters
+        return new DERIA5String(data).getEncoded(ASN1Encoding.DER);
     }
 
     /**
@@ -524,12 +502,8 @@ class CertUtil
      */
     private static byte[] parseX509Name(String data) throws IOException
     {
-        // TODO more test for illegal charateers
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        ASN1OutputStream derOutStream = ASN1OutputStream.create(outStream, ASN1Encoding.DER);
-        derOutStream.writeObject(new X509Name(trimX509Name(data)));
-        derOutStream.close();
-        return outStream.toByteArray();
+        // TODO more test for illegal characters
+        return new X509Name(trimX509Name(data)).getEncoded(ASN1Encoding.DER);
     }
 
     /**

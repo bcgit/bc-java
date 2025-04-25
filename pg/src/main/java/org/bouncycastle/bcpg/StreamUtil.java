@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
+import org.bouncycastle.util.Arrays;
+
 class StreamUtil
 {
     private static final long MAX_MEMORY = Runtime.getRuntime().maxMemory();
@@ -109,16 +111,25 @@ class StreamUtil
     static void writeTime(BCPGOutputStream pOut, long time)
         throws IOException
     {
-        pOut.write((byte)(time >> 24));
-        pOut.write((byte)(time >> 16));
-        pOut.write((byte)(time >> 8));
-        pOut.write((byte)time);
+        StreamUtil.writeSeconds(pOut, time / 1000);
     }
 
     static long readTime(BCPGInputStream in)
         throws IOException
     {
-        return (((long)in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read()) * 1000;
+        return readSeconds(in) * 1000L;
+    }
+
+    static void writeSeconds(BCPGOutputStream pOut, long time)
+        throws IOException
+    {
+        StreamUtil.write4OctetLength(pOut, (int)time);
+    }
+
+    static long readSeconds(BCPGInputStream in)
+        throws IOException
+    {
+        return ((long)read4OctetLength(in)) & 0xFFFFFFFFL;
     }
 
     static void write2OctetLength(OutputStream pOut, int len)
@@ -147,6 +158,72 @@ class StreamUtil
         throws IOException
     {
         return (in.read() << 24) | (in.read() << 16) | (in.read() << 8) | in.read();
+    }
+
+    static int flag_eof = 0;
+    static int flag_isLongLength = 1;
+    static int flag_partial = 2;
+    /**
+     * Note: flags is an array of three boolean values:
+     * flags[0] indicates l is negative, flag for eof
+     * flags[1] indicates (is)longLength = true
+     * flags[2] indicate partial = true
+     */
+    static int readBodyLen(InputStream in, boolean[] flags)
+        throws IOException
+    {
+        Arrays.fill(flags, false);
+        int l = in.read();
+        int bodyLen = -1;
+        if (l < 0)
+        {
+            flags[flag_eof] = true;
+        }
+        if (l < 192)
+        {
+            bodyLen = l;
+        }
+        else if (l <= 223)
+        {
+            bodyLen = ((l - 192) << 8) + (in.read()) + 192;
+        }
+        else if (l == 255)
+        {
+            flags[flag_isLongLength] = true;
+            bodyLen = StreamUtil.read4OctetLength(in);
+        }
+        else
+        {
+            flags[flag_partial] = true;
+            bodyLen = 1 << (l & 0x1f);
+        }
+        return bodyLen;
+    }
+
+    static void write8OctetLength(OutputStream pOut, long len)
+        throws IOException
+    {
+        pOut.write((int) (len >> 56));
+        pOut.write((int) (len >> 48));
+        pOut.write((int) (len >> 40));
+        pOut.write((int) (len >> 32));
+        pOut.write((int) (len >> 24));
+        pOut.write((int) (len >> 16));
+        pOut.write((int) (len >> 8));
+        pOut.write((int) len);
+    }
+
+    static long read8OctetLength(InputStream in)
+        throws IOException
+    {
+        return ((long) in.read() << 56) |
+            ((long) in.read() << 48) |
+            ((long) in.read() << 40) |
+            ((long) in.read() << 32) |
+            ((long) in.read() << 24) |
+            ((long) in.read() << 16) |
+            ((long) in.read() << 8) |
+            ((long) in.read());
     }
 
 }

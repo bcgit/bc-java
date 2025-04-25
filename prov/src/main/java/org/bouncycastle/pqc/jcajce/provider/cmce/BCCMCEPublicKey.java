@@ -40,7 +40,7 @@ public class BCCMCEPublicKey
     }
     
     /**
-     * Compare this SPHINCS-256 public key with another object.
+     * Compare this CMCE public key with another object.
      *
      * @param o the other object
      * @return the result of the comparison

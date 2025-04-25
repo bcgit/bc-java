@@ -60,12 +60,23 @@ public class PublicKeyEncSessionPacket
                 // anon recipient
                 keyVersion = 0;
                 keyFingerprint = new byte[0];
+                keyID = 0L;
             }
             else
             {
                 keyVersion = in.read();
                 keyFingerprint = new byte[keyInfoLen - 1];
                 in.readFully(keyFingerprint);
+                // Derived key-ID from fingerprint
+                // TODO: Replace with getKeyIdentifier
+                if (keyVersion == PublicKeyPacket.VERSION_4)
+                {
+                    keyID = FingerprintUtil.keyIdFromV4Fingerprint(keyFingerprint);
+                }
+                else
+                {
+                    keyID = FingerprintUtil.keyIdFromV6Fingerprint(keyFingerprint);
+                }
             }
         }
         else
@@ -265,9 +276,16 @@ public class PublicKeyEncSessionPacket
         }
         else if (version == VERSION_6)
         {
-            pOut.write(keyFingerprint.length + 1);
-            pOut.write(keyVersion);
-            pOut.write(keyFingerprint);
+            if (keyFingerprint.length != 0)
+            {
+                pOut.write(keyFingerprint.length + 1);
+                pOut.write(keyVersion);
+                pOut.write(keyFingerprint);
+            }
+            else
+            {
+                pOut.write(0);
+            }
         }
 
         pOut.write(algorithm);

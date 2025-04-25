@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestResult;
 
@@ -24,7 +25,24 @@ public class ObjectIdentifierTest
         {
             isEquals("invalid OID contents", e.getMessage());
         }
-        
+
+        byte[] faultyOID = Hex.decode("06092A864886FC6B048000");
+        try
+        {
+            ASN1ObjectIdentifier.getInstance(faultyOID);
+            fail("no exception");
+        }
+        catch (Exception e)
+        {
+            isEquals("failed to construct object identifier from byte[]: invalid OID contents", e.getMessage());
+        }
+
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
+        String oid = ASN1ObjectIdentifier.getInstance(faultyOID).getId();
+
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
+        isEquals("1.2.840.114283.4.0", oid);
+
         // exercise the object cache
         for (int i = 0; i < 100; i++)
         {

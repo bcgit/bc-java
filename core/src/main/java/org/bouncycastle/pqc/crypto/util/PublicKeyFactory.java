@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -31,8 +32,6 @@ import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
 import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.crystals.dilithium.DilithiumPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
-import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.frodo.FrodoParameters;
@@ -40,7 +39,13 @@ import org.bouncycastle.pqc.crypto.frodo.FrodoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
@@ -54,6 +59,10 @@ import org.bouncycastle.pqc.crypto.rainbow.RainbowParameters;
 import org.bouncycastle.pqc.crypto.rainbow.RainbowPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
+import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusPublicKeyParameters;
@@ -87,6 +96,7 @@ public class PublicKeyFactory
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(PQCObjectIdentifiers.mcElieceCca2, new McElieceCCA2Converter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
+
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3, new SPHINCSPlusConverter());
@@ -105,23 +115,10 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3, new SPHINCSPlusConverter());
-
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_128f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_128f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_192f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_192f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_192f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_sha2_256f_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s_r3_simple, new SPHINCSPlusConverter());
-        converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, new SPHINCSPlusConverter());
 
@@ -138,7 +135,7 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256s, new SPHINCSPlusConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
-        
+
         converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
@@ -193,12 +190,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
-        converters.put(BCObjectIdentifiers.kyber512, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber512_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber768_aes, new MLKEMConverter());
+        converters.put(BCObjectIdentifiers.kyber1024_aes, new MLKEMConverter());
         converters.put(BCObjectIdentifiers.ntrulpr653, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr761, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr857, new NTRULPrimeConverter());
@@ -211,6 +208,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sntrup953, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1013, new SNTRUPrimeConverter());
         converters.put(BCObjectIdentifiers.sntrup1277, new SNTRUPrimeConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_44, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_65, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_ml_dsa_87, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_44_with_sha512, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_65_with_sha512, new MLDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_ml_dsa_87_with_sha512, new MLDSAConverter());
         converters.put(BCObjectIdentifiers.dilithium2, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium3, new DilithiumConverter());
         converters.put(BCObjectIdentifiers.dilithium5, new DilithiumConverter());
@@ -229,6 +232,81 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.rainbow_V_classic, new RainbowConverter());
         converters.put(BCObjectIdentifiers.rainbow_V_circumzenithal, new RainbowConverter());
         converters.put(BCObjectIdentifiers.rainbow_V_compressed, new RainbowConverter());
+
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_256f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_128f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_192f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256, new SLHDSAConverter());
+        converters.put(NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256, new SLHDSAConverter());
+
+        converters.put(BCObjectIdentifiers.mayo1, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo2, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo3, new MayoConverter());
+        converters.put(BCObjectIdentifiers.mayo5, new MayoConverter());
+
+        converters.put(BCObjectIdentifiers.snova_24_5_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_24_5_5_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_25_8_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_29_6_5_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_8_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_37_17_2_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_49_11_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_56_25_2_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_60_10_4_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_66_15_3_shake_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
+        converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
     }
 
     /**
@@ -413,21 +491,21 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+            ASN1OctetString data = (ASN1OctetString)Utils.parseData(keyEnc);
 
-            if (Pack.bigEndianToInt(keyEnc, 0) == 1)
+            if (data != null)
             {
-                return LMSPublicKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+                return getLmsKeyParameters(data.getOctets());
             }
-            else
-            {
-                // public key with extra tree height
-                if (keyEnc.length == 64)
-                {
-                    keyEnc = Arrays.copyOfRange(keyEnc, 4, keyEnc.length);
-                }
-                return HSSPublicKeyParameters.getInstance(keyEnc);
-            }
+
+            return getLmsKeyParameters(keyEnc);
+        }
+
+        private LMSKeyParameters getLmsKeyParameters(byte[] keyEnc)
+            throws IOException
+        {
+            return HSSPublicKeyParameters.getInstance(keyEnc);
         }
     }
 
@@ -471,7 +549,7 @@ public class PublicKeyFactory
                 return new CMCEPublicKeyParameters(spParams, keyEnc);
             }
             catch (Exception e)
-            {        
+            {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
                 CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
@@ -482,13 +560,13 @@ public class PublicKeyFactory
     }
 
     private static class SABERConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(
-                    ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
+                ASN1Sequence.getInstance(keyInfo.parsePublicKey()).getObjectAt(0)).getOctets();
 
             SABERParameters saberParams = Utils.saberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
@@ -509,10 +587,10 @@ public class PublicKeyFactory
     }
 
     private static class FrodoConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -523,10 +601,10 @@ public class PublicKeyFactory
     }
 
     private static class PicnicConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
 
@@ -542,7 +620,19 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+            ASN1OctetString data = Utils.parseOctetData(keyEnc);
+
+            if (data != null)
+            {
+                return getNtruPublicKeyParameters(keyInfo, data.getOctets());
+            }
+
+            return getNtruPublicKeyParameters(keyInfo, keyEnc);
+        }
+
+        private NTRUPublicKeyParameters getNtruPublicKeyParameters(SubjectPublicKeyInfo keyInfo, byte[] keyEnc)
+        {
 
             NTRUParameters ntruParams = Utils.ntruParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
@@ -566,25 +656,52 @@ public class PublicKeyFactory
         }
     }
 
-    private static class KyberConverter
+    static class MLKEMConverter
         extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            KyberParameters kyberParameters = Utils.kyberParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            MLKEMParameters parameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             try
             {
                 ASN1Primitive obj = keyInfo.parsePublicKey();
                 KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
 
-                return new KyberPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
+                return new MLKEMPublicKeyParameters(parameters, kyberKey.getT(), kyberKey.getRho());
             }
             catch (Exception e)
             {
                 // we're a raw encoding
-                return new KyberPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
+                return new MLKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
+            }
+        }
+
+        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters parameters, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLKEMPublicKeyParameters(parameters,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLKEMPublicKeyParameters(parameters, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
             }
         }
     }
@@ -616,7 +733,7 @@ public class PublicKeyFactory
             return new SNTRUPrimePublicKeyParameters(ntruLPRimeParams, keyEnc);
         }
     }
-    
+
     static class DilithiumConverter
         extends SubjectPublicKeyInfoConverter
     {
@@ -656,11 +773,50 @@ public class PublicKeyFactory
         }
     }
 
-    private static class BIKEConverter
-            extends SubjectPublicKeyInfoConverter
+    static class MLDSAConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
+        {
+            MLDSAParameters dilithiumParams = Utils.mldsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return getPublicKeyParams(dilithiumParams, keyInfo.getPublicKeyData());
+        }
+
+        static MLDSAPublicKeyParameters getPublicKeyParams(MLDSAParameters mlDsaParams, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLDSAPublicKeyParameters(mlDsaParams,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLDSAPublicKeyParameters(mlDsaParams, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLDSAPublicKeyParameters(mlDsaParams, publicKeyData.getOctets());
+            }
+        }
+    }
+
+    private static class BIKEConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
         {
             try
             {
@@ -682,10 +838,10 @@ public class PublicKeyFactory
     }
 
     private static class HQCConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
             try
             {
@@ -707,6 +863,31 @@ public class PublicKeyFactory
         }
     }
 
+    private static class SLHDSAConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            try
+            {
+                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+                SLHDSAParameters spParams = Utils.slhdsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new SLHDSAPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
+            }
+            catch (Exception e)
+            {
+                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+                SLHDSAParameters spParams = Utils.slhdsaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+                return new SLHDSAPublicKeyParameters(spParams, keyEnc);
+            }
+        }
+    }
+
     private static class RainbowConverter
         extends SubjectPublicKeyInfoConverter
     {
@@ -718,6 +899,34 @@ public class PublicKeyFactory
             RainbowParameters rainbowParams = Utils.rainbowParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new RainbowPublicKeyParameters(rainbowParams, keyEnc);
+        }
+    }
+
+    private static class MayoConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            MayoParameters mayoParams = Utils.mayoParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new MayoPublicKeyParameters(mayoParams, keyEnc);
+        }
+    }
+
+    private static class SnovaConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new SnovaPublicKeyParameters(snovaParams, keyEnc);
         }
     }
 }

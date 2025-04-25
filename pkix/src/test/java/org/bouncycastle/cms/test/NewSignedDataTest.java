@@ -1,7 +1,11 @@
 package org.bouncycastle.cms.test;
 
-import java.io.ByteArrayInputStream;
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -27,7 +31,6 @@ import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -48,12 +51,16 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.ess.ESSCertIDv2;
+import org.bouncycastle.asn1.ess.SigningCertificateV2;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.IssuerSerial;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -63,6 +70,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CRLHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.test.SampleCredentials;
 import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerationException;
@@ -76,6 +84,7 @@ import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.DefaultCMSSignatureAlgorithmNameGenerator;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
 import org.bouncycastle.cms.SignerId;
+import org.bouncycastle.cms.SignerInfoGenerator;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
@@ -92,6 +101,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcContentSignerBuilder;
@@ -99,10 +109,13 @@ import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
 public class NewSignedDataTest
     extends TestCase
@@ -136,6 +149,38 @@ public class NewSignedDataTest
 
     private static KeyPair         _signEd448KP;
     private static X509Certificate _signEd448Cert;
+
+    private static KeyPair         _signMLDsa44KP;
+    private static X509Certificate _signMLDsa44Cert;
+    private static KeyPair         _signMLDsa65KP;
+    private static X509Certificate _signMLDsa65Cert;
+    private static KeyPair         _signMLDsa87KP;
+    private static X509Certificate _signMLDsa87Cert;
+
+    private static KeyPair         _signSlhDsa_Sha2_128f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_128f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_128s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_128s_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_192f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_192f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_192s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_192s_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_256f_KP;
+    private static X509Certificate _signSlhDsa_Sha2_256f_Cert;
+    private static KeyPair         _signSlhDsa_Sha2_256s_KP;
+    private static X509Certificate _signSlhDsa_Sha2_256s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_128f_KP;
+    private static X509Certificate _signSlhDsa_Shake_128f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_128s_KP;
+    private static X509Certificate _signSlhDsa_Shake_128s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_192f_KP;
+    private static X509Certificate _signSlhDsa_Shake_192f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_192s_KP;
+    private static X509Certificate _signSlhDsa_Shake_192s_Cert;
+    private static KeyPair         _signSlhDsa_Shake_256f_KP;
+    private static X509Certificate _signSlhDsa_Shake_256f_Cert;
+    private static KeyPair         _signSlhDsa_Shake_256s_KP;
+    private static X509Certificate _signSlhDsa_Shake_256s_Cert;
 
     private static String          _reciDN;
     private static KeyPair         _reciKP;
@@ -675,6 +720,29 @@ public class NewSignedDataTest
             "CiwhMCLDeeEBOdxWZHVbIiFnnRTQqyIDGAOSSIUmjE/pMPKpPvumkCGq2r9GxPV9\n" +
             "YlpnThaYbDCnWg8tbWYAAAAAAAA=");
 
+    private static byte[] signedData_mldsa44 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-44.pem");
+    private static byte[] signedData_mldsa65 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-65.pem");
+    private static byte[] signedData_mldsa87 = loadPemContents("pkix/cms/mldsa", "SignedData_ML-DSA-87.pem");
+
+    private static byte[] loadPemContents(String path, String name)
+    {
+        try
+        {
+            InputStream input = new BufferedInputStream(TestResourceFinder.findTestResource(path, name));
+            Reader reader = new InputStreamReader(input);
+
+            PemReader pemReader = new PemReader(reader);
+            PemObject pemObject = pemReader.readPemObject();
+            pemReader.close();
+
+            return pemObject.getContent();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
     static
     {
         noParams.add(X9ObjectIdentifiers.ecdsa_with_SHA1);
@@ -697,8 +765,23 @@ public class NewSignedDataTest
         noParams.add(NISTObjectIdentifiers.id_ecdsa_with_sha3_512);
         noParams.add(EdECObjectIdentifiers.id_Ed25519);
         noParams.add(EdECObjectIdentifiers.id_Ed448);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_44);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_65);
+        noParams.add(NISTObjectIdentifiers.id_ml_dsa_87);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_sha2_256s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_128s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_192s);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256f);
+        noParams.add(NISTObjectIdentifiers.id_slh_dsa_shake_256s);
     }
-    
+
     public NewSignedDataTest(String name)
     {
         super(name);
@@ -768,6 +851,51 @@ public class NewSignedDataTest
 
             _signEd448KP   = CMSTestUtil.makeEd448KeyPair();
             _signEd448Cert = CMSTestUtil.makeCertificate(_signEd448KP, _signDN, _origKP, _origDN);
+
+            _signMLDsa44KP   = CMSTestUtil.makeMLDsa44KeyPair();
+            _signMLDsa44Cert = CMSTestUtil.makeCertificate(_signMLDsa44KP, _signDN, _origKP, _origDN);
+
+            _signMLDsa65KP   = CMSTestUtil.makeMLDsa65KeyPair();
+            _signMLDsa65Cert = CMSTestUtil.makeCertificate(_signMLDsa65KP, _signDN, _origKP, _origDN);
+
+            _signMLDsa87KP   = CMSTestUtil.makeMLDsa87KeyPair();
+            _signMLDsa87Cert = CMSTestUtil.makeCertificate(_signMLDsa87KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_128f_KP   = CMSTestUtil.makeSlhDsa_Sha2_128f_KeyPair();
+            _signSlhDsa_Sha2_128f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_128f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_128s_KP   = CMSTestUtil.makeSlhDsa_Sha2_128s_KeyPair();
+            _signSlhDsa_Sha2_128s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_128s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_192f_KP   = CMSTestUtil.makeSlhDsa_Sha2_192f_KeyPair();
+            _signSlhDsa_Sha2_192f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_192f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_192s_KP   = CMSTestUtil.makeSlhDsa_Sha2_192s_KeyPair();
+            _signSlhDsa_Sha2_192s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_192s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_256f_KP   = CMSTestUtil.makeSlhDsa_Sha2_256f_KeyPair();
+            _signSlhDsa_Sha2_256f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_256f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Sha2_256s_KP   = CMSTestUtil.makeSlhDsa_Sha2_256s_KeyPair();
+            _signSlhDsa_Sha2_256s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Sha2_256s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_128f_KP   = CMSTestUtil.makeSlhDsa_Shake_128f_KeyPair();
+            _signSlhDsa_Shake_128f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_128f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_128s_KP   = CMSTestUtil.makeSlhDsa_Shake_128s_KeyPair();
+            _signSlhDsa_Shake_128s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_128s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_192f_KP   = CMSTestUtil.makeSlhDsa_Shake_192f_KeyPair();
+            _signSlhDsa_Shake_192f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_192f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_192s_KP   = CMSTestUtil.makeSlhDsa_Shake_192s_KeyPair();
+            _signSlhDsa_Shake_192s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_192s_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_256f_KP   = CMSTestUtil.makeSlhDsa_Shake_256f_KeyPair();
+            _signSlhDsa_Shake_256f_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_256f_KP, _signDN, _origKP, _origDN);
+
+            _signSlhDsa_Shake_256s_KP   = CMSTestUtil.makeSlhDsa_Shake_256s_KeyPair();
+            _signSlhDsa_Shake_256s_Cert = CMSTestUtil.makeCertificate(_signSlhDsa_Shake_256s_KP, _signDN, _origKP, _origDN);
 
             _reciDN   = "CN=Doug, OU=Sales, O=Bouncy Castle, C=AU";
             _reciKP   = CMSTestUtil.makeKeyPair();
@@ -928,10 +1056,7 @@ public class NewSignedDataTest
 
         CMSSignedData s = gen.generate(msg, true);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
-        
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certs = s.getCertificates();
 
@@ -984,10 +1109,7 @@ public class NewSignedDataTest
            
         s = gen.generate(msg, true);
 
-        bIn = new ByteArrayInputStream(s.getEncoded());
-        aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certs = s.getCertificates();
 
@@ -1782,25 +1904,36 @@ public class NewSignedDataTest
     public void testEd25519()
         throws Exception
     {
-        encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
+        /*
+         * RFC 8419 3.1. When signing with Ed25519, the digestAlgorithm MUST be id-sha512, and the algorithm
+         * parameters field MUST be absent.
+         * 
+         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+         */
+        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+
+        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, expectedDigAlgId);
+
+        encapsulatedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519,
+            expectedDigAlgId);
     }
 
     public void testEd448()
         throws Exception
     {
-        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
-    }
+        /*
+         * RFC 8419 3.1. When signing with Ed448, the digestAlgorithm MUST be id-shake256-len, the algorithm
+         * parameters field MUST be present, and the parameter MUST contain 512, encoded as a positive integer
+         * value.
+         * 
+         * We confirm here that our implementation defaults to id-shake256-len/512 for the digest algorithm.
+         */
+        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len,
+            new ASN1Integer(512));
 
-    public void testDetachedEd25519()
-        throws Exception
-    {
-        detachedTest(_signEd25519KP, _signEd25519Cert, "Ed25519", EdECObjectIdentifiers.id_Ed25519, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512));
-    }
+        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
 
-    public void testEdDetached448()
-        throws Exception
-    {
-        detachedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256_len, new ASN1Integer(512)));
+        encapsulatedTest(_signEd448KP, _signEd448Cert, "Ed448", EdECObjectIdentifiers.id_Ed448, expectedDigAlgId);
     }
 
     public void testEd25519WithNoAttr()
@@ -1931,6 +2064,17 @@ public class NewSignedDataTest
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA512withECDSA");
     }
 
+    public void testECDSASHA512EncapsulatedWithKeyFactoryAsEC()
+        throws Exception
+    {
+        X509EncodedKeySpec  pubSpec = new X509EncodedKeySpec(_signEcDsaKP.getPublic().getEncoded());
+        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(_signEcDsaKP.getPrivate().getEncoded());
+        KeyFactory          keyFact = KeyFactory.getInstance("EC", BC);
+        KeyPair             kp = new KeyPair(keyFact.generatePublic(pubSpec), keyFact.generatePrivate(privSpec));
+        
+        encapsulatedTest(kp, _signEcDsaCert, "SHA512withECDSA");
+    }
+
     public void testECDSASHA3_224Encapsulated()
         throws Exception
     {
@@ -2001,17 +2145,6 @@ public class NewSignedDataTest
         throws Exception
     {
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA3-512withPLAIN-ECDSA");
-    }
-
-    public void testECDSASHA512EncapsulatedWithKeyFactoryAsEC()
-        throws Exception
-    {
-        X509EncodedKeySpec  pubSpec = new X509EncodedKeySpec(_signEcDsaKP.getPublic().getEncoded());
-        PKCS8EncodedKeySpec privSpec = new PKCS8EncodedKeySpec(_signEcDsaKP.getPrivate().getEncoded());
-        KeyFactory          keyFact = KeyFactory.getInstance("EC", BC);
-        KeyPair             kp = new KeyPair(keyFact.generatePublic(pubSpec), keyFact.generatePrivate(privSpec));
-        
-        encapsulatedTest(kp, _signEcDsaCert, "SHA512withECDSA");
     }
 
     public void testDSAEncapsulated()
@@ -2263,6 +2396,270 @@ public class NewSignedDataTest
         assertTrue(digAlgs.contains(new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd160, DERNull.INSTANCE)));
     }
 
+//    public void testMLDsa44()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-ml-dsa-02 3.3. SHA-512 [FIPS180] MUST be supported for use with the variants
+//         * of ML-DSA in this document; however, other hash functions MAY also be supported. When SHA-512 is
+//         * used, the id-sha512 [RFC5754] digest algorithm identifier is used and the parameters field MUST be
+//         * omitted.
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signMLDsa44KP, _signMLDsa44Cert, "ML-DSA-44", NISTObjectIdentifiers.id_ml_dsa_44,
+//            expectedDigAlgId);
+//
+//        encapsulatedTest(_signMLDsa44KP, _signMLDsa44Cert, "ML-DSA-44", NISTObjectIdentifiers.id_ml_dsa_44,
+//            expectedDigAlgId);
+//    }
+//
+//    public void testMLDsa65()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-ml-dsa-02 3.3. SHA-512 [FIPS180] MUST be supported for use with the variants
+//         * of ML-DSA in this document; however, other hash functions MAY also be supported. When SHA-512 is
+//         * used, the id-sha512 [RFC5754] digest algorithm identifier is used and the parameters field MUST be
+//         * omitted.
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signMLDsa65KP, _signMLDsa65Cert, "ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65,
+//            expectedDigAlgId);
+//
+//        encapsulatedTest(_signMLDsa65KP, _signMLDsa65Cert, "ML-DSA-65", NISTObjectIdentifiers.id_ml_dsa_65,
+//            expectedDigAlgId);
+//    }
+//
+//    public void testMLDsa87()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-ml-dsa-02 3.3. SHA-512 [FIPS180] MUST be supported for use with the variants
+//         * of ML-DSA in this document; however, other hash functions MAY also be supported. When SHA-512 is
+//         * used, the id-sha512 [RFC5754] digest algorithm identifier is used and the parameters field MUST be
+//         * omitted.
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signMLDsa87KP, _signMLDsa87Cert, "ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87,
+//            expectedDigAlgId);
+//
+//        encapsulatedTest(_signMLDsa87KP, _signMLDsa87Cert, "ML-DSA-87", NISTObjectIdentifiers.id_ml_dsa_87,
+//            expectedDigAlgId);
+//    }
+
+//    public void testSlhDsa_Sha2_128f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+//
+//        detachedTest(_signSlhDsa_Sha2_128f_KP, _signSlhDsa_Sha2_128f_Cert, "SLH-DSA-SHA2-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_128f_KP, _signSlhDsa_Sha2_128f_Cert, "SLH-DSA-SHA2-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_128s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+//
+//        detachedTest(_signSlhDsa_Sha2_128s_KP, _signSlhDsa_Sha2_128s_Cert, "SLH-DSA-SHA2-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_128s_KP, _signSlhDsa_Sha2_128s_Cert, "SLH-DSA-SHA2-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_128s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_192f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, "SLH-DSA-SHA2-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, "SLH-DSA-SHA2-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_192s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_192s_KP, _signSlhDsa_Sha2_192s_Cert, "SLH-DSA-SHA2-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_192s_KP, _signSlhDsa_Sha2_192s_Cert, "SLH-DSA-SHA2-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_192s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_256f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_256f_KP, _signSlhDsa_Sha2_256f_Cert, "SLH-DSA-SHA2-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_256f_KP, _signSlhDsa_Sha2_256f_Cert, "SLH-DSA-SHA2-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Sha2_256s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHA-512 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
+//
+//        detachedTest(_signSlhDsa_Sha2_256s_KP, _signSlhDsa_Sha2_256s_Cert, "SLH-DSA-SHA2-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Sha2_256s_KP, _signSlhDsa_Sha2_256s_Cert, "SLH-DSA-SHA2-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_sha2_256s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_128f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-128 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+//
+//        detachedTest(_signSlhDsa_Shake_128f_KP, _signSlhDsa_Shake_128f_Cert, "SLH-DSA-SHAKE-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_128f_KP, _signSlhDsa_Shake_128f_Cert, "SLH-DSA-SHAKE-128F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_128s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-128 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
+//
+//        detachedTest(_signSlhDsa_Shake_128s_KP, _signSlhDsa_Shake_128s_Cert, "SLH-DSA-SHAKE-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_128s_KP, _signSlhDsa_Shake_128s_Cert, "SLH-DSA-SHAKE-128S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_128s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_192f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_192f_KP, _signSlhDsa_Shake_192f_Cert, "SLH-DSA-SHAKE-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_192f_KP, _signSlhDsa_Shake_192f_Cert, "SLH-DSA-SHAKE-192F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_192s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_192s_KP, _signSlhDsa_Shake_192s_Cert, "SLH-DSA-SHAKE-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_192s_KP, _signSlhDsa_Shake_192s_Cert, "SLH-DSA-SHAKE-192S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_192s, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_256f()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_256f_KP, _signSlhDsa_Shake_256f_Cert, "SLH-DSA-SHAKE-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256f, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_256f_KP, _signSlhDsa_Shake_256f_Cert, "SLH-DSA-SHAKE-256F",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256f, expectedDigAlgId);
+//    }
+//
+//    public void testSlhDsa_Shake_256s()
+//        throws Exception
+//    {
+//        /*
+//         * draft-ietf-lamps-cms-sphincs-plus-19 4. (we initially only support the MUST-support algorithm)
+//         *
+//         * We confirm here that our implementation defaults to SHAKE-256 for the digest algorithm.
+//         */
+//        AlgorithmIdentifier expectedDigAlgId = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
+//
+//        detachedTest(_signSlhDsa_Shake_256s_KP, _signSlhDsa_Shake_256s_Cert, "SLH-DSA-SHAKE-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256s, expectedDigAlgId);
+//
+//        encapsulatedTest(_signSlhDsa_Shake_256s_KP, _signSlhDsa_Shake_256s_Cert, "SLH-DSA-SHAKE-256S",
+//            NISTObjectIdentifiers.id_slh_dsa_shake_256s, expectedDigAlgId);
+//    }
+
     private void rsaPSSTest(String signatureAlgorithmName)
         throws Exception
     {
@@ -2392,11 +2789,8 @@ public class NewSignedDataTest
         CMSSignedData s = gen.generate(msg, true);
 
         assertEquals(3, s.getVersion());
-        
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
 
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certStore = s.getCertificates();
 
@@ -2436,10 +2830,7 @@ public class NewSignedDataTest
 
         s = gen.generate(msg, true);
 
-        bIn = new ByteArrayInputStream(s.getEncoded());
-        aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         certStore = s.getCertificates();
 
@@ -2485,47 +2876,49 @@ public class NewSignedDataTest
         X509Certificate signatureCert,
         String          signatureAlgorithm,
         ASN1ObjectIdentifier sigAlgOid,
-        AlgorithmIdentifier digAlgId)
+        AlgorithmIdentifier expectedDigAlgId)
     throws Exception
     {
-        List                certList = new ArrayList();
-        List                crlList = new ArrayList();
-        CMSTypedData        msg = new CMSProcessableByteArray("Hello World!".getBytes());
-    
+        CMSTypedData msg = new CMSProcessableByteArray("Hello World!".getBytes());
+
+        List certList = new ArrayList();
+        List crlList = new ArrayList();
+
         certList.add(signatureCert);
         certList.add(_origCert);
 
         crlList.add(_signCrl);
 
-        Store           certs = new JcaCertStore(certList);
-        Store           crlStore = new JcaCRLStore(crlList);
+        Store certStore = new JcaCertStore(certList);
+        Store crlStore = new JcaCRLStore(crlList);
 
         CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
 
         ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC).build(signaturePair.getPrivate());
 
-        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(contentSigner, signatureCert));
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
 
-        gen.addCertificates(certs);
-    
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(contentSigner, signatureCert));
+
+        gen.addCertificates(certStore);
+        gen.addCRLs(crlStore);
+
         CMSSignedData s = gen.generate(msg, true);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
 
         assertTrue(digestAlgorithms.size() > 0);
 
-        if (digAlgId != null)
+        if (expectedDigAlgId != null)
         {
-            assertTrue(digestAlgorithms.contains(digAlgId));
+            assertTrue(digestAlgorithms.contains(expectedDigAlgId));
         }
 
-        certs = s.getCertificates();
-    
+        certStore = s.getCertificates();
+        crlStore = s.getCRLs();
+
         SignerInformationStore  signers = s.getSignerInfos();
         Collection              c = signers.getSigners();
         Iterator                it = c.iterator();
@@ -2533,7 +2926,7 @@ public class NewSignedDataTest
         while (it.hasNext())
         {
             SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certs.getMatches(signer.getSID());
+            Collection          certCollection = certStore.getMatches(signer.getSID());
     
             Iterator        certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
@@ -2585,18 +2978,17 @@ public class NewSignedDataTest
         gen = new CMSSignedDataGenerator();
            
         gen.addSigners(s.getSignerInfos());
-        
+
         gen.addCertificates(s.getCertificates());
-           
+        gen.addCRLs(s.getCRLs());
+
         s = gen.generate(msg, true);
-    
-        bIn = new ByteArrayInputStream(s.getEncoded());
-        aIn = new ASN1InputStream(bIn);
-    
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
-    
-        certs = s.getCertificates();
-    
+
+        s = new CMSSignedData(s.getEncoded());
+
+        certStore = s.getCertificates();
+        crlStore = s.getCRLs();
+
         signers = s.getSignerInfos();
         c = signers.getSigners();
         it = c.iterator();
@@ -2604,7 +2996,7 @@ public class NewSignedDataTest
         while (it.hasNext())
         {
             SignerInformation   signer = (SignerInformation)it.next();
-            Collection          certCollection = certs.getMatches(signer.getSID());
+            Collection          certCollection = certStore.getMatches(signer.getSID());
     
             Iterator        certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
@@ -2648,12 +3040,9 @@ public class NewSignedDataTest
 
         gen.addCertificates(certs);
 
-        CMSSignedData s = gen.generate(msg, true);
+        CMSSignedData s = gen.generate(msg);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream aIn = new ASN1InputStream(bIn);
-
-        s = new CMSSignedData(msg, ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(msg, s.getEncoded());
 
         Set digestAlgorithms = new HashSet(s.getDigestAlgorithmIDs());
 
@@ -2820,10 +3209,7 @@ public class NewSignedDataTest
 
         CMSSignedData s = gen.generate(new CMSAbsentContent(), false);
 
-        ByteArrayInputStream bIn = new ByteArrayInputStream(s.getEncoded());
-        ASN1InputStream      aIn = new ASN1InputStream(bIn);
-        
-        s = new CMSSignedData(ContentInfo.getInstance(aIn.readObject()));
+        s = new CMSSignedData(s.getEncoded());
 
         verifySignatures(s);
     }
@@ -3203,6 +3589,54 @@ public class NewSignedDataTest
         }
     }
 
+    public void testSignerInfoGenCopyConstructor()
+        throws Exception
+    {
+        ContentSigner sha256Signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        final SignerInfoGenerator signerInfoGen = new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(sha256Signer, _origCert);
+
+        DigestCalculator digCalc = new SHA256DigestCalculator();
+
+        OutputStream dOut = digCalc.getOutputStream();
+
+        dOut.write(_origCert.getEncoded());
+
+        dOut.close();
+
+        byte[] certHash256 = digCalc.getDigest();
+        final ESSCertIDv2 essCertIDv2 = new ESSCertIDv2(certHash256, new IssuerSerial(X500Name.getInstance(_origCert.getIssuerX500Principal().getEncoded()), _origCert.getSerialNumber()));
+
+        CMSAttributeTableGenerator signedAttrGen = new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                AttributeTable table = signerInfoGen.getSignedAttributeTableGenerator().getAttributes(parameters);
+
+                if (table.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2) == null)
+                {
+                    return table.add(PKCSObjectIdentifiers.id_aa_signingCertificateV2,
+                        new SigningCertificateV2(essCertIDv2));
+                }
+
+                return table;
+            }
+        };
+        SignerInfoGenerator newSignerInfoGen = new SignerInfoGenerator(signerInfoGen, signedAttrGen, signerInfoGen.getUnsignedAttributeTableGenerator());
+
+        assertTrue(signerInfoGen.hasAssociatedCertificate());
+        assertTrue(newSignerInfoGen.hasAssociatedCertificate());
+        assertTrue(signerInfoGen.getUnsignedAttributeTableGenerator() == newSignerInfoGen.getUnsignedAttributeTableGenerator());
+        assertTrue(newSignerInfoGen.getSignedAttributeTableGenerator() == signedAttrGen);
+    }
+
+    public void testEU()
+        throws Exception
+    {
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
+        CMSSignedData cmsSignedData = new CMSSignedData(this.getInput("bc1639test.p7m"));
+        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
+    }
     public void testMSPKCS7()
         throws Exception
     {
@@ -3302,6 +3736,24 @@ public class NewSignedDataTest
         }
     }
 
+    public void testVerifySignedDataMLDsa44()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa44, SampleCredentials.ML_DSA_44);
+    }
+
+    public void testVerifySignedDataMLDsa65()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa65, SampleCredentials.ML_DSA_65);
+    }
+
+    public void testVerifySignedDataMLDsa87()
+        throws Exception
+    {
+        implTestVerifySignedData(signedData_mldsa87, SampleCredentials.ML_DSA_87);
+    }
+
     private void verifySignatures(CMSSignedDataParser sp)
         throws Exception
     {
@@ -3321,6 +3773,40 @@ public class NewSignedDataTest
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
+    }
+
+    private static void implTestVerifySignedData(byte[] signedData, SampleCredentials credentials)
+        throws Exception
+    {
+        CMSSignedData sd = new CMSSignedData(signedData);
+
+        // Verify using the certificate from the supplied credentials
+        SignerInformationVerifierProvider verifierProvider = new SignerInformationVerifierProvider()
+        {
+            public SignerInformationVerifier get(SignerId signerId)
+                throws OperatorCreationException
+            {
+                return new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(credentials.getCertificate());
+            }
+        };
+
+        // External signer verification
+        {
+            SignerInformationStore signers = sd.getSignerInfos();
+
+            Iterator it = signers.getSigners().iterator();
+            while (it.hasNext())
+            {
+                SignerInformation signer = (SignerInformation)it.next();
+
+                SignerInformationVerifier verifier = verifierProvider.get(signer.getSID());
+
+                assertTrue(signer.verify(verifier));
+            }
+        }
+
+        // Built-in signer verification
+        assertTrue(sd.verifySignatures(verifierProvider));
     }
 
     private static class TestCMSSignatureAlgorithmNameGenerator

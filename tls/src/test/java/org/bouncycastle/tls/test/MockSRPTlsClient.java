@@ -124,7 +124,7 @@ class MockSRPTlsClient
                     throw new TlsFatalAlert(AlertDescription.bad_certificate);
                 }
 
-                String[] trustedCertResources = new String[] { "x509-server-dsa.pem", "x509-server-rsa_pss_256.pem",
+                String[] trustedCertResources = new String[]{ "x509-server-dsa.pem", "x509-server-rsa_pss_256.pem",
                     "x509-server-rsa_pss_384.pem", "x509-server-rsa_pss_512.pem", "x509-server-rsa-sign.pem" };
 
                 TlsCertificate[] certPath = TlsTestUtils.getTrustedCertPath(context.getCrypto(), chain[0],

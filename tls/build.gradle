@@ -22,15 +22,15 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk1.11", "src/test/java"))
+            srcDir(files("src/test/jdk1.11"))
         }
     }
 
-    test17 {
+    test15 {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk1.11","src/test/jdk1.15", "src/test/java"))
+            srcDir(files("src/test/jdk1.15"))
         }
     }
 
@@ -38,19 +38,18 @@ sourceSets {
         java {
             compileClasspath += main.output + test.output
             runtimeClasspath += test.output
-            srcDir(files("src/test/jdk1.11","src/test/jdk1.15","src/test/jdk21", "src/test/java"))
+            srcDir(files("src/test/jdk21"))
         }
     }
 
 }
 
 dependencies {
-    implementation project(':core')
+
     implementation project(':prov')
     implementation project(':util')
     implementation project(':pkix')
 
-    java9Implementation project(':core')
     java9Implementation project(':prov')
     java9Implementation project(':util')
     java9Implementation project(':pkix')
@@ -59,72 +58,63 @@ dependencies {
     }
 
     test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
 
 
-    test11Implementation project(':core')
     test11Implementation project(':prov')
     test11Implementation project(':util')
     test11Implementation project(':pkix')
 
-    test17Implementation project(':core')
-    test17Implementation project(':prov')
-    test17Implementation project(':util')
-    test17Implementation project(':pkix')
+    test15Implementation project(':prov')
+    test15Implementation project(':util')
+    test15Implementation project(':pkix')
 
-    test21Implementation project(':core')
     test21Implementation project(':prov')
     test21Implementation project(':util')
     test21Implementation project(':pkix')
 
 }
 
+
+evaluationDependsOn(":prov")
+evaluationDependsOn(":util")
+evaluationDependsOn(":pkix")
+
 compileJava {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    targetCompatibility = 1.8;
-    sourceCompatibility = 1.8;
+    options.release = 8
 }
 
 compileJava9Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 9
-    targetCompatibility = 9
+
+    options.release = 9
+
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+    def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
+
+
     options.compilerArgs += [
-            '--module-path', "${bc_prov}${File.pathSeparator}${bc_util}${File.pathSeparator}${bc_pkix}"
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
 }
 
 compileTest11Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 11
-    targetCompatibility = 11
+
+    options.release = 11
     options.sourcepath = files(['src/test/java', 'src/test/jdk1.11'])
 }
 
-compileTest17Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    sourceCompatibility = 17
-    targetCompatibility = 17
+compileTest15Java {
+    options.release = 15
     options.sourcepath = files(['src/test/java', 'src/test/jdk1.15'])
 }
 
 compileTest21Java {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
-    sourceCompatibility = 21
-    targetCompatibility = 21
+
+    options.release = 21
     options.sourcepath = files(['src/test/java', 'src/test/jdk21'])
 }
 
@@ -168,30 +158,40 @@ artifacts {
     archives sourcesJar
 }
 
-test {
-    jvmArgs = ['-Dtest.java.version.prefix=1.8']
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId = 'org.bouncycastle'
+            artifactId = "bctls-$vmrange"
+            from components.java
+
+            artifact(javadocJar)
+            artifact(sourcesJar)
+        }
+
+    }
 }
 
 
-task test11(type: Test) {
 
-    dependsOn(jar)
 
-    testClassesDirs = sourceSets.test11.output.classesDirs
-    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
+task test8(type: Test) {
+    onlyIf {System.getenv("BC_JDK8") != null}
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath + files(jar.archiveFile)
 
     forkEvery = 1;
     maxParallelForks = 8;
 
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = false
 
     javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(8)
     }
 
-    jvmArgs = ['-Dtest.java.version.prefix=11.']
+    jvmArgs = ['-Dtest.java.version.prefix=1.8']
 
 
     finalizedBy jacocoTestReport
@@ -204,27 +204,58 @@ task test11(type: Test) {
     }
 }
 
-task test17(type: Test) {
+task test11(type: Test) {
+    onlyIf {System.getenv("BC_JDK11") != null}
+    dependsOn(jar)
 
-    // This is testing the 1.15 code base
-
-    dependsOn jar
-
-    testClassesDirs = sourceSets.test17.output.classesDirs
-    classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
+    testClassesDirs = sourceSets.test11.output.classesDirs
+    classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
 
     forkEvery = 1;
     maxParallelForks = 8;
 
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = false
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+
+    jvmArgs = ['-Dtest.java.version.prefix=11']
+
+
+    finalizedBy jacocoTestReport
+
+    filter {
+        includeTestsMatching "AllTest*"
+        if (project.hasProperty('excludeTests')) {
+            excludeTestsMatching "${excludeTests}"
+        }
+    }
+}
+
+task test15(type: Test) {
+
+    // This is testing the 1.15 code base
+    onlyIf {System.getenv("BC_JDK17") != null}
+    dependsOn jar
+
+    testClassesDirs = sourceSets.test15.output.classesDirs
+    classpath = sourceSets.test15.runtimeClasspath + files(jar.archiveFile)
+
+    forkEvery = 1;
+    maxParallelForks = 8;
+
+    systemProperty 'bc.test.data.home', bcTestDataHome
+    maxHeapSize = "1536m"
+    testLogging.showStandardStreams = false
 
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
 
-    jvmArgs = ['-Dtest.java.version.prefix=17.']
+    jvmArgs = ['-Dtest.java.version.prefix=17']
 
 
     finalizedBy jacocoTestReport
@@ -240,7 +271,7 @@ task test17(type: Test) {
 task test21(type: Test) {
 
     // This is testing the 21 code base
-
+    onlyIf {System.getenv("BC_JDK21") != null}
     dependsOn jar
 
     testClassesDirs = sourceSets.test21.output.classesDirs
@@ -251,7 +282,7 @@ task test21(type: Test) {
 
     systemProperty 'bc.test.data.home', bcTestDataHome
     maxHeapSize = "1536m"
-    testLogging.showStandardStreams = true
+    testLogging.showStandardStreams = false
 
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(21)
@@ -269,3 +300,27 @@ task test21(type: Test) {
         }
     }
 }
+
+if (System.getenv("BC_JDK8") != null) {
+    System.out.println("${project.name}: Adding test8 as dependency for test task because BC_JDK8 is defined")
+    test.dependsOn("test8")
+}
+
+if (System.getenv("BC_JDK11") != null) {
+    System.out.println("${project.name}: Adding test11 as dependency for test task because BC_JDK11 is defined")
+    test.dependsOn("test11")
+}
+
+if (System.getenv("BC_JDK17") != null) {
+    System.out.println("${project.name}: Adding test15 as dependency for test task because BC_JDK17 is defined")
+    test.dependsOn("test15")
+}
+
+if (System.getenv("BC_JDK21") != null) {
+    System.out.println("${project.name}: Adding test21 as dependency for test task because BC_JDK21 is defined")
+    test.dependsOn("test21")
+}
+
+
+
+compileJava9Java.dependsOn([":prov:jar", ":util:jar",":pkix:jar"])
