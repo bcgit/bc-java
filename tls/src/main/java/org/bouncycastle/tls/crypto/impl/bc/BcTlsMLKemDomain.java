@@ -25,9 +25,12 @@ public class BcTlsMLKemDomain implements TlsKemDomain
             return MLKEMParameters.ml_kem_512;
         case NamedGroup.OQS_mlkem768:
         case NamedGroup.MLKEM768:
+        case NamedGroup.SecP256r1MLKEM768:
+        case NamedGroup.X25519MLKEM768:
             return MLKEMParameters.ml_kem_768;
         case NamedGroup.OQS_mlkem1024:
         case NamedGroup.MLKEM1024:
+        case NamedGroup.SecP384r1MLKEM1024:
             return MLKEMParameters.ml_kem_1024;
         default:
             throw new IllegalArgumentException("No ML-KEM configuration provided");
@@ -57,11 +60,10 @@ public class BcTlsMLKemDomain implements TlsKemDomain
         return new BcTlsMLKem(this);
     }
 
-    public BcTlsSecret decapsulate(MLKEMPrivateKeyParameters privateKey, byte[] ciphertext)
+    public byte[] decapsulate(MLKEMPrivateKeyParameters privateKey, byte[] ciphertext)
     {
         MLKEMExtractor kemExtract = new MLKEMExtractor(privateKey);
-        byte[] secret = kemExtract.extractSecret(ciphertext);
-        return adoptLocalSecret(secret);
+        return kemExtract.extractSecret(ciphertext);
     }
 
     public MLKEMPublicKeyParameters decodePublicKey(byte[] encoding)
