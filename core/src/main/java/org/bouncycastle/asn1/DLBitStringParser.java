@@ -8,6 +8,7 @@ import java.io.InputStream;
  * 
  * @deprecated Check for 'ASN1BitStringParser' instead 
  */
+@Deprecated
 public class DLBitStringParser
     implements ASN1BitStringParser
 {

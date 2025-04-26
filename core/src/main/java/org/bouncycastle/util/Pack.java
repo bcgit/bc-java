@@ -159,6 +159,7 @@ public abstract class Pack
      * @param bytes number of bytes to write.
      * @deprecated Will be removed
      */
+    @Deprecated
     public static void longToBigEndian(long value, byte[] bs, int off, int bytes)
     {
         for (int i = bytes - 1; i >= 0; i--)

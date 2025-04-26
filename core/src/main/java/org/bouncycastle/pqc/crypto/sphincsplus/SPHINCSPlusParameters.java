@@ -193,6 +193,7 @@ public class SPHINCSPlusParameters
      * @return the OID for the parameter set.
      * @deprecated Use {@link #getID()} instead
      */
+    @Deprecated
     public static Integer getID(SPHINCSPlusParameters params)
     {
         return params.getID();

@@ -19,7 +19,6 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.impl.jcajce.JcaTlsCrypto;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
 class NamedGroupInfo
@@ -138,7 +137,7 @@ class NamedGroupInfo
 
             this.local = local;
             this.localECDSA = localECDSA;
-            this.peer = new AtomicReference<List<NamedGroupInfo>>();
+            this.peer = new AtomicReference<>();
         }
 
         List<NamedGroupInfo> getPeer()
@@ -223,16 +222,13 @@ class NamedGroupInfo
         boolean post13Active = TlsUtils.isTLSv13(latest);
         boolean pre13Active = !TlsUtils.isTLSv13(earliest);
 
-        int count = candidates.length;
-        LinkedHashMap<Integer, NamedGroupInfo> local = new LinkedHashMap<Integer, NamedGroupInfo>(count);
-        for (int i = 0; i < count; ++i)
+        LinkedHashMap<Integer, NamedGroupInfo> local = new LinkedHashMap<>(candidates.length);
+        for (int candidate : candidates)
         {
-            Integer candidate = Integers.valueOf(candidates[i]);
             NamedGroupInfo namedGroupInfo = perContext.index.get(candidate);
 
             if (null != namedGroupInfo
-                && namedGroupInfo.isActive(algorithmConstraints, post13Active, pre13Active))
-            {
+                    && namedGroupInfo.isActive(algorithmConstraints, post13Active, pre13Active)) {
                 // NOTE: Re-insertion doesn't affect iteration order for insertion-order LinkedHashMap
                 local.put(candidate, namedGroupInfo);
             }
@@ -328,13 +324,14 @@ class NamedGroupInfo
 
     static Vector<Integer> getSupportedGroupsLocalClient(PerConnection perConnection)
     {
-        return new Vector<Integer>(perConnection.local.keySet());
+        return new Vector<>(perConnection.local.keySet());
     }
 
     static int[] getSupportedGroupsLocalServer(PerConnection perConnection)
     {
         Set<Integer> keys = perConnection.local.keySet();
-        int count = keys.size(), pos = 0;
+        int count = keys.size();
+        int pos = 0;
         int[] result = new int[count];
         for (Integer key : keys)
         {
@@ -515,7 +512,7 @@ class NamedGroupInfo
 
     private static Map<Integer, NamedGroupInfo> createIndex(boolean isFipsContext, JcaTlsCrypto crypto)
     {
-        Map<Integer, NamedGroupInfo> ng = new TreeMap<Integer, NamedGroupInfo>();
+        Map<Integer, NamedGroupInfo> ng = new TreeMap<>();
 
         final boolean disableChar2 =
             PropertyUtils.getBooleanSystemProperty("org.bouncycastle.jsse.ec.disableChar2", false) ||
@@ -557,11 +554,9 @@ class NamedGroupInfo
         }
 
         int count = namedGroups.length;
-        ArrayList<NamedGroupInfo> result = new ArrayList<NamedGroupInfo>(count);
-        for (int i = 0; i < count; ++i)
+        ArrayList<NamedGroupInfo> result = new ArrayList<>(count);
+        for (int namedGroup : namedGroups)
         {
-            int namedGroup = namedGroups[i];
-
             NamedGroupInfo namedGroupInfo = namedGroupInfos.get(namedGroup);
             if (null != namedGroupInfo)
             {

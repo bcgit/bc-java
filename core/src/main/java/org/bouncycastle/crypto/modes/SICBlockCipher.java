@@ -41,6 +41,7 @@ public class SICBlockCipher
      * @param c the block cipher to be used.
      * @deprecated use newInstance() method.
      */
+    @Deprecated
     public SICBlockCipher(BlockCipher c)
     {
         super(c);
