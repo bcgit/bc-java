@@ -41,16 +41,13 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.crypto.BufferedBlockCipher;
 import org.bouncycastle.crypto.DefaultMultiBlockCipher;
 import org.bouncycastle.crypto.engines.AESEngine;
-import org.bouncycastle.crypto.engines.DESEngine;
-import org.bouncycastle.crypto.paddings.PKCS7Padding;
-import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestFailedException;
-import org.junit.Assert;
+
 
 /**
  * basic test class for a block cipher, basically this just exercises the provider, and makes sure we
@@ -868,12 +865,12 @@ public class BlockCipherTest
         }
         catch (Exception e)
         {
-            Assert.fail(e.toString());
+            fail(e.toString());
         }
 
         if (!Arrays.areEqual(data, 0, len, output, 0, output.length))
         {
-            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
@@ -898,12 +895,12 @@ public class BlockCipherTest
         }
         catch (Exception e)
         {
-            Assert.fail(e.toString());
+            fail(e.toString());
         }
 
         if (!Arrays.areEqual(data, 1, 1 + len, output, 0, output.length))
         {
-            Assert.fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
+            fail("" + algorithm + " failed doFinal - expected " + new String(Hex.encode(output)) + " got " + new String(Hex.encode(data)));
         }
 
         //
@@ -1805,6 +1802,7 @@ public class BlockCipherTest
         doFinalTest();
         testOverlapping();
         testOverlapping2();
+        testOverlap();
     }
 
     private void doFinalTest()
@@ -1897,6 +1895,63 @@ public class BlockCipherTest
         {
             fail("failed to overlapping of encryption");
         }
+    }
+
+    public void testOverlap()
+    {
+        try
+        {
+            int l = 32;
+            byte[] msg = new byte[l];
+            Arrays.fill(msg, (byte)1);
+
+            byte[] workingArray = new byte[l * 2];
+            Arrays.fill(workingArray, (byte)1);
+            System.arraycopy(msg, 0, workingArray, 0, msg.length);
+
+            byte[] originalWorkingArray = new byte[workingArray.length];
+            System.arraycopy(workingArray, 0, originalWorkingArray, 0, workingArray.length);
+
+            Cipher javaEncrypt = Cipher.getInstance("AES/ECB/NoPadding", BouncyCastleProvider.PROVIDER_NAME);
+            javaEncrypt.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(new byte[16], "AES"));
+
+            //
+            // Expected encryption
+            //
+            byte[] expectedOutput = new byte[msg.length];
+            javaEncrypt.doFinal(msg, 0, msg.length, expectedOutput, 0);
+
+
+            //
+            // We expect to see the "expectedOutput" being written at each offset.
+            //
+            for (int outputOffset = 0; outputOffset < msg.length; outputOffset++)
+            {
+                javaEncrypt.doFinal(workingArray, 0, msg.length, workingArray, outputOffset);
+
+                // Grab a copy of the produced cipher text
+                byte[] ct = Arrays.copyOfRange(workingArray, outputOffset, outputOffset + msg.length);
+                System.out.println("\nOutput Offset: " + outputOffset);
+                System.out.println("Expected: " + pad(outputOffset * 2) + Hex.toHexString(expectedOutput));
+                System.out.println("Actual  : " + Hex.toHexString(workingArray));
+
+                isTrue(Arrays.areEqual(ct, expectedOutput));
+
+                System.arraycopy(originalWorkingArray, 0, workingArray, 0, originalWorkingArray.length);
+            }
+        }
+        catch (Exception e)
+        {
+            fail(e.getMessage(), e);
+        }
+
+    }
+
+    public String pad(int len)
+    {
+        char[] buf = new char[len];
+        Arrays.fill(buf, ' ');
+        return new String(buf);
     }
 
     public static void main(

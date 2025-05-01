@@ -225,6 +225,19 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier    sMIMECapabilitiesVersions = pkcs_9.branch("15.3");
 
     //
+    // id-mod OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
+    // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) mod(0)}
+    //
+    /** RFC 4010: SeedEncryptionAlgorithmInCMS; OID 1.2.840.113549.1.9.16.0.24 */
+    ASN1ObjectIdentifier id_mod_cms_seed = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.24");
+
+    /** RFC 9708 MTS-HashSig-2013; OID 1.2.840.113549.1.9.16.0.64 */
+    ASN1ObjectIdentifier id_mod_mts_hashsig_2013 = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.64");
+
+    /** RFC 8103 id-mod-CMS-AEADChaCha20Poly1305; OID 1.2.840.113549.1.9.16.0.66 */
+    ASN1ObjectIdentifier id_mod_CMS_AEADChaCha20Poly1305 = new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.0.66");
+
+    //
     // id-ct OBJECT IDENTIFIER ::= {iso(1) member-body(2) usa(840)
     // rsadsi(113549) pkcs(1) pkcs-9(9) smime(16) ct(1)}
     //
@@ -260,6 +273,8 @@ public interface PKCSObjectIdentifiers
     ASN1ObjectIdentifier id_alg_PWRI_KEK            = smime_alg.branch("9");
     /** PKCS#9: 1.2.840.113549.1.9.16.3.10 */
     ASN1ObjectIdentifier    id_alg_SSDH             = smime_alg.branch("10");
+
+
 
     /**
      * <pre>

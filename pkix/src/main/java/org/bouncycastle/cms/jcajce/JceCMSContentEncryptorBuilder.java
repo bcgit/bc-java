@@ -376,10 +376,17 @@ public class JceCMSContentEncryptorBuilder
             {
                 algId = algorithmIdentifier;
             }
-            
-            // TODO: works for CCM too, but others will follow.
-            GCMParameters p = GCMParameters.getInstance(algId.getParameters());
-            macOut = new MacCaptureStream(dOut, p.getIcvLen());
+
+            if (algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305))
+            {
+                macOut = new MacCaptureStream(dOut, 16);
+            }
+            else
+            {
+                // TODO: works for CCM too, but others will follow.
+                GCMParameters p = GCMParameters.getInstance(algId.getParameters());
+                macOut = new MacCaptureStream(dOut, p.getIcvLen());
+            }
             return new CipherOutputStream(macOut, cipher);
         }
 
