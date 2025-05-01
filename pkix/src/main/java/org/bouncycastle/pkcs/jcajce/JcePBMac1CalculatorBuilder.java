@@ -187,6 +187,7 @@ public class JcePBMac1CalculatorBuilder
                 salt = pbeParams.getSalt();
                 iterationCount = BigIntegers.intValueExact(pbeParams.getIterationCount());
                 keySize = BigIntegers.intValueExact(pbeParams.getKeyLength()) * 8;
+                prf = pbeParams.getPrf();
             }
             
             SecretKeyFactory secFact = helper.createSecretKeyFactory("PBKDF2");
