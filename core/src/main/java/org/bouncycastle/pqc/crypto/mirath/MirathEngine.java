@@ -370,7 +370,7 @@ class MirathEngine
         t = m * n;
         c = r * (n - r);
         gamma = rho * (m * n - k);
-        blockLength = (ffYBytes + mirathMatrixFFBytesSize(r, n - r) + rho + (securityBytes - 1)) / securityBytes;
+        blockLength = (ffSBytes + ffCBytes + rho + (securityBytes - 1)) / securityBytes;
 
         offEA = (8 * ffYBytes) - (isA ? 4 : 1) * (m * n - k);
         offEB = (8 * calculateMatrixBytes(k, 1)) - (isA ? 4 : 1) * k;
@@ -1125,31 +1125,34 @@ class MirathEngine
                                 byte[] S_acc, byte[] C_acc)
     {
         int idx = mirathTcithPsi(i, e);
-        byte[][] sample = new byte[blockLength][securityBytes];
+        byte[] sample = new byte[blockLength * securityBytes];
 
         // Expand shares using AES
         mirathExpandShare(sample, salt, seeds[idx]);
 
         // Extract components from sample
-        byte[] S_rnd = extractComponent(sample, 0, ffSBytes);
-        byte[] C_rnd = extractComponent(sample, ffSBytes, ffCBytes);
-        byte[] v_rnd = extractComponent(sample, ffSBytes + ffCBytes, rho);
+        byte[] S_rnd = Arrays.copyOf(sample, ffSBytes);
+        mirathMatrixSetToFF(S_rnd, m, r);
+        byte[] C_rnd = Arrays.copyOfRange(sample, ffSBytes, ffSBytes + ffCBytes);
+        mirathMatrixSetToFF(C_rnd, r, n - r);
+        byte[] v_rnd = Arrays.copyOfRange(sample, ffSBytes + ffCBytes, ffSBytes + ffCBytes + rho);
 
-        // Update accumulated values
+        // Performs S_acc = S_acc + S_rnd, C_acc = C_acc + C_rnd and v[e] = v[e] + v_rnd
         updateAccumulators(S_acc, C_acc, v[e], S_rnd, C_rnd, v_rnd);
 
         // Update base matrices with finite field operations
         updateBaseMatrices(e, i, S_base, C_base, v_base, S_rnd, C_rnd, v_rnd);
     }
 
-    private static void mirathExpandShare(byte[][] sample, byte[] salt, byte[] seed)
+    private void mirathExpandShare(byte[] sample, byte[] salt, byte[] seed)
     {
         BlockCipher aes = AESEngine.newInstance();
         KeyParameter key = new KeyParameter(Arrays.copyOf(seed, 16));
         aes.init(true, key);
 
         byte[] ctr = new byte[16];
-        for (int i = 0; i < sample.length; i++)
+        int sampleOff = 0;
+        for (int i = 0; i < blockLength; i++)
         {
             ctr[0] = (byte)i;
             byte[] msg = new byte[16];
@@ -1157,30 +1160,9 @@ class MirathEngine
             {
                 msg[k] = (byte)(ctr[k] ^ salt[k % salt.length]);
             }
-            aes.processBlock(msg, 0, sample[i], 0);
+            aes.processBlock(msg, 0, sample, sampleOff);
+            sampleOff += 16;
         }
-    }
-
-    private static byte[] extractComponent(byte[][] sample, int offset, int length)
-    {
-        byte[] component = new byte[length];
-        int count = 0;
-        for (byte[] block : sample)
-        {
-            for (byte b : block)
-            {
-                if (count >= offset + length)
-                {
-                    break;
-                }
-                if (count >= offset)
-                {
-                    component[count - offset] = b;
-                }
-                count++;
-            }
-        }
-        return component;
     }
 
     private void updateAccumulators(byte[] S_acc, byte[] C_acc, byte[] v,
