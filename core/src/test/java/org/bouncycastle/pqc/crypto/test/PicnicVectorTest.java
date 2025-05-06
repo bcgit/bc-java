@@ -90,17 +90,16 @@ public class PicnicVectorTest
             };
         }
 
-        TestSampler sampler = new TestSampler();
-
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/picnic", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

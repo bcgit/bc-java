@@ -8,7 +8,6 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -45,22 +44,18 @@ public class SphincsPlusTest
             " haraka-128s-simple.rsp  haraka-256f-simple.rsp" +
             " haraka-192f-simple.rsp  haraka-256s-simple.rsp";
 
-        TestSampler sampler = new TestSampler();
-
-        Random rd = new Random(System.currentTimeMillis());
-
-        int offSet = rd.nextInt(10);
-
         String[] fileList = splitOn(files, ' ');
-        //long startTime = System.currentTimeMillis();
+
         for (int i = 0; i != fileList.length; i++)
         {
             String name = fileList[i];
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/sphincs_plus", "subset_" + name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-            // System.out.println(name);
+
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -80,14 +75,10 @@ public class SphincsPlusTest
                         byte[] sigExpected = Hex.decode((String)buf.get("sm"));
                         byte[] oprR = Hex.decode((String)buf.get("optrand"));
 
-                        if (Integer.parseInt(count) != offSet)
+                        if (sampler.skipTest(count))
                         {
                             continue;
                         }
-//                        if (sampler.skipTest(count))
-//                        {
-//                            continue;
-//                        }
 
                         SPHINCSPlusKeyPairGenerator kpGen = new SPHINCSPlusKeyPairGenerator();
                         SecureRandom random = new FixedSecureRandom(sk);

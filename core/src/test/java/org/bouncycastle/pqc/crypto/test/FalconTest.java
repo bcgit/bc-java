@@ -39,16 +39,16 @@ public class FalconTest
             FalconParameters.falcon_1024
         };
 
-        TestSampler sampler = new TestSampler();
-
         for (int fileindex = 0; fileindex < files.length; fileindex++)
         {
             String name = files[fileindex];
-            // System.out.println("testing: " + name);
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/falcon", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
+
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

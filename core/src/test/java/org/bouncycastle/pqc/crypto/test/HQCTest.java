@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -53,19 +52,16 @@ public class HQCTest
             HQCParameters.hqc256
         };
 
-        TestSampler sampler = new TestSampler();
         for (int fileIndex = 0; fileIndex < files.length; fileIndex++)
         {
-            // System.out.println("Working Directory = " + System.getProperty("user.dir"));
             String name = files[fileIndex];
-            // System.out.println("testing: " + name);
+
             InputStream src = TestResourceFinder.findTestResource("pqc/crypto/hqc", name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
             String line = null;
             HashMap<String, String> buf = new HashMap<String, String>();
-            Random rnd = new Random(System.currentTimeMillis());
-
+            TestSampler sampler = new TestSampler();
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();

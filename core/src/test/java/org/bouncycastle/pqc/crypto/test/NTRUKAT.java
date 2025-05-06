@@ -31,13 +31,12 @@ public class NTRUKAT
      */
     public byte[] ss;
 
-    private static final TestSampler sampler = new TestSampler();
-
     public static List<NTRUKAT> getKAT(InputStream src)
     {
         List<NTRUKAT> kats = new ArrayList<NTRUKAT>();
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
         HashMap<String, String> buf = new HashMap<String, String>();
+        TestSampler sampler = new TestSampler();
         try
         {
             for (String line = bin.readLine(); line != null; line = bin.readLine())
