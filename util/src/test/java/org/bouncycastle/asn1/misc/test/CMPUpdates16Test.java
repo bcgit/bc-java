@@ -61,7 +61,7 @@ public class CMPUpdates16Test
         }
         catch (IllegalArgumentException ilex)
         {
-            assertEquals("unknown tag 3", ilex.getMessage());
+            assertEquals("unknown tag [CONTEXT 3]", ilex.getMessage());
         }
 
         // Check that both values are not set at construction
