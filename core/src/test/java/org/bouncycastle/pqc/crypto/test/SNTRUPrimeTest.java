@@ -37,7 +37,6 @@ public class SNTRUPrimeTest
                 SNTRUPrimeParameters.sntrup1277
         };
 
-        TestSampler sampler = new TestSampler();
         for (int i = 0; i != paramList.length; i++)
         {
             SNTRUPrimeParameters paramSpec = paramList[i];
@@ -46,6 +45,7 @@ public class SNTRUPrimeTest
             BufferedReader resourceReader = new BufferedReader(new InputStreamReader(resource));
 
             String line;
+            TestSampler sampler = new TestSampler();
             while ((line = resourceReader.readLine()) != null)
             {
                 if (! line.startsWith("count"))
