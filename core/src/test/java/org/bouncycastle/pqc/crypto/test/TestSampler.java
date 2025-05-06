@@ -20,12 +20,16 @@ class TestSampler
 
     boolean skipTest(String count)
     {
-        int c = Integer.parseInt(count);
-        return !isFull && c != 0 && ((c + offSet) % 9 != 0);
+        return !isFull && shouldSkip(Integer.parseInt(count));
     }
 
     boolean skipTest(int count)
     {
-        return !isFull && count != 0 && ((count + offSet) % 9 != 0);
+        return !isFull && shouldSkip(count);
+    }
+
+    private boolean shouldSkip(int count)
+    {
+        return count != 0 && ((count + offSet) % 9 != 0);
     }
 }

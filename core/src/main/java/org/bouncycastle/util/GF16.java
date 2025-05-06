@@ -35,7 +35,7 @@ public class GF16
      * <p>
      * This method multiplies two elements in GF(16) (represented as integers 0–15)
      * using carryless multiplication followed by reduction modulo x^4 + x + 1.
-     * Please ensure a<=0x0F and b<=0x0F
+     * Please ensure a &lt;= 0x0F and b &lt;= 0x0F
      *
      * @param a an element in GF(16) (only the lower 4 bits are used)
      * @param b an element in GF(16) (only the lower 4 bits are used)
@@ -51,7 +51,7 @@ public class GF16
      * <p>
      * This method multiplies two elements in GF(16) (represented as integers 0–15)
      * using carryless multiplication followed by reduction modulo x^4 + x + 1.
-     * Please ensure a<=0x0F and b<=0x0F
+     * Please ensure a &lt;= 0x0F and b &lt;= 0x0F
      *
      * @param a an element in GF(16) (only the lower 4 bits are used)
      * @param b an element in GF(16) (only the lower 4 bits are used)
