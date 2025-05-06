@@ -19,17 +19,17 @@ import org.bouncycastle.util.test.SimpleTest;
 public class ArmorCRCTest
     extends SimpleTest
 {
-
+	private static final String NL = Strings.lineSeparator();
     private static final String WITHOUT_CRC = "" +
-        "-----BEGIN PGP MESSAGE-----\n" +
-        "\n" +
-        "yxR0AAAAAABIZWxsbywgV29ybGQhCg==\n" +
-        "-----END PGP MESSAGE-----\n";
+        "-----BEGIN PGP MESSAGE-----" + NL +
+        NL +
+        "yxR0AAAAAABIZWxsbywgV29ybGQhCg==" + NL +
+        "-----END PGP MESSAGE-----" + NL;
     private static final String FAULTY_CRC = "" +
-        "-----BEGIN PGP MESSAGE-----\n" +
-        "\n" +
-        "yxR0AAAAAABIZWxsbywgV29ybGQhCg==\n" +
-        "=TRA9\n" +
+        "-----BEGIN PGP MESSAGE-----" + NL +
+        NL +
+        "yxR0AAAAAABIZWxsbywgV29ybGQhCg==" + NL +
+        "=TRA9" + NL +
         "-----END PGP MESSAGE-----";
 
     @Override

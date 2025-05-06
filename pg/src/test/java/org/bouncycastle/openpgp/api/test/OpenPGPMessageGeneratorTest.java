@@ -13,6 +13,7 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class OpenPGPMessageGeneratorTest
@@ -52,12 +53,13 @@ public class OpenPGPMessageGeneratorTest
 
         msgOut.close();
 
-        isEquals(
-                "-----BEGIN PGP MESSAGE-----\n" +
-                        "\n" +
-                        "yxNiAAAAAABIZWxsbywgV29ybGQh\n" +
-                        "-----END PGP MESSAGE-----\n",
-                bOut.toString());
+        String nl = Strings.lineSeparator();
+        String expected = 
+        	"-----BEGIN PGP MESSAGE-----" + nl +
+            nl +
+            "yxNiAAAAAABIZWxsbywgV29ybGQh" + nl +
+            "-----END PGP MESSAGE-----" + nl;
+        isEquals(expected, bOut.toString());
     }
 
     private void unarmoredLiteralDataPacket(OpenPGPApi api)
@@ -93,11 +95,13 @@ public class OpenPGPMessageGeneratorTest
 
         msgOut.close();
 
-        isEquals("-----BEGIN PGP MESSAGE-----\n" +
-                "\n" +
-                "yBUBOy2cxAACHqk5Ofk6CuH5RTkpigA=\n" +
-                "-----END PGP MESSAGE-----\n",
-                bOut.toString());
+        String nl = Strings.lineSeparator();
+        String expected =
+        	"-----BEGIN PGP MESSAGE-----" + nl +
+            nl +
+            "yBUBOy2cxAACHqk5Ofk6CuH5RTkpigA=" + nl +
+            "-----END PGP MESSAGE-----" + nl;
+        isEquals(expected, bOut.toString());
     }
 
     private void unarmoredCompressedLiteralDataPacket(OpenPGPApi api)
