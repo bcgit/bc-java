@@ -8,6 +8,8 @@
 *.swp
 *.iml
 */*.iml
+*.ipr
+*.iws
 
 bin/
 build/
@@ -22,7 +24,7 @@ pg/*.bak
 pg/*.bpg
 pg/*.txt
 
-.idea
+.idea/
 
 codesigning.jks
 
