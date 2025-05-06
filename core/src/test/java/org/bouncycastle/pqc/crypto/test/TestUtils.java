@@ -32,7 +32,7 @@ class TestUtils
 
     public interface KeyGenerationOperation
     {
-        SecureRandom getSecureRanom(byte[] seed);
+        SecureRandom getSecureRandom(byte[] seed);
 
         AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random);
 
@@ -45,17 +45,19 @@ class TestUtils
         MessageSigner getMessageSigner();
     }
 
-    public static void testTestVector(boolean enableFactory, boolean isSigner, String homeDir, String[] files, KeyGenerationOperation operation)
+    public static void testTestVector(boolean sampleOnly, boolean enableFactory, boolean isSigner, String homeDir, String[] files, KeyGenerationOperation operation)
         throws Exception
     {
         for (int fileIndex = 0; fileIndex != files.length; fileIndex++)
         {
             String name = files[fileIndex];
+
             InputStream src = TestResourceFinder.findTestResource(homeDir, name);
             BufferedReader bin = new BufferedReader(new InputStreamReader(src));
-            //System.out.println(files[fileIndex]);
+
             String line;
             HashMap<String, String> buf = new HashMap<String, String>();
+            TestSampler sampler = sampleOnly ? new TestSampler() : null;
             while ((line = bin.readLine()) != null)
             {
                 line = line.trim();
@@ -68,18 +70,19 @@ class TestUtils
                 {
                     if (buf.size() > 0)
                     {
-                        int count = Integer.parseInt(buf.get("count"));
-//                        if (count == 99)
-//                        {
-//                            System.out.println("break");
-//                        }
+                        String count = (String)buf.get("count");
+                        if (sampler != null && sampler.skipTest(count))
+                        {
+                            continue;
+                        }
+
                         byte[] seed = Hex.decode((String)buf.get("seed"));
                         byte[] pk = Hex.decode((String)buf.get("pk"));
                         byte[] sk = Hex.decode((String)buf.get("sk"));
                         byte[] message = Hex.decode((String)buf.get("msg"));
                         byte[] signature = Hex.decode((String)buf.get("sm"));
 
-                        SecureRandom random = operation.getSecureRanom(seed);
+                        SecureRandom random = operation.getSecureRandom(seed);
 
                         AsymmetricCipherKeyPairGenerator kpGen = operation.getAsymmetricCipherKeyPairGenerator(fileIndex, random);
 
