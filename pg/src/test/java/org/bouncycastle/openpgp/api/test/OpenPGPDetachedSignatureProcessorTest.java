@@ -22,6 +22,7 @@ import org.bouncycastle.openpgp.api.OpenPGPSignature;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
+import org.bouncycastle.util.Strings;
 
 public class OpenPGPDetachedSignatureProcessorTest
         extends APITest
@@ -63,7 +64,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         OpenPGPSignature.OpenPGPDocumentSignature signature = signatures.get(0);
         isEquals(4, signature.getSignature().getVersion());
         String armored = signature.toAsciiArmoredString();
-        isTrue(armored.startsWith("-----BEGIN PGP SIGNATURE-----\n"));
+        isTrue(armored.startsWith("-----BEGIN PGP SIGNATURE-----" + Strings.lineSeparator()));
 
         // Verify detached signatures
         OpenPGPDetachedSignatureProcessor processor = api.verifyDetachedSignature();
@@ -90,7 +91,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         OpenPGPSignature.OpenPGPDocumentSignature signature = signatures.get(0);
         isEquals(6, signature.getSignature().getVersion());
         String armored = signature.toAsciiArmoredString();
-        isTrue(armored.startsWith("-----BEGIN PGP SIGNATURE-----\n"));
+        isTrue(armored.startsWith("-----BEGIN PGP SIGNATURE-----" + Strings.lineSeparator()));
 
         // Verify detached signatures
         OpenPGPDetachedSignatureProcessor processor = api.verifyDetachedSignature();
