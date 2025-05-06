@@ -48,7 +48,7 @@ public class MirathSigner
     public byte[] generateSignature(byte[] message)
     {
         MirathEngine engine = new MirathEngine(params);
-        byte[] sigMsg = new byte[params.getSignatureBytes()];
+        byte[] sigMsg = new byte[params.getSignatureBytes() + message.length];
         byte[] sk = privKey.getEncoded();
         byte[] salt = new byte[engine.saltBytes];
         byte[] rseed = new byte[engine.securityBytes];
@@ -121,14 +121,13 @@ public class MirathSigner
         // Step 9: Hash MPC results
         engine.mirathTcithHashMpc(hMpc, pk, salt, message, hSh, alphaMid, alphaBase);
 
-
         // Step 10: Open random share
-        ctr = engine.mirathTcithOpenRandomShare(
-            path, commitsIStar, tree, commits, hMpc
-        );
+        ctr = engine.mirathTcithOpenRandomShare(path, commitsIStar, tree, commits, hMpc);
 
         // Step 11: Serialize signature
         engine.unparseSignature(sigMsg, salt, ctr, hMpc, path, commitsIStar, aux, alphaMid);
+
+        System.arraycopy(message, 0, sigMsg, params.getSignatureBytes(), message.length);
 
         return sigMsg;
     }
