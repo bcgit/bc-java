@@ -57,6 +57,13 @@ public class MessageEncryptionMechanism
                 SymmetricKeyAlgorithmTags.NULL, none);
     }
 
+    @Deprecated
+    public static MessageEncryptionMechanism legacyEncryptedNonIntegrityProtected(int symmetricKeyAlgorithm)
+    {
+        int none = 0;
+        return new MessageEncryptionMechanism(EncryptedDataPacketType.SED, symmetricKeyAlgorithm, none);
+    }
+
     /**
      * The data will be encrypted and integrity protected using a SEIPDv1 packet.
      *
