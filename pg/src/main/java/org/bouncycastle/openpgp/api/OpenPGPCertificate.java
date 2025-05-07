@@ -637,7 +637,6 @@ public class OpenPGPCertificate
     public String toAsciiArmoredString(PacketFormat packetFormat)
             throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
                 .clearHeaders();
         // Add fingerprint comment
@@ -649,7 +648,24 @@ public class OpenPGPCertificate
             armorBuilder.addEllipsizedComment(userId.getUserId());
         }
 
+        return toAsciiArmoredString(packetFormat, armorBuilder);
+    }
+
+    /**
+     * Return an ASCII armored {@link String} containing the certificate.
+     * The {@link ArmoredOutputStream.Builder} can be used to customize the ASCII armor (headers, CRC etc.).
+     *
+     * @param packetFormat packet length encoding format
+     * @param armorBuilder builder for the ASCII armored output stream
+     * @return armored certificate
+     * @throws IOException if the cert cannot be encoded
+     */
+    public String toAsciiArmoredString(PacketFormat packetFormat, ArmoredOutputStream.Builder armorBuilder)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ArmoredOutputStream aOut = armorBuilder.build(bOut);
+
         aOut.write(getEncoded(packetFormat));
         aOut.close();
         return bOut.toString();
