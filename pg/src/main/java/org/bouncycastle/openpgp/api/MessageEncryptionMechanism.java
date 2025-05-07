@@ -144,4 +144,16 @@ public class MessageEncryptionMechanism
                 && getSymmetricKeyAlgorithm() == m.getSymmetricKeyAlgorithm()
                 && getAeadAlgorithm() == m.getAeadAlgorithm();
     }
+
+    @Override
+    public String toString()
+    {
+        String out = mode.name() + "[cipher: " + symmetricKeyAlgorithm;
+        if (mode == EncryptedDataPacketType.SEIPDv2 || mode == EncryptedDataPacketType.LIBREPGP_OED)
+        {
+            out += " aead: " + aeadAlgorithm;
+        }
+        out += "]";
+        return out;
+    }
 }
