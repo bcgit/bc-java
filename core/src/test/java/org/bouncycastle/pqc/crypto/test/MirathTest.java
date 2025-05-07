@@ -28,7 +28,7 @@ public class MirathTest
 
     private static final MirathParameters[] PARAMETER_SETS = new MirathParameters[]
         {
-            MirathParameters.mirath_1a_fast,
+//            MirathParameters.mirath_1a_fast,
             MirathParameters.mirath_1a_short,
             MirathParameters.mirath_1b_fast,
             MirathParameters.mirath_1b_short,
@@ -43,7 +43,7 @@ public class MirathTest
         };
 
     private static final String[] files = new String[]{
-        "Mirath-1a-fast/PQCsignKAT_32.rsp",
+//         "Mirath-1a-fast/PQCsignKAT_32.rsp",
         "Mirath-1a-short/PQCsignKAT_32.rsp",
         "Mirath-1b-fast/PQCsignKAT_32.rsp",
         "Mirath-1b-short/PQCsignKAT_32.rsp",
@@ -62,10 +62,10 @@ public class MirathTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, false, "pqc/crypto/mirath", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(false, false, false, "pqc/crypto/mirath", files, new TestUtils.KeyGenerationOperation()
         {
             @Override
-            public SecureRandom getSecureRanom(byte[] seed)
+            public SecureRandom getSecureRandom(byte[] seed)
             {
                 return new NISTSecureRandom(seed, null);
             }

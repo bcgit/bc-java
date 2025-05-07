@@ -62,30 +62,10 @@ public class MirathSigner
         byte[] H = new byte[engine.ffHBytes];
 
         byte[] pk = new byte[params.getPublicKeyBytes()];
-
-        byte[][] SBase = new byte[engine.tau][engine.s];
-        byte[][] CBase = new byte[engine.tau][engine.c];
-        byte[][] vBase = new byte[engine.tau][engine.rho];
-        byte[][] v = new byte[engine.tau][engine.rho];
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
-
-        byte[] hSh = new byte[2 * engine.securityBytes]; // or adjust for your hash type
-
+        byte[] hSh = new byte[2 * engine.securityBytes];
         byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
         byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes]; // Assuming an object form
-
-
-        byte[][] alphaMid = new byte[engine.tau][engine.rho];
-        byte[][] alphaBase = new byte[engine.tau][engine.rho];
-
-        // Step 1: Decompress secret key
-        engine.mirathMatrixDecompressSecretKey(S, C, H, pk, sk);
-
-        // Steps 2-3: Generate random values
-        random.nextBytes(salt);
-        random.nextBytes(rseed);
-
-        // Phase 1: Build and Commit Parallel Witness Shares
 
         byte[][][] commits = new byte[engine.tau][][];
         for (int i = 0; i < engine.tau1; ++i)
@@ -97,35 +77,87 @@ public class MirathSigner
             commits[i] = new byte[engine.n2][engine.securityBytes * 2];
         }
 
-        // Step 4: Commit to shares
-        engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, tree, commits, aux, salt, rseed, S, C);
+        // Phase 1: Build and Commit Parallel Witness Shares
+        // Step 1: Decompress secret key
+        engine.mirathMatrixDecompressSecretKey(S, C, H, pk, sk);
+        // Steps 2-3: Generate random values
+        random.nextBytes(salt);
+        random.nextBytes(rseed);
 
-        // Phase 2: MPC simulation
-        byte[] Gamma = new byte[engine.gamma];
-        // Step 5: Expand MPC challenge
-        engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
-
-
-        // Steps 6-8: Emulate MPC for each tau
-        for (int e = 0; e < engine.tau; e++)
+        if (params.isFast())
         {
-            alphaBase[e] = new byte[engine.rho];
-            alphaMid[e] = new byte[engine.rho];
-            engine.emulateMPCMu(
-                alphaBase[e], alphaMid[e], S, SBase[e],
-                C, CBase[e], v[e], vBase[e], Gamma, H
-            );
+            byte[][] SBase = new byte[engine.tau][engine.s];
+            byte[][] CBase = new byte[engine.tau][engine.c];
+            byte[][] vBase = new byte[engine.tau][engine.rho];
+            byte[][] v = new byte[engine.tau][engine.rho];
+
+            byte[] Gamma = new byte[engine.gamma];
+            byte[][] alphaMid = new byte[engine.tau][engine.rho];
+            byte[][] alphaBase = new byte[engine.tau][engine.rho];
+
+            // Step 4: Commit to shares
+            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, tree, commits, aux, salt, rseed, S, C);
+
+            // Phase 2: MPC simulation
+            // Step 5: Expand MPC challenge
+            engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
+
+            // Steps 6-8: Emulate MPC for each tau
+            for (int e = 0; e < engine.tau; e++)
+            {
+                alphaBase[e] = new byte[engine.rho];
+                alphaMid[e] = new byte[engine.rho];
+                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e],
+                    C, CBase[e], v[e], vBase[e], Gamma, H);
+            }
+
+            // Phase 3: Sharing Opening
+            // Step 9: Hash MPC results
+            engine.mirathTcithHashMpc(hMpc, pk, salt, message, hSh, alphaMid, alphaBase);
+
+            // Step 10: Open random share
+            ctr = engine.mirathTcithOpenRandomShare(path, commitsIStar, tree, commits, hMpc);
+
+            // Step 11: Serialize signature
+            engine.unparseSignature(sigMsg, salt, ctr, hMpc, path, commitsIStar, aux, alphaMid);
         }
+        else
+        {
+            short[][] SBase = new short[engine.tau][engine.s];
+            short[][] CBase = new short[engine.tau][engine.c];
+            short[][] vBase = new short[engine.tau][engine.rho];
+            short[][] v = new short[engine.tau][engine.rho];
 
-        // Phase 3: Sharing Opening
-        // Step 9: Hash MPC results
-        engine.mirathTcithHashMpc(hMpc, pk, salt, message, hSh, alphaMid, alphaBase);
+            short[] Gamma = new short[engine.gamma];
+            short[][] alphaMid = new short[engine.tau][engine.rho];
+            short[][] alphaBase = new short[engine.tau][engine.rho];
 
-        // Step 10: Open random share
-        ctr = engine.mirathTcithOpenRandomShare(path, commitsIStar, tree, commits, hMpc);
+            // Step 4: Commit to shares
+            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, tree, commits, aux, salt, rseed, S, C);
 
-        // Step 11: Serialize signature
-        engine.unparseSignature(sigMsg, salt, ctr, hMpc, path, commitsIStar, aux, alphaMid);
+            // Phase 2: MPC simulation
+            // Step 5: Expand MPC challenge
+            engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
+
+            // Steps 6-8: Emulate MPC for each tau
+            for (int e = 0; e < engine.tau; e++)
+            {
+                alphaBase[e] = new short[engine.rho];
+                alphaMid[e] = new short[engine.rho];
+                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e],
+                    C, CBase[e], v[e], vBase[e], Gamma, H);
+            }
+
+            // Phase 3: Sharing Opening
+            // Step 9: Hash MPC results
+            engine.mirathTcithHashMpc(hMpc, pk, salt, message, hSh, alphaMid, alphaBase);
+
+            // Step 10: Open random share
+            ctr = engine.mirathTcithOpenRandomShare(path, commitsIStar, tree, commits, hMpc);
+
+            // Step 11: Serialize signature
+            engine.unparseSignature(sigMsg, salt, ctr, hMpc, path, commitsIStar, aux, alphaMid);
+        }
 
         System.arraycopy(message, 0, sigMsg, params.getSignatureBytes(), message.length);
 
