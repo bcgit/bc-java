@@ -2,6 +2,7 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.Signature;
 
@@ -56,6 +57,21 @@ public class JcaTlsECDSA13Signer
             signer.initSign(privateKey, crypto.getSecureRandom());
             signer.update(hash, 0, hash.length);
             return signer.sign();
+        }
+        catch (InvalidKeyException e)
+        {
+            // try with PKCS#11 (usually) alternative provider
+            try
+            {
+                Signature signer = crypto.getAltHelper().createSignature("NoneWithECDSA");
+                signer.initSign(privateKey, crypto.getSecureRandom());
+                signer.update(hash, 0, hash.length);
+                return signer.sign();
+            }
+            catch (GeneralSecurityException ex)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error, ex);
+            }
         }
         catch (GeneralSecurityException e)
         {
