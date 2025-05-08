@@ -2,6 +2,9 @@ package org.bouncycastle.pqc.crypto.mirath;
 
 public class MirathParameters
 {
+    //TODO: n1Bits, n2Bits is 8 for fast, and 12 for short
+    //TODO: n1Bytes, n2Bytes is 1 for fast, and 2 for short
+    //TODO: n1Mask n2Mask is 0xff for fast, and 0x0f for short
     public static final MirathParameters mirath_1a_fast = new MirathParameters(
         "Mirath-1a-fast",                         // name
         128,                              // securityLevel
