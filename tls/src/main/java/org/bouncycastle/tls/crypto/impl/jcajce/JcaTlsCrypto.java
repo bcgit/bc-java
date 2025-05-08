@@ -447,7 +447,7 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToASpecificKem(namedGroup))
         {
-        	return KemUtil.getAlgorithmParameters(this, NamedGroup.getKemName(namedGroup));
+            return KemUtil.getAlgorithmParameters(this, NamedGroup.getKemName(namedGroup));
         }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
