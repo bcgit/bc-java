@@ -1162,6 +1162,7 @@ public class JcaTlsCrypto
             else if (NamedGroup.refersToASpecificKem(namedGroup))
             {
                 // TODO[tls-kem] When implemented via provider, need to check for support dynamically
+//                return Boolean.valueOf(KemUtil.isKemSupported(this, NamedGroup.getKemName(namedGroup)));
                 return Boolean.TRUE;
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
