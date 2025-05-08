@@ -10,7 +10,7 @@ class KemUtil
     {
         try
         {
-             // TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
+            // TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
         }
         catch (AssertionError e)
         {
@@ -42,6 +42,6 @@ class KemUtil
     {
         // TODO[tls-kem] When implemented via provider, need to check for support dynamically
 //        return kemName != null && getCipher(crypto, kemName) != null;
-    	return true;
+        return true;
     }
 }
