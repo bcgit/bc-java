@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
-import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
@@ -16,7 +15,6 @@ import org.bouncycastle.openpgp.PGPSignatureException;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.exception.MalformedOpenPGPSignatureException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
-import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.io.ByteArrayOutputStream;
