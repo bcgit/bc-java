@@ -20,6 +20,7 @@ public class JcaTlsCryptoProvider
     implements TlsCryptoProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
+    private JcaJceHelper altHelper = helper;
 
     public JcaTlsCryptoProvider()
     {
@@ -33,7 +34,21 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCryptoProvider setProvider(Provider provider)
     {
-        this.helper = new ProviderJcaJceHelper(provider);
+        this.helper = this.altHelper = new ProviderJcaJceHelper(provider);
+
+        return this;
+    }
+
+    /**
+     * Set the alternate provider of cryptographic services for any JcaTlsCrypto we build (usually points to a
+     * HSM).
+     *
+     * @param provider the provider class to source cryptographic services from.
+     * @return the current builder instance.
+     */
+    public JcaTlsCryptoProvider setAlternateProvider(Provider provider)
+    {
+        this.altHelper = new ProviderJcaJceHelper(provider);
 
         return this;
     }
@@ -46,7 +61,20 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCryptoProvider setProvider(String providerName)
     {
-        this.helper = new NamedJcaJceHelper(providerName);
+        this.helper = this.altHelper = new NamedJcaJceHelper(providerName);
+
+        return this;
+    }
+
+    /**
+     * Set the provider of cryptographic services for any JcaTlsCrypto we build by name (usually refers to a HSM).
+     *
+     * @param providerName the name of the provider class to source cryptographic services from.
+     * @return the current builder instance.
+     */
+    public JcaTlsCryptoProvider setAlternateProvider(String providerName)
+    {
+        this.altHelper = new NamedJcaJceHelper(providerName);
 
         return this;
     }
@@ -92,6 +120,11 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
+        if (helper != altHelper)
+        {
+            return new JcaTlsCrypto(getHelper(), altHelper, keyRandom, nonceRandom);
+        }
+
         return new JcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
     }
 
