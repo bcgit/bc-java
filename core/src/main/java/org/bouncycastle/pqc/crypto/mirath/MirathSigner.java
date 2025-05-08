@@ -54,7 +54,7 @@ public class MirathSigner
         byte[] rseed = new byte[engine.securityBytes];
         long ctr;
         // Phase 0: Initialization
-        byte[][] path = new byte[engine.maxOpen][16];
+        byte[][] path = new byte[engine.maxOpen][engine.securityBytes];
         byte[] hMpc = new byte[2 * engine.securityBytes];
 
         byte[] S = new byte[engine.ffSBytes];

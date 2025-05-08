@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.engines.RijndaelEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Bytes;
@@ -476,8 +477,6 @@ class MirathEngine
     private void matrixProduct(byte[] result, byte[] matrix1, byte[] matrix2,
                                int nRows1, int nCols1, int nCols2)
     {
-//        int matrixHeight = mirathMatrixFfBytesPerColumn(nRows1);
-
         for (int i = 0; i < nRows1; i++)
         {
             for (int j = 0; j < nCols2; j++)
@@ -494,15 +493,6 @@ class MirathEngine
                 setMatrixEntry(result, nRows1, i, j, entry);
             }
         }
-
-//        if ((nRows1 & 1) != 0)
-//        {
-//            int matrixHeightX = matrixHeight - 1;
-//            for (int i = 0; i < nCols2; i++)
-//            {
-//                result[i * matrixHeight + matrixHeightX] &= 0x0F;
-//            }
-//        }
     }
 
     private byte getMatrixEntry(byte[] matrix, int nRows, int i, int j)
@@ -774,26 +764,69 @@ class MirathEngine
 
     private void mirathExpandSeed(byte[][] pairNode, byte[] salt, int idx, byte[] seed)
     {
-        BlockCipher aes = AESEngine.newInstance();
-        byte[] msg = new byte[16];
-        byte[] keyBytes = Arrays.copyOf(seed, 16);
+        if (securityBytes == 16)
+        {
+            BlockCipher aes = AESEngine.newInstance();
+            byte[] msg = new byte[16];
+            byte[] keyBytes = Arrays.copyOf(seed, 16);
 
-        // Expand key
-        KeyParameter key = new KeyParameter(keyBytes);
-        aes.init(true, key);
+            // Expand key
+            KeyParameter key = new KeyParameter(keyBytes);
+            aes.init(true, key);
 
-        // Process first block
-        System.arraycopy(salt, 0, msg, 0, msg.length);
-        msg[0] ^= 0x00;
-        byte[] bytes = Pack.intToLittleEndian(idx);
-        Bytes.xorTo(4, bytes, 0, msg, 1);
-        msg[5] ^= domainSeparatorPrg;
-        aes.processBlock(msg, 0, pairNode[0], 0);
+            // Process first block
+            System.arraycopy(salt, 0, msg, 0, msg.length);
+            msg[0] ^= 0x00;
+            byte[] bytes = Pack.intToLittleEndian(idx);
+            Bytes.xorTo(4, bytes, 0, msg, 1);
+            msg[5] ^= domainSeparatorPrg;
+            aes.processBlock(msg, 0, pairNode[0], 0);
 
-        // Process second block
-        msg[0] ^= 0x01;
-        aes.processBlock(msg, 0, pairNode[1], 0);
+            // Process second block
+            msg[0] ^= 0x01;
+            aes.processBlock(msg, 0, pairNode[1], 0);
+        }
+        else
+        {
+            // Prepare 32-byte key: seed (24 bytes) + 8 zero bytes
+            byte[] key = new byte[32];
+            System.arraycopy(seed, 0, key, 0, seed.length);
 
+            // Initialize Rijndael cipher with 256-bit block size
+            RijndaelEngine engine = new RijndaelEngine(32 * 8); // bits
+            engine.init(true, new KeyParameter(key));
+
+            // Prepare message buffer
+            byte[] msg = new byte[32];
+            System.arraycopy(salt, 0, msg, 0, securityBytes);
+
+            // First encryption: counter = 0
+            prepareMessage(msg, idx, domainSeparatorPrg, (byte)0x00);
+            byte[] output0 = new byte[32];
+            engine.processBlock(msg, 0, output0, 0);
+            System.arraycopy(output0, 0, pairNode[0], 0, 24);
+
+            // Second encryption: counter = 1
+            prepareMessage(msg, idx, domainSeparatorPrg, (byte)0x01);
+            byte[] output1 = new byte[32];
+            engine.processBlock(msg, 0, output1, 0);
+            System.arraycopy(output1, 0, pairNode[1], 0, 24);
+        }
+    }
+
+    private static void prepareMessage(byte[] msg, int idx, int domainSeparator, byte counter)
+    {
+        // XOR the first byte with the counter
+        msg[0] ^= counter;
+
+        // XOR the next 4 bytes with the index
+        msg[1] ^= (byte)(idx & 0xFF);
+        msg[2] ^= (byte)((idx >> 8) & 0xFF);
+        msg[3] ^= (byte)((idx >> 16) & 0xFF);
+        msg[4] ^= (byte)((idx >> 24) & 0xFF);
+
+        // XOR the sixth byte with the domain separator
+        msg[5] ^= domainSeparator;
     }
 
     public void mirathCommit(byte[][] pairNode, byte[] salt, int idx, byte[] seed)
@@ -872,6 +905,20 @@ class MirathEngine
         }
     }
 
+    private int getShakeDigest()
+    {
+        switch (securityBytes)
+        {
+        case 16:
+            return 128;
+        case 24:
+        case 32:
+            return 256;
+        default:
+            throw new IllegalArgumentException("Unsupported security bytes size");
+        }
+    }
+
     // Matrix Operations
     public void mirathMatrixFFAdd(byte[] matrix1, byte[] matrix2, byte[] matrix3, int nRows, int nCols)
     {
@@ -934,50 +981,64 @@ class MirathEngine
         return tmp;
     }
 
-    public static short mirathFFMuMult(short a, short b)
+    public short mirathFFMuMult(short a, short b)
     {
-        // Extract 4-bit limbs from 12-bit values (stored in 16-bit space)
-        int a0 = a & 0xF;
-        int a1 = (a >> 4) & 0xF;
-        int a2 = (a >> 8) & 0xF;
+        if (isA)
+        {
+            // Extract 4-bit limbs from 12-bit values (stored in 16-bit space)
+            int a0 = a & 0xF;
+            int a1 = (a >> 4) & 0xF;
+            int a2 = (a >> 8) & 0xF;
 
-        int b0 = b & 0xF;
-        int b1 = (b >> 4) & 0xF;
-        int b2 = (b >> 8) & 0xF;
+            int b0 = b & 0xF;
+            int b1 = (b >> 4) & 0xF;
+            int b2 = (b >> 8) & 0xF;
 
-        // Compute basic products
-        int p0 = mirathFfProduct(a0, b0);
-        int p1 = mirathFfProduct(a1, b1);
-        int p2 = mirathFfProduct(a2, b2);
+            // Compute basic products
+            int p0 = mirathFfProduct(a0, b0);
+            int p1 = mirathFfProduct(a1, b1);
+            int p2 = mirathFfProduct(a2, b2);
 
-        // Compute intermediate sums
-        int a01 = a0 ^ a1;
-        int a12 = a1 ^ a2;
-        int a02 = a0 ^ a2;
-        int b01 = b0 ^ b1;
-        int b12 = b1 ^ b2;
-        int b02 = b0 ^ b2;
+            // Compute intermediate sums
+            int a01 = a0 ^ a1;
+            int a12 = a1 ^ a2;
+            int a02 = a0 ^ a2;
+            int b01 = b0 ^ b1;
+            int b12 = b1 ^ b2;
+            int b02 = b0 ^ b2;
 
-        // Compute cross products
-        int p01 = mirathFfProduct(a01, b01);
-        int p12 = mirathFfProduct(a12, b12);
-        int p02 = mirathFfProduct(a02, b02);
+            // Compute cross products
+            int p01 = mirathFfProduct(a01, b01);
+            int p12 = mirathFfProduct(a12, b12);
+            int p02 = mirathFfProduct(a02, b02);
 
-        // Combine terms
-        int r = p1 ^ p2;
-        r = r ^ p12;
-        r = r ^ p0;
+            // Combine terms
+            int r = p1 ^ p2;
+            r = r ^ p12;
+            r = r ^ p0;
 
-        // Apply shifts and combine
-        r ^= (p0 << 4);
-        r ^= (p01 << 4);
-        r ^= (p12 << 4);
-        r ^= (p02 << 8);
-        r ^= (p0 << 8);
-        r ^= (p1 << 8);
+            // Apply shifts and combine
+            r ^= (p0 << 4);
+            r ^= (p01 << 4);
+            r ^= (p12 << 4);
+            r ^= (p02 << 8);
+            r ^= (p0 << 8);
+            r ^= (p1 << 8);
 
-        // Mask to 16 bits (12 significant bits)
-        return (short)(r & 0xFFFF);
+            // Mask to 16 bits (12 significant bits)
+            return (short)(r & 0xFFFF);
+        }
+        else
+        {
+            short result = (short)(-(a & 1) & b);
+            short tmp = b;
+            for (int i = 1; i < 12; ++i)
+            {
+                tmp = (short)((tmp << 1) ^ (-(tmp >> 11) & 0x1009));
+                result ^= (-(a >> i & 1) & tmp);
+            }
+            return result;
+        }
     }
 
     private static int mirathFfProduct(int a, int b)
@@ -989,10 +1050,15 @@ class MirathEngine
     private byte mirathMatrixFFGetEntry(byte[] matrix, int nRows, int i, int j)
     {
         int bytesPerCol = mirathMatrixFfBytesPerColumn(nRows);
-        int pos = j * bytesPerCol + (i >> 1);
-        return (byte)((i & 1) != 0 ?
-            (matrix[pos] >> 4) & 0x0F :
-            matrix[pos] & 0x0F);
+        if (isA)
+        {
+            int pos = j * bytesPerCol + (i >> 1);
+            return (byte)((i & 1) != 0 ? (matrix[pos] >> 4) & 0x0F : matrix[pos] & 0x0F);
+        }
+        else
+        {
+            return (byte)((matrix[bytesPerCol * j + (i >> 3)] >> (i & 7)) & 0x01);
+        }
     }
 
     private int mirathMatrixFFBytesSize(int nRows, int nCols)
@@ -1129,22 +1195,62 @@ class MirathEngine
 
     private void mirathExpandShare(byte[] sample, byte[] salt, byte[] seed)
     {
-        BlockCipher aes = AESEngine.newInstance();
-        KeyParameter key = new KeyParameter(Arrays.copyOf(seed, 16));
-        aes.init(true, key);
-
-        byte[] ctr = new byte[16];
         int sampleOff = 0;
-        for (int i = 0; i < blockLength; i++)
+        if (securityBytes == 16)
         {
-            ctr[0] = (byte)i;
-            byte[] msg = new byte[16];
-            for (int k = 0; k < 16; k++)
+            BlockCipher aes = AESEngine.newInstance();
+            KeyParameter key = new KeyParameter(Arrays.copyOf(seed, 16));
+            aes.init(true, key);
+
+            byte[] ctr = new byte[16];
+            for (int i = 0; i < blockLength; i++)
             {
-                msg[k] = (byte)(ctr[k] ^ salt[k % salt.length]);
+                ctr[0] = (byte)i;
+                byte[] msg = new byte[16];
+                for (int k = 0; k < 16; k++)
+                {
+                    msg[k] = (byte)(ctr[k] ^ salt[k % salt.length]);
+                }
+                aes.processBlock(msg, 0, sample, sampleOff);
+                sampleOff += 16;
             }
-            aes.processBlock(msg, 0, sample, sampleOff);
-            sampleOff += 16;
+        }
+        else
+        {
+// 1) Build the 256-bit key = seed || 8 zero bytes
+            byte[] keyBytes = new byte[32];
+            System.arraycopy(seed, 0, keyBytes, 0, 24);
+
+            // 2) Init Rijndael-256 cipher for encryption
+            RijndaelEngine engine = new RijndaelEngine(32 * 8);
+            engine.init(true, new KeyParameter(keyBytes));
+
+            // 3) Prepare CTR buffer (only ctr[0] changes)
+            byte[] ctr = new byte[32]; // all zeros initially
+
+            // temp buffers
+            byte[] msg = new byte[32];
+            byte[] output = new byte[32];
+
+            // 4) Loop: for each share, set ctr[0]=i, xor with salt, encrypt
+            for (int i = 0; i < blockLength; i++)
+            {
+                ctr[0] = (byte)i;
+
+                // Build msg = ctr ⊕ salt for the first 24 bytes, rest stay zero
+                for (int k = 0; k < 24; k++)
+                {
+                    msg[k] = (byte)(ctr[k] ^ salt[k]);
+                }
+                // (msg[24..31] are already zero from new array / previous iteration)
+
+                // Encrypt one block
+                engine.processBlock(msg, 0, output, 0);
+
+                // Copy first 24 bytes into dst[i]
+                System.arraycopy(output, 0, sample, sampleOff, 24);
+                sampleOff += 24;
+            }
         }
     }
 
@@ -1232,7 +1338,7 @@ class MirathEngine
         }
     }
 
-    public static void mirathVectorFFMuAddMultiple(
+    public void mirathVectorFFMuAddMultiple(
         short[] vector1,
         short[] vector2,
         short scalar,
@@ -1249,14 +1355,14 @@ class MirathEngine
 
     public void mirathTcithExpandMpcChallenge(byte[] Gamma, byte[] hSh)
     {
-        SHAKEDigest prng = new SHAKEDigest(128);
+        SHAKEDigest prng = new SHAKEDigest(getShakeDigest());
         prng.update(hSh, 0, 2 * securityBytes);
         prng.doFinal(Gamma, 0, Gamma.length);
     }
 
     public void mirathTcithExpandMpcChallenge(short[] Gamma, byte[] hSh)
     {
-        SHAKEDigest prng = new SHAKEDigest(128);
+        SHAKEDigest prng = new SHAKEDigest(getShakeDigest());
         prng.update(hSh, 0, 2 * securityBytes);
         byte[] result = new byte[Gamma.length << 1];
         prng.doFinal(result, 0, result.length);
@@ -1429,8 +1535,8 @@ class MirathEngine
         }
     }
 
-    public static void matrixFFMuProduct(short[] result, short[] matrix1, short[] matrix2,
-                                         int nRows1, int nCols1, int nCols2)
+    public void matrixFFMuProduct(short[] result, short[] matrix1, short[] matrix2,
+                                  int nRows1, int nCols1, int nCols2)
     {
         for (int i = 0; i < nRows1; i++)
         {
@@ -1913,7 +2019,6 @@ class MirathEngine
                                  byte[][] aux,
                                  byte[][] midAlpha)
     {
-
         int ptr = 0;
 
         // Copy salt
@@ -1947,13 +2052,20 @@ class MirathEngine
         int offPtr = 8; // Tracks bits remaining in current byte
         int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
         int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-        int onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
+        int onCol1, onCol2;
+        if (isA)
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
+            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
+        }
+        else
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - m);
+            onCol2 = 8 - ((8 * nRowsBytes2) - r);
+        }
 
         for (int e = 0; e < tau; e++)
         {
-            // Process aux[e] columns
-            byte[] auxData = aux[e];
             int col = 0;
             // Process R columns (M x R matrix)
             for (int j = 0; j < r; j++)
@@ -1971,7 +2083,7 @@ class MirathEngine
                     ptr++;
                     signature[ptr] = (byte)((aux[e][col] & 0xff) >> offPtr);
                 }
-                offPtr = 8 - ((onCol1 - offPtr) % 8);
+                offPtr = 8 - ((onCol1 - offPtr) & 7);
                 col++;
             }
 
@@ -1991,7 +2103,7 @@ class MirathEngine
                     ptr++;
                     signature[ptr] = (byte)((aux[e][col] & 0xff) >> offPtr);
                 }
-                offPtr = 8 - ((onCol2 - offPtr) % 8);
+                offPtr = 8 - ((onCol2 - offPtr) & 7);
                 col++;
             }
 
@@ -2054,8 +2166,17 @@ class MirathEngine
         int offPtr = 8; // Tracks bits remaining in current byte
         int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
         int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-        int onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
+        int onCol1, onCol2;
+        if (isA)
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
+            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
+        }
+        else
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - m);
+            onCol2 = 8 - ((8 * nRowsBytes2) - r);
+        }
 
         for (int e = 0; e < tau; e++)
         {
@@ -2076,7 +2197,7 @@ class MirathEngine
                     ptr++;
                     signature[ptr] = (byte)((aux[e][col] & 0xff) >>> offPtr);
                 }
-                offPtr = 8 - ((onCol1 - offPtr) % 8);
+                offPtr = 8 - ((onCol1 - offPtr) & 7);
                 col++;
             }
 
@@ -2096,7 +2217,7 @@ class MirathEngine
                     ptr++;
                     signature[ptr] = (byte)((aux[e][col] & 0xff) >>> offPtr);
                 }
-                offPtr = 8 - ((onCol2 - offPtr) % 8);
+                offPtr = 8 - ((onCol2 - offPtr) & 7);
                 col++;
             }
 
