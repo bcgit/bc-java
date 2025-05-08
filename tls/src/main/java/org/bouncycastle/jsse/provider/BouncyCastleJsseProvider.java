@@ -73,6 +73,7 @@ public class BouncyCastleJsseProvider
 
         boolean fipsMode = false;
         String cryptoName = config;
+        String altCryptoName = null;
 
         int colonPos = config.indexOf(':');
         if (colonPos >= 0)
@@ -81,13 +82,24 @@ public class BouncyCastleJsseProvider
             String second = config.substring(colonPos + 1).trim();
 
             fipsMode = first.equalsIgnoreCase("fips");
-            cryptoName = second;
+            config = second;
+        }
+
+        int commaPos = config.indexOf(',');
+        if (commaPos >= 0)
+        {
+            cryptoName = config.substring(0, commaPos).trim();
+            altCryptoName = config.substring(commaPos + 1).trim();
+        }
+        else
+        {
+            cryptoName = config;
         }
 
         JcaTlsCryptoProvider cryptoProvider;
         try
         {
-            cryptoProvider = createCryptoProvider(cryptoName);
+            cryptoProvider = createCryptoProvider(cryptoName, altCryptoName);
         }
         catch (GeneralSecurityException e)
         {
@@ -116,7 +128,7 @@ public class BouncyCastleJsseProvider
         return new BouncyCastleJsseProvider(configArg);
     }
 
-    private JcaTlsCryptoProvider createCryptoProvider(String cryptoName)
+    private JcaTlsCryptoProvider createCryptoProvider(String cryptoName, String altCryptoName)
         throws GeneralSecurityException
     {
         if (cryptoName.equalsIgnoreCase("default"))
@@ -127,9 +139,18 @@ public class BouncyCastleJsseProvider
         Provider provider = Security.getProvider(cryptoName);
         if (provider != null)
         {
-            return new JcaTlsCryptoProvider().setProvider(provider);
+            JcaTlsCryptoProvider cryptoProvider = new JcaTlsCryptoProvider().setProvider(provider);
+
+            if (altCryptoName != null)
+            {
+                // this has to be done by name as a PKCS#11 login may be required.
+                cryptoProvider.setAlternateProvider(altCryptoName);
+            }
+
+            return cryptoProvider;
         }
 
+        // TODO: should we support alt name here?
         try
         {
             Class<?> cryptoProviderClass = Class.forName(cryptoName);
@@ -234,7 +255,8 @@ public class BouncyCastleJsseProvider
         addAlgorithmImplementation("SSLContext.DEFAULT", "org.bouncycastle.jsse.provider.SSLContext.Default",
             new EngineCreator()
             {
-                public Object createInstance(Object constructorParameter) throws GeneralSecurityException
+                public Object createInstance(Object constructorParameter)
+                    throws GeneralSecurityException
                 {
                     return new DefaultSSLContextSpi(fipsMode, cryptoProvider);
                 }
@@ -281,7 +303,7 @@ public class BouncyCastleJsseProvider
     {
         String upperCaseAlgName = Strings.toUpperCase(algorithm);
         String serviceKey = type + "." + upperCaseAlgName;
-        
+
         BcJsseService service = serviceMap.get(serviceKey);
 
         if (service == null)
@@ -345,7 +367,7 @@ public class BouncyCastleJsseProvider
         Set<Provider.Service> serviceSet = super.getServices();
         Set<Provider.Service> bcServiceSet = new HashSet<Provider.Service>();
 
-        for (Provider.Service service: serviceSet)
+        for (Provider.Service service : serviceSet)
         {
             bcServiceSet.add(getService(service.getType(), service.getAlgorithm()));
         }
@@ -405,7 +427,7 @@ public class BouncyCastleJsseProvider
          * @param attributes Map of attributes or null if this implementation
          *                   has no attributes
          * @throws NullPointerException if provider, type, algorithm, or
-         * className is null
+         *                              className is null
          */
         public BcJsseService(Provider provider, String type, String algorithm, String className, List<String> aliases, Map<String, String> attributes, EngineCreator creator)
         {
