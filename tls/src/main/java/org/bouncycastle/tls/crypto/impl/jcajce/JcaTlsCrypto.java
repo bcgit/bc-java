@@ -1262,6 +1262,11 @@ public class JcaTlsCrypto
         return helper;
     }
 
+    public JcaJceHelper getAltHelper()
+    {
+        return altHelper;
+    }
+
     protected TlsBlockCipherImpl createCBCBlockCipherImpl(TlsCryptoParameters cryptoParams, String algorithm,
                                                           int cipherKeySize, boolean forEncryption)
         throws GeneralSecurityException
