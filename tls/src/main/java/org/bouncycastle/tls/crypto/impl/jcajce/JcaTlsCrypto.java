@@ -447,19 +447,7 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToASpecificKem(namedGroup))
         {
-            switch (namedGroup)
-            {
-            /*
-             * TODO[tls-kem] Return AlgorithmParameters to check against disabled algorithms?
-             */
-            case NamedGroup.OQS_mlkem512:
-            case NamedGroup.OQS_mlkem768:
-            case NamedGroup.OQS_mlkem1024:
-            case NamedGroup.MLKEM512:
-            case NamedGroup.MLKEM768:
-            case NamedGroup.MLKEM1024:
-                return null;
-            }
+        	return KemUtil.getAlgorithmParameters(this, NamedGroup.getKemName(namedGroup));
         }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
@@ -1161,9 +1149,7 @@ public class JcaTlsCrypto
             }
             else if (NamedGroup.refersToASpecificKem(namedGroup))
             {
-                // TODO[tls-kem] When implemented via provider, need to check for support dynamically
-//                return Boolean.valueOf(KemUtil.isKemSupported(this, NamedGroup.getKemName(namedGroup)));
-                return Boolean.TRUE;
+                return Boolean.valueOf(KemUtil.isKemSupported(this, NamedGroup.getKemName(namedGroup)));
             }
             else if (NamedGroup.refersToAnECDSACurve(namedGroup))
             {
