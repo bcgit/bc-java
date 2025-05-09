@@ -801,32 +801,19 @@ class MirathEngine
             System.arraycopy(salt, 0, msg, 0, securityBytes);
 
             // First encryption: counter = 0
-            prepareMessage(msg, idx, domainSeparatorPrg, (byte)0x00);
+            byte[] idxBytes = Pack.intToLittleEndian(idx);
+            Bytes.xorTo(4, idxBytes, 0, msg, 1);
+            msg[5] ^= domainSeparatorPrg;
             byte[] output0 = new byte[32];
             engine.processBlock(msg, 0, output0, 0);
             System.arraycopy(output0, 0, pairNode[0], 0, 24);
 
             // Second encryption: counter = 1
-            prepareMessage(msg, idx, domainSeparatorPrg, (byte)0x01);
+            msg[0] ^= (byte) 0x01;
             byte[] output1 = new byte[32];
             engine.processBlock(msg, 0, output1, 0);
             System.arraycopy(output1, 0, pairNode[1], 0, 24);
         }
-    }
-
-    private static void prepareMessage(byte[] msg, int idx, int domainSeparator, byte counter)
-    {
-        // XOR the first byte with the counter
-        msg[0] ^= counter;
-
-        // XOR the next 4 bytes with the index
-        msg[1] ^= (byte)(idx & 0xFF);
-        msg[2] ^= (byte)((idx >> 8) & 0xFF);
-        msg[3] ^= (byte)((idx >> 16) & 0xFF);
-        msg[4] ^= (byte)((idx >> 24) & 0xFF);
-
-        // XOR the sixth byte with the domain separator
-        msg[5] ^= domainSeparator;
     }
 
     public void mirathCommit(byte[][] pairNode, byte[] salt, int idx, byte[] seed)
@@ -1217,9 +1204,9 @@ class MirathEngine
         }
         else
         {
-// 1) Build the 256-bit key = seed || 8 zero bytes
+            // 1) Build the 256-bit key = seed || 8 zero bytes
             byte[] keyBytes = new byte[32];
-            System.arraycopy(seed, 0, keyBytes, 0, 24);
+            System.arraycopy(seed, 0, keyBytes, 0, securityBytes);
 
             // 2) Init Rijndael-256 cipher for encryption
             RijndaelEngine engine = new RijndaelEngine(32 * 8);
@@ -1248,8 +1235,8 @@ class MirathEngine
                 engine.processBlock(msg, 0, output, 0);
 
                 // Copy first 24 bytes into dst[i]
-                System.arraycopy(output, 0, sample, sampleOff, 24);
-                sampleOff += 24;
+                System.arraycopy(output, 0, sample, sampleOff, securityBytes);
+                sampleOff += securityBytes;
             }
         }
     }
@@ -1328,8 +1315,7 @@ class MirathEngine
         byte[] vector2,
         byte scalar,
         byte[] vector3,
-        int ncols
-    )
+        int ncols)
     {
         for (int i = 0; i < ncols; i++)
         {
@@ -1343,8 +1329,7 @@ class MirathEngine
         short[] vector2,
         short scalar,
         short[] vector3,
-        int ncols
-    )
+        int ncols)
     {
         for (int i = 0; i < ncols; i++)
         {
@@ -1526,11 +1511,11 @@ class MirathEngine
                 byte entry_i_j = 0;
                 for (int k = 0; k < nCols1; k++)
                 {
-                    byte entry_i_k = getMatrixEntryMu(matrix1, nRows1, i, k);
-                    byte entry_k_j = getMatrixEntryMu(matrix2, nCols1, k, j);
+                    byte entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
+                    byte entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
                     entry_i_j ^= ffMuMult(entry_i_k, entry_k_j);
                 }
-                setMatrixEntryMu(result, nRows1, i, j, entry_i_j);
+                mirathMatrixFFMuSetEntry(result, nRows1, i, j, entry_i_j);
             }
         }
     }
@@ -1545,33 +1530,13 @@ class MirathEngine
                 short entry_i_j = 0;
                 for (int k = 0; k < nCols1; k++)
                 {
-                    short entry_i_k = getMatrixEntryMu(matrix1, nRows1, i, k);
-                    short entry_k_j = getMatrixEntryMu(matrix2, nCols1, k, j);
+                    short entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
+                    short entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
                     entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
                 }
-                setMatrixEntryMu(result, nRows1, i, j, entry_i_j);
+                mirathMatrixFFMuSetEntry(result, nRows1, i, j, entry_i_j);
             }
         }
-    }
-
-    private static byte getMatrixEntryMu(byte[] matrix, int nRows, int i, int j)
-    {
-        return matrix[j * nRows + i];
-    }
-
-    private static short getMatrixEntryMu(short[] matrix, int nRows, int i, int j)
-    {
-        return matrix[j * nRows + i];
-    }
-
-    private static void setMatrixEntryMu(byte[] matrix, int nRows, int i, int j, byte value)
-    {
-        matrix[j * nRows + i] = value;
-    }
-
-    private static void setMatrixEntryMu(short[] matrix, int nRows, int i, int j, short value)
-    {
-        matrix[j * nRows + i] = value;
     }
 
     // return a*b
@@ -1807,7 +1772,7 @@ class MirathEngine
 
     private void expandViewChallenge(int[] challenge, byte[] vGrinding, byte[] input)
     {
-        SHAKEDigest prng = new SHAKEDigest(128);
+        SHAKEDigest prng = new SHAKEDigest(getShakeDigest());
         prng.update(input, 0, input.length);
 
         byte[] random = new byte[challenge2Bytes + hash2MaskBytes];
