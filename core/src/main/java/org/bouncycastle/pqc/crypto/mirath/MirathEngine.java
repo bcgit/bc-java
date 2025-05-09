@@ -806,13 +806,13 @@ class MirathEngine
             msg[5] ^= domainSeparatorPrg;
             byte[] output0 = new byte[32];
             engine.processBlock(msg, 0, output0, 0);
-            System.arraycopy(output0, 0, pairNode[0], 0, 24);
+            System.arraycopy(output0, 0, pairNode[0], 0, securityBytes);
 
             // Second encryption: counter = 1
             msg[0] ^= (byte) 0x01;
             byte[] output1 = new byte[32];
             engine.processBlock(msg, 0, output1, 0);
-            System.arraycopy(output1, 0, pairNode[1], 0, 24);
+            System.arraycopy(output1, 0, pairNode[1], 0, securityBytes);
         }
     }
 
@@ -1225,12 +1225,10 @@ class MirathEngine
                 ctr[0] = (byte)i;
 
                 // Build msg = ctr ⊕ salt for the first 24 bytes, rest stay zero
-                for (int k = 0; k < 24; k++)
+                for (int k = 0; k < securityBytes; k++)
                 {
                     msg[k] = (byte)(ctr[k] ^ salt[k]);
                 }
-                // (msg[24..31] are already zero from new array / previous iteration)
-
                 // Encrypt one block
                 engine.processBlock(msg, 0, output, 0);
 
