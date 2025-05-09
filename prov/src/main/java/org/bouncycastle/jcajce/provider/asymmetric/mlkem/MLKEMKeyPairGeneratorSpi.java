@@ -75,8 +75,6 @@ public class MLKEMKeyPairGeneratorSpi
     {
         String name = getNameFromParams(params);
 
-        MLKEMParameters kyberParams = Utils.getParameters(name);
-
         if (name != null)
         {
             MLKEMParameters mlkemParams = Utils.getParameters(name);
