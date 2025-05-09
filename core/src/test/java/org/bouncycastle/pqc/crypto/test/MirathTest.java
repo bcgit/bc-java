@@ -28,7 +28,7 @@ public class MirathTest
 
     private static final MirathParameters[] PARAMETER_SETS = new MirathParameters[]
         {
-//            MirathParameters.mirath_1a_fast,
+            MirathParameters.mirath_1a_fast,
             MirathParameters.mirath_1a_short,
             MirathParameters.mirath_1b_fast,
             MirathParameters.mirath_1b_short,
@@ -43,7 +43,7 @@ public class MirathTest
         };
 
     private static final String[] files = new String[]{
-//         "Mirath-1a-fast/PQCsignKAT_32.rsp",
+        "Mirath-1a-fast/PQCsignKAT_32.rsp",
         "Mirath-1a-short/PQCsignKAT_32.rsp",
         "Mirath-1b-fast/PQCsignKAT_32.rsp",
         "Mirath-1b-short/PQCsignKAT_32.rsp",
