@@ -10,6 +10,6 @@ public class FipsJcaTlsCryptoProvider extends JcaTlsCryptoProvider
     @Override
     public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        return new FipsJcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
+        return new FipsJcaTlsCrypto(getHelper(), getAltHelper(), keyRandom, nonceRandom);
     }
 }

@@ -20,7 +20,7 @@ public class JcaTlsCryptoProvider
     implements TlsCryptoProvider
 {
     private JcaJceHelper helper = new DefaultJcaJceHelper();
-    private JcaJceHelper altHelper = helper;
+    private JcaJceHelper altHelper = null;
 
     public JcaTlsCryptoProvider()
     {
@@ -34,7 +34,8 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCryptoProvider setProvider(Provider provider)
     {
-        this.helper = this.altHelper = new ProviderJcaJceHelper(provider);
+        this.helper = new ProviderJcaJceHelper(provider);
+        this.altHelper = null;
 
         return this;
     }
@@ -61,7 +62,8 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCryptoProvider setProvider(String providerName)
     {
-        this.helper = this.altHelper = new NamedJcaJceHelper(providerName);
+        this.helper = new NamedJcaJceHelper(providerName);
+        this.altHelper = null;
 
         return this;
     }
@@ -120,17 +122,17 @@ public class JcaTlsCryptoProvider
      */
     public JcaTlsCrypto create(SecureRandom keyRandom, SecureRandom nonceRandom)
     {
-        if (helper != altHelper)
-        {
-            return new JcaTlsCrypto(getHelper(), altHelper, keyRandom, nonceRandom);
-        }
-
-        return new JcaTlsCrypto(getHelper(), keyRandom, nonceRandom);
+        return new JcaTlsCrypto(getHelper(), getAltHelper(), keyRandom, nonceRandom);
     }
 
     public JcaJceHelper getHelper()
     {
         return helper;
+    }
+
+    public JcaJceHelper getAltHelper()
+    {
+        return altHelper;
     }
 
     @SuppressWarnings("serial")

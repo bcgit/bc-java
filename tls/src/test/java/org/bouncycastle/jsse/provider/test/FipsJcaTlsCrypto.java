@@ -14,6 +14,12 @@ public class FipsJcaTlsCrypto extends JcaTlsCrypto
         super(helper, entropySource, nonceEntropySource);
     }
 
+    public FipsJcaTlsCrypto(JcaJceHelper helper, JcaJceHelper altHelper, SecureRandom entropySource,
+        SecureRandom nonceEntropySource)
+    {
+        super(helper, altHelper, entropySource, nonceEntropySource);
+    }
+
     @Override
     public AEADNonceGeneratorFactory getFipsGCMNonceGeneratorFactory()
     {
