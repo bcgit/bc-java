@@ -8,14 +8,21 @@ import java.io.PipedOutputStream;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsServerProtocol;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
 import junit.framework.TestCase;
 
-public class TlsProtocolKemTest
+public abstract class TlsProtocolKemTest
     extends TestCase
 {
+    protected final TlsCrypto crypto;
+
+    protected TlsProtocolKemTest(TlsCrypto crypto)
+    {
+        this.crypto = crypto;
+    }
     // mismatched ML-KEM strengths w/o classical crypto
     public void testMismatchStrength() throws Exception
     {
@@ -27,7 +34,7 @@ public class TlsProtocolKemTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, new int[]{ NamedGroup.MLKEM768 }, true);
+        ServerThread serverThread = new ServerThread(crypto, serverProtocol, new int[]{ NamedGroup.MLKEM768 }, true);
         try
         {
             serverThread.start();
@@ -35,7 +42,7 @@ public class TlsProtocolKemTest
         catch (Exception ignored)
         {
         }
-        MockTlsKemClient client = new MockTlsKemClient(null);
+        MockTlsKemClient client = new MockTlsKemClient(crypto, null);
         client.setNamedGroups(new int[]{ NamedGroup.MLKEM512 });
         try
         {
@@ -59,10 +66,10 @@ public class TlsProtocolKemTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        ServerThread serverThread = new ServerThread(serverProtocol, null, false);
+        ServerThread serverThread = new ServerThread(crypto, serverProtocol, null, false);
         serverThread.start();
 
-        MockTlsKemClient client = new MockTlsKemClient(null);
+        MockTlsKemClient client = new MockTlsKemClient(crypto, null);
         clientProtocol.connect(client);
 
         // NOTE: Because we write-all before we read-any, this length can't be more than the pipe capacity
@@ -88,12 +95,14 @@ public class TlsProtocolKemTest
     static class ServerThread
         extends Thread
     {
+        private final TlsCrypto crypto;
         private final TlsServerProtocol serverProtocol;
         private final int[] namedGroups;
         private boolean shouldFail = false;
 
-        ServerThread(TlsServerProtocol serverProtocol, int[] namedGroups, boolean shouldFail)
+        ServerThread(TlsCrypto crypto, TlsServerProtocol serverProtocol, int[] namedGroups, boolean shouldFail)
         {
+            this.crypto = crypto;
             this.serverProtocol = serverProtocol;
             this.namedGroups = namedGroups;
             this.shouldFail = shouldFail;
@@ -103,7 +112,7 @@ public class TlsProtocolKemTest
         {
             try
             {
-                MockTlsKemServer server = new MockTlsKemServer();
+                MockTlsKemServer server = new MockTlsKemServer(crypto);
                 if (namedGroups != null)
                 {
                     server.setNamedGroups(namedGroups);

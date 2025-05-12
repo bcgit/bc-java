@@ -1,11 +1,11 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
+import java.security.KeyPair;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
+import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -13,8 +13,8 @@ public class JceTlsMLKem implements TlsAgreement
 {
     protected final JceTlsMLKemDomain domain;
 
-    protected MLKEMPrivateKeyParameters privateKey;
-    protected MLKEMPublicKeyParameters publicKey;
+    protected BCMLKEMPrivateKey privateKey;
+    protected BCMLKEMPublicKey publicKey;
     protected TlsSecret secret;
 
     public JceTlsMLKem(JceTlsMLKemDomain domain)
@@ -26,16 +26,16 @@ public class JceTlsMLKem implements TlsAgreement
     {
         if (domain.isServer())
         {
-            SecretWithEncapsulation encap = domain.encapsulate(publicKey);
+            SecretKeyWithEncapsulation encap = domain.encapsulate(publicKey);
             this.publicKey = null;
-            this.secret = domain.adoptLocalSecret(encap.getSecret());
+            this.secret = domain.adoptLocalSecret(encap.getEncoded());
             return encap.getEncapsulation();
         }
         else
         {
-            AsymmetricCipherKeyPair kp = domain.generateKeyPair();
-            this.privateKey = (MLKEMPrivateKeyParameters)kp.getPrivate();
-            return domain.encodePublicKey((MLKEMPublicKeyParameters)kp.getPublic());
+            KeyPair kp = domain.generateKeyPair();
+            this.privateKey = (BCMLKEMPrivateKey)kp.getPrivate();
+            return ((BCMLKEMPublicKey)kp.getPublic()).getPublicData();
         }
     }
 

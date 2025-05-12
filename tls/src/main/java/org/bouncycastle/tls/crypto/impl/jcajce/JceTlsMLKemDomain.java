@@ -2,10 +2,17 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
+import org.bouncycastle.jcajce.spec.KEMExtractSpec;
+import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
@@ -13,6 +20,23 @@ import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsKemDomain;
+import org.bouncycastle.util.encoders.Hex;
+
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 
 public class JceTlsMLKemDomain implements TlsKemDomain
 {
@@ -38,6 +62,10 @@ public class JceTlsMLKemDomain implements TlsKemDomain
     protected final TlsKemConfig config;
     protected final MLKEMParameters domainParameters;
     protected final boolean isServer;
+    protected KeyGenerator keyGen;
+//    protected KeyPairGenerator kpg;
+//    protected Cipher cipher;
+
 
     public JceTlsMLKemDomain(JcaTlsCrypto crypto, TlsKemConfig kemConfig)
     {
@@ -45,6 +73,18 @@ public class JceTlsMLKemDomain implements TlsKemDomain
         this.config = kemConfig;
         this.domainParameters = getDomainParameters(kemConfig);
         this.isServer = kemConfig.isServer();
+        try
+        {
+            this.keyGen = keyGen = crypto.getHelper().createKeyGenerator(domainParameters.getName());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public JceTlsSecret adoptLocalSecret(byte[] secret)
@@ -57,22 +97,42 @@ public class JceTlsMLKemDomain implements TlsKemDomain
         return new JceTlsMLKem(this);
     }
 
-    public JceTlsSecret decapsulate(MLKEMPrivateKeyParameters privateKey, byte[] ciphertext)
+    public JceTlsSecret decapsulate(PrivateKey privateKey, byte[] ciphertext)
     {
-        MLKEMExtractor kemExtract = new MLKEMExtractor(privateKey);
-        byte[] secret = kemExtract.extractSecret(ciphertext);
-        return adoptLocalSecret(secret);
+        try
+        {
+            keyGen.init(new KEMExtractSpec.Builder(privateKey, ciphertext, "DEF", 256).withNoKdf().build());
+            SecretKeyWithEncapsulation secEnc = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+            return adoptLocalSecret(secEnc.getEncoded());
+        }
+        catch (Exception e)
+        {
+            throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
+        }
+
+
+//        MLKEMExtractor kemExtract = new MLKEMExtractor(privateKey);
+//        byte[] secret = kemExtract.extractSecret(ciphertext);
+//        return adoptLocalSecret(secret);
     }
 
-    public MLKEMPublicKeyParameters decodePublicKey(byte[] encoding)
+    public BCMLKEMPublicKey decodePublicKey(byte[] encoding)
     {
-        return new MLKEMPublicKeyParameters(domainParameters, encoding);
+        return new BCMLKEMPublicKey(new MLKEMPublicKeyParameters(domainParameters, encoding));
     }
 
-    public SecretWithEncapsulation encapsulate(MLKEMPublicKeyParameters publicKey)
+    public SecretKeyWithEncapsulation encapsulate(PublicKey publicKey)
     {
-        MLKEMGenerator kemGen = new MLKEMGenerator(crypto.getSecureRandom());
-        return kemGen.generateEncapsulated(publicKey);
+        try
+        {
+            keyGen.init(new KEMGenerateSpec.Builder(publicKey, "DEF", 256).withNoKdf().build());
+            return (SecretKeyWithEncapsulation)keyGen.generateKey();
+        }
+        catch (Exception e)
+        {
+            throw Exceptions.illegalArgumentException("invalid key: " + e.getMessage(), e);
+        }
     }
 
     public byte[] encodePublicKey(MLKEMPublicKeyParameters publicKey)
@@ -80,11 +140,46 @@ public class JceTlsMLKemDomain implements TlsKemDomain
         return publicKey.getEncoded();
     }
 
-    public AsymmetricCipherKeyPair generateKeyPair()
+    private void init()
     {
-        MLKEMKeyPairGenerator keyPairGenerator = new MLKEMKeyPairGenerator();
-        keyPairGenerator.init(new MLKEMKeyGenerationParameters(crypto.getSecureRandom(), domainParameters));
-        return keyPairGenerator.generateKeyPair();
+//        try
+//        {
+////            kpg = KeyPairGenerator.getInstance("MLKEM");
+////            kpg.initialize(MLKEMParameterSpec.fromName(domainParameters.getName()), crypto.getSecureRandom());
+////            keyGen = KeyGenerator.getInstance(domainParameters.getName(), "BC");
+//
+////            cipher = KemUtil.getCipher(crypto, domainParameters.getName());
+//
+//
+//        }
+//        catch (GeneralSecurityException e)
+//        {
+//            throw Exceptions.illegalStateException("unable to create key pair: " + e.getMessage(), e);
+//        }
+
+
+    }
+    public KeyPair generateKeyPair()
+    {
+//        AlgorithmParameters params = KemUtil.getAlgorithmParameters(crypto, domainParameters.getName());
+//        if (params == null)
+//        {
+//            throw new IllegalStateException("KEM parameters unavailable");
+//        }
+        KeyPairGenerator kpg = null;
+        try
+        {
+            kpg = crypto.getHelper().createKeyPairGenerator(domainParameters.getName());
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw new RuntimeException(e);
+        }
+        return kpg.generateKeyPair();
     }
 
     public boolean isServer()
