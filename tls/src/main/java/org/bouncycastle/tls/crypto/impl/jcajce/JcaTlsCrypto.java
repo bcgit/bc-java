@@ -113,7 +113,8 @@ public class JcaTlsCrypto
      * @param entropySource      primary entropy source, used for key generation.
      * @param nonceEntropySource secondary entropy source, used for nonce and IV generation.
      */
-    protected JcaTlsCrypto(JcaJceHelper helper, JcaJceHelper altHelper, SecureRandom entropySource, SecureRandom nonceEntropySource)
+    protected JcaTlsCrypto(JcaJceHelper helper, JcaJceHelper altHelper, SecureRandom entropySource,
+        SecureRandom nonceEntropySource)
     {
         this.helper = helper;
         this.altHelper = altHelper;
@@ -572,7 +573,7 @@ public class JcaTlsCrypto
         case CryptoSignatureAlgorithm.gostr34102012_256:
         case CryptoSignatureAlgorithm.gostr34102012_512:
 
-            // TODO[RFC 8998]
+        // TODO[RFC 8998]
         case CryptoSignatureAlgorithm.sm2:
 
         default:
@@ -754,7 +755,7 @@ public class JcaTlsCrypto
         case SignatureAlgorithm.gostr34102012_256:
         case SignatureAlgorithm.gostr34102012_512:
 
-            // TODO[RFC 8998]
+        // TODO[RFC 8998]
 //        case SignatureAlgorithm.sm2:
 
         default:
@@ -783,7 +784,7 @@ public class JcaTlsCrypto
         switch (signatureScheme)
         {
         case SignatureScheme.sm2sig_sm3:
-            // TODO[tls] Implement before adding
+        // TODO[tls] Implement before adding
         case SignatureScheme.DRAFT_mldsa44:
         case SignatureScheme.DRAFT_mldsa65:
         case SignatureScheme.DRAFT_mldsa87:
@@ -902,8 +903,7 @@ public class JcaTlsCrypto
      * @throws GeneralSecurityException in case of failure.
      */
     protected TlsBlockCipherImpl createBlockCipher(String cipherName, String algorithm, int keySize,
-                                                   boolean isEncrypting)
-        throws GeneralSecurityException
+        boolean isEncrypting) throws GeneralSecurityException
     {
         return new JceBlockCipherImpl(this, helper.createCipher(cipherName), algorithm, keySize, isEncrypting);
     }
@@ -919,8 +919,7 @@ public class JcaTlsCrypto
      * @throws GeneralSecurityException in case of failure.
      */
     protected TlsBlockCipherImpl createBlockCipherWithCBCImplicitIV(String cipherName, String algorithm, int keySize,
-                                                                    boolean isEncrypting)
-        throws GeneralSecurityException
+        boolean isEncrypting) throws GeneralSecurityException
     {
         return new JceBlockCipherWithCBCImplicitIVImpl(this, helper.createCipher(cipherName), algorithm, isEncrypting);
     }
@@ -954,8 +953,7 @@ public class JcaTlsCrypto
     }
 
     protected TlsStreamSigner createStreamSigner(SignatureAndHashAlgorithm algorithm, PrivateKey privateKey,
-                                                 boolean needsRandom)
-        throws IOException
+        boolean needsRandom) throws IOException
     {
         String algorithmName = JcaUtils.getJcaAlgorithmName(algorithm);
 
@@ -963,8 +961,7 @@ public class JcaTlsCrypto
     }
 
     protected TlsStreamSigner createStreamSigner(String algorithmName, AlgorithmParameterSpec parameter,
-                                                 PrivateKey privateKey, boolean needsRandom)
-        throws IOException
+        PrivateKey privateKey, boolean needsRandom) throws IOException
     {
         SecureRandom random = needsRandom ? getSecureRandom() : null;
 
@@ -976,14 +973,13 @@ public class JcaTlsCrypto
             }
             catch (InvalidKeyException e)
             {
-                if (altHelper != null)
-                {
-                    return createStreamSigner(altHelper, algorithmName, parameter, privateKey, random);
-                }
-                else
+                JcaJceHelper altHelper = getAltHelper();
+                if (altHelper == null)
                 {
                     throw e;
                 }
+
+                return createStreamSigner(altHelper, algorithmName, parameter, privateKey, random);
             }
         }
         catch (GeneralSecurityException e)
@@ -992,38 +988,36 @@ public class JcaTlsCrypto
         }
     }
 
-    private TlsStreamSigner createStreamSigner(JcaJceHelper helper, String algorithmName, AlgorithmParameterSpec parameter,
-                                               PrivateKey privateKey, SecureRandom random)
-        throws GeneralSecurityException
+    protected TlsStreamSigner createStreamSigner(JcaJceHelper helper, String algorithmName,
+        AlgorithmParameterSpec parameter, PrivateKey privateKey, SecureRandom random) throws GeneralSecurityException
     {
         try
         {
             if (null != parameter)
             {
+                Signature dummySigner;                
                 try
                 {
-                    Signature dummySigner = helper.createSignature(algorithmName);
-                    dummySigner.initSign(privateKey, random);
-                    helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+                    dummySigner = helper.createSignature(algorithmName);
                 }
                 catch (NoSuchAlgorithmException e)
                 {
                     // more PKCS#11 mischief
                     String upperAlg = Strings.toUpperCase(algorithmName);
-                    if (upperAlg.endsWith("MGF1"))
+                    if (upperAlg.endsWith("ANDMGF1"))
                     {
                         // ANDMGF1 has vanished from the Sun PKCS11 provider.
                         algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
-                        Signature dummySigner = helper.createSignature(algorithmName);
-
-                        dummySigner.initSign(privateKey, random);
-                        helper = new ProviderJcaJceHelper(dummySigner.getProvider());
+                        dummySigner = helper.createSignature(algorithmName);
                     }
                     else
                     {
                         throw e;
                     }
                 }
+
+                dummySigner.initSign(privateKey, random);
+                helper = new ProviderJcaJceHelper(dummySigner.getProvider());
             }
 
             Signature signer = helper.createSignature(algorithmName);
@@ -1037,7 +1031,7 @@ public class JcaTlsCrypto
         catch (InvalidKeyException e)
         {
             String upperAlg = Strings.toUpperCase(algorithmName);
-            if (upperAlg.endsWith("MGF1"))
+            if (upperAlg.endsWith("ANDMGF1"))
             {
                 // ANDMGF1 has vanished from the Sun PKCS11 provider.
                 algorithmName = upperAlg.replace("ANDMGF1", "SSA-PSS");
@@ -1059,8 +1053,7 @@ public class JcaTlsCrypto
     }
 
     protected TlsStreamVerifier createStreamVerifier(String algorithmName, AlgorithmParameterSpec parameter,
-                                                     byte[] signature, PublicKey publicKey)
-        throws IOException
+        byte[] signature, PublicKey publicKey) throws IOException
     {
         try
         {
@@ -1087,8 +1080,7 @@ public class JcaTlsCrypto
     }
 
     protected Tls13Verifier createTls13Verifier(String algorithmName, AlgorithmParameterSpec parameter,
-                                                PublicKey publicKey)
-        throws IOException
+        PublicKey publicKey) throws IOException
     {
         try
         {
@@ -1268,8 +1260,7 @@ public class JcaTlsCrypto
     }
 
     protected TlsBlockCipherImpl createCBCBlockCipherImpl(TlsCryptoParameters cryptoParams, String algorithm,
-                                                          int cipherKeySize, boolean forEncryption)
-        throws GeneralSecurityException
+        int cipherKeySize, boolean forEncryption) throws GeneralSecurityException
     {
         String cipherName = algorithm + "/CBC/NoPadding";
 
@@ -1324,8 +1315,7 @@ public class JcaTlsCrypto
     }
 
     protected TlsCipher createCipher_CBC(TlsCryptoParameters cryptoParams, String algorithm, int cipherKeySize,
-                                         int macAlgorithm)
-        throws GeneralSecurityException, IOException
+        int macAlgorithm) throws GeneralSecurityException, IOException
     {
         TlsBlockCipherImpl encrypt = createCBCBlockCipherImpl(cryptoParams, algorithm, cipherKeySize, true);
         TlsBlockCipherImpl decrypt = createCBCBlockCipherImpl(cryptoParams, algorithm, cipherKeySize, false);
