@@ -464,6 +464,7 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToASpecificKem(namedGroup))
         {
+            //Note: There is no AlgorithmParametersSpi for ML-KEM
             return KemUtil.getAlgorithmParameters(this, NamedGroup.getKemName(namedGroup));
         }
 
