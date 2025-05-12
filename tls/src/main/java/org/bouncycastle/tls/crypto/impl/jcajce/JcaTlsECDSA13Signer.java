@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 
+import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.SignatureScheme;
@@ -51,26 +53,24 @@ public class JcaTlsECDSA13Signer
             throw new IllegalStateException("Invalid algorithm: " + algorithm);
         }
 
+        SecureRandom random = crypto.getSecureRandom();
+
         try
         {
-            Signature signer = crypto.getHelper().createSignature("NoneWithECDSA");
-            signer.initSign(privateKey, crypto.getSecureRandom());
-            signer.update(hash, 0, hash.length);
-            return signer.sign();
-        }
-        catch (InvalidKeyException e)
-        {
-            // try with PKCS#11 (usually) alternative provider
             try
             {
-                Signature signer = crypto.getAltHelper().createSignature("NoneWithECDSA");
-                signer.initSign(privateKey, crypto.getSecureRandom());
-                signer.update(hash, 0, hash.length);
-                return signer.sign();
+                return implGenerateRawSignature(crypto.getHelper(), privateKey, random, hash);
             }
-            catch (GeneralSecurityException ex)
+            catch (InvalidKeyException e)
             {
-                throw new TlsFatalAlert(AlertDescription.internal_error, ex);
+                // try with PKCS#11 (usually) alternative provider
+                JcaJceHelper altHelper = crypto.getAltHelper();
+                if (altHelper == null)
+                {
+                    throw e;
+                }
+
+                return implGenerateRawSignature(altHelper, privateKey, random, hash);
             }
         }
         catch (GeneralSecurityException e)
@@ -83,5 +83,14 @@ public class JcaTlsECDSA13Signer
         throws IOException
     {
         return null;
+    }
+
+    private static byte[] implGenerateRawSignature(JcaJceHelper helper, PrivateKey privateKey, SecureRandom random,
+        byte[] hash) throws GeneralSecurityException
+    {
+        Signature signer = helper.createSignature("NoneWithECDSA");
+        signer.initSign(privateKey, random);
+        signer.update(hash, 0, hash.length);
+        return signer.sign();
     }
 }
