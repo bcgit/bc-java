@@ -80,8 +80,20 @@ public class MirathSigner
 
         // Phase 1: Build and Commit Parallel Witness Shares
         // Step 1: Decompress secret key
-        engine.mirathMatrixDecompressSecretKey(S, C, H, pk, sk);
-        // Steps 2-3: Generate random values
+        //engine.mirathMatrixDecompressSecretKey(S, C, H, pk, sk);
+        byte[] seedSk = org.bouncycastle.util.Arrays.copyOfRange(sk, 0, engine.securityBytes);
+        byte[] seedPk = org.bouncycastle.util.Arrays.copyOfRange(sk, engine.securityBytes, 2 * engine.securityBytes);
+        byte[] y = new byte[engine.ffYBytes];
+
+        // Expand matrices from seeds
+        engine.mirathMatrixExpandSeedPublicMatrix(H, seedPk);
+        engine.mirathMatrixExpandSeedSecretMatrix(S, C, seedSk);
+
+        // Compute y and build public key
+        engine.mirathMatrixComputeY(y, S, C, H);
+//        engine.unparsePublicKey(pk, seedPk, y);
+        System.arraycopy(seedPk, 0, pk, 0, engine.securityBytes);
+        System.arraycopy(y, 0, pk, engine.securityBytes, engine.ffYBytes);
         random.nextBytes(salt);
         random.nextBytes(rseed);
 

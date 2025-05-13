@@ -38,9 +38,9 @@ public class MirathKeyPairGenerator
         random.nextBytes(seedPk);
 
         // Initialize matrices
-        byte[] S = new byte[engine.calculateMatrixBytes(m, r)];
-        byte[] C = new byte[engine.calculateMatrixBytes(r, n - r)];
-        byte[] H = new byte[engine.calculateMatrixBytes(m * n - k, k)];
+        byte[] S = new byte[engine.mirathMatrixFFBytesSize(m, r)];
+        byte[] C = new byte[engine.mirathMatrixFFBytesSize(r, n - r)];
+        byte[] H = new byte[engine.mirathMatrixFFBytesSize(m * n - k, k)];
         byte[] y = new byte[engine.ffYBytes];
 
         // Step 3 & 4: Expand matrices
