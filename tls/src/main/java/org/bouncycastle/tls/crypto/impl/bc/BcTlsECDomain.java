@@ -79,13 +79,11 @@ public class BcTlsECDomain implements TlsECDomain
     }
     
     protected final BcTlsCrypto crypto;
-    protected final TlsECConfig config;
     protected final ECDomainParameters domainParameters;
 
     public BcTlsECDomain(BcTlsCrypto crypto, TlsECConfig ecConfig)
     {
         this.crypto = crypto;
-        this.config = ecConfig;
         this.domainParameters = getDomainParameters(ecConfig);
     }
 
