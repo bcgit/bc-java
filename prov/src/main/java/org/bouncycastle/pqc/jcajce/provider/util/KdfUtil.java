@@ -34,7 +34,7 @@ public class KdfUtil
      */
     public static byte[] makeKeyBytes(KEMKDFSpec kdfSpec, byte[] secret)
     {
-        byte[] keyBytes = null;
+        byte[] keyBytes;
         try
         {
             if (kdfSpec == null)
@@ -42,8 +42,11 @@ public class KdfUtil
                 keyBytes = new byte[secret.length];
                 System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
             }
-
-            keyBytes = makeKeyBytes(kdfSpec.getKdfAlgorithm(), secret, kdfSpec.getOtherInfo(), kdfSpec.getKeySize());
+            else
+            {
+                keyBytes = makeKeyBytes(kdfSpec.getKdfAlgorithm(), secret, kdfSpec.getOtherInfo(),
+                    kdfSpec.getKeySize());
+            }
         }
         finally
         {
