@@ -57,20 +57,20 @@ public class BcTlsDHDomain implements TlsDHDomain
         return new DHParameters(dhGroup.getP(), dhGroup.getG(), dhGroup.getQ(), dhGroup.getL());
     }
 
-    protected BcTlsCrypto crypto;
-    protected TlsDHConfig config;
-    protected DHParameters domainParameters;
+    protected final BcTlsCrypto crypto;
+    protected final DHParameters domainParameters;
+    protected final boolean isPadded;
 
     public BcTlsDHDomain(BcTlsCrypto crypto, TlsDHConfig dhConfig)
     {
         this.crypto = crypto;
-        this.config = dhConfig;
         this.domainParameters = getDomainParameters(dhConfig);
+        this.isPadded = dhConfig.isPadded();
     }
 
     public BcTlsSecret calculateDHAgreement(DHPrivateKeyParameters privateKey, DHPublicKeyParameters publicKey)
     {
-        return calculateDHAgreement(crypto, privateKey, publicKey, config.isPadded());
+        return calculateDHAgreement(crypto, privateKey, publicKey, isPadded);
     }
 
     public TlsAgreement createDH()
@@ -80,7 +80,7 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public BigInteger decodeParameter(byte[] encoding) throws IOException
     {
-        if (config.isPadded() && getValueLength(domainParameters) != encoding.length)
+        if (isPadded && getValueLength(domainParameters) != encoding.length)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -109,7 +109,7 @@ public class BcTlsDHDomain implements TlsDHDomain
 
     public byte[] encodeParameter(BigInteger x)
     {
-        return encodeValue(domainParameters, config.isPadded(), x);
+        return encodeValue(domainParameters, isPadded, x);
     }
 
     public byte[] encodePublicKey(DHPublicKeyParameters publicKey)

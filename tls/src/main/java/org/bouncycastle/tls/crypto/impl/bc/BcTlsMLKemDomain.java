@@ -35,14 +35,12 @@ public class BcTlsMLKemDomain implements TlsKemDomain
     }
 
     protected final BcTlsCrypto crypto;
-    protected final TlsKemConfig config;
     protected final MLKEMParameters domainParameters;
     protected final boolean isServer;
 
     public BcTlsMLKemDomain(BcTlsCrypto crypto, TlsKemConfig kemConfig)
     {
         this.crypto = crypto;
-        this.config = kemConfig;
         this.domainParameters = getDomainParameters(kemConfig);
         this.isServer = kemConfig.isServer();
     }
