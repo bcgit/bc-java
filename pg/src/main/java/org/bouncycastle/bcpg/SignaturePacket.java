@@ -353,7 +353,22 @@ public class SignaturePacket
         byte[]                  fingerPrint,
         MPInteger[]             signature)
     {
-        super(SIGNATURE);
+        this(version, false, signatureType, keyID, keyAlgorithm, hashAlgorithm, hashedData, unhashedData, fingerPrint, signature);
+    }
+
+    public SignaturePacket(
+            int                     version,
+            boolean                 hasNewPacketFormat,
+            int                     signatureType,
+            long                    keyID,
+            int                     keyAlgorithm,
+            int                     hashAlgorithm,
+            SignatureSubpacket[]    hashedData,
+            SignatureSubpacket[]    unhashedData,
+            byte[]                  fingerPrint,
+            MPInteger[]             signature)
+    {
+        super(SIGNATURE, hasNewPacketFormat);
 
         this.version = version;
         this.signatureType = signatureType;
