@@ -69,6 +69,7 @@ public class MirathSigner
         byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
         byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes];
         byte[][] seeds = new byte[engine.treeLeaves][engine.securityBytes];
+        byte[] sample = new byte[engine.blockLength * engine.securityBytes];
 
         byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
 
@@ -106,7 +107,11 @@ public class MirathSigner
             byte[][] alphaBase = new byte[engine.tau][engine.rho];
 
             // Step 4: Commit to shares
-            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, aux, salt, S, C, seeds);
+            for (int e = 0; e < engine.tau; e++)
+            {
+                engine.commitParallelSharings(SBase[e], CBase[e], vBase[e], v[e], e, aux[e], salt, S, C, seeds, sample);
+            }
+            engine.computeFinalHash(hSh, salt, hSh, aux);
 
             // Phase 2: MPC simulation
             // Step 5: Expand MPC challenge
@@ -115,8 +120,6 @@ public class MirathSigner
             // Steps 6-8: Emulate MPC for each tau
             for (int e = 0; e < engine.tau; e++)
             {
-                alphaBase[e] = new byte[engine.rho];
-                alphaMid[e] = new byte[engine.rho];
                 engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H);
             }
 
@@ -140,10 +143,13 @@ public class MirathSigner
             short[] Gamma = new short[engine.gamma];
             short[][] alphaMid = new short[engine.tau][engine.rho];
             short[][] alphaBase = new short[engine.tau][engine.rho];
-
+            short[] v_rnd = new short[engine.rho];
             // Step 4: Commit to shares
-            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, aux, salt, S, C, seeds);
-
+            for (int e = 0; e < engine.tau; e++)
+            {
+                engine.commitParallelSharings(SBase[e], CBase[e], vBase[e], v[e], e, aux[e], salt, S, C, seeds, sample, v_rnd);
+            }
+            engine.computeFinalHash(hSh, salt, hSh, aux);
             // Phase 2: MPC simulation
             // Step 5: Expand MPC challenge
             engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
@@ -151,8 +157,6 @@ public class MirathSigner
             // Steps 6-8: Emulate MPC for each tau
             for (int e = 0; e < engine.tau; e++)
             {
-                alphaBase[e] = new short[engine.rho];
-                alphaMid[e] = new short[engine.rho];
                 engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H);
             }
 
