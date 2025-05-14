@@ -398,7 +398,7 @@ public class SignaturePacket
             byte[]                  signatureEncoding,
             byte[]                  salt)
     {
-        super(SIGNATURE);
+        super(SIGNATURE, true);
 
         this.version = version;
         this.signatureType = signatureType;
@@ -428,7 +428,7 @@ public class SignaturePacket
         MPInteger[] signature,
         byte[] salt)
     {
-        super(SIGNATURE);
+        super(SIGNATURE, true);
 
         this.version = version;
         this.signatureType = signatureType;
