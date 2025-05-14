@@ -7,10 +7,8 @@ public class MirathParameters
         16,                               // securityLevelBytes
         73,                               // publicKeyBytes
         3728,                             // signatureBytes
-        16,                               // q
         16,                               // m
         143,                              // k
-        16,                               // n
         4,                                // r
         17,                               // tau
         16,                               // rho
@@ -29,10 +27,8 @@ public class MirathParameters
         16,                              // securityLevelBytes
         73,                              // publicKeyBytes
         3078,                            // signatureBytes
-        16,                              // q
         16,                              // m
         143,                             // k
-        16,                              // n
         4,                               // r
         11,                              // tau
         11,                              // rho
@@ -51,10 +47,8 @@ public class MirathParameters
         16,                             // securityLevelBytes
         57,                             // publicKeyBytes
         3456,                           // signatureBytes
-        2,                              // q
         42,                             // m
         1443,                           // k
-        42,                             // n
         4,                              // r
         17,                             // tau
         16,                             // rho
@@ -73,10 +67,8 @@ public class MirathParameters
         16,                            // securityLevelBytes
         57,                            // publicKeyBytes
         2902,                          // signatureBytes
-        2,                             // q
         42,                            // m
         1443,                          // k
-        42,                            // n
         4,                             // r
         11,                            // tau
         11,                            // rho
@@ -95,10 +87,8 @@ public class MirathParameters
         24,                           // securityLevelBytes
         107,                          // publicKeyBytes
         8537,                         // signatureBytes
-        16,                           // q
         19,                           // m
         195,                          // k
-        19,                           // n
         5,                            // r
         26,                           // tau
         24,                           // rho
@@ -117,10 +107,8 @@ public class MirathParameters
         24,                           // securityLevelBytes
         107,                          // publicKeyBytes
         6907,                         // signatureBytes
-        16,                           // q
         19,                           // m
         195,                          // k
-        19,                           // n
         5,                            // r
         17,                           // tau
         16,                           // rho
@@ -139,10 +127,8 @@ public class MirathParameters
         24,                           // securityLevelBytes
         84,                           // publicKeyBytes
         7936,                         // signatureBytes
-        2,                            // q
         50,                           // m
         2024,                         // k
-        50,                           // n
         5,                            // r
         26,                           // tau
         24,                           // rho
@@ -161,10 +147,8 @@ public class MirathParameters
         24,                           // securityLevelBytes
         84,                           // publicKeyBytes
         6514,                         // signatureBytes
-        2,                            // q
         50,                           // m
         2024,                         // k
-        50,                           // n
         5,                            // r
         17,                           // tau
         16,                           // rho
@@ -183,10 +167,8 @@ public class MirathParameters
         32,                           // securityLevelBytes
         147,                          // publicKeyBytes
         15504,                        // signatureBytes
-        16,                           // q
         22,                           // m
         255,                          // k
-        22,                           // n
         6,                            // r
         36,                           // tau
         32,                           // rho
@@ -205,10 +187,8 @@ public class MirathParameters
         32,                           // securityLevelBytes
         147,                          // publicKeyBytes
         12413,                        // signatureBytes
-        16,                           // q
         22,                           // m
         255,                          // k
-        22,                           // n
         6,                            // r
         23,                           // tau
         22,                           // rho
@@ -227,10 +207,8 @@ public class MirathParameters
         32,                           // securityLevelBytes
         112,                          // publicKeyBytes
         14262,                        // signatureBytes
-        2,                            // q
         56,                           // m
         2499,                         // k
-        56,                           // n
         6,                            // r
         36,                           // tau
         32,                           // rho
@@ -249,10 +227,8 @@ public class MirathParameters
         32,                           // securityLevelBytes
         112,                          // publicKeyBytes
         11620,                        // signatureBytes
-        2,                            // q
         56,                           // m
         2499,                         // k
-        56,                           // n
         6,                            // r
         23,                           // tau
         22,                           // rho
@@ -273,10 +249,8 @@ public class MirathParameters
     private final int secretKeyBytes;
     private final int publicKeyBytes;
     private final int signatureBytes;
-    private final int q;
     private final int m;
     private final int k;
-    private final int n;
     private final int r;
     private final int n1n2;
     private final int n1n2Bits;
@@ -294,10 +268,8 @@ public class MirathParameters
     private final boolean isFast;
 
     private MirathParameters(String name, int securityLevelBytes, int publicKeyBytes, int signatureBytes,
-                             int q, int m, int k, int n, int r, int tau,
-                             int rho, int mu, int treeLeaves,
-                             int challenge2Bytes, int hash2MaskBytes, int hash2Mask, int tOpen,
-                             boolean isA, boolean isFast)
+                             int m, int k, int r, int tau, int rho, int mu, int treeLeaves,
+                             int challenge2Bytes, int hash2MaskBytes, int hash2Mask, int tOpen, boolean isA, boolean isFast)
     {
         this.name = name;
         this.securityLevel = securityLevelBytes << 3;
@@ -306,10 +278,8 @@ public class MirathParameters
         this.secretKeyBytes = securityLevelBytes << 1;
         this.publicKeyBytes = publicKeyBytes;
         this.signatureBytes = signatureBytes;
-        this.q = q;
         this.m = m;
         this.k = k;
-        this.n = n;
         this.r = r;
         this.n1n2 = isFast ? 256 : 4096;
         this.n1n2Bits = isFast ? 8 : 12;
@@ -363,11 +333,6 @@ public class MirathParameters
         return signatureBytes;
     }
 
-    public int getQ()
-    {
-        return q;
-    }
-
     public int getM()
     {
         return m;
@@ -376,11 +341,6 @@ public class MirathParameters
     public int getK()
     {
         return k;
-    }
-
-    public int getN()
-    {
-        return n;
     }
 
     public int getR()

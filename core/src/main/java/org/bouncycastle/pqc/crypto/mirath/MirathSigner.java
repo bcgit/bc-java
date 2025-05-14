@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
+import org.bouncycastle.util.Pack;
 
 public class MirathSigner
     implements MessageSigner
@@ -190,6 +191,48 @@ public class MirathSigner
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
         // Step 2: Decompress public key
         engine.mirathMatrixDecompressPK(H, y, pk);
+        //parseSignature part 1
+        int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * engine.mu) * engine.tau;
+        if (engine.isA)
+        {
+            tmpBits *= 4;
+        }
+        int modBits = tmpBits % 8;
+        if (modBits != 0)
+        {
+            int mask = (1 << modBits) - 1;
+            int lastByte = signature[engine.signatureBytes - 1] & 0xFF;
+            if ((lastByte & ~mask) != 0)
+            {
+                return false;
+            }
+        }
+        int ptr = 0;
+        // Copy salt
+        System.arraycopy(signature, ptr, salt, 0, engine.saltBytes);
+        ptr += engine.saltBytes;
+        // Copy counter (little-endian)
+        byte[] ctrBytes = new byte[8];
+        System.arraycopy(signature, ptr, ctrBytes, 0, 8);
+        ctr[0] = Pack.littleEndianToLong(ctrBytes, 0);
+        ptr += 8;
+        // Copy hash2
+        System.arraycopy(signature, ptr, hMpc, 0, 2 * engine.securityBytes);
+        ptr += 2 * engine.securityBytes;
+
+        // Copy path
+        for (int i = 0; i < engine.tOpen; i++)
+        {
+            System.arraycopy(signature, ptr, path[i], 0, engine.securityBytes);
+            ptr += engine.securityBytes;
+        }
+
+        // Copy commits_i_star
+        for (int e = 0; e < engine.tau; e++)
+        {
+            System.arraycopy(signature, ptr, commitsIStar[e], 0, 2 * engine.securityBytes);
+            ptr += 2 * engine.securityBytes;
+        }
         if (params.isFast())
         {
             byte[][] SShare = new byte[engine.tau][engine.s];
@@ -200,10 +243,7 @@ public class MirathSigner
             byte[][] alphaBase = new byte[engine.tau][engine.rho];
 
             // Step 1: Parse signature
-            if (engine.parseSignature(salt, ctr, hMpc, path, commitsIStar, aux, alphaMid, signature) != 0)
-            {
-                return false;
-            }
+            engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
             int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
@@ -236,10 +276,7 @@ public class MirathSigner
             short[][] alphaBase = new short[engine.tau][engine.rho];
 
             // Step 1: Parse signature
-            if (engine.parseSignature(salt, ctr, hMpc, path, commitsIStar, aux, alphaMid, signature) != 0)
-            {
-                return false;
-            }
+            engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
             int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
