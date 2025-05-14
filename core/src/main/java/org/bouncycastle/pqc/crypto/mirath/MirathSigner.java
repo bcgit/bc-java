@@ -249,11 +249,10 @@ public class MirathSigner
         engine.expandViewChallenge(iStar, vGrinding, shakeInput);
 
         // Reconstruct commitments
-        byte[] hCom = new byte[2 * engine.securityBytes];
         byte[][] seeds = new byte[engine.treeLeaves][engine.securityBytes];
         byte[][] tree = new byte[2 * engine.treeLeaves - 1][engine.securityBytes];
         byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
-        int ret = engine.multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
+        int ret = engine.multivcReconstruct(hSh, seeds, iStar, path, commitsIStar, salt, tree, commits);
         if ((ret & (engine.discardInputChallenge2(vGrinding) == 0 ? 0 : 1)) != 0)
         {
             return false;
@@ -271,7 +270,7 @@ public class MirathSigner
             engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
-            engine.computeFinalHash(hSh, salt, hCom, aux);
+            engine.computeFinalHash(hSh, salt, hSh, aux);
             for (int e = 0; e < engine.tau; e++)
             {
                 engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
@@ -303,7 +302,7 @@ public class MirathSigner
             engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
-            engine.computeFinalHash(hSh, salt, hCom, aux);
+            engine.computeFinalHash(hSh, salt, hSh, aux);
             for (int e = 0; e < engine.tau; e++)
             {
                 engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
