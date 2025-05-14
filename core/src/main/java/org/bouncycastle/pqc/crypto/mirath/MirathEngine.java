@@ -23,12 +23,9 @@ class MirathEngine
     public final int m;
     public final int r;
     public final int n;
-    final int n2;
     final int n1;
     public final int k;
     final int tau;
-    public final int tau1;
-    public final int tau2;
     final int rho;
     private final boolean isA;
     final int ffYBytes;
@@ -53,11 +50,8 @@ class MirathEngine
     final int maxOpen;
     final int gamma;
     private final int n1Bytes;
-    private final int n2Bytes;
     private final int n1Bits;
     private final int n1Mask;
-    private final int n2Mask;
-    private final int n2Bits;
     private final int signatureBytes;
     private final boolean isFast;
     private static final int domainSeparatorCommitment = 5;
@@ -341,24 +335,18 @@ class MirathEngine
         r = parameters.getR();
         n = parameters.getN();
         n1 = parameters.getN1();
-        n2 = parameters.getN2();
         rho = parameters.getRho();
         k = parameters.getK();
         isA = parameters.isA();
         tau = parameters.getTau();
-        tau1 = parameters.getTau1();
-        tau2 = parameters.getTau2();
         treeLeaves = parameters.getTreeLeaves();
         challenge2Bytes = parameters.getChallenge2Bytes();
         hash2MaskBytes = parameters.getHash2MaskBytes();
         hash2Mask = parameters.getHash2Mask();
         tOpen = parameters.getTOpen();
         n1Bytes = parameters.getN1Bytes();
-        n2Bytes = parameters.getN2Bytes();
         n1Bits = parameters.getN1Bits();
         n1Mask = parameters.getN1Mask();
-        n2Mask = parameters.getN2Mask();
-        n2Bits = parameters.getN2Bits();
         mu = parameters.getMu();
         isFast = parameters.isFast();
         signatureBytes = parameters.getSignatureBytes();
@@ -623,8 +611,8 @@ class MirathEngine
         // Process commits
         for (int e = 0; e < tau; e++)
         {
-            int N = e < tau1 ? n1 : n2;
-            for (int i = 0; i < N; i++)
+            //int N = e < tau1 ? n1 : n2;
+            for (int i = 0; i < n1; i++)
             {
                 int idx = mirathTcithPsi(i, e);
                 mirathTcithCommit(commits[e][i], salt, e, i, seeds[idx]);
@@ -639,11 +627,7 @@ class MirathEngine
     {
         for (int i = 0; i < treeLeaves - 1; i++)
         {
-            byte[][] children = new byte[2][securityBytes];
-            mirathExpandSeed(children, salt, i, tree[i]);
-
-            System.arraycopy(children[0], 0, tree[2 * i + 1], 0, securityBytes);
-            System.arraycopy(children[1], 0, tree[2 * i + 2], 0, securityBytes);
+            mirathExpandSeed(tree, 2 * i + 1, salt, i, tree[i]);
         }
     }
 
@@ -658,14 +642,7 @@ class MirathEngine
 
     private int mirathTcithPsi(int i, int e)
     {
-        if (i < n2)
-        {
-            return i * tau + e;
-        }
-        else
-        {
-            return n2 * tau + (i - n2) * tau1 + e;
-        }
+        return i * tau + e;
     }
 
     private void mirathTcithCommit(byte[] commit, byte[] salt, int e, int i, byte[] seed)
@@ -805,11 +782,11 @@ class MirathEngine
         // Process each tau element
         for (int e = 0; e < tau; e++)
         {
-            int N = e < tau1 ? n1 : n2;
+           // int N = e < tau1 ? n1 : n2;
             byte[] S_acc = new byte[ffSBytes];
             byte[] C_acc = new byte[ffCBytes];
 
-            for (int i = 0; i < N; i++)
+            for (int i = 0; i < n1; i++)
             {
                 int idx = mirathTcithPsi(i, e);
 
@@ -857,11 +834,11 @@ class MirathEngine
         // Process each tau element
         for (int e = 0; e < tau; e++)
         {
-            int N = e < tau1 ? n1 : n2;
+            //int N = e < tau1 ? n1 : n2;
             byte[] S_acc = new byte[ffSBytes];
             byte[] C_acc = new byte[ffCBytes];
 
-            for (int i = 0; i < N; i++)
+            for (int i = 0; i < n1; i++)
             {
                 int idx = mirathTcithPsi(i, e);
 
@@ -956,7 +933,7 @@ class MirathEngine
         }
     }
 
-    private void mirathExpandSeed(byte[][] pairNode, byte[] salt, int idx, byte[] seed)
+    private void mirathExpandSeed(byte[][] pairNode, int pos, byte[] salt, int idx, byte[] seed)
     {
         BlockCipher cipher = getBlockCipher(seed);
         byte[] msg = new byte[securityBytes == 16 ? 16 : 32];
@@ -968,18 +945,18 @@ class MirathEngine
         {
             byte[] output = new byte[32];
             cipher.processBlock(msg, 0, output, 0);
-            System.arraycopy(output, 0, pairNode[0], 0, securityBytes);
+            System.arraycopy(output, 0, pairNode[pos], 0, securityBytes);
 
             msg[0] ^= 0x01;
             output = new byte[32];
             cipher.processBlock(msg, 0, output, 0);
-            System.arraycopy(output, 0, pairNode[1], 0, securityBytes);
+            System.arraycopy(output, 0, pairNode[pos + 1], 0, securityBytes);
         }
         else
         {
-            cipher.processBlock(msg, 0, pairNode[0], 0);
+            cipher.processBlock(msg, 0, pairNode[pos], 0);
             msg[0] ^= 0x01;
-            cipher.processBlock(msg, 0, pairNode[1], 0);
+            cipher.processBlock(msg, 0, pairNode[pos + 1], 0);
         }
     }
 
@@ -1515,7 +1492,7 @@ class MirathEngine
         int randomOffset = 0;
 
         // Process N1 challenges
-        for (int e = 0; e < tau1; e++)
+        for (int e = 0; e < tau; e++)
         {
             byte[] block = Arrays.copyOfRange(random, randomOffset, randomOffset + n1Bytes);
             block[n1Bytes - 1] &= n1Mask;
@@ -1524,21 +1501,6 @@ class MirathEngine
 
             // Shift right by N1_BITS
             for (int j = 0; j < n1Bits; j++)
-            {
-                shiftRightArray(random, challenge2Bytes);
-            }
-        }
-
-        // Process N2 challenges
-        for (int e = tau1; e < tau1 + tau2; e++)
-        {
-            byte[] block = Arrays.copyOfRange(random, randomOffset, randomOffset + n2Bytes);
-            block[n2Bytes - 1] &= n2Mask;
-
-            challenge[e] = getChallenge(block);
-
-            // Shift right by N2_BITS
-            for (int j = 0; j < n2Bits; j++)
             {
                 shiftRightArray(random, challenge2Bytes);
             }
@@ -2253,15 +2215,7 @@ class MirathEngine
         byte[] hCom = new byte[2 * securityBytes];
         byte[][] seeds = new byte[treeLeaves][securityBytes];
         byte[][] tree = new byte[2 * treeLeaves - 1][securityBytes]; // Initialize based on your tree structure
-        byte[][][] commits = new byte[tau][][]; // Initialize based on your commit structure
-        for (int i = 0; i < tau1; ++i)
-        {
-            commits[i] = new byte[n1][securityBytes * 2];
-        }
-        for (int i = tau1; i < tau; ++i)
-        {
-            commits[i] = new byte[n2][securityBytes * 2];
-        }
+        byte[][][] commits = new byte[tau][n1][securityBytes * 2]; // Initialize based on your commit structure
         int ret = multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
 
         // Hash sh
@@ -2305,15 +2259,7 @@ class MirathEngine
         byte[] hCom = new byte[2 * securityBytes];
         byte[][] seeds = new byte[treeLeaves][securityBytes];
         byte[][] tree = new byte[2 * treeLeaves - 1][securityBytes]; // Initialize based on your tree structure
-        byte[][][] commits = new byte[tau][][]; // Initialize based on your commit structure
-        for (int i = 0; i < tau1; ++i)
-        {
-            commits[i] = new byte[n1][securityBytes * 2];
-        }
-        for (int i = tau1; i < tau; ++i)
-        {
-            commits[i] = new byte[n2][securityBytes * 2];
-        }
+        byte[][][] commits = new byte[tau][n1][securityBytes * 2]; // Initialize based on your commit structure
         int ret = multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
 
         // Hash sh
@@ -2366,9 +2312,8 @@ class MirathEngine
         // Process commits
         for (int e = 0; e < tau; e++)
         {
-            int N = e < tau1 ? n1 : n2;
             System.arraycopy(commitsIStar[e], 0, commits[e][iStar[e]], 0, 2 * securityBytes);
-            for (int i = 0; i < N; i++)
+            for (int i = 0; i < n1; i++)
             {
                 if (i != iStar[e])
                 {
@@ -2443,14 +2388,12 @@ class MirathEngine
             {
                 if (valid[i])
                 {
-                    byte[][] pairnode = new byte[2][securityBytes];
-                    mirathExpandSeed(pairnode, salt, i, partialGGMTree[i]);
-                    System.arraycopy(pairnode[0], 0, partialGGMTree[getChild0(i)], 0, securityBytes);
-                    System.arraycopy(pairnode[1], 0, partialGGMTree[getChild1(i)], 0, securityBytes);
+                    int child0 = 2 * i + 1;
+                    mirathExpandSeed(partialGGMTree, child0, salt, i, partialGGMTree[i]);
                     if (i < treeLeaves / 2)
                     {
-                        valid[getChild0(i)] = true;
-                        valid[getChild1(i)] = true;
+                        valid[child0] = true;
+                        valid[child0 + 1] = true;
                     }
                 }
             }
@@ -2509,33 +2452,15 @@ class MirathEngine
         return n + 1;
     }
 
-    private static int getChild0(int i)
-    {
-        return 2 * i + 1;
-    }
-
-    private static int getChild1(int i)
-    {
-        return 2 * i + 2;
-    }
-
-    private void computeShare(byte[] S_share,
-                              byte[] C_share,
-                              byte[] v_share,
-                              int i_star,
-                              byte[][] seeds,
-                              int e,
-                              byte[] aux,
-                              byte[] salt)
+    private void computeShare(byte[] S_share, byte[] C_share, byte[] v_share, int i_star, byte[][] seeds, int e,
+                              byte[] aux, byte[] salt)
     {
         // Split aux into S and C components
         byte[] aux_S = Arrays.copyOfRange(aux, 0, ffSBytes);
         byte[] aux_C = Arrays.copyOfRange(aux, ffSBytes, ffSBytes + ffCBytes);
 
         // Determine matrix dimensions based on parameter version
-        int N = (e < tau1) ? n1 : n2;
-
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < n1; i++)
         {
             if (i != i_star)
             {
@@ -2585,9 +2510,7 @@ class MirathEngine
         byte[] aux_C = Arrays.copyOfRange(aux, ffSBytes, ffSBytes + ffCBytes);
 
         // Determine matrix dimensions based on parameter version
-        int N = (e < tau1) ? n1 : n2;
-
-        for (int i = 0; i < N; i++)
+        for (int i = 0; i < n1; i++)
         {
             if (i != i_star)
             {
@@ -2679,15 +2602,8 @@ class MirathEngine
         mirathVectorFFMuAddMultiple(baseAlpha, baseAlpha, (byte)p, midAlpha, rho);
     }
 
-    public void emulatePartyMu(short[] baseAlpha,
-                               int p,
-                               short[] S_share,
-                               short[] C_share,
-                               short[] v_share,
-                               short[] gamma,
-                               byte[] H,
-                               byte[] y,
-                               short[] midAlpha)
+    public void emulatePartyMu(short[] baseAlpha, int p, short[] S_share, short[] C_share, short[] v_share,
+                               short[] gamma, byte[] H, byte[] y, short[] midAlpha)
     {
         // Initialize temporary buffers
         short[] e_A = new short[eA];

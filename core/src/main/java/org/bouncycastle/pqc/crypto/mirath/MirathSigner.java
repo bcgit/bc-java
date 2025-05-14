@@ -69,15 +69,7 @@ public class MirathSigner
         byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes];
         byte[][] seeds = new byte[engine.treeLeaves][engine.securityBytes];
 
-        byte[][][] commits = new byte[engine.tau][][];
-        for (int i = 0; i < engine.tau1; ++i)
-        {
-            commits[i] = new byte[engine.n1][engine.securityBytes * 2];
-        }
-        for (int i = engine.tau1; i < engine.tau; ++i)
-        {
-            commits[i] = new byte[engine.n2][engine.securityBytes * 2];
-        }
+        byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
 
         // Phase 1: Build and Commit Parallel Witness Shares
         // Step 1: Decompress secret key

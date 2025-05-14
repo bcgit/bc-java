@@ -2,15 +2,9 @@ package org.bouncycastle.pqc.crypto.mirath;
 
 public class MirathParameters
 {
-    //TODO: n1Bits, n2Bits is 8 for fast, and 12 for short
-    //TODO: n1Bytes, n2Bytes is 1 for fast, and 2 for short
-    //TODO: n1Mask n2Mask is 0xff for fast, and 0x0f for short
     public static final MirathParameters mirath_1a_fast = new MirathParameters(
         "Mirath-1a-fast",                         // name
-        128,                              // securityLevel
         16,                               // securityLevelBytes
-        2 * 16,                           // saltBytes
-        32,                               // secretKeyBytes
         73,                               // publicKeyBytes
         3728,                             // signatureBytes
         16,                               // q
@@ -18,17 +12,7 @@ public class MirathParameters
         143,                              // k
         16,                               // n
         4,                                // r
-        256,                              // n1
-        256,                              // n2
-        8,                                // n1Bits
-        8,                                // n2Bits
-        1,                                // n1Bytes
-        1,                                // n2Bytes
-        0xff,                             // n1Mask
-        0xff,                             // n2Mask
         17,                               // tau
-        17,                               // tau1
-        0,                                // tau2
         16,                               // rho
         2,                                // mu
         4352,                             // treeLeaves
@@ -42,10 +26,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_1a_short = new MirathParameters(
         "Mirath-1a-short",                 // name
-        128,                             // securityLevel
         16,                              // securityLevelBytes
-        2 * 16,                          // saltBytes
-        32,                              // secretKeyBytes
         73,                              // publicKeyBytes
         3078,                            // signatureBytes
         16,                              // q
@@ -53,17 +34,7 @@ public class MirathParameters
         143,                             // k
         16,                              // n
         4,                               // r
-        4096,                            // n1
-        4096,                            // n2
-        12,                              // n1Bits
-        12,                              // n2Bits
-        2,                               // n1Bytes
-        2,                               // n2Bytes
-        0x0F,                            // n1Mask
-        0x0F,                            // n2Mask
         11,                              // tau
-        11,                              // tau1
-        0,                               // tau2
         11,                              // rho
         3,                               // mu
         45056,                           // treeLeaves
@@ -77,10 +48,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_1b_fast = new MirathParameters(
         "Mirath-1b-fast",                // name
-        128,                            // securityLevel
         16,                             // securityLevelBytes
-        2 * 16,                         // saltBytes
-        32,                             // secretKeyBytes
         57,                             // publicKeyBytes
         3456,                           // signatureBytes
         2,                              // q
@@ -88,17 +56,7 @@ public class MirathParameters
         1443,                           // k
         42,                             // n
         4,                              // r
-        256,                            // n1
-        256,                            // n2
-        8,                              // n1Bits
-        8,                              // n2Bits
-        1,                              // n1Bytes
-        1,                              // n2Bytes
-        0xff,                           // n1Mask
-        0xff,                           // n2Mask
         17,                             // tau
-        17,                             // tau1
-        0,                              // tau2
         16,                             // rho
         8,                              // mu
         4352,                           // treeLeaves
@@ -112,10 +70,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_1b_short = new MirathParameters(
         "Mirath-1b-short",              // name
-        128,                           // securityLevel
         16,                            // securityLevelBytes
-        2 * 16,                        // saltBytes
-        32,                            // secretKeyBytes
         57,                            // publicKeyBytes
         2902,                          // signatureBytes
         2,                             // q
@@ -123,17 +78,7 @@ public class MirathParameters
         1443,                          // k
         42,                            // n
         4,                             // r
-        4096,                          // n1
-        4096,                          // n2
-        12,                            // n1Bits
-        12,                            // n2Bits
-        2,                             // n1Bytes
-        2,                             // n2Bytes
-        0x0F,                          // n1Mask
-        0x0F,                          // n2Mask
         11,                            // tau
-        11,                            // tau1
-        0,                             // tau2
         11,                            // rho
         12,                            // mu
         45056,                         // treeLeaves
@@ -147,10 +92,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_3a_fast = new MirathParameters(
         "Mirath-3a-fast",              // name
-        192,                          // securityLevel
         24,                           // securityLevelBytes
-        2 * 24,                       // saltBytes
-        48,                           // secretKeyBytes
         107,                          // publicKeyBytes
         8537,                         // signatureBytes
         16,                           // q
@@ -158,17 +100,7 @@ public class MirathParameters
         195,                          // k
         19,                           // n
         5,                            // r
-        256,                          // n1
-        256,                          // n2
-        8,                            // n1Bits
-        8,                            // n2Bits
-        1,                            // n1Bytes
-        1,                            // n2Bytes
-        0xff,                         // n1Mask
-        0xff,                         // n2Mask
         26,                           // tau
-        26,                           // tau1
-        0,                            // tau2
         24,                           // rho
         2,                            // mu
         6656,                         // treeLeaves
@@ -182,10 +114,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_3a_short = new MirathParameters(
         "Mirath-3a-short",             // name
-        192,                          // securityLevel
         24,                           // securityLevelBytes
-        2 * 24,                       // saltBytes
-        48,                           // secretKeyBytes
         107,                          // publicKeyBytes
         6907,                         // signatureBytes
         16,                           // q
@@ -193,17 +122,7 @@ public class MirathParameters
         195,                          // k
         19,                           // n
         5,                            // r
-        4096,                         // n1
-        4096,                         // n2
-        12,                           // n1Bits
-        12,                           // n2Bits
-        2,                            // n1Bytes
-        2,                            // n2Bytes
-        0x0f,                         // n1Mask
-        0x0f,                         // n2Mask
         17,                           // tau
-        17,                           // tau1
-        0,                            // tau2
         16,                           // rho
         3,                            // mu
         69632,                        // treeLeaves
@@ -217,10 +136,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_3b_fast = new MirathParameters(
         "Mirath-3b-fast",              // name
-        192,                          // securityLevel
         24,                           // securityLevelBytes
-        2 * 24,                       // saltBytes
-        48,                           // secretKeyBytes
         84,                           // publicKeyBytes
         7936,                         // signatureBytes
         2,                            // q
@@ -228,17 +144,7 @@ public class MirathParameters
         2024,                         // k
         50,                           // n
         5,                            // r
-        256,                          // n1
-        256,                          // n2
-        8,                            // n1Bits
-        8,                            // n2Bits
-        1,                            // n1Bytes
-        1,                            // n2Bytes
-        0xff,                         // n1Mask
-        0xff,                         // n2Mask
         26,                           // tau
-        26,                           // tau1
-        0,                            // tau2
         24,                           // rho
         8,                            // mu
         6656,                         // treeLeaves
@@ -252,10 +158,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_3b_short = new MirathParameters(
         "Mirath-3b-short",             // name
-        192,                          // securityLevel
         24,                           // securityLevelBytes
-        2 * 24,                       // saltBytes
-        48,                           // secretKeyBytes
         84,                           // publicKeyBytes
         6514,                         // signatureBytes
         2,                            // q
@@ -263,17 +166,7 @@ public class MirathParameters
         2024,                         // k
         50,                           // n
         5,                            // r
-        4096,                         // n1
-        4096,                         // n2
-        12,                           // n1Bits
-        12,                           // n2Bits
-        2,                            // n1Bytes
-        2,                            // n2Bytes
-        0x0f,                         // n1Mask
-        0x0f,                         // n2Mask
         17,                           // tau
-        17,                           // tau1
-        0,                            // tau2
         16,                           // rho
         12,                           // mu
         69632,                        // treeLeaves
@@ -287,10 +180,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_5a_fast = new MirathParameters(
         "Mirath-5a-fast",              // name
-        256,                          // securityLevel
         32,                           // securityLevelBytes
-        2 * 32,                       // saltBytes
-        64,                           // secretKeyBytes
         147,                          // publicKeyBytes
         15504,                        // signatureBytes
         16,                           // q
@@ -298,17 +188,7 @@ public class MirathParameters
         255,                          // k
         22,                           // n
         6,                            // r
-        256,                          // n1
-        256,                          // n2
-        8,                            // n1Bits
-        8,                            // n2Bits
-        1,                            // n1Bytes
-        1,                            // n2Bytes
-        0xff,                         // n1Mask
-        0xff,                         // n2Mask
         36,                           // tau
-        36,                           // tau1
-        0,                            // tau2
         32,                           // rho
         2,                            // mu
         9216,                         // treeLeaves
@@ -322,10 +202,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_5a_short = new MirathParameters(
         "Mirath-5a-short",             // name
-        256,                          // securityLevel
         32,                           // securityLevelBytes
-        2 * 32,                       // saltBytes
-        64,                           // secretKeyBytes
         147,                          // publicKeyBytes
         12413,                        // signatureBytes
         16,                           // q
@@ -333,17 +210,7 @@ public class MirathParameters
         255,                          // k
         22,                           // n
         6,                            // r
-        4096,                         // n1
-        4096,                         // n2
-        12,                           // n1Bits
-        12,                           // n2Bits
-        2,                            // n1Bytes
-        2,                            // n2Bytes
-        0x0f,                         // n1Mask
-        0x0f,                         // n2Mask
         23,                           // tau
-        23,                           // tau1
-        0,                            // tau2
         22,                           // rho
         3,                            // mu
         94208,                        // treeLeaves
@@ -357,10 +224,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_5b_fast = new MirathParameters(
         "Mirath-5b-fast",              // name
-        256,                          // securityLevel
         32,                           // securityLevelBytes
-        2 * 32,                       // saltBytes
-        64,                           // secretKeyBytes
         112,                          // publicKeyBytes
         14262,                        // signatureBytes
         2,                            // q
@@ -368,17 +232,7 @@ public class MirathParameters
         2499,                         // k
         56,                           // n
         6,                            // r
-        256,                          // n1
-        256,                          // n2
-        8,                            // n1Bits
-        8,                            // n2Bits
-        1,                            // n1Bytes
-        1,                            // n2Bytes
-        0xff,                          // n1Mask
-        0xff,                          // n2Mask
         36,                           // tau
-        36,                           // tau1
-        0,                            // tau2
         32,                           // rho
         8,                            // mu
         9216,                         // treeLeaves
@@ -392,10 +246,7 @@ public class MirathParameters
 
     public static final MirathParameters mirath_5b_short = new MirathParameters(
         "Mirath-5b-short",              // name
-        256,                          // securityLevel
         32,                           // securityLevelBytes
-        2 * 32,                       // saltBytes
-        64,                           // secretKeyBytes
         112,                          // publicKeyBytes
         11620,                        // signatureBytes
         2,                            // q
@@ -403,17 +254,7 @@ public class MirathParameters
         2499,                         // k
         56,                           // n
         6,                            // r
-        4096,                         // n1
-        4096,                         // n2
-        12,                           // n1Bits
-        12,                           // n2Bits
-        2,                            // n1Bytes
-        2,                            // n2Bytes
-        0xf,                          // n1Mask
-        0xf,                          // n2Mask
         23,                           // tau
-        23,                           // tau1
-        0,                            // tau2
         22,                           // rho
         12,                           // mu
         94208,                        // treeLeaves
@@ -437,17 +278,11 @@ public class MirathParameters
     private final int k;
     private final int n;
     private final int r;
-    private final int n1;
-    private final int n2;
-    private final int n1Bits;
-    private final int n2Bits;
-    private final int n1Bytes;
-    private final int n2Bytes;
-    private final int n1Mask;
-    private final int n2Mask;
+    private final int n1n2;
+    private final int n1n2Bits;
+    private final int n1n2Bytes;
+    private final int n1n2Mask;
     private final int tau;
-    private final int tau1;
-    private final int tau2;
     private final int rho;
     private final int mu;
     private final int treeLeaves;
@@ -458,20 +293,17 @@ public class MirathParameters
     private final boolean isA;
     private final boolean isFast;
 
-    private MirathParameters(String name, int securityLevel, int securityLevelBytes, int saltBytes,
-                             int secretKeyBytes, int publicKeyBytes, int signatureBytes,
-                             int q, int m, int k, int n, int r,
-                             int n1, int n2, int n1Bits, int n2Bits, int n1Bytes, int n2Bytes,
-                             int n1Mask, int n2Mask, int tau, int tau1, int tau2,
+    private MirathParameters(String name, int securityLevelBytes, int publicKeyBytes, int signatureBytes,
+                             int q, int m, int k, int n, int r, int tau,
                              int rho, int mu, int treeLeaves,
                              int challenge2Bytes, int hash2MaskBytes, int hash2Mask, int tOpen,
                              boolean isA, boolean isFast)
     {
         this.name = name;
-        this.securityLevel = securityLevel;
+        this.securityLevel = securityLevelBytes << 3;
         this.securityLevelBytes = securityLevelBytes;
-        this.saltBytes = saltBytes;
-        this.secretKeyBytes = secretKeyBytes;
+        this.saltBytes = securityLevelBytes << 1;
+        this.secretKeyBytes = securityLevelBytes << 1;
         this.publicKeyBytes = publicKeyBytes;
         this.signatureBytes = signatureBytes;
         this.q = q;
@@ -479,17 +311,11 @@ public class MirathParameters
         this.k = k;
         this.n = n;
         this.r = r;
-        this.n1 = n1;
-        this.n2 = n2;
-        this.n1Bits = n1Bits;
-        this.n2Bits = n2Bits;
-        this.n1Bytes = n1Bytes;
-        this.n2Bytes = n2Bytes;
-        this.n1Mask = n1Mask;
-        this.n2Mask = n2Mask;
+        this.n1n2 = isFast ? 256 : 4096;
+        this.n1n2Bits = isFast ? 8 : 12;
+        this.n1n2Bytes = isFast ? 1 : 2;
+        this.n1n2Mask = isFast ? 0xff : 0x0f;
         this.tau = tau;
-        this.tau1 = tau1;
-        this.tau2 = tau2;
         this.rho = rho;
         this.mu = mu;
         this.treeLeaves = treeLeaves;
@@ -564,57 +390,32 @@ public class MirathParameters
 
     public int getN1()
     {
-        return n1;
+        return n1n2;
     }
 
     public int getN2()
     {
-        return n2;
+        return n1n2;
     }
 
     public int getN1Bits()
     {
-        return n1Bits;
-    }
-
-    public int getN2Bits()
-    {
-        return n2Bits;
+        return n1n2Bits;
     }
 
     public int getN1Bytes()
     {
-        return n1Bytes;
-    }
-
-    public int getN2Bytes()
-    {
-        return n2Bytes;
+        return n1n2Bytes;
     }
 
     public int getN1Mask()
     {
-        return n1Mask;
-    }
-
-    public int getN2Mask()
-    {
-        return n2Mask;
+        return n1n2Mask;
     }
 
     public int getTau()
     {
         return tau;
-    }
-
-    public int getTau1()
-    {
-        return tau1;
-    }
-
-    public int getTau2()
-    {
-        return tau2;
     }
 
     public int getRho()
