@@ -42,7 +42,7 @@ class MirathEngine
     final int treeLeaves;
     private final int blockLength;
     private final int challenge2Bytes;
-    private final int hash2MaskBytes;
+    final int hash2MaskBytes;
     private final int hash2Mask;
     final int tOpen;
     private final int leavesSeedsOffset;
@@ -59,6 +59,10 @@ class MirathEngine
     private static final int domainSeparatorHash2Partial = 2;
     private static final byte domainSeparatorCmt = 3;
     SHAKEDigest prng;
+    int nRowsBytes1;
+    int nRowsBytes2;
+    int onCol1;
+    int onCol2;
 
     // GF(16) multiplication table (replace with actual implementation if different)
     private static final byte[] MIRATH_MAP_FF_TO_FF_MU = new byte[]{
@@ -364,6 +368,18 @@ class MirathEngine
         prng = new SHAKEDigest(securityBytes == 16 ? 128 : 256);
         offEA = (8 * ffYBytes) - (isA ? 4 : 1) * (m * m - k);
         offEB = (8 * mirathMatrixFFBytesSize(k, 1)) - (isA ? 4 : 1) * k;
+        nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
+        nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
+        if (isA)
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
+            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
+        }
+        else
+        {
+            onCol1 = 8 - ((8 * nRowsBytes1) - m);
+            onCol2 = 8 - ((8 * nRowsBytes2) - r);
+        }
     }
 
     public void mirathMatrixExpandSeedSecretMatrix(byte[] S, byte[] C, byte[] seedSk)
@@ -510,11 +526,7 @@ class MirathEngine
                 result[ptrIndex] = (byte)((matrix1[colIndex] & 0xFF) >>> offPtr);
             }
             colIndex++;
-            offPtr = (8 - ((onCol - offPtr) % 8));
-            if (offPtr > 8)
-            {
-                offPtr -= 8;
-            }
+            offPtr = (8 - ((onCol - offPtr) & 7));
         }
 
         // Process matrix2
@@ -540,15 +552,11 @@ class MirathEngine
                 }
             }
             colIndex++;
-            offPtr = (8 - ((onCol - offPtr) % 8));
-            if (offPtr > 8)
-            {
-                offPtr -= 8;
-            }
+            offPtr = (8 - ((onCol - offPtr) & 7));
         }
     }
 
-    private void mirathMatrixSetToFF(byte[] matrix, int nRows, int nCols)
+    void mirathMatrixSetToFF(byte[] matrix, int nRows, int nCols)
     {
         if (isA)
         {
@@ -599,7 +607,10 @@ class MirathEngine
     {
         // Initialize tree
         System.arraycopy(rseed, 0, tree[0], 0, securityBytes);
-        mirathGGMTreeExpand(tree, salt);
+        for (int i = 0; i < treeLeaves - 1; i++)
+        {
+            mirathExpandSeed(tree, 2 * i + 1, salt, i, tree[i]);
+        }
         mirathGGMTreeGetLeaves(seeds, tree);
 
         // Initialize hash
@@ -619,14 +630,6 @@ class MirathEngine
         }
 
         hash.doFinal(hCom, 0);
-    }
-
-    private void mirathGGMTreeExpand(byte[][] tree, byte[] salt)
-    {
-        for (int i = 0; i < treeLeaves - 1; i++)
-        {
-            mirathExpandSeed(tree, 2 * i + 1, salt, i, tree[i]);
-        }
     }
 
     private void mirathGGMTreeGetLeaves(byte[][] output, byte[][] tree)
@@ -780,7 +783,6 @@ class MirathEngine
         // Process each tau element
         for (int e = 0; e < tau; e++)
         {
-            // int N = e < tau1 ? n1 : n2;
             byte[] S_acc = new byte[ffSBytes];
             byte[] C_acc = new byte[ffCBytes];
 
@@ -826,7 +828,6 @@ class MirathEngine
         // Process each tau element
         for (int e = 0; e < tau; e++)
         {
-            //int N = e < tau1 ? n1 : n2;
             byte[] S_acc = new byte[ffSBytes];
             byte[] C_acc = new byte[ffCBytes];
 
@@ -954,7 +955,7 @@ class MirathEngine
         }
     }
 
-    private void computeFinalHash(byte[] hSh, byte[] salt, byte[] hCom, byte[][] aux)
+    void computeFinalHash(byte[] hSh, byte[] salt, byte[] hCom, byte[][] aux)
     {
         SHA3Digest digest = getSHA3Digest();
         digest.update((byte)domainSeparatorHash1);
@@ -1471,7 +1472,7 @@ class MirathEngine
         digest.doFinal(hMpc, 0);
     }
 
-    private void expandViewChallenge(int[] challenge, byte[] vGrinding, byte[] input)
+    void expandViewChallenge(int[] challenge, byte[] vGrinding, byte[] input)
     {
         prng.update(input, 0, input.length);
 
@@ -1700,19 +1701,6 @@ class MirathEngine
 
         // Pack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
-        int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
-        int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1, onCol2;
-        if (isA)
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
-        }
-        else
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - m);
-            onCol2 = 8 - ((8 * nRowsBytes2) - r);
-        }
 
         for (int e = 0; e < tau; e++)
         {
@@ -1813,19 +1801,6 @@ class MirathEngine
 
         // Pack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
-        int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
-        int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1, onCol2;
-        if (isA)
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
-        }
-        else
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - m);
-            onCol2 = 8 - ((8 * nRowsBytes2) - r);
-        }
 
         for (int e = 0; e < tau; e++)
         {
@@ -1906,19 +1881,6 @@ class MirathEngine
     public void parseSignature(int ptr, byte[][] aux, byte[][] midAlpha, byte[] signature)
     {
         int offPtr = 8; // Tracks bits remaining in current byte
-        int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
-        int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1, onCol2;
-        if (isA)
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
-        }
-        else
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - m);
-            onCol2 = 8 - ((8 * nRowsBytes2) - r);
-        }
 
         for (int e = 0; e < tau; e++)
         {
@@ -1981,19 +1943,6 @@ class MirathEngine
     {
         // Unpack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
-        int nRowsBytes1 = mirathMatrixFFBytesSize(m, 1); // Bytes per column for M rows
-        int nRowsBytes2 = mirathMatrixFFBytesSize(r, 1); // Bytes per column for R rows
-        int onCol1, onCol2;
-        if (isA)
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - (4 * m));
-            onCol2 = 8 - ((8 * nRowsBytes2) - (4 * r));
-        }
-        else
-        {
-            onCol1 = 8 - ((8 * nRowsBytes1) - m);
-            onCol2 = 8 - ((8 * nRowsBytes2) - r);
-        }
 
         for (int e = 0; e < tau; e++)
         {
@@ -2070,96 +2019,14 @@ class MirathEngine
         }
     }
 
-    public void mirathMatrixDecompressPK(byte[] H, byte[] y, byte[] pk)
-    {
-        byte[] seedPk = new byte[securityBytes];
-
-        System.arraycopy(pk, 0, seedPk, 0, securityBytes);
-        System.arraycopy(pk, securityBytes, y, 0, ffYBytes);
-        prng.update(seedPk, 0, securityBytes);
-
-        int hBytes = mirathMatrixFFBytesSize(m * m - k, k);
-        prng.doFinal(H, 0, hBytes);
-        mirathMatrixSetToFF(H, m * m - k, k);
-    }
-
-    public int computeParallelShares(byte[][] S_share, byte[][] C_share, byte[][] v_share, int[] iStar,
-                                     byte[] hSh, long ctr, byte[][] path, byte[][] commitsIStar, byte[][] aux,
-                                     byte[] salt, byte[] binding)
-    {
-        byte[] vGrinding = new byte[hash2MaskBytes]; // Adjust size if needed
-        byte[] shakeInput = new byte[2 * securityBytes + 8];
-
-        // Prepare SHAKE input
-        System.arraycopy(binding, 0, shakeInput, 0, 2 * securityBytes);
-        byte[] ctrBytes = Pack.longToLittleEndian(ctr);
-        System.arraycopy(ctrBytes, 0, shakeInput, 2 * securityBytes, 8);
-
-        // Expand view challenge
-        expandViewChallenge(iStar, vGrinding, shakeInput);
-
-        // Reconstruct commitments
-        byte[] hCom = new byte[2 * securityBytes];
-        byte[][] seeds = new byte[treeLeaves][securityBytes];
-        byte[][] tree = new byte[2 * treeLeaves - 1][securityBytes]; // Initialize based on your tree structure
-        byte[][][] commits = new byte[tau][n1][securityBytes * 2]; // Initialize based on your commit structure
-        int ret = multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
-
-        // Hash sh
-        computeFinalHash(hSh, salt, hCom, aux);
-
-        // Process each share
-        for (int e = 0; e < tau; e++)
-        {
-            // To be implemented later
-            computeShare(S_share[e], C_share[e], v_share[e], iStar[e], seeds, e, aux[e], salt);
-        }
-
-        return ret & (discardInputChallenge2(vGrinding) == 0 ? 0 : 1);
-    }
-
-    public int computeParallelShares(short[][] S_share, short[][] C_share, short[][] v_share, int[] iStar,
-                                     byte[] hSh, long ctr, byte[][] path, byte[][] commitsIStar, byte[][] aux,
-                                     byte[] salt, byte[] binding)
-    {
-        byte[] vGrinding = new byte[hash2MaskBytes]; // Adjust size if needed
-        byte[] shakeInput = new byte[2 * securityBytes + 8];
-
-        // Prepare SHAKE input
-        System.arraycopy(binding, 0, shakeInput, 0, 2 * securityBytes);
-        byte[] ctrBytes = Pack.longToLittleEndian(ctr);
-        System.arraycopy(ctrBytes, 0, shakeInput, 2 * securityBytes, 8);
-
-        // Expand view challenge
-        expandViewChallenge(iStar, vGrinding, shakeInput);
-
-        // Reconstruct commitments
-        byte[] hCom = new byte[2 * securityBytes];
-        byte[][] seeds = new byte[treeLeaves][securityBytes];
-        byte[][] tree = new byte[2 * treeLeaves - 1][securityBytes]; // Initialize based on your tree structure
-        byte[][][] commits = new byte[tau][n1][securityBytes * 2]; // Initialize based on your commit structure
-        int ret = multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
-
-        // Hash sh
-        computeFinalHash(hSh, salt, hCom, aux);
-
-        // Process each share
-        for (int e = 0; e < tau; e++)
-        {
-            computeShare(S_share[e], C_share[e], v_share[e], iStar[e], seeds, e, aux[e], salt);
-        }
-
-        return ret & (discardInputChallenge2(vGrinding) == 0 ? 0 : 1);
-    }
-
-    private int multivcReconstruct(byte[] hCom,
-                                   byte[][] seeds,
-                                   int[] iStar,
-                                   byte[][] path,
-                                   byte[][] commitsIStar,
-                                   byte[] salt,
-                                   byte[][] tree,
-                                   byte[][][] commits)
+    int multivcReconstruct(byte[] hCom,
+                           byte[][] seeds,
+                           int[] iStar,
+                           byte[][] path,
+                           byte[][] commitsIStar,
+                           byte[] salt,
+                           byte[][] tree,
+                           byte[][][] commits)
     {
         int[] psiIStar = new int[tau];
         for (int e = 0; e < tau; e++)
@@ -2330,8 +2197,8 @@ class MirathEngine
         return n + 1;
     }
 
-    private void computeShare(byte[] S_share, byte[] C_share, byte[] v_share, int i_star, byte[][] seeds, int e,
-                              byte[] aux, byte[] salt)
+    void computeShare(byte[] S_share, byte[] C_share, byte[] v_share, int i_star, byte[][] seeds, int e,
+                      byte[] aux, byte[] salt)
     {
         // Split aux into S and C components
         byte[] aux_S = Arrays.copyOfRange(aux, 0, ffSBytes);
@@ -2374,14 +2241,14 @@ class MirathEngine
         mirathMatrixFFMuAddMultipleFF(C_share, phi_i, aux_C, r, m - r);
     }
 
-    private void computeShare(short[] S_share,
-                              short[] C_share,
-                              short[] v_share,
-                              int i_star,
-                              byte[][] seeds,
-                              int e,
-                              byte[] aux,
-                              byte[] salt)
+    void computeShare(short[] S_share,
+                      short[] C_share,
+                      short[] v_share,
+                      int i_star,
+                      byte[][] seeds,
+                      int e,
+                      byte[] aux,
+                      byte[] salt)
     {
         // Split aux into S and C components
         byte[] aux_S = Arrays.copyOfRange(aux, 0, ffSBytes);

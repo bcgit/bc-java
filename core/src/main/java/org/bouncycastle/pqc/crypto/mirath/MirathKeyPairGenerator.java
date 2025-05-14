@@ -26,10 +26,6 @@ public class MirathKeyPairGenerator
     {
         byte[] pk = new byte[p.getPublicKeyBytes()];
         byte[] sk = new byte[p.getSecretKeyBytes()];
-        final int m = p.getM();
-        final int r = p.getR();
-        final int n = p.getN();
-        final int k = p.getK();
         MirathEngine engine = new MirathEngine(p);
         // Step 1 & 2: Generate seeds
         byte[] seedSk = new byte[p.getSecurityLevelBytes()];
@@ -38,9 +34,9 @@ public class MirathKeyPairGenerator
         random.nextBytes(seedPk);
 
         // Initialize matrices
-        byte[] S = new byte[engine.mirathMatrixFFBytesSize(m, r)];
-        byte[] C = new byte[engine.mirathMatrixFFBytesSize(r, n - r)];
-        byte[] H = new byte[engine.mirathMatrixFFBytesSize(m * n - k, k)];
+        byte[] S = new byte[engine.ffSBytes];
+        byte[] C = new byte[engine.ffCBytes];
+        byte[] H = new byte[engine.ffHBytes];
         byte[] y = new byte[engine.ffYBytes];
 
         // Step 3 & 4: Expand matrices
@@ -51,21 +47,13 @@ public class MirathKeyPairGenerator
         engine.mirathMatrixComputeY(y, S, C, H);
 
         // Step 6 & 7: Build keys
-        unparsePublicKey(pk, seedPk, y);
-        unparseSecretKey(sk, seedSk, seedPk);
-
-        return new AsymmetricCipherKeyPair(new MirathPublicKeyParameters(p, pk), new MirathPrivateKeyParameters(p, sk));
-    }
-
-    public void unparsePublicKey(byte[] pk, byte[] seedPk, byte[] y)
-    {
+        //unparsePublicKey
         System.arraycopy(seedPk, 0, pk, 0, p.getSecurityLevelBytes());
         System.arraycopy(y, 0, pk, p.getSecurityLevelBytes(), y.length);
-    }
-
-    public void unparseSecretKey(byte[] sk, byte[] seedSk, byte[] seedPk)
-    {
+        //unparseSecretKey
         System.arraycopy(seedSk, 0, sk, 0, p.getSecurityLevelBytes());
         System.arraycopy(seedPk, 0, sk, p.getSecurityLevelBytes(), p.getSecurityLevelBytes());
+
+        return new AsymmetricCipherKeyPair(new MirathPublicKeyParameters(p, pk), new MirathPrivateKeyParameters(p, sk));
     }
 }

@@ -190,7 +190,10 @@ public class MirathSigner
         byte[][] path = new byte[engine.maxOpen][engine.securityBytes];
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
         // Step 2: Decompress public key
-        engine.mirathMatrixDecompressPK(H, y, pk);
+        System.arraycopy(pk, engine.securityBytes, y, 0, engine.ffYBytes);
+        engine.prng.update(pk, 0, engine.securityBytes);
+        engine.prng.doFinal(H, 0, engine.mirathMatrixFFBytesSize(engine.m * engine.m - engine.k, engine.k));
+        engine.mirathMatrixSetToFF(H, engine.m * engine.m - engine.k, engine.k);
         //parseSignature part 1
         int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * engine.mu) * engine.tau;
         if (engine.isA)
@@ -233,6 +236,28 @@ public class MirathSigner
             System.arraycopy(signature, ptr, commitsIStar[e], 0, 2 * engine.securityBytes);
             ptr += 2 * engine.securityBytes;
         }
+        //computeParallelShares part 1
+        byte[] vGrinding = new byte[engine.hash2MaskBytes]; // Adjust size if needed
+        byte[] shakeInput = new byte[2 * engine.securityBytes + 8];
+
+        // Prepare SHAKE input
+        System.arraycopy(hMpc, 0, shakeInput, 0, 2 * engine.securityBytes);
+        ctrBytes = Pack.longToLittleEndian(ctr);
+        System.arraycopy(ctrBytes, 0, shakeInput, 2 * engine.securityBytes, 8);
+
+        // Expand view challenge
+        engine.expandViewChallenge(iStar, vGrinding, shakeInput);
+
+        // Reconstruct commitments
+        byte[] hCom = new byte[2 * engine.securityBytes];
+        byte[][] seeds = new byte[engine.treeLeaves][engine.securityBytes];
+        byte[][] tree = new byte[2 * engine.treeLeaves - 1][engine.securityBytes];
+        byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
+        int ret = engine.multivcReconstruct(hCom, seeds, iStar, path, commitsIStar, salt, tree, commits);
+        if ((ret & (engine.discardInputChallenge2(vGrinding) == 0 ? 0 : 1)) != 0)
+        {
+            return false;
+        }
         if (params.isFast())
         {
             byte[][] SShare = new byte[engine.tau][engine.s];
@@ -246,11 +271,10 @@ public class MirathSigner
             engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
-            int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
-                path, commitsIStar, aux, salt, hMpc);
-            if (ret != 0)
+            engine.computeFinalHash(hSh, salt, hCom, aux);
+            for (int e = 0; e < engine.tau; e++)
             {
-                return false;
+                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
             }
 
             // Step 4: Expand MPC challenge
@@ -279,13 +303,11 @@ public class MirathSigner
             engine.parseSignature(ptr, aux, alphaMid, signature);
 
             // Step 3: Compute parallel shares
-            int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
-                path, commitsIStar, aux, salt, hMpc);
-            if (ret != 0)
+            engine.computeFinalHash(hSh, salt, hCom, aux);
+            for (int e = 0; e < engine.tau; e++)
             {
-                return false;
+                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
             }
-
             // Step 4: Expand MPC challenge
             engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
 
