@@ -840,7 +840,7 @@ public class TlsClientProtocol
         final Hashtable extensions = helloRetryRequest.getExtensions();
         if (null == extensions)
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "no extensions found");
         }
         TlsUtils.checkExtensionData13(extensions, HandshakeType.hello_retry_request, AlertDescription.illegal_parameter);
 
@@ -855,15 +855,17 @@ public class TlsClientProtocol
             while (e.hasMoreElements())
             {
                 Integer extType = (Integer)e.nextElement();
+                int extensionType = extType.intValue();
 
-                if (ExtensionType.cookie == extType.intValue())
+                if (ExtensionType.cookie == extensionType)
                 {
                     continue;
                 }
 
                 if (null == TlsUtils.getExtensionData(clientExtensions, extType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.unsupported_extension);
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "received unrequested extension response: " + ExtensionType.getText(extensionType));
                 }
             }
         }
@@ -871,14 +873,19 @@ public class TlsClientProtocol
         final ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
         if (null == server_version)
         {
-            throw new TlsFatalAlert(AlertDescription.missing_extension);
+            throw new TlsFatalAlert(AlertDescription.missing_extension,
+                "missing extension response: " + ExtensionType.getText(ExtensionType.supported_versions));
         }
 
         if (!ProtocolVersion.TLSv13.isEqualOrEarlierVersionOf(server_version) ||
-            !ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version) ||
-            !TlsUtils.isValidVersionForCipherSuite(cipherSuite, server_version))
+            !ProtocolVersion.contains(tlsClientContext.getClientSupportedVersions(), server_version))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid version selected: " + server_version);
+        }
+
+        if (!TlsUtils.isValidVersionForCipherSuite(cipherSuite, server_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid cipher suite for selected version");
         }
 
         if (null != clientBinders)
@@ -891,6 +898,20 @@ public class TlsClientProtocol
             }
         }
 
+        final int selected_group = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
+
+        /*
+         * TODO[tls:psk_ke]
+         *
+         * RFC 8446 4.2.8. Servers [..] MUST NOT send a KeyShareEntry when using the "psk_ke"
+         * PskKeyExchangeMode.
+         */
+        if (selected_group < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.missing_extension,
+                "missing extension response: " + ExtensionType.getText(ExtensionType.key_share));
+        }
+
         /*
          * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the
          * client MUST verify that (1) the selected_group field corresponds to a group which was
@@ -899,12 +920,10 @@ public class TlsClientProtocol
          * extension in the original ClientHello. If either of these checks fails, then the client
          * MUST abort the handshake with an "illegal_parameter" alert.
          */
-        final int selected_group = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
-
         if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
             clientAgreements, selected_group))
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
         }
 
         final byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
