@@ -71,8 +71,8 @@ public class JceTlsDHDomain
     }
 
     protected final JcaTlsCrypto crypto;
-    protected final TlsDHConfig dhConfig;
     protected final DHParameterSpec dhSpec;
+    protected final boolean isPadded;
 
     public JceTlsDHDomain(JcaTlsCrypto crypto, TlsDHConfig dhConfig)
     {
@@ -83,8 +83,8 @@ public class JceTlsDHDomain
             if (null != spec)
             {
                 this.crypto = crypto;
-                this.dhConfig = dhConfig;
                 this.dhSpec = spec;
+                this.isPadded = dhConfig.isPadded();
                 return;
             }
         }
@@ -95,7 +95,7 @@ public class JceTlsDHDomain
     public JceTlsSecret calculateDHAgreement(DHPrivateKey privateKey, DHPublicKey publicKey)
         throws IOException
     {
-        return calculateDHAgreement(crypto, privateKey, publicKey, dhConfig.isPadded());
+        return calculateDHAgreement(crypto, privateKey, publicKey, isPadded);
     }
 
     public TlsAgreement createDH()
@@ -105,7 +105,7 @@ public class JceTlsDHDomain
 
     public BigInteger decodeParameter(byte[] encoding) throws IOException
     {
-        if (dhConfig.isPadded() && getValueLength(dhSpec) != encoding.length)
+        if (isPadded && getValueLength(dhSpec) != encoding.length)
         {
             throw new TlsFatalAlert(AlertDescription.illegal_parameter);
         }
@@ -140,7 +140,7 @@ public class JceTlsDHDomain
 
     public byte[] encodeParameter(BigInteger x) throws IOException
     {
-        return encodeValue(dhSpec, dhConfig.isPadded(), x);
+        return encodeValue(dhSpec, isPadded, x);
     }
 
     public byte[] encodePublicKey(DHPublicKey publicKey) throws IOException

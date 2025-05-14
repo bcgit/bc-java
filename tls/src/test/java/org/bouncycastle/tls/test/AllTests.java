@@ -22,16 +22,17 @@ public class AllTests
         TestSuite suite = new TestSuite("TLS tests");
 
         suite.addTestSuite(BasicTlsTest.class);
+        suite.addTestSuite(BcTlsProtocolKemTest.class);
         suite.addTestSuite(ByteQueueInputStreamTest.class);
         suite.addTestSuite(DTLSAggregatedHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSProtocolTest.class);
         suite.addTestSuite(DTLSPSKProtocolTest.class);
         suite.addTestSuite(DTLSRawKeysProtocolTest.class);
+        suite.addTestSuite(JcaTlsProtocolKemTest.class);
         suite.addTestSuite(OCSPTest.class);
         suite.addTestSuite(PRFTest.class);
         suite.addTestSuite(Tls13PSKProtocolTest.class);
-        suite.addTestSuite(TlsProtocolKemTest.class);
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);
