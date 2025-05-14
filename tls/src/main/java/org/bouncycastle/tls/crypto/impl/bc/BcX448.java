@@ -25,10 +25,10 @@ public class BcX448 implements TlsAgreement
 
     public byte[] generateEphemeral() throws IOException
     {
-        crypto.getSecureRandom().nextBytes(privateKey);
+        X448.generatePrivateKey(crypto.getSecureRandom(), privateKey);
 
         byte[] publicKey = new byte[X448.POINT_SIZE];
-        X448.scalarMultBase(privateKey, 0, publicKey, 0);
+        X448.generatePublicKey(privateKey, 0, publicKey, 0);
         return publicKey;
     }
 
