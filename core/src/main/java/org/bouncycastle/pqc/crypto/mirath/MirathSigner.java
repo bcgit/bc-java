@@ -66,7 +66,8 @@ public class MirathSigner
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
         byte[] hSh = new byte[2 * engine.securityBytes];
         byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
-        byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes]; // Assuming an object form
+        byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes];
+        byte[][] seeds = new byte[engine.treeLeaves][engine.securityBytes];
 
         byte[][][] commits = new byte[engine.tau][][];
         for (int i = 0; i < engine.tau1; ++i)
@@ -91,11 +92,14 @@ public class MirathSigner
 
         // Compute y and build public key
         engine.mirathMatrixComputeY(y, S, C, H);
-//        engine.unparsePublicKey(pk, seedPk, y);
+        //unparsePublicKey
         System.arraycopy(seedPk, 0, pk, 0, engine.securityBytes);
         System.arraycopy(y, 0, pk, engine.securityBytes, engine.ffYBytes);
         random.nextBytes(salt);
         random.nextBytes(rseed);
+        // Generate commitments
+        //hSh is hCom in this stage
+        engine.mirathMultivcCommit(seeds, hSh, tree, commits, salt, rseed);
 
         if (params.isFast())
         {
@@ -109,7 +113,7 @@ public class MirathSigner
             byte[][] alphaBase = new byte[engine.tau][engine.rho];
 
             // Step 4: Commit to shares
-            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, tree, commits, aux, salt, rseed, S, C);
+            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, aux, salt, S, C, seeds);
 
             // Phase 2: MPC simulation
             // Step 5: Expand MPC challenge
@@ -120,8 +124,7 @@ public class MirathSigner
             {
                 alphaBase[e] = new byte[engine.rho];
                 alphaMid[e] = new byte[engine.rho];
-                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e],
-                    C, CBase[e], v[e], vBase[e], Gamma, H);
+                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H);
             }
 
             // Phase 3: Sharing Opening
@@ -146,7 +149,7 @@ public class MirathSigner
             short[][] alphaBase = new short[engine.tau][engine.rho];
 
             // Step 4: Commit to shares
-            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, tree, commits, aux, salt, rseed, S, C);
+            engine.commitParallelSharings(SBase, CBase, vBase, v, hSh, aux, salt, S, C, seeds);
 
             // Phase 2: MPC simulation
             // Step 5: Expand MPC challenge
@@ -157,8 +160,7 @@ public class MirathSigner
             {
                 alphaBase[e] = new short[engine.rho];
                 alphaMid[e] = new short[engine.rho];
-                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e],
-                    C, CBase[e], v[e], vBase[e], Gamma, H);
+                engine.emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H);
             }
 
             // Phase 3: Sharing Opening
@@ -194,6 +196,8 @@ public class MirathSigner
         byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
         byte[][] path = new byte[engine.maxOpen][engine.securityBytes];
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
+        // Step 2: Decompress public key
+        engine.mirathMatrixDecompressPK(H, y, pk);
         if (params.isFast())
         {
             byte[][] SShare = new byte[engine.tau][engine.s];
@@ -208,9 +212,6 @@ public class MirathSigner
             {
                 return false;
             }
-
-            // Step 2: Decompress public key
-            engine.mirathMatrixDecompressPK(H, y, pk);
 
             // Step 3: Compute parallel shares
             int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
@@ -247,9 +248,6 @@ public class MirathSigner
             {
                 return false;
             }
-
-            // Step 2: Decompress public key
-            engine.mirathMatrixDecompressPK(H, y, pk);
 
             // Step 3: Compute parallel shares
             int ret = engine.computeParallelShares(SShare, CShare, vShare, iStar, hSh, ctr[0],
