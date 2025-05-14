@@ -869,7 +869,6 @@ class MirathEngine
         {
             cipher = AESEngine.newInstance();
             keyBytes = new byte[securityBytes];
-
         }
         else
         {
@@ -929,7 +928,7 @@ class MirathEngine
             System.arraycopy(output, 0, pairNode[pos], 0, securityBytes);
 
             msg[0] ^= 0x01;
-            output = new byte[32];
+            Arrays.clear(output);
             cipher.processBlock(msg, 0, output, 0);
             System.arraycopy(output, 0, pairNode[pos + 1], 0, securityBytes);
         }
@@ -2033,10 +2032,11 @@ class MirathEngine
         return n + 1;
     }
 
-    void computeShare(byte[] S_share, byte[] C_share, byte[] v_share, int i_star, byte[][] seeds, int e, byte[] aux, byte[] salt)
+    void computeShare(byte[] S_share, byte[] C_share, byte[] v_share, int i_star, byte[][] seeds, int e, byte[] aux,
+                      byte[] salt, byte[] sample)
     {
         // Split aux into S and C components
-        byte[] sample = new byte[2 * blockLength * securityBytes];
+
         // Determine matrix dimensions based on parameter version
         for (int i = 0; i < n1; i++)
         {
@@ -2060,11 +2060,9 @@ class MirathEngine
         mirathMatrixFFMuAddMultipleFF(C_share, phi_i, aux, ffSBytes, r, m - r);
     }
 
-    void computeShare(short[] S_share, short[] C_share, short[] v_share, int i_star, byte[][] seeds, int e, byte[] aux, byte[] salt)
+    void computeShare(short[] S_share, short[] C_share, short[] v_share, int i_star, byte[][] seeds, int e, byte[] aux,
+                      byte[] salt, byte[] sample, short[] vi)
     {
-        // Split aux into S and C components
-        byte[] sample = new byte[2 * blockLength * securityBytes];
-        short[] vi = new short[rho];
         // Determine matrix dimensions based on parameter version
         for (int i = 0; i < n1; i++)
         {

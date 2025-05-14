@@ -193,6 +193,7 @@ public class MirathSigner
         byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
         byte[][] path = new byte[engine.maxOpen][engine.securityBytes];
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
+        byte[] sample = new byte[2 * engine.blockLength * engine.securityBytes];
         // Step 2: Decompress public key
         System.arraycopy(pk, engine.securityBytes, y, 0, engine.ffYBytes);
         engine.prng.update(pk, 0, engine.securityBytes);
@@ -277,7 +278,7 @@ public class MirathSigner
             engine.computeFinalHash(hSh, salt, hSh, aux);
             for (int e = 0; e < engine.tau; e++)
             {
-                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
+                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt, sample);
             }
 
             // Step 4: Expand MPC challenge
@@ -301,7 +302,7 @@ public class MirathSigner
             short[] Gamma = new short[engine.gamma];
             short[][] alphaMid = new short[engine.tau][engine.rho];
             short[][] alphaBase = new short[engine.tau][engine.rho];
-
+            short[] vi = new short[engine.rho];
             // Step 1: Parse signature
             engine.parseSignature(ptr, aux, alphaMid, signature);
 
@@ -309,7 +310,7 @@ public class MirathSigner
             engine.computeFinalHash(hSh, salt, hSh, aux);
             for (int e = 0; e < engine.tau; e++)
             {
-                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt);
+                engine.computeShare(SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt, sample, vi);
             }
             // Step 4: Expand MPC challenge
             engine.mirathTcithExpandMpcChallenge(Gamma, hSh);
