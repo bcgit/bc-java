@@ -398,19 +398,14 @@ class MirathEngine
     public void mirathMatrixExpandSeedPublicMatrix(byte[] H, byte[] seedPk)
     {
         prng.update(seedPk, 0, securityBytes);
-        int rows = eA;
-        int cols = k;
-        int hBytes = mirathMatrixFFBytesSize(rows, cols);
-
-        prng.doFinal(H, 0, hBytes);
-        mirathMatrixSetToFF(H, rows, cols);
+        prng.doFinal(H, 0, mirathMatrixFFBytesSize(eA, k));
+        mirathMatrixSetToFF(H, eA, k);
     }
 
     public void mirathMatrixComputeY(byte[] y, byte[] S, byte[] C, byte[] H)
     {
-        int eASize = ffYBytes;
         int eBSize = mirathMatrixFFBytesSize(k, 1);
-        byte[] eA = new byte[eASize];
+        byte[] eA = new byte[ffYBytes];
         byte[] eB = new byte[eBSize];
 
         // Calculate intermediate matrices
@@ -451,12 +446,12 @@ class MirathEngine
         if (offEA > 0)
         {
             byte mask = (byte)((1 << (8 - offEA)) - 1);
-            eA[eASize - 1] = (byte)(E[eASize - 1] & mask);
+            eA[ffYBytes - 1] = (byte)(E[ffYBytes - 1] & mask);
 
             for (int i = 0; i < eBSize - 1; i++)
             {
-                byte part1 = (byte)((E[eASize - 1 + i] & 0xFF) >>> (8 - offEA));
-                byte part2 = (byte)((E[eASize + i] & 0xFF) << offEA);
+                byte part1 = (byte)((E[ffYBytes - 1 + i] & 0xFF) >>> (8 - offEA));
+                byte part2 = (byte)((E[ffYBytes + i] & 0xFF) << offEA);
                 eB[i] = (byte)(part1 ^ part2);
             }
 
@@ -473,7 +468,7 @@ class MirathEngine
         }
         else
         {
-            System.arraycopy(E, eASize, eB, 0, eBSize);
+            System.arraycopy(E, ffYBytes, eB, 0, eBSize);
         }
 
         // Compute final y
@@ -678,26 +673,6 @@ class MirathEngine
         default:
             throw new IllegalArgumentException("Unsupported security bytes size");
         }
-    }
-
-    private static void mirathMatrixFFMuSetEntry(byte[] m, int n, int i, int j, byte v)
-    {
-        m[j * n + i] = v;
-    }
-
-    private static void mirathMatrixFFMuSetEntry(short[] m, int n, int i, int j, short v)
-    {
-        m[j * n + i] = v;
-    }
-
-    private static byte mirathMatrixFFMuGetEntry(byte[] m, int n, int i, int j)
-    {
-        return m[n * j + i];
-    }
-
-    private static short mirathMatrixFFMuGetEntry(short[] m, int n, int i, int j)
-    {
-        return m[n * j + i];
     }
 
     private byte mirathFFMuMult(byte a, byte b)
@@ -924,49 +899,55 @@ class MirathEngine
 
     public void mirathMatrixFFMuAddMultipleFF(byte[] matrix, byte scalar, byte[] src, int nRows, int nCols)
     {
-        if (isFast)
+        if (isA)
         {
             for (int i = 0; i < nRows; i++)
             {
                 for (int j = 0; j < nCols; j++)
                 {
-                    byte entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                    byte entry2 = MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(src, nRows, i, j)];
-                    byte product = mirathFFMuMult(scalar, entry2);
-                    mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (byte)(entry1 ^ product));
+                    matrix[j * nRows + i] ^= mirathFFMuMult(scalar, MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(src, nRows, i, j)]);
                 }
             }
         }
         else
         {
-            matrixFFMuAddMuFF(matrix, matrix, src, nRows, nCols);
+            for (int i = 0; i < nRows; i++)
+            {
+                for (int j = 0; j < nCols; j++)
+                {
+                    matrix[j * nRows + i] ^= mirathFFMuMult(scalar, (byte)(mirathMatrixFFGetEntry(src, nRows, i, j) & 0x01));
+                }
+            }
         }
     }
 
     public void mirathMatrixFFMuAddMultipleFF(byte[] matrix, byte scalar, byte[] src, int off, int nRows, int nCols)
     {
-        if (isFast)
+        if (isA)
         {
             for (int i = 0; i < nRows; i++)
             {
                 for (int j = 0; j < nCols; j++)
                 {
-                    byte entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                    byte entry2 = MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(src, off, nRows, i, j)];
-                    byte product = mirathFFMuMult(scalar, entry2);
-                    mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (byte)(entry1 ^ product));
+                    matrix[j * nRows + i] ^= mirathFFMuMult(scalar, MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(src, off, nRows, i, j)]);
                 }
             }
         }
         else
         {
-            matrixFFMuAddMuFF(matrix, src, off, nRows, nCols);
+            for (int i = 0; i < nRows; i++)
+            {
+                for (int j = 0; j < nCols; j++)
+                {
+                    matrix[j * nRows + i] ^= mirathFFMuMult(scalar, (byte)(mirathMatrixFFGetEntry(src, off, nRows, i, j) & 0x01));
+                }
+            }
         }
     }
 
     private void matrixFFMuAddMu1FFTo(byte[] matrix1, byte[] matrix3, int rows, int cols)
     {
-        if (isFast)
+        if (isA)
         {
             for (int i = 0; i < rows; i++)
             {
@@ -1018,22 +999,9 @@ class MirathEngine
         {
             for (int j = 0; j < cols; j++)
             {
-                byte entry1 = mirathMatrixFFMuGetEntry(matrix2, rows, i, j);
+                byte entry1 = matrix2[rows * j + i];
                 byte entry2 = (byte)(mirathMatrixFFGetEntry(matrix3, rows, i, j) & 0x01);
-                mirathMatrixFFMuSetEntry(matrix1, rows, i, j, (byte)(entry1 ^ entry2));
-            }
-        }
-    }
-
-    private void matrixFFMuAddMuFF(byte[] matrix1, byte[] matrix3, int off, int rows, int cols)
-    {
-        for (int i = 0; i < rows; i++)
-        {
-            for (int j = 0; j < cols; j++)
-            {
-                byte entry1 = mirathMatrixFFMuGetEntry(matrix1, rows, i, j);
-                byte entry2 = (byte)(mirathMatrixFFGetEntry(matrix3, off, rows, i, j) & 0x01);
-                mirathMatrixFFMuSetEntry(matrix1, rows, i, j, (byte)(entry1 ^ entry2));
+                matrix1[rows * j + i] = (byte)(entry1 ^ entry2);
             }
         }
     }
@@ -1044,10 +1012,7 @@ class MirathEngine
         {
             for (int j = 0; j < nCols; j++)
             {
-                short entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                short entry2 = mirathMatrixFFGetEntry(src, nRows, i, j);
-                short product = mirathFFMuMult(scalar, entry2);
-                mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (short)(entry1 ^ product));
+                matrix[nRows * j + i] ^= mirathFFMuMult(scalar, mirathMatrixFFGetEntry(src, nRows, i, j));
             }
         }
     }
@@ -1058,10 +1023,7 @@ class MirathEngine
         {
             for (int j = 0; j < nCols; j++)
             {
-                short entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                short entry2 = mirathMatrixFFGetEntry(src, off, nRows, i, j);
-                short product = mirathFFMuMult(scalar, entry2);
-                mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (short)(entry1 ^ product));
+                matrix[nRows * j + i] ^= mirathFFMuMult(scalar, mirathMatrixFFGetEntry(src, off, nRows, i, j));
             }
         }
     }
@@ -1145,7 +1107,7 @@ class MirathEngine
         byte[] aux_E = new byte[baseMid]; // m * (m - r)
         // 7. Intermediate calculations
         byte[] aux_c = new byte[c];
-        byte[] sc = new byte[calculateFFBytes(m, m - r)];
+        byte[] sc = new byte[mirathMatrixFFBytesSize(m, m - r)];
         // 1. aux_E = S_rnd * C_rnd
         matrixFFMuProduct(aux_E, S_rnd, C_rnd, m, r, m - r);
 
@@ -1193,7 +1155,7 @@ class MirathEngine
         // 7. Intermediate calculations
         short[] aux_s = new short[s];
         short[] aux_c = new short[c];
-        byte[] sc = new byte[calculateFFBytes(m, m - r)];
+        byte[] sc = new byte[mirathMatrixFFBytesSize(m, m - r)];
 
         // 1. aux_E = S_rnd * C_rnd
         matrixFFMuProduct(aux_E, S_rnd, C_rnd, m, r, m - r);
@@ -1256,16 +1218,21 @@ class MirathEngine
         {
             for (int j = 0; j < nCols2; j++)
             {
-                byte entry_i_j = 0;
-                for (int k = 0; k < nCols1; k++)
-                {
-                    byte entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
-                    byte entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
-                    entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
-                }
-                mirathMatrixFFMuSetEntry(result, nRows1, i, j, entry_i_j);
+                result[nRows1 * j + i] = getEntry_i_j(matrix1, matrix2, nRows1, nCols1, i, j);
             }
         }
+    }
+
+    private byte getEntry_i_j(byte[] matrix1, byte[] matrix2, int nRows1, int nCols1, int i, int j)
+    {
+        byte entry_i_j = 0;
+        for (int k = 0; k < nCols1; k++)
+        {
+            byte entry_i_k = matrix1[nRows1 * k + i];//mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
+            byte entry_k_j = matrix2[nCols1 * j + k];//mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
+            entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
+        }
+        return entry_i_j;
     }
 
     public void matrixFFMuProductTo(byte[] result, byte[] matrix1, byte[] matrix2, int nRows1, int nCols1, int nCols2)
@@ -1274,13 +1241,7 @@ class MirathEngine
         {
             for (int j = 0; j < nCols2; j++)
             {
-                byte entry_i_j = 0;
-                for (int k = 0; k < nCols1; k++)
-                {
-                    byte entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
-                    byte entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
-                    entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
-                }
+                byte entry_i_j = getEntry_i_j(matrix1, matrix2, nRows1, nCols1, i, j);
                 result[j * nRows1 + i] ^= entry_i_j;
             }
         }
@@ -1293,7 +1254,7 @@ class MirathEngine
             byte entry_i_j = matrix3[i];
             for (int k = 0; k < eA; k++)
             {
-                entry_i_j ^= mirathFFMuMult(mirathMatrixFFMuGetEntry(matrix1, rho, i, k), matrix2[k]);
+                entry_i_j ^= mirathFFMuMult(matrix1[rho * k + i], matrix2[k]);
             }
             result[i] = entry_i_j;
         }
@@ -1305,14 +1266,7 @@ class MirathEngine
         {
             for (int j = 0; j < nCols2; j++)
             {
-                short entry_i_j = 0;
-                for (int k = 0; k < nCols1; k++)
-                {
-                    short entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
-                    short entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
-                    entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
-                }
-                mirathMatrixFFMuSetEntry(result, nRows1, i, j, entry_i_j);
+                result[j * nRows1 + i] = getEntry_i_j(matrix1, matrix2, nRows1, nCols1, i, j);
             }
         }
     }
@@ -1323,16 +1277,21 @@ class MirathEngine
         {
             for (int j = 0; j < nCols2; j++)
             {
-                short entry_i_j = 0;
-                for (int k = 0; k < nCols1; k++)
-                {
-                    short entry_i_k = mirathMatrixFFMuGetEntry(matrix1, nRows1, i, k);
-                    short entry_k_j = mirathMatrixFFMuGetEntry(matrix2, nCols1, k, j);
-                    entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
-                }
-                result[j * nRows1 + i] ^= entry_i_j;
+                result[j * nRows1 + i] ^= getEntry_i_j(matrix1, matrix2, nRows1, nCols1, i, j);
             }
         }
+    }
+
+    private short getEntry_i_j(short[] matrix1, short[] matrix2, int nRows1, int nCols1, int i, int j)
+    {
+        short entry_i_j = 0;
+        for (int k = 0; k < nCols1; k++)
+        {
+            short entry_i_k = matrix1[nRows1 * k + i];
+            short entry_k_j = matrix2[nCols1 * j + k];
+            entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
+        }
+        return entry_i_j;
     }
 
     public void matrixFFMuProductXor(short[] result, short[] matrix1, short[] matrix2, short[] matrix3)
@@ -1342,7 +1301,7 @@ class MirathEngine
             short entry_i_j = matrix3[i];
             for (int k = 0; k < eA; k++)
             {
-                entry_i_j ^= mirathFFMuMult(mirathMatrixFFMuGetEntry(matrix1, rho, i, k), matrix2[k]);
+                entry_i_j ^= mirathFFMuMult(matrix1[rho * k + i], matrix2[k]);
             }
             result[i] = entry_i_j;
         }
@@ -1378,7 +1337,7 @@ class MirathEngine
                 for (int k = 0; k < cols1; k++)
                 {
                     byte entry_i_k = MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(mat1, rows1, i, k)];
-                    byte entry_k_j = mirathMatrixFFMuGetEntry(mat2, cols1, k, 0);
+                    byte entry_k_j = mat2[k];//mirathMatrixFFMuGetEntry(mat2, cols1, k, 0);
                     entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
                 }
                 result[i] ^= entry_i_j;
@@ -1392,7 +1351,7 @@ class MirathEngine
                 for (int k = 0; k < cols1; k++)
                 {
                     byte entry_i_k = (byte)(mirathMatrixFFGetEntry(mat1, rows1, i, k) & 0x01);
-                    byte entry_k_j = mirathMatrixFFMuGetEntry(mat2, cols1, k, 0);
+                    byte entry_k_j = mat2[k];//mirathMatrixFFMuGetEntry(mat2, cols1, k, 0);
                     entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
                 }
                 result[i] ^= entry_i_j;
@@ -1423,9 +1382,7 @@ class MirathEngine
                 short entry_i_j = 0;
                 for (int k = 0; k < cols1; k++)
                 {
-                    short entry_i_k = (short)(mirathMatrixFFGetEntry(mat1, rows1, i, k) & 0x01);
-                    short entry_k_j = mat2[k];
-                    entry_i_j ^= mirathFFMuMult(entry_i_k, entry_k_j);
+                    entry_i_j ^= mirathFFMuMult((short)(mirathMatrixFFGetEntry(mat1, rows1, i, k) & 0x01), mat2[k]);
                 }
                 result[i] ^= entry_i_j;
             }
@@ -1434,15 +1391,15 @@ class MirathEngine
 
     private void matrixFFMuAddMu1FF(byte[] matrix1, byte[] matrix2, byte[] matrix3, int rows, int cols)
     {
-        if (isFast)
+        if (isA)
         {
             for (int i = 0; i < rows; i++)
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    byte entry1 = mirathMatrixFFMuGetEntry(matrix2, rows, i, j);
+                    byte entry1 = matrix2[rows * j + i];//mirathMatrixFFMuGetEntry(matrix2, rows, i, j);
                     byte entry2 = MIRATH_MAP_FF_TO_FF_MU[mirathMatrixFFGetEntry(matrix3, rows, i, j)];
-                    mirathMatrixFFMuSetEntry(matrix1, rows, i, j, (byte)(entry1 ^ entry2));
+                    matrix1[rows * j + i] = (byte)(entry1 ^ entry2);
                 }
             }
         }
@@ -1460,9 +1417,9 @@ class MirathEngine
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    short entry1 = mirathMatrixFFMuGetEntry(matrix2, rows, i, j);
+                    short entry1 = matrix2[rows * j + i];
                     short entry2 = mirathMatrixFFGetEntry(matrix3, rows, i, j);
-                    mirathMatrixFFMuSetEntry(matrix1, rows, i, j, (short)(entry1 ^ entry2));
+                    matrix1[rows * j + i] = (short)(entry1 ^ entry2);
                 }
             }
         }
@@ -1472,17 +1429,12 @@ class MirathEngine
             {
                 for (int j = 0; j < cols; j++)
                 {
-                    short entry1 = mirathMatrixFFMuGetEntry(matrix2, rows, i, j);
+                    short entry1 = matrix2[rows * j + i];
                     short entry2 = (short)(mirathMatrixFFGetEntry(matrix3, rows, i, j) & 0x01);
-                    mirathMatrixFFMuSetEntry(matrix1, rows, i, j, (short)(entry1 ^ entry2));
+                    matrix1[rows * j + i] = (short)(entry1 ^ entry2);
                 }
             }
         }
-    }
-
-    private static int calculateFFBytes(int rows, int cols)
-    {
-        return cols * ((rows + 1) / 2);
     }
 
     public void mirathTcithHashMpc(SHA3Digest digest, byte[] hMpc, byte[] pk, byte[] salt, byte[] msg, byte[] hSh,
@@ -1585,15 +1537,8 @@ class MirathEngine
 
     public byte multivcOpen(byte[][] path, byte[][] commitsIStar, byte[][] tree, byte[][][] commits, int[] iStar)
     {
-        int[] psiIStar = new int[tau];
-
-        for (int e = 0; e < tau; e++)
-        {
-            psiIStar[e] = mirathTcithPsi(iStar[e], e);
-        }
-
         int[] pathIndexes = new int[maxOpen];
-        int pathLength = getPathIndexes(psiIStar, pathIndexes);
+        int pathLength = getPathIndexes(iStar, pathIndexes);
 
         // Copy the seeds from the tree to the path
         for (int i = 0; i < pathLength; i++)
@@ -1618,8 +1563,14 @@ class MirathEngine
         return 0;
     }
 
-    private int getPathIndexes(int[] psiIStar, int[] pathIndexes)
+    private int getPathIndexes(int[] iStar, int[] pathIndexes)
     {
+        int[] psiIStar = new int[tau];
+
+        for (int e = 0; e < tau; e++)
+        {
+            psiIStar[e] = mirathTcithPsi(iStar[e], e);
+        }
         int pathLength = 0;
 
         // Build path index list
@@ -1690,14 +1641,8 @@ class MirathEngine
         }
     }
 
-    public void unparseSignature(byte[] signature,
-                                 byte[] salt,
-                                 long ctr,
-                                 byte[] hash2,
-                                 byte[][] path,
-                                 byte[][] commitsIStar,
-                                 byte[][] aux,
-                                 byte[][] midAlpha)
+    public void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar,
+                                 byte[][] aux, byte[][] midAlpha)
     {
         unparseSignature(signature, salt, ctr, hash2, path, commitsIStar);
 
@@ -1904,13 +1849,8 @@ class MirathEngine
     int multivcReconstruct(SHA3Digest hash, SHA3Digest digest, BlockCipher cipher, byte[] hCom, byte[][] seeds,
                            int[] iStar, byte[][] path, byte[][] commitsIStar, byte[] salt, byte[][] tree, byte[][][] commits)
     {
-        int[] psiIStar = new int[tau];
-        for (int e = 0; e < tau; e++)
-        {
-            psiIStar[e] = mirathTcithPsi(iStar[e], e);
-        }
         int[] pathIndexes = new int[maxOpen];
-        int n = getPathIndexes(psiIStar, pathIndexes);
+        int n = getPathIndexes(iStar, pathIndexes);
 
         int pathLength = 0;
         final byte[] zeroArray = new byte[securityBytes]; // Automatically initialized to all zeros
@@ -2098,7 +2038,7 @@ class MirathEngine
         byte[] Ts = new byte[s];
 
         // p * S_share (accumulated in Ts)
-        mirathMatrixFFMuAddMultiple2(Ts, (byte)p, S_share, m, r);
+        mirathMatrixFFMuAddMultiple2(Ts, (byte)p, S_share);
 
         // S_share * C_share -> aux
         matrixFFMuProduct(aux, S_share, C_share, m, r, m - r);
@@ -2130,7 +2070,7 @@ class MirathEngine
         short[] Ts = new short[s];
 
         // p * S_share (accumulated in Ts)
-        mirathMatrixFFMuAddMultiple2(Ts, (short)p, S_share, m, r);
+        mirathMatrixFFMuAddMultiple2(Ts, (short)p, S_share);
 
         // S_share * C_share -> aux
         matrixFFMuProduct(aux, S_share, C_share, m, r, m - r);
@@ -2152,30 +2092,24 @@ class MirathEngine
         mirathVectorFFMuAddMultiple(baseAlpha, (short)p, midAlpha, rho);
     }
 
-    public void mirathMatrixFFMuAddMultiple2(byte[] matrix, byte scalar, byte[] src, int nRows, int nCols)
+    public void mirathMatrixFFMuAddMultiple2(byte[] matrix, byte scalar, byte[] src)
     {
-        for (int i = 0; i < nRows; i++)
+        for (int i = 0; i < m; i++)
         {
-            for (int j = 0; j < nCols; j++)
+            for (int j = 0; j < r; j++)
             {
-                byte entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                byte entry2 = mirathMatrixFFMuGetEntry(src, nRows, i, j);
-                byte product = mirathFFMuMult(scalar, entry2);
-                mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (byte)(entry1 ^ product));
+                matrix[m * j + i] ^= mirathFFMuMult(scalar, src[m * j + i]);
             }
         }
     }
 
-    public void mirathMatrixFFMuAddMultiple2(short[] matrix, short scalar, short[] src, int nRows, int nCols)
+    public void mirathMatrixFFMuAddMultiple2(short[] matrix, short scalar, short[] src)
     {
-        for (int i = 0; i < nRows; i++)
+        for (int i = 0; i < m; i++)
         {
-            for (int j = 0; j < nCols; j++)
+            for (int j = 0; j < r; j++)
             {
-                short entry1 = mirathMatrixFFMuGetEntry(matrix, nRows, i, j);
-                short entry2 = mirathMatrixFFMuGetEntry(src, nRows, i, j);
-                short product = mirathFFMuMult(scalar, entry2);
-                mirathMatrixFFMuSetEntry(matrix, nRows, i, j, (short)(entry1 ^ product));
+                matrix[m * j + i] ^= mirathFFMuMult(scalar, src[m * j + i]);
             }
         }
     }

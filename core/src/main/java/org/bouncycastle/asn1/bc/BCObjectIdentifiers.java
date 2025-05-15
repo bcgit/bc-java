@@ -686,4 +686,21 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42");
     ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
     ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
+
+    /**
+     * Mirath
+     */
+    ASN1ObjectIdentifier mirath = bc_sig.branch("12");
+    ASN1ObjectIdentifier mirath_1a_fast = mayo.branch("1");
+    ASN1ObjectIdentifier mirath_1a_short = mayo.branch("2");
+    ASN1ObjectIdentifier mirath_1b_fast = mayo.branch("3");
+    ASN1ObjectIdentifier mirath_1b_short = mayo.branch("4");
+    ASN1ObjectIdentifier mirath_3a_fast = mayo.branch("5");
+    ASN1ObjectIdentifier mirath_3a_short = mayo.branch("6");
+    ASN1ObjectIdentifier mirath_3b_fast = mayo.branch("7");
+    ASN1ObjectIdentifier mirath_3b_short = mayo.branch("8");
+    ASN1ObjectIdentifier mirath_5a_fast = mayo.branch("9");
+    ASN1ObjectIdentifier mirath_5a_short = mayo.branch("10");
+    ASN1ObjectIdentifier mirath_5b_fast = mayo.branch("11");
+    ASN1ObjectIdentifier mirath_5b_short = mayo.branch("12");
 }
