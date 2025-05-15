@@ -206,8 +206,8 @@ public class MirathSigner
         // Step 2: Decompress public key
         System.arraycopy(pk, engine.securityBytes, y, 0, engine.ffYBytes);
         engine.prng.update(pk, 0, engine.securityBytes);
-        engine.prng.doFinal(H, 0, engine.mirathMatrixFFBytesSize(engine.m * engine.m - engine.k, engine.k));
-        engine.mirathMatrixSetToFF(H, engine.m * engine.m - engine.k, engine.k);
+        engine.prng.doFinal(H, 0, engine.mirathMatrixFFBytesSize(engine.eA, engine.k));
+        engine.mirathMatrixSetToFF(H, engine.eA, engine.k);
         //parseSignature part 1
         int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * engine.mu) * engine.tau;
         if (engine.isA)
