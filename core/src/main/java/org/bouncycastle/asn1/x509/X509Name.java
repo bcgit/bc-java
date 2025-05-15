@@ -1079,6 +1079,11 @@ public class X509Name
         {
             return false;
         }
+
+        if (orderingSize == 0)
+        {
+            return true;
+        }
         
         boolean[] indexes = new boolean[orderingSize];
         int       start, end, delta;
