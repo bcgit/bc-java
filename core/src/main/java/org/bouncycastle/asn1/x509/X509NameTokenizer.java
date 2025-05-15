@@ -25,18 +25,18 @@ public class X509NameTokenizer
         char separator)
     {
         this.value = oid;
-        this.index = -1;
+        this.index = oid.length() < 1 ? 0 : -1;
         this.separator = separator;
     }
 
     public boolean hasMoreTokens()
     {
-        return (index != value.length());
+        return index < value.length();
     }
 
     public String nextToken()
     {
-        if (index == value.length())
+        if (index >= value.length())
         {
             return null;
         }
