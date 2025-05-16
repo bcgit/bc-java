@@ -52,6 +52,7 @@ public class AllTests
         suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(MayoTest.class);
         suite.addTestSuite(SnovaTest.class);
+        suite.addTestSuite(MirathTest.class);
         return new BCTestSetup(suite);
     }
 

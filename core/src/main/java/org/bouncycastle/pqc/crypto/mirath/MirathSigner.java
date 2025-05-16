@@ -23,6 +23,8 @@ public class MirathSigner
     private MirathPublicKeyParameters pubKey;
     private MirathPrivateKeyParameters privKey;
     private MirathEngine engine;
+    private SHA3Digest hash;
+    private SHA3Digest digest;
     private static final byte domainSeparatorHash1 = 1;
 
     @Override
@@ -53,6 +55,23 @@ public class MirathSigner
             random = null;
         }
         engine = new MirathEngine(params);
+        switch (engine.securityBytes)
+        {
+        case 16:
+            hash = new SHA3Digest(256);
+            digest = new SHA3Digest(256);
+            break;
+        case 24:
+            hash = new SHA3Digest(384);
+            digest = new SHA3Digest(384);
+            break;
+        case 32:
+            hash = new SHA3Digest(512);
+            digest = new SHA3Digest(512);
+            break;
+        default:
+            throw new IllegalArgumentException("Unsupported security bytes size");
+        }
     }
 
     @Override
@@ -89,8 +108,7 @@ public class MirathSigner
         byte[] y = new byte[engine.ffYBytes];
 
         byte[] sc = new byte[engine.mirathMatrixFFBytesSize(engine.m, engine.m - engine.r)];
-        SHA3Digest hash = engine.getSHA3Digest();
-        SHA3Digest digest = engine.getSHA3Digest();
+
         BlockCipher cipher = getBlockCipher(engine.securityBytes);
         // Expand matrices from seeds
         engine.mirathMatrixExpandSeedPublicMatrix(H, seedPk);
@@ -207,13 +225,11 @@ public class MirathSigner
         byte[][] path = new byte[engine.maxOpen][engine.securityBytes];
         byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
         byte[] sample = new byte[2 * engine.blockLength * engine.securityBytes];
-        SHA3Digest hash = engine.getSHA3Digest();
-        SHA3Digest digest = engine.getSHA3Digest();
         BlockCipher cipher = getBlockCipher(engine.securityBytes);
         // Step 2: Decompress public key
         System.arraycopy(pk, engine.securityBytes, y, 0, engine.ffYBytes);
         engine.prng.update(pk, 0, engine.securityBytes);
-        engine.prng.doFinal(H, 0, engine.mirathMatrixFFBytesSize(engine.eA, engine.k));
+        engine.prng.doFinal(H, 0, engine.ffHBytes);
         engine.mirathMatrixSetToFF(H, engine.eA, engine.k);
         //parseSignature part 1
         int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * engine.mu) * engine.tau;
@@ -430,8 +446,8 @@ public class MirathSigner
 
             // Update base matrices with finite field operations
             short phi_i = (short)i;
-            engine.mirathMatrixFFMuAddMultipleFF(S_base, phi_i, sample, engine.m, engine.r);
-            engine.mirathMatrixFFMuAddMultipleFF(C_base, phi_i, sample, engine.ffSBytes, engine.r, engine.m - engine.r);
+            engine.mirathMatrixFFMuAddMultipleFF(S_base, phi_i, sample);
+            engine.mirathMatrixFFMuAddMultipleFF(C_base, phi_i, sample, engine.ffSBytes);
             engine.mirathVectorFFMuAddMultiple(v_base, phi_i, v_rnd, engine.rho);
 
             // Performs S_acc = S_acc + S_rnd, C_acc = C_acc + C_rnd and v[e] = v[e] + v_rnd

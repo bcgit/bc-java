@@ -62,7 +62,7 @@ public class MirathTest
         throws Exception
     {
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(false, false, false, "pqc/crypto/mirath", files, new TestUtils.KeyGenerationOperation()
+        TestUtils.testTestVector(true, false, false, "pqc/crypto/mirath", files, new TestUtils.KeyGenerationOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
