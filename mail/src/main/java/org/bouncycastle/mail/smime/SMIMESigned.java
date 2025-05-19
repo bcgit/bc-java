@@ -23,6 +23,8 @@ import org.bouncycastle.cms.CMSSignedData;
 /**
  * general class for handling a pkcs7-signature message.
  * <p>
+ * (SMIMESignedParser may be preferred e.g. for large files, since it avoids loading all the data at once).
+ * <p>
  * A simple example of usage - note, in the example below the validity of
  * the certificate isn't verified, just the fact that one of the certs 
  * matches the given signer...
