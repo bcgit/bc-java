@@ -42,6 +42,8 @@ import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.mirath.MirathParameters;
+import org.bouncycastle.pqc.crypto.mirath.MirathPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
@@ -307,6 +309,19 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.snova_75_33_2_ssk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaConverter());
         converters.put(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaConverter());
+
+        converters.put(BCObjectIdentifiers.mirath_1a_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_1a_short, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_1b_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_1b_short, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_3a_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_3a_short, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_3b_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_3b_short, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_5a_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_5a_short, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_5b_fast, new MirathConverter());
+        converters.put(BCObjectIdentifiers.mirath_5b_short, new MirathConverter());
     }
 
     /**
@@ -927,6 +942,20 @@ public class PublicKeyFactory
             SnovaParameters snovaParams = Utils.snovaParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
             return new SnovaPublicKeyParameters(snovaParams, keyEnc);
+        }
+    }
+
+    private static class MirathConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
+
+            MirathParameters mirathParams = Utils.mirathParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            return new MirathPublicKeyParameters(mirathParams, keyEnc);
         }
     }
 }

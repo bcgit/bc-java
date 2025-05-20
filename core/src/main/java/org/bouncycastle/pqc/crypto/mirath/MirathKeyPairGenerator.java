@@ -1,13 +1,28 @@
 package org.bouncycastle.pqc.crypto.mirath;
 
-
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 
-
+/**
+ * Implementation of the Mirath asymmetric key pair generator following the Mirath signature scheme specifications.
+ * <p>
+ * This generator produces {@link MirathPublicKeyParameters} and {@link MirathPrivateKeyParameters} based on the
+ * Mirath algorithm parameters. The implementation follows the specification defined in the official Mirath
+ * documentation and reference implementation.
+ * </p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://pqc-mirath.org/">Mirath Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/mirath-spec-round2-web.pdf">Mirath Specification Document</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/submission-pkg/mirath-submission-round2.zip">Mirath Reference Implementation</a></li>
+ * </ul>
+ */
 public class MirathKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

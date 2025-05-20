@@ -19,6 +19,21 @@ import org.bouncycastle.util.Bytes;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Shorts;
 
+/**
+ * Implementation of the Mirath digital signature scheme as specified in the Mirath documentation.
+ * This class provides functionality for both signature generation and verification.
+ *
+ * <p>Mirath is a candidate in the <b>NIST Post-Quantum Cryptography: Additional Digital Signature Schemes</b> project,
+ * currently in Round 2 of evaluations. For more details about the NIST standardization process, see:
+ * <a href="https://csrc.nist.gov/Projects/pqc-dig-sig">NIST PQC Additional Digital Signatures</a>.</p>
+ *
+ * <p>References:</p>
+ * <ul>
+ *   <li><a href="https://pqc-mirath.org/">Mirath Official Website</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/spec-files/mirath-spec-round2-web.pdf">Mirath Specification Document</a></li>
+ *   <li><a href="https://csrc.nist.gov/csrc/media/Projects/pqc-dig-sig/documents/round-2/submission-pkg/mirath-submission-round2.zip">Mirath Reference Implementation</a></li>
+ * </ul>
+ */
 public class MirathSigner
     implements MessageSigner
 {
@@ -36,6 +51,7 @@ public class MirathSigner
     private SHA3Digest digest;
     private boolean isFast;
     private int signatureBytes;
+    int saltBytes;
     private int n1Mask;
     private int n1Bits;
     private int n1Bytes;
@@ -48,6 +64,13 @@ public class MirathSigner
     private int challenge2Bytes;
     private int hash2MaskBytes;
     private int hash2Mask;
+    private int mu;
+    private int c;
+    private int ffAuxBytes;
+    private int baseMid;
+    private int s;
+    private int tau;
+    private int n1;
     @Override
     public void init(boolean forSigning, CipherParameters param)
     {
@@ -93,6 +116,9 @@ public class MirathSigner
         default:
             throw new IllegalArgumentException("Unsupported security bytes size");
         }
+        saltBytes = params.getSaltBytes();
+        n1 = params.getN1();
+        tau = params.getTau();
         isFast = params.isFast();
         signatureBytes = params.getSignatureBytes();
         n1Mask = params.getN1Mask();
@@ -103,6 +129,15 @@ public class MirathSigner
         treeLeaves = params.getTreeLeaves();
         leavesSeedsOffset = treeLeaves - 1;
         maxOpen = 2 * tOpen;
+        challenge2Bytes = params.getChallenge2Bytes();
+        hash2MaskBytes = params.getHash2MaskBytes();
+        hash2Mask = params.getHash2Mask();
+        mu = params.getMu();
+        ffAuxBytes = engine.ffSBytes + engine.ffCBytes;
+        baseMid = engine.m * (engine.m - engine.r);
+        s = engine.m * engine.r;
+        c = engine.r * (engine.m - engine.r);
+        blockLength = (engine.ffSBytes + engine.ffCBytes + engine.rho + (engine.securityBytes - 1)) / engine.securityBytes;
     }
 
     @Override
@@ -110,7 +145,7 @@ public class MirathSigner
     {
         byte[] sigMsg = new byte[params.getSignatureBytes() + message.length];
         byte[] sk = privKey.getEncoded();
-        byte[] salt = new byte[engine.saltBytes];
+        byte[] salt = new byte[saltBytes];
         long ctr;
         // Phase 0: Initialization
         byte[][] path = new byte[maxOpen][engine.securityBytes];
@@ -121,13 +156,13 @@ public class MirathSigner
         byte[] H = new byte[engine.ffHBytes];
 
         byte[] pk = new byte[params.getPublicKeyBytes()];
-        byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
-        byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
+        byte[][] aux = new byte[tau][ffAuxBytes];
+        byte[][] commitsIStar = new byte[tau][2 * engine.securityBytes];
         byte[][] tree = new byte[params.getTreeLeaves() * 2 - 1][engine.securityBytes];
         byte[][] seeds = new byte[treeLeaves][engine.securityBytes];
-        byte[] sample = new byte[engine.blockLength * engine.securityBytes]; //ffSBytes + ffCBytes + rho + (securityBytes - 1)
+        byte[] sample = new byte[blockLength * engine.securityBytes]; //ffSBytes + ffCBytes + rho + (securityBytes - 1)
 
-        byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
+        byte[][][] commits = new byte[tau][n1][engine.securityBytes * 2];
 
         // Phase 1: Build and Commit Parallel Witness Shares
         // Step 1: Decompress secret key
@@ -155,22 +190,22 @@ public class MirathSigner
 
         if (params.isFast())
         {
-            byte[][] SBase = new byte[engine.tau][engine.s];
-            byte[][] CBase = new byte[engine.tau][engine.c];
-            byte[][] vBase = new byte[engine.tau][engine.rho];
-            byte[][] v = new byte[engine.tau][engine.rho];
+            byte[][] SBase = new byte[tau][s];
+            byte[][] CBase = new byte[tau][c];
+            byte[][] vBase = new byte[tau][engine.rho];
+            byte[][] v = new byte[tau][engine.rho];
 
             byte[] Gamma = new byte[gamma];
-            byte[][] alphaMid = new byte[engine.tau][engine.rho];
-            byte[][] alphaBase = new byte[engine.tau][engine.rho];
+            byte[][] alphaMid = new byte[tau][engine.rho];
+            byte[][] alphaBase = new byte[tau][engine.rho];
             // Temporary storage
-            byte[] aux_s = new byte[engine.s]; // m * r
-            byte[] aux_E = new byte[engine.baseMid]; // m * (m - r)
-            byte[] aux_c = new byte[engine.c];
+            byte[] aux_s = new byte[s]; // m * r
+            byte[] aux_E = new byte[baseMid]; // m * (m - r)
+            byte[] aux_c = new byte[c];
             byte[] eAeB = new byte[engine.m * engine.m];
 
             // Step 4: Commit to shares
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 commitParallelSharings(cipher, SBase[e], CBase[e], vBase[e], v[e], e, aux[e], salt, S, C, seeds, sample);
             }
@@ -181,7 +216,7 @@ public class MirathSigner
             mirathTcithExpandMpcChallenge(Gamma, hMpc);
 
             // Steps 6-8: Emulate MPC for each tau
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H, sc, aux_s,
                     aux_E, aux_c, eAeB);
@@ -199,22 +234,22 @@ public class MirathSigner
         }
         else
         {
-            short[][] SBase = new short[engine.tau][engine.s];
-            short[][] CBase = new short[engine.tau][engine.c];
-            short[][] vBase = new short[engine.tau][engine.rho];
-            short[][] v = new short[engine.tau][engine.rho];
+            short[][] SBase = new short[tau][s];
+            short[][] CBase = new short[tau][c];
+            short[][] vBase = new short[tau][engine.rho];
+            short[][] v = new short[tau][engine.rho];
 
             short[] Gamma = new short[gamma];
-            short[][] alphaMid = new short[engine.tau][engine.rho];
-            short[][] alphaBase = new short[engine.tau][engine.rho];
+            short[][] alphaMid = new short[tau][engine.rho];
+            short[][] alphaBase = new short[tau][engine.rho];
             short[] v_rnd = new short[engine.rho];
             // Temporary storage
-            short[] aux_E = new short[engine.baseMid];
-            short[] aux_s = new short[engine.s];
-            short[] aux_c = new short[engine.c];
+            short[] aux_E = new short[baseMid];
+            short[] aux_s = new short[s];
+            short[] aux_c = new short[c];
             short[] eAeB = new short[engine.m * engine.m];
             // Step 4: Commit to shares
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 commitParallelSharings(cipher, SBase[e], CBase[e], vBase[e], v[e], e, aux[e], salt, S, C, seeds, sample, v_rnd);
             }
@@ -224,7 +259,7 @@ public class MirathSigner
             mirathTcithExpandMpcChallenge(Gamma, hMpc);
 
             // Steps 6-8: Emulate MPC for each tau
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 emulateMPCMu(alphaBase[e], alphaMid[e], S, SBase[e], C, CBase[e], v[e], vBase[e], Gamma, H, sc, aux_E,
                     aux_s, aux_c, eAeB);
@@ -251,17 +286,17 @@ public class MirathSigner
     {
         byte[] pk = pubKey.getEncoded();
         // Phase 0: Initialization
-        byte[] salt = new byte[engine.saltBytes];
+        byte[] salt = new byte[saltBytes];
         byte[] hSh = new byte[2 * engine.securityBytes];
         byte[] hMpc = new byte[2 * engine.securityBytes];
         long[] ctr = new long[1];
-        int[] iStar = new int[engine.tau];
+        int[] iStar = new int[tau];
         byte[] H = new byte[engine.ffHBytes];
         byte[] y = new byte[engine.ffYBytes];
-        byte[][] commitsIStar = new byte[engine.tau][2 * engine.securityBytes];
+        byte[][] commitsIStar = new byte[tau][2 * engine.securityBytes];
         byte[][] path = new byte[maxOpen][engine.securityBytes];
-        byte[][] aux = new byte[engine.tau][engine.ffAuxBytes];
-        byte[] sample = new byte[2 * engine.blockLength * engine.securityBytes];
+        byte[][] aux = new byte[tau][ffAuxBytes];
+        byte[] sample = new byte[2 * blockLength * engine.securityBytes];
         BlockCipher cipher = getBlockCipher(engine.securityBytes);
         // Step 2: Decompress public key
         System.arraycopy(pk, engine.securityBytes, y, 0, engine.ffYBytes);
@@ -269,7 +304,7 @@ public class MirathSigner
         engine.prng.doFinal(H, 0, engine.ffHBytes);
         engine.mirathMatrixSetToFF(H, engine.eA, engine.k);
         //parseSignature part 1
-        int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * engine.mu) * engine.tau;
+        int tmpBits = (engine.m * engine.r + engine.r * (engine.m - engine.r) + engine.rho * mu) * tau;
         if (engine.isA)
         {
             tmpBits *= 4;
@@ -287,7 +322,7 @@ public class MirathSigner
         int ptr = parseSignature1(signature, salt, hMpc, ctr, commitsIStar, path);
         byte[] ctrBytes;
         //computeParallelShares part 1
-        byte[] vGrinding = new byte[engine.hash2MaskBytes]; // Adjust size if needed
+        byte[] vGrinding = new byte[hash2MaskBytes]; // Adjust size if needed
         byte[] shakeInput = new byte[2 * engine.securityBytes + 8];
 
         // Prepare SHAKE input
@@ -301,7 +336,7 @@ public class MirathSigner
         // Reconstruct commitments
         byte[][] seeds = new byte[treeLeaves][engine.securityBytes];
         byte[][] tree = new byte[2 * treeLeaves - 1][engine.securityBytes];
-        byte[][][] commits = new byte[engine.tau][engine.n1][engine.securityBytes * 2];
+        byte[][][] commits = new byte[tau][n1][engine.securityBytes * 2];
         int ret = multivcReconstruct(hash, digest, cipher, hSh, seeds, iStar, path, commitsIStar, salt, tree, commits);
         if ((ret & (discardInputChallenge2(vGrinding) == 0 ? 0 : 1)) != 0)
         {
@@ -309,12 +344,12 @@ public class MirathSigner
         }
         if (params.isFast())
         {
-            byte[][] SShare = new byte[engine.tau][engine.s];
-            byte[][] CShare = new byte[engine.tau][engine.c];
-            byte[][] vShare = new byte[engine.tau][engine.rho];
+            byte[][] SShare = new byte[tau][s];
+            byte[][] CShare = new byte[tau][c];
+            byte[][] vShare = new byte[tau][engine.rho];
             byte[] Gamma = new byte[gamma];
-            byte[][] alphaMid = new byte[engine.tau][engine.rho];
-            byte[][] alphaBase = new byte[engine.tau][engine.rho];
+            byte[][] alphaMid = new byte[tau][engine.rho];
+            byte[][] alphaBase = new byte[tau][engine.rho];
             // Initialize temporary buffers
             byte[] eAeB = new byte[engine.m * engine.m];
 
@@ -323,7 +358,7 @@ public class MirathSigner
 
             // Step 3: Compute parallel shares
             computeFinalHash(digest, hSh, salt, hSh, aux);
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 computeShare(cipher, SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt, sample);
             }
@@ -332,7 +367,7 @@ public class MirathSigner
             mirathTcithExpandMpcChallenge(Gamma, hSh);
 
             // Steps 5-6: Emulate parties
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
 
                 emulatePartyMu(alphaBase[e], iStar[e], SShare[e], CShare[e], vShare[e], Gamma, H, y, alphaMid[e], eAeB);
@@ -343,12 +378,12 @@ public class MirathSigner
         }
         else
         {
-            short[][] SShare = new short[engine.tau][engine.s];
-            short[][] CShare = new short[engine.tau][engine.c];
-            short[][] vShare = new short[engine.tau][engine.rho];
+            short[][] SShare = new short[tau][s];
+            short[][] CShare = new short[tau][c];
+            short[][] vShare = new short[tau][engine.rho];
             short[] Gamma = new short[gamma];
-            short[][] alphaMid = new short[engine.tau][engine.rho];
-            short[][] alphaBase = new short[engine.tau][engine.rho];
+            short[][] alphaMid = new short[tau][engine.rho];
+            short[][] alphaBase = new short[tau][engine.rho];
             short[] vi = new short[engine.rho];
             short[] eAeB = new short[engine.m * engine.m];
             // Step 1: Parse signature
@@ -356,7 +391,7 @@ public class MirathSigner
 
             // Step 3: Compute parallel shares
             computeFinalHash(digest, hSh, salt, hSh, aux);
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 computeShare(cipher, SShare[e], CShare[e], vShare[e], iStar[e], seeds, e, aux[e], salt, sample, vi);
             }
@@ -364,7 +399,7 @@ public class MirathSigner
             mirathTcithExpandMpcChallenge(Gamma, hSh);
 
             // Steps 5-6: Emulate parties
-            for (int e = 0; e < engine.tau; e++)
+            for (int e = 0; e < tau; e++)
             {
                 emulatePartyMu(alphaBase[e], iStar[e], SShare[e], CShare[e], vShare[e], Gamma, H, y, alphaMid[e], eAeB);
             }
@@ -388,9 +423,9 @@ public class MirathSigner
 
         hash.update(domainSeparatorCommitment);
         // Process commits
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
-            for (int i = 0; i < engine.n1; i++)
+            for (int i = 0; i < n1; i++)
             {
                 tcithCommit(digest, commits[e][i], salt, e, i, seeds[tcithPsi(i, e)]);
                 hash.update(commits[e][i], 0, 2 * engine.securityBytes);
@@ -453,13 +488,13 @@ public class MirathSigner
 
     int tcithPsi(int i, int e)
     {
-        return i * engine.tau + e;
+        return i * tau + e;
     }
 
     void tcithCommit(SHA3Digest digest, byte[] commit, byte[] salt, int e, int i, byte[] seed)
     {
         digest.update(domainSeparatorCmt);
-        digest.update(salt, 0, engine.saltBytes);
+        digest.update(salt, 0, saltBytes);
         digest.update(Pack.longToLittleEndian(tcithPsi(i, e)), 0, 4);
         digest.update(seed, 0, engine.securityBytes);
         digest.doFinal(commit, 0);
@@ -489,7 +524,7 @@ public class MirathSigner
     {
         System.arraycopy(S, 0, aux, 0, engine.ffSBytes);
         System.arraycopy(C, 0, aux, engine.ffSBytes, engine.ffCBytes);
-        for (int i = 0; i < engine.n1; i++)
+        for (int i = 0; i < n1; i++)
         {
             computeShare(cipher, sample, salt, seeds, i, e, i, SBase, CBase, vBase);
 
@@ -500,12 +535,12 @@ public class MirathSigner
         }
     }
 
-    public void commitParallelSharings(BlockCipher cipher, short[] S_base, short[] C_base, short[] v_base, short[] v, int e, byte[] aux,
+    private void commitParallelSharings(BlockCipher cipher, short[] S_base, short[] C_base, short[] v_base, short[] v, int e, byte[] aux,
                                        byte[] salt, byte[] S, byte[] C, byte[][] seeds, byte[] sample, short[] v_rnd)
     {
         System.arraycopy(S, 0, aux, 0, engine.ffSBytes);
         System.arraycopy(C, 0, aux, engine.ffSBytes, engine.ffCBytes);
-        for (int i = 0; i < engine.n1; i++)
+        for (int i = 0; i < n1; i++)
         {
             computeShare(cipher, sample, salt, seeds, i, e, v_rnd, i, S_base, C_base, v_base);
 
@@ -563,7 +598,7 @@ public class MirathSigner
         if (engine.securityBytes == 24)
         {
             byte[] output = new byte[32];
-            for (int i = 0; i < engine.blockLength; i++)
+            for (int i = 0; i < blockLength; i++)
             {
                 ctr[0] = (byte)i;
                 Bytes.xor(engine.securityBytes, ctr, salt, msg);
@@ -574,7 +609,7 @@ public class MirathSigner
         }
         else
         {
-            for (int i = 0; i < engine.blockLength; i++)
+            for (int i = 0; i < blockLength; i++)
             {
                 ctr[0] = (byte)i;
                 Bytes.xor(engine.securityBytes, ctr, salt, msg);
@@ -605,11 +640,11 @@ public class MirathSigner
                               byte[] aux_c, byte[] eAeB)
     {
         // 1. aux_E = S_rnd * C_rnd
-        engine.matrixFFMuProduct(eAeB, engine.s, S_rnd, C_rnd, engine.m, engine.r, engine.m - engine.r);
+        engine.matrixFFMuProduct(eAeB, s, S_rnd, C_rnd, engine.m, engine.r, engine.m - engine.r);
 
         // 2. Split codeword
-        Arrays.fill(eAeB, 0, engine.s, (byte)0);
-        System.arraycopy(eAeB, engine.s, aux_E, 0, aux_E.length);
+        Arrays.fill(eAeB, 0, s, (byte)0);
+        System.arraycopy(eAeB, s, aux_E, 0, aux_E.length);
 
         // 3. e_A + (H * e_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);
@@ -630,8 +665,8 @@ public class MirathSigner
         engine.matrixFFMuAddMu1FFTo(aux_E, sc, engine.m, engine.m - engine.r);
 
         // 14. Split codeword again
-        System.arraycopy(S_rnd, 0, eAeB, 0, engine.s);
-        System.arraycopy(aux_E, 0, eAeB, engine.s, aux_E.length);
+        System.arraycopy(S_rnd, 0, eAeB, 0, s);
+        System.arraycopy(aux_E, 0, eAeB, s, aux_E.length);
 
         // 15-16. e'_A + (H * e'_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);
@@ -645,11 +680,11 @@ public class MirathSigner
                               short[] aux_c, short[] eAeB)
     {
         // 1. aux_E = S_rnd * C_rnd
-        engine.matrixFFMuProduct(eAeB, engine.s, S_rnd, C_rnd, engine.m, engine.r, engine.m - engine.r);
+        engine.matrixFFMuProduct(eAeB, s, S_rnd, C_rnd, engine.m, engine.r, engine.m - engine.r);
 
         // 2. Split codeword
-        Arrays.fill(eAeB, 0, engine.s, (byte)0);
-        System.arraycopy(eAeB, engine.s, aux_E, 0, aux_E.length);
+        Arrays.fill(eAeB, 0, s, (byte)0);
+        System.arraycopy(eAeB, s, aux_E, 0, aux_E.length);
 
         // 3. e_A + (H * e_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);
@@ -670,8 +705,8 @@ public class MirathSigner
         engine.matrixFFMuAddMu1FFTo(aux_E, sc, engine.m, engine.m - engine.r);
 
         // 14. Split codeword again
-        System.arraycopy(S_rnd, 0, eAeB, 0, engine.s);
-        System.arraycopy(aux_E, 0, eAeB, engine.s, aux_E.length);
+        System.arraycopy(S_rnd, 0, eAeB, 0, s);
+        System.arraycopy(aux_E, 0, eAeB, s, aux_E.length);
 
         // 15-16. e'_A + (H * e'_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);
@@ -686,7 +721,7 @@ public class MirathSigner
         HashMpcPart1(digest, pk, salt, msg, hSh);
 
         // Process alpha values
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             byte[] tmp = Pack.shortToLittleEndian(alphaBase[e]);
             digest.update(tmp, 0, tmp.length);
@@ -704,7 +739,7 @@ public class MirathSigner
         HashMpcPart1(digest, pk, salt, msg, hSh);
 
         // Process alpha values
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             digest.update(alphaBase[e], 0, alphaBase[e].length);
             digest.update(alphaMid[e], 0, alphaMid[e].length);
@@ -730,14 +765,14 @@ public class MirathSigner
         System.arraycopy(binding, 0, shakeInput, 0, 2 * engine.securityBytes);
 
         long ctr = 0;
-        byte[] vGrinding = new byte[engine.hash2MaskBytes];
+        byte[] vGrinding = new byte[hash2MaskBytes];
 
         while (true)
         {
             byte[] ctrBytes = Pack.longToLittleEndian(ctr);
             System.arraycopy(ctrBytes, 0, shakeInput, 2 * engine.securityBytes, Long.BYTES);
 
-            int[] challenge = new int[engine.tau];
+            int[] challenge = new int[tau];
             expandViewChallenge(challenge, vGrinding, shakeInput);
 
             byte result = multivcOpen(path, commitsIStar, tree, commits, challenge);
@@ -777,7 +812,7 @@ public class MirathSigner
             return 1;
         }
 
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             System.arraycopy(commits[e][iStar[e]], 0, commitsIStar[e], 0, 2 * engine.securityBytes);
         }
@@ -788,7 +823,7 @@ public class MirathSigner
     {
         List<Integer> pathIndexes = new ArrayList<Integer>();
 
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             int node = leavesSeedsOffset + tcithPsi(iStar[e], e);
             while (node > 0)
@@ -824,18 +859,18 @@ public class MirathSigner
     {
         engine.prng.update(input, 0, input.length);
 
-        byte[] random = new byte[engine.challenge2Bytes + engine.hash2MaskBytes];
+        byte[] random = new byte[challenge2Bytes + hash2MaskBytes];
         engine.prng.doFinal(random, 0, random.length);
 
         // Extract v_grinding and apply mask
-        System.arraycopy(random, engine.challenge2Bytes, vGrinding, 0, engine.hash2MaskBytes);
-        vGrinding[engine.hash2MaskBytes - 1] &= engine.hash2Mask;
-        org.bouncycastle.util.Arrays.fill(random, engine.challenge2Bytes, random.length, (byte)0);
+        System.arraycopy(random, challenge2Bytes, vGrinding, 0, hash2MaskBytes);
+        vGrinding[hash2MaskBytes - 1] &= hash2Mask;
+        org.bouncycastle.util.Arrays.fill(random, challenge2Bytes, random.length, (byte)0);
 
         int randomOffset = 0;
 
         // Process N1 challenges
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             byte[] block = org.bouncycastle.util.Arrays.copyOfRange(random, randomOffset, randomOffset + n1Bytes);
             block[n1Bytes - 1] &= n1Mask;
@@ -845,21 +880,21 @@ public class MirathSigner
             // Shift right by N1_BITS
             for (int j = 0; j < n1Bits; j++)
             {
-                for (int i = 0; i < engine.challenge2Bytes - 1; i++)
+                for (int i = 0; i < challenge2Bytes - 1; i++)
                 {
                     random[i] = (byte)(((random[i] & 0xff) >>> 1) ^ ((random[i + 1] & 0xff) << 7));
                 }
-                random[engine.challenge2Bytes - 1] = (byte)((random[engine.challenge2Bytes - 1] & 0xff) >>> 1);
+                random[challenge2Bytes - 1] = (byte)((random[challenge2Bytes - 1] & 0xff) >>> 1);
             }
         }
     }
 
-    public byte discardInputChallenge2(byte[] vGrinding)
+    private byte discardInputChallenge2(byte[] vGrinding)
     {
         byte output = 0x00;
-        byte mask = (byte)engine.hash2Mask;
+        byte mask = (byte)hash2Mask;
 
-        for (int i = 0; i < engine.hash2MaskBytes; i++)
+        for (int i = 0; i < hash2MaskBytes; i++)
         {
             if (i > 0)
             {
@@ -874,7 +909,7 @@ public class MirathSigner
         return output;
     }
 
-    public void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar,
+    private void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar,
                                  byte[][] aux, byte[][] midAlpha)
     {
         unparseSignature(signature, salt, ctr, hash2, path, commitsIStar);
@@ -882,7 +917,7 @@ public class MirathSigner
         // Pack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
 
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             engine.col = 0;
             // Process R columns (M x R matrix)
@@ -910,8 +945,8 @@ public class MirathSigner
     private void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar)
     {
         // Copy salt
-        System.arraycopy(salt, 0, signature, 0, engine.saltBytes);
-        engine.ptr = engine.saltBytes;
+        System.arraycopy(salt, 0, signature, 0, saltBytes);
+        engine.ptr = saltBytes;
 
         // Copy counter (little-endian)
         byte[] ctrBytes = Pack.longToLittleEndian(ctr);
@@ -937,7 +972,7 @@ public class MirathSigner
         }
     }
 
-    public void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar,
+    private void unparseSignature(byte[] signature, byte[] salt, long ctr, byte[] hash2, byte[][] path, byte[][] commitsIStar,
                                  byte[][] aux, short[][] midAlpha)
     {
         unparseSignature(signature, salt, ctr, hash2, path, commitsIStar);
@@ -945,7 +980,7 @@ public class MirathSigner
         // Pack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
 
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             engine.col = 0;
             // Process R columns (M x R matrix)
@@ -1047,10 +1082,10 @@ public class MirathSigner
 
         hash.update(domainSeparatorCommitment);
         // Process commits
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             System.arraycopy(commitsIStar[e], 0, commits[e][iStar[e]], 0, 2 * engine.securityBytes);
-            for (int i = 0; i < engine.n1; i++)
+            for (int i = 0; i < n1; i++)
             {
                 if (i != iStar[e])
                 {
@@ -1070,8 +1105,8 @@ public class MirathSigner
     {
         int ptr = 0;
         // Copy salt
-        System.arraycopy(signature, ptr, salt, 0, engine.saltBytes);
-        ptr += engine.saltBytes;
+        System.arraycopy(signature, ptr, salt, 0, saltBytes);
+        ptr += saltBytes;
         // Copy counter (little-endian)
         ctr[0] = Pack.littleEndianToLong(signature, ptr);
         ptr += 8;
@@ -1087,7 +1122,7 @@ public class MirathSigner
         }
 
         // Copy commits_i_star
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             System.arraycopy(signature, ptr, commitsIStar[e], 0, 2 * engine.securityBytes);
             ptr += 2 * engine.securityBytes;
@@ -1123,7 +1158,7 @@ public class MirathSigner
     {
         int offPtr = 8; // Tracks bits remaining in current byte
         engine.ptr = pos;
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             engine.col = 0;
             // Process R columns (M x R matrix)
@@ -1143,14 +1178,14 @@ public class MirathSigner
         }
     }
 
-    public void parseSignature(int pos, byte[][] aux, short[][] midAlpha, byte[] signature)
+    private void parseSignature(int pos, byte[][] aux, short[][] midAlpha, byte[] signature)
     {
         // Unpack field elements
         int offPtr = 8; // Tracks bits remaining in current byte
         engine.ptr = pos;
         int onMu = 4;
         short maskHighMu = 0x0F;
-        for (int e = 0; e < engine.tau; e++)
+        for (int e = 0; e < tau; e++)
         {
             engine.col = 0;
             // Process R columns (M x R matrix)
@@ -1191,7 +1226,7 @@ public class MirathSigner
                       byte[] salt, byte[] sample)
     {
         // Determine matrix dimensions based on parameter version
-        for (int i = 0; i < engine.n1; i++)
+        for (int i = 0; i < n1; i++)
         {
             if (i != i_star)
             {
@@ -1209,7 +1244,7 @@ public class MirathSigner
                       byte[] salt, byte[] sample, short[] vi)
     {
         // Determine matrix dimensions based on parameter version
-        for (int i = 0; i < engine.n1; i++)
+        for (int i = 0; i < n1; i++)
         {
             if (i != i_star)
             {
@@ -1223,14 +1258,14 @@ public class MirathSigner
         engine.matrixFFMuAddMultipleFF(C_share, phi_i, aux, engine.ffSBytes);
     }
 
-    public void emulatePartyMu(byte[] baseAlpha, int p, byte[] S_share, byte[] C_share, byte[] v_share,
+    private void emulatePartyMu(byte[] baseAlpha, int p, byte[] S_share, byte[] C_share, byte[] v_share,
                                byte[] gamma, byte[] H, byte[] y, byte[] midAlpha, byte[] eAeB)
     {
         // p * S_share (accumulated in Ts)
         engine.mirathMatrixFFMuAddMultiple2(eAeB, (byte)p, S_share);
 
         // S_share * C_share -> aux
-        engine.matrixFFMuProduct(eAeB, engine.s, S_share, C_share, engine.m, engine.r, engine.m - engine.r);
+        engine.matrixFFMuProduct(eAeB, s, S_share, C_share, engine.m, engine.r, engine.m - engine.r);
 
         // e_A + (H * e_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);
@@ -1246,14 +1281,14 @@ public class MirathSigner
         engine.mirathVectorFFMuAddMultiple(baseAlpha, (byte)p, midAlpha, engine.rho);
     }
 
-    public void emulatePartyMu(short[] baseAlpha, int p, short[] S_share, short[] C_share, short[] v_share,
+    private void emulatePartyMu(short[] baseAlpha, int p, short[] S_share, short[] C_share, short[] v_share,
                                short[] gamma, byte[] H, byte[] y, short[] midAlpha, short[] eAeB)
     {
         // p * S_share (accumulated in Ts)
         engine.mirathMatrixFFMuAddMultiple2(eAeB, (short)p, S_share);
 
         // S_share * C_share -> aux
-        engine.matrixFFMuProduct(eAeB, engine.s, S_share, C_share, engine.m, engine.r, engine.m - engine.r);
+        engine.matrixFFMuProduct(eAeB, s, S_share, C_share, engine.m, engine.r, engine.m - engine.r);
 
         // e_A + (H * e_B)
         engine.matrixFFMuProductFF1MuTo(eAeB, H, engine.eA, engine.k);

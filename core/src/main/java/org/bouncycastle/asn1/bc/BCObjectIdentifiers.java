@@ -691,16 +691,16 @@ public interface BCObjectIdentifiers
      * Mirath
      */
     ASN1ObjectIdentifier mirath = bc_sig.branch("12");
-    ASN1ObjectIdentifier mirath_1a_fast = mayo.branch("1");
-    ASN1ObjectIdentifier mirath_1a_short = mayo.branch("2");
-    ASN1ObjectIdentifier mirath_1b_fast = mayo.branch("3");
-    ASN1ObjectIdentifier mirath_1b_short = mayo.branch("4");
-    ASN1ObjectIdentifier mirath_3a_fast = mayo.branch("5");
-    ASN1ObjectIdentifier mirath_3a_short = mayo.branch("6");
-    ASN1ObjectIdentifier mirath_3b_fast = mayo.branch("7");
-    ASN1ObjectIdentifier mirath_3b_short = mayo.branch("8");
-    ASN1ObjectIdentifier mirath_5a_fast = mayo.branch("9");
-    ASN1ObjectIdentifier mirath_5a_short = mayo.branch("10");
-    ASN1ObjectIdentifier mirath_5b_fast = mayo.branch("11");
-    ASN1ObjectIdentifier mirath_5b_short = mayo.branch("12");
+    ASN1ObjectIdentifier mirath_1a_fast = mirath.branch("1");
+    ASN1ObjectIdentifier mirath_1a_short = mirath.branch("2");
+    ASN1ObjectIdentifier mirath_1b_fast = mirath.branch("3");
+    ASN1ObjectIdentifier mirath_1b_short = mirath.branch("4");
+    ASN1ObjectIdentifier mirath_3a_fast = mirath.branch("5");
+    ASN1ObjectIdentifier mirath_3a_short = mirath.branch("6");
+    ASN1ObjectIdentifier mirath_3b_fast = mirath.branch("7");
+    ASN1ObjectIdentifier mirath_3b_short = mirath.branch("8");
+    ASN1ObjectIdentifier mirath_5a_fast = mirath.branch("9");
+    ASN1ObjectIdentifier mirath_5a_short = mirath.branch("10");
+    ASN1ObjectIdentifier mirath_5b_fast = mirath.branch("11");
+    ASN1ObjectIdentifier mirath_5b_short = mirath.branch("12");
 }
