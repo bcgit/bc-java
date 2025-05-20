@@ -653,7 +653,7 @@ public class PGPSignature
     {
         for (KeyIdentifier id : getKeyIdentifiers())
         {
-            if (id.matches(identifier))
+            if (id.matchesExplicit(identifier))
             {
                 return true;
             }

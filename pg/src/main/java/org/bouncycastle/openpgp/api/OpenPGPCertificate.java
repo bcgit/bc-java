@@ -305,7 +305,7 @@ public class OpenPGPCertificate
      */
     public OpenPGPComponentKey getKey(KeyIdentifier identifier)
     {
-        if (identifier.matches(getPrimaryKey().getPGPPublicKey().getKeyIdentifier()))
+        if (identifier.matchesExplicit(getPrimaryKey().getPGPPublicKey().getKeyIdentifier()))
         {
             return primaryKey;
         }
