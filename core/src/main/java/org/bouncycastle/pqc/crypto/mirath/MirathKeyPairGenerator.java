@@ -38,13 +38,14 @@ public class MirathKeyPairGenerator
         byte[] C = new byte[engine.ffCBytes];
         byte[] H = new byte[engine.ffHBytes];
         byte[] y = new byte[engine.ffYBytes];
+        byte[] T = new byte[engine.mirathMatrixFFBytesSize(engine.m, engine.m - engine.r)];
 
         // Step 3 & 4: Expand matrices
         engine.mirathMatrixExpandSeedSecretMatrix(S, C, seedSk);
         engine.mirathMatrixExpandSeedPublicMatrix(H, seedPk, 0);
 
         // Step 5: Compute y
-        engine.mirathMatrixComputeY(y, S, C, H);
+        engine.mirathMatrixComputeY(y, S, C, H, T);
 
         // Step 6 & 7: Build keys
         //unparsePublicKey
