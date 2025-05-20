@@ -39,6 +39,7 @@ import org.bouncycastle.pqc.jcajce.provider.hqc.HQCKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.kyber.KyberKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.mirath.MirathKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.picnic.PicnicKeyFactorySpi;
@@ -485,6 +486,19 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_esk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_ssk, new SnovaKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.snova_75_33_2_shake_esk, new SnovaKeyFactorySpi());
+
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_1a_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_1a_short, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_1b_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_1b_short, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_3a_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_3a_short, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_3b_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_3b_short, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_5a_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_5a_short, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_5b_fast, new MirathKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.mirath_5b_short, new MirathKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
