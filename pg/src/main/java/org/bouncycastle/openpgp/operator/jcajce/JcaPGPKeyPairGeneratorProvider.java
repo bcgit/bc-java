@@ -1,13 +1,16 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
@@ -210,6 +213,42 @@ public class JcaPGPKeyPairGeneratorProvider
             catch (GeneralSecurityException e)
             {
                 throw new PGPException("Cannot generate LegacyX25519 key pair.", e);
+            }
+        }
+
+        @Override
+        public PGPKeyPair generateECDHKeyPair(ASN1ObjectIdentifier curveOID)
+            throws PGPException
+        {
+            try
+            {
+                KeyPairGenerator gen = helper.createKeyPairGenerator("ECDH");
+                String curveName = ECUtil.getCurveName(curveOID);
+                gen.initialize(new ECNamedCurveGenParameterSpec(curveName));
+                KeyPair keyPair = gen.generateKeyPair();
+                return new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.ECDH, keyPair, creationTime);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new PGPException("Cannot generate ECDH key pair.", e);
+            }
+        }
+
+        @Override
+        public PGPKeyPair generateECDSAKeyPair(ASN1ObjectIdentifier curveOID)
+            throws PGPException
+        {
+            try
+            {
+                KeyPairGenerator gen = helper.createKeyPairGenerator("ECDSA");
+                String curveName = ECUtil.getCurveName(curveOID);
+                gen.initialize(new ECNamedCurveGenParameterSpec(curveName));
+                KeyPair keyPair = gen.generateKeyPair();
+                return new JcaPGPKeyPair(version, PublicKeyAlgorithmTags.ECDSA, keyPair, creationTime);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new PGPException("Cannot generate ECDSA key pair.", e);
             }
         }
     }
