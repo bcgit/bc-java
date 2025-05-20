@@ -1,5 +1,7 @@
 package org.bouncycastle.openpgp.operator;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -177,5 +179,115 @@ public abstract class PGPKeyPairGenerator
      * @throws PGPException if the key pair cannot be generated
      */
     public abstract PGPKeyPair generateLegacyX25519KeyPair()
+        throws PGPException;
+
+    /**
+     * Generate an ECDH elliptic curve encryption key over the NIST p-256 curve.
+     *
+     * @return NIST p-256 ECDSA encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP256ECDHKeyPair()
+        throws PGPException
+    {
+        return generateECDHKeyPair(SECObjectIdentifiers.secp256r1);
+    }
+
+    /**
+     * Generate an ECDH elliptic curve encryption key over the NIST p-384 curve.
+     *
+     * @return NIST p-384 ECDSA encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP384ECDHKeyPair()
+        throws PGPException
+    {
+        return generateECDHKeyPair(SECObjectIdentifiers.secp384r1);
+    }
+
+    /**
+     * Generate an ECDH elliptic curve encryption key over the NIST p-521 curve.
+     *
+     * @return NIST p-521 ECDSA encryption key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP521ECDHKeyPair()
+        throws PGPException
+    {
+        return generateECDHKeyPair(SECObjectIdentifiers.secp521r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the NIST p-256 curve.
+     *
+     * @return NIST p-256 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP256ECDSAKeyPair()
+        throws PGPException
+    {
+        return generateECDSAKeyPair(SECObjectIdentifiers.secp256r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the NIST p-384 curve.
+     *
+     * @return NIST p-384 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP384ECDSAKeyPair()
+        throws PGPException
+    {
+        return generateECDSAKeyPair(SECObjectIdentifiers.secp384r1);
+    }
+
+    /**
+     * Generate an ECDSA elliptic curve signing key over the NIST p-521 curve.
+     *
+     * @return NIST p-521 ECDSA signing key pair
+     * @throws PGPException if the key pair cannot be generated
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc6637.html">
+     *     RFC6637 - Elliptic Curve Cryptography in OpenPGP</a>
+     */
+    public PGPKeyPair generateNistP521ECDSAKeyPair()
+        throws PGPException
+    {
+        return generateECDSAKeyPair(SECObjectIdentifiers.secp521r1);
+    }
+
+    /**
+     * Generate an elliptic curve Diffie-Hellman encryption key pair over the curve identified by the given OID.
+     *
+     * @param curveOID OID of the elliptic curve
+     * @return PGP key pair
+     * @throws PGPException if the key pair cannot be generated
+     */
+    public abstract PGPKeyPair generateECDHKeyPair(ASN1ObjectIdentifier curveOID)
+        throws PGPException;
+
+    /**
+     * Generate an elliptic curve signing key over the curve identified by the given OID.
+     *
+     * @param curveOID OID of the elliptic curve
+     * @return PGP key pair
+     * @throws PGPException if the key pair cannot be generated
+     */
+    public abstract PGPKeyPair generateECDSAKeyPair(ASN1ObjectIdentifier curveOID)
         throws PGPException;
 }
