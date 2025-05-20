@@ -41,7 +41,7 @@ public class MirathKeyPairGenerator
 
         // Step 3 & 4: Expand matrices
         engine.mirathMatrixExpandSeedSecretMatrix(S, C, seedSk);
-        engine.mirathMatrixExpandSeedPublicMatrix(H, seedPk);
+        engine.mirathMatrixExpandSeedPublicMatrix(H, seedPk, 0);
 
         // Step 5: Compute y
         engine.mirathMatrixComputeY(y, S, C, H);
