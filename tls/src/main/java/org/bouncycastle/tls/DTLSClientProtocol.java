@@ -420,9 +420,10 @@ public class DTLSClientProtocol
 
         TlsSession sessionToResume = offeringDTLSv12Minus ? client.getSessionToResume() : null;
 
-        boolean fallback = client.isFallback();
-
+        // NOTE: Client is free to modify the cipher suites up until getSessionToResume
         state.offeredCipherSuites = client.getCipherSuites();
+
+        boolean fallback = client.isFallback();
 
         state.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(client.getClientExtensions());
 
