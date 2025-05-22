@@ -1500,6 +1500,9 @@ public class NewSignedDataTest
         // compute expected content digest
         //
 
+        assertTrue(s.isDetachedSignature());
+        assertFalse(s.isCertificateManagementMessage());
+
         verifySignatures(s, md.digest("Hello world!".getBytes()));
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
     }
@@ -3553,10 +3556,13 @@ public class NewSignedDataTest
 
         CMSSignedData sData = sGen.generate(new CMSAbsentContent(), true);
 
-        CMSSignedData rsData = new CMSSignedData(sData.getEncoded());
-
         assertTrue(sData.isCertificateManagementMessage());
         assertFalse(sData.isDetachedSignature());
+
+        CMSSignedData rsData = new CMSSignedData(sData.getEncoded());
+
+        assertTrue(rsData.isCertificateManagementMessage());
+        assertFalse(rsData.isDetachedSignature());
 
         assertEquals(2, rsData.getCertificates().getMatches(null).size());
     }
