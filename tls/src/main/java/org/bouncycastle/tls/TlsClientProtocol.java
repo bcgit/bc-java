@@ -1808,9 +1808,10 @@ public class TlsClientProtocol
 
         TlsSession sessionToResume = offeringTLSv12Minus ? tlsClient.getSessionToResume() : null;
 
-        boolean fallback = tlsClient.isFallback();
-
+        // NOTE: Client is free to modify the cipher suites up until getSessionToResume
         int[] offeredCipherSuites = tlsClient.getCipherSuites();
+
+        boolean fallback = tlsClient.isFallback();
 
         this.clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsClient.getClientExtensions());
 
