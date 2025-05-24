@@ -1,10 +1,17 @@
 package org.bouncycastle.openpgp.operator.bc;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.Date;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
@@ -18,15 +25,10 @@ import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
-import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGeneratorProvider;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.Date;
 
 public class BcPGPKeyPairGeneratorProvider
         extends PGPKeyPairGeneratorProvider
@@ -140,7 +142,7 @@ public class BcPGPKeyPairGeneratorProvider
         {
             ECKeyPairGenerator gen = new ECKeyPairGenerator();
             gen.init(new ECKeyGenerationParameters(
-                    new ECNamedDomainParameters(curveOID, ECUtil.getNamedCurveByOid(curveOID)),
+                    new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
                     CryptoServicesRegistrar.getSecureRandom()));
 
             AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
@@ -153,11 +155,24 @@ public class BcPGPKeyPairGeneratorProvider
         {
             ECKeyPairGenerator gen = new ECKeyPairGenerator();
             gen.init(new ECKeyGenerationParameters(
-                    new ECNamedDomainParameters(curveOID, ECUtil.getNamedCurveByOid(curveOID)),
+                    new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
                     CryptoServicesRegistrar.getSecureRandom()));
 
             AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
             return new BcPGPKeyPair(version, PublicKeyAlgorithmTags.ECDSA, keyPair, creationTime);
         }
+    }
+
+    private static X9ECParameters getNamedCurveByOid(
+        ASN1ObjectIdentifier oid)
+    {
+        X9ECParameters params = CustomNamedCurves.getByOID(oid);
+
+        if (params == null)
+        {
+            params = ECNamedCurveTable.getByOID(oid);
+        }
+
+        return params;
     }
 }
