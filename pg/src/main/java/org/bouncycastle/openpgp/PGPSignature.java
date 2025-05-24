@@ -198,7 +198,7 @@ public class PGPSignature
      */
     public static final int THIRD_PARTY_CONFIRMATION = 0x50;
 
-    private final SignaturePacket sigPck;
+    final SignaturePacket sigPck;
     private final TrustPacket trustPck;
 
     private volatile PGPContentVerifier verifier;
@@ -1034,6 +1034,8 @@ public class PGPSignature
         SignatureSubpacket[] unhashed = (SignatureSubpacket[])merged.toArray(new SignatureSubpacket[0]);
         return new PGPSignature(
             new SignaturePacket(
+                sig1.getVersion(),
+                sig1.sigPck.hasNewPacketFormat(),
                 sig1.getSignatureType(),
                 sig1.getKeyID(),
                 sig1.getKeyAlgorithm(),
