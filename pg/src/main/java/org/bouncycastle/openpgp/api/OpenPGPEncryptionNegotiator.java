@@ -104,7 +104,7 @@ public abstract class OpenPGPEncryptionNegotiator
                     // This way, combinations with a smaller index have a higher weight than combinations with larger index.
                     // Additionally, we divide this weight by the number of capable subkeys per cert in order to
                     //  prevent a certificate with many capable subkeys from outvoting other certificates
-                    List<PreferredAEADCiphersuites.Combination> result = new ArrayList<>();
+                    List<PreferredAEADCiphersuites.Combination> result = new ArrayList<PreferredAEADCiphersuites.Combination>();
                     for (PreferredAEADCiphersuites.Combination c : prefs.getAlgorithms())
                     {
                         if (c.getSymmetricAlgorithm() != SymmetricKeyAlgorithmTags.NULL
@@ -153,7 +153,7 @@ public abstract class OpenPGPEncryptionNegotiator
                     // This way, combinations with a smaller index have a higher weight than combinations with larger index.
                     // Additionally, we divide this weight by the number of capable subkeys per cert in order to
                     //  prevent a certificate with many capable subkeys from outvoting other certificates
-                    List<Integer> result = new ArrayList<>();
+                    List<Integer> result = new ArrayList<Integer>();
                     int[] prefs = preferences.getPreferences();
                     for (int i = 0; i < prefs.length; i++)
                     {
@@ -202,7 +202,7 @@ public abstract class OpenPGPEncryptionNegotiator
                 {
                     // Count the keys symmetric key preferences (that can be used with OED) and update the weight map
 
-                    List<Integer> result = new ArrayList<>();
+                    List<Integer> result = new ArrayList<Integer>();
                     int[] prefs = preferences.getPreferences();
                     for (int i = 0; i < prefs.length; i++)
                     {
@@ -255,7 +255,7 @@ public abstract class OpenPGPEncryptionNegotiator
         KeyProcessor<T, R> keyProcessor,
         R defaultResult)
     {
-        Map<R, Float> weights = new HashMap<>();
+        Map<R, Float> weights = new HashMap<R, Float>();
 
         // Go through all certificate's capable subkeys
         for (Iterator<OpenPGPCertificate> it = certificates.iterator(); it.hasNext(); )
@@ -267,7 +267,7 @@ public abstract class OpenPGPEncryptionNegotiator
             }
 
             // Only consider encryption keys capable of SEIPDv1/OED
-            Map<OpenPGPCertificate.OpenPGPComponentKey, T> capableKeys = new HashMap<>();
+            Map<OpenPGPCertificate.OpenPGPComponentKey, T> capableKeys = new HashMap<OpenPGPCertificate.OpenPGPComponentKey, T>();
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> ckIt = encryptionKeys.iterator(); ckIt.hasNext(); )
             {
                 keyProcessor.processKey(ckIt.next(), capableKeys);

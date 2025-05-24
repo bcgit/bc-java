@@ -1,12 +1,12 @@
 package org.bouncycastle.openpgp.api;
 
-import org.bouncycastle.util.Arrays;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.bouncycastle.util.Arrays;
 
 public interface KeyPassphraseProvider
 {
@@ -23,8 +23,8 @@ public interface KeyPassphraseProvider
     class DefaultKeyPassphraseProvider
         implements KeyPassphraseProvider
     {
-        private final Map<OpenPGPKey.OpenPGPSecretKey, char[]> passphraseMap = new HashMap<>();
-        private final List<char[]> allPassphrases = new ArrayList<>();
+        private final Map<OpenPGPKey.OpenPGPSecretKey, char[]> passphraseMap = new HashMap<OpenPGPKey.OpenPGPSecretKey, char[]>();
+        private final List<char[]> allPassphrases = new ArrayList<char[]>();
         private KeyPassphraseProvider callback;
 
         public DefaultKeyPassphraseProvider()
@@ -78,8 +78,9 @@ public interface KeyPassphraseProvider
         public DefaultKeyPassphraseProvider addPassphrase(char[] passphrase)
         {
             boolean found = false;
-            for (char[] existing : allPassphrases)
+            for (Iterator it = allPassphrases.iterator(); it.hasNext();)
             {
+                char[] existing = (char[])it.next();
                 found |= (Arrays.areEqual(existing, passphrase));
             }
 

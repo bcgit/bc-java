@@ -74,7 +74,7 @@ public class OpenPGPKey
         super(keyRing, implementation, policy);
 
         // Process and map secret keys
-        this.secretKeys = new HashMap<>();
+        this.secretKeys = new HashMap<KeyIdentifier, OpenPGPSecretKey>();
         for (Iterator it = getKeys().iterator(); it.hasNext(); )
         {
             OpenPGPComponentKey key = (OpenPGPComponentKey)it.next();
@@ -115,7 +115,7 @@ public class OpenPGPKey
         List<OpenPGPCertificateComponent> components = super.getComponents();
         for (int i = components.size() - 1; i >= 0; i--)
         {
-            OpenPGPCertificateComponent component = components.get(i);
+            OpenPGPCertificateComponent component = (OpenPGPCertificateComponent)components.get(i);
             if (component instanceof OpenPGPComponentKey)
             {
                 OpenPGPSecretKey secretKey = getSecretKey((OpenPGPComponentKey)component);
@@ -147,7 +147,7 @@ public class OpenPGPKey
      */
     public Map<KeyIdentifier, OpenPGPSecretKey> getSecretKeys()
     {
-        return new HashMap<>(secretKeys);
+        return new HashMap<KeyIdentifier, OpenPGPSecretKey>(secretKeys);
     }
 
     /**

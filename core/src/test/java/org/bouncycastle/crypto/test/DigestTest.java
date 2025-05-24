@@ -326,7 +326,7 @@ public abstract class DigestTest
             int a = line.indexOf('=');
             if (a < 0)
             {
-                int count = Integer.parseInt(map.get("Count"));
+                int count = Integer.parseInt((String)map.get("Count"));
                 if (count != 21)
                 {
                     continue;

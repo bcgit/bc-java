@@ -40,7 +40,7 @@ public class OpenPGPDetachedSignatureProcessor
     private final OpenPGPImplementation implementation;
     private final OpenPGPPolicy policy;
     private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool = new OpenPGPKeyMaterialPool.OpenPGPCertificatePool();
-    private final List<PGPSignature> pgpSignatures = new ArrayList<>();
+    private final List<PGPSignature> pgpSignatures = new ArrayList<PGPSignature>();
     private Date verifyNotAfter = new Date();       // now
     private Date verifyNotBefore = new Date(0L);    // beginning of time
 
@@ -185,7 +185,7 @@ public class OpenPGPDetachedSignatureProcessor
     public List<OpenPGPSignature.OpenPGPDocumentSignature> process(InputStream inputStream)
         throws IOException
     {
-        List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<>();
+        List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
         for (Iterator it = pgpSignatures.iterator(); it.hasNext(); )
         {
             PGPSignature signature = (PGPSignature)it.next();

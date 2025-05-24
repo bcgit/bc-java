@@ -1,42 +1,24 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
-import org.bouncycastle.jcajce.spec.KEMExtractSpec;
-import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
-import org.bouncycastle.jcajce.spec.KEMParameterSpec;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
-import org.bouncycastle.tls.NamedGroup;
-import org.bouncycastle.tls.crypto.TlsAgreement;
-import org.bouncycastle.tls.crypto.TlsKemConfig;
-import org.bouncycastle.tls.crypto.TlsKemDomain;
-import org.bouncycastle.util.encoders.Hex;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.AlgorithmParameters;
-import java.security.GeneralSecurityException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
+
+import javax.crypto.KeyGenerator;
+
+import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
+import org.bouncycastle.jcajce.spec.KEMExtractSpec;
+import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
+import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.crypto.TlsAgreement;
+import org.bouncycastle.tls.crypto.TlsKemConfig;
+import org.bouncycastle.tls.crypto.TlsKemDomain;
 
 public class JceTlsMLKemDomain implements TlsKemDomain
 {
@@ -75,7 +57,7 @@ public class JceTlsMLKemDomain implements TlsKemDomain
         this.isServer = kemConfig.isServer();
         try
         {
-            this.keyGen = keyGen = crypto.getHelper().createKeyGenerator(domainParameters.getName());
+            this.keyGen = crypto.getHelper().createKeyGenerator(domainParameters.getName());
         }
         catch (NoSuchAlgorithmException e)
         {
