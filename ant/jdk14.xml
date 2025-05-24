@@ -31,7 +31,7 @@
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
-                <exclude name="**/ISAP*.java"/>
+                <exclude name="**/ISAPEngine*.java"/>
                 <exclude name="**/Xoodyak*.java"/>
                 <exclude name="**/Elephant*.java"/>
                 <exclude name="**/Sparkle*.java"/>
@@ -45,6 +45,8 @@
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
+                <exclude name="**/BcHssLmsContentSignerB*.java"/>
+                <exclude name="**/BcHssLmsContentVerifierProviderBuilder.java"/>
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>

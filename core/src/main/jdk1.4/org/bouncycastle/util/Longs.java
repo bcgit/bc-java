@@ -77,4 +77,12 @@ public class Longs
     {
         return new Long(value);
     }
+
+    public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
+    {
+        for (int i = 0; i < len; ++i)
+        {
+            z[zOff + i] ^= x[xOff + i];
+        }
+    }
 }

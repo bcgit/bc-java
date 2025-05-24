@@ -52,7 +52,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to Snova: " + e.getMessage(), e);
+                throw new InvalidKeyException("unknown public key passed to Snova: " + e.getMessage());
             }
         }
 

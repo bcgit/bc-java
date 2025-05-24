@@ -1,11 +1,10 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
-
 import java.security.AlgorithmParameters;
-import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.Cipher;
+
+import org.bouncycastle.util.Exceptions;
 
 class KemUtil
 {
@@ -40,7 +39,7 @@ class KemUtil
         }
         catch (Exception e)
         {
-            throw new IllegalStateException("KEM cipher failed: " + kemName, e);
+            throw Exceptions.illegalStateException("KEM cipher failed: " + kemName, e);
         }
 
         return null;
@@ -52,17 +51,23 @@ class KemUtil
         return kemName != null && getCipher(crypto, kemName) != null;
     }
 
+    // TODO: not used?
     static int getEncapsulationLength(String kemName)
     {
-        switch (kemName)
+        if ("ML-KEM-512".equals(kemName))
         {
-        case "ML-KEM-512":
             return 768;
-        case "ML-KEM-768":
+        }
+        else if ("ML-KEM-768".equals(kemName))
+        {
             return 1088;
-        case "ML-KEM-1024":
+        }
+        else if ("ML-KEM-1024".equals(kemName))
+        {
             return 1568;
-        default:
+        }
+        else
+        {
             throw new IllegalArgumentException("unknown kem name " + kemName);
         }
     }

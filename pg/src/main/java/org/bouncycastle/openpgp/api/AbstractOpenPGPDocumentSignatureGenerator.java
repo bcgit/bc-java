@@ -22,10 +22,10 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
     protected final OpenPGPPolicy policy;
 
     // Below lists all use the same indexing
-    protected final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<>();
-    protected final List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<>();
-    protected final List<SignatureParameters.Callback> signatureCallbacks = new ArrayList<>();
-    protected final List<KeyPassphraseProvider> signingKeyPassphraseProviders = new ArrayList<>();
+    protected final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<PGPSignatureGenerator>();
+    protected final List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<OpenPGPKey.OpenPGPSecretKey>();
+    protected final List<SignatureParameters.Callback> signatureCallbacks = new ArrayList<SignatureParameters.Callback>();
+    protected final List<KeyPassphraseProvider> signingKeyPassphraseProviders = new ArrayList<KeyPassphraseProvider>();
 
     protected final KeyPassphraseProvider.DefaultKeyPassphraseProvider defaultKeyPassphraseProvider =
         new KeyPassphraseProvider.DefaultKeyPassphraseProvider();
@@ -36,7 +36,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
                                                                    final OpenPGPPolicy policy)
         {
-            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = certificate.getSigningKeys().iterator(); it.hasNext(); )
             {
                 OpenPGPCertificate.OpenPGPComponentKey key = it.next();

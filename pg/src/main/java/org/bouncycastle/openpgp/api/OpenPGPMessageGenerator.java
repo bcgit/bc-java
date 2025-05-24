@@ -53,8 +53,8 @@ public class OpenPGPMessageGenerator
 
     private boolean isArmored = true;
     public boolean isAllowPadding = true;
-    private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<>();
-    private final List<char[]> messagePassphrases = new ArrayList<>();
+    private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
+    private final List<char[]> messagePassphrases = new ArrayList<char[]>();
 
     // Literal Data metadata
     private Date fileModificationDate = null;
@@ -457,7 +457,7 @@ public class OpenPGPMessageGenerator
         public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
                                                                    OpenPGPPolicy policy)
         {
-            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = certificate.getEncryptionKeys().iterator(); it.hasNext(); )
             {
                 OpenPGPCertificate.OpenPGPComponentKey key = it.next();
@@ -491,8 +491,8 @@ public class OpenPGPMessageGenerator
 //                .distinct()
 //                .collect(Collectors.toList());
 
-            List<OpenPGPCertificate> certificates = new ArrayList<>();
-            Set<OpenPGPCertificate> uniqueCertificates = new HashSet<>(); // For distinctness
+            List<OpenPGPCertificate> certificates = new ArrayList<OpenPGPCertificate>();
+            Set<OpenPGPCertificate> uniqueCertificates = new HashSet<OpenPGPCertificate>(); // For distinctness
 
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = encryptionKeys.iterator(); it.hasNext(); )
             {

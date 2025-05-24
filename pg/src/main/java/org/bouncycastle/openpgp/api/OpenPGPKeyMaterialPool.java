@@ -21,7 +21,7 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
         implements OpenPGPKeyMaterialProvider<M>
 {
-    private final Map<KeyIdentifier, M> pool = new HashMap<>();
+    private final Map<KeyIdentifier, M> pool = new HashMap<KeyIdentifier, M>();
     private OpenPGPKeyMaterialProvider<M> callback = null;
     private boolean cacheResultsFromCallback = true;
 

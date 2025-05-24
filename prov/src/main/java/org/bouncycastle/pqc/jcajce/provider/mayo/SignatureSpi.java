@@ -52,7 +52,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to Mayo: " + e.getMessage(), e);
+                throw new InvalidKeyException("unknown public key passed to Mayo: " + e.getMessage());
             }
         }
 

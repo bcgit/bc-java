@@ -1,5 +1,8 @@
 package org.bouncycastle.crypto.kems;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
@@ -9,9 +12,6 @@ import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-
-import java.math.BigInteger;
-import java.security.SecureRandom;
 
 /**
  * This class implements the SAKKE (Sakai-Kasahara Key Encryption) Key Encapsulation Mechanism
@@ -146,7 +146,7 @@ public class SAKKEKEMSGenerator
         // Step 1: Compute A = hashfn(s)
         digest.update(input, 0, input.length);
         digest.doFinal(hash, 0);
-        byte[] A = hash.clone();
+        byte[] A = Arrays.clone(hash);
 
         // Step 2: Initialize h_0 to all-zero bytes of hashlen size
         byte[] h = new byte[digest.getDigestSize()];

@@ -1,21 +1,21 @@
 package org.bouncycastle.openpgp.api;
 
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
 public class OpenPGPDefaultPolicy
         implements OpenPGPPolicy
 {
-    private final Map<Integer, Date> documentHashAlgorithmCutoffDates = new HashMap<>();
-    private final Map<Integer, Date> certificateHashAlgorithmCutoffDates = new HashMap<>();
-    private final Map<Integer, Date> symmetricKeyAlgorithmCutoffDates = new HashMap<>();
-    private final Map<Integer, Integer> publicKeyMinimalBitStrengths = new HashMap<>();
+    private final Map<Integer, Date> documentHashAlgorithmCutoffDates = new HashMap<Integer, Date>();
+    private final Map<Integer, Date> certificateHashAlgorithmCutoffDates = new HashMap<Integer, Date>();
+    private final Map<Integer, Date> symmetricKeyAlgorithmCutoffDates = new HashMap<Integer, Date>();
+    private final Map<Integer, Integer> publicKeyMinimalBitStrengths = new HashMap<Integer, Integer>();
     private int defaultDocumentSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultCertificationSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultSymmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;

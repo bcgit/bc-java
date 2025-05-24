@@ -1,14 +1,14 @@
 package org.bouncycastle.openpgp.api;
 
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.sig.NotationData;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
-
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Policy for OpenPGP algorithms and features.
@@ -309,7 +309,7 @@ public interface OpenPGPPolicy
      */
     class OpenPGPNotationRegistry
     {
-        private final Set<String> knownNotations = new HashSet<>();
+        private final Set<String> knownNotations = new HashSet<String>();
 
         public boolean isNotationKnown(String notationName)
         {

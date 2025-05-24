@@ -1,5 +1,12 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
@@ -7,13 +14,6 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Reader for {@link OpenPGPKey OpenPGPKeys} or {@link OpenPGPCertificate OpenPGPCertificates}.
@@ -223,7 +223,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseKeysOrCertificates(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPCertificate> certsOrKeys = new ArrayList<>();
+        List<OpenPGPCertificate> certsOrKeys = new ArrayList<OpenPGPCertificate>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
@@ -271,7 +271,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseCertificates(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPCertificate> certs = new ArrayList<>();
+        List<OpenPGPCertificate> certs = new ArrayList<OpenPGPCertificate>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
@@ -315,7 +315,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPKey> parseKeys(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPKey> keys = new ArrayList<>();
+        List<OpenPGPKey> keys = new ArrayList<OpenPGPKey>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);

@@ -81,7 +81,7 @@ public class OpenPGPDetachedSignatureGenerator
             }
         }
 
-        List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<>();
+        List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
         for (int i = 0; i < signatureGenerators.size(); i++)
         {
             PGPSignatureGenerator sigGen = signatureGenerators.get(i);
