@@ -741,7 +741,7 @@ public class OpenPGPMessageInputStream
         {
             for (Iterator it = signatures.iterator(); it.hasNext();)
             {
-                PGPSignature signature = it.next();
+                PGPSignature signature = (PGPSignature)it.next();
                 this.signatures.add(signature);
             }
         }
@@ -751,7 +751,7 @@ public class OpenPGPMessageInputStream
 
             for (Iterator it = onePassSignatures.iterator(); it.hasNext();)
             {
-                PGPOnePassSignature onePassSignature = (PGPOnePassSignature)it.next();
+                PGPOnePassSignature ops = (PGPOnePassSignature)it.next();
                 KeyIdentifier identifier = ops.getKeyIdentifier();
                 OpenPGPCertificate cert = processor.provideCertificate(identifier);
                 if (cert == null)
