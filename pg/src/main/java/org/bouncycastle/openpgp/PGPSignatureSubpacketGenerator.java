@@ -1,11 +1,14 @@
 package org.bouncycastle.openpgp;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.PacketFormat;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
 import org.bouncycastle.bcpg.sig.EmbeddedSignature;
@@ -445,9 +448,16 @@ public class PGPSignatureSubpacketGenerator
     public void addEmbeddedSignature(boolean isCritical, PGPSignature pgpSignature)
         throws IOException
     {
-        byte[] sig = pgpSignature.getEncoded();
+        // Encode the signature forcing legacy packet format, such that we consistently cut off the proper amount
+        // of header bytes
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketFormat.LEGACY);
+        pgpSignature.encode(pOut);
+        pOut.close();
+        byte[] sig = bOut.toByteArray();
         byte[] data;
 
+        // Cut off the header bytes
         if (sig.length - 1 > 256)
         {
             data = new byte[sig.length - 3];
