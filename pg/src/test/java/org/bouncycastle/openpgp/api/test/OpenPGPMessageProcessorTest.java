@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -30,12 +29,13 @@ import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 public class OpenPGPMessageProcessorTest
     extends APITest
 {
-    private static final byte[] PLAINTEXT = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] PLAINTEXT = Strings.toUTF8ByteArray("Hello, World!\n");
 
     private PGPSessionKey encryptionSessionKey;
 
@@ -83,7 +83,6 @@ public class OpenPGPMessageProcessorTest
             .setAllowPadding(false)
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.UNCOMPRESSED;
@@ -114,7 +113,6 @@ public class OpenPGPMessageProcessorTest
             .setAllowPadding(false)
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.UNCOMPRESSED;
@@ -146,7 +144,6 @@ public class OpenPGPMessageProcessorTest
             .setAllowPadding(false)
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.ZIP;
@@ -192,7 +189,6 @@ public class OpenPGPMessageProcessorTest
             })
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.ZIP;
@@ -464,7 +460,6 @@ public class OpenPGPMessageProcessorTest
             .addDecryptionKey(key)
             .setMissingOpenPGPKeyPassphraseProvider(new KeyPassphraseProvider()
             {
-                @Override
                 public char[] getKeyPassword(OpenPGPKey.OpenPGPSecretKey key)
                 {
                     return OpenPGPTestKeys.V6_KEY_LOCKED_PASSPHRASE.toCharArray();
@@ -500,7 +495,6 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageInputStream decIn = api.decryptAndOrVerifyMessage()
             .setMissingOpenPGPKeyProvider(new OpenPGPKeyMaterialProvider.OpenPGPKeyProvider()
             {
-                @Override
                 public OpenPGPKey provide(KeyIdentifier componentKeyIdentifier)
                 {
                     return key;
@@ -650,7 +644,7 @@ public class OpenPGPMessageProcessorTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream out = gen.open(bOut);
 
-        out.write("Some Data".getBytes(StandardCharsets.UTF_8));
+        out.write(Strings.toUTF8ByteArray("Some Data"));
         out.close();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
@@ -688,7 +682,7 @@ public class OpenPGPMessageProcessorTest
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.BOB_KEY);
         OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage();
         processor.addDecryptionKey(key);
-        OpenPGPMessageInputStream oIn = processor.process(new ByteArrayInputStream(MSG.getBytes(StandardCharsets.UTF_8)));
+        OpenPGPMessageInputStream oIn = processor.process(new ByteArrayInputStream(Strings.toUTF8ByteArray(MSG)));
         Streams.drain(oIn);
         try
         {
