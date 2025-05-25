@@ -1,11 +1,11 @@
 package org.bouncycastle.openpgp.api;
 
-import java.util.Date;
-import java.util.Objects;
-
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.util.Arrays;
+
+import java.util.Date;
+import java.util.Objects;
 
 /**
  * Parameters for signature generation.
@@ -304,10 +304,7 @@ public class SignatureParameters
          * @param parameters parameters instance
          * @return modified parameters, or null
          */
-        default SignatureParameters apply(SignatureParameters parameters)
-        {
-            return parameters;
-        }
+        SignatureParameters apply(SignatureParameters parameters);
 
         static class Util
         {
@@ -318,7 +315,7 @@ public class SignatureParameters
              * @param function signature subpackets function to apply to the hashed area
              * @return callback
              */
-            public static Callback modifyHashedSubpackets(SignatureSubpacketsFunction function)
+            public static Callback modifyHashedSubpackets(final SignatureSubpacketsFunction function)
             {
                 return new Callback()
                 {

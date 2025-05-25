@@ -414,11 +414,11 @@ public class OpenPGPMessageGenerator
      */
     private void applyLiteralDataWrap(OpenPGPMessageOutputStream.Builder builder)
     {
-        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
         builder.literalData(new OpenPGPMessageOutputStream.OutputStreamFactory()
         {
             @Override
-            public OutputStream get(OutputStream o)
+            public OutputStream get(final OutputStream o)
                 throws PGPException, IOException
             {
                 try

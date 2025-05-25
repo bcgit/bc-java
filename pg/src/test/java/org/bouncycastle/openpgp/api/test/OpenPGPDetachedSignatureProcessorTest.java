@@ -103,7 +103,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         isTrue(verified.get(0).isValid());
     }
 
-    private void missingPassphraseThrows(OpenPGPApi api)
+    private void missingPassphraseThrows(final OpenPGPApi api)
     {
         isNotNull(testException(
                 "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
@@ -121,7 +121,7 @@ public class OpenPGPDetachedSignatureProcessorTest
                 }));
     }
 
-    private void wrongPassphraseThrows(OpenPGPApi api)
+    private void wrongPassphraseThrows(final OpenPGPApi api)
     {
         isNotNull(testException(
                 "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
@@ -183,10 +183,10 @@ public class OpenPGPDetachedSignatureProcessorTest
         isEquals(1, signatures.size());
     }
 
-    private void withoutSigningSubkeyFails(OpenPGPApi api)
+    private void withoutSigningSubkeyFails(final OpenPGPApi api)
             throws PGPException
     {
-        OpenPGPKey noSigningKey = api.generateKey()
+        final OpenPGPKey noSigningKey = api.generateKey()
                 .withPrimaryKey(
                         new KeyPairGeneratorCallback() {
                             @Override
@@ -195,7 +195,7 @@ public class OpenPGPDetachedSignatureProcessorTest
                                 return generator.generatePrimaryKey();
                             }
                         },
-                        SignatureParameters.Callback.modifyHashedSubpackets(
+                        SignatureParameters.Callback.Util.modifyHashedSubpackets(
                                 new SignatureSubpacketsFunction()
                                 {
                                     @Override
@@ -226,10 +226,10 @@ public class OpenPGPDetachedSignatureProcessorTest
                 }));
     }
 
-    private void nonSigningSubkeyFails(OpenPGPApi api)
+    private void nonSigningSubkeyFails(final OpenPGPApi api)
             throws PGPException
     {
-        OpenPGPKey noSigningKey = api.generateKey()
+        final OpenPGPKey noSigningKey = api.generateKey()
                 .withPrimaryKey(
                         new KeyPairGeneratorCallback() {
                             @Override
@@ -238,7 +238,7 @@ public class OpenPGPDetachedSignatureProcessorTest
                                 return generator.generatePrimaryKey();
                             }
                         },
-                        SignatureParameters.Callback.modifyHashedSubpackets(
+                        SignatureParameters.Callback.Util.modifyHashedSubpackets(
                                 new SignatureSubpacketsFunction()
                                 {
                                     @Override
