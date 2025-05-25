@@ -26,7 +26,6 @@ public class StackMessagePassphraseCallback
         this.passphases.addAll(passphrases);
     }
 
-    @Override
     public char[] getMessagePassphrase()
     {
         if (passphases.isEmpty())
