@@ -41,6 +41,8 @@
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
+                <exclude name="**/api/*.java"/>
+                <exclude name="**/api/**/*.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
@@ -213,7 +215,9 @@
             <fileset dir="pg/src/main/javadoc"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
-            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java"/>
+            <fileset dir="pg/src/main/jdk1.5">
+                <exclude name="**/api/**/*.java"/>
+            </fileset>
             <fileset dir="prov/src/test/jdk1.5" includes="**/*.java"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">

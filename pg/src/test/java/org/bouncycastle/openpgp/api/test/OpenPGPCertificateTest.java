@@ -775,8 +775,9 @@ public class OpenPGPCertificateTest
     {
         OpenPGPCertificate certificate = api.readKeyOrCertificate().parseCertificate(cert);
 
-        for (TestSignature test : testSignatures)
+        for (int i = 0; i != testSignatures.length; i++)
         {
+            TestSignature test = testSignatures[i];
             PGPSignature signature = test.getSignature();
             OpenPGPCertificate.OpenPGPComponentKey signingKey = certificate.getSigningKeyFor(signature);
 
