@@ -299,9 +299,10 @@ public abstract class OpenPGPSignature
                     this, "Signature predates issuer key creation time.");
         }
 
-        for (Iterator it = hashed.getNotationDataOccurrences().iterator(); it.hasNext(); )
+        NotationData[] notations = hashed.getNotationDataOccurrences();
+        for (int i = 0; i< notations.length; i++ )
         {
-            NotationData notation = (NotationData)it.next();
+            NotationData notation = notations[i];
             if (notation.isCritical())
             {
                 throw new MalformedOpenPGPSignatureException(
