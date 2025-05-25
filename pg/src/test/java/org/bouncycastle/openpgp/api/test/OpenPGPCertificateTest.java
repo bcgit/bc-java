@@ -798,14 +798,14 @@ public class OpenPGPCertificateTest
     private void testGetPrimaryUserId(OpenPGPApi api)
             throws PGPException
     {
-        Date now = new Date((new Date().getTime() / 1000) * 1000);
+        final Date now = new Date((new Date().getTime() / 1000) * 1000);
         Date oneHourAgo = new Date(now.getTime() - 1000 * 60 * 60);
 
         OpenPGPKeyGenerator gen = api.generateKey(oneHourAgo);
         OpenPGPKey key = gen.withPrimaryKey()
                 .addUserId("Old non-primary <non-primary@user.id>")
                 .addUserId("New primary <primary@user.id>",
-                        SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                        SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                         {
                             @Override
                             public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)

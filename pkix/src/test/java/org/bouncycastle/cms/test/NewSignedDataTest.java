@@ -3781,7 +3781,7 @@ public class NewSignedDataTest
         }
     }
 
-    private static void implTestVerifySignedData(byte[] signedData, SampleCredentials credentials)
+    private static void implTestVerifySignedData(byte[] signedData, final SampleCredentials credentials)
         throws Exception
     {
         CMSSignedData sd = new CMSSignedData(signedData);

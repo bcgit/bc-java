@@ -10,19 +10,24 @@ import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPEncryptionNegotiator;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.api.OpenPGPKeyMaterialProvider;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageInputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;
+import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
@@ -76,7 +81,14 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
             .setArmored(false)
             .setAllowPadding(false)
-            .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                @Override
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.UNCOMPRESSED;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -100,7 +112,14 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
             .setArmored(true)
             .setAllowPadding(false)
-            .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.UNCOMPRESSED);
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                @Override
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.UNCOMPRESSED;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -125,7 +144,14 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
             .setArmored(true)
             .setAllowPadding(false)
-            .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                @Override
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.ZIP;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -148,9 +174,13 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
             .setArmored(true)
             .addEncryptionPassphrase("lal".toCharArray())
-            .setSessionKeyExtractionCallback(
-                sk -> this.encryptionSessionKey = sk
-            )
+            .setSessionKeyExtractionCallback(new PGPEncryptedDataGenerator.SessionKeyExtractionCallback()
+            {
+                public void extractSessionKey(PGPSessionKey sessionKey)
+                {
+                    OpenPGPMessageProcessorTest.this.encryptionSessionKey = sessionKey;
+                }
+            })
             .setAllowPadding(false)
             .setPasswordBasedEncryptionNegotiator(new OpenPGPEncryptionNegotiator()
             {
@@ -160,8 +190,14 @@ public class OpenPGPMessageProcessorTest
                     return MessageEncryptionMechanism.integrityProtected(SymmetricKeyAlgorithmTags.AES_256);
                 }
             })
-            .setCompressionNegotiator(
-                (conf, neg) -> CompressionAlgorithmTags.ZIP);
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                @Override
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.ZIP;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream msgOut = gen.open(bOut);
@@ -191,7 +227,13 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
             .addEncryptionPassphrase("orange".toCharArray())
             .addEncryptionPassphrase("violet".toCharArray())
-            .setSessionKeyExtractionCallback(sk -> this.encryptionSessionKey = sk)
+            .setSessionKeyExtractionCallback(new PGPEncryptedDataGenerator.SessionKeyExtractionCallback()
+            {
+                public void extractSessionKey(PGPSessionKey sessionKey)
+                {
+                    OpenPGPMessageProcessorTest.this.encryptionSessionKey = sessionKey;
+                }
+            })
             .setPasswordBasedEncryptionNegotiator(
                 new OpenPGPEncryptionNegotiator()
                 {
@@ -420,8 +462,14 @@ public class OpenPGPMessageProcessorTest
         bOut = new ByteArrayOutputStream();
         decIn = api.decryptAndOrVerifyMessage()
             .addDecryptionKey(key)
-            .setMissingOpenPGPKeyPassphraseProvider(k ->
-                OpenPGPTestKeys.V6_KEY_LOCKED_PASSPHRASE.toCharArray())
+            .setMissingOpenPGPKeyPassphraseProvider(new KeyPassphraseProvider()
+            {
+                @Override
+                public char[] getKeyPassword(OpenPGPKey.OpenPGPSecretKey key)
+                {
+                    return OpenPGPTestKeys.V6_KEY_LOCKED_PASSPHRASE.toCharArray();
+                }
+            })
             .process(bIn);
         Streams.pipeAll(decIn, bOut);
         decIn.close();
@@ -434,7 +482,7 @@ public class OpenPGPMessageProcessorTest
     private void encryptDecryptWithMissingKey(OpenPGPApi api)
         throws IOException, PGPException
     {
-        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
+        final OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         OutputStream encOut = api.signAndOrEncryptMessage()
@@ -450,7 +498,14 @@ public class OpenPGPMessageProcessorTest
         ByteArrayInputStream bIn = new ByteArrayInputStream(ciphertext);
         bOut = new ByteArrayOutputStream();
         OpenPGPMessageInputStream decIn = api.decryptAndOrVerifyMessage()
-            .setMissingOpenPGPKeyProvider(id -> key)
+            .setMissingOpenPGPKeyProvider(new OpenPGPKeyMaterialProvider.OpenPGPKeyProvider()
+            {
+                @Override
+                public OpenPGPKey provide(KeyIdentifier componentKeyIdentifier)
+                {
+                    return key;
+                }
+            })
             .process(bIn);
         Streams.pipeAll(decIn, bOut);
         decIn.close();

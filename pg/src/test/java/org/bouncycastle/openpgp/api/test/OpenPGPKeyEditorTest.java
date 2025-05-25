@@ -79,7 +79,7 @@ public class OpenPGPKeyEditorTest
     {
         OpenPGPKey key = api.readKeyOrCertificate()
             .parseKey(OpenPGPTestKeys.ALICE_KEY);
-        Date now = currentTimeRounded();
+        final Date now = currentTimeRounded();
         Date oneHourAgo = new Date(now.getTime() - (1000 * 60 * 60));
         OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
         isNotNull(userId);
@@ -115,7 +115,7 @@ public class OpenPGPKeyEditorTest
     {
         OpenPGPKey key = api.readKeyOrCertificate()
             .parseKey(OpenPGPTestKeys.ALICE_KEY);
-        Date now = currentTimeRounded();
+        final Date now = currentTimeRounded();
         Date oneHourAgo = new Date(now.getTime() - (1000 * 60 * 60));
         OpenPGPCertificate.OpenPGPUserId userId = key.getPrimaryUserId(now);
         isNotNull(userId);
@@ -202,7 +202,7 @@ public class OpenPGPKeyEditorTest
         isEquals("Default key generation MUST set expiration time of +5years",
             key.getExpirationTime().getTime(), n0.getTime() + 5L * 31536000 * 1000);
 
-        Date n1 = new Date(n0.getTime() + 1000); // 1 sec later
+        final Date n1 = new Date(n0.getTime() + 1000); // 1 sec later
 
         key = api.editKey(key)
             .addDirectKeySignature(new SignatureParameters.Callback()

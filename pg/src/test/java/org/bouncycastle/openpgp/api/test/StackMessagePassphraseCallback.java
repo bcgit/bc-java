@@ -1,10 +1,10 @@
 package org.bouncycastle.openpgp.api.test;
 
-import org.bouncycastle.openpgp.api.MissingMessagePassphraseCallback;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Stack;
+
+import org.bouncycastle.openpgp.api.MissingMessagePassphraseCallback;
 
 /**
  * Test implementation of {@link MissingMessagePassphraseCallback} which provides passphrases by popping
@@ -22,7 +22,7 @@ public class StackMessagePassphraseCallback
 
     public StackMessagePassphraseCallback(Collection<char[]> passphrases)
     {
-        this.passphases = new Stack<>();
+        this.passphases = new Stack<char[]>();
         this.passphases.addAll(passphrases);
     }
 

@@ -336,7 +336,7 @@ public class OpenPGPV6KeyGeneratorTest
                             return generator.generateRsaKeyPair(4096);
                         }
                     },
-                    SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                    SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                     {
                         @Override
                         public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
@@ -364,7 +364,7 @@ public class OpenPGPV6KeyGeneratorTest
                             return generator.generateEd448KeyPair();
                         }
                     },
-                    SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                    SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                     {
                         @Override
                         public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
@@ -477,7 +477,7 @@ public class OpenPGPV6KeyGeneratorTest
                         return generator.generateEd25519KeyPair();
                     }
                 },
-                SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                 {
                     @Override
                     public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)

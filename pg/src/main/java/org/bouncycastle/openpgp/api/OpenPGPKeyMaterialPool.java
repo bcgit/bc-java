@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bouncycastle.bcpg.KeyIdentifier;
 
@@ -121,9 +122,8 @@ public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
      */
     public Collection<M> getAllItems()
     {
-        return pool.values().stream()
-                .distinct()
-                .collect(Collectors.toList());
+        Stream<M> distinct = pool.values().stream().distinct();
+        return distinct.collect(Collectors.<M>toList());
     }
 
     /**

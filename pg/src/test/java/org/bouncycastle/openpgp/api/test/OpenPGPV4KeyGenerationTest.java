@@ -41,7 +41,7 @@ public class OpenPGPV4KeyGenerationTest
                     {
                         return generator.generateRsaKeyPair(3072);
                     }
-                }, SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+                }, SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                 {
                     @Override
                     public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)

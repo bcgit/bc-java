@@ -230,7 +230,7 @@ public class OpenPGPKeyGenerator
     {
         return withPrimaryKey(
             KeyPairGeneratorCallback.primaryKey(),
-            SignatureParameters.Callback.modifyHashedSubpackets(new SignatureSubpacketsFunction()
+            SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
             {
                 @Override
                 public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
