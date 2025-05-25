@@ -15,7 +15,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -3034,41 +3033,56 @@ public class OpenPGPCertificate
          */
         public Date getSince()
         {
-            // Find most recent chain link
-//            return chainLinks.stream()
-//                .map(it -> it.signature)
-//                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
-//                .map(OpenPGPComponentSignature::getCreationTime)
-//                .orElse(null);
-            return chainLinks.stream()
-                .map(new Function<Link, Object>()
+            Date latestDate = null;
+            for (Iterator it = chainLinks.iterator(); it.hasNext(); )
+            {
+                Link link = (Link)it.next();
+                OpenPGPComponentSignature signature = link.getSignature();
+                Date currentDate = signature.getCreationTime();
+                if (latestDate == null || currentDate.after(latestDate))
                 {
-                    @Override
-                    public OpenPGPComponentSignature apply(Link it)
-                    {
-                        return it.signature; // Replace lambda: `it -> it.signature`
-                    }
-
-                })
-                .max(new Comparator<Object>()
-                {
-                    @Override
-                    public int compare(Object o1, Object o2)
-                    {
-                        // Replace method reference: `Comparator.comparing(OpenPGPComponentSignature::getCreationTime)`
-                        return ((OpenPGPComponentSignature)o1).getCreationTime().compareTo(((OpenPGPComponentSignature)o2).getCreationTime());
-                    }
-                })
-                .map(new Function<Object, Date>()
-                {
-                    @Override
-                    public Date apply(Object sig)
-                    {
-                        return ((OpenPGPComponentSignature)sig).getCreationTime(); // Replace method reference: `OpenPGPComponentSignature::getCreationTime`
-                    }
-                })
-                .orElse(null);
+                    latestDate = currentDate;
+                }
+            }
+            return latestDate;
         }
+//        public Date getSince()
+//        {
+//            // Find most recent chain link
+////            return chainLinks.stream()
+////                .map(it -> it.signature)
+////                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
+////                .map(OpenPGPComponentSignature::getCreationTime)
+////                .orElse(null);
+//            return chainLinks.stream()
+//                .map(new Function<Link, Object>()
+//                {
+//                    @Override
+//                    public OpenPGPComponentSignature apply(Link it)
+//                    {
+//                        return it.signature; // Replace lambda: `it -> it.signature`
+//                    }
+//
+//                })
+//                .max(new Comparator<Object>()
+//                {
+//                    @Override
+//                    public int compare(Object o1, Object o2)
+//                    {
+//                        // Replace method reference: `Comparator.comparing(OpenPGPComponentSignature::getCreationTime)`
+//                        return ((OpenPGPComponentSignature)o1).getCreationTime().compareTo(((OpenPGPComponentSignature)o2).getCreationTime());
+//                    }
+//                })
+//                .map(new Function<Object, Date>()
+//                {
+//                    @Override
+//                    public Date apply(Object sig)
+//                    {
+//                        return ((OpenPGPComponentSignature)sig).getCreationTime(); // Replace method reference: `OpenPGPComponentSignature::getCreationTime`
+//                    }
+//                })
+//                .orElse(null);
+//        }
 
         /**
          * Return the date until which the chain link is valid.
