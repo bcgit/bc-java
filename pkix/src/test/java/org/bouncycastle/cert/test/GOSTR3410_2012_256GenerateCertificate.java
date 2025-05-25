@@ -9,7 +9,6 @@ import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
-import java.time.ZonedDateTime;
 import java.util.Date;
 
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -60,14 +59,14 @@ public class GOSTR3410_2012_256GenerateCertificate
             X500Name subject = new X500Name("CN=TEST");
             X500Name issuer = subject;
             BigInteger serial = BigInteger.ONE;
-            ZonedDateTime notBefore = ZonedDateTime.now();
-            ZonedDateTime notAfter = notBefore.plusYears(1);
+            Date notBefore = new Date();
+            Date notAfter = new Date(notBefore.getTime() + 1000L * 60 * 60 * 24 * 365);
 
             X509v3CertificateBuilder certificateBuilder = new JcaX509v3CertificateBuilder(
                 issuer,
                 serial,
-                Date.from(notBefore.toInstant()),
-                Date.from(notAfter.toInstant()),
+                notBefore,
+                notAfter,
                 subject,
                 keyPair.getPublic()
             );
