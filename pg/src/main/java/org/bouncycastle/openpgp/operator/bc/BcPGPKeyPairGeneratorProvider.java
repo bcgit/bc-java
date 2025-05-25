@@ -142,8 +142,8 @@ public class BcPGPKeyPairGeneratorProvider
         {
             ECKeyPairGenerator gen = new ECKeyPairGenerator();
             gen.init(new ECKeyGenerationParameters(
-                    new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
-                    CryptoServicesRegistrar.getSecureRandom()));
+                new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
+                CryptoServicesRegistrar.getSecureRandom()));
 
             AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
             return new BcPGPKeyPair(version, PublicKeyAlgorithmTags.ECDH, keyPair, creationTime);
@@ -155,8 +155,8 @@ public class BcPGPKeyPairGeneratorProvider
         {
             ECKeyPairGenerator gen = new ECKeyPairGenerator();
             gen.init(new ECKeyGenerationParameters(
-                    new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
-                    CryptoServicesRegistrar.getSecureRandom()));
+                new ECNamedDomainParameters(curveOID, getNamedCurveByOid(curveOID)),
+                CryptoServicesRegistrar.getSecureRandom()));
 
             AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
             return new BcPGPKeyPair(version, PublicKeyAlgorithmTags.ECDSA, keyPair, creationTime);
