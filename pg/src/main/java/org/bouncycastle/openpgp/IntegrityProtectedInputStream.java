@@ -1,10 +1,11 @@
 package org.bouncycastle.openpgp;
 
-import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * {@link InputStream} that performs verification of integrity protection upon {@link #close()}.
@@ -76,7 +77,7 @@ public class IntegrityProtectedInputStream
                 }
                 catch (PGPException e)
                 {
-                    throw new IOException(e);
+                    throw Exceptions.ioException(e.getMessage(), e);
                 }
             }
         }
