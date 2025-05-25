@@ -136,10 +136,14 @@
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/gpg/test/*.java"/>
+                <exclude name="**/api/test/*.java"/>
                 <exclude name="**/BcImplProviderTest.java"/>
                 <exclude name="**/OperatorJcajceTest.java"/>
                 <exclude name="**/AEADWithArgon2Test.java"/>
                 <exclude name="**/AEADProtectedPGPSecretKeyTest.java"/>
+                <exclude name="**/OpenPGPKeyEditorTest.java"/>
+                <exclude name="**/OpenPGPMessageGeneratorTest.java"/>
+                <exclude name="**/OpenPGPKeyReaderTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
@@ -161,6 +165,7 @@
 	    </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java"/>
+                <exclude name="**/PQCDHTest.java"/>
                 <exclude name="**/ECEncodingTest.java"/>
                 <exclude name="**/jce/provider/test/ChaCha20Poly1305Test.java"/>
                 <exclude name="**/DetDSATest.java"/>

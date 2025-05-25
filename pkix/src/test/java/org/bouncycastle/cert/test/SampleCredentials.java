@@ -20,7 +20,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
-import org.junit.Assert;
 
 public class SampleCredentials
 {
@@ -70,7 +69,10 @@ public class SampleCredentials
             X509Certificate certificate = (X509Certificate)cf.generateCertificate(
                 new ByteArrayInputStream(pemCert.getContent()));
 
-            Assert.assertEquals(publicKey, certificate.getPublicKey());
+            if (!publicKey.equals(certificate.getPublicKey()))
+            {
+                throw new IllegalStateException("public key mismatch");
+            }
 
             return new SampleCredentials(keyPair, certificate);
         }
