@@ -40,6 +40,7 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsHash;
 import org.bouncycastle.tls.crypto.TlsHashOutputStream;
+import org.bouncycastle.tls.crypto.TlsHybridAgreement;
 import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
@@ -1149,7 +1150,7 @@ public class TlsUtils
 
     public static void addIfSupported(Vector supportedGroups, TlsCrypto crypto, int namedGroup)
     {
-        if (crypto.hasNamedGroup(namedGroup))
+        if (isSupportedNamedGroup(crypto, namedGroup))
         {
             supportedGroups.addElement(Integers.valueOf(namedGroup));
         }
@@ -4449,6 +4450,17 @@ public class TlsUtils
         }
     }
 
+    public static boolean isSupportedNamedGroup(TlsCrypto crypto, int namedGroup)
+    {
+        if (!NamedGroup.refersToASpecificHybrid(namedGroup))
+        {
+            return crypto.hasNamedGroup(namedGroup);
+        }
+
+        return crypto.hasNamedGroup(NamedGroup.getHybridFirst(namedGroup))
+            && crypto.hasNamedGroup(NamedGroup.getHybridSecond(namedGroup));
+    }
+
     static boolean hasAnyRSASigAlgs(TlsCrypto crypto)
     {
         return crypto.hasSignatureAlgorithm(SignatureAlgorithm.rsa)
@@ -5362,37 +5374,14 @@ public class TlsUtils
             int supportedGroup = supportedGroups[i];
             Integer supportedGroupElement = Integers.valueOf(supportedGroup);
 
-            if (!keyShareGroups.contains(supportedGroupElement)
-                || clientAgreements.containsKey(supportedGroupElement)
-                || !crypto.hasNamedGroup(supportedGroup))
+            if (!keyShareGroups.contains(supportedGroupElement) ||
+                clientAgreements.containsKey(supportedGroupElement))
             {
                 continue;
             }
 
-            TlsAgreement agreement = null;
-            if (NamedGroup.refersToAnECDHCurve(supportedGroup))
-            {
-                if (crypto.hasECDHAgreement())
-                {
-                    agreement = crypto.createECDomain(new TlsECConfig(supportedGroup)).createECDH();
-                }
-            }
-            else if (NamedGroup.refersToASpecificFiniteField(supportedGroup))
-            {
-                if (crypto.hasDHAgreement())
-                {
-                    agreement = crypto.createDHDomain(new TlsDHConfig(supportedGroup, true)).createDH();
-                }
-            }
-            else if (NamedGroup.refersToASpecificKem(supportedGroup))
-            {
-                if (crypto.hasKemAgreement())
-                {
-                    agreement = crypto.createKemDomain(new TlsKemConfig(supportedGroup, false)).createKem();
-                }
-            }
-
-            if (null != agreement)
+            TlsAgreement agreement = createKeyShare(crypto, supportedGroup, false);
+            if (agreement != null)
             {
                 byte[] key_exchange = agreement.generateEphemeral();
                 KeyShareEntry clientShare = new KeyShareEntry(supportedGroup, key_exchange);
@@ -5401,6 +5390,63 @@ public class TlsUtils
                 clientAgreements.put(supportedGroupElement, agreement);
             }
         }
+    }
+
+    static TlsAgreement createKeyShare(TlsCrypto crypto, int keyShareGroup, boolean isServer)
+    {
+        if (!NamedGroup.refersToASpecificHybrid(keyShareGroup))
+        {
+            return createKeyShareSimple(crypto, keyShareGroup, isServer);
+        }
+
+        int hybridFirst = NamedGroup.getHybridFirst(keyShareGroup);
+        TlsAgreement firstAgreement = createKeyShareSimple(crypto, hybridFirst, isServer);
+        if (firstAgreement == null)
+        {
+            return null;
+        }
+
+        int hybridSecond = NamedGroup.getHybridSecond(keyShareGroup);
+        TlsAgreement secondAgreement = createKeyShareSimple(crypto, hybridSecond, isServer);
+        if (secondAgreement == null)
+        {
+            return null;
+        }
+
+        int peerValueSplit = isServer
+            ? NamedGroup.getHybridSplitClientShare(hybridFirst)
+            : NamedGroup.getHybridSplitServerShare(hybridFirst);
+
+        return new TlsHybridAgreement(crypto, firstAgreement, secondAgreement, peerValueSplit);
+    }
+
+    private static TlsAgreement createKeyShareSimple(TlsCrypto crypto, int keyShareGroup, boolean isServer)
+    {
+        if (crypto.hasNamedGroup(keyShareGroup))
+        {
+            if (NamedGroup.refersToAnECDHCurve(keyShareGroup))
+            {
+                if (crypto.hasECDHAgreement())
+                {
+                    return crypto.createECDomain(new TlsECConfig(keyShareGroup)).createECDH();
+                }
+            }
+            else if (NamedGroup.refersToASpecificFiniteField(keyShareGroup))
+            {
+                if (crypto.hasDHAgreement())
+                {
+                    return crypto.createDHDomain(new TlsDHConfig(keyShareGroup, true)).createDH();
+                }
+            }
+            else if (NamedGroup.refersToASpecificKem(keyShareGroup))
+            {
+                if (crypto.hasKemAgreement())
+                {
+                    return crypto.createKemDomain(new TlsKemConfig(keyShareGroup, isServer)).createKem();
+                }
+            }
+        }
+        return null;
     }
 
     static KeyShareEntry selectKeyShare(Vector clientShares, int keyShareGroup)
@@ -5427,25 +5473,10 @@ public class TlsUtils
 
                 int group = clientShare.getNamedGroup();
 
-                if (!NamedGroup.canBeNegotiated(group, negotiatedVersion))
-                {
-                    continue;
-                }
-
-                if (!Arrays.contains(serverSupportedGroups, group) ||
-                    !Arrays.contains(clientSupportedGroups, group))
-                {
-                    continue;
-                }
-
-                if (!crypto.hasNamedGroup(group))
-                {
-                    continue;
-                }
-
-                if ((NamedGroup.refersToAnECDHCurve(group) && crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && crypto.hasDHAgreement()) ||
-                    (NamedGroup.refersToASpecificKem(group) && crypto.hasKemAgreement()))
+                if (NamedGroup.canBeNegotiated(group, negotiatedVersion) &&
+                    Arrays.contains(serverSupportedGroups, group) &&
+                    Arrays.contains(clientSupportedGroups, group) &&
+                    supportsKeyShareGroup(crypto, group))
                 {
                     return clientShare;
                 }
@@ -5463,30 +5494,46 @@ public class TlsUtils
             {
                 int group = clientSupportedGroups[i];
 
-                if (!NamedGroup.canBeNegotiated(group, negotiatedVersion))
-                {
-                    continue;
-                }
-
-                if (!Arrays.contains(serverSupportedGroups, group))
-                {
-                    continue;
-                }
-
-                if (!crypto.hasNamedGroup(group))
-                {
-                    continue;
-                }
-
-                if ((NamedGroup.refersToAnECDHCurve(group) && crypto.hasECDHAgreement()) ||
-                    (NamedGroup.refersToASpecificFiniteField(group) && crypto.hasDHAgreement()) ||
-                    (NamedGroup.refersToASpecificKem(group) && crypto.hasKemAgreement()))
+                if (NamedGroup.canBeNegotiated(group, negotiatedVersion) &&
+                    Arrays.contains(serverSupportedGroups, group) &&
+                    supportsKeyShareGroup(crypto, group))
                 {
                     return group;
                 }
             }
         }
         return -1;
+    }
+
+    private static boolean supportsKeyShareGroup(TlsCrypto crypto, int keyShareGroup)
+    {
+        if (!NamedGroup.refersToASpecificHybrid(keyShareGroup))
+        {
+            return supportsKeyShareGroupSimple(crypto, keyShareGroup);
+        }
+
+        return supportsKeyShareGroupSimple(crypto, NamedGroup.getHybridFirst(keyShareGroup))
+            && supportsKeyShareGroupSimple(crypto, NamedGroup.getHybridSecond(keyShareGroup));
+    }
+
+    private static boolean supportsKeyShareGroupSimple(TlsCrypto crypto, int keyShareGroup)
+    {
+        if (crypto.hasNamedGroup(keyShareGroup))
+        {
+            if (NamedGroup.refersToAnECDHCurve(keyShareGroup))
+            {
+                return crypto.hasECDHAgreement();
+            }
+            else if (NamedGroup.refersToASpecificFiniteField(keyShareGroup))
+            {
+                return crypto.hasDHAgreement();
+            }
+            else if (NamedGroup.refersToASpecificKem(keyShareGroup))
+            {
+                return crypto.hasKemAgreement();
+            }
+        }
+        return false;
     }
 
     static byte[] readEncryptedPMS(TlsContext context, InputStream input) throws IOException
