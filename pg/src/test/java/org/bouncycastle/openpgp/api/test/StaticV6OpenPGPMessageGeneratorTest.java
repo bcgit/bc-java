@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.api.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,6 +16,7 @@ import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.openpgp.api.SubkeySelector;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class StaticV6OpenPGPMessageGeneratorTest
@@ -53,7 +53,7 @@ public class StaticV6OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream pgOut = (OpenPGPMessageOutputStream) gen.open(bOut);
-        pgOut.write("Hello, World!\n".getBytes(StandardCharsets.UTF_8));
+        pgOut.write(Strings.toUTF8ByteArray("Hello, World!\n"));
         pgOut.close();
 
         System.out.println(bOut);
@@ -68,7 +68,7 @@ public class StaticV6OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream pgOut = (OpenPGPMessageOutputStream) gen.open(bOut);
-        pgOut.write("Hello, World!\n".getBytes(StandardCharsets.UTF_8));
+        pgOut.write(Strings.toUTF8ByteArray("Hello, World!\n"));
         pgOut.close();
 
         System.out.println(bOut);
@@ -86,7 +86,6 @@ public class StaticV6OpenPGPMessageGeneratorTest
         OpenPGPMessageGenerator gen = new OpenPGPMessageGenerator()
                 .setSigningKeySelector(new SubkeySelector()
                 {
-                    @Override
                     public List<OpenPGPCertificate.OpenPGPComponentKey> select(
                             OpenPGPCertificate certificate, OpenPGPPolicy policy)
                     {
@@ -95,7 +94,6 @@ public class StaticV6OpenPGPMessageGeneratorTest
                 })
                 .setEncryptionKeySelector(
                         new SubkeySelector() {
-                            @Override
                             public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate, OpenPGPPolicy policy) {
                                 return Collections.singletonList(certificate.getKey(encryptionKeyIdentifier));
                             }

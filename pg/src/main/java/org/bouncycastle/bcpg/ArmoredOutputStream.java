@@ -639,7 +639,7 @@ public class ArmoredOutputStream
                     line = line.substring(availableCommentCharsPerLine).trim();
                 }
 
-                if (!line.isEmpty())
+                if (line.length() != 0)
                 {
                     addComment(line);
                 }

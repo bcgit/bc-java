@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.api.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 
@@ -26,6 +25,7 @@ import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.Strings;
 
 public class OpenPGPCertificateTest
         extends APITest
@@ -808,7 +808,6 @@ public class OpenPGPCertificateTest
                 .addUserId("New primary <primary@user.id>",
                         SignatureParameters.Callback.Util.modifyHashedSubpackets(new SignatureSubpacketsFunction()
                         {
-                            @Override
                             public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
                             {
                                 subpackets.removePacketsOfType(SignatureSubpacketTags.CREATION_TIME);
@@ -850,7 +849,7 @@ public class OpenPGPCertificateTest
         private static PGPSignature parseSignature(String armoredSignature)
                 throws IOException
         {
-            ByteArrayInputStream bIn = new ByteArrayInputStream(armoredSignature.getBytes(StandardCharsets.UTF_8));
+            ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armoredSignature));
             ArmoredInputStream aIn = new ArmoredInputStream(bIn);
             BCPGInputStream pIn = new BCPGInputStream(aIn);
             PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);

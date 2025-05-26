@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -571,7 +570,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setPasswordBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pbeNegotiator)
     {
-        this.passwordBasedEncryptionNegotiator = Objects.requireNonNull(pbeNegotiator);
+        if (pbeNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.passwordBasedEncryptionNegotiator = pbeNegotiator;
         return this;
     }
 
@@ -584,7 +587,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setPublicKeyBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pkbeNegotiator)
     {
-        this.publicKeyBasedEncryptionNegotiator = Objects.requireNonNull(pkbeNegotiator);
+        if (pkbeNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.publicKeyBasedEncryptionNegotiator = pkbeNegotiator;
         return this;
     }
 
@@ -598,7 +605,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setEncryptionKeySelector(SubkeySelector encryptionKeySelector)
     {
-        this.encryptionKeySelector = Objects.requireNonNull(encryptionKeySelector);
+        if (encryptionKeySelector == null)
+        {
+            throw new NullPointerException();
+        }
+        this.encryptionKeySelector = encryptionKeySelector;
         return this;
     }
 
@@ -612,7 +623,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setCompressionNegotiator(CompressionNegotiator compressionNegotiator)
     {
-        this.compressionNegotiator = Objects.requireNonNull(compressionNegotiator);
+        if (compressionNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.compressionNegotiator = compressionNegotiator;
         return this;
     }
 
@@ -624,7 +639,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setArmorStreamFactory(ArmoredOutputStreamFactory factory)
     {
-        this.armorStreamFactory = Objects.requireNonNull(factory);
+        if (factory == null)
+        {
+            throw new NullPointerException();
+        }
+        this.armorStreamFactory = factory;
         return this;
     }
 

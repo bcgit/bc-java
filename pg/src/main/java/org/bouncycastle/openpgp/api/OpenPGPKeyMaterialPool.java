@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,7 +62,11 @@ public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
      */
     public OpenPGPKeyMaterialPool<M> setMissingItemCallback(OpenPGPKeyMaterialProvider<M> callback)
     {
-        this.callback = Objects.requireNonNull(callback);
+        if (callback == null)
+        {
+            throw new NullPointerException();
+        }
+        this.callback = callback;
         return this;
     }
 
