@@ -4,6 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.bouncycastle.util.StringList;
 import org.bouncycastle.util.Strings;
@@ -144,6 +147,9 @@ public class ArmoredInputStream
     StringList     headerList= Strings.newList();
     int            lastC = 0;
     boolean        isEndOfStream;
+
+    private boolean validateAllowedHeaders = false;
+    private List<String> allowedHeaders = defaultAllowedHeaders();
     
     /**
      * Create a stream for reading a PGP armoured message, parsing up to a header 
@@ -192,13 +198,46 @@ public class ArmoredInputStream
         this.hasHeaders = builder.hasHeaders;
         this.detectMissingChecksum = builder.detectMissingCRC;
         this.crc = builder.ignoreCRC ? null : new FastCRC24();
+        this.validateAllowedHeaders = builder.validateAllowedHeaders;
+        this.allowedHeaders = builder.allowedHeaders;
 
         if (hasHeaders)
         {
             parseHeaders();
         }
 
+        if (validateAllowedHeaders)
+        {
+            rejectUnknownHeadersInCSFMessages();
+        }
+
         start = false;
+    }
+
+    private void rejectUnknownHeadersInCSFMessages()
+            throws ArmoredInputException
+    {
+        Iterator<String> headerLines = headerList.iterator();
+        String header = headerLines.next();
+
+        // Only reject unknown headers in cleartext signed messages
+        if (!header.startsWith("-----BEGIN PGP SIGNED MESSAGE-----"))
+        {
+            return;
+        }
+
+        outerloop: while (headerLines.hasNext())
+        {
+            String headerLine = headerLines.next();
+            for (String allowedHeader : allowedHeaders)
+            {
+                if (headerLine.startsWith(allowedHeader + ": "))
+                {
+                    continue outerloop;
+                }
+            }
+            throw new ArmoredInputException("Illegal ASCII armor header line in clearsigned message encountered: " + headerLine);
+        }
     }
 
     public int available()
@@ -619,6 +658,17 @@ public class ArmoredInputStream
         this.detectMissingChecksum = detectMissing;
     }
 
+    private static List<String> defaultAllowedHeaders()
+    {
+        List<String> allowedHeaders = new ArrayList<>();
+        allowedHeaders.add(ArmoredOutputStream.COMMENT_HDR);
+        allowedHeaders.add(ArmoredOutputStream.VERSION_HDR);
+        allowedHeaders.add(ArmoredOutputStream.CHARSET_HDR);
+        allowedHeaders.add(ArmoredOutputStream.HASH_HDR);
+        allowedHeaders.add(ArmoredOutputStream.MESSAGE_ID_HDR);
+        return allowedHeaders;
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -629,6 +679,8 @@ public class ArmoredInputStream
         private boolean hasHeaders = true;
         private boolean detectMissingCRC = false;
         private boolean ignoreCRC = false;
+        private boolean validateAllowedHeaders = false;
+        private List<String> allowedHeaders = defaultAllowedHeaders();
 
         private Builder()
         {
@@ -645,6 +697,18 @@ public class ArmoredInputStream
         {
             this.hasHeaders = hasHeaders;
 
+            return this;
+        }
+
+        public Builder setValidateClearsignedMessageHeaders(boolean validateHeaders)
+        {
+            this.validateAllowedHeaders = validateHeaders;
+            return this;
+        }
+
+        public Builder addAllowedArmorHeader(String header)
+        {
+            allowedHeaders.add(header.trim());
             return this;
         }
 
