@@ -1,22 +1,90 @@
 package org.bouncycastle.tls.crypto.impl.jcajce;
 
-import java.security.AlgorithmParameters;
+import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
-import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 
-import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
+import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.jcajce.spec.MLKEMPublicKeySpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.TlsFatalAlert;
 
 class KemUtil
 {
-    static AlgorithmParameters getAlgorithmParameters(JcaTlsCrypto crypto, String kemName)
+    static PublicKey decodePublicKey(JcaTlsCrypto crypto, String kemName, byte[] encoding) throws TlsFatalAlert
     {
         try
         {
-            return null;
-//            AlgorithmParameters algParams = AlgorithmParameters.getInstance(kemName, "BC");
-//            MLKEMParameterSpec mlkemSpec = MLKEMParameterSpec.fromName(kemName);
-//            algParams.init(mlkemSpec);
-//            return algParams;
+            KeyFactory kf = crypto.getHelper().createKeyFactory(kemName);
+
+            // More efficient BC-specific method
+            if (kf.getProvider() instanceof BouncyCastleProvider)
+            {
+                try
+                {
+                    // TODO Add RawEncodedKeySpec support to BC?
+
+                    MLKEMParameterSpec params = MLKEMParameterSpec.fromName(kemName);
+                    MLKEMPublicKeySpec keySpec = new MLKEMPublicKeySpec(params, encoding);
+                    return kf.generatePublic(keySpec);
+                }
+                catch (Exception e)
+                {
+                    // Fallback to X.509
+                }
+            }
+
+            EncodedKeySpec keySpec = createX509EncodedKeySpec(getAlgorithmOID(kemName), encoding);
+            return kf.generatePublic(keySpec);
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, e);
+        }
+    }
+
+    static byte[] encodePublicKey(PublicKey publicKey) throws TlsFatalAlert
+    {
+        // More efficient BC-specific method
+        if (publicKey instanceof MLKEMPublicKey)
+        {
+            return ((MLKEMPublicKey)publicKey).getPublicData();
+        }
+
+        if (!"X.509".equals(publicKey.getFormat()))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, "Public key format unrecognized");
+        }
+
+        try
+        {
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(publicKey.getEncoded());
+            return spki.getPublicKeyData().getOctets();
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+    }
+
+    static KeyFactory getKeyFactory(JcaTlsCrypto crypto, String kemName)
+    
+    {
+        try
+        {
+            return crypto.getHelper().createKeyFactory(kemName);
         }
         catch (AssertionError e)
         {
@@ -28,18 +96,33 @@ class KemUtil
         return null;
     }
 
-    static Cipher getCipher(JcaTlsCrypto crypto, String kemName)
+    static KeyGenerator getKeyGenerator(JcaTlsCrypto crypto, String kemName)
     {
         try
         {
-            return crypto.getHelper().createCipher(kemName);
+            return crypto.getHelper().createKeyGenerator(kemName);
         }
         catch (AssertionError e)
         {
         }
         catch (Exception e)
         {
-            throw Exceptions.illegalStateException("KEM cipher failed: " + kemName, e);
+        }
+
+        return null;
+    }
+
+    static KeyPairGenerator getKeyPairGenerator(JcaTlsCrypto crypto, String kemName)
+    {
+        try
+        {
+            return crypto.getHelper().createKeyPairGenerator(kemName);
+        }
+        catch (AssertionError e)
+        {
+        }
+        catch (Exception e)
+        {
         }
 
         return null;
@@ -47,28 +130,35 @@ class KemUtil
 
     static boolean isKemSupported(JcaTlsCrypto crypto, String kemName)
     {
-        // TODO[tls-kem] When implemented via provider, need to check for support dynamically
-        return kemName != null && getCipher(crypto, kemName) != null;
+        return kemName != null
+            && getKeyFactory(crypto, kemName) != null
+            && getKeyGenerator(crypto, kemName) != null
+            && getKeyPairGenerator(crypto, kemName) != null;
     }
 
-    // TODO: not used?
-    static int getEncapsulationLength(String kemName)
+    private static X509EncodedKeySpec createX509EncodedKeySpec(ASN1ObjectIdentifier oid, byte[] encoding)
+        throws IOException
     {
-        if ("ML-KEM-512".equals(kemName))
+        AlgorithmIdentifier algID = new AlgorithmIdentifier(oid);
+        SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(algID, encoding);
+        return new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER));
+    }
+
+    private static ASN1ObjectIdentifier getAlgorithmOID(String kemName)
+    {
+        if ("ML-KEM-512".equalsIgnoreCase(kemName))
         {
-            return 768;
+            return NISTObjectIdentifiers.id_alg_ml_kem_512;
         }
-        else if ("ML-KEM-768".equals(kemName))
+        if ("ML-KEM-768".equalsIgnoreCase(kemName))
         {
-            return 1088;
+            return NISTObjectIdentifiers.id_alg_ml_kem_768;
         }
-        else if ("ML-KEM-1024".equals(kemName))
+        if ("ML-KEM-1024".equalsIgnoreCase(kemName))
         {
-            return 1568;
+            return NISTObjectIdentifiers.id_alg_ml_kem_1024;
         }
-        else
-        {
-            throw new IllegalArgumentException("unknown kem name " + kemName);
-        }
+
+        throw Exceptions.illegalArgumentException("unknown kem name " + kemName, null);        
     }
 }

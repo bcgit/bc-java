@@ -2,10 +2,10 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPublicKey;
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsSecret;
 
@@ -13,8 +13,8 @@ public class JceTlsMLKem implements TlsAgreement
 {
     protected final JceTlsMLKemDomain domain;
 
-    protected BCMLKEMPrivateKey privateKey;
-    protected BCMLKEMPublicKey publicKey;
+    protected PrivateKey privateKey;
+    protected PublicKey publicKey;
     protected TlsSecret secret;
 
     public JceTlsMLKem(JceTlsMLKemDomain domain)
@@ -34,8 +34,8 @@ public class JceTlsMLKem implements TlsAgreement
         else
         {
             KeyPair kp = domain.generateKeyPair();
-            this.privateKey = (BCMLKEMPrivateKey)kp.getPrivate();
-            return ((BCMLKEMPublicKey)kp.getPublic()).getPublicData();
+            this.privateKey = kp.getPrivate();
+            return KemUtil.encodePublicKey(kp.getPublic());
         }
     }
 
