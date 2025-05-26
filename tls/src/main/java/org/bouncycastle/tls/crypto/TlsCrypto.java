@@ -146,6 +146,8 @@ public interface TlsCrypto
      */
     boolean hasSRPAuthentication();
 
+    TlsSecret createHybridSecret(TlsSecret s1, TlsSecret s2);
+
     /**
      * Create a TlsSecret object based on provided data.
      *

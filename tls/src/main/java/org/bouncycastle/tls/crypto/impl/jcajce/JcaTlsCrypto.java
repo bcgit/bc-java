@@ -812,6 +812,11 @@ public class JcaTlsCrypto
         return true;
     }
 
+    public TlsSecret createHybridSecret(TlsSecret s1, TlsSecret s2)
+    {
+        return adoptLocalSecret(Arrays.concatenate(s1.extract(), s2.extract()));
+    }
+
     public TlsSecret createSecret(byte[] data)
     {
         try

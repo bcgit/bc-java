@@ -396,21 +396,9 @@ public class TlsServerProtocol
         TlsSecret sharedSecret;
         {
             int namedGroup = clientShare.getNamedGroup();
-    
-            TlsAgreement agreement;
-            if (NamedGroup.refersToAnECDHCurve(namedGroup))
-            {
-                agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
-            }
-            else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
-            {
-                agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
-            }
-            else if (NamedGroup.refersToASpecificKem(namedGroup))
-            {
-                agreement = crypto.createKemDomain(new TlsKemConfig(namedGroup, true)).createKem();
-            }
-            else
+
+            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, namedGroup, true);
+            if (agreement == null)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
