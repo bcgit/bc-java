@@ -127,6 +127,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
+    exports org.bouncycastle.pqc.crypto.mayo;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruprime;
@@ -136,6 +137,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.crypto.sphincsplus;
     exports org.bouncycastle.pqc.crypto.slhdsa;
+    exports org.bouncycastle.pqc.crypto.snova;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.math.ntru;
