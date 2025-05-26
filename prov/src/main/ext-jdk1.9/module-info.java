@@ -8,6 +8,9 @@ module org.bouncycastle.provider
 
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.mlkem to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
 
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
@@ -110,20 +113,22 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.bike;
     exports org.bouncycastle.pqc.crypto.cmce;
     exports org.bouncycastle.pqc.crypto.crystals.dilithium;
+    exports org.bouncycastle.pqc.crypto.mldsa;
     exports org.bouncycastle.pqc.crypto.mlkem;
     exports org.bouncycastle.pqc.crypto.falcon;
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.legacy.crypto.gemss;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
+    exports org.bouncycastle.pqc.crypto.mayo;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruprime;
     exports org.bouncycastle.pqc.crypto.picnic;
-    exports org.bouncycastle.pqc.legacy.crypto.rainbow;
     exports org.bouncycastle.pqc.crypto.saber;
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.crypto.sphincsplus;
+    exports org.bouncycastle.pqc.crypto.snova;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.math.ntru;
