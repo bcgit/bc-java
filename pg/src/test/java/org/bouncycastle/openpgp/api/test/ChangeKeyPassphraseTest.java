@@ -15,11 +15,14 @@ public class ChangeKeyPassphraseTest
     protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
-        removeAEADPassphrase(api);
-        addAEADPassphrase(api);
-        changeAEADPassphrase(api);
+        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        {
+            removeAEADPassphrase(api);
+            addAEADPassphrase(api);
+            changeAEADPassphrase(api);
 
-        testChangingCFBPassphrase(api);
+            testChangingCFBPassphrase(api);
+        }
     }
 
     private void removeAEADPassphrase(OpenPGPApi api)
