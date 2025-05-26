@@ -379,7 +379,8 @@ public class OpenPGPKeyGenerator
             SignatureParameters.Callback signatureParameters)
             throws PGPException
         {
-            if (userId == null || userId.trim().isEmpty())
+            // care - needs to run with Java 5.
+            if (userId == null || userId.trim().length() == 0)
             {
                 throw new IllegalArgumentException("User-ID cannot be null or empty.");
             }

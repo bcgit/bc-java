@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
@@ -50,7 +49,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -74,7 +73,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -88,7 +87,6 @@ public class OpenPGPMessageGeneratorTest
             .setAllowPadding(false)
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.ZIP;
@@ -99,7 +97,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -120,7 +118,6 @@ public class OpenPGPMessageGeneratorTest
             .setAllowPadding(false)
             .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
             {
-                @Override
                 public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
                 {
                     return CompressionAlgorithmTags.ZIP;
@@ -131,7 +128,7 @@ public class OpenPGPMessageGeneratorTest
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -148,7 +145,7 @@ public class OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream encOut = gen.open(bOut);
-        encOut.write("Hello World!\n".getBytes(StandardCharsets.UTF_8));
+        encOut.write(Strings.toUTF8ByteArray("Hello, World!"));
         encOut.close();
 
         System.out.println(bOut);
@@ -164,7 +161,7 @@ public class OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream encOut = gen.open(bOut);
-        encOut.write("Hello World!\n".getBytes(StandardCharsets.UTF_8));
+        encOut.write(Strings.toUTF8ByteArray("Hello, World!"));
         encOut.close();
 
         System.out.println(bOut);

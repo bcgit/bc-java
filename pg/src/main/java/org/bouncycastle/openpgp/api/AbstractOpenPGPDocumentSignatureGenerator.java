@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.IntPredicate;
 
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
@@ -64,7 +63,11 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
      */
     public T setSigningKeySelector(SubkeySelector signingKeySelector)
     {
-        this.signingKeySelector = Objects.requireNonNull(signingKeySelector);
+        if (signingKeySelector == null)
+        {
+             throw new NullPointerException();
+        }
+        this.signingKeySelector = signingKeySelector;
         return (T)this;
     }
 

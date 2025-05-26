@@ -1,7 +1,6 @@
 package org.bouncycastle.openpgp.api;
 
 import java.util.Date;
-import java.util.Objects;
 
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
@@ -200,8 +199,13 @@ public class SignatureParameters
      */
     public SignatureParameters setSignatureCreationTime(Date signatureCreationTime)
     {
-        this.signatureCreationTime = Objects.requireNonNull(signatureCreationTime,
-            "Signature creation time cannot be null.");
+        if (signatureCreationTime == null)
+        {
+             throw new NullPointerException("Signature creation time cannot be null.");
+        }
+        
+        this.signatureCreationTime = signatureCreationTime;
+
         return this;
     }
 
