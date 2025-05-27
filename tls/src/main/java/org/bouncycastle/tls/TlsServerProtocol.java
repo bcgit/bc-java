@@ -10,9 +10,6 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
-import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -219,7 +216,7 @@ public class TlsServerProtocol
             }
             this.retryCookie = null;
 
-            clientShare = TlsUtils.selectKeyShare(clientShares, retryGroup);
+            clientShare = TlsUtils.getRetryKeyShare(clientShares, retryGroup);
             if (null == clientShare)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -297,17 +294,18 @@ public class TlsServerProtocol
             int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
             int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
 
-            clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
+            int selectedGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
                 serverSupportedGroups);
+            if (selectedGroup < 0)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            clientShare = TlsUtils.findEarlyKeyShare(clientShares, selectedGroup);
 
             if (null == clientShare)
             {
-                this.retryGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
-                    serverSupportedGroups);
-                if (retryGroup < 0)
-                {
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                }
+                this.retryGroup = selectedGroup;
 
                 this.retryCookie = tlsServerContext.getNonceGenerator().generateNonce(16);
 
