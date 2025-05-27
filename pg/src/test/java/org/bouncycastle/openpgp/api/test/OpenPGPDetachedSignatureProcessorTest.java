@@ -35,6 +35,9 @@ public class OpenPGPDetachedSignatureProcessorTest
     protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
+        String javaVersion = System.getProperty("java.version");
+        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
+
         createVerifyV4Signature(api);
         createVerifyV6Signature(api);
 
@@ -42,7 +45,11 @@ public class OpenPGPDetachedSignatureProcessorTest
         keyPassphrasesArePairedUpProperly_passphraseAddedFirst(api);
 
         missingPassphraseThrows(api);
-        wrongPassphraseThrows(api);
+
+        if (!oldJDK)
+        {
+            wrongPassphraseThrows(api);
+        }
 
         withoutSigningSubkeyFails(api);
         nonSigningSubkeyFails(api);
