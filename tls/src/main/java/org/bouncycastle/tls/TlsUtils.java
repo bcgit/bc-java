@@ -5449,7 +5449,23 @@ public class TlsUtils
         return null;
     }
 
-    static KeyShareEntry selectKeyShare(Vector clientShares, int keyShareGroup)
+    static KeyShareEntry findEarlyKeyShare(Vector clientShares, int keyShareGroup)
+    {
+        if (null != clientShares)
+        {
+            for (int i = 0; i < clientShares.size(); ++i)
+            {
+                KeyShareEntry clientShare = (KeyShareEntry)clientShares.elementAt(i);
+                if (null != clientShare && clientShare.getNamedGroup() == keyShareGroup)
+                {
+                    return clientShare;
+                }
+            }
+        }
+        return null;
+    }
+
+    static KeyShareEntry getRetryKeyShare(Vector clientShares, int keyShareGroup)
     {
         if (null != clientShares && 1 == clientShares.size())
         {
@@ -5457,29 +5473,6 @@ public class TlsUtils
             if (null != clientShare && clientShare.getNamedGroup() == keyShareGroup)
             {
                 return clientShare;
-            }
-        }
-        return null;
-    }
-
-    static KeyShareEntry selectKeyShare(TlsCrypto crypto, ProtocolVersion negotiatedVersion, Vector clientShares,
-        int[] clientSupportedGroups, int[] serverSupportedGroups)
-    {
-        if (null != clientShares && !isNullOrEmpty(clientSupportedGroups) && !isNullOrEmpty(serverSupportedGroups))
-        {
-            for (int i = 0; i < clientShares.size(); ++i)
-            {
-                KeyShareEntry clientShare = (KeyShareEntry)clientShares.elementAt(i);
-
-                int group = clientShare.getNamedGroup();
-
-                if (NamedGroup.canBeNegotiated(group, negotiatedVersion) &&
-                    Arrays.contains(serverSupportedGroups, group) &&
-                    Arrays.contains(clientSupportedGroups, group) &&
-                    supportsKeyShareGroup(crypto, group))
-                {
-                    return clientShare;
-                }
             }
         }
         return null;
