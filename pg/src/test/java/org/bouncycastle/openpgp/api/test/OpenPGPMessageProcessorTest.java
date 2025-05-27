@@ -48,6 +48,9 @@ public class OpenPGPMessageProcessorTest
     protected void performTestWith(OpenPGPApi api)
         throws PGPException, IOException
     {
+        String javaVersion = System.getProperty("java.version");
+        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
+
         testVerificationOfSEIPD1MessageWithTamperedCiphertext(api);
 
         roundtripUnarmoredPlaintextMessage(api);
@@ -64,9 +67,12 @@ public class OpenPGPMessageProcessorTest
         encryptWithV4V6KeyDecryptWithV4(api);
         encryptWithV4V6KeyDecryptWithV6(api);
 
-        encryptDecryptWithLockedKey(api);
-        encryptDecryptWithMissingKey(api);
-
+        if (!oldJDK)
+        {
+            encryptDecryptWithLockedKey(api);
+            encryptDecryptWithMissingKey(api);
+        }
+        
         inlineSignWithV4KeyAlice(api);
         inlineSignWithV4KeyBob(api);
         inlineSignWithV6Key(api);
