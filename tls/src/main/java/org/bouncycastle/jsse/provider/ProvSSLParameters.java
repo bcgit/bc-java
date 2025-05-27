@@ -39,7 +39,7 @@ final class ProvSSLParameters
     private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private List<BCSNIServerName> sniServerNames;
     private List<BCSNIMatcher> sniMatchers;
-    private boolean useCipherSuitesOrder = true;
+    private boolean useCipherSuitesOrder = false;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
