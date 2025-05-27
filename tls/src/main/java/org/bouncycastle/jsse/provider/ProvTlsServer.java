@@ -314,6 +314,12 @@ class ProvTlsServer
     }
 
     @Override
+    public boolean preferLocalSupportedGroups()
+    {
+        return sslParameters.getUseNamedGroupsOrder();
+    }
+
+    @Override
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         TlsCredentials cipherSuiteCredentials = null;

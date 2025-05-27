@@ -5479,19 +5479,22 @@ public class TlsUtils
     }
 
     static int selectKeyShareGroup(TlsCrypto crypto, ProtocolVersion negotiatedVersion,
-        int[] clientSupportedGroups, int[] serverSupportedGroups)
+        int[] clientSupportedGroups, int[] serverSupportedGroups, boolean useServerOrder)
     {
         if (!isNullOrEmpty(clientSupportedGroups) && !isNullOrEmpty(serverSupportedGroups))
         {
-            for (int i = 0; i < clientSupportedGroups.length; ++i)
-            {
-                int group = clientSupportedGroups[i];
+            int[] ordered = useServerOrder ? serverSupportedGroups : clientSupportedGroups;
+            int[] unordered = useServerOrder ? clientSupportedGroups : serverSupportedGroups;
 
-                if (NamedGroup.canBeNegotiated(group, negotiatedVersion) &&
-                    Arrays.contains(serverSupportedGroups, group) &&
-                    supportsKeyShareGroup(crypto, group))
+            for (int i = 0; i < ordered.length; ++i)
+            {
+                int candidate = ordered[i];
+
+                if (Arrays.contains(unordered, candidate) &&
+                    NamedGroup.canBeNegotiated(candidate, negotiatedVersion) &&
+                    supportsKeyShareGroup(crypto, candidate))
                 {
-                    return group;
+                    return candidate;
                 }
             }
         }

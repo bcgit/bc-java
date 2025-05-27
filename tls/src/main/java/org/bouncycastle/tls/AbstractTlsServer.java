@@ -155,6 +155,11 @@ public abstract class AbstractTlsServer
         return false;
     }
 
+    public boolean preferLocalSupportedGroups()
+    {
+        return false;
+    }
+
     protected boolean selectCipherSuite(int cipherSuite) throws IOException
     {
         this.selectedCipherSuite = cipherSuite;
