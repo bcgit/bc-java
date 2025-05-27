@@ -293,9 +293,10 @@ public class TlsServerProtocol
 
             int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
             int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+            boolean useServerOrder = tlsServer.preferLocalSupportedGroups();
 
             int selectedGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
-                serverSupportedGroups);
+                serverSupportedGroups, useServerOrder);
             if (selectedGroup < 0)
             {
                 throw new TlsFatalAlert(AlertDescription.handshake_failure);
