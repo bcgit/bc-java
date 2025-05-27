@@ -1,11 +1,9 @@
 package org.bouncycastle.openpgp.api;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.IntPredicate;
 
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.PGPException;
@@ -263,22 +261,41 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
         if (hashPreferences != null)
         {
-            int[] pref = Arrays.stream(hashPreferences.getPreferences())
-                .filter(new IntPredicate()
-                { // Replace lambda with anonymous class for IntPredicate
-                    @Override
-                    public boolean test(int it)
-                    {
-                        return policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date());
-                    }
-                })
-                .toArray();
-            if (pref.length != 0)
+            int[] prefs = hashPreferences.getPreferences();
+            List<Integer> acceptablePrefs = new ArrayList<Integer>();
+            for (int i = 0; i < prefs.length; i++)
             {
-                return pref[0];
+                int algo = prefs[i];
+                if (policy.isAcceptableDocumentSignatureHashAlgorithm(algo, new Date()))
+                {
+                    acceptablePrefs.add(algo);
+                }
+            }
+            if (!acceptablePrefs.isEmpty())
+            {
+                return acceptablePrefs.get(0);
             }
         }
         return policy.getDefaultDocumentSignatureHashAlgorithm();
+//        PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
+//        if (hashPreferences != null)
+//        {
+//            int[] pref = Arrays.stream(hashPreferences.getPreferences())
+//                .filter(new IntPredicate()
+//                { // Replace lambda with anonymous class for IntPredicate
+//                    @Override
+//                    public boolean test(int it)
+//                    {
+//                        return policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date());
+//                    }
+//                })
+//                .toArray();
+//            if (pref.length != 0)
+//            {
+//                return pref[0];
+//            }
+//        }
+//        return policy.getDefaultDocumentSignatureHashAlgorithm();
     }
 
     /**
