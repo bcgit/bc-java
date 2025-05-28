@@ -156,6 +156,7 @@ class NamedGroupInfo
         NamedGroup.ffdhe2048,
         NamedGroup.ffdhe3072,
         NamedGroup.ffdhe4096,
+        NamedGroup.X25519MLKEM768,
     };
 
     static class PerConnection
