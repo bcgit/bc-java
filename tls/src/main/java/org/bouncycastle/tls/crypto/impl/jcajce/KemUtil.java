@@ -116,7 +116,9 @@ class KemUtil
     {
         try
         {
-            return crypto.getHelper().createKeyPairGenerator(kemName);
+            KeyPairGenerator keyPairGenerator = crypto.getHelper().createKeyPairGenerator("ML-KEM");
+            keyPairGenerator.initialize(MLKEMParameterSpec.fromName(kemName), crypto.getSecureRandom());
+            return keyPairGenerator;
         }
         catch (AssertionError e)
         {
@@ -159,6 +161,6 @@ class KemUtil
             return NISTObjectIdentifiers.id_alg_ml_kem_1024;
         }
 
-        throw Exceptions.illegalArgumentException("unknown kem name " + kemName, null);        
+        throw new IllegalArgumentException("unknown kem name " + kemName);        
     }
 }
