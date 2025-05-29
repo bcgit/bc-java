@@ -254,9 +254,16 @@ subprojects {
 
     nohttp {
         source.exclude '**/*.asc'
-        source.exclude '**/*.pem'
-        source.exclude '**/*.rsp'
+        source.exclude '**/*.class'
+        source.exclude '**/*.crt'
+        source.exclude '**/*.crl'
+        source.exclude '**/*.eml'
+        source.exclude '**/*.gpg'
         source.exclude '**/*.jar'
+        source.exclude '**/*.message'
+        source.exclude '**/*.pem'
+        source.exclude '**/*.*pub'
+        source.exclude '**/*.rsp'
     }
 
     jacocoTestReport {
