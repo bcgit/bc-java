@@ -1145,6 +1145,14 @@ public final class Arrays
         return hc;
     }
 
+    public static boolean segmentsOverlap(int aOff, int aLen, int bOff, int bLen)
+    {
+        return aLen > 0
+            && bLen > 0
+            && aOff - bOff < bLen
+            && bOff - aOff < aLen;
+    }
+
     public static void validateSegment(byte[] buf, int off, int len)
     {
         if (buf == null)
