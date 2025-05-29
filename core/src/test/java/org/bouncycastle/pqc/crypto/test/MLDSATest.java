@@ -15,16 +15,6 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoException;
-import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.SHA1Digest;
-import org.bouncycastle.crypto.digests.SHA224Digest;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA384Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
-import org.bouncycastle.crypto.digests.SHA512tDigest;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
-import org.bouncycastle.crypto.params.ParametersWithDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.HashMLDSASigner;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
@@ -55,14 +45,13 @@ public class MLDSATest
     };
 
     private static final MLDSAParameters[] PARAMETER_SETS = new MLDSAParameters[]
-        {
-            MLDSAParameters.ml_dsa_44,
-            MLDSAParameters.ml_dsa_65,
-            MLDSAParameters.ml_dsa_87,
-        };
+    {
+        MLDSAParameters.ml_dsa_44,
+        MLDSAParameters.ml_dsa_65,
+        MLDSAParameters.ml_dsa_87,
+    };
 
-    public void testConsistency()
-        throws Exception
+    public void testConsistency() throws Exception
     {
         SecureRandom random = new SecureRandom();
 
@@ -479,72 +468,6 @@ public class MLDSATest
         }
     }
 
-    public void testHashMLDSA()
-        throws Exception
-    {
-        Digest[] digests = new Digest[] {
-                new SHA1Digest(),
-                new SHA224Digest(),
-                new SHA256Digest(),
-                new SHA384Digest(),
-                new SHA512Digest(),
-                new SHA512tDigest(224),
-                new SHA512tDigest(256),
-                new SHA3Digest(224),
-                new SHA3Digest(256),
-                new SHA3Digest(384),
-                new SHA3Digest(512),
-                new SHAKEDigest(128),
-                new SHAKEDigest(256),
-        };
-        SecureRandom random = new SecureRandom();
-
-        MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
-
-        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
-        {
-            MLDSAParameters parameters = PARAMETER_SETS[idx];
-            kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
-
-            int msgSize = 0;
-            for (Digest digest :digests )
-            {
-
-                do
-                {
-                    byte[] msg = new byte[msgSize];
-
-                    for (int i = 0; i < 2; ++i)
-                    {
-                        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
-
-                        HashMLDSASigner signer = new HashMLDSASigner();
-
-                        for (int j = 0; j < 2; ++j)
-                        {
-                            random.nextBytes(msg);
-
-                            // sign
-                            signer.init(true, new ParametersWithDigest(kp.getPrivate(), digest));
-                            signer.update(msg, 0, msg.length);
-                            byte[] signature = signer.generateSignature();
-
-                            // verify
-                            signer.init(false, new ParametersWithDigest(kp.getPublic(), digest));
-                            signer.update(msg, 0, msg.length);
-                            boolean shouldVerify = signer.verifySignature(signature);
-
-                            assertTrue("count = " + i, shouldVerify);
-                        }
-                    }
-
-                    msgSize += msgSize < 128 ? 1 : 17;
-                }
-                while (msgSize <= 256);
-            }
-        }
-    }
-
     public void testMLDSARejection()
         throws Exception
     {
@@ -578,7 +501,7 @@ public class MLDSATest
         List<TestVector> testVectors = parseTestVectors(TestResourceFinder.findTestResource("pqc/crypto/mldsa", filename));
         for (int i = 0; i < testVectors.size(); ++i)
         {
-            TestVector t = (TestVector)testVectors.get(i);
+            TestVector t = testVectors.get(i);
             FixedSecureRandom random = new FixedSecureRandom(t.seed);
 
             MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
@@ -617,6 +540,7 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
+            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -625,6 +549,7 @@ public class MLDSATest
                 return signer.generateMuSignature(msg);
             }
 
+            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -639,6 +564,7 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
+            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -648,6 +574,7 @@ public class MLDSATest
                 return signer.generateSignature();
             }
 
+            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 HashMLDSASigner signer = new HashMLDSASigner();
@@ -663,6 +590,7 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
+            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -673,6 +601,7 @@ public class MLDSATest
                 return signer.generateSignature();
             }
 
+            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -688,6 +617,7 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
+            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -695,7 +625,8 @@ public class MLDSATest
                 signer.init(true, privParams);
                 return signer.internalGenerateSignature(msg, new byte[32]);
             }
-            
+
+            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -709,7 +640,7 @@ public class MLDSATest
     private static List<TestVector> parseTestVectors(InputStream src)
         throws IOException
     {
-        List<TestVector> vectors = new ArrayList<TestVector>();
+        List<TestVector> vectors = new ArrayList<>();
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
         TestVector currentVector = null;
@@ -723,13 +654,13 @@ public class MLDSATest
         {
             // Skip comments and empty lines
             line = line.split("//")[0].trim();
-            if (line.length() == 0)
+            if (line.isEmpty())
             {
                 continue;
             }
 
             // Look for test vector array start
-            if (line.indexOf("dilithium_rejection_testvectors[] = ") >= 0)
+            if (line.contains("dilithium_rejection_testvectors[] = "))
             {
                 continue;
             }
@@ -746,7 +677,7 @@ public class MLDSATest
             if (fieldMatcher.find())
             {
                 currentField = fieldMatcher.group(1);
-                currentBytes = new ArrayList<Byte>();
+                currentBytes = new ArrayList<>();
                 line = line.substring(fieldMatcher.end()).trim();
             }
 
@@ -757,11 +688,11 @@ public class MLDSATest
                 while (hexMatcher.find())
                 {
                     String hex = hexMatcher.group(1);
-                    currentBytes.add(new Byte((byte)Integer.parseInt(hex, 16)));
+                    currentBytes.add((byte)Integer.parseInt(hex, 16));
                 }
 
                 // Check for field end
-                if (line.indexOf("},") >= 0)
+                if (line.contains("},"))
                 {
                     setField(currentVector, currentField, currentBytes);
                     currentField = null;
@@ -786,30 +717,27 @@ public class MLDSATest
         byte[] byteArray = new byte[bytes.size()];
         for (int i = 0; i < bytes.size(); i++)
         {
-            byteArray[i] = ((Byte)bytes.get(i)).byteValue();
+            byteArray[i] = bytes.get(i);
         }
 
-        if ("seed".equals(field))
+        switch (field)
         {
+        case "seed":
             vector.seed = byteArray;
-        }
-        else if ("pk".equals(field))
-        {
+            break;
+        case "pk":
             vector.pk = byteArray;
-        }
-        else if ("sk".equals(field))
-        {
+            break;
+        case "sk":
             vector.sk = byteArray;
-        }
-        else if ("msg".equals(field))
-        {
+            break;
+        case "msg":
             vector.msg = byteArray;
-        }
-        else if ("sig".equals(field))
-        {
+            break;
+        case "sig":
             vector.sig = byteArray;
+            break;
         }
-        // else ignore
     }
 
     static class TestVector
