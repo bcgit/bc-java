@@ -333,7 +333,7 @@ public class OCBBlockCipher
             throw new DataLengthException("Input buffer too short");
         }
         int resultLen = 0;
-        if (input == output && segmentsOverlap(inOff, len, outOff, getUpdateOutputSize(len)))
+        if (input == output && Arrays.segmentsOverlap(inOff, len, outOff, getUpdateOutputSize(len)))
         {
             input = new byte[len];
             System.arraycopy(output, inOff, input, 0, len);
@@ -596,11 +596,5 @@ public class OCBBlockCipher
     protected static void xor(byte[] block, byte[] val)
     {
         Bytes.xorTo(16, val, block);
-    }
-
-    protected boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
-    {
-        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
-        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 }

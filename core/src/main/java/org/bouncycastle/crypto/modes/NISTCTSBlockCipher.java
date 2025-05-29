@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.OutputLengthException;
+import org.bouncycastle.util.Arrays;
 
 /**
  * A Cipher Text Stealing (CTS) mode cipher. CTS allows block ciphers to
@@ -157,7 +158,7 @@ public class NISTCTSBlockCipher
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
             inOff += gapLen;
             len -= gapLen;
-            if (in == out && segmentsOverlap(inOff, len, outOff, length))
+            if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, length))
             {
                 in = new byte[len];
                 System.arraycopy(out, inOff, in, 0, len);

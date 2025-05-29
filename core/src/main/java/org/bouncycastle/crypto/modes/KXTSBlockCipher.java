@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -123,7 +124,7 @@ public class KXTSBlockCipher
         {
             throw new IllegalArgumentException("Partial blocks not supported");
         }
-        if (input == output && segmentsOverlap(inOff, len, outOff, len))
+        if (input == output && Arrays.segmentsOverlap(inOff, len, outOff, len))
         {
             input = new byte[len];
             System.arraycopy(output, inOff, input, 0, len);
@@ -131,13 +132,13 @@ public class KXTSBlockCipher
         }
         for (int pos = 0; pos < len; pos += blockSize)
         {
-            processBlocks(input, inOff + pos, output, outOff + pos);
+            processBlock(input, inOff + pos, output, outOff + pos);
         }
 
         return len;
     }
 
-    private void processBlocks(byte[] input, int inOff, byte[] output, int outOff)
+    private void processBlock(byte[] input, int inOff, byte[] output, int outOff)
     {
         /*
          * A somewhat arbitrary limit of 2^32 - 1 blocks
