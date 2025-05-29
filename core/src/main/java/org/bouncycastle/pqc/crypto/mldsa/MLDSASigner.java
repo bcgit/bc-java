@@ -14,11 +14,9 @@ public class MLDSASigner
     implements Signer
 {
     private static final byte[] EMPTY_CONTEXT = new byte[0];
-
     private MLDSAPublicKeyParameters pubKey;
     private MLDSAPrivateKeyParameters privKey;
     private SecureRandom random;
-
     private MLDSAEngine engine;
     private SHAKEDigest msgDigest;
 
@@ -148,7 +146,7 @@ public class MLDSASigner
         {
             throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
         }
-        
+
         boolean isTrue = engine.verifyInternalMu(mu);
 
         reset();
@@ -171,9 +169,9 @@ public class MLDSASigner
         {
             throw new DataLengthException("mu value must be " + MLDSAEngine.CrhBytes + " bytes");
         }
-        
+
         msgDigest.reset();
-        
+
         boolean isTrue = engine.verifyInternalMuSignature(mu, signature, signature.length, msgDigest, pubKey.rho, pubKey.t1);
 
         reset();
