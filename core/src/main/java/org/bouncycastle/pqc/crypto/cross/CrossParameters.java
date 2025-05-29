@@ -21,7 +21,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_1_balanced = new CrossParameters(
-        "CROSS-RSDP-1-BALANCED", true,1,
+        "CROSS-RSDP-1-BALANCED", true, 1,
         127,
         1, 2, 4,
         128, 127, 76, 0, 256, 215, 16,
@@ -39,7 +39,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_1_small = new CrossParameters(
-        "CROSS-RSDP-1-SMALL", true,1,
+        "CROSS-RSDP-1-SMALL", true, 1,
         127,
         1, 2, 4,
         128, 127, 76, 0, 520, 488, 16,
@@ -223,7 +223,7 @@ public class CrossParameters
 
     // RSDPG Category 3
     public static final CrossParameters cross_rsdpg_3_fast = new CrossParameters(
-        "CROSS-RSDPG-3-FAST",false, 3,
+        "CROSS-RSDPG-3-FAST", false, 3,
         509,
         1, 4, 4,
         192, 79, 48, 40, 224, 119, 8,
@@ -241,7 +241,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_3_balanced = new CrossParameters(
-        "CROSS-RSDPG-3-BALANCED",false, 3,
+        "CROSS-RSDPG-3-BALANCED", false, 3,
         509,
         1, 4, 4,
         192, 79, 48, 40, 268, 196, 8,
@@ -259,7 +259,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_3_small = new CrossParameters(
-        "CROSS-RSDPG-3-SMALL",false, 3,
+        "CROSS-RSDPG-3-SMALL", false, 3,
         509,
         1, 4, 4,
         192, 79, 48, 40, 512, 463, 16,
@@ -278,7 +278,7 @@ public class CrossParameters
 
     // RSDPG Category 5
     public static final CrossParameters cross_rsdpg_5_fast = new CrossParameters(
-        "CROSS-RSDPG-5-FAST",false, 5,
+        "CROSS-RSDPG-5-FAST", false, 5,
         509,
         1, 4, 4,
         256, 106, 69, 48, 300, 153, 16,
@@ -296,7 +296,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_5_balanced = new CrossParameters(
-        "CROSS-RSDPG-5-BALANCED",false, 5,
+        "CROSS-RSDPG-5-BALANCED", false, 5,
         509,
         1, 4, 4,
         256, 106, 69, 48, 356, 258, 16,
@@ -314,7 +314,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_5_small = new CrossParameters(
-        "CROSS-RSDPG-5-SMALL",false, 5,
+        "CROSS-RSDPG-5-SMALL", false, 5,
         509,
         1, 4, 4,
         256, 106, 69, 48, 642, 575, 16,
@@ -373,6 +373,7 @@ public class CrossParameters
     private final int bitsVCtRng;
     private final int bitsNFzCtRng;
     private final int bitsCWStrRng;
+    private final int bitsWCtRng;
 
     private CrossParameters(String name, boolean rsdp, int category,
                             int fpElemSize, int fzElemSize, int fpDoublePrecSize, int fpTriplePrecSize,
@@ -397,6 +398,8 @@ public class CrossParameters
             this.z = 7;
             this.restrGTable = 0x0140201008040201L;
             this.restrGGen = 2;
+
+            this.bitsWCtRng = 0;
         }
         else
         {
@@ -404,6 +407,20 @@ public class CrossParameters
             this.z = 177;
             this.restrGTable = 0L;
             this.restrGGen = 16;
+            switch (category)
+            {
+            case 1:
+                this.bitsWCtRng = 5677;
+                break;
+            case 3:
+                this.bitsWCtRng = 11655;
+                break;
+            case 5:
+                this.bitsWCtRng = 20594;
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid NIST category level");
+            }
         }
         this.fpElemSize = fpElemSize;
         this.fzElemSize = fzElemSize;
@@ -640,5 +657,10 @@ public class CrossParameters
     public int getBitsCWStrRng()
     {
         return bitsCWStrRng;
+    }
+
+    public int getBitsWCtRng()
+    {
+        return bitsWCtRng;
     }
 }
