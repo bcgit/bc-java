@@ -478,17 +478,17 @@ public class ChaCha20Poly1305Test
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc = initCipher(false, parameters);
         bc.processBytes(data, 0, expected.length, expected, 0);
-        bc = initCipher(true, parameters);
+        bc = initCipher(false, parameters);
         bc.processBytes(data, 0, expected.length, data, offset);
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 
