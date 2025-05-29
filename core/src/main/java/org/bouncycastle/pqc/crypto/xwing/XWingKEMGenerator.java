@@ -10,61 +10,88 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
+/**
+ * Implements the encapsulation process of the X-Wing hybrid Key Encapsulation Mechanism (KEM).
+ * <p>
+ * X-Wing is a general-purpose hybrid post-quantum/traditional KEM that combines X25519 and ML-KEM-768,
+ * as specified in the IETF draft: draft-connolly-cfrg-xwing-kem-07.
+ * </p>
+ * <p>
+ * This class facilitates the generation of ciphertexts and shared secrets using a recipient's public key.
+ * </p>
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/draft-connolly-cfrg-xwing-kem/07/">X-Wing KEM Draft</a>
+ */
 public class XWingKEMGenerator
     implements EncapsulatedSecretGenerator
 {
-    // the source of randomness
-    private final SecureRandom sr;
+    private final SecureRandom random;
+    private static final byte[] XWING_LABEL = Strings.toByteArray("\\.//^\\");
 
     public XWingKEMGenerator(SecureRandom random)
     {
-        this.sr = random;
+        this.random = random;
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
         XWingPublicKeyParameters key = (XWingPublicKeyParameters)recipientKey;
+        MLKEMPublicKeyParameters kyberPub = key.getKyberPublicKey();
+        X25519PublicKeyParameters xdhPub = key.getXDHPublicKey();
+        byte[] xdhPubBytes = xdhPub.getEncoded();
 
-        MLKEMGenerator kybKem = new MLKEMGenerator(sr);
+        // 1. Perform ML-KEM encapsulation
+        MLKEMGenerator mlkemGen = new MLKEMGenerator(random);
+        SecretWithEncapsulation mlkemSec = mlkemGen.generateEncapsulated(kyberPub);
+        byte[] ctM = mlkemSec.getEncapsulation();
 
-        SecretWithEncapsulation kybSecWithEnc = kybKem.generateEncapsulated(key.getKyberPublicKey());
-        X25519Agreement xdhAgree = new X25519Agreement();
-        byte[] kybSecret = kybSecWithEnc.getSecret();
-        byte[] k = new byte[kybSecret.length + xdhAgree.getAgreementSize()];
-
-        System.arraycopy(kybSecret, 0, k, 0, kybSecret.length);
-
-        Arrays.clear(kybSecret);
-
+        // 2. Generate ephemeral X25519 key pair
         X25519KeyPairGenerator xdhGen = new X25519KeyPairGenerator();
+        xdhGen.init(new X25519KeyGenerationParameters(random));
+        AsymmetricCipherKeyPair ephXdhKp = xdhGen.generateKeyPair();
+        byte[] ctX = ((X25519PublicKeyParameters)ephXdhKp.getPublic()).getEncoded();
 
-        xdhGen.init(new X25519KeyGenerationParameters(sr));
+        // 3. Perform X25519 agreement
+        byte[] ssX = computeSSX(xdhPub, (X25519PrivateKeyParameters)ephXdhKp.getPrivate());
 
-        AsymmetricCipherKeyPair ephXdh = xdhGen.generateKeyPair();
+        // 4. Compute shared secret: SHA3-256(ssM || ssX || ctX || pkX || label)
+        byte[] ss = computeSharedSecret(xdhPubBytes, mlkemSec.getSecret(), ctX, ssX);
 
-        xdhAgree.init(ephXdh.getPrivate());
+        // 5. Cleanup intermediate values
+        Arrays.clear(ssX);
 
-        xdhAgree.calculateAgreement(key.getXDHPublicKey(), k, kybSecret.length);
+        // 6. Return shared secret and encapsulation (ctM || ctX)
+        return new SecretWithEncapsulationImpl(ss, Arrays.concatenate(ctM, ctX));
+    }
 
-        X25519PublicKeyParameters ephXdhPub = (X25519PublicKeyParameters)ephXdh.getPublic();
+    static byte[] computeSSX(X25519PublicKeyParameters xdhPub, X25519PrivateKeyParameters ephXdhPriv)
+    {
+        X25519Agreement xdhAgreement = new X25519Agreement();
+        xdhAgreement.init(ephXdhPriv);
+        byte[] ssX = new byte[xdhAgreement.getAgreementSize()];
+        xdhAgreement.calculateAgreement(xdhPub, ssX, 0);
+        return ssX;
+    }
 
+    static byte[] computeSharedSecret(byte[] xdhPubBytes, byte[] ssM, byte[] ctX, byte[] ssX)
+    {
         SHA3Digest sha3 = new SHA3Digest(256);
+        sha3.update(ssM, 0, ssM.length);
+        sha3.update(ssX, 0, ssX.length);
+        sha3.update(ctX, 0, ctX.length);
+        sha3.update(xdhPubBytes, 0, xdhPubBytes.length);
+        sha3.update(XWING_LABEL, 0, XWING_LABEL.length);
 
-        sha3.update(Strings.toByteArray("\\.//^\\"), 0, 6);
-        sha3.update(k, 0, k.length);
-        sha3.update(ephXdhPub.getEncoded(), 0, X25519PublicKeyParameters.KEY_SIZE);
-        sha3.update(((X25519PublicKeyParameters)key.getXDHPublicKey()).getEncoded(), 0, X25519PublicKeyParameters.KEY_SIZE);
-
-        byte[] kemSecret = new byte[32];
-
-        sha3.doFinal(kemSecret, 0);
-
-        return new SecretWithEncapsulationImpl(kemSecret, Arrays.concatenate(kybSecWithEnc.getEncapsulation(), ephXdhPub.getEncoded()));
+        byte[] ss = new byte[32];
+        sha3.doFinal(ss, 0);
+        return ss;
     }
 }
