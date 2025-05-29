@@ -2,20 +2,20 @@ package org.bouncycastle.pqc.crypto.mldsa;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
 class MLDSAEngine
 {
     private final SecureRandom random;
-
-    private final SHAKEDigest shake256Digest = new SHAKEDigest(256);
+    final SHAKEDigest shake256Digest = new SHAKEDigest(256);
 
     public final static int DilithiumN = 256;
     public final static int DilithiumQ = 8380417;
     public final static int DilithiumQinv = 58728449; // q^(-1) mod 2^32
     public final static int DilithiumD = 13;
-    public final static int DilithiumRootOfUnity = 1753;
+    //public final static int DilithiumRootOfUnity = 1753;
     public final static int SeedBytes = 32;
     public final static int CrhBytes = 64;
     public final static int RndBytes = 32;
@@ -55,10 +55,10 @@ class MLDSAEngine
         return symmetric;
     }
 
-    int getDilithiumPolyVecHPackedBytes()
-    {
-        return DilithiumPolyVecHPackedBytes;
-    }
+//    int getDilithiumPolyVecHPackedBytes()
+//    {
+//        return DilithiumPolyVecHPackedBytes;
+//    }
 
     int getDilithiumPolyZPackedBytes()
     {
@@ -75,10 +75,10 @@ class MLDSAEngine
         return DilithiumPolyEtaPackedBytes;
     }
 
-    int getDilithiumMode()
-    {
-        return DilithiumMode;
-    }
+//    int getDilithiumMode()
+//    {
+//        return DilithiumMode;
+//    }
 
     int getDilithiumK()
     {
@@ -130,15 +130,15 @@ class MLDSAEngine
         return CryptoPublicKeyBytes;
     }
 
-    int getCryptoSecretKeyBytes()
-    {
-        return CryptoSecretKeyBytes;
-    }
-
-    int getCryptoBytes()
-    {
-        return CryptoBytes;
-    }
+//    int getCryptoSecretKeyBytes()
+//    {
+//        return CryptoSecretKeyBytes;
+//    }
+//
+//    int getCryptoBytes()
+//    {
+//        return CryptoBytes;
+//    }
 
     int getPolyUniformGamma1NBlocks()
     {
@@ -357,12 +357,7 @@ class MLDSAEngine
     void initSign(byte[] tr, boolean isPreHash, byte[] ctx)
     {
         shake256Digest.update(tr, 0, TrBytes);
-        if (ctx != null)
-        {
-            shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
-            shake256Digest.update((byte)ctx.length);
-            shake256Digest.update(ctx, 0, ctx.length);
-        }
+        absorbCtx(isPreHash, ctx);
     }
 
     void initVerify(byte[] rho, byte[] encT1, boolean isPreHash, byte[] ctx)
@@ -374,6 +369,11 @@ class MLDSAEngine
         shake256Digest.doFinal(mu, 0, TrBytes);
 
         shake256Digest.update(mu, 0, TrBytes);
+        absorbCtx(isPreHash, ctx);
+    }
+
+    void absorbCtx(boolean isPreHash, byte[] ctx)
+    {
         if (ctx != null)
         {
             shake256Digest.update(isPreHash ? (byte)1 : (byte)0);
@@ -396,7 +396,6 @@ class MLDSAEngine
         byte[] mu = new byte[CrhBytes];
 
         shake256Digest.doFinal(mu, 0, CrhBytes);
-
         return mu;
     }
 
