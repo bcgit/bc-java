@@ -654,7 +654,7 @@ public class PGPSignature
     {
         for (Iterator it = getKeyIdentifiers().iterator(); it.hasNext(); )
         {
-            if (((KeyIdentifier)it.next()).matches(identifier))
+            if (((KeyIdentifier)it.next()).matchesExplicit(identifier))
             {
                 return true;
             }
