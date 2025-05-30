@@ -263,7 +263,7 @@ public class PGPSecretKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPSecretKey k = (PGPSecretKey)it.next();
-            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            if (k.getPublicKey() != null && identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k.getPublicKey();
             }
@@ -272,7 +272,7 @@ public class PGPSecretKeyRing
         for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
             PGPPublicKey k = (PGPPublicKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -287,7 +287,7 @@ public class PGPSecretKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPSecretKey k = (PGPSecretKey)it.next();
-            if (k.getPublicKey() != null && identifier.matches(k.getKeyIdentifier()))
+            if (k.getPublicKey() != null && identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k.getPublicKey());
             }
@@ -296,7 +296,7 @@ public class PGPSecretKeyRing
         for (Iterator it = extraPubKeys.iterator(); it.hasNext();)
         {
             PGPPublicKey k = (PGPPublicKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }
@@ -309,7 +309,7 @@ public class PGPSecretKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPSecretKey k = (PGPSecretKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -323,7 +323,7 @@ public class PGPSecretKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPSecretKey k = (PGPSecretKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }

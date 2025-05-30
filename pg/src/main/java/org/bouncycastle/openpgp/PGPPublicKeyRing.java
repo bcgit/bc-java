@@ -201,7 +201,7 @@ public class PGPPublicKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPPublicKey k = (PGPPublicKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 return k;
             }
@@ -216,7 +216,7 @@ public class PGPPublicKeyRing
         for (Iterator it = keys.iterator(); it.hasNext();)
         {
             PGPPublicKey k = (PGPPublicKey)it.next();
-            if (identifier.matches(k.getKeyIdentifier()))
+            if (identifier.matchesExplicit(k.getKeyIdentifier()))
             {
                 matches.add(k);
             }

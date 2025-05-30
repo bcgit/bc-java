@@ -170,6 +170,11 @@ public class KeyIdentifier
             return true;
         }
 
+        return matchesExplicit(other);
+    }
+
+    public boolean matchesExplicit(KeyIdentifier other)
+    {
         if (fingerprint != null && other.fingerprint != null)
         {
             return Arrays.constantTimeAreEqual(fingerprint, other.fingerprint);
@@ -214,7 +219,7 @@ public class KeyIdentifier
     {
         for (Iterator it = others.iterator(); it.hasNext();)
         {
-            if (this.matches((KeyIdentifier)it.next()))
+            if (this.matchesExplicit((KeyIdentifier)it.next()))
             {
                 return true;
             }
