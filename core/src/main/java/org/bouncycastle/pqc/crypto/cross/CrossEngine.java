@@ -4,6 +4,16 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class CrossEngine
 {
+    // Precomputed constants for exponentiation
+    private static final int RESTR_G_GEN_1 = 16;
+    private static final int RESTR_G_GEN_2 = 256;
+    private static final int RESTR_G_GEN_4 = 384;
+    private static final int RESTR_G_GEN_8 = 355;
+    private static final int RESTR_G_GEN_16 = 302;
+    private static final int RESTR_G_GEN_32 = 93;
+    private static final int RESTR_G_GEN_64 = 505;
+    private static final long REDUCTION_CONST = 2160140723L;
+    private static final long RESTR_G_TABLE = 0x0140201008040201L;
     private final SHAKEDigest digest;
     private final int securityLevel;
 
@@ -331,6 +341,182 @@ class CrossEngine
             }
             subBuffer >>>= bitsForZ; // Unsigned right shift
             bitsInSubBuf -= bitsForZ;
+        }
+    }
+
+    // Reduction methods for RSDPG (Z=127)
+    public static int fzRedSingle(int x)
+    {
+        return (x & 0x7F) + (x >>> 7);
+    }
+
+    public static int fpRedSingle(int x)
+    {
+        long xLong = x & 0xFFFFFFFFL; // Treat as unsigned
+        long quotient = (xLong * REDUCTION_CONST) >>> 40;
+        long result = xLong - quotient * 509;
+        if (result < 0)
+        {
+            result += 509;
+        }
+        else if (result >= 509)
+        {
+            result -= 509;
+        }
+        return (int)result;
+    }
+
+    public static int fzRedDouble(int x)
+    {
+        return fzRedSingle(fzRedSingle(x));
+    }
+
+    public static int fzDoubleZeroNorm(int x)
+    {
+        return (x + ((x + 1) >>> 7)) & 0x7F;
+    }
+
+    // Matrix-vector multiplication for RSDPG
+    public static void fzInfWByFzMatrix(byte[] res, byte[] e, byte[][] W_mat, CrossParameters params)
+    {
+        int n = params.getN();
+        int m = params.getM();
+        int nMinusM = n - m;
+
+        // Initialize result: first (n-m) elements = 0, last m elements = e
+        for (int j = 0; j < nMinusM; j++)
+        {
+            res[j] = 0;
+        }
+        System.arraycopy(e, 0, res, nMinusM, m);
+
+        // Compute matrix-vector product
+        for (int i = 0; i < m; i++)
+        {
+            for (int j = 0; j < nMinusM; j++)
+            {
+                // Convert bytes to unsigned integers
+                int eVal = e[i] & 0xFF;
+                int wVal = W_mat[i][j] & 0xFF;
+                int current = res[j] & 0xFF;
+
+                // Compute product and sum
+                int product = eVal * wVal;
+                int sum = current + product;
+
+                // Apply double reduction
+                int reduced = fzRedDouble(sum);
+
+                // Store result
+                res[j] = (byte)reduced;
+            }
+        }
+    }
+
+    // Vector normalization
+    public static void fzDzNormN(byte[] v)
+    {
+        for (int i = 0; i < v.length; i++)
+        {
+            int val = v[i] & 0xFF;
+            v[i] = (byte)fzDoubleZeroNorm(val);
+        }
+    }
+
+    public static int fpRedDouble(int x)
+    {
+        return fpRedSingle(fpRedSingle(x));
+    }
+
+    public static byte restrToVal(byte x)
+    {
+        int shift = 8 * (x & 0x07); // x is in [0,6]
+        return (byte)((RESTR_G_TABLE >>> shift) & 0xFF);
+    }
+
+//    public static short restrToVal(byte x)
+//    {
+//        int xInt = x & 0xFF; // Convert to unsigned integer
+//        int res1 = cmov((xInt >> 0) & 1, RESTR_G_GEN_1, 1);
+//        int res2 = cmov((xInt >> 1) & 1, RESTR_G_GEN_2, 1);
+//        int res3 = cmov((xInt >> 2) & 1, RESTR_G_GEN_4, 1);
+//        int res4 = cmov((xInt >> 3) & 1, RESTR_G_GEN_8, 1);
+//        int res5 = cmov((xInt >> 4) & 1, RESTR_G_GEN_16, 1);
+//        int res6 = cmov((xInt >> 5) & 1, RESTR_G_GEN_32, 1);
+//        int res7 = cmov((xInt >> 6) & 1, RESTR_G_GEN_64, 1);
+//
+//        // Multiply pairs with reduction
+//        int prod1 = fpRedSingle(res1 * res2);
+//        int prod2 = fpRedSingle(res3 * res4);
+//        int prod3 = fpRedSingle(res5 * res6);
+//
+//        // Combine results
+//        int prod12 = fpRedSingle(prod1 * prod2);
+//        int prod123 = fpRedSingle(prod12 * prod3);
+//        int finalProd = fpRedSingle(prod123 * res7);
+//
+//        return (short)finalProd;
+//    }
+
+    public static void restrVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, CrossParameters params)
+    {
+        int n = params.getN();
+        int k = params.getK();
+        int nMinusK = n - k;
+
+        // Initialize res with restricted values from the last n-k elements of e
+        for (int i = k; i < n; i++)
+        {
+            res[i - k] = restrToVal(e[i]);
+        }
+
+        // Accumulate matrix-vector product
+        for (int i = 0; i < k; i++)
+        {
+            byte e_val = restrToVal(e[i]);
+            for (int j = 0; j < nMinusK; j++)
+            {
+                int current = res[j] & 0xFF;
+                int product = (e_val & 0xFF) * (V_tr[i][j] & 0xFF);
+                int sum = current + product;
+                int reduced = fpRedDouble(sum);
+                res[j] = (byte)reduced;
+            }
+        }
+    }
+
+    // Conditional move for constant-time operations
+    private static int cmov(int bit, int trueVal, int falseVal)
+    {
+        int mask = -bit; // mask = 0xFFFFFFFF if bit=1, 0 if bit=0
+        return (trueVal & mask) | (falseVal & ~mask);
+    }
+
+
+    public static void restrVecByFpMatrix(short[] res, byte[] e, short[][] V_tr, CrossParameters params)
+    {
+        int n = params.getN();
+        int k = params.getK();
+        int nMinusK = n - k;
+
+        // Initialize res with restricted values from the last n-k elements of e
+        for (int i = k; i < n; i++)
+        {
+            res[i - k] = restrToVal(e[i]);
+        }
+
+        // Accumulate matrix-vector product
+        for (int i = 0; i < k; i++)
+        {
+            short e_val = restrToVal(e[i]);
+            for (int j = 0; j < nMinusK; j++)
+            {
+                int current = res[j] & 0xFFFF;
+                int product = (e_val & 0xFFFF) * (V_tr[i][j] & 0xFFFF);
+                int sum = current + product;
+                int reduced = fpRedSingle(sum);
+                res[j] = (short)reduced;
+            }
         }
     }
 }
