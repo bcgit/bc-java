@@ -190,7 +190,7 @@ public class CTSTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc.init(false, key);
@@ -200,7 +200,7 @@ public class CTSTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 
@@ -228,7 +228,7 @@ public class CTSTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc.init(false, key);
@@ -238,7 +238,7 @@ public class CTSTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 

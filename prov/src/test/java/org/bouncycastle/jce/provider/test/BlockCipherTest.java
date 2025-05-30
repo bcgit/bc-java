@@ -1848,7 +1848,7 @@ public class BlockCipherTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc.init(false, key);
@@ -1858,7 +1858,7 @@ public class BlockCipherTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 
@@ -1931,9 +1931,9 @@ public class BlockCipherTest
 
                 // Grab a copy of the produced cipher text
                 byte[] ct = Arrays.copyOfRange(workingArray, outputOffset, outputOffset + msg.length);
-                System.out.println("\nOutput Offset: " + outputOffset);
-                System.out.println("Expected: " + pad(outputOffset * 2) + Hex.toHexString(expectedOutput));
-                System.out.println("Actual  : " + Hex.toHexString(workingArray));
+//                System.out.println("\nOutput Offset: " + outputOffset);
+//                System.out.println("Expected: " + pad(outputOffset * 2) + Hex.toHexString(expectedOutput));
+//                System.out.println("Actual  : " + Hex.toHexString(workingArray));
 
                 isTrue(Arrays.areEqual(ct, expectedOutput));
 

@@ -1,62 +1,54 @@
 package org.bouncycastle.pqc.crypto.xwing;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
-import org.bouncycastle.crypto.agreement.X25519Agreement;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
+/**
+ * Implements the decapsulation process of the X-Wing hybrid Key Encapsulation Mechanism (KEM).
+ * <p>
+ * This class allows the recipient to derive the shared secret from a given ciphertext using their private key,
+ * as defined in the X-Wing KEM specification.
+ * </p>
+ *
+ * @see <a href="https://datatracker.ietf.org/doc/draft-connolly-cfrg-xwing-kem/07/">X-Wing KEM Draft</a>
+ */
 public class XWingKEMExtractor
     implements EncapsulatedSecretExtractor
 {
+    private static final int MLKEM_CIPHERTEXT_SIZE = 1088;
     private final XWingPrivateKeyParameters key;
-    private final MLKEMExtractor kemExtractor;
+    private final MLKEMExtractor mlkemExtractor;
 
     public XWingKEMExtractor(XWingPrivateKeyParameters privParams)
     {
         this.key = privParams;
-        this.kemExtractor = new MLKEMExtractor((MLKEMPrivateKeyParameters)key.getKyberPrivateKey());
+        this.mlkemExtractor = new MLKEMExtractor(key.getKyberPrivateKey());
     }
 
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
-        // Decryption
-        byte[] kybSecret = kemExtractor.extractSecret(Arrays.copyOfRange(encapsulation, 0, encapsulation.length - X25519PublicKeyParameters.KEY_SIZE));
-        X25519Agreement xdhAgree = new X25519Agreement();
+        // 1. Split ciphertext into ML-KEM and X25519 parts
+        byte[] ctM = Arrays.copyOfRange(encapsulation, 0, MLKEM_CIPHERTEXT_SIZE);
+        byte[] ctX = Arrays.copyOfRange(encapsulation, MLKEM_CIPHERTEXT_SIZE, encapsulation.length);
 
-        byte[] k = new byte[kybSecret.length + xdhAgree.getAgreementSize()];
+        // 2. Compute X25519 shared secret
+        byte[] ssX = XWingKEMGenerator.computeSSX(new X25519PublicKeyParameters(ctX, 0), key.getXDHPrivateKey());
 
-        System.arraycopy(kybSecret, 0, k, 0, kybSecret.length);
+        // 3. Compute combiner: SHA3-256(ssM || ssX || ctX || pkX || XWING_LABEL)
+        byte[] kemSecret = XWingKEMGenerator.computeSharedSecret(key.getXDHPublicKey().getEncoded(),
+            mlkemExtractor.extractSecret(ctM), ctX, ssX);
 
-        Arrays.clear(kybSecret);
-        
-        xdhAgree.init(key.getXDHPrivateKey());
-
-        X25519PublicKeyParameters ephXdhPub = new X25519PublicKeyParameters(Arrays.copyOfRange(encapsulation, encapsulation.length - X25519PublicKeyParameters.KEY_SIZE, encapsulation.length));
-
-        xdhAgree.calculateAgreement(ephXdhPub, k, kybSecret.length);
-        
-        SHA3Digest sha3 = new SHA3Digest(256);
-
-        sha3.update(Strings.toByteArray("\\.//^\\"), 0, 6);
-        sha3.update(k, 0, k.length);
-        sha3.update(ephXdhPub.getEncoded(), 0, X25519PublicKeyParameters.KEY_SIZE);
-        sha3.update(((X25519PrivateKeyParameters)key.getXDHPrivateKey()).generatePublicKey().getEncoded(), 0, X25519PublicKeyParameters.KEY_SIZE);
-
-        byte[] kemSecret = new byte[32];
-
-        sha3.doFinal(kemSecret, 0);
+        // 4. Cleanup intermediate values
+        Arrays.clear(ssX);
 
         return kemSecret;
     }
 
     public int getEncapsulationLength()
     {
-        return kemExtractor.getEncapsulationLength() + X25519PublicKeyParameters.KEY_SIZE;
+        return mlkemExtractor.getEncapsulationLength() + X25519PublicKeyParameters.KEY_SIZE;
     }
 }

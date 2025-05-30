@@ -160,7 +160,7 @@ public class PaddingTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc.init(false, key);
@@ -170,7 +170,7 @@ public class PaddingTest
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + bc.getBlockSize() * 2)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 
