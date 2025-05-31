@@ -655,7 +655,7 @@ public class MLDSATest
         {
             // Skip comments and empty lines
             line = line.split("//")[0].trim();
-            if (line.isEmpty())
+            if (line.length() == 0)
             {
                 continue;
             }
