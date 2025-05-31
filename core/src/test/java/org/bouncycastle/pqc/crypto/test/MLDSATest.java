@@ -641,7 +641,7 @@ public class MLDSATest
     private static List<TestVector> parseTestVectors(InputStream src)
         throws IOException
     {
-        List<TestVector> vectors = new ArrayList<>();
+        List<TestVector> vectors = new ArrayList<TestVector>();
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
         TestVector currentVector = null;
@@ -678,7 +678,7 @@ public class MLDSATest
             if (fieldMatcher.find())
             {
                 currentField = fieldMatcher.group(1);
-                currentBytes = new ArrayList<>();
+                currentBytes = new ArrayList<Byte>();
                 line = line.substring(fieldMatcher.end()).trim();
             }
 
@@ -721,24 +721,27 @@ public class MLDSATest
             byteArray[i] = bytes.get(i);
         }
 
-        switch (field)
+        if ("seed".equals(field))
         {
-        case "seed":
             vector.seed = byteArray;
-            break;
-        case "pk":
-            vector.pk = byteArray;
-            break;
-        case "sk":
-            vector.sk = byteArray;
-            break;
-        case "msg":
-            vector.msg = byteArray;
-            break;
-        case "sig":
-            vector.sig = byteArray;
-            break;
         }
+        else if ("pk".equals(field))
+        {
+            vector.pk = byteArray;
+        }
+        else if ("sk".equals(field))
+        {
+            vector.sk = byteArray;
+        }
+        else if ("msg".equals(field))
+        {
+            vector.msg = byteArray;
+        }
+        else if ("sig".equals(field))
+        {
+            vector.sig = byteArray;
+        }
+        // else ignore
     }
 
     static class TestVector

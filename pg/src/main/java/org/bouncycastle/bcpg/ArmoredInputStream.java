@@ -663,7 +663,7 @@ public class ArmoredInputStream
 
     private static List<String> defaultAllowedHeaders()
     {
-        List<String> allowedHeaders = new ArrayList<>();
+        List<String> allowedHeaders = new ArrayList<String>();
         allowedHeaders.add(ArmoredOutputStream.COMMENT_HDR);
         allowedHeaders.add(ArmoredOutputStream.VERSION_HDR);
         allowedHeaders.add(ArmoredOutputStream.CHARSET_HDR);

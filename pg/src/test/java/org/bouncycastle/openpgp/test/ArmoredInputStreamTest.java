@@ -159,7 +159,7 @@ public class ArmoredInputStreamTest
 
         // Test validation enabled
         bIn = new ByteArrayInputStream(armor.getBytes(StandardCharsets.UTF_8));
-        ByteArrayInputStream finalBIn = bIn;
+        final ByteArrayInputStream finalBIn = bIn;
         isTrue(null != testException(
             "Illegal ASCII armor header line in clearsigned message encountered: Hello: this is totally part of the signed text",
             "ArmoredInputException",
