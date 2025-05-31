@@ -218,7 +218,7 @@ public class ArmoredInputStream
         throws ArmoredInputException
     {
         Iterator<String> headerLines = headerList.iterator();
-        String header = headerLines.next();
+        String header = (String)headerLines.next();
 
         // Only reject unknown headers in cleartext signed messages
         if (!header.startsWith("-----BEGIN PGP SIGNED MESSAGE-----"))
@@ -229,7 +229,7 @@ public class ArmoredInputStream
         outerloop:
         while (headerLines.hasNext())
         {
-            String headerLine = headerLines.next();
+            String headerLine = (String)headerLines.next();
             for (Iterator it = allowedHeaders.iterator(); it.hasNext(); )
             {
                 if (headerLine.startsWith((String)it.next() + ": "))

@@ -502,7 +502,7 @@ public class MLDSATest
         List<TestVector> testVectors = parseTestVectors(TestResourceFinder.findTestResource("pqc/crypto/mldsa", filename));
         for (int i = 0; i < testVectors.size(); ++i)
         {
-            TestVector t = testVectors.get(i);
+            TestVector t = (TestVector)testVectors.get(i);
             FixedSecureRandom random = new FixedSecureRandom(t.seed);
 
             MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
@@ -541,7 +541,6 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
-            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -550,7 +549,6 @@ public class MLDSATest
                 return signer.generateMuSignature(msg);
             }
 
-            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -565,7 +563,6 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
-            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -575,7 +572,6 @@ public class MLDSATest
                 return signer.generateSignature();
             }
 
-            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 HashMLDSASigner signer = new HashMLDSASigner();
@@ -591,7 +587,6 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
-            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -602,7 +597,6 @@ public class MLDSATest
                 return signer.generateSignature();
             }
 
-            @Override
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -618,7 +612,6 @@ public class MLDSATest
     {
         rejectionTest(parameters, filename, new RejectionOperation()
         {
-            @Override
             public byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
                 throws CryptoException
             {
@@ -626,8 +619,7 @@ public class MLDSATest
                 signer.init(true, privParams);
                 return signer.internalGenerateSignature(msg, new byte[32]);
             }
-
-            @Override
+            
             public boolean processVerify(MLDSAPublicKeyParameters pubParams, byte[] msg, byte[] sig)
             {
                 InternalMLDSASigner signer = new InternalMLDSASigner();
@@ -661,7 +653,7 @@ public class MLDSATest
             }
 
             // Look for test vector array start
-            if (line.contains("dilithium_rejection_testvectors[] = "))
+            if (line.indexOf("dilithium_rejection_testvectors[] = ") >= 0)
             {
                 continue;
             }
@@ -689,11 +681,11 @@ public class MLDSATest
                 while (hexMatcher.find())
                 {
                     String hex = hexMatcher.group(1);
-                    currentBytes.add((byte)Integer.parseInt(hex, 16));
+                    currentBytes.add(new Byte((byte)Integer.parseInt(hex, 16)));
                 }
 
                 // Check for field end
-                if (line.contains("},"))
+                if (line.indexOf("},") >= 0)
                 {
                     setField(currentVector, currentField, currentBytes);
                     currentField = null;
@@ -718,7 +710,7 @@ public class MLDSATest
         byte[] byteArray = new byte[bytes.size()];
         for (int i = 0; i < bytes.size(); i++)
         {
-            byteArray[i] = bytes.get(i);
+            byteArray[i] = ((Byte)bytes.get(i)).byteValue();
         }
 
         if ("seed".equals(field))
