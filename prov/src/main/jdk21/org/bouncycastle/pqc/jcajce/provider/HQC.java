@@ -40,17 +40,19 @@ public class HQC
 
             provider.addAlgorithm("Cipher.HQC", PREFIX + "HQCCipherSpi$Base");
             provider.addAlgorithm("Alg.Alias.Cipher.HQC", "HQC");
-            provider.addAlgorithm("Alg.Alias.Cipher." + BCObjectIdentifiers.pqc_kem_hqc, "HQC");
 
             addCipherAlgorithm(provider, "HQC128", PREFIX + "HQCCipherSpi$HQC128", BCObjectIdentifiers.hqc128);
             addCipherAlgorithm(provider, "HQC192", PREFIX + "HQCCipherSpi$HQC192", BCObjectIdentifiers.hqc192);
             addCipherAlgorithm(provider, "HQC256", PREFIX + "HQCCipherSpi$HQC256", BCObjectIdentifiers.hqc256);
 
-            registerOid(provider, BCObjectIdentifiers.pqc_kem_hqc, "HQC", keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc128, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc192, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.hqc256, keyFact);
+
+            provider.addAlgorithm("KEM.HQC", PREFIX + "HQCKEMSpi");
+            provider.addAlgorithm("Alg.Alias.KEM." + BCObjectIdentifiers.hqc128, "HQC");
+            provider.addAlgorithm("Alg.Alias.KEM." + BCObjectIdentifiers.hqc192, "HQC");
+            provider.addAlgorithm("Alg.Alias.KEM." + BCObjectIdentifiers.hqc256, "HQC");
         }
     }
 }
-
