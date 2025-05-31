@@ -16,6 +16,7 @@ import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -31,12 +32,24 @@ import org.bouncycastle.util.test.FixedSecureRandom;
 public class HQCTest
     extends TestCase
 {
+    public static void main(String[] args)
+        throws Exception
+    {
+        HQCTest test = new HQCTest();
+        test.setUp();
+        test.testGenerateAES();
+    }
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastlePQCProvider());
         }
+//        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+//        {
+//            Security.addProvider(new BouncyCastleProvider());
+//        }
     }
 
     public void testBasicKEMAES()
