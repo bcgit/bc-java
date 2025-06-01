@@ -472,6 +472,56 @@ public class PublicKeyFactory
         }
     }
 
+    static class MLKEMConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            MLKEMParameters parameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+
+            try
+            {
+                ASN1Primitive obj = keyInfo.parsePublicKey();
+                KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
+
+                return new MLKEMPublicKeyParameters(parameters, kyberKey.getT(), kyberKey.getRho());
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
+            }
+        }
+
+        static MLKEMPublicKeyParameters getPublicKeyParams(MLKEMParameters parameters, ASN1BitString publicKeyData)
+        {
+            try
+            {
+                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                if (obj instanceof ASN1Sequence)
+                {
+                    ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
+
+                    return new MLKEMPublicKeyParameters(parameters,
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                }
+                else
+                {
+                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
+
+                    return new MLKEMPublicKeyParameters(parameters, encKey);
+                }
+            }
+            catch (Exception e)
+            {
+                // we're a raw encoding
+                return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
+            }
+        }
+    }
+    
     private static class KyberConverter
         extends SubjectPublicKeyInfoConverter
     {
