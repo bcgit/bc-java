@@ -15,6 +15,7 @@ public class DilithiumParameters
      * @deprecated
      * obsolete to be removed
      */
+    @Deprecated
     private final boolean usingAES;// or shake
 
     private DilithiumParameters(String name, int k, boolean usingAES)

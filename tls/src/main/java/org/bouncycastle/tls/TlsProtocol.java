@@ -1941,6 +1941,7 @@ public abstract class TlsProtocol
     /**
      * @deprecated Will be removed.
      */
+    @Deprecated
     protected short processMaxFragmentLengthExtension(Hashtable clientExtensions, Hashtable serverExtensions,
         short alertDescription)
         throws IOException

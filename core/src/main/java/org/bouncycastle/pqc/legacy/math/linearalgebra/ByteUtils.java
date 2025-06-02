@@ -7,6 +7,7 @@ import org.bouncycastle.util.Strings;
  *
  * @deprecated use org.bouncycastle.util.Arrays.
  */
+@Deprecated
 public final class ByteUtils
 {
 

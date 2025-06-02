@@ -2,6 +2,7 @@ package org.bouncycastle.test.est;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
@@ -94,7 +95,7 @@ public class ESTServerUtils
             try
             {
                 Thread.sleep(100);
-                sock = new Socket("127.0.0.1", port);
+                sock = new Socket(InetAddress.getLoopbackAddress(), port);
                 break;
             }
             catch (Exception ex)
