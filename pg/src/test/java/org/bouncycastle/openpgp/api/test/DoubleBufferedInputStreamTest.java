@@ -1,14 +1,14 @@
 package org.bouncycastle.openpgp.api.test;
 
-import org.bouncycastle.bcpg.test.AbstractPacketTest;
-import org.bouncycastle.openpgp.api.DoubleBufferedInputStream;
-import org.bouncycastle.util.io.Streams;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import org.bouncycastle.bcpg.test.AbstractPacketTest;
+import org.bouncycastle.openpgp.api.DoubleBufferedInputStream;
+import org.bouncycastle.util.io.Streams;
 
 public class DoubleBufferedInputStreamTest
     extends AbstractPacketTest
@@ -37,7 +37,7 @@ public class DoubleBufferedInputStreamTest
     {
         byte[] bytes = getSequentialBytes(400);
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
-        DoubleBufferedInputStream<ByteArrayInputStream> retIn = new DoubleBufferedInputStream<>(bIn, 512);
+        DoubleBufferedInputStream<ByteArrayInputStream> retIn = new DoubleBufferedInputStream<ByteArrayInputStream>(bIn, 512);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         Streams.pipeAll(retIn, bOut);
         isEncodingEqual(bytes, bOut.toByteArray());
@@ -48,7 +48,7 @@ public class DoubleBufferedInputStreamTest
     {
         byte[] bytes = getSequentialBytes(2000);
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
-        DoubleBufferedInputStream<ByteArrayInputStream> retIn = new DoubleBufferedInputStream<>(bIn, 512);
+        DoubleBufferedInputStream<ByteArrayInputStream> retIn = new DoubleBufferedInputStream<ByteArrayInputStream>(bIn, 512);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         Streams.pipeAll(retIn, bOut);
         isEncodingEqual(bytes, bOut.toByteArray());
@@ -74,7 +74,7 @@ public class DoubleBufferedInputStreamTest
                 return i;
             }
         };
-        DoubleBufferedInputStream<InputStream> retIn = new DoubleBufferedInputStream<>(throwAfterNBytes, 512);
+        DoubleBufferedInputStream<InputStream> retIn = new DoubleBufferedInputStream<InputStream>(throwAfterNBytes, 512);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         try
         {
@@ -107,7 +107,7 @@ public class DoubleBufferedInputStreamTest
                 return i;
             }
         };
-        DoubleBufferedInputStream<InputStream> retIn = new DoubleBufferedInputStream<>(throwAfterNBytes, 4);
+        DoubleBufferedInputStream<InputStream> retIn = new DoubleBufferedInputStream<InputStream>(throwAfterNBytes, 4);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         try
         {
@@ -134,7 +134,7 @@ public class DoubleBufferedInputStreamTest
                 throw new IOException("Oopsie");
             }
         };
-        DoubleBufferedInputStream<FilterInputStream> retIn = new DoubleBufferedInputStream<>(throwOnClose, 512);
+        DoubleBufferedInputStream<FilterInputStream> retIn = new DoubleBufferedInputStream<FilterInputStream>(throwOnClose, 512);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         try
         {

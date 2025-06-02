@@ -31,9 +31,9 @@ public class HQCKeyPairGeneratorTest
         HQCParameterSpec[] specs =
             new HQCParameterSpec[]
                 {
-                        HQCParameterSpec.hqc128,
-                        HQCParameterSpec.hqc192,
-                        HQCParameterSpec.hqc256
+                    HQCParameterSpec.hqc128,
+                    HQCParameterSpec.hqc192,
+                    HQCParameterSpec.hqc256
                 };
         kf = KeyFactory.getInstance("HQC", "BCPQC");
 

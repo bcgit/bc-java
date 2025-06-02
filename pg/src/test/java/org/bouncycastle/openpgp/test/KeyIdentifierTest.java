@@ -37,6 +37,7 @@ public class KeyIdentifierTest
             throws Exception
     {
         testWildcardIdentifier();
+        testWildcardMatches();
         testIdentifierFromKeyId();
 
         testIdentifierFromLongKeyId();
@@ -62,6 +63,17 @@ public class KeyIdentifierTest
 
         KeyIdentifier id = new KeyIdentifier(0L);
         isTrue(id.isWildcard());
+    }
+
+    private void testWildcardMatches() {
+        KeyIdentifier wildcard = KeyIdentifier.wildcard();
+        KeyIdentifier nonWildcard = new KeyIdentifier(123L);
+
+        isTrue(wildcard.matches(nonWildcard));
+        isTrue(nonWildcard.matches(wildcard));
+
+        isTrue(!wildcard.matchesExplicit(nonWildcard));
+        isTrue(!nonWildcard.matchesExplicit(wildcard));
     }
 
     private void testIdentifierFromKeyId()

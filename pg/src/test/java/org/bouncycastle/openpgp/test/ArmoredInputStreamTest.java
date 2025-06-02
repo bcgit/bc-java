@@ -2,7 +2,6 @@ package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.security.Security;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
@@ -142,7 +141,7 @@ public class ArmoredInputStreamTest
             "-----END PGP SIGNATURE-----";
 
         // Test validation is not enabled by default
-        ByteArrayInputStream bIn = new ByteArrayInputStream(armor.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
         ArmoredInputStream aIn = ArmoredInputStream.builder()
             .build(bIn);
         // Skip over cleartext
@@ -158,8 +157,8 @@ public class ArmoredInputStreamTest
 
 
         // Test validation enabled
-        bIn = new ByteArrayInputStream(armor.getBytes(StandardCharsets.UTF_8));
-        ByteArrayInputStream finalBIn = bIn;
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
+        final ByteArrayInputStream finalBIn = bIn;
         isTrue(null != testException(
             "Illegal ASCII armor header line in clearsigned message encountered: Hello: this is totally part of the signed text",
             "ArmoredInputException",
@@ -177,7 +176,7 @@ public class ArmoredInputStreamTest
 
 
         // Test validation enabled, but custom header allowed
-        bIn = new ByteArrayInputStream(armor.getBytes(StandardCharsets.UTF_8));
+        bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(armor));
         aIn = ArmoredInputStream.builder()
             .setValidateClearsignedMessageHeaders(true)
             .addAllowedArmorHeader("Hello")

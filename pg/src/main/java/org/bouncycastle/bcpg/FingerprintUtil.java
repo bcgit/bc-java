@@ -3,6 +3,8 @@ package org.bouncycastle.bcpg;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.util.Locale;
+
 public class FingerprintUtil
 {
 
@@ -141,7 +143,7 @@ public class FingerprintUtil
     public static String prettifyFingerprint(byte[] fingerprint)
     {
         // -DM Hex.toHexString
-        char[] hex = Hex.toHexString(fingerprint).toUpperCase().toCharArray();
+        char[] hex = Hex.toHexString(fingerprint).toUpperCase(Locale.getDefault()).toCharArray();
         StringBuilder sb = new StringBuilder();
         switch (hex.length)
         {
