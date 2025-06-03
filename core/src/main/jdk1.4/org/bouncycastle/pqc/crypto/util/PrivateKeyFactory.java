@@ -200,7 +200,7 @@ public class PrivateKeyFactory
             MLKEMPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
             {
-                pubParams = PublicKeyFactory.MLKEMConverter.getPublicKeyParams(mlkemParams, keyInfo.getPublicKeyData());
+                pubParams = PublicKeyFactory.MLKEMKeyConverter.getPublicKeyParams(mlkemParams, keyInfo.getPublicKeyData());
             }
 
             if (mlkemKey instanceof ASN1OctetString)
