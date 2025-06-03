@@ -166,12 +166,12 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.ntruhrss1373, new NtruConverter());
         converters.put(BCObjectIdentifiers.falcon_512, new FalconConverter());
         converters.put(BCObjectIdentifiers.falcon_1024, new FalconConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new KyberConverter());
-        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber512_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber768_aes, new KyberConverter());
-        converters.put(BCObjectIdentifiers.kyber1024_aes, new KyberConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_512, new MLKEMKeyConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_768, new MLKEMKeyConverter());
+        converters.put(NISTObjectIdentifiers.id_alg_ml_kem_1024, new MLKEMKeyConverter());
+        converters.put(BCObjectIdentifiers.kyber512_aes, new MLKEMKeyConverter());
+        converters.put(BCObjectIdentifiers.kyber768_aes, new MLKEMKeyConverter());
+        converters.put(BCObjectIdentifiers.kyber1024_aes, new MLKEMKeyConverter());
         converters.put(BCObjectIdentifiers.ntrulpr653, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr761, new NTRULPrimeConverter());
         converters.put(BCObjectIdentifiers.ntrulpr857, new NTRULPrimeConverter());
@@ -471,7 +471,7 @@ public class PublicKeyFactory
         }
     }
 
-    static class MLKEMConverter
+    static class MLKEMKeyConverter
         extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
@@ -507,29 +507,6 @@ public class PublicKeyFactory
             {
                 // we're a raw encoding
                 return new MLKEMPublicKeyParameters(parameters, publicKeyData.getOctets());
-            }
-        }
-    }
-    
-    private static class KyberConverter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            MLKEMParameters kyberParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-            try
-            {
-                ASN1Primitive obj = keyInfo.parsePublicKey();
-                KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
-
-                return new MLKEMPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
-            }
-            catch (Exception e)
-            {
-                // we're a raw encoding
-                return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
             }
         }
     }
