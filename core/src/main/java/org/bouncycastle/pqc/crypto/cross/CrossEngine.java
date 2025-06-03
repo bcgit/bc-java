@@ -104,7 +104,7 @@ class CrossEngine
         long subBuffer = 0;
         for (int i = 0; i < 8; i++)
         {
-            subBuffer |= ((long)(CSPRNG_buffer[i] & 0xFF)) << (8 * i);
+            subBuffer |= ((long)(CSPRNG_buffer[i] & 0xFF)) << 8 * i;
         }
 
         int bitsInSubBuf = 64;
@@ -283,10 +283,10 @@ class CrossEngine
                 bitsInSubBuf += 8 * refreshAmount;
             }
 
-            long elementLong = subBuffer & mask;
+            byte elementLong = (byte)(subBuffer & mask);
             if (elementLong < z)
             {
-                res[placed] = (byte)elementLong;
+                res[placed] = elementLong;
                 placed++;
             }
             subBuffer >>>= bitsForZ; // Unsigned right shift
@@ -302,7 +302,7 @@ class CrossEngine
         int bitsForZ = bitsToRepresent(z - 1);
         long mask = (1L << bitsForZ) - 1;
         //TODO: BitsMFzCtRng
-        int bufferSize = 0;//roundUp(params.getBitsMFzCtRng(), 8) / 8;
+        int bufferSize = roundUp(params.getBitsMFzCtRng(), 8) / 8;
         byte[] CSPRNG_buffer = new byte[bufferSize];
         randomBytes(CSPRNG_buffer, bufferSize);
 
@@ -425,13 +425,12 @@ class CrossEngine
 
     public static int fpRedDouble(int x)
     {
-        return fpRedSingle(fpRedSingle(x));
+        return fzRedSingle(fzRedSingle(x));
     }
 
-    public static byte restrToVal(byte x)
+    public static long restrToVal(long x)
     {
-        int shift = 8 * (x & 0x07); // x is in [0,6]
-        return (byte)((RESTR_G_TABLE >>> shift) & 0xFF);
+        return (RESTR_G_TABLE >>> (8 * x));
     }
 
 //    public static short restrToVal(byte x)
@@ -467,19 +466,20 @@ class CrossEngine
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
-            res[i - k] = restrToVal(e[i]);
+            res[i - k] = (byte)restrToVal(e[i]);
         }
 
         // Accumulate matrix-vector product
         for (int i = 0; i < k; i++)
         {
-            byte e_val = restrToVal(e[i]);
+            long e_val = restrToVal(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
-                int current = res[j] & 0xFF;
-                int product = (e_val & 0xFF) * (V_tr[i][j] & 0xFF);
-                int sum = current + product;
-                int reduced = fpRedDouble(sum);
+                short current = (short)(res[j] & 0xFF);
+                short product = (short)((short)e_val * (short)(V_tr[i][j] & 0xFF));
+                short sum = (short)(current + product);
+                int reduced = (sum & 0x7F) + (sum >>> 7);
+                reduced = (reduced & 0x7F) + (reduced >>> 7);
                 res[j] = (byte)reduced;
             }
         }
@@ -502,13 +502,13 @@ class CrossEngine
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
-            res[i - k] = restrToVal(e[i]);
+            res[i - k] = (byte)restrToVal(e[i]);
         }
 
         // Accumulate matrix-vector product
         for (int i = 0; i < k; i++)
         {
-            short e_val = restrToVal(e[i]);
+            short e_val = (short)restrToVal(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
                 int current = res[j] & 0xFFFF;

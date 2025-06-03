@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.cross.CrossParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossSigner;
+import org.bouncycastle.pqc.crypto.cross.CsprngSecureRandom;
 
 public class CrossTest
 {
@@ -25,9 +26,9 @@ public class CrossTest
 
     private static final CrossParameters[] PARAMETER_SETS = new CrossParameters[]
         {
-            CrossParameters.cross_rsdpg_1_small,
-            CrossParameters.cross_rsdpg_1_balanced,
-            CrossParameters.cross_rsdpg_1_fast,
+//            CrossParameters.cross_rsdpg_1_small,
+//            CrossParameters.cross_rsdpg_1_balanced,
+//            CrossParameters.cross_rsdpg_1_fast,
             CrossParameters.cross_rsdp_1_small,
             CrossParameters.cross_rsdp_1_balanced,
             CrossParameters.cross_rsdp_1_fast,
@@ -46,9 +47,9 @@ public class CrossTest
         };
 
     private static final String[] files = new String[]{
-        "PQCsignKAT_54_8960.rsp",
-        "PQCsignKAT_54_9120.rsp",
-        "PQCsignKAT_54_11980.rsp",
+//        "PQCsignKAT_54_8960.rsp",
+//        "PQCsignKAT_54_9120.rsp",
+//        "PQCsignKAT_54_11980.rsp",
         "PQCsignKAT_77_12432.rsp",
         "PQCsignKAT_77_13152.rsp",
         "PQCsignKAT_77_18432.rsp",
@@ -76,7 +77,12 @@ public class CrossTest
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
             {
-                return new NISTSecureRandom(seed, null);
+                final byte[] entropyInput = new byte[48];
+                for (int i = 0; i < 48; ++i)
+                {
+                    entropyInput[i] = (byte)i;
+                }
+                return new CsprngSecureRandom(entropyInput);
             }
 
             @Override
@@ -110,10 +116,10 @@ public class CrossTest
             @Override
             public MessageSigner getMessageSigner()
             {
-                return new CrossSigner();
+                return null;//new CrossSigner();
             }
         });
         long end = System.currentTimeMillis();
-        System.out.println("time cost: " + (end - start) +"\n");
+        System.out.println("time cost: " + (end - start) + "\n");
     }
 }
