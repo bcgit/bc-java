@@ -519,4 +519,198 @@ class CrossEngine
             }
         }
     }
+
+
+    // Normalizes a syndrome vector of finite field elements
+    public static void fpDzNormSynd(byte[] v, CrossParameters params)
+    {
+        int p = params.getP();
+        if (p == 127)
+        {
+            for (int i = 0; i < v.length; i++)
+            {
+                int val = v[i] & 0xFF;
+                v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
+            }
+        }
+        // For P=509, no normalization is needed (identity operation)
+    }
+
+    // Packs a syndrome vector of finite field elements into a byte array
+    public static void packFpSyn(byte[] out, byte[] in, CrossParameters params)
+    {
+        int p = params.getP();
+        if (p == 127)
+        {
+            genericPack7Bit(out, in);
+        }
+        else if (p == 509)
+        {
+            // Convert byte[] to short[] for 9-bit packing
+            short[] inShort = new short[in.length];
+            for (int i = 0; i < in.length; i++)
+            {
+                inShort[i] = (short)(in[i] & 0xFF);
+            }
+            genericPack9Bit(out, inShort);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus: " + p);
+        }
+    }
+
+    // Packs 7-bit elements (for P=127)
+    private static void genericPack7Bit(byte[] out, byte[] in)
+    {
+        int inlen = in.length;
+        int fullBlocks = inlen / 8;
+        int i;
+
+        for (i = 0; i < fullBlocks; i++)
+        {
+            int baseIn = i * 8;
+            int baseOut = i * 7;
+
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 6] = (byte)(((in[baseIn + 6] & 0xFF) >>> 6) | ((in[baseIn + 7] & 0x7F) << 1));
+        }
+
+        int remaining = inlen % 8;
+        int baseIn = i * 8;
+        int baseOut = i * 7;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = in[baseIn];
+            break;
+        case 2:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)((in[baseIn + 1] & 0xFF) >>> 1);
+            break;
+        case 3:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)((in[baseIn + 2] & 0xFF) >>> 2);
+            break;
+        case 4:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)((in[baseIn + 3] & 0xFF) >>> 3);
+            break;
+        case 5:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)((in[baseIn + 4] & 0xFF) >>> 4);
+            break;
+        case 6:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)((in[baseIn + 5] & 0xFF) >>> 5);
+            break;
+        case 7:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 6] = (byte)((in[baseIn + 6] & 0xFF) >>> 6);
+            break;
+        }
+    }
+
+    // Packs 9-bit elements (for P=509)
+    private static void genericPack9Bit(byte[] out, short[] in)
+    {
+        int inlen = in.length;
+        int fullBlocks = inlen / 8;
+        int i;
+
+        for (i = 0; i < fullBlocks; i++)
+        {
+            int baseIn = i * 8;
+            int baseOut = i * 9;
+
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 7] = (byte)((in[baseIn + 6] >>> 2) | ((in[baseIn + 7] & 0x7F) << 1));
+            out[baseOut + 8] = (byte)(in[baseIn + 7] >>> 1);
+        }
+
+        int remaining = inlen % 8;
+        int baseIn = i * 8;
+        int baseOut = i * 9;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)(in[baseIn] >>> 8);
+            break;
+        case 2:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)(in[baseIn + 1] >>> 7);
+            break;
+        case 3:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)(in[baseIn + 2] >>> 6);
+            break;
+        case 4:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)(in[baseIn + 3] >>> 5);
+            break;
+        case 5:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)(in[baseIn + 4] >>> 4);
+            break;
+        case 6:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)(in[baseIn + 5] >>> 3);
+            break;
+        case 7:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 7] = (byte)(in[baseIn + 6] >>> 2);
+            break;
+        }
+    }
+
 }
