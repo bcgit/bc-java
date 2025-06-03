@@ -3,7 +3,6 @@ package org.bouncycastle.pkcs.test;
 import java.security.Security;
 
 import junit.framework.TestCase;
-
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PBMAC1Params;
@@ -38,7 +37,7 @@ public class PBETest
 
     }
 
-    void testPbmac1PrfPropagation() throws OperatorCreationException {
+    public void testPbmac1PrfPropagation() throws OperatorCreationException {
         AlgorithmIdentifier prf = new AlgorithmIdentifier(NISTObjectIdentifiers.id_hmacWithSHA3_512, null);;
         AlgorithmIdentifier protectionAlgorithm = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1,
             new PBMAC1Params(
@@ -51,7 +50,7 @@ public class PBETest
         AlgorithmIdentifier actualPrf = PBKDF2Params.getInstance(
             PBMAC1Params.getInstance(calculator.getKey().getAlgorithmIdentifier().getParameters()).getKeyDerivationFunc().getParameters()
         ).getPrf();
-        System.out.println("Should be true: " + prf.equals(actualPrf));
+        assertTrue(prf.equals(actualPrf));
     }
 
 }
