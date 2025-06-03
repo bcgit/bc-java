@@ -40,7 +40,7 @@ public final class DigestFactory
         {
             public Digest createClone(Digest original)
             {
-                return new MD5Digest((MD5Digest)original);
+                return new SHA1Digest((SHA1Digest)original);
             }
         });
         cloneMap.put(createSHA224().getAlgorithmName(), new Cloner()
