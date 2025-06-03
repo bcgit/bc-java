@@ -29,6 +29,7 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
@@ -488,7 +489,7 @@ public class TlsTestUtils
     static PemObject loadPemResource(String resource)
         throws IOException
     {
-        InputStream s = TlsTestUtils.class.getResourceAsStream(resource);
+        InputStream s = TestResourceFinder.findTestResource("tls/credentials", resource);
         PemReader p = new PemReader(new InputStreamReader(s));
         PemObject o = p.readPemObject();
         p.close();
