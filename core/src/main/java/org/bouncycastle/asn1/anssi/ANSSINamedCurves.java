@@ -64,9 +64,9 @@ public class ANSSINamedCurves
     };
 
 
-    static final Hashtable objIds = new Hashtable();
-    static final Hashtable curves = new Hashtable();
-    static final Hashtable names = new Hashtable();
+    static final Hashtable<String, ASN1ObjectIdentifier> objIds = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, X9ECParametersHolder> curves = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, String> names = new Hashtable<>();
 
     static void defineCurve(String name, ASN1ObjectIdentifier oid, X9ECParametersHolder holder)
     {
@@ -106,7 +106,7 @@ public class ANSSINamedCurves
 
     public static X9ECParametersHolder getByOIDLazy(ASN1ObjectIdentifier oid)
     {
-        return (X9ECParametersHolder)curves.get(oid);
+        return curves.get(oid);
     }
 
     /**
@@ -115,10 +115,9 @@ public class ANSSINamedCurves
      *
      * @return the object identifier associated with name, if present.
      */
-    public static ASN1ObjectIdentifier getOID(
-        String name)
+    public static ASN1ObjectIdentifier getOID(String name)
     {
-        return (ASN1ObjectIdentifier)objIds.get(Strings.toLowerCase(name));
+        return objIds.get(Strings.toLowerCase(name));
     }
 
     /**
@@ -127,7 +126,7 @@ public class ANSSINamedCurves
     public static String getName(
         ASN1ObjectIdentifier oid)
     {
-        return (String)names.get(oid);
+        return names.get(oid);
     }
 
     /**

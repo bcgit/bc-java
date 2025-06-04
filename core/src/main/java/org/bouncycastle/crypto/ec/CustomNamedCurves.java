@@ -76,6 +76,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder curve25519 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new Curve25519());
@@ -107,6 +108,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp128r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP128R1Curve());
@@ -127,6 +129,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp160k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             GLVTypeBParameters glv = new GLVTypeBParameters(
@@ -160,6 +163,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp160r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP160R1Curve());
@@ -180,6 +184,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp160r2 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP160R2Curve());
@@ -200,6 +205,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp192k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             GLVTypeBParameters glv = new GLVTypeBParameters(
@@ -233,6 +239,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp192r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP192R1Curve());
@@ -253,6 +260,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp224k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             GLVTypeBParameters glv = new GLVTypeBParameters(
@@ -286,6 +294,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp224r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP224R1Curve());
@@ -306,6 +315,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp256k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             GLVTypeBParameters glv = new GLVTypeBParameters(
@@ -339,6 +349,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp256r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP256R1Curve());
@@ -359,6 +370,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp384r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP384R1Curve());
@@ -380,6 +392,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder secp521r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecP521R1Curve());
@@ -401,6 +414,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect113r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT113R1Curve());
@@ -421,6 +435,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect113r2 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT113R2Curve());
@@ -441,6 +456,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect131r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT131R1Curve());
@@ -461,6 +477,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect131r2 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT131R2Curve());
@@ -481,6 +498,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect163k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT163K1Curve());
@@ -501,6 +519,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect163r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT163R1Curve());
@@ -521,6 +540,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect163r2 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT163R2Curve());
@@ -541,6 +561,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect193r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT193R1Curve());
@@ -561,6 +582,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect193r2 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT193R2Curve());
@@ -581,6 +603,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect233k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT233K1Curve());
@@ -601,6 +624,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect233r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT233R1Curve());
@@ -621,6 +645,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect239k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT239K1Curve());
@@ -641,6 +666,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect283k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT283K1Curve());
@@ -662,6 +688,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect283r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT283R1Curve());
@@ -683,6 +710,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect409k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT409K1Curve());
@@ -704,6 +732,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect409r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT409R1Curve());
@@ -725,6 +754,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect571k1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT571K1Curve());
@@ -746,6 +776,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sect571r1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SecT571R1Curve());
@@ -767,6 +798,7 @@ public class CustomNamedCurves
      */
     static X9ECParametersHolder sm2p256v1 = new X9ECParametersHolder()
     {
+        @Override
         protected ECCurve createCurve()
         {
             return configureCurve(new SM2P256V1Curve());
@@ -783,11 +815,11 @@ public class CustomNamedCurves
     };
 
 
-    static final Hashtable nameToCurve = new Hashtable();
-    static final Hashtable nameToOID = new Hashtable();
-    static final Hashtable oidToCurve = new Hashtable();
-    static final Hashtable oidToName = new Hashtable();
-    static final Vector names = new Vector();
+    static final Hashtable<String, X9ECParametersHolder> nameToCurve = new Hashtable<>();
+    static final Hashtable<String, ASN1ObjectIdentifier> nameToOID = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, X9ECParametersHolder> oidToCurve = new Hashtable<>();
+    static final Hashtable<ASN1ObjectIdentifier, String> oidToName = new Hashtable<>();
+    static final Vector<String> names = new Vector<>();
 
     static void defineCurve(String name, X9ECParametersHolder holder)
     {
@@ -808,7 +840,7 @@ public class CustomNamedCurves
 
     static void defineCurveAlias(String name, ASN1ObjectIdentifier oid)
     {
-        Object curve = oidToCurve.get(oid);
+        X9ECParametersHolder curve = oidToCurve.get(oid);
         if (curve == null)
         {
             throw new IllegalStateException();
@@ -887,7 +919,7 @@ public class CustomNamedCurves
 
     public static X9ECParametersHolder getByNameLazy(String name)
     {
-        return (X9ECParametersHolder)nameToCurve.get(Strings.toLowerCase(name));
+        return nameToCurve.get(Strings.toLowerCase(name));
     }
 
     /**
@@ -905,7 +937,7 @@ public class CustomNamedCurves
 
     public static X9ECParametersHolder getByOIDLazy(ASN1ObjectIdentifier oid)
     {
-        return (X9ECParametersHolder)oidToCurve.get(oid);
+        return oidToCurve.get(oid);
     }
 
     /**
@@ -916,7 +948,7 @@ public class CustomNamedCurves
      */
     public static ASN1ObjectIdentifier getOID(String name)
     {
-        return (ASN1ObjectIdentifier)nameToOID.get(Strings.toLowerCase(name));
+        return nameToOID.get(Strings.toLowerCase(name));
     }
 
     /**
@@ -924,7 +956,7 @@ public class CustomNamedCurves
      */
     public static String getName(ASN1ObjectIdentifier oid)
     {
-        return (String)oidToName.get(oid);
+        return oidToName.get(oid);
     }
 
     /**
