@@ -72,17 +72,18 @@ public class CrossTest
         throws Exception
     {
         long start = System.currentTimeMillis();
+        final byte[] entropyInput = new byte[48];
+        for (int i = 0; i < 48; ++i)
+        {
+            entropyInput[i] = (byte)i;
+        }
+        final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
         TestUtils.testTestVector(false, false, false, "pqc/crypto/Cross", files, new TestUtils.KeyGenerationOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
             {
-                final byte[] entropyInput = new byte[48];
-                for (int i = 0; i < 48; ++i)
-                {
-                    entropyInput[i] = (byte)i;
-                }
-                return new CsprngSecureRandom(entropyInput);
+                return random;
             }
 
             @Override

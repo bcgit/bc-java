@@ -60,7 +60,7 @@ public class CrossKeyPairGenerator
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
-                new CrossPrivateKeyParameters(params, Arrays.concatenate(seedSk, e_bar))
+                new CrossPrivateKeyParameters(params, seedSk)
             );
         }
         else if (params.getP() == 509)
@@ -89,7 +89,7 @@ public class CrossKeyPairGenerator
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
-                new CrossPrivateKeyParameters(params, Arrays.concatenate(seedSk, e_bar))
+                new CrossPrivateKeyParameters(params, seedSk)
             );
         }
         return null;

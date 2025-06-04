@@ -2,8 +2,11 @@ package org.bouncycastle.pqc.crypto.cross;
 
 public class CrossParameters
 {
+    static final int FAST = 1; //SPEED
+    static final int BALANCED = 2;
+    static final int SMALL = 3; //SIG_SIZE
     public static final CrossParameters cross_rsdp_1_fast = new CrossParameters(
-        "CROSS-RSDP-1-FAST", true, 1,
+        "CROSS-RSDP-1-FAST", true, 1, FAST,
         127,
         1, 2, 4,
         128, 127, 76, 0, 157, 82, 16,
@@ -21,7 +24,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_1_balanced = new CrossParameters(
-        "CROSS-RSDP-1-BALANCED", true, 1,
+        "CROSS-RSDP-1-BALANCED", true, 1, BALANCED,
         127,
         1, 2, 4,
         128, 127, 76, 0, 256, 215, 16,
@@ -39,7 +42,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_1_small = new CrossParameters(
-        "CROSS-RSDP-1-SMALL", true, 1,
+        "CROSS-RSDP-1-SMALL", true, 1, SMALL,
         127,
         1, 2, 4,
         128, 127, 76, 0, 520, 488, 16,
@@ -58,7 +61,7 @@ public class CrossParameters
 
     // RSDP Category 3
     public static final CrossParameters cross_rsdp_3_fast = new CrossParameters(
-        "CROSS-RSDP-3-FAST", true, 3,
+        "CROSS-RSDP-3-FAST", true, 3, FAST,
         127,
         1, 2, 4,
         192, 187, 111, 0, 239, 125, 16,
@@ -76,7 +79,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_3_balanced = new CrossParameters(
-        "CROSS-RSDP-3-BALANCED", true, 3,
+        "CROSS-RSDP-3-BALANCED", true, 3, BALANCED,
         127,
         1, 2, 4,
         192, 187, 111, 0, 384, 321, 16,
@@ -94,7 +97,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_3_small = new CrossParameters(
-        "CROSS-RSDP-3-SMALL", true, 3,
+        "CROSS-RSDP-3-SMALL", true, 3, SMALL,
         127,
         1, 2, 4,
         192, 187, 111, 0, 580, 527, 16,
@@ -113,7 +116,7 @@ public class CrossParameters
 
     // RSDP Category 5
     public static final CrossParameters cross_rsdp_5_fast = new CrossParameters(
-        "CROSS-RSDP-5-FAST", true, 5,
+        "CROSS-RSDP-5-FAST", true, 5, FAST,
         127,
         1, 2, 4,
         256, 251, 150, 0, 321, 167, 16,
@@ -131,7 +134,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_5_balanced = new CrossParameters(
-        "CROSS-RSDP-5-BALANCED", true, 5,
+        "CROSS-RSDP-5-BALANCED", true, 5, BALANCED,
         127,
         1, 2, 4,
         256, 251, 150, 0, 512, 427, 16,
@@ -149,7 +152,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdp_5_small = new CrossParameters(
-        "CROSS-RSDP-5-SMALL", true, 5,
+        "CROSS-RSDP-5-SMALL", true, 5, SMALL,
         127,
         1, 2, 4,
         256, 251, 150, 0, 832, 762, 16,
@@ -168,7 +171,7 @@ public class CrossParameters
 
     // RSDPG Category 1
     public static final CrossParameters cross_rsdpg_1_fast = new CrossParameters(
-        "CROSS-RSDPG-1-FAST", true, 1,
+        "CROSS-RSDPG-1-FAST", true, 1, FAST,
         509,
         1, 4, 4,
         128, 55, 36, 25, 147, 76, 8,
@@ -186,7 +189,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_1_balanced = new CrossParameters(
-        "CROSS-RSDPG-1-BALANCED", false, 1,
+        "CROSS-RSDPG-1-BALANCED", false, 1, BALANCED,
         509,
         1, 4, 4,
         128, 55, 36, 25, 256, 220, 8,
@@ -204,7 +207,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_1_small = new CrossParameters(
-        "CROSS-RSDPG-1-SMALL", false, 1,
+        "CROSS-RSDPG-1-SMALL", false, 1, SMALL,
         509,
         1, 4, 4,
         128, 55, 36, 25, 512, 484, 16,
@@ -223,7 +226,7 @@ public class CrossParameters
 
     // RSDPG Category 3
     public static final CrossParameters cross_rsdpg_3_fast = new CrossParameters(
-        "CROSS-RSDPG-3-FAST", false, 3,
+        "CROSS-RSDPG-3-FAST", false, 3, FAST,
         509,
         1, 4, 4,
         192, 79, 48, 40, 224, 119, 8,
@@ -241,7 +244,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_3_balanced = new CrossParameters(
-        "CROSS-RSDPG-3-BALANCED", false, 3,
+        "CROSS-RSDPG-3-BALANCED", false, 3, BALANCED,
         509,
         1, 4, 4,
         192, 79, 48, 40, 268, 196, 8,
@@ -259,7 +262,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_3_small = new CrossParameters(
-        "CROSS-RSDPG-3-SMALL", false, 3,
+        "CROSS-RSDPG-3-SMALL", false, 3, SMALL,
         509,
         1, 4, 4,
         192, 79, 48, 40, 512, 463, 16,
@@ -278,7 +281,7 @@ public class CrossParameters
 
     // RSDPG Category 5
     public static final CrossParameters cross_rsdpg_5_fast = new CrossParameters(
-        "CROSS-RSDPG-5-FAST", false, 5,
+        "CROSS-RSDPG-5-FAST", false, 5, FAST,
         509,
         1, 4, 4,
         256, 106, 69, 48, 300, 153, 16,
@@ -296,7 +299,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_5_balanced = new CrossParameters(
-        "CROSS-RSDPG-5-BALANCED", false, 5,
+        "CROSS-RSDPG-5-BALANCED", false, 5, BALANCED,
         509,
         1, 4, 4,
         256, 106, 69, 48, 356, 258, 16,
@@ -314,7 +317,7 @@ public class CrossParameters
     );
 
     public static final CrossParameters cross_rsdpg_5_small = new CrossParameters(
-        "CROSS-RSDPG-5-SMALL", false, 5,
+        "CROSS-RSDPG-5-SMALL", false, 5, SMALL,
         509,
         1, 4, 4,
         256, 106, 69, 48, 642, 575, 16,
@@ -334,6 +337,7 @@ public class CrossParameters
     private final String name;
     final boolean rsdp;
     final int category;
+    final int variant;
     private final int p;
     private final int z;
     private final long restrGTable;
@@ -376,7 +380,7 @@ public class CrossParameters
     private final int bitsWCtRng;
     private final int bitsMFzCtRng;
 
-    private CrossParameters(String name, boolean rsdp, int category,
+    private CrossParameters(String name, boolean rsdp, int category, int variant,
                             int fpElemSize, int fzElemSize, int fpDoublePrecSize, int fpTriplePrecSize,
                             int secMarginLambda, int n, int k, int m, int t, int w,
                             int positionInFWStringTBits,
@@ -393,6 +397,7 @@ public class CrossParameters
         this.name = name;
         this.rsdp = rsdp;
         this.category = category;
+        this.variant = variant;
         if (rsdp)
         {
             this.p = 127;
@@ -467,6 +472,11 @@ public class CrossParameters
     public String getName()
     {
         return name;
+    }
+
+    public int getVariant()
+    {
+        return variant;
     }
 
     public int getP()
