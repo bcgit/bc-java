@@ -17,6 +17,8 @@ class CrossEngine
     private static final long RESTR_G_TABLE = 0x0140201008040201L;
     private final SHAKEDigest digest;
     private final int securityLevel;
+    static final int CSPRNG_DOMAIN_SEP_CONST = 0;
+    static final int HASH_DOMAIN_SEP_CONST = 32768;
 
     public CrossEngine(int securityLevel)
     {
@@ -722,7 +724,7 @@ class CrossEngine
         byte[][] seedESeedPk = new byte[2][keypairSeedLen];
 
         // Step 1: Initialize CSPRNG for secret key expansion
-        int dscCsprngSeedSk = 0 + (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
+        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
         init(seedSk, seedSk.length, dscCsprngSeedSk);
 
         // Step 2: Generate seeds for error vector and public key
@@ -1515,5 +1517,146 @@ class CrossEngine
     private static int sibling(int node)
     {
         return (node % 2 == 1) ? node + 1 : node - 1;
+    }
+
+    public void genSeedTree(CrossParameters params, byte[] seedTree,
+                            byte[] rootSeed, byte[] salt)
+    {
+        int seedLen = params.getSeedLengthBytes();
+        int saltLen = params.getSaltLengthBytes();
+        int numNodes = params.getNumNodesSeedTree();
+        int logT = params.getTreeOffsets().length - 1; // LOG2(T)
+
+        // 1. Initialize root seed
+        System.arraycopy(rootSeed, 0, seedTree, 0, seedLen);
+
+        // 2. Prepare CSPRNG input buffer (seed + salt)
+        byte[] csprngInput = new byte[seedLen + saltLen];
+        System.arraycopy(salt, 0, csprngInput, seedLen, saltLen);
+
+        // 3. Get tree structure parameters
+        int[] off = params.getTreeOffsets();
+        int[] npl = params.getTreeNodesPerLevel();
+        int[] lpl = params.getTreeLeavesPerLevel();
+
+        // 4. Generate tree levels
+        int startNode = 0;
+        for (int level = 0; level < logT; level++)
+        {
+            int nodesToProcess = npl[level] - lpl[level];
+
+            for (int nodeInLevel = 0; nodeInLevel < nodesToProcess; nodeInLevel++)
+            {
+                int fatherNode = startNode + nodeInLevel;
+                int leftChildNode = leftChild(fatherNode) - off[level];
+
+                // Prepare CSPRNG input: father seed + salt
+                System.arraycopy(seedTree, fatherNode * seedLen,
+                    csprngInput, 0, seedLen);
+
+                // Domain separation: 0 + father node index
+                int domainSep = fatherNode;
+
+                // Initialize CSPRNG and generate children
+                init(csprngInput, csprngInput.length, domainSep);
+
+                // Generate two children (2 * seedLen bytes)
+                int childPos = leftChildNode * seedLen;
+                randomBytes(seedTree, childPos, 2 * seedLen);
+            }
+            startNode += npl[level];
+        }
+    }
+
+    private static int leftChild(int nodeIndex)
+    {
+        return 2 * nodeIndex + 1;
+    }
+
+    // For NO_TREES (SPEED variant)
+    public void treeRootSpeed(byte[] root, byte[][] leaves, CrossParameters params)
+    {
+        int T = params.getT();
+        int hashDigestLength = params.getHashDigestLength();
+        int[] remainders = new int[4];
+        remainders[0] = (T % 4 > 0) ? 1 : 0;
+        remainders[1] = (T % 4 > 1) ? 1 : 0;
+        remainders[2] = (T % 4 > 2) ? 1 : 0;
+
+        byte[] hashInput = new byte[4 * hashDigestLength];
+        int offset = 0;
+
+        for (int i = 0; i < 4; i++)
+        {
+            int groupSize = T / 4 + remainders[i];
+            byte[] groupLeaves = new byte[groupSize * hashDigestLength];
+
+            // Flatten group leaves into contiguous array
+            for (int j = 0; j < groupSize; j++)
+            {
+                int leafIndex = (T / 4) * i + j + offset;
+                System.arraycopy(leaves[leafIndex], 0, groupLeaves, j * hashDigestLength, hashDigestLength);
+            }
+
+            // Hash group and store in hashInput
+            byte[] groupHash = new byte[hashDigestLength];
+            hash(groupHash, groupLeaves, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+            System.arraycopy(groupHash, 0, hashInput, i * hashDigestLength, hashDigestLength);
+            offset += remainders[i];
+        }
+
+        // Compute final root hash
+        hash(root, hashInput, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+    }
+
+    // For tree-based variants (BALANCED/SMALL)
+    public void treeRootBalanced(byte[] root, byte[] tree, byte[][] leaves, CrossParameters params)
+    {
+        int hashDigestLength = params.getHashDigestLength();
+        int[] off = params.getTreeOffsets();
+        int[] npl = params.getTreeNodesPerLevel();
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int logT = off.length - 1;
+        int treeSubroots = params.getTreeSubroots();
+
+        // Place leaves in the tree
+        placeCmtOnLeaves(tree, leaves, leavesStartIndices, params.getTreeConsecutiveLeaves(), treeSubroots, hashDigestLength);
+
+        int startNode = leavesStartIndices[0];
+        for (int level = logT; level > 0; level--)
+        {
+            for (int i = npl[level] - 2; i >= 0; i -= 2)
+            {
+                int currentNode = startNode + i;
+                int parentNode = parent(currentNode, level - 1, off);
+
+                // Hash sibling pair
+                byte[] siblingPair = Arrays.copyOfRange(tree, currentNode * hashDigestLength, (currentNode + 2) * hashDigestLength);
+                byte[] parentHash = new byte[hashDigestLength];
+                hash(parentHash, siblingPair, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+                System.arraycopy(parentHash, 0, tree, parentNode * hashDigestLength, hashDigestLength);
+            }
+            startNode -= npl[level - 1];
+        }
+
+        // Root is at index 0
+        System.arraycopy(tree, 0, root, 0, hashDigestLength);
+    }
+
+    private static void placeCmtOnLeaves(byte[] merkleTree, byte[][] leaves,
+                                         int[] leavesStartIndices, int[] consecutiveLeaves,
+                                         int treeSubroots, int hashDigestLength)
+    {
+        int cnt = 0;
+        for (int i = 0; i < treeSubroots; i++)
+        {
+            int startIdx = leavesStartIndices[i];
+            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            {
+                int treePos = (startIdx + j) * hashDigestLength;
+                System.arraycopy(leaves[cnt], 0, merkleTree, treePos, hashDigestLength);
+                cnt++;
+            }
+        }
     }
 }

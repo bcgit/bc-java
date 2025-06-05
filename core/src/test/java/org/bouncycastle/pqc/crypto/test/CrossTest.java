@@ -117,7 +117,7 @@ public class CrossTest
             @Override
             public MessageSigner getMessageSigner()
             {
-                return null;//new CrossSigner();
+                return new CrossSigner();
             }
         });
         long end = System.currentTimeMillis();

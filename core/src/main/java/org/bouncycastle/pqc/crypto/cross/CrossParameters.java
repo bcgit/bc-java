@@ -20,7 +20,7 @@ public class CrossParameters
         new int[]{185, 93, 30},
         new int[]{128, 28, 1},
         82,
-        1127, 1421, 28028, 717, 3656
+        1127, 1421, 28028, 717, 3656, 18432
     );
 
     public static final CrossParameters cross_rsdp_1_balanced = new CrossParameters(
@@ -38,7 +38,7 @@ public class CrossParameters
         new int[]{255},
         new int[]{256},
         108,
-        1127, 2170, 28028, 717, 4776
+        1127, 2170, 28028, 717, 4776, 13152
     );
 
     public static final CrossParameters cross_rsdp_1_small = new CrossParameters(
@@ -56,7 +56,7 @@ public class CrossParameters
         new int[]{527, 23},
         new int[]{512, 8},
         129,
-        1127, 4130, 28028, 717, 10390
+        1127, 4130, 28028, 717, 10390, 12432
     );
 
     // RSDP Category 3
@@ -75,7 +75,7 @@ public class CrossParameters
         new int[]{253, 239, 126},
         new int[]{224, 14, 1},
         125,
-        1673, 2163, 60711, 1065, 5264
+        1673, 2163, 60711, 1065, 5264, 41406
     );
 
     public static final CrossParameters cross_rsdp_3_balanced = new CrossParameters(
@@ -93,7 +93,7 @@ public class CrossParameters
         new int[]{511, 383},
         new int[]{256, 128},
         165,
-        1673, 3255, 60711, 1065, 8586
+        1673, 3255, 60711, 1065, 8586, 29853
     );
 
     public static final CrossParameters cross_rsdp_3_small = new CrossParameters(
@@ -111,7 +111,7 @@ public class CrossParameters
         new int[]{647, 327, 27},
         new int[]{512, 64, 4},
         184,
-        1673, 4718, 60711, 1065, 12880
+        1673, 4718, 60711, 1065, 12880, 28391
     );
 
     // RSDP Category 5
@@ -130,7 +130,7 @@ public class CrossParameters
         new int[]{385, 321, 6},
         new int[]{256, 64, 1},
         167,
-        2247, 2905, 108689, 1431, 8343
+        2247, 2905, 108689, 1431, 8343, 74590
     );
 
     public static final CrossParameters cross_rsdp_5_balanced = new CrossParameters(
@@ -148,7 +148,7 @@ public class CrossParameters
         new int[]{511},
         new int[]{512},
         220,
-        2247, 4347, 108689, 1431, 10746
+        2247, 4347, 108689, 1431, 10746, 53527
     );
 
     public static final CrossParameters cross_rsdp_5_small = new CrossParameters(
@@ -166,7 +166,7 @@ public class CrossParameters
         new int[]{895, 447},
         new int[]{768, 64},
         251,
-        2247, 6734, 108689, 1431, 18150
+        2247, 6734, 108689, 1431, 18150, 50818
     );
 
     // RSDPG Category 1
@@ -185,7 +185,7 @@ public class CrossParameters
         new int[]{165, 85, 27, 14},
         new int[]{128, 16, 2, 1},
         76,
-        729, 1647, 6624, 343, 3472
+        729, 1647, 6624, 343, 3472, 11980
     );
 
     public static final CrossParameters cross_rsdpg_1_balanced = new CrossParameters(
@@ -203,7 +203,7 @@ public class CrossParameters
         new int[]{255},
         new int[]{256},
         101,
-        729, 2682, 6624, 343, 4776
+        729, 2682, 6624, 343, 4776, 9120
     );
 
     public static final CrossParameters cross_rsdpg_1_small = new CrossParameters(
@@ -221,7 +221,7 @@ public class CrossParameters
         new int[]{511},
         new int[]{512},
         117,
-        729, 5085, 6624, 343, 9153
+        729, 5085, 6624, 343, 9153, 8960
     );
 
     // RSDPG Category 3
@@ -240,7 +240,7 @@ public class CrossParameters
         new int[]{255, 223},
         new int[]{192, 32},
         119,
-        1071, 2502, 14211, 539, 5128
+        1071, 2502, 14211, 539, 5128, 26772
     );
 
     public static final CrossParameters cross_rsdpg_3_balanced = new CrossParameters(
@@ -258,7 +258,7 @@ public class CrossParameters
         new int[]{279, 47, 27},
         new int[]{256, 8, 4},
         138,
-        1071, 2925, 14211, 539, 6444
+        1071, 2925, 14211, 539, 6444, 22464
     );
 
     public static final CrossParameters cross_rsdpg_3_small = new CrossParameters(
@@ -276,7 +276,7 @@ public class CrossParameters
         new int[]{511},
         new int[]{512},
         165,
-        1071, 5238, 14211, 539, 9981
+        1071, 5238, 14211, 539, 9981, 20452
     );
 
     // RSDPG Category 5
@@ -295,7 +295,7 @@ public class CrossParameters
         new int[]{343, 183, 111, 59},
         new int[]{256, 32, 8, 4},
         153,
-        1431, 3357, 24192, 679, 7929
+        1431, 3357, 24192, 679, 7929, 48102
     );
 
     public static final CrossParameters cross_rsdpg_5_balanced = new CrossParameters(
@@ -313,7 +313,7 @@ public class CrossParameters
         new int[]{455, 359, 59},
         new int[]{256, 96, 4},
         185,
-        1431, 3897, 24192, 679, 8937
+        1431, 3897, 24192, 679, 8937, 40100
     );
 
     public static final CrossParameters cross_rsdpg_5_small = new CrossParameters(
@@ -331,7 +331,7 @@ public class CrossParameters
         new int[]{771, 643, 13},
         new int[]{512, 128, 2},
         220,
-        1431, 6597, 24192, 679, 15140
+        1431, 6597, 24192, 679, 15140, 35454
     );
 
     private final String name;
@@ -379,6 +379,7 @@ public class CrossParameters
     private final int bitsCWStrRng;
     private final int bitsWCtRng;
     private final int bitsMFzCtRng;
+    private final int signatureSize;
 
     private CrossParameters(String name, boolean rsdp, int category, int variant,
                             int fpElemSize, int fzElemSize, int fpDoublePrecSize, int fpTriplePrecSize,
@@ -392,7 +393,7 @@ public class CrossParameters
                             int[] treeOffsets, int[] treeNodesPerLevel, int[] treeLeavesPerLevel,
                             int treeSubroots, int[] treeLeavesStartIndices, int[] treeConsecutiveLeaves,
                             int treeNodesToStore, int bitsNFpCtRng, int bitsChall1FpstarCtRng,
-                            int bitsVCtRng, int bitsNFzCtRng, int bitsCWStrRng)
+                            int bitsVCtRng, int bitsNFzCtRng, int bitsCWStrRng, int signatureSize)
     {
         this.name = name;
         this.rsdp = rsdp;
@@ -467,6 +468,7 @@ public class CrossParameters
         this.bitsVCtRng = bitsVCtRng;
         this.bitsNFzCtRng = bitsNFzCtRng;
         this.bitsCWStrRng = bitsCWStrRng;
+        this.signatureSize = signatureSize;
     }
 
     public String getName()
@@ -682,5 +684,10 @@ public class CrossParameters
     public int getBitsMFzCtRng()
     {
         return bitsMFzCtRng;
+    }
+
+    public int getSignatureSize()
+    {
+        return signatureSize;
     }
 }
