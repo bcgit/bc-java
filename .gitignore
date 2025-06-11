@@ -18,6 +18,7 @@ libs/*.jar
 out/
 */out/
 .settings/
+local.properties
 
 pg/*.asc
 pg/*.bak
