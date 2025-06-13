@@ -29,28 +29,25 @@ public class ECGOST3410Signer
 
     SecureRandom    random;
 
-    public void init(
-        boolean                 forSigning,
-        CipherParameters        param)
+    public void init(boolean forSigning, CipherParameters param)
     {
         if (forSigning)
         {
+            SecureRandom providedRandom = null;
             if (param instanceof ParametersWithRandom)
             {
-                ParametersWithRandom    rParam = (ParametersWithRandom)param;
+                ParametersWithRandom withRandom = (ParametersWithRandom)param;
+                providedRandom = withRandom.getRandom();
+                param = withRandom.getParameters();
+            }
 
-                this.random = rParam.getRandom();
-                this.key = (ECPrivateKeyParameters)rParam.getParameters();
-            }
-            else
-            {
-                this.random = CryptoServicesRegistrar.getSecureRandom();
-                this.key = (ECPrivateKeyParameters)param;
-            }
+            this.key = (ECPrivateKeyParameters)param;
+            this.random = CryptoServicesRegistrar.getSecureRandom(providedRandom);
         }
         else
         {
             this.key = (ECPublicKeyParameters)param;
+            this.random = null;
         }
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECGOST3410", key, forSigning));
