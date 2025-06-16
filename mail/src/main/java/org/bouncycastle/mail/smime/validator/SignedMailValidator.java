@@ -233,15 +233,14 @@ public class SignedMailValidator
         usedParameters.addCertStore(certs);
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
         // check each signer
-        while (it.hasNext())
+        for (Object o : c)
         {
             List errors = new ArrayList();
             List notifications = new ArrayList();
 
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             // signer certificate
             X509Certificate cert = null;
 
@@ -621,10 +620,9 @@ public class SignedMailValidator
         throws CertStoreException
     {
         List result = new ArrayList();
-        Iterator it = certStores.iterator();
-        while (it.hasNext())
+        for (Object certStore : certStores)
         {
-            CertStore store = (CertStore)it.next();
+            CertStore store = (CertStore)certStore;
             Collection coll = store.getCertificates(selector);
             // sometimes the subjectKeyIdentifier in a TA certificate, even when the authorityKeyIdentifier is set.
             // where this happens we role back to a simpler match to make sure we've got all the possibilities.
@@ -706,10 +704,9 @@ public class SignedMailValidator
         while (cert != null && !trustAnchorFound)
         {
             // check if cert Issuer is Trustanchor
-            Iterator trustIt = trustanchors.iterator();
-            while (trustIt.hasNext())
+            for (Object trustanchor : trustanchors)
             {
-                TrustAnchor anchor = (TrustAnchor)trustIt.next();
+                TrustAnchor anchor = (TrustAnchor)trustanchor;
                 X509Certificate anchorCert = anchor.getTrustedCert();
                 if (anchorCert != null)
                 {

@@ -290,11 +290,10 @@ public class SMIMEMiscTest
         throws Exception
     {
         Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
-    
-        while (it.hasNext())
+
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation   signer = (SignerInformation)o;
             Collection          certCollection = certs.getMatches(signer.getSID());
     
             Iterator        certIt = certCollection.iterator();

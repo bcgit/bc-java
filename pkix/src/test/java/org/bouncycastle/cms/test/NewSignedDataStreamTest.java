@@ -185,11 +185,10 @@ public class NewSignedDataStreamTest
         assertTrue(digestIDs.size() > 0);
 
         Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
-    
-        while (it.hasNext())
+
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation   signer = (SignerInformation)o;
             Collection          certCollection = certStore.getMatches(signer.getSID());
     
             Iterator        certIt = certCollection.iterator();
@@ -979,11 +978,10 @@ public class NewSignedDataStreamTest
         SignerInformationStore  signers = sp.getSignerInfos();
 
         Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             checkAttribute(signer.getContentDigest(), signer.getSignedAttributes().get(dummyOid1));
             checkAttribute(signer.getSignature(), signer.getUnsignedAttributes().get(dummyOid2));
         }
@@ -1371,11 +1369,10 @@ public class NewSignedDataStreamTest
         SignerInformationStore signers = sp.getSignerInfos();
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certStore.getMatches(signer.getSID());
 
             Iterator certIt = certCollection.iterator();

@@ -193,11 +193,9 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
 
         Collection c = recipients.getRecipients();
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), "1.2.840.113549.1.1.1");
 
@@ -264,11 +262,9 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
 
         Collection c = recipients.getRecipients();
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), "1.2.840.113549.1.1.1");
 
@@ -322,11 +318,9 @@ public class CMSAuthEnvelopedDataStreamGeneratorTest
 
         Collection c = recipients.getRecipients();
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), "1.2.840.113549.1.1.1");
 

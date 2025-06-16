@@ -327,10 +327,8 @@ public class PKIXAttrCertPathBuilderSpi
     {
         Set certs = new HashSet();
 
-        Iterator iter = certStores.iterator();
-        while (iter.hasNext())
+        for (Object obj : certStores)
         {
-            Object obj = iter.next();
             if (obj instanceof Store)
             {
                 Store certStore = (Store)obj;

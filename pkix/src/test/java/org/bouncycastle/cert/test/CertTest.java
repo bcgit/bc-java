@@ -1691,10 +1691,9 @@ public class CertTest
         }
 
         Collection c = cert.getSubjectAlternativeNames();
-        Iterator it = c.iterator();
-        while (it.hasNext())
+        for (Object o : c)
         {
-            List gn = (List)it.next();
+            List gn = (List)o;
             if (!gn.get(1).equals("test@test.test") && !gn.get(1).equals("dom.test.test"))
             {
                 fail("failed subject alternative names test");
@@ -2631,10 +2630,9 @@ public class CertTest
         boolean oneFound = false;
         boolean twoFound = false;
 
-        Iterator it = crlHolder.getRevokedCertificates().iterator();
-        while (it.hasNext())
+        for (Object o : crlHolder.getRevokedCertificates())
         {
-            X509CRLEntryHolder crlEnt = (X509CRLEntryHolder)it.next();
+            X509CRLEntryHolder crlEnt = (X509CRLEntryHolder)o;
 
             if (crlEnt.getSerialNumber().intValue() == 1)
             {

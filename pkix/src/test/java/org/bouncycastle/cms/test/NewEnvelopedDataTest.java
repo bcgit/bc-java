@@ -676,11 +676,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -711,11 +709,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -974,11 +970,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -1025,11 +1019,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -1072,11 +1064,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, recipient.getKeyEncryptionAlgorithm().getAlgorithm());
 
@@ -1152,11 +1142,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, recipient.getKeyEncryptionAlgorithm().getAlgorithm());
 
@@ -1198,11 +1186,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, recipient.getKeyEncryptionAlgorithm().getAlgorithm());
 
@@ -1321,11 +1307,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -1368,11 +1352,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
@@ -1401,11 +1383,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
@@ -2516,18 +2496,16 @@ public class NewEnvelopedDataTest
 
         Collection c = recipients.getRecipients();
 
-        Iterator it = c.iterator();
+        for (Object o : c)
+        {
+            RecipientInformation recipient = (RecipientInformation)o;
 
-         while (it.hasNext())
-         {
-             RecipientInformation recipient = (RecipientInformation)it.next();
+            assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId());
 
-             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512.getId());
+            byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
 
-             byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(privKey).setProvider(BC));
-
-             assertTrue(Arrays.equals(data, recData));
-         }
+            assertTrue(Arrays.equals(data, recData));
+        }
 
     }
 
@@ -2550,11 +2528,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR3410_2001.getId());
 
@@ -2592,11 +2568,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId());
 
@@ -2623,11 +2597,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256.getId());
 
@@ -2667,11 +2639,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH.getId());
 
@@ -2709,11 +2679,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR3410_2001.getId());
 
@@ -2751,11 +2719,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_ESDH.getId());
 
@@ -2793,11 +2759,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.getId());
 
@@ -2902,11 +2866,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.getId());
 
@@ -2965,11 +2927,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_256.getId());
 
@@ -3028,11 +2988,9 @@ public class NewEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), RosstandartObjectIdentifiers.id_tc26_agreement_gost_3410_12_512.getId());
 

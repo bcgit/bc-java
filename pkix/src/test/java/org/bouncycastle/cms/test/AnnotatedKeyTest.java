@@ -131,11 +131,9 @@ public class AnnotatedKeyTest
 
         assertEquals(2, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(PKCSObjectIdentifiers.id_RSAES_OAEP, recipient.getKeyEncryptionAlgorithm().getAlgorithm());
 

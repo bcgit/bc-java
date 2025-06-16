@@ -168,11 +168,10 @@ public class MultipartParserTest
                 throws CMSException
             {
                 Collection c = signers.getSigners();
-                Iterator it = c.iterator();
 
-                while (it.hasNext())
+                for (Object o : c)
                 {
-                    SignerInformation signer = (SignerInformation)it.next();
+                    SignerInformation signer = (SignerInformation)o;
                     Collection certCollection = certificates.getMatches(signer.getSID());
 
                     Iterator certIt = certCollection.iterator();
@@ -226,11 +225,10 @@ public class MultipartParserTest
                 throws CMSException
             {
                 Collection c = signers.getSigners();
-                Iterator it = c.iterator();
 
-                while (it.hasNext())
+                for (Object o : c)
                 {
-                    SignerInformation signer = (SignerInformation)it.next();
+                    SignerInformation signer = (SignerInformation)o;
                     Collection certCollection = certificates.getMatches(signer.getSID());
 
                     Iterator certIt = certCollection.iterator();
@@ -281,11 +279,10 @@ public class MultipartParserTest
                 throws CMSException
             {
                 Collection c = signers.getSigners();
-                Iterator it = c.iterator();
 
-                while (it.hasNext())
+                for (Object o : c)
                 {
-                    SignerInformation signer = (SignerInformation)it.next();
+                    SignerInformation signer = (SignerInformation)o;
                     Collection certCollection = certificates.getMatches(signer.getSID());
 
                     Iterator certIt = certCollection.iterator();
@@ -350,11 +347,10 @@ public class MultipartParserTest
                 throws CMSException
             {
                 Collection c = signers.getSigners();
-                Iterator it = c.iterator();
 
-                while (it.hasNext())
+                for (Object o : c)
                 {
-                    SignerInformation signer = (SignerInformation)it.next();
+                    SignerInformation signer = (SignerInformation)o;
                     Collection certCollection = certificates.getMatches(signer.getSID());
 
                     Iterator certIt = certCollection.iterator();

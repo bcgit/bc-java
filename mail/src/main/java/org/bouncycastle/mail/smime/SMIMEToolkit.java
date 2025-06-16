@@ -139,11 +139,10 @@ public class SMIMEToolkit
         }
 
         Collection c = s.getSignerInfos().getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
 
             if (signer.verify(verifier))
             {

@@ -223,11 +223,10 @@ public class CMSSignedGenerator
     public void addSigners(
         SignerInformationStore    signerStore)
     {
-        Iterator    it = signerStore.getSigners().iterator();
 
-        while (it.hasNext())
+        for (SignerInformation signerInformation : signerStore.getSigners())
         {
-            _signers.add(it.next());
+            _signers.add(signerInformation);
         }
     }
 

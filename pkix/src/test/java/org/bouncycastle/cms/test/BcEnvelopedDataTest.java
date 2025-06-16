@@ -269,11 +269,9 @@ public class BcEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation   recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -305,11 +303,9 @@ public class BcEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation   recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -340,11 +336,9 @@ public class BcEnvelopedDataTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation   recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             byte[] recData = recipient.getContent(new BcRSAKeyTransEnvelopedRecipient(PrivateKeyFactory.createKey(PrivateKeyInfo.getInstance(_reciKP.getPrivate().getEncoded()))));
 

@@ -48,10 +48,8 @@ abstract class PKIXCRLUtil
         AnnotatedException lastException = null;
         boolean foundValidStore = false;
 
-        Iterator iter = crlStores.iterator();
-        while (iter.hasNext())
+        for (Object obj : crlStores)
         {
-            Object obj = iter.next();
             if (obj instanceof X509Store)
             {
                 X509Store store = (X509Store)obj;

@@ -108,10 +108,9 @@ public class X509StoreLDAPCerts
         Set crossCerts = new HashSet(helper.getCrossCertificatePairs(ps));
         Set forward = new HashSet();
         Set reverse = new HashSet();
-        Iterator it = crossCerts.iterator();
-        while (it.hasNext())
+        for (Object crossCert : crossCerts)
         {
-            X509CertificatePair pair = (X509CertificatePair)it.next();
+            X509CertificatePair pair = (X509CertificatePair)crossCert;
             if (pair.getForward() != null)
             {
                 forward.add(pair.getForward());

@@ -497,10 +497,9 @@ public class CMSSignedDataStreamGenerator
             // add the precalculated SignerInfo objects
             //
             {
-                Iterator it = _signers.iterator();
-                while (it.hasNext())
+                for (Object o : _signers)
                 {
-                    SignerInformation signer = (SignerInformation)it.next();
+                    SignerInformation signer = (SignerInformation)o;
 
                     // TODO Verify the content type and calculated digest match the precalculated SignerInfo
 //                    if (!signer.getContentType().equals(_contentOID))

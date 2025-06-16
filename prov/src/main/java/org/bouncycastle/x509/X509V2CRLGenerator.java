@@ -148,10 +148,9 @@ public class X509V2CRLGenerator
 
         if (revocations != null)
         {
-            Iterator it = revocations.iterator();
-            while (it.hasNext())
+            for (Object revocation : revocations)
             {
-                X509CRLEntry entry = (X509CRLEntry)it.next();
+                X509CRLEntry entry = (X509CRLEntry)revocation;
 
                 ASN1InputStream aIn = new ASN1InputStream(entry.getEncoded());
 

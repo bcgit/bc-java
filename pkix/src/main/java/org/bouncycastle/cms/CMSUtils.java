@@ -388,10 +388,9 @@ class CMSUtils
     static InputStream attachDigestsToInputStream(Collection digests, InputStream s)
     {
         InputStream result = s;
-        Iterator it = digests.iterator();
-        while (it.hasNext())
+        for (Object o : digests)
         {
-            DigestCalculator digest = (DigestCalculator)it.next();
+            DigestCalculator digest = (DigestCalculator)o;
             result = new TeeInputStream(result, digest.getOutputStream());
         }
         return result;
@@ -400,10 +399,9 @@ class CMSUtils
     static OutputStream attachSignersToOutputStream(Collection signers, OutputStream s)
     {
         OutputStream result = s;
-        Iterator it = signers.iterator();
-        while (it.hasNext())
+        for (Object signer : signers)
         {
-            SignerInfoGenerator signerGen = (SignerInfoGenerator)it.next();
+            SignerInfoGenerator signerGen = (SignerInfoGenerator)signer;
             result = getSafeTeeOutputStream(result, signerGen.getCalculatingOutputStream());
         }
         return result;
@@ -444,11 +442,10 @@ class CMSUtils
         throws CMSException
     {
         ASN1EncodableVector recipientInfos = new ASN1EncodableVector();
-        Iterator it = recipientInfoGenerators.iterator();
 
-        while (it.hasNext())
+        for (Object recipientInfoGenerator : recipientInfoGenerators)
         {
-            RecipientInfoGenerator recipient = (RecipientInfoGenerator)it.next();
+            RecipientInfoGenerator recipient = (RecipientInfoGenerator)recipientInfoGenerator;
 
             recipientInfos.add(recipient.generate(encKey));
         }

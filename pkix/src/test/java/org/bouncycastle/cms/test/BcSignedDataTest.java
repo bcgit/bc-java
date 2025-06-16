@@ -489,11 +489,10 @@ public class BcSignedDataTest
         SignerInformationStore  signers = s.getSignerInfos();
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certStore.getMatches(signer.getSID());
 
             Iterator certIt = certCollection.iterator();
@@ -516,11 +515,10 @@ public class BcSignedDataTest
         SignerInformationStore  signers = s.getSignerInfos();
         
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certStore.getMatches(signer.getSID());
     
             Iterator certIt = certCollection.iterator();
@@ -1159,10 +1157,9 @@ public class BcSignedDataTest
         Collection csSigners = cs.getSigners();
         assertEquals(2, csSigners.size());
 
-        Iterator it = csSigners.iterator();
-        while (it.hasNext())
+        for (Object csSigner : csSigners)
         {
-            SignerInformation   cSigner = (SignerInformation)it.next();
+            SignerInformation cSigner = (SignerInformation)csSigner;
             Collection certCollection = certStore.getMatches(cSigner.getSID());
 
             Iterator certIt = certCollection.iterator();
@@ -1457,11 +1454,10 @@ public class BcSignedDataTest
         
         signers = s.getSignerInfos();
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
-    
-        while (it.hasNext())
+
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certs.getMatches(signer.getSID());
     
             Iterator certIt = certCollection.iterator();
@@ -1480,11 +1476,10 @@ public class BcSignedDataTest
 
         SignerInformationStore  signers = s.getSignerInfos();
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certs.getMatches(signer.getSID());
             Iterator certIt = certCollection.iterator();
             X509CertificateHolder cert = (X509CertificateHolder)certIt.next();
@@ -1805,10 +1800,9 @@ public class BcSignedDataTest
         Collection csSigners = cs.getSigners();
         assertEquals(1, csSigners.size());
 
-        Iterator it = csSigners.iterator();
-        while (it.hasNext())
+        for (Object csSigner : csSigners)
         {
-            SignerInformation   cSigner = (SignerInformation)it.next();
+            SignerInformation cSigner = (SignerInformation)csSigner;
             Collection certCollection = sig.getCertificates().getMatches(cSigner.getSID());
 
             Iterator certIt = certCollection.iterator();
@@ -1867,11 +1861,10 @@ public class BcSignedDataTest
         SignerInformationStore  signers = sp.getSignerInfos();
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certs.getMatches(signer.getSID());
 
             Iterator certIt = certCollection.iterator();

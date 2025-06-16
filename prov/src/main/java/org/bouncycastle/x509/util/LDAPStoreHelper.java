@@ -394,10 +394,9 @@ public class LDAPStoreHelper
         if (serials.size() > 0
             && params.getSearchForSerialNumberIn() != null)
         {
-            Iterator it = serials.iterator();
-            while (it.hasNext())
+            for (Object o : serials)
             {
-                serial = (String)it.next();
+                serial = (String)o;
                 list.addAll(search(splitString(params.getSearchForSerialNumberIn()), serial, attrs));
             }
         }
@@ -449,10 +448,9 @@ public class LDAPStoreHelper
                 }
             }
         }
-        Iterator it = issuers.iterator();
-        while (it.hasNext())
+        for (Object o : issuers)
         {
-            issuer = ((X500Principal)it.next()).getName("RFC1779");
+            issuer = ((X500Principal)o).getName("RFC1779");
             String attrValue = null;
 
             for (int i = 0; i < issuerAttributeNames.length; i++)

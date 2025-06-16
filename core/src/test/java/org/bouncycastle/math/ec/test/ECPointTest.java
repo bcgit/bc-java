@@ -575,10 +575,8 @@ public class ECPointTest extends TestCase
         Set names = new HashSet(enumToList(ECNamedCurveTable.getNames()));
         names.addAll(enumToList(CustomNamedCurves.getNames()));
 
-        Iterator it = names.iterator();
-        while (it.hasNext())
-        {
-            String name = (String)it.next();
+        for (Object o : names) {
+            String name = (String)o;
 
             X9ECParameters x9A = ECNamedCurveTable.getByName(name);
             X9ECParameters x9B = CustomNamedCurves.getByName(name);
