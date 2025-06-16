@@ -516,7 +516,7 @@ public class GF2Vector
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i = 0; i < length; i++)
         {
             if ((i != 0) && ((i & 0x1f) == 0))

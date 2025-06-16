@@ -96,7 +96,7 @@ public class CramerShoupCiphertext
 
     public String toString()
     {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
 
         result.append("u1: " + u1.toString());
         result.append("\nu2: " + u2.toString());

@@ -11,7 +11,7 @@ class DHUtil
 {
     static String privateKeyToString(String algorithm, BigInteger x, DHParameters dhParams)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String       nl = Strings.lineSeparator();
 
         BigInteger y = dhParams.getG().modPow(x, dhParams.getP());
@@ -25,7 +25,7 @@ class DHUtil
 
     static String publicKeyToString(String algorithm, BigInteger y, DHParameters dhParams)
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         String       nl = Strings.lineSeparator();
 
         buf.append(algorithm);

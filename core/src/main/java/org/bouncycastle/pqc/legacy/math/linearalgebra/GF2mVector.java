@@ -233,7 +233,7 @@ public class GF2mVector
      */
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (int i = 0; i < vector.length; i++)
         {
             for (int j = 0; j < field.getDegree(); j++)
