@@ -261,10 +261,8 @@ public class BaseMac
     {
         Hashtable newTable = new Hashtable();
 
-        Iterator keys = paramsMap.keySet().iterator();
-        while (keys.hasNext())
+        for (Object key : paramsMap.keySet())
         {
-            Object key = keys.next();
             newTable.put(key, paramsMap.get(key));
         }
 

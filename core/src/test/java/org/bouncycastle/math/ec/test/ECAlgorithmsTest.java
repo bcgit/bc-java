@@ -35,10 +35,9 @@ public class ECAlgorithmsTest extends TestCase
     public void testSumOfMultipliesComplete()
     {
         List x9s = getTestCurves();
-        Iterator it = x9s.iterator();
-        while (it.hasNext())
+        for (Object o : x9s)
         {
-            X9ECParameters x9 = (X9ECParameters)it.next();
+            X9ECParameters x9 = (X9ECParameters)o;
             doTestSumOfMultiplies(x9);
         }
     }
@@ -54,10 +53,9 @@ public class ECAlgorithmsTest extends TestCase
     public void testSumOfTwoMultipliesComplete()
     {
         List x9s = getTestCurves();
-        Iterator it = x9s.iterator();
-        while (it.hasNext())
+        for (Object o : x9s)
         {
-            X9ECParameters x9 = (X9ECParameters)it.next();
+            X9ECParameters x9 = (X9ECParameters)o;
             doTestSumOfTwoMultiplies(x9);
         }
     }
@@ -146,10 +144,9 @@ public class ECAlgorithmsTest extends TestCase
         Set names = new HashSet(AllTests.enumToList(ECNamedCurveTable.getNames()));
         names.addAll(AllTests.enumToList(CustomNamedCurves.getNames()));
 
-        Iterator it = names.iterator();
-        while (it.hasNext())
+        for (Object o : names)
         {
-            String name = (String)it.next();
+            String name = (String)o;
 
             X9ECParameters x9 = ECNamedCurveTable.getByName(name);
             if (x9 != null)

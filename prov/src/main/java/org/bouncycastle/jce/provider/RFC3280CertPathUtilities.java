@@ -839,10 +839,9 @@ class RFC3280CertPathUtilities
                 tmp.add(sd_p);
             }
 
-            Iterator it_idp = m_idp.entrySet().iterator();
-            while (it_idp.hasNext())
+            for (Object o : m_idp.entrySet())
             {
-                Map.Entry e_idp = (Map.Entry)it_idp.next();
+                Map.Entry e_idp = (Map.Entry)o;
 
                 String id_p = (String)e_idp.getKey();
                 HashSet expectedPolicies = (HashSet)e_idp.getValue();
@@ -1275,11 +1274,8 @@ class RFC3280CertPathUtilities
                         {
                             PKIXPolicyNode _node = (PKIXPolicyNode)_nodes.get(k);
 
-                            Iterator _policySetIter = _node.getExpectedPolicies().iterator();
-                            while (_policySetIter.hasNext())
+                            for (Object _tmp : _node.getExpectedPolicies())
                             {
-                                Object _tmp = _policySetIter.next();
-
                                 String _policy;
                                 if (_tmp instanceof String)
                                 {
@@ -2346,10 +2342,9 @@ class RFC3280CertPathUtilities
                     }
                 }
 
-                Iterator _vpnsIter = _validPolicyNodeSet.iterator();
-                while (_vpnsIter.hasNext())
+                for (Object o : _validPolicyNodeSet)
                 {
-                    PKIXPolicyNode _node = (PKIXPolicyNode)_vpnsIter.next();
+                    PKIXPolicyNode _node = (PKIXPolicyNode)o;
                     String _validPolicy = _node.getValidPolicy();
 
                     if (!acceptablePolicies.contains(_validPolicy))
@@ -2410,10 +2405,9 @@ class RFC3280CertPathUtilities
             //
             // (g) (iii) 2
             //
-            Iterator _vpnsIter = _validPolicyNodeSet.iterator();
-            while (_vpnsIter.hasNext())
+            for (Object o : _validPolicyNodeSet)
             {
-                PKIXPolicyNode _node = (PKIXPolicyNode)_vpnsIter.next();
+                PKIXPolicyNode _node = (PKIXPolicyNode)o;
                 String _validPolicy = _node.getValidPolicy();
 
                 if (!userInitialPolicySet.contains(_validPolicy))

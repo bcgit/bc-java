@@ -137,11 +137,8 @@ public class ValidateSignedMail
         SignedMailValidator validator = new SignedMailValidator(msg, param);
 
         // iterate over all signatures and print results
-        Iterator it = validator.getSignerInformationStore().getSigners()
-                .iterator();
-        while (it.hasNext())
+        for (SignerInformation signer : validator.getSignerInformationStore().getSigners())
         {
-            SignerInformation signer = (SignerInformation) it.next();
             SignedMailValidator.ValidationResult result = validator
                     .getValidationResult(signer);
             if (result.isValidSignature())
@@ -159,10 +156,8 @@ public class ValidateSignedMail
                 System.out.println(errMsg.getText(loc));
                 // print errors
                 System.out.println("Errors:");
-                Iterator errorsIt = result.getErrors().iterator();
-                while (errorsIt.hasNext())
-                {
-                    ErrorBundle errorMsg = (ErrorBundle) errorsIt.next();
+                for (Object o : result.getErrors()) {
+                    ErrorBundle errorMsg = (ErrorBundle)o;
                     if (dbgLvl == DETAIL)
                     {
                         System.out.println("\t\t" + errorMsg.getDetail(loc));
@@ -176,10 +171,9 @@ public class ValidateSignedMail
             if (!result.getNotifications().isEmpty())
             {
                 System.out.println("Notifications:");
-                Iterator notIt = result.getNotifications().iterator();
-                while (notIt.hasNext())
+                for (Object o : result.getNotifications())
                 {
-                    ErrorBundle notMsg = (ErrorBundle) notIt.next();
+                    ErrorBundle notMsg = (ErrorBundle)o;
                     if (dbgLvl == DETAIL)
                     {
                         System.out.println("\t\t" + notMsg.getDetail(loc));
@@ -205,10 +199,9 @@ public class ValidateSignedMail
                 System.out.println("\nCertificate path validation results:");
                 // global errors
                 System.out.println("Errors:");
-                Iterator errorsIt = review.getErrors(-1).iterator();
-                while (errorsIt.hasNext())
+                for (Object object : review.getErrors(-1))
                 {
-                    ErrorBundle errorMsg = (ErrorBundle) errorsIt.next();
+                    ErrorBundle errorMsg = (ErrorBundle)object;
                     if (dbgLvl == DETAIL)
                     {
                         System.out.println("\t\t" + errorMsg.getDetail(loc));
@@ -220,21 +213,17 @@ public class ValidateSignedMail
                 }
 
                 System.out.println("Notifications:");
-                Iterator notificationsIt = review.getNotifications(-1)
-                        .iterator();
-                while (notificationsIt.hasNext())
+                for (Object o : review.getNotifications(-1))
                 {
-                    ErrorBundle noteMsg = (ErrorBundle) notificationsIt.next();
+                    ErrorBundle noteMsg = (ErrorBundle)o;
                     System.out.println("\t" + noteMsg.getText(loc));
                 }
 
                 // per certificate errors and notifications
-                Iterator certIt = review.getCertPath().getCertificates()
-                        .iterator();
                 int i = 0;
-                while (certIt.hasNext())
+                for (java.security.cert.Certificate certificate : review.getCertPath().getCertificates())
                 {
-                    X509Certificate cert = (X509Certificate) certIt.next();
+                    X509Certificate cert = (X509Certificate)certificate;
                     System.out.println("\nCertificate " + i + "\n========");
                     System.out.println("Issuer: "
                             + cert.getIssuerDN().getName());
@@ -243,10 +232,9 @@ public class ValidateSignedMail
 
                     // errors
                     System.out.println("\tErrors:");
-                    errorsIt = review.getErrors(i).iterator();
-                    while (errorsIt.hasNext())
+                    for (Object object : review.getErrors(i))
                     {
-                        ErrorBundle errorMsg = (ErrorBundle) errorsIt.next();
+                        ErrorBundle errorMsg = (ErrorBundle)object;
                         if (dbgLvl == DETAIL)
                         {
                             System.out
@@ -260,11 +248,9 @@ public class ValidateSignedMail
 
                     // notifications
                     System.out.println("\tNotifications:");
-                    notificationsIt = review.getNotifications(i).iterator();
-                    while (notificationsIt.hasNext())
+                    for (Object o : review.getNotifications(i))
                     {
-                        ErrorBundle noteMsg = (ErrorBundle) notificationsIt
-                                .next();
+                        ErrorBundle noteMsg = (ErrorBundle)o;
                         if (dbgLvl == DETAIL)
                         {
                             System.out.println("\t\t" + noteMsg.getDetail(loc));

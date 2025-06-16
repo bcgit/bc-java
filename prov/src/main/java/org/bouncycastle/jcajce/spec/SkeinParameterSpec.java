@@ -158,10 +158,9 @@ public class SkeinParameterSpec
 
         public Builder(SkeinParameterSpec params)
         {
-            Iterator keys = params.parameters.keySet().iterator();
-            while (keys.hasNext())
+            for (Object o : params.parameters.keySet())
             {
-                Integer key = (Integer)keys.next();
+                Integer key = (Integer)o;
                 parameters.put(key, params.parameters.get(key));
             }
         }

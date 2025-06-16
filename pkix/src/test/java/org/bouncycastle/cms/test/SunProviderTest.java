@@ -110,11 +110,10 @@ public class SunProviderTest
 
         SignerInformationStore signers = s.getSignerInfos();
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection          certCollection = certsAndCrls.getMatches(signer.getSID());
 
             Iterator        certIt = certCollection.iterator();
@@ -161,11 +160,10 @@ public class SunProviderTest
         SignerInformationStore  signers = sp.getSignerInfos();
 
         Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation   signer = (SignerInformation)o;
             Collection          certCollection = certStore.getMatches(signer.getSID());
 
             Iterator        certIt = certCollection.iterator();
@@ -226,11 +224,9 @@ public class SunProviderTest
 
         assertEquals(1, c.size());
 
-        Iterator    it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 

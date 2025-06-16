@@ -181,11 +181,10 @@ public class NewEnvelopedDataStreamTest
         assertEquals(ep.getEncryptionAlgOID(), expectedOid);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -230,11 +229,9 @@ public class NewEnvelopedDataStreamTest
 
         assertEquals(1, c.size());
 
-        Iterator it = c.iterator();
-
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -560,11 +557,10 @@ public class NewEnvelopedDataStreamTest
         assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -601,11 +597,10 @@ public class NewEnvelopedDataStreamTest
         assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.AES128_CBC);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -653,11 +648,10 @@ public class NewEnvelopedDataStreamTest
         assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.CAST5_CBC);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -697,11 +691,10 @@ public class NewEnvelopedDataStreamTest
         assertEquals(ep.getEncryptionAlgOID(), CMSEnvelopedDataGenerator.DES_EDE3_CBC);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), "2.16.840.1.101.3.4.1.25");
 

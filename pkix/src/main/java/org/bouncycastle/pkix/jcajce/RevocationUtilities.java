@@ -111,11 +111,8 @@ class RevocationUtilities
     protected static void findCertificates(LinkedHashSet certs, PKIXCertStoreSelector certSelect, List certStores)
         throws AnnotatedException
     {
-        Iterator iter = certStores.iterator();
-        while (iter.hasNext())
+        for (Object obj : certStores)
         {
-            Object obj = iter.next();
-
             if (obj instanceof Store)
             {
                 Store certStore = (Store)obj;

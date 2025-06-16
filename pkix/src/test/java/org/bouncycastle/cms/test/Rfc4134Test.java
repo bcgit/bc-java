@@ -330,11 +330,10 @@ public class Rfc4134Test
         SignerInformationStore signers = s.getSignerInfos();
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certStore.getMatches(signer.getSID());
 
             Iterator certIt = certCollection.iterator();
@@ -368,11 +367,10 @@ public class Rfc4134Test
         SignerInformationStore signers = sp.getSignerInfos();
 
         Collection c = signers.getSigners();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation signer = (SignerInformation)it.next();
+            SignerInformation signer = (SignerInformation)o;
             Collection certCollection = certs.getMatches(signer.getSID());
 
             Iterator certIt = certCollection.iterator();

@@ -23,10 +23,9 @@ public class F2mSqrtOptimizer
         SortedSet names = new TreeSet(enumToList(ECNamedCurveTable.getNames()));
         names.addAll(enumToList(CustomNamedCurves.getNames()));
 
-        Iterator it = names.iterator();
-        while (it.hasNext())
+        for (Object o : names)
         {
-            String name = (String)it.next();
+            String name = (String)o;
             X9ECParametersHolder x9 = CustomNamedCurves.getByNameLazy(name);
             if (x9 == null)
             {

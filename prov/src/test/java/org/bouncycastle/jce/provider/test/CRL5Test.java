@@ -224,10 +224,9 @@ public class CRL5Test
         ByteArrayInputStream in = new ByteArrayInputStream(inDirectCrl);
         X509CRL crl = (X509CRL) cf.generateCRL(in);
         Set set = crl.getRevokedCertificates();
-        Iterator it = set.iterator();
-        while (it.hasNext())
+        for (Object o : set)
         {
-            if (((X509CRLEntry)it.next()).getCertificateIssuer() == null)
+            if (((X509CRLEntry)o).getCertificateIssuer() == null)
             {
                 fail("certificate issuer CRL entry extension is null");
             }
@@ -241,10 +240,9 @@ public class CRL5Test
         ByteArrayInputStream in = new ByteArrayInputStream(directCRL);
         X509CRL crl = (X509CRL) cf.generateCRL(in);
         Set set = crl.getRevokedCertificates();
-        Iterator it = set.iterator();
-        while (it.hasNext())
+        for (Object o : set)
         {
-            if (((X509CRLEntry)it.next()).getCertificateIssuer() != null)
+            if (((X509CRLEntry)o).getCertificateIssuer() != null)
             {
                 fail("certificate issuer CRL entry extension is not null");
             }

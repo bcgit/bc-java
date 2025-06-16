@@ -39,12 +39,9 @@ public class SignerInformationStore
     public SignerInformationStore(
         Collection<SignerInformation>  signerInfos)
     {
-        Iterator    it = signerInfos.iterator();
-
-        while (it.hasNext())
+        for (SignerInformation signer : signerInfos)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
-            SignerId            sid = signer.getSID();
+            SignerId sid = signer.getSID();
 
             List list = (ArrayList)table.get(sid);
             if (list == null)

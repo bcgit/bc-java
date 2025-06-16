@@ -118,10 +118,9 @@ public class F2mProofer
         Properties res2 = loadResults(classPrefix2, m);
 
         Set keys = res1.keySet();
-        Iterator iter = keys.iterator();
-        while (iter.hasNext())
+        for (Object o : keys)
         {
-            String key = (String) iter.next();
+            String key = (String)o;
             String result1 = res1.getProperty(key);
             String result2 = res2.getProperty(key);
             if (!(result1.equals(result2)))

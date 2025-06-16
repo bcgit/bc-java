@@ -362,10 +362,9 @@ class CertPathValidatorUtilities
         throws AnnotatedException, CertPathValidatorException
     {
         boolean idp_found = false;
-        Iterator nodes_i = policyNodes[i].iterator();
-        while (nodes_i.hasNext())
+        for (Object o : policyNodes[i])
         {
-            PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
+            PKIXPolicyNode node = (PKIXPolicyNode)o;
             if (node.getValidPolicy().equals(id_p))
             {
                 idp_found = true;
@@ -376,10 +375,9 @@ class CertPathValidatorUtilities
 
         if (!idp_found)
         {
-            nodes_i = policyNodes[i].iterator();
-            while (nodes_i.hasNext())
+            for (Object o : policyNodes[i])
             {
-                PKIXPolicyNode node = (PKIXPolicyNode)nodes_i.next();
+                PKIXPolicyNode node = (PKIXPolicyNode)o;
                 if (ANY_POLICY.equals(node.getValidPolicy()))
                 {
                     Set pq = null;
@@ -571,12 +569,9 @@ class CertPathValidatorUtilities
         throws AnnotatedException
     {
         Set certs = new HashSet();
-        Iterator iter = certStores.iterator();
 
-        while (iter.hasNext())
+        for (Object obj : certStores)
         {
-            Object obj = iter.next();
-
             if (obj instanceof Store)
             {
                 Store certStore = (Store)obj;
@@ -614,12 +609,9 @@ class CertPathValidatorUtilities
         throws AnnotatedException
     {
         Set certs = new HashSet();
-        Iterator iter = certStores.iterator();
 
-        while (iter.hasNext())
+        for (Object obj : certStores)
         {
-            Object obj = iter.next();
-
             if (obj instanceof X509Store)
             {
                 X509Store certStore = (X509Store)obj;

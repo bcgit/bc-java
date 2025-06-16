@@ -178,10 +178,9 @@ public class ECPointPerformanceTest extends TestCase
 
         Set oids = new HashSet();
 
-        Iterator it = names.iterator();
-        while (it.hasNext())
+        for (Object o : names)
         {
-            String name = (String)it.next();
+            String name = (String)o;
             ASN1ObjectIdentifier oid = ECNamedCurveTable.getOID(name);
             if (oid == null)
             {

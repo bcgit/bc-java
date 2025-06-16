@@ -268,12 +268,9 @@ public class CMSSignedDataParser
             
             List      signerInfos = new ArrayList();
             Map       hashes = new HashMap();
-            
-            Iterator  it = digests.keySet().iterator();
-            while (it.hasNext())
-            {
-                Object digestKey = it.next();
 
+            for (Object digestKey : digests.keySet())
+            {
                 hashes.put(digestKey, ((DigestCalculator)digests.get(digestKey)).getDigest());
             }
             

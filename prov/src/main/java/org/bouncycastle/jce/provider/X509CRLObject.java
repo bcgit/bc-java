@@ -519,10 +519,9 @@ public class X509CRLObject
         Set set = getRevokedCertificates();
         if (set != null)
         {
-            Iterator it = set.iterator();
-            while (it.hasNext())
+            for (Object o : set)
             {
-                buf.append(it.next());
+                buf.append(o);
                 buf.append(nl);
             }
         }

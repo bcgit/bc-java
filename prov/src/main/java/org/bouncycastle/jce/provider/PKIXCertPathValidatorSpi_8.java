@@ -153,10 +153,9 @@ public class PKIXCertPathValidatorSpi_8
 
         PKIXCertRevocationChecker revocationChecker = null;
         List pathCheckers = new ArrayList();
-        Iterator certIter = paramsPKIX.getCertPathCheckers().iterator();
-        while (certIter.hasNext())
+        for (Object o : paramsPKIX.getCertPathCheckers())
         {
-            PKIXCertPathChecker checker = (PKIXCertPathChecker)certIter.next();
+            PKIXCertPathChecker checker = (PKIXCertPathChecker)o;
 
             checker.init(false);
 

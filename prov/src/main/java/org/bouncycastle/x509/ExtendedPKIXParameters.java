@@ -211,10 +211,9 @@ public class ExtendedPKIXParameters
     {
         if (stores != null)
         {
-            Iterator it = stores.iterator();
-            while (it.hasNext())
+            for (Object store : stores)
             {
-                addCertStore((CertStore)it.next());
+                addCertStore((CertStore)store);
             }
         }
     }

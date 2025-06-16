@@ -529,10 +529,9 @@ public class CMSSignedData
         //
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
 
-        Iterator it = digestAlgorithms.iterator();
-        while (it.hasNext())
+        for (AlgorithmIdentifier algorithm : digestAlgorithms)
         {
-            digestAlgs.add(HELPER.fixDigestAlgID((AlgorithmIdentifier)it.next(), digestAlgIdFinder));
+            digestAlgs.add(HELPER.fixDigestAlgID(algorithm, digestAlgIdFinder));
         }
         digestAlgs.add(digestAlg);
 
@@ -610,10 +609,8 @@ public class CMSSignedData
         Collection<SignerInformation> signers = signerInformationStore.getSigners();
         ASN1EncodableVector vec = new ASN1EncodableVector(signers.size());
 
-        Iterator it = signers.iterator();
-        while (it.hasNext())
+        for (SignerInformation signer : signers)
         {
-            SignerInformation signer = (SignerInformation)it.next();
             CMSUtils.addDigestAlgs(digestAlgs, signer, digestAlgIdFinder);
             vec.add(signer.toASN1Structure());
         }

@@ -138,11 +138,10 @@ public class NewAuthEnvelopedDataStreamTest
         assertEquals(ep.getEncAlgOID(), expectedOid);
 
         Collection c = recipients.getRecipients();
-        Iterator it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            RecipientInformation recipient = (RecipientInformation)it.next();
+            RecipientInformation recipient = (RecipientInformation)o;
 
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
@@ -187,12 +186,8 @@ public class NewAuthEnvelopedDataStreamTest
 
         assertEquals(1, c.size());
 
-        Iterator<RecipientInformation> it = c.iterator();
-
-        while (it.hasNext())
+        for (RecipientInformation recipient : c)
         {
-            RecipientInformation recipient = it.next();
-
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
             byte[] recData = recipient.getContent(new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
@@ -403,12 +398,9 @@ public class NewAuthEnvelopedDataStreamTest
         assertEquals(ep.getEncAlgOID(), CMSAlgorithm.AES128_GCM.getId());
 
         Collection<RecipientInformation> c = recipients.getRecipients();
-        Iterator<RecipientInformation> it = c.iterator();
 
-        while (it.hasNext())
+        for (RecipientInformation recipient : c)
         {
-            RecipientInformation recipient = it.next();
-
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
             CMSTypedStream recData = recipient.getContentStream(
@@ -445,12 +437,9 @@ public class NewAuthEnvelopedDataStreamTest
         assertEquals(ep.getEncAlgOID(), CMSAlgorithm.AES128_GCM.getId());
 
         Collection<RecipientInformation> c = recipients.getRecipients();
-        Iterator<RecipientInformation> it = c.iterator();
 
-        while (it.hasNext())
+        for (RecipientInformation recipient : c)
         {
-            RecipientInformation recipient = it.next();
-
             assertEquals(recipient.getKeyEncryptionAlgOID(), PKCSObjectIdentifiers.rsaEncryption.getId());
 
             CMSTypedStream recData = recipient.getContentStream(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
@@ -489,12 +478,9 @@ public class NewAuthEnvelopedDataStreamTest
         assertEquals(ep.getEncAlgOID(), CMSAlgorithm.AES128_GCM.getId());
 
         Collection<RecipientInformation> c = recipients.getRecipients();
-        Iterator<RecipientInformation> it = c.iterator();
 
-        while (it.hasNext())
+        for (RecipientInformation recipient : c)
         {
-            RecipientInformation recipient = it.next();
-
             CMSTypedStream recData = recipient.getContentStream(new JceKEKAuthEnvelopedRecipient(kek).setProvider(BC));
 
             assertTrue(Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));
@@ -531,12 +517,9 @@ public class NewAuthEnvelopedDataStreamTest
         assertEquals(ep.getEncAlgOID(), CMSAlgorithm.ChaCha20Poly1305.getId());
 
         Collection<RecipientInformation> c = recipients.getRecipients();
-        Iterator<RecipientInformation> it = c.iterator();
 
-        while (it.hasNext())
+        for (RecipientInformation recipient : c)
         {
-            RecipientInformation recipient = it.next();
-
             CMSTypedStream recData = recipient.getContentStream(new JceKEKAuthEnvelopedRecipient(kek).setProvider(BC));
 
             assertTrue(Arrays.equals(data, CMSTestUtil.streamToByteArray(recData.getContentStream())));

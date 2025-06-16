@@ -437,10 +437,9 @@ class RFC3280CertPathUtilities
         List validCerts = new ArrayList();
         List validKeys = new ArrayList();
 
-        Iterator cert_it = coll.iterator();
-        while (cert_it.hasNext())
+        for (Object o : coll)
         {
-            X509Certificate signingCert = (X509Certificate)cert_it.next();
+            X509Certificate signingCert = (X509Certificate)o;
 
             /*
              * CA of the certificate, for which this CRL is checked, has also

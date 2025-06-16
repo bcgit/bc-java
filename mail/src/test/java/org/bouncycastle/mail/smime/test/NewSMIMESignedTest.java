@@ -1230,11 +1230,10 @@ public class NewSMIMESignedTest
         SMIMESigned s = new SMIMESigned((MimeMultipart)message.getContent());
 
         Collection              c = s.getSignerInfos().getSigners();
-        Iterator                it = c.iterator();
 
-        while (it.hasNext())
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation   signer = (SignerInformation)o;
             Collection          certCollection = s.getCertificates().getMatches(signer.getSID());
 
             Iterator        certIt = certCollection.iterator();
@@ -1324,11 +1323,10 @@ public class NewSMIMESignedTest
         throws Exception
     {
         Collection              c = signers.getSigners();
-        Iterator                it = c.iterator();
-    
-        while (it.hasNext())
+
+        for (Object o : c)
         {
-            SignerInformation   signer = (SignerInformation)it.next();
+            SignerInformation   signer = (SignerInformation)o;
             Collection          certCollection = certs.getMatches(signer.getSID());
     
             Iterator        certIt = certCollection.iterator();

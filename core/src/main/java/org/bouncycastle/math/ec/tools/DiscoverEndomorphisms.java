@@ -37,10 +37,9 @@ public class DiscoverEndomorphisms
             SortedSet curveNames = new TreeSet(enumToList(ECNamedCurveTable.getNames()));
             curveNames.addAll(enumToList(CustomNamedCurves.getNames()));
 
-            Iterator it = curveNames.iterator();
-            while (it.hasNext())
+            for (Object curveName : curveNames)
             {
-                discoverEndomorphisms((String)it.next());
+                discoverEndomorphisms((String)curveName);
             }
         }
     }

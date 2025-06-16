@@ -884,12 +884,9 @@ public class X509RevocationChecker
             }
 
             List<CRL> col = new ArrayList<CRL>();
-            Iterator<CRL> iter = _local.iterator();
 
-            while (iter.hasNext())
+            for (CRL obj : _local)
             {
-                CRL obj = iter.next();
-
                 if (selector.match(obj))
                 {
                     col.add(obj);

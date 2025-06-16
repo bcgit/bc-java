@@ -386,11 +386,10 @@ public class PKIXNameConstraintValidator
         {
             return;
         }
-        Iterator it = permitted.iterator();
 
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            ASN1Sequence subtree = (ASN1Sequence)it.next();
+            ASN1Sequence subtree = (ASN1Sequence)o;
 
             if (withinDNSubtree(dns, subtree))
             {
@@ -410,11 +409,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            ASN1Sequence subtree = (ASN1Sequence)it.next();
+            ASN1Sequence subtree = (ASN1Sequence)o;
 
             if (withinDNSubtree(dns, subtree))
             {
@@ -440,10 +437,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator _iter = permitted.iterator();
-                while (_iter.hasNext())
+                for (Object o : permitted)
                 {
-                    ASN1Sequence subtree = (ASN1Sequence)_iter.next();
+                    ASN1Sequence subtree = (ASN1Sequence)o;
 
                     if (withinDNSubtree(dn, subtree))
                     {
@@ -475,10 +471,9 @@ public class PKIXNameConstraintValidator
         {
             Set intersect = new HashSet();
 
-            Iterator it = excluded.iterator();
-            while (it.hasNext())
+            for (Object o : excluded)
             {
-                ASN1Sequence subtree = ASN1Sequence.getInstance(it.next());
+                ASN1Sequence subtree = ASN1Sequence.getInstance(o);
 
                 if (withinDNSubtree(dn, subtree))
                 {
@@ -515,10 +510,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator it2 = permitted.iterator();
-                while (it2.hasNext())
+                for (Object o : permitted)
                 {
-                    OtherName otName2 = OtherName.getInstance(it2.next());
+                    OtherName otName2 = OtherName.getInstance(o);
 
                     intersectOtherName(otName1, otName2, intersect);
                 }
@@ -561,10 +555,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator it2 = permitted.iterator();
-                while (it2.hasNext())
+                for (Object o : permitted)
                 {
-                    String _permitted = (String)it2.next();
+                    String _permitted = (String)o;
 
                     intersectEmail(email, _permitted, intersect);
                 }
@@ -588,10 +581,9 @@ public class PKIXNameConstraintValidator
         {
             Set union = new HashSet();
 
-            Iterator it = excluded.iterator();
-            while (it.hasNext())
+            for (Object o : excluded)
             {
-                String _excluded = (String)it.next();
+                String _excluded = (String)o;
 
                 unionEmail(_excluded, email, union);
             }
@@ -626,10 +618,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator it2 = permitted.iterator();
-                while (it2.hasNext())
+                for (Object o : permitted)
                 {
-                    byte[] _permitted = (byte[])it2.next();
+                    byte[] _permitted = (byte[])o;
                     intersect.addAll(intersectIPRange(_permitted, ip));
                 }
             }
@@ -663,10 +654,9 @@ public class PKIXNameConstraintValidator
         {
             Set union = new HashSet();
 
-            Iterator it = excluded.iterator();
-            while (it.hasNext())
+            for (Object o : excluded)
             {
-                byte[] _excluded = (byte[])it.next();
+                byte[] _excluded = (byte[])o;
                 union.addAll(unionIPRange(_excluded, ip));
             }
 
@@ -823,11 +813,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            String str = ((String)it.next());
+            String str = (String)o;
 
             if (emailIsConstrained(email, str))
             {
@@ -852,11 +840,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            OtherName str = OtherName.getInstance(it.next());
+            OtherName str = OtherName.getInstance(o);
 
             if (otherNameIsConstrained(name, str))
             {
@@ -876,11 +862,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            OtherName str = OtherName.getInstance(it.next());
+            OtherName str = OtherName.getInstance(o);
 
             if (otherNameIsConstrained(name, str))
             {
@@ -898,11 +882,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            String str = (String)it.next();
+            String str = (String)o;
 
             if (emailIsConstrained(email, str))
             {
@@ -929,11 +911,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            byte[] ipWithSubnet = (byte[])it.next();
+            byte[] ipWithSubnet = (byte[])o;
 
             if (isIPConstrained(ip, ipWithSubnet))
             {
@@ -965,11 +945,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            byte[] ipWithSubnet = (byte[])it.next();
+            byte[] ipWithSubnet = (byte[])o;
 
             if (isIPConstrained(ip, ipWithSubnet))
             {
@@ -1096,11 +1074,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            String str = ((String)it.next());
+            String str = (String)o;
 
             // is sub domain
             if (withinDomain(dns, str) || dns.equalsIgnoreCase(str))
@@ -1124,11 +1100,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            String str = ((String)it.next());
+            String str = (String)o;
 
             // is sub domain or the same
             if (withinDomain(dns, str) || dns.equalsIgnoreCase(str))
@@ -1440,10 +1414,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator _iter = permitted.iterator();
-                while (_iter.hasNext())
+                for (Object o : permitted)
                 {
-                    String _permitted = (String)_iter.next();
+                    String _permitted = (String)o;
 
                     if (withinDomain(_permitted, dns))
                     {
@@ -1476,10 +1449,9 @@ public class PKIXNameConstraintValidator
         {
             Set union = new HashSet();
 
-            Iterator _iter = excluded.iterator();
-            while (_iter.hasNext())
+            for (Object o : excluded)
             {
-                String _permitted = (String)_iter.next();
+                String _permitted = (String)o;
 
                 if (withinDomain(_permitted, dns))
                 {
@@ -1609,11 +1581,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = excluded.iterator();
-
-        while (it.hasNext())
+        for (Object o : excluded)
         {
-            String str = ((String)it.next());
+            String str = (String)o;
 
             if (isUriConstrained(uri, str))
             {
@@ -1639,10 +1609,9 @@ public class PKIXNameConstraintValidator
             }
             else
             {
-                Iterator _iter = permitted.iterator();
-                while (_iter.hasNext())
+                for (Object o : permitted)
                 {
-                    String _permitted = (String)_iter.next();
+                    String _permitted = (String)o;
                     intersectURI(_permitted, uri, intersect);
                 }
             }
@@ -1666,10 +1635,9 @@ public class PKIXNameConstraintValidator
         {
             Set union = new HashSet();
 
-            Iterator _iter = excluded.iterator();
-            while (_iter.hasNext())
+            for (Object o : excluded)
             {
-                String _excluded = (String)_iter.next();
+                String _excluded = (String)o;
 
                 unionURI(_excluded, uri, union);
             }
@@ -1779,11 +1747,9 @@ public class PKIXNameConstraintValidator
             return;
         }
 
-        Iterator it = permitted.iterator();
-
-        while (it.hasNext())
+        for (Object o : permitted)
         {
-            String str = ((String)it.next());
+            String str = (String)o;
 
             if (isUriConstrained(uri, str))
             {
@@ -1935,10 +1901,8 @@ public class PKIXNameConstraintValidator
             return 0;
         }
         int hash = 0;
-        Iterator it1 = coll.iterator();
-        while (it1.hasNext())
+        for (Object o : coll)
         {
-            Object o = it1.next();
             if (o instanceof byte[])
             {
                 hash += Arrays.hashCode((byte[])o);
@@ -1965,16 +1929,12 @@ public class PKIXNameConstraintValidator
         {
             return false;
         }
-        Iterator it1 = coll1.iterator();
 
-        while (it1.hasNext())
+        for (Object a : coll1)
         {
-            Object a = it1.next();
-            Iterator it2 = coll2.iterator();
             boolean found = false;
-            while (it2.hasNext())
+            for (Object b : coll2)
             {
-                Object b = it2.next();
                 if (equals(a, b))
                 {
                     found = true;

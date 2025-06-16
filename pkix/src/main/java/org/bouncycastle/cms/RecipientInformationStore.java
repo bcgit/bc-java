@@ -35,11 +35,8 @@ public class RecipientInformationStore
     public RecipientInformationStore(
         Collection<RecipientInformation> recipientInfos)
     {
-        Iterator it = recipientInfos.iterator();
-
-        while (it.hasNext())
+        for (RecipientInformation recipientInformation : recipientInfos)
         {
-            RecipientInformation recipientInformation = (RecipientInformation)it.next();
             RecipientId rid = recipientInformation.getRID();
 
             List list = (ArrayList)table.get(rid);

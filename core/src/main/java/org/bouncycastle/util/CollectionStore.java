@@ -39,12 +39,9 @@ public class CollectionStore<T>
         else
         {
             List<T> col = new ArrayList<T>();
-            Iterator<T> iter = _local.iterator();
 
-            while (iter.hasNext())
+            for (T obj : _local)
             {
-                T obj = iter.next();
-
                 if (selector.match(obj))
                 {
                     col.add(obj);

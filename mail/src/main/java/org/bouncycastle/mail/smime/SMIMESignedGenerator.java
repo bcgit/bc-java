@@ -218,11 +218,10 @@ public class SMIMESignedGenerator
     public void addSigners(
         SignerInformationStore signerStore)
     {
-        Iterator it = signerStore.getSigners().iterator();
 
-        while (it.hasNext())
+        for (SignerInformation signerInformation : signerStore.getSigners())
         {
-            _oldSigners.add(it.next());
+            _oldSigners.add(signerInformation);
         }
     }
 
