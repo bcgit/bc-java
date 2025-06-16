@@ -487,7 +487,14 @@ public class PGPPublicKey
         {
             if (ids.get(i) instanceof UserIDPacket)
             {
-                temp.add(((UserIDPacket)ids.get(i)).getID());
+                try
+                {
+                    temp.add(((UserIDPacket) ids.get(i)).getID());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // Skip non-UTF8 user-ids
+                }
             }
         }
 
