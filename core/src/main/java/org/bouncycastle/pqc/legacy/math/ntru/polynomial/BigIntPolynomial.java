@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.legacy.math.ntru.polynomial;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -284,14 +285,14 @@ public class BigIntPolynomial
         BigInteger max = maxCoeffAbs();
         int coeffLength = (int)(max.bitLength() * LOG_10_2) + 1;
         // factor = 1/divisor
-        BigDecimal factor = Constants.BIGDEC_ONE.divide(divisor, coeffLength + decimalPlaces + 1, BigDecimal.ROUND_HALF_EVEN);
+        BigDecimal factor = Constants.BIGDEC_ONE.divide(divisor, coeffLength + decimalPlaces + 1, RoundingMode.HALF_EVEN);
 
         // multiply each coefficient by factor
         BigDecimalPolynomial p = new BigDecimalPolynomial(coeffs.length);
         for (int i = 0; i < coeffs.length; i++)
         // multiply, then truncate after decimalPlaces so subsequent operations aren't slowed down
         {
-            p.coeffs[i] = new BigDecimal(coeffs[i]).multiply(factor).setScale(decimalPlaces, BigDecimal.ROUND_HALF_EVEN);
+            p.coeffs[i] = new BigDecimal(coeffs[i]).multiply(factor).setScale(decimalPlaces, RoundingMode.HALF_EVEN);
         }
 
         return p;
