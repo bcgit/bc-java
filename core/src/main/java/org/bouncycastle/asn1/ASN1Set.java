@@ -423,7 +423,7 @@ public abstract class ASN1Set
             return "[]";
         }
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append('[');
         for (int i = 0;;)
         {
