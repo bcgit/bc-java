@@ -94,9 +94,9 @@ public abstract class AbstractTlsServer
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups != null)
         {
-            for (int i = 0; i < clientSupportedGroups.length; ++i)
+            for (int clientSupportedGroup : clientSupportedGroups)
             {
-                maxBits = Math.max(maxBits, NamedGroup.getCurveBits(clientSupportedGroups[i]));
+                maxBits = Math.max(maxBits, NamedGroup.getCurveBits(clientSupportedGroup));
             }
         }
         else
@@ -118,10 +118,10 @@ public abstract class AbstractTlsServer
         int[] clientSupportedGroups = context.getSecurityParametersHandshake().getClientSupportedGroups();
         if (clientSupportedGroups != null)
         {
-            for (int i = 0; i < clientSupportedGroups.length; ++i)
+            for (int clientSupportedGroup : clientSupportedGroups)
             {
-                anyPeerFF |= NamedGroup.isFiniteField(clientSupportedGroups[i]);
-                maxBits = Math.max(maxBits, NamedGroup.getFiniteFieldBits(clientSupportedGroups[i]));
+                anyPeerFF |= NamedGroup.isFiniteField(clientSupportedGroup);
+                maxBits = Math.max(maxBits, NamedGroup.getFiniteFieldBits(clientSupportedGroup));
             }
         }
         if (!anyPeerFF)
@@ -173,9 +173,8 @@ public abstract class AbstractTlsServer
         if (clientSupportedGroups != null)
         {
             // Try to find a supported named group of the required size from the client's list.
-            for (int i = 0; i < clientSupportedGroups.length; ++i)
+            for (int namedGroup : clientSupportedGroups)
             {
-                int namedGroup = clientSupportedGroups[i];
                 anyPeerFF |= NamedGroup.isFiniteField(namedGroup);
 
                 if (NamedGroup.getFiniteFieldBits(namedGroup) >= minimumFiniteFieldBits)
@@ -221,9 +220,8 @@ public abstract class AbstractTlsServer
         }
 
         // Try to find a supported named group of the required size from the client's list.
-        for (int i = 0; i < clientSupportedGroups.length; ++i)
+        for (int namedGroup : clientSupportedGroups)
         {
-            int namedGroup = clientSupportedGroups[i];
             if (NamedGroup.getCurveBits(namedGroup) >= minimumCurveBits)
             {
                 // This default server implementation supports all NamedGroup curves
@@ -443,9 +441,8 @@ public abstract class AbstractTlsServer
         ProtocolVersion[] serverVersions = getProtocolVersions();
         ProtocolVersion[] clientVersions = context.getClientSupportedVersions();
 
-        for (int i = 0; i < clientVersions.length; ++i)
+        for (ProtocolVersion clientVersion : clientVersions)
         {
-            ProtocolVersion clientVersion = clientVersions[i];
             if (ProtocolVersion.contains(serverVersions, clientVersion))
             {
                 return clientVersion;
@@ -501,9 +498,8 @@ public abstract class AbstractTlsServer
             int[] cipherSuites = TlsUtils.getCommonCipherSuites(offeredCipherSuites, getCipherSuites(),
                 preferLocalCipherSuites());
 
-            for (int i = 0; i < cipherSuites.length; ++i)
+            for (int cipherSuite : cipherSuites)
             {
-                int cipherSuite = cipherSuites[i];
                 if (isSelectableCipherSuite(cipherSuite, availCurveBits, availFiniteFieldBits, sigAlgs)
                     && selectCipherSuite(cipherSuite))
                 {
@@ -644,9 +640,8 @@ public abstract class AbstractTlsServer
                 }
 
                 short selectedType = -1;
-                for (int i = 0; i < preferredTypes.length; i++)
+                for (short preferredType : preferredTypes)
                 {
-                    short preferredType = preferredTypes[i];
                     if (CertificateType.OpenPGP == preferredType && isTLSv13)
                     {
                         continue;

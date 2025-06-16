@@ -259,9 +259,8 @@ public abstract class AbstractTlsClient
         boolean offeringDTLSv12 = false;        
         {
             ProtocolVersion[] supportedVersions = getProtocolVersions();
-            for (int i = 0; i < supportedVersions.length; ++i)
+            for (ProtocolVersion supportedVersion : supportedVersions)
             {
-                ProtocolVersion supportedVersion = supportedVersions[i];
                 if (TlsUtils.isTLSv13(supportedVersion))
                 {
                     offeringTLSv13Plus = true;

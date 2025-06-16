@@ -547,9 +547,8 @@ public final class BouncyCastleProvider extends Provider
     {
         put(key + " ImplementedIn", "Software");
 
-        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
+        for (String attributeName : attributeMap.keySet())
         {
-            String attributeName = (String)it.next();
             String attributeKey = key + " " + attributeName;
             if (containsKey(attributeKey))
             {
