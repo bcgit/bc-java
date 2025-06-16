@@ -458,9 +458,9 @@ class CertPathValidatorUtilities
         PKIXPolicyNode parent = (PKIXPolicyNode)node.getParent();
         if (parent == null)
         {
-            for (int j = 0; j < policyNodes.length; j++)
+            for (List policyNode : policyNodes)
             {
-                policyNodes[j].clear();
+                policyNode.clear();
             }
 
             return null;
@@ -498,9 +498,9 @@ class CertPathValidatorUtilities
     {
         List policyNodeVec = policyNodes[index - 1];
 
-        for (int j = 0; j < policyNodeVec.size(); j++)
+        for (Object o : policyNodeVec)
         {
-            PKIXPolicyNode node = (PKIXPolicyNode)policyNodeVec.get(j);
+            PKIXPolicyNode node = (PKIXPolicyNode)o;
             Set expectedPolicies = node.getExpectedPolicies();
 
             if (expectedPolicies.contains(pOid.getId()))
@@ -617,17 +617,17 @@ class CertPathValidatorUtilities
 
         List<PKIXCRLStore> stores = new ArrayList<PKIXCRLStore>();
 
-        for (int i = 0; i < dps.length; i++)
+        for (DistributionPoint dp : dps)
         {
-            DistributionPointName dpn = dps[i].getDistributionPoint();
+            DistributionPointName dpn = dp.getDistributionPoint();
             // look for URIs in fullName
             if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
             {
                 GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
 
-                for (int j = 0; j < genNames.length; j++)
+                for (GeneralName genName : genNames)
                 {
-                    PKIXCRLStore store = namedCRLStoreMap.get(genNames[j]);
+                    PKIXCRLStore store = namedCRLStoreMap.get(genName);
                     if (store != null)
                     {
                         stores.add(store);
@@ -649,17 +649,16 @@ class CertPathValidatorUtilities
                 throw new AnnotatedException("cannot create certificate factory: " + e.getMessage(), e);
             }
 
-            for (int i = 0; i < dps.length; i++)
+            for (DistributionPoint dp : dps)
             {
-                DistributionPointName dpn = dps[i].getDistributionPoint();
+                DistributionPointName dpn = dp.getDistributionPoint();
                 // look for URIs in fullName
                 if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
                 {
                     GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
 
-                    for (int j = 0; j < genNames.length; j++)
+                    for (GeneralName name : genNames)
                     {
-                        GeneralName name = genNames[j];
                         if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                         {
                             try
@@ -713,13 +712,13 @@ class CertPathValidatorUtilities
         {
             GeneralName genNames[] = dp.getCRLIssuer().getNames();
             // look for a DN
-            for (int j = 0; j < genNames.length; j++)
+            for (GeneralName genName : genNames)
             {
-                if (genNames[j].getTagNo() == GeneralName.directoryName)
+                if (genName.getTagNo() == GeneralName.directoryName)
                 {
                     try
                     {
-                        issuers.add(X500Name.getInstance(genNames[j].getName().toASN1Primitive().getEncoded()));
+                        issuers.add(X500Name.getInstance(genName.getName().toASN1Primitive().getEncoded()));
                     }
                     catch (IOException e)
                     {
@@ -741,9 +740,9 @@ class CertPathValidatorUtilities
                     "CRL issuer is omitted from distribution point but no distributionPoint field present.");
             }
             // add and check issuer principals
-            for (Iterator it = issuerPrincipals.iterator(); it.hasNext(); )
+            for (Object issuerPrincipal : issuerPrincipals)
             {
-                issuers.add(it.next());
+                issuers.add(issuerPrincipal);
             }
         }
         // TODO: is not found although this should correctly add the rel name. selector of Sun is buggy here or PKI test case is invalid
@@ -989,17 +988,16 @@ class CertPathValidatorUtilities
 
             CRLDistPoint id = CRLDistPoint.getInstance(idp);
             DistributionPoint[] dps = id.getDistributionPoints();
-            for (int i = 0; i < dps.length; i++)
+            for (DistributionPoint dp : dps)
             {
-                DistributionPointName dpn = dps[i].getDistributionPoint();
+                DistributionPointName dpn = dp.getDistributionPoint();
                 // look for URIs in fullName
                 if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME)
                 {
                     GeneralName[] genNames = GeneralNames.getInstance(dpn.getName()).getNames();
 
-                    for (int j = 0; j < genNames.length; j++)
+                    for (GeneralName name : genNames)
                     {
-                        GeneralName name = genNames[j];
                         if (name.getTagNo() == GeneralName.uniformResourceIdentifier)
                         {
                             try
@@ -1031,9 +1029,9 @@ class CertPathValidatorUtilities
     {
         Set result = new HashSet();
 
-        for (Iterator it = crls.iterator(); it.hasNext(); )
+        for (Object o : crls)
         {
-            X509CRL crl = (X509CRL)it.next();
+            X509CRL crl = (X509CRL)o;
 
             if (isDeltaCRL(crl))
             {

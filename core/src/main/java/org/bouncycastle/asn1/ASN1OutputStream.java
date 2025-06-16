@@ -121,9 +121,9 @@ public class ASN1OutputStream
     void writeElements(ASN1Encodable[] elements)
         throws IOException
     {
-        for (int i = 0, count = elements.length; i < count; ++i)
+        for (ASN1Encodable element : elements)
         {
-            elements[i].toASN1Primitive().encode(this, true);
+            element.toASN1Primitive().encode(this, true);
         }
     }
 
@@ -226,9 +226,9 @@ public class ASN1OutputStream
 
     void writePrimitives(ASN1Primitive[] primitives) throws IOException
     {
-        for (int i = 0, count = primitives.length; i < count; ++i)
+        for (ASN1Primitive primitive : primitives)
         {
-            primitives[i].encode(this, true);
+            primitive.encode(this, true);
         }
     }
 

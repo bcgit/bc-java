@@ -300,9 +300,9 @@ class CertPathValidatorUtilities
     {
         List policyNodeVec = policyNodes[index - 1];
 
-        for (int j = 0; j < policyNodeVec.size(); j++)
+        for (Object o : policyNodeVec)
         {
-            PKIXPolicyNode node = (PKIXPolicyNode)policyNodeVec.get(j);
+            PKIXPolicyNode node = (PKIXPolicyNode)o;
             Set expectedPolicies = node.getExpectedPolicies();
 
             if (expectedPolicies.contains(pOid.getId()))
@@ -335,9 +335,9 @@ class CertPathValidatorUtilities
     {
         List policyNodeVec = policyNodes[index - 1];
 
-        for (int j = 0; j < policyNodeVec.size(); j++)
+        for (Object o : policyNodeVec)
         {
-            PKIXPolicyNode _node = (PKIXPolicyNode)policyNodeVec.get(j);
+            PKIXPolicyNode _node = (PKIXPolicyNode)o;
 
             if (ANY_POLICY.equals(_node.getValidPolicy()))
             {
@@ -465,9 +465,9 @@ class CertPathValidatorUtilities
                 for (int k = (i - 1); k >= 0; k--)
                 {
                     List nodes = policyNodes[k];
-                    for (int l = 0; l < nodes.size(); l++)
+                    for (Object o : nodes)
                     {
-                        PKIXPolicyNode node2 = (PKIXPolicyNode)nodes.get(l);
+                        PKIXPolicyNode node2 = (PKIXPolicyNode)o;
                         if (!node2.hasChildren())
                         {
                             validPolicyTree = removePolicyNode(validPolicyTree, policyNodes, node2);

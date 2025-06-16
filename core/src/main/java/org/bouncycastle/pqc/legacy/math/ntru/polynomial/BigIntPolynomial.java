@@ -342,9 +342,9 @@ public class BigIntPolynomial
     BigInteger sumCoeffs()
     {
         BigInteger sum = Constants.BIGINT_ZERO;
-        for (int i = 0; i < coeffs.length; i++)
+        for (BigInteger coeff : coeffs)
         {
-            sum = sum.add(coeffs[i]);
+            sum = sum.add(coeff);
         }
         return sum;
     }

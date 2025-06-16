@@ -356,7 +356,7 @@ public class BCStyle
 
         RDN[] rdns = name.getRDNs();
 
-        for (int i = 0; i < rdns.length; i++)
+        for (RDN rdn : rdns)
         {
             if (first)
             {
@@ -367,7 +367,7 @@ public class BCStyle
                 buf.append(',');
             }
 
-            IETFUtils.appendRDN(buf, rdns[i], defaultSymbols);
+            IETFUtils.appendRDN(buf, rdn, defaultSymbols);
         }
 
         return buf.toString();

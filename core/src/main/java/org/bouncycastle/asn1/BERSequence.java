@@ -59,9 +59,9 @@ public class BERSequence
     {
         int totalLength = withTag ? 4 : 3;
 
-        for (int i = 0, count = elements.length; i < count; ++i)
+        for (ASN1Encodable element : elements)
         {
-            ASN1Primitive p = elements[i].toASN1Primitive();
+            ASN1Primitive p = element.toASN1Primitive();
             totalLength += p.encodedLength(true);
         }
 
