@@ -1434,7 +1434,7 @@ public class PKCS12KeyStoreSpi
         // TODO:delete comment
         //  Since we cannot add any function to the KeyStore Api we will run code when saving the store
         // to sync the friendlyNames with Alias depending on the storeParameter
-        /**
+        /*
          *     @Override
          *     public void setFriendlyName(String alias, String newFriendlyName, char[] password) throws UnrecoverableKeyException, NoSuchAlgorithmException
          *     {
