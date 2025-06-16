@@ -75,7 +75,7 @@ public class Headers
 
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
 
-        if (contentType.indexOf("multipart") >= 0)    // JVM compatibility
+        if (contentType.contains("multipart"))    // JVM compatibility
         {
             multipart = true;
             String bound = (String)contentTypeParameters.get("boundary");
@@ -145,7 +145,7 @@ public class Headers
 
         contentTransferEncoding = this.getValues("Content-Transfer-Encoding") == null ? defaultContentTransferEncoding : this.getValues("Content-Transfer-Encoding")[0];
 
-        if (contentType.indexOf("multipart") >= 0)
+        if (contentType.contains("multipart"))
         {
             multipart = true;
             String bound = (String)contentTypeParameters.get("boundary");

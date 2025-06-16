@@ -422,7 +422,7 @@ class BcFKSKeyStoreSpi
                 String keyAlg = Strings.toUpperCase(key.getAlgorithm());
                 SecretKeyData secKeyData;
 
-                if (keyAlg.indexOf("AES") > -1)
+                if (keyAlg.contains("AES"))
                 {
                     secKeyData = new SecretKeyData(NISTObjectIdentifiers.aes, encodedKey);
                 }

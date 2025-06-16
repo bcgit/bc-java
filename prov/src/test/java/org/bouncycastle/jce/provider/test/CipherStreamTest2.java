@@ -38,7 +38,7 @@ public class CipherStreamTest2
             String transform = transforms[i];
             String cipherName = algo + transform;
 
-            boolean cts = transform.indexOf("CTS") > -1;
+            boolean cts = transform.contains("CTS");
             if (cts && streamSize < Cipher.getInstance(cipherName, "BC").getBlockSize())
             {
                 continue;

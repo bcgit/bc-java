@@ -43,7 +43,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalStateException ilarex)
         {
-            isTrue("message", contains(ilarex.getMessage(), "input must be exactly 32 bytes"));
+            isTrue("message", ilarex.getMessage().contains("input must be exactly 32 bytes"));
         }
     }
 
@@ -59,7 +59,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("long message", contains(ilarex.getMessage(), "total input cannot be more than 32 bytes"));
+            isTrue("long message", ilarex.getMessage().contains("total input cannot be more than 32 bytes"));
         }
     }
 
@@ -80,7 +80,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message 1", contains(ilarex.getMessage(), "output too short to receive digest"));
+            isTrue("message 1", ilarex.getMessage().contains("output too short to receive digest"));
         }
 
         //
@@ -97,7 +97,7 @@ public class Haraka256DigestTest
         }
         catch (IllegalArgumentException ilarex)
         {
-            isTrue("message 2", contains(ilarex.getMessage(), "output too short to receive digest"));
+            isTrue("message 2", ilarex.getMessage().contains("output too short to receive digest"));
         }
 
 
@@ -161,11 +161,6 @@ public class Haraka256DigestTest
             isTrue("Monte Carlo test: " + c, !this.areEqual(expected, result));
             c++;
         }
-    }
-
-    private boolean contains(String message, String sub)
-    {
-        return message.indexOf(sub) >= 0;
     }
 
     public void performTest()

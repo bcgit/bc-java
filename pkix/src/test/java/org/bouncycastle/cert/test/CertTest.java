@@ -4662,7 +4662,7 @@ public class CertTest
 
         cert.verify(lmsPub, "BCPQC");     // lms key only
 
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        if (!System.getProperty("java.version").contains("1.5."))
         {
             cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
 
@@ -4768,7 +4768,7 @@ public class CertTest
 
         cert.verify(ecPub, BC);      // ec key only
 
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        if (!System.getProperty("java.version").contains("1.5."))
         {
             cert.verify(ecPub, new BouncyCastleProvider());      // ec key only
         }

@@ -136,11 +136,11 @@ public class CompositeIndex
 
     static String getBaseName(String name)
     {
-        if (name.indexOf("RSA") >= 0)
+        if (name.contains("RSA"))
         {
             return "RSA";
         }
-        if (name.indexOf("ECDSA") >= 0)
+        if (name.contains("ECDSA"))
         {
             return "EC";
         }

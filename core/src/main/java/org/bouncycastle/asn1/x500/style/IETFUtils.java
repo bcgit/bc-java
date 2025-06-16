@@ -507,7 +507,7 @@ public class IETFUtils
     public static String stripInternalSpaces(
         String str)
     {
-        if (str.indexOf("  ") < 0)
+        if (!str.contains("  "))
         {
             return str;
         }

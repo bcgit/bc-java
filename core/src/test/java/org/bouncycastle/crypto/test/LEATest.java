@@ -186,7 +186,7 @@ public class LEATest
             }
             else if (line.startsWith("Test:"))
             {
-                if (comment.indexOf("ECB") >= 0)
+                if (comment.contains("ECB"))
                 {
                     LEAEngine engine = new LEAEngine();
                     if (line.endsWith("Encrypt"))
@@ -216,11 +216,11 @@ public class LEATest
                     }
 
                 }
-                else if (comment.indexOf("CTR") >= 0 || comment.indexOf("CBC") >= 0)
+                else if (comment.contains("CTR") || comment.contains("CBC"))
                 {
                     BlockCipher engine;
 
-                    if (comment.indexOf("CBC") >= 0)
+                    if (comment.contains("CBC"))
                     {
                         engine = CBCBlockCipher.newInstance(new LEAEngine());
                     }

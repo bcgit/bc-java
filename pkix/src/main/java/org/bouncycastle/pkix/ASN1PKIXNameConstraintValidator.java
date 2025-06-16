@@ -1813,7 +1813,7 @@ class ASN1PKIXNameConstraintValidator
         // remove ':' after protocol, e.g. http:
         String sub = url.substring(url.indexOf(':') + 1);
         // extract host from Common Internet Scheme Syntax, e.g. https://
-        if (sub.indexOf("//") != -1)
+        if (sub.contains("//"))
         {
             sub = sub.substring(sub.indexOf("//") + 2);
         }
