@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.legacy.math.ntru.polynomial;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * A polynomial with {@link BigDecimal} coefficients.
@@ -214,7 +215,7 @@ public class BigDecimalPolynomial
         BigIntPolynomial p = new BigIntPolynomial(N);
         for (int i = 0; i < N; i++)
         {
-            p.coeffs[i] = coeffs[i].setScale(0, BigDecimal.ROUND_HALF_EVEN).toBigInteger();
+            p.coeffs[i] = coeffs[i].setScale(0, RoundingMode.HALF_EVEN).toBigInteger();
         }
         return p;
     }

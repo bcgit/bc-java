@@ -445,7 +445,7 @@ public class AuthEnvelopedDataTest
 
         RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
 
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        if (!System.getProperty("java.version").contains("1.5."))
         {
             byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
             assertTrue(java.util.Arrays.equals(authData.getMac(), recipient.getMac()));
@@ -491,7 +491,7 @@ public class AuthEnvelopedDataTest
 
         RecipientInformation recipient = (RecipientInformation)recipients.getRecipients().iterator().next();
 
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        if (!System.getProperty("java.version").contains("1.5."))
         {
             byte[] recData = recipient.getContent(new JceKeyTransAuthEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
                                     

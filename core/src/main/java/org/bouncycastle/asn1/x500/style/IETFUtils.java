@@ -33,7 +33,7 @@ public class IETFUtils
 
         boolean escaped = false;
         boolean quoted = false;
-        StringBuffer buf = new StringBuffer(elt.length());
+        StringBuilder buf = new StringBuilder(elt.length());
         int start = 0;
 
         // if it's an escaped hash string and not an actual encoding in string form
@@ -367,7 +367,7 @@ public class IETFUtils
 
     public static String valueToString(ASN1Encodable value)
     {
-        StringBuffer vBuf = new StringBuffer();
+        StringBuilder vBuf = new StringBuilder();
 
         if (value instanceof ASN1String && !(value instanceof ASN1UniversalString))
         {
@@ -507,12 +507,12 @@ public class IETFUtils
     public static String stripInternalSpaces(
         String str)
     {
-        if (str.indexOf("  ") < 0)
+        if (!str.contains("  "))
         {
             return str;
         }
 
-        StringBuffer res = new StringBuffer();
+        StringBuilder res = new StringBuilder();
 
         char c1 = str.charAt(0);
         res.append(c1);

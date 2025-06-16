@@ -1119,7 +1119,7 @@ public class PGPGeneralTest
 
     private boolean messageIs(String message, String s)
     {
-        return message.indexOf(s) >= 0;
+        return message.contains(s);
     }
 
     public void testAddRemoveCertification()

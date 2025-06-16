@@ -247,7 +247,7 @@ public abstract class ASN1BitString
             throw new ASN1ParsingException("Internal error encoding BitString: " + e.getMessage(), e);
         }
 
-        StringBuffer buf = new StringBuffer(1 + string.length * 2);
+        StringBuilder buf = new StringBuilder(1 + string.length * 2);
         buf.append('#');
 
         for (int i = 0; i != string.length; i++)
