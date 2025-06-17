@@ -96,7 +96,7 @@ public class CrossSigner
         {
             seed_tree = new byte[params.getNumNodesSeedTree() * params.getSeedLengthBytes()];
             engine.genSeedTree(params, seed_tree, root_seed, salt);
-            engine.seedLeavesTree(params, round_seeds, seed_tree);
+            CrossEngine.seedLeavesTree(params, round_seeds, seed_tree);
         }
 
         // Prepare arrays for T rounds
@@ -106,12 +106,6 @@ public class CrossSigner
         byte[] s_prime = new byte[params.getN() - params.getK()];
         byte[][] e_G_bar_prime = null;
         byte[][] v_G_bar = null;
-
-        if (!params.rsdp)
-        {
-            e_G_bar_prime = new byte[params.getT()][];
-            v_G_bar = new byte[params.getT()][];
-        }
 
         // Prepare commitment inputs
         int cmt0InputSize;
@@ -126,6 +120,8 @@ public class CrossSigner
             cmt0InputSize = params.getDenselyPackedFpSynSize() +
                 params.getDenselyPackedFzRsdpGVecSize() +
                 params.getSaltLengthBytes();
+            e_G_bar_prime = new byte[params.getT()][];
+            v_G_bar = new byte[params.getT()][];
         }
 
         byte[] cmt_0_i_input = new byte[cmt0InputSize];
@@ -205,13 +201,14 @@ public class CrossSigner
 
         // Compute root digests
         byte[] digest_cmt0_cmt1 = new byte[2 * params.getHashDigestLength()];
+        byte[] merkle_tree_0 = null;
         if (params.variant == CrossParameters.FAST)
         {
             engine.treeRootSpeed(digest_cmt0_cmt1, cmt_0, params);
         }
         else
         {
-            byte[] merkle_tree_0 = new byte[params.getNumNodesMerkleTree() * params.getHashDigestLength()];
+            merkle_tree_0 = new byte[params.getNumNodesMerkleTree() * params.getHashDigestLength()];
             engine.treeRootBalanced(digest_cmt0_cmt1, merkle_tree_0, cmt_0, params);
         }
 
@@ -276,7 +273,7 @@ public class CrossSigner
         {
             proof = new byte[params.getHashDigestLength() * params.getTreeNodesToStore()];
             path = new byte[params.getTreeNodesToStore() * params.getSeedLengthBytes()];
-            CrossEngine.treeProofBalanced(proof, seed_tree, chall_2, params);
+            CrossEngine.treeProofBalanced(proof, merkle_tree_0, chall_2, params);
             CrossEngine.seedPathBalanced(path, seed_tree, chall_2, params);
         }
 

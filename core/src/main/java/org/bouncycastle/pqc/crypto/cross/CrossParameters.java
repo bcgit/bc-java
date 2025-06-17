@@ -454,7 +454,8 @@ public class CrossParameters
         this.denselyPackedFpVecSize = denselyPackedFpVecSize;
         this.denselyPackedFpSynSize = (n - k) / 8 * CrossEngine.bitsToRepresent(p - 1) +
             CrossEngine.roundUp(((n - k) % 8) * CrossEngine.bitsToRepresent(p - 1), 8) / 8;
-        this.denselyPackedFzVecSize = denselyPackedFzVecSize;
+        this.denselyPackedFzVecSize = (n / 8 * CrossEngine.bitsToRepresent(z - 1) + CrossEngine.roundUp((n % 8)
+            * CrossEngine.bitsToRepresent(z - 1), 8) / 8);
         this.denselyPackedFzRsdpGVecSize = denselyPackedFzRsdpGVecSize;
         this.treeOffsets = treeOffsets;
         this.treeNodesPerLevel = treeNodesPerLevel;

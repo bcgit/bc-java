@@ -1058,9 +1058,8 @@ class CrossEngine
     {
         int n = params.getN();
         int z = params.getZ();
-        int bitsForZ = bitsToRepresent(z - 1);
         int packedSize = params.getDenselyPackedFzVecSize();
-        genericPackFz(out, in, packedSize, n, bitsForZ);
+        genericPackFz(out, in, z, packedSize, n);
     }
 
     // Pack FZ RSDPG vector into byte array
@@ -1074,34 +1073,305 @@ class CrossEngine
     }
 
     // Generic packing for FZ vectors
-    private static void genericPackFz(byte[] out, byte[] in, int outLen, int inLen, int bitsPerElement)
+    public static void genericPackFz(byte[] out, byte[] in, int Z, int outlen, int inlen)
     {
-        int outPos = 0;
-        int inPos = 0;
-        int bitBuffer = 0;
-        int bitsInBuffer = 0;
-
-        for (int i = 0; i < inLen; i++)
+        if (Z == 127)
         {
-            int element = in[inPos++] & 0xFF;
+            genericPack7Bit(out, in, outlen, inlen);
+        }
+        else if (Z == 7)
+        {
+            genericPack3Bit(out, in, outlen, inlen);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus Z: " + Z);
+        }
+    }
 
-            // Add element to bit buffer
-            bitBuffer |= (element << bitsInBuffer);
-            bitsInBuffer += bitsPerElement;
-
-            // Flush full bytes to output
-            while (bitsInBuffer >= 8)
-            {
-                out[outPos++] = (byte)(bitBuffer & 0xFF);
-                bitBuffer >>>= 8;
-                bitsInBuffer -= 8;
-            }
+    public static void genericPack3Bit(byte[] out, byte[] in, int outlen, int inlen)
+    {
+        // Clear output array
+        for (int i = 0; i < outlen; i++)
+        {
+            out[i] = 0;
         }
 
-        // Flush remaining bits
-        if (bitsInBuffer > 0)
+        int fullBlocks = inlen / 8;
+        int i;
+
+        // Process full blocks (8 elements → 3 bytes)
+        for (i = 0; i < fullBlocks; i++)
         {
-            out[outPos] = (byte)(bitBuffer & 0xFF);
+            int baseIn = i * 8;
+            int baseOut = i * 3;
+
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)  // Only 2 bits fit here
+            );
+
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x01) |
+                    ((in[baseIn + 3] & 0x07) << 1) |
+                    ((in[baseIn + 4] & 0x07) << 4) |
+                    ((in[baseIn + 5] & 0x01) << 7)  // Only 1 bit fits here
+            );
+
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 5] >>> 1) & 0x03) |
+                    ((in[baseIn + 6] & 0x07) << 2) |
+                    ((in[baseIn + 7] & 0x07) << 5)
+            );
+        }
+
+        // Process remaining elements (1-7)
+        int baseIn = i * 8;
+        int baseOut = i * 3;
+        int remaining = inlen % 8;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = (byte)(in[baseIn] & 0x07);
+            break;
+        case 2:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3)
+            );
+            break;
+        case 3:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 1] = (byte)((in[baseIn + 2] >>> 2) & 0x01);
+            break;
+        case 4:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x01) |
+                    ((in[baseIn + 3] & 0x07) << 1)
+            );
+            break;
+        case 5:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x01) |
+                    ((in[baseIn + 3] & 0x07) << 1) |
+                    ((in[baseIn + 4] & 0x07) << 4)
+            );
+            break;
+        case 6:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x01) |
+                    ((in[baseIn + 3] & 0x07) << 1) |
+                    ((in[baseIn + 4] & 0x07) << 4) |
+                    ((in[baseIn + 5] & 0x01) << 7)
+            );
+            out[baseOut + 2] = (byte)((in[baseIn + 5] >>> 1) & 0x03);
+            break;
+        case 7:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x07) |
+                    ((in[baseIn + 1] & 0x07) << 3) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x01) |
+                    ((in[baseIn + 3] & 0x07) << 1) |
+                    ((in[baseIn + 4] & 0x07) << 4) |
+                    ((in[baseIn + 5] & 0x01) << 7)
+            );
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 5] >>> 1) & 0x03) |
+                    ((in[baseIn + 6] & 0x07) << 2)
+            );
+            break;
+        }
+    }
+
+    public static void genericPack7Bit(byte[] out, byte[] in, int outlen, int inlen)
+    {
+        // Clear output array
+        for (int i = 0; i < outlen; i++)
+        {
+            out[i] = 0;
+        }
+
+        int fullBlocks = inlen / 8;
+        int i;
+
+        // Process full blocks (8 elements → 7 bytes)
+        for (i = 0; i < fullBlocks; i++)
+        {
+            int baseIn = i * 8;
+            int baseOut = i * 7;
+
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x1F) |
+                    ((in[baseIn + 3] & 0x07) << 5)
+            );
+
+            out[baseOut + 3] = (byte)(
+                ((in[baseIn + 3] >>> 3) & 0x0F) |
+                    ((in[baseIn + 4] & 0x0F) << 4)
+            );
+
+            out[baseOut + 4] = (byte)(
+                ((in[baseIn + 4] >>> 4) & 0x07) |
+                    ((in[baseIn + 5] & 0x1F) << 3)
+            );
+
+            out[baseOut + 5] = (byte)(
+                ((in[baseIn + 5] >>> 5) & 0x03) |
+                    ((in[baseIn + 6] & 0x3F) << 2)
+            );
+
+            out[baseOut + 6] = (byte)(
+                ((in[baseIn + 6] >>> 6) & 0x01) |
+                    ((in[baseIn + 7] & 0x7F) << 1)
+            );
+        }
+
+        // Process remaining elements (1-7)
+        int baseIn = i * 8;
+        int baseOut = i * 7;
+        int remaining = inlen % 8;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = (byte)(in[baseIn] & 0x7F);
+            break;
+        case 2:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)((in[baseIn + 1] >>> 1) & 0x3F);
+            break;
+        case 3:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 2] = (byte)((in[baseIn + 2] >>> 2) & 0x1F);
+            break;
+        case 4:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x1F) |
+                    ((in[baseIn + 3] & 0x07) << 5)
+            );
+            out[baseOut + 3] = (byte)((in[baseIn + 3] >>> 3) & 0x0F);
+            break;
+        case 5:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x1F) |
+                    ((in[baseIn + 3] & 0x07) << 5)
+            );
+            out[baseOut + 3] = (byte)(
+                ((in[baseIn + 3] >>> 3) & 0x0F) |
+                    ((in[baseIn + 4] & 0x0F) << 4)
+            );
+            out[baseOut + 4] = (byte)((in[baseIn + 4] >>> 4) & 0x07);
+            break;
+        case 6:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x1F) |
+                    ((in[baseIn + 3] & 0x07) << 5)
+            );
+            out[baseOut + 3] = (byte)(
+                ((in[baseIn + 3] >>> 3) & 0x0F) |
+                    ((in[baseIn + 4] & 0x0F) << 4)
+            );
+            out[baseOut + 4] = (byte)(
+                ((in[baseIn + 4] >>> 4) & 0x07) |
+                    ((in[baseIn + 5] & 0x1F) << 3)
+            );
+            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 5) & 0x03);
+            break;
+        case 7:
+            out[baseOut] = (byte)(
+                (in[baseIn] & 0x7F) |
+                    ((in[baseIn + 1] & 0x01) << 7)
+            );
+            out[baseOut + 1] = (byte)(
+                ((in[baseIn + 1] >>> 1) & 0x3F) |
+                    ((in[baseIn + 2] & 0x03) << 6)
+            );
+            out[baseOut + 2] = (byte)(
+                ((in[baseIn + 2] >>> 2) & 0x1F) |
+                    ((in[baseIn + 3] & 0x07) << 5)
+            );
+            out[baseOut + 3] = (byte)(
+                ((in[baseIn + 3] >>> 3) & 0x0F) |
+                    ((in[baseIn + 4] & 0x0F) << 4)
+            );
+            out[baseOut + 4] = (byte)(
+                ((in[baseIn + 4] >>> 4) & 0x07) |
+                    ((in[baseIn + 5] & 0x1F) << 3)
+            );
+            out[baseOut + 5] = (byte)(
+                ((in[baseIn + 5] >>> 5) & 0x03) |
+                    ((in[baseIn + 6] & 0x3F) << 2)
+            );
+            out[baseOut + 6] = (byte)((in[baseIn + 6] >>> 6) & 0x01);
+            break;
         }
     }
 
@@ -1282,7 +1552,7 @@ class CrossEngine
         }
 
         // Initialize CSPRNG with domain separation
-        int dsc = 0 + (3 * t); // CSPRNG_DOMAIN_SEP_CONST = 0
+        int dsc = (3 * t); // CSPRNG_DOMAIN_SEP_CONST = 0
 
         init(digest, digest.length, dsc);
 
