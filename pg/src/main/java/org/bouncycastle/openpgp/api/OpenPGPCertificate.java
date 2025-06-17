@@ -15,7 +15,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
@@ -116,8 +115,8 @@ public class OpenPGPCertificate
         this.policy = policy;
 
         this.keyRing = keyRing;
-        this.subkeys = new LinkedHashMap<>();
-        this.componentSignatureChains = new LinkedHashMap<>();
+        this.subkeys = new LinkedHashMap<KeyIdentifier, OpenPGPSubkey>();
+        this.componentSignatureChains = new LinkedHashMap<OpenPGPCertificateComponent, OpenPGPSignatureChains>();
 
         Iterator<PGPPublicKey> rawKeys = keyRing.getPublicKeys();
 
@@ -184,7 +183,7 @@ public class OpenPGPCertificate
      */
     public Map<KeyIdentifier, OpenPGPComponentKey> getPublicKeys()
     {
-        Map<KeyIdentifier, OpenPGPComponentKey> keys = new HashMap<>();
+        Map<KeyIdentifier, OpenPGPComponentKey> keys = new HashMap<KeyIdentifier, OpenPGPComponentKey>();
         keys.put(primaryKey.getKeyIdentifier(), primaryKey);
         keys.putAll(subkeys);
         return keys;
@@ -208,7 +207,7 @@ public class OpenPGPCertificate
      */
     public Map<KeyIdentifier, OpenPGPSubkey> getSubkeys()
     {
-        return new LinkedHashMap<>(subkeys);
+        return new LinkedHashMap<KeyIdentifier, OpenPGPSubkey>(subkeys);
     }
 
     /**
@@ -249,7 +248,7 @@ public class OpenPGPCertificate
      */
     public List<OpenPGPCertificateComponent> getComponents()
     {
-        return new ArrayList<>(componentSignatureChains.keySet());
+        return new ArrayList<OpenPGPCertificateComponent>(componentSignatureChains.keySet());
     }
 
     /**
@@ -261,7 +260,7 @@ public class OpenPGPCertificate
      */
     public List<OpenPGPComponentKey> getKeys()
     {
-        List<OpenPGPComponentKey> keys = new ArrayList<>();
+        List<OpenPGPComponentKey> keys = new ArrayList<OpenPGPComponentKey>();
         keys.add(primaryKey);
         keys.addAll(subkeys.values());
         return keys;
@@ -304,7 +303,7 @@ public class OpenPGPCertificate
      */
     public OpenPGPComponentKey getKey(KeyIdentifier identifier)
     {
-        if (identifier.matches(getPrimaryKey().getPGPPublicKey().getKeyIdentifier()))
+        if (identifier.matchesExplicit(getPrimaryKey().getPGPPublicKey().getKeyIdentifier()))
         {
             return primaryKey;
         }
@@ -370,7 +369,7 @@ public class OpenPGPCertificate
             return (PGPPublicKeyRing)keyRing;
         }
 
-        List<PGPPublicKey> list = new ArrayList<>();
+        List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
         for (Iterator<PGPPublicKey> it = keyRing.getPublicKeys(); it.hasNext(); )
         {
             list.add(it.next());
@@ -395,7 +394,7 @@ public class OpenPGPCertificate
      */
     public List<KeyIdentifier> getAllKeyIdentifiers()
     {
-        List<KeyIdentifier> identifiers = new ArrayList<>();
+        List<KeyIdentifier> identifiers = new ArrayList<KeyIdentifier>();
         for (Iterator<PGPPublicKey> it = keyRing.getPublicKeys(); it.hasNext(); )
         {
             PGPPublicKey key = it.next();
@@ -637,7 +636,6 @@ public class OpenPGPCertificate
     public String toAsciiArmoredString(PacketFormat packetFormat)
         throws IOException
     {
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ArmoredOutputStream.Builder armorBuilder = ArmoredOutputStream.builder()
             .clearHeaders();
         // Add fingerprint comment
@@ -649,7 +647,24 @@ public class OpenPGPCertificate
             armorBuilder.addEllipsizedComment(it.next().getUserId());
         }
 
+        return toAsciiArmoredString(packetFormat, armorBuilder);
+    }
+
+    /**
+     * Return an ASCII armored {@link String} containing the certificate.
+     * The {@link ArmoredOutputStream.Builder} can be used to customize the ASCII armor (headers, CRC etc.).
+     *
+     * @param packetFormat packet length encoding format
+     * @param armorBuilder builder for the ASCII armored output stream
+     * @return armored certificate
+     * @throws IOException if the cert cannot be encoded
+     */
+    public String toAsciiArmoredString(PacketFormat packetFormat, ArmoredOutputStream.Builder armorBuilder)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         ArmoredOutputStream aOut = armorBuilder.build(bOut);
+
         aOut.write(getEncoded(packetFormat));
         aOut.close();
         return bOut.toString();
@@ -682,7 +697,7 @@ public class OpenPGPCertificate
         BCPGOutputStream pOut = new BCPGOutputStream(bOut, format);
 
         // Make sure we export a TPK
-        List<PGPPublicKey> list = new ArrayList<>();
+        List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
         for (Iterator<PGPPublicKey> it = getPGPKeyRing().getPublicKeys(); it.hasNext(); )
         {
             list.add(it.next());
@@ -974,7 +989,7 @@ public class OpenPGPCertificate
             return directKeyBinding;
         }
 
-        List<OpenPGPSignatureChain> uidBindings = new ArrayList<>();
+        List<OpenPGPSignatureChain> uidBindings = new ArrayList<OpenPGPSignatureChain>();
         for (Iterator<OpenPGPUserId> it = getPrimaryKey().getUserIDs().iterator(); it.hasNext(); )
         {
             OpenPGPSignatureChain uidBinding = getAllSignatureChainsFor(it.next())
@@ -1017,7 +1032,7 @@ public class OpenPGPCertificate
      */
     public List<OpenPGPIdentityComponent> getIdentities()
     {
-        return new ArrayList<>(primaryKey.identityComponents);
+        return new ArrayList<OpenPGPIdentityComponent>(primaryKey.identityComponents);
     }
 
     /**
@@ -1824,7 +1839,7 @@ public class OpenPGPCertificate
 
             OpenPGPComponentKey subkey = getTargetKeyComponent();
             // Signing subkey needs embedded primary key binding signature
-            List<PGPSignature> embeddedSignatures = new ArrayList<>();
+            List<PGPSignature> embeddedSignatures = new ArrayList<PGPSignature>();
             try
             {
                 PGPSignatureList sigList = signature.getHashedSubPackets().getEmbeddedSignatures();
@@ -2245,7 +2260,7 @@ public class OpenPGPCertificate
         public OpenPGPPrimaryKey(PGPPublicKey rawPubkey, OpenPGPCertificate certificate)
         {
             super(rawPubkey, certificate);
-            this.identityComponents = new ArrayList<>();
+            this.identityComponents = new ArrayList<OpenPGPIdentityComponent>();
 
             Iterator<String> userIds = rawPubkey.getUserIDs();
             while (userIds.hasNext())
@@ -2324,7 +2339,7 @@ public class OpenPGPCertificate
         @Override
         public OpenPGPComponentSignature getLatestSelfSignature(Date evaluationTime)
         {
-            List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+            List<OpenPGPComponentSignature> signatures = new ArrayList<OpenPGPComponentSignature>();
 
             OpenPGPComponentSignature directKeySig = getLatestDirectKeySelfSignature(evaluationTime);
             if (directKeySig != null)
@@ -2366,7 +2381,7 @@ public class OpenPGPCertificate
          */
         public List<OpenPGPUserId> getUserIDs()
         {
-            List<OpenPGPUserId> userIds = new ArrayList<>();
+            List<OpenPGPUserId> userIds = new ArrayList<OpenPGPUserId>();
             for (Iterator<OpenPGPIdentityComponent> it = identityComponents.iterator(); it.hasNext(); )
             {
                 OpenPGPIdentityComponent identity = it.next();
@@ -2398,7 +2413,7 @@ public class OpenPGPCertificate
          */
         public List<OpenPGPUserId> getValidUserIDs(Date evaluationTime)
         {
-            List<OpenPGPUserId> userIds = new ArrayList<>();
+            List<OpenPGPUserId> userIds = new ArrayList<OpenPGPUserId>();
             for (Iterator<OpenPGPIdentityComponent> it = identityComponents.iterator(); it.hasNext(); )
             {
                 OpenPGPIdentityComponent identity = it.next();
@@ -2499,7 +2514,7 @@ public class OpenPGPCertificate
          */
         public List<OpenPGPUserAttribute> getUserAttributes()
         {
-            List<OpenPGPUserAttribute> userAttributes = new ArrayList<>();
+            List<OpenPGPUserAttribute> userAttributes = new ArrayList<OpenPGPUserAttribute>();
             for (Iterator<OpenPGPIdentityComponent> it = identityComponents.iterator(); it.hasNext(); )
             {
                 OpenPGPIdentityComponent identity = it.next();
@@ -2519,7 +2534,7 @@ public class OpenPGPCertificate
         protected List<OpenPGPComponentSignature> getKeySignatures()
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignatures();
-            List<OpenPGPCertificate.OpenPGPComponentSignature> list = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentSignature> list = new ArrayList<OpenPGPCertificate.OpenPGPComponentSignature>();
             while (iterator.hasNext())
             {
                 PGPSignature sig = iterator.next();
@@ -2563,7 +2578,7 @@ public class OpenPGPCertificate
 
         private List<OpenPGPComponentSignature> signIterToList(OpenPGPIdentityComponent identity, Iterator<PGPSignature> iterator)
         {
-            List<OpenPGPComponentSignature> list = new ArrayList<>();
+            List<OpenPGPComponentSignature> list = new ArrayList<OpenPGPComponentSignature>();
             while (iterator.hasNext())
             {
                 PGPSignature sig = iterator.next();
@@ -2614,7 +2629,7 @@ public class OpenPGPCertificate
         protected List<OpenPGPComponentSignature> getKeySignatures()
         {
             Iterator<PGPSignature> iterator = rawPubkey.getSignatures();
-            List<OpenPGPCertificate.OpenPGPComponentSignature> list = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentSignature> list = new ArrayList<OpenPGPCertificate.OpenPGPComponentSignature>();
             while (iterator.hasNext())
             {
                 PGPSignature sig = iterator.next();
@@ -2840,7 +2855,7 @@ public class OpenPGPCertificate
     public static class OpenPGPSignatureChain
         implements Comparable<OpenPGPSignatureChain>, Iterable<OpenPGPSignatureChain.Link>
     {
-        private final List<Link> chainLinks = new ArrayList<>();
+        private final List<Link> chainLinks = new ArrayList<Link>();
 
         private OpenPGPSignatureChain(Link rootLink)
         {
@@ -2893,7 +2908,7 @@ public class OpenPGPCertificate
          */
         public List<OpenPGPComponentSignature> getSignatures()
         {
-            List<OpenPGPComponentSignature> signatures = new ArrayList<>();
+            List<OpenPGPComponentSignature> signatures = new ArrayList<OpenPGPComponentSignature>();
             for (Link link : chainLinks)
             {
                 signatures.add(link.getSignature());
@@ -3034,41 +3049,56 @@ public class OpenPGPCertificate
          */
         public Date getSince()
         {
-            // Find most recent chain link
-//            return chainLinks.stream()
-//                .map(it -> it.signature)
-//                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
-//                .map(OpenPGPComponentSignature::getCreationTime)
-//                .orElse(null);
-            return chainLinks.stream()
-                .map(new Function<Link, Object>()
+            Date latestDate = null;
+            for (Iterator it = chainLinks.iterator(); it.hasNext(); )
+            {
+                Link link = (Link)it.next();
+                OpenPGPComponentSignature signature = link.getSignature();
+                Date currentDate = signature.getCreationTime();
+                if (latestDate == null || currentDate.after(latestDate))
                 {
-                    @Override
-                    public OpenPGPComponentSignature apply(Link it)
-                    {
-                        return it.signature; // Replace lambda: `it -> it.signature`
-                    }
-
-                })
-                .max(new Comparator<Object>()
-                {
-                    @Override
-                    public int compare(Object o1, Object o2)
-                    {
-                        // Replace method reference: `Comparator.comparing(OpenPGPComponentSignature::getCreationTime)`
-                        return ((OpenPGPComponentSignature)o1).getCreationTime().compareTo(((OpenPGPComponentSignature)o2).getCreationTime());
-                    }
-                })
-                .map(new Function<Object, Date>()
-                {
-                    @Override
-                    public Date apply(Object sig)
-                    {
-                        return ((OpenPGPComponentSignature)sig).getCreationTime(); // Replace method reference: `OpenPGPComponentSignature::getCreationTime`
-                    }
-                })
-                .orElse(null);
+                    latestDate = currentDate;
+                }
+            }
+            return latestDate;
         }
+//        public Date getSince()
+//        {
+//            // Find most recent chain link
+////            return chainLinks.stream()
+////                .map(it -> it.signature)
+////                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
+////                .map(OpenPGPComponentSignature::getCreationTime)
+////                .orElse(null);
+//            return chainLinks.stream()
+//                .map(new Function<Link, Object>()
+//                {
+//                    @Override
+//                    public OpenPGPComponentSignature apply(Link it)
+//                    {
+//                        return it.signature; // Replace lambda: `it -> it.signature`
+//                    }
+//
+//                })
+//                .max(new Comparator<Object>()
+//                {
+//                    @Override
+//                    public int compare(Object o1, Object o2)
+//                    {
+//                        // Replace method reference: `Comparator.comparing(OpenPGPComponentSignature::getCreationTime)`
+//                        return ((OpenPGPComponentSignature)o1).getCreationTime().compareTo(((OpenPGPComponentSignature)o2).getCreationTime());
+//                    }
+//                })
+//                .map(new Function<Object, Date>()
+//                {
+//                    @Override
+//                    public Date apply(Object sig)
+//                    {
+//                        return ((OpenPGPComponentSignature)sig).getCreationTime(); // Replace method reference: `OpenPGPComponentSignature::getCreationTime`
+//                    }
+//                })
+//                .orElse(null);
+//        }
 
         /**
          * Return the date until which the chain link is valid.
@@ -3422,7 +3452,7 @@ public class OpenPGPCertificate
         implements Iterable<OpenPGPSignatureChain>
     {
         private final OpenPGPCertificateComponent targetComponent;
-        private final Set<OpenPGPSignatureChain> chains = new TreeSet<>();
+        private final Set<OpenPGPSignatureChain> chains = new TreeSet<OpenPGPSignatureChain>();
 
         public OpenPGPSignatureChains(OpenPGPCertificateComponent component)
         {
@@ -3583,7 +3613,7 @@ public class OpenPGPCertificate
 
     private List<OpenPGPComponentKey> filterKeys(Date evaluationTime, KeyFilter filter)
     {
-        List<OpenPGPComponentKey> result = new ArrayList<>();
+        List<OpenPGPComponentKey> result = new ArrayList<OpenPGPComponentKey>();
         for (Iterator<OpenPGPComponentKey> it = getKeys().iterator(); it.hasNext(); )
         {
             OpenPGPComponentKey key = it.next();

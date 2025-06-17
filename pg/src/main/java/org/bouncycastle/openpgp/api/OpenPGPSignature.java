@@ -1,5 +1,12 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.KeyIdentifier;
@@ -16,12 +23,6 @@ import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.openpgp.api.exception.MalformedOpenPGPSignatureException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.util.encoders.Hex;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * An OpenPGP signature.
@@ -125,8 +126,10 @@ public abstract class OpenPGPSignature
         }
 
         // Find most expressive identifier
-        for (KeyIdentifier identifier : identifiers)
+        for (Iterator it = identifiers.iterator(); it.hasNext();)
         {
+            KeyIdentifier identifier = (KeyIdentifier)it.next();
+
             // non-wildcard and has fingerprint
             if (!identifier.isWildcard() && identifier.getFingerprint() != null)
             {
@@ -135,8 +138,9 @@ public abstract class OpenPGPSignature
         }
 
         // Find non-wildcard identifier
-        for (KeyIdentifier identifier : identifiers)
+        for (Iterator it = identifiers.iterator(); it.hasNext();)
         {
+            KeyIdentifier identifier = (KeyIdentifier)it.next();
             // non-wildcard (and no fingerprint)
             if (!identifier.isWildcard())
             {
@@ -295,17 +299,21 @@ public abstract class OpenPGPSignature
                     this, "Signature predates issuer key creation time.");
         }
 
-        for (NotationData notation : hashed.getNotationDataOccurrences())
+        NotationData[] notations = hashed.getNotationDataOccurrences();
+        for (int i = 0; i< notations.length; i++ )
         {
+            NotationData notation = notations[i];
             if (notation.isCritical())
             {
                 throw new MalformedOpenPGPSignatureException(
-                        this, "Critical unknown NotationData encountered: " + notation.getNotationName());
+                    this, "Critical unknown NotationData encountered: " + notation.getNotationName());
             }
         }
 
-        for (SignatureSubpacket unknownSubpacket : hashed.toArray())
+        SignatureSubpacket[] signatureSubpackets = hashed.toArray();
+        for (int i = 0; i != signatureSubpackets.length; i++)
         {
+            SignatureSubpacket unknownSubpacket = signatureSubpackets[i];
             // SignatureSubpacketInputStream returns unknown subpackets as SignatureSubpacket
             if (unknownSubpacket.isCritical() &&
                     unknownSubpacket.getClass().equals(SignatureSubpacket.class))

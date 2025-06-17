@@ -22,7 +22,7 @@ public class BouncyCastlePQCProvider
     extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Post-Quantum Security Provider v1.80";
+    private static String info = "BouncyCastle Post-Quantum Security Provider v1.81";
 
     public static String PROVIDER_NAME = "BCPQC";
 
@@ -32,8 +32,8 @@ public class BouncyCastlePQCProvider
     private static final Map keyInfoConverters = new HashMap();
 
     /*
-    * Configurable symmetric ciphers
-    */
+     * Configurable symmetric ciphers
+     */
     private static final String ALGORITHM_PACKAGE = "org.bouncycastle.pqc.jcajce.provider.";
     private static final String[] ALGORITHMS =
         {
@@ -51,7 +51,7 @@ public class BouncyCastlePQCProvider
      */
     public BouncyCastlePQCProvider()
     {
-        super(PROVIDER_NAME, 1.80, info);
+        super(PROVIDER_NAME, 1.81, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {
@@ -118,7 +118,7 @@ public class BouncyCastlePQCProvider
         addAttributes(key, attributes);
     }
 
-    public void addAlgorithm(String type,  ASN1ObjectIdentifier oid, String className)
+    public void addAlgorithm(String type, ASN1ObjectIdentifier oid, String className)
     {
         if (!containsKey(type + "." + className))
         {
@@ -151,7 +151,7 @@ public class BouncyCastlePQCProvider
 
     public void addAttributes(String key, Map<String, String> attributeMap)
     {
-        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext();)
+        for (Iterator it = attributeMap.keySet().iterator(); it.hasNext(); )
         {
             String attributeName = (String)it.next();
             String attributeKey = key + " " + attributeName;

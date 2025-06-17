@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api.test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
@@ -13,11 +12,12 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
+import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 public class OpenPGPMessageGeneratorTest
-        extends APITest
+    extends APITest
 {
     @Override
     public String getName()
@@ -26,7 +26,7 @@ public class OpenPGPMessageGeneratorTest
     }
 
     protected void performTestWith(OpenPGPApi api)
-            throws PGPException, IOException
+        throws PGPException, IOException
     {
         armoredLiteralDataPacket(api);
         unarmoredLiteralDataPacket(api);
@@ -41,39 +41,39 @@ public class OpenPGPMessageGeneratorTest
     }
 
     private void armoredLiteralDataPacket(OpenPGPApi api)
-            throws PGPException, IOException
+        throws PGPException, IOException
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setAllowPadding(false);
+            .setAllowPadding(false);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
         String nl = Strings.lineSeparator();
-        String expected = 
-        	"-----BEGIN PGP MESSAGE-----" + nl +
-            nl +
-            "yxNiAAAAAABIZWxsbywgV29ybGQh" + nl +
-            "-----END PGP MESSAGE-----" + nl;
+        String expected =
+            "-----BEGIN PGP MESSAGE-----" + nl +
+                nl +
+                "yxNiAAAAAABIZWxsbywgV29ybGQh" + nl +
+                "-----END PGP MESSAGE-----" + nl;
         isEquals(expected, bOut.toString());
     }
 
     private void unarmoredLiteralDataPacket(OpenPGPApi api)
-            throws PGPException, IOException
+        throws PGPException, IOException
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setArmored(false) // disable ASCII armor
-                .setAllowPadding(false); // disable padding
+            .setArmored(false) // disable ASCII armor
+            .setAllowPadding(false); // disable padding
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -81,42 +81,54 @@ public class OpenPGPMessageGeneratorTest
     }
 
     private void armoredCompressedLiteralDataPacket(OpenPGPApi api)
-            throws PGPException, IOException
+        throws PGPException, IOException
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setAllowPadding(false)
-                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
+            .setAllowPadding(false)
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.ZIP;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
         String nl = Strings.lineSeparator();
         String expected =
-        	"-----BEGIN PGP MESSAGE-----" + nl +
-            nl +
-            "yBUBOy2cxAACHqk5Ofk6CuH5RTkpigA=" + nl +
-            "-----END PGP MESSAGE-----" + nl;
+            "-----BEGIN PGP MESSAGE-----" + nl +
+                nl +
+                "yBUBOy2cxAACHqk5Ofk6CuH5RTkpigA=" + nl +
+                "-----END PGP MESSAGE-----" + nl;
         isEquals(expected, bOut.toString());
     }
 
     private void unarmoredCompressedLiteralDataPacket(OpenPGPApi api)
-            throws IOException, PGPException
+        throws IOException, PGPException
     {
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setArmored(false) // no armor
-                .setAllowPadding(false)
-                .setCompressionNegotiator((conf, neg) -> CompressionAlgorithmTags.ZIP);
+            .setArmored(false) // no armor
+            .setAllowPadding(false)
+            .setCompressionNegotiator(new OpenPGPMessageGenerator.CompressionNegotiator()
+            {
+                public int negotiateCompression(OpenPGPMessageGenerator messageGenerator, OpenPGPPolicy policy)
+                {
+                    return CompressionAlgorithmTags.ZIP;
+                }
+            });
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream msgOut = gen.open(bOut);
 
         // Only write a LiteralData packet with "Hello, World!" as content
-        msgOut.write("Hello, World!".getBytes(StandardCharsets.UTF_8));
+        msgOut.write(Strings.toUTF8ByteArray("Hello, World!"));
 
         msgOut.close();
 
@@ -124,7 +136,7 @@ public class OpenPGPMessageGeneratorTest
     }
 
     private void seipd2EncryptedMessage(OpenPGPApi api)
-            throws IOException, PGPException
+        throws IOException, PGPException
     {
         OpenPGPCertificate cert = api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.V6_CERT);
 
@@ -133,14 +145,14 @@ public class OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream encOut = gen.open(bOut);
-        encOut.write("Hello World!\n".getBytes(StandardCharsets.UTF_8));
+        encOut.write(Strings.toUTF8ByteArray("Hello, World!"));
         encOut.close();
 
         System.out.println(bOut);
     }
 
     private void seipd1EncryptedMessage(OpenPGPApi api)
-            throws IOException, PGPException
+        throws IOException, PGPException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.BOB_KEY);
 
@@ -149,22 +161,22 @@ public class OpenPGPMessageGeneratorTest
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream encOut = gen.open(bOut);
-        encOut.write("Hello World!\n".getBytes(StandardCharsets.UTF_8));
+        encOut.write(Strings.toUTF8ByteArray("Hello, World!"));
         encOut.close();
 
         System.out.println(bOut);
     }
 
     private void seipd2EncryptedSignedMessage(OpenPGPApi api)
-            throws IOException, PGPException
+        throws IOException, PGPException
     {
         OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY);
 
         OpenPGPMessageGenerator gen = api.signAndOrEncryptMessage()
-                .setAllowPadding(true)
-                .setArmored(true)
-                .addSigningKey(key)
-                .addEncryptionCertificate(key);
+            .setAllowPadding(true)
+            .setArmored(true)
+            .addSigningKey(key)
+            .addEncryptionCertificate(key);
 
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OutputStream encOut = gen.open(bOut);

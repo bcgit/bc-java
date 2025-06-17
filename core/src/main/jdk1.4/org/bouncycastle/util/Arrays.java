@@ -962,6 +962,14 @@ public final class Arrays
         }
     }
 
+    public static void clear(long[] data)
+    {
+        if (null != data)
+        {
+            java.util.Arrays.fill(data, 0);
+        }
+    }
+
     public static boolean isNullOrContainsNull(Object[] array)
     {
         if (null == array)
@@ -1135,6 +1143,28 @@ public final class Arrays
         }
 
         return hc;
+    }
+
+    public static boolean segmentsOverlap(int aOff, int aLen, int bOff, int bLen)
+    {
+        return aLen > 0
+            && bLen > 0
+            && aOff - bOff < bLen
+            && bOff - aOff < aLen;
+    }
+
+    public static void validateSegment(byte[] buf, int off, int len)
+    {
+        if (buf == null)
+        {
+            throw new NullPointerException("'buf' cannot be null");
+        }
+        int available = buf.length - off;
+        int remaining = available - len;
+        if ((off | len | available | remaining) < 0)
+        {
+            throw new IndexOutOfBoundsException("buf.length: " + buf.length + ", off: " + off + ", len: " + len);
+        }
     }
 
     /**

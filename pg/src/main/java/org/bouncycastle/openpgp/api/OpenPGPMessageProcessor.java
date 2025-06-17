@@ -1,6 +1,13 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.openpgp.IntegrityProtectedInputStream;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
@@ -11,18 +18,11 @@ import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPSessionKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPUtil;
-import org.bouncycastle.openpgp.IntegrityProtectedInputStream;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PBEDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.util.Arrays;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class OpenPGPMessageProcessor
 {
@@ -433,7 +433,7 @@ public class OpenPGPMessageProcessor
      */
     private List<PGPPBEEncryptedData> skesks(PGPEncryptedDataList encDataList)
     {
-        List<PGPPBEEncryptedData> list = new ArrayList<>();
+        List<PGPPBEEncryptedData> list = new ArrayList<PGPPBEEncryptedData>();
         for (PGPEncryptedData encData : encDataList)
         {
             if (encData instanceof PGPPBEEncryptedData)
@@ -452,7 +452,7 @@ public class OpenPGPMessageProcessor
      */
     private List<PGPPublicKeyEncryptedData> pkesks(PGPEncryptedDataList encDataList)
     {
-        List<PGPPublicKeyEncryptedData> list = new ArrayList<>();
+        List<PGPPublicKeyEncryptedData> list = new ArrayList<PGPPublicKeyEncryptedData>();
         for (PGPEncryptedData encData : encDataList)
         {
             if (encData instanceof PGPPublicKeyEncryptedData)
@@ -495,7 +495,7 @@ public class OpenPGPMessageProcessor
         private final OpenPGPKeyMaterialPool.OpenPGPCertificatePool certificatePool;
         private final OpenPGPKeyMaterialPool.OpenPGPKeyPool keyPool;
         private final KeyPassphraseProvider.DefaultKeyPassphraseProvider keyPassphraseProvider;
-        public final List<char[]> messagePassphrases = new ArrayList<>();
+        public final List<char[]> messagePassphrases = new ArrayList<char[]>();
         private MissingMessagePassphraseCallback missingMessagePassphraseCallback;
         private PGPExceptionCallback exceptionCallback = null;
         private PGPSessionKey sessionKey;

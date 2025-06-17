@@ -13,6 +13,8 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.falcon to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.dilithium to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.mayo to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.snova to java.base;
 
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
@@ -127,6 +129,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.frodo;
     exports org.bouncycastle.pqc.crypto.hqc;
     exports org.bouncycastle.pqc.crypto.lms;
+    exports org.bouncycastle.pqc.crypto.mayo;
     exports org.bouncycastle.pqc.crypto.newhope;
     exports org.bouncycastle.pqc.crypto.ntru;
     exports org.bouncycastle.pqc.crypto.ntruprime;
@@ -136,6 +139,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sphincs;
     exports org.bouncycastle.pqc.crypto.sphincsplus;
     exports org.bouncycastle.pqc.crypto.slhdsa;
+    exports org.bouncycastle.pqc.crypto.snova;
     exports org.bouncycastle.pqc.crypto.util;
     exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.math.ntru;
@@ -151,12 +155,14 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.hqc;
     exports org.bouncycastle.pqc.jcajce.provider.kyber;
     exports org.bouncycastle.pqc.jcajce.provider.lms;
+    exports org.bouncycastle.pqc.jcajce.provider.mayo;
     exports org.bouncycastle.pqc.jcajce.provider.mceliece;
     exports org.bouncycastle.pqc.jcajce.provider.ntru;
     exports org.bouncycastle.pqc.jcajce.provider.ntruprime;
     exports org.bouncycastle.pqc.jcajce.provider.newhope;
     exports org.bouncycastle.pqc.jcajce.provider.picnic;
     exports org.bouncycastle.pqc.jcajce.provider.saber;
+    exports org.bouncycastle.pqc.jcajce.provider.snova;
     exports org.bouncycastle.pqc.jcajce.provider.sphincs;
     exports org.bouncycastle.pqc.jcajce.provider.sphincsplus; 
     exports org.bouncycastle.pqc.jcajce.provider.util;

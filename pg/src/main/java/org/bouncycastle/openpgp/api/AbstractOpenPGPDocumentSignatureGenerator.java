@@ -1,12 +1,9 @@
 package org.bouncycastle.openpgp.api;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.IntPredicate;
 
 import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.openpgp.PGPException;
@@ -22,10 +19,10 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
     protected final OpenPGPPolicy policy;
 
     // Below lists all use the same indexing
-    protected final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<>();
-    protected final List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<>();
-    protected final List<SignatureParameters.Callback> signatureCallbacks = new ArrayList<>();
-    protected final List<KeyPassphraseProvider> signingKeyPassphraseProviders = new ArrayList<>();
+    protected final List<PGPSignatureGenerator> signatureGenerators = new ArrayList<PGPSignatureGenerator>();
+    protected final List<OpenPGPKey.OpenPGPSecretKey> signingKeys = new ArrayList<OpenPGPKey.OpenPGPSecretKey>();
+    protected final List<SignatureParameters.Callback> signatureCallbacks = new ArrayList<SignatureParameters.Callback>();
+    protected final List<KeyPassphraseProvider> signingKeyPassphraseProviders = new ArrayList<KeyPassphraseProvider>();
 
     protected final KeyPassphraseProvider.DefaultKeyPassphraseProvider defaultKeyPassphraseProvider =
         new KeyPassphraseProvider.DefaultKeyPassphraseProvider();
@@ -36,7 +33,7 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
                                                                    final OpenPGPPolicy policy)
         {
-            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = certificate.getSigningKeys().iterator(); it.hasNext(); )
             {
                 OpenPGPCertificate.OpenPGPComponentKey key = it.next();
@@ -64,7 +61,11 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
      */
     public T setSigningKeySelector(SubkeySelector signingKeySelector)
     {
-        this.signingKeySelector = Objects.requireNonNull(signingKeySelector);
+        if (signingKeySelector == null)
+        {
+             throw new NullPointerException();
+        }
+        this.signingKeySelector = signingKeySelector;
         return (T)this;
     }
 
@@ -260,22 +261,41 @@ public class AbstractOpenPGPDocumentSignatureGenerator<T extends AbstractOpenPGP
         PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
         if (hashPreferences != null)
         {
-            int[] pref = Arrays.stream(hashPreferences.getPreferences())
-                .filter(new IntPredicate()
-                { // Replace lambda with anonymous class for IntPredicate
-                    @Override
-                    public boolean test(int it)
-                    {
-                        return policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date());
-                    }
-                })
-                .toArray();
-            if (pref.length != 0)
+            int[] prefs = hashPreferences.getPreferences();
+            List<Integer> acceptablePrefs = new ArrayList<Integer>();
+            for (int i = 0; i < prefs.length; i++)
             {
-                return pref[0];
+                int algo = prefs[i];
+                if (policy.isAcceptableDocumentSignatureHashAlgorithm(algo, new Date()))
+                {
+                    acceptablePrefs.add(algo);
+                }
+            }
+            if (!acceptablePrefs.isEmpty())
+            {
+                return acceptablePrefs.get(0);
             }
         }
         return policy.getDefaultDocumentSignatureHashAlgorithm();
+//        PreferredAlgorithms hashPreferences = key.getHashAlgorithmPreferences();
+//        if (hashPreferences != null)
+//        {
+//            int[] pref = Arrays.stream(hashPreferences.getPreferences())
+//                .filter(new IntPredicate()
+//                { // Replace lambda with anonymous class for IntPredicate
+//                    @Override
+//                    public boolean test(int it)
+//                    {
+//                        return policy.isAcceptableDocumentSignatureHashAlgorithm(it, new Date());
+//                    }
+//                })
+//                .toArray();
+//            if (pref.length != 0)
+//            {
+//                return pref[0];
+//            }
+//        }
+//        return policy.getDefaultDocumentSignatureHashAlgorithm();
     }
 
     /**

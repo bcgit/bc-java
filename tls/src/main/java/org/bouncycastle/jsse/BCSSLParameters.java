@@ -37,6 +37,7 @@ public final class BCSSLParameters
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
     private boolean useCipherSuitesOrder;
+    private boolean useNamedGroupsOrder;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
@@ -187,6 +188,16 @@ public final class BCSSLParameters
     public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
     {
         this.useCipherSuitesOrder = useCipherSuitesOrder;
+    }
+
+    public boolean getUseNamedGroupsOrder()
+    {
+        return useNamedGroupsOrder;
+    }
+
+    public void setUseNamedGroupsOrder(boolean useNamedGroupsOrder)
+    {
+        this.useNamedGroupsOrder = useNamedGroupsOrder;
     }
 
     public boolean getEnableRetransmissions()

@@ -397,7 +397,9 @@ public class BcTlsCrypto
 
     public boolean hasNamedGroup(int namedGroup)
     {
-        return NamedGroup.refersToASpecificGroup(namedGroup);
+        return NamedGroup.refersToASpecificCurve(namedGroup)
+            || NamedGroup.refersToASpecificFiniteField(namedGroup)
+            || NamedGroup.refersToASpecificKem(namedGroup);
     }
 
     public boolean hasRSAEncryption()
@@ -478,6 +480,11 @@ public class BcTlsCrypto
     public boolean hasSRPAuthentication()
     {
         return true;
+    }
+
+    public TlsSecret createHybridSecret(TlsSecret s1, TlsSecret s2)
+    {
+        return adoptLocalSecret(Arrays.concatenate(s1.extract(), s2.extract()));
     }
 
     public TlsSecret createSecret(byte[] data)

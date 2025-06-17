@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.bouncycastle.bcpg.KeyIdentifier;
 
@@ -21,7 +21,7 @@ import org.bouncycastle.bcpg.KeyIdentifier;
 public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
         implements OpenPGPKeyMaterialProvider<M>
 {
-    private final Map<KeyIdentifier, M> pool = new HashMap<>();
+    private final Map<KeyIdentifier, M> pool = new HashMap<KeyIdentifier, M>();
     private OpenPGPKeyMaterialProvider<M> callback = null;
     private boolean cacheResultsFromCallback = true;
 
@@ -62,7 +62,11 @@ public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
      */
     public OpenPGPKeyMaterialPool<M> setMissingItemCallback(OpenPGPKeyMaterialProvider<M> callback)
     {
-        this.callback = Objects.requireNonNull(callback);
+        if (callback == null)
+        {
+            throw new NullPointerException();
+        }
+        this.callback = callback;
         return this;
     }
 
@@ -121,9 +125,8 @@ public abstract class OpenPGPKeyMaterialPool<M extends OpenPGPCertificate>
      */
     public Collection<M> getAllItems()
     {
-        return pool.values().stream()
-                .distinct()
-                .collect(Collectors.toList());
+        Stream<M> distinct = pool.values().stream().distinct();
+        return distinct.collect(Collectors.<M>toList());
     }
 
     /**

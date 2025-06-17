@@ -64,8 +64,8 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 public class SMIMESignedParser
     extends CMSSignedDataParser
 {
-    Object                  message;
-    MimeBodyPart            content;
+    protected Object message;
+    protected MimeBodyPart content;
 
     private static File getTmpFile()
         throws MessagingException

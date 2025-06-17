@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto;
 
+import org.bouncycastle.util.Arrays;
 
 /**
  * A wrapper class that allows block ciphers to be used to process data in
@@ -237,7 +238,7 @@ public class BufferedBlockCipher
             System.arraycopy(in, inOff, buf, bufOff, gapLen);
             inOff += gapLen;
             len -= gapLen;
-            if (in == out && segmentsOverlap(inOff, len, outOff, length))
+            if (in == out && Arrays.segmentsOverlap(inOff, len, outOff, length))
             {
                 in = new byte[len];
                 System.arraycopy(out, inOff, in, 0, len);
@@ -356,11 +357,5 @@ public class BufferedBlockCipher
         // reset the underlying cipher.
         //
         cipher.reset();
-    }
-
-    protected boolean segmentsOverlap(int inOff, int inLen, int outOff, int outLen)
-    {
-        // please ensure a valid check for inLen > 0 and outLen > 0 outside this function
-        return inOff <= outOff + outLen && outOff <= inOff + inLen;
     }
 }

@@ -30,6 +30,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -101,7 +102,7 @@ public class FalconTest
             System.out.println("Public Key Algorithm : " + publicKey.getAlgorithm());
             System.out.println("Public Key Format    : " + publicKey.getFormat());
             System.out.println("Encoded Key Length   : " + publicKey.getEncoded().length + " bytes");
-            System.out.println("Encoded Key (Base64) : " + java.util.Base64.getEncoder().encodeToString(publicKey.getEncoded()));
+            System.out.println("Encoded Key (Base64) : " + Base64.toBase64String(publicKey.getEncoded()));
 
         }
         catch (Exception e)

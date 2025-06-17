@@ -1,45 +1,72 @@
 package org.bouncycastle.pqc.crypto.xwing;
 
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
+import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
+import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 public class XWingPrivateKeyParameters
     extends XWingKeyParameters
 {
-    private final MLKEMPrivateKeyParameters kybPriv;
-    private final X25519PrivateKeyParameters xdhPriv;
+    private final transient byte[] seed;
+    private final transient MLKEMPrivateKeyParameters kyberPrivateKey;
+    private final transient X25519PrivateKeyParameters xdhPrivateKey;
+    private final transient MLKEMPublicKeyParameters kyberPublicKey;
+    private final transient X25519PublicKeyParameters xdhPublicKey;
 
-    XWingPrivateKeyParameters(AsymmetricKeyParameter kybPriv, AsymmetricKeyParameter xdhPriv)
+    public XWingPrivateKeyParameters(byte[] seed,
+                                     MLKEMPrivateKeyParameters kyberPrivateKey,
+                                     X25519PrivateKeyParameters xdhPrivateKey,
+                                     MLKEMPublicKeyParameters kyberPublicKey,
+                                     X25519PublicKeyParameters xdhPublicKey)
     {
         super(true);
-
-        this.kybPriv = (MLKEMPrivateKeyParameters)kybPriv;
-        this.xdhPriv = (X25519PrivateKeyParameters)xdhPriv;
+        this.seed = Arrays.clone(seed);
+        this.kyberPrivateKey = kyberPrivateKey;
+        this.xdhPrivateKey = xdhPrivateKey;
+        this.kyberPublicKey = kyberPublicKey;
+        this.xdhPublicKey = xdhPublicKey;
     }
 
-    public XWingPrivateKeyParameters(byte[] encoding)
+    public XWingPrivateKeyParameters(byte[] seed)
     {
-        super(false);
+        super(true);
+        XWingPrivateKeyParameters key = (XWingPrivateKeyParameters)XWingKeyPairGenerator.genKeyPair(seed).getPrivate();
+        this.seed = key.seed;
+        this.kyberPrivateKey = key.kyberPrivateKey;
+        this.xdhPrivateKey = key.xdhPrivateKey;
+        this.kyberPublicKey = key.kyberPublicKey;
+        this.xdhPublicKey = key.xdhPublicKey;
+    }
 
-        this.kybPriv = new MLKEMPrivateKeyParameters(MLKEMParameters.ml_kem_768, Arrays.copyOfRange(encoding, 0, encoding.length - X25519PrivateKeyParameters.KEY_SIZE));
-        this.xdhPriv = new X25519PrivateKeyParameters(encoding, encoding.length - X25519PrivateKeyParameters.KEY_SIZE);
+    public byte[] getSeed()
+    {
+        return Arrays.clone(seed);
     }
 
     MLKEMPrivateKeyParameters getKyberPrivateKey()
     {
-        return kybPriv;
+        return kyberPrivateKey;
+    }
+
+    MLKEMPublicKeyParameters getKyberPublicKey()
+    {
+        return kyberPublicKey;
     }
 
     X25519PrivateKeyParameters getXDHPrivateKey()
     {
-        return xdhPriv;
+        return xdhPrivateKey;
+    }
+
+    X25519PublicKeyParameters getXDHPublicKey()
+    {
+        return xdhPublicKey;
     }
 
     public byte[] getEncoded()
     {
-        return Arrays.concatenate(kybPriv.getEncoded(), xdhPriv.getEncoded());
+        return Arrays.clone(seed);
     }
 }

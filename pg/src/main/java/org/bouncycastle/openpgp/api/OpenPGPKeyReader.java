@@ -1,19 +1,19 @@
 package org.bouncycastle.openpgp.api;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.openpgp.PGPMarker;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Reader for {@link OpenPGPKey OpenPGPKeys} or {@link OpenPGPCertificate OpenPGPCertificates}.
@@ -103,7 +103,7 @@ public class OpenPGPKeyReader
     public OpenPGPCertificate parseCertificateOrKey(String armored)
             throws IOException
     {
-        return parseCertificateOrKey(armored.getBytes(StandardCharsets.UTF_8));
+        return parseCertificateOrKey(Strings.toUTF8ByteArray(armored));
     }
 
     /**
@@ -163,7 +163,7 @@ public class OpenPGPKeyReader
     public OpenPGPKey parseKey(String armored)
             throws IOException
     {
-        return parseKey(armored.getBytes(StandardCharsets.UTF_8));
+        return parseKey(Strings.toUTF8ByteArray(armored));
     }
 
     /**
@@ -211,7 +211,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseKeysOrCertificates(String armored)
             throws IOException
     {
-        return parseKeysOrCertificates(armored.getBytes(StandardCharsets.UTF_8));
+        return parseKeysOrCertificates(Strings.toUTF8ByteArray(armored));
     }
 
     public List<OpenPGPCertificate> parseKeysOrCertificates(InputStream inputStream)
@@ -223,7 +223,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseKeysOrCertificates(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPCertificate> certsOrKeys = new ArrayList<>();
+        List<OpenPGPCertificate> certsOrKeys = new ArrayList<OpenPGPCertificate>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
@@ -259,7 +259,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseCertificates(String armored)
             throws IOException
     {
-        return parseCertificates(armored.getBytes(StandardCharsets.UTF_8));
+        return parseCertificates(Strings.toUTF8ByteArray(armored));
     }
 
     public List<OpenPGPCertificate> parseCertificates(InputStream inputStream)
@@ -271,7 +271,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPCertificate> parseCertificates(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPCertificate> certs = new ArrayList<>();
+        List<OpenPGPCertificate> certs = new ArrayList<OpenPGPCertificate>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);
@@ -303,7 +303,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPKey> parseKeys(String armored)
             throws IOException
     {
-        return parseKeys(armored.getBytes(StandardCharsets.UTF_8));
+        return parseKeys(Strings.toUTF8ByteArray(armored));
     }
 
     public List<OpenPGPKey> parseKeys(InputStream inputStream)
@@ -315,7 +315,7 @@ public class OpenPGPKeyReader
     public List<OpenPGPKey> parseKeys(byte[] bytes)
             throws IOException
     {
-        List<OpenPGPKey> keys = new ArrayList<>();
+        List<OpenPGPKey> keys = new ArrayList<OpenPGPKey>();
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(bytes);
         InputStream decoderStream = PGPUtil.getDecoderStream(bIn);

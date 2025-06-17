@@ -13,6 +13,8 @@ import org.bouncycastle.tls.crypto.TlsECConfig;
 public interface TlsServer
     extends TlsPeer
 {
+    boolean preferLocalSupportedGroups();
+
     void init(TlsServerContext context);
 
     /**

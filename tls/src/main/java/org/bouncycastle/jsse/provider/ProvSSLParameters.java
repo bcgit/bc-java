@@ -39,7 +39,8 @@ final class ProvSSLParameters
     private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private List<BCSNIServerName> sniServerNames;
     private List<BCSNIMatcher> sniMatchers;
-    private boolean useCipherSuitesOrder = true;
+    private boolean useCipherSuitesOrder = false;
+    private boolean useNamedGroupsOrder = false;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
@@ -69,6 +70,7 @@ final class ProvSSLParameters
         p.sniServerNames = sniServerNames;
         p.sniMatchers = sniMatchers;
         p.useCipherSuitesOrder = useCipherSuitesOrder;
+        p.useNamedGroupsOrder = useNamedGroupsOrder;
         p.enableRetransmissions = enableRetransmissions;
         p.maximumPacketSize = maximumPacketSize;
         p.applicationProtocols = applicationProtocols;
@@ -212,6 +214,16 @@ final class ProvSSLParameters
     public void setUseCipherSuitesOrder(boolean useCipherSuitesOrder)
     {
         this.useCipherSuitesOrder = useCipherSuitesOrder;
+    }
+
+    public boolean getUseNamedGroupsOrder()
+    {
+        return useNamedGroupsOrder;
+    }
+
+    public void setUseNamedGroupsOrder(boolean useNamedGroupsOrder)
+    {
+        this.useNamedGroupsOrder = useNamedGroupsOrder;
     }
 
     public boolean getEnableRetransmissions()

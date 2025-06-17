@@ -19,7 +19,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.CMCEPublicKey;
-import org.bouncycastle.pqc.asn1.KyberPublicKey;
 import org.bouncycastle.pqc.asn1.McElieceCCA2PublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
@@ -375,18 +374,8 @@ public class PublicKeyFactory
         {
             MLKEMParameters kyberParameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
-            try
-            {
-                ASN1Primitive obj = keyInfo.parsePublicKey();
-                KyberPublicKey kyberKey = KyberPublicKey.getInstance(obj);
-
-                return new MLKEMPublicKeyParameters(kyberParameters, kyberKey.getT(), kyberKey.getRho());
-            }
-            catch (Exception e)
-            {
-                // we're a raw encoding
-                return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
-            }
+            // we're a raw encoding
+            return new MLKEMPublicKeyParameters(kyberParameters, keyInfo.getPublicKeyData().getOctets());
         }
     }
 

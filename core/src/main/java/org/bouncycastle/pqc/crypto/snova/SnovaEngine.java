@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.GF16;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Pack;
 
 class SnovaEngine
@@ -39,7 +40,7 @@ class SnovaEngine
         this.o = params.getO();
         this.alpha = params.getAlpha();
         this.n = params.getN();
-        if (!xSSet.containsKey(l))
+        if (!xSSet.containsKey(Integers.valueOf(l)))
         {
             byte[][] S = new byte[l][lsq];
             int[][] xS = new int[l][lsq];
@@ -57,12 +58,12 @@ class SnovaEngine
                     xS[index][ij] = GF16Utils.gf16FromNibble(S[index][ij]);
                 }
             }
-            sSet.put(l, S);
-            xSSet.put(l, xS);
+            sSet.put(Integers.valueOf(l), S);
+            xSSet.put(Integers.valueOf(l), xS);
         }
-        S = sSet.get(l);
-        xS = xSSet.get(l);
-        if (l < 4 && !fixedAbqSet.containsKey(o))
+        S = (byte[][])sSet.get(Integers.valueOf(l));
+        xS = (int[][])xSSet.get(Integers.valueOf(l));
+        if (l < 4 && !fixedAbqSet.containsKey(Integers.valueOf(o)))
         {
             int alphaxl = alpha * l;
             int alphaxlsq = alphaxl * l;
@@ -88,7 +89,7 @@ class SnovaEngine
                     genAFqS(q12, oxalphaxl + axl, fixedAbq, (oxalphaxlsq << 1) + oxalphaxlsq + axlsq);
                 }
             }
-            fixedAbqSet.put(o, fixedAbq);
+            fixedAbqSet.put(Integers.valueOf(o), fixedAbq);
         }
     }
 
@@ -564,7 +565,7 @@ class SnovaEngine
         else
         {
             int oxalphaxlsq = o * alpha * lsq;
-            byte[] fixedAbq = fixedAbqSet.get(o);
+            byte[] fixedAbq = (byte[])fixedAbqSet.get(Integers.valueOf(o));
             MapGroup1.fillAlpha(fixedAbq, 0, map1.aAlpha, m * oxalphaxlsq);
             MapGroup1.fillAlpha(fixedAbq, oxalphaxlsq, map1.bAlpha, (m - 1) * oxalphaxlsq);
             MapGroup1.fillAlpha(fixedAbq, oxalphaxlsq * 2, map1.qAlpha1, (m - 2) * oxalphaxlsq);

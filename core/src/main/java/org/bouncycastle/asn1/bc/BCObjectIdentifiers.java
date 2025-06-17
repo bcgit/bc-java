@@ -259,6 +259,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier p521_sphincs_shake256f_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.11");
     /** 1.3.9999.6.9.13 OQS_OID_P521_SPHINCSSHAKE256SSIMPLE */
     ASN1ObjectIdentifier p521_sphincs_shake256s_simple = new ASN1ObjectIdentifier("1.3.9999.6.9.13");
+
     /**
      * Picnic
      */
@@ -280,10 +281,10 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier picnicl5full = picnic_key.branch("12");
 
     ASN1ObjectIdentifier picnic_signature = picnic.branch("2");
+
     ASN1ObjectIdentifier picnic_with_sha512 = picnic_signature.branch("1");
     ASN1ObjectIdentifier picnic_with_shake256 = picnic_signature.branch("2");
     ASN1ObjectIdentifier picnic_with_sha3_512 = picnic_signature.branch("3");
-
 
     /*
      * Falcon
@@ -295,20 +296,21 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier p256_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.12");
     /** 1.3.9999.3.13 OQS_OID_RSA3072_FALCON512 */
     ASN1ObjectIdentifier rsa_3072_falcon_512 = new ASN1ObjectIdentifier("1.3.9999.3.13");
+    /** 1.3.9999.3.14 OQS_OID_FALCON1024 */
+    ASN1ObjectIdentifier falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.14");
+    /** 1.3.9999.3.15 OQS_OID_P521_FALCON1024 */
+    ASN1ObjectIdentifier p521_falcon1024 = new ASN1ObjectIdentifier("1.3.9999.3.15");
     /** 1.3.9999.3.16 OQS_OID_FALCONPADDED512 */
     ASN1ObjectIdentifier falcon_padded_512 = new ASN1ObjectIdentifier("1.3.9999.3.16");
     /** 1.3.9999.3.17 OQS_OID_P256_FALCONPADDED512 */
     ASN1ObjectIdentifier p256_falcon_padded512 = new ASN1ObjectIdentifier("1.3.9999.3.17");
     /** 1.3.9999.3.18 OQS_OID_RSA3072_FALCONPADDED512 */
     ASN1ObjectIdentifier rsa_3072_falconpadded512 = new ASN1ObjectIdentifier("1.3.9999.3.18");
-    /** 1.3.9999.3.14 OQS_OID_FALCON1024 */
-    ASN1ObjectIdentifier falcon_1024 = new ASN1ObjectIdentifier("1.3.9999.3.14");
-    /** 1.3.9999.3.15 OQS_OID_P521_FALCON1024 */
-    ASN1ObjectIdentifier p521_falcon1024 = new ASN1ObjectIdentifier("1.3.9999.3.15");
     /** 1.3.9999.3.19 OQS_OID_FALCONPADDED1024 */
     ASN1ObjectIdentifier falcon_padded_1024 = new ASN1ObjectIdentifier("1.3.9999.3.19");
     /** 1.3.9999.3.20 OQS_OID_P521_FALCONPADDED1024 */
     ASN1ObjectIdentifier p521_falcon_padded_1024 = new ASN1ObjectIdentifier("1.3.9999.3.20");
+
     /*
      * Dilithium
      */
@@ -321,6 +323,11 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier dilithium2_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.4.4"); // dilithium.branch("4");
     ASN1ObjectIdentifier dilithium3_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.6.5"); // dilithium.branch("5");
     ASN1ObjectIdentifier dilithium5_aes = new ASN1ObjectIdentifier("1.3.6.1.4.1.2.267.11.8.7"); // dilithium.branch("6");
+
+    /*
+     * ML-DSA
+     */
+    ///** 2.16.840.1.101.3.4.3.17 OQS_OID_MLDSA44 */
     /** 1.3.9999.7.5 OQS_OID_P256_MLDSA44 */
     ASN1ObjectIdentifier p256_mldsa44 = new ASN1ObjectIdentifier("1.3.9999.7.5");
     /** 1.3.9999.7.6 OQS_OID_RSA3072_MLDSA44 */
@@ -349,7 +356,6 @@ public interface BCObjectIdentifiers
     /** 2.16.840.1.114027.80.8.1.10 OQS_OID_MLDSA65_ed25519 */
     ASN1ObjectIdentifier mldsa65_ed25519 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.10");
     ///** 2.16.840.1.101.3.4.3.19 OQS_OID_MLDSA87 */
-
     /** 1.3.9999.7.8 OQS_OID_P521_MLDSA87 */
     ASN1ObjectIdentifier p521_mldsa87 = new ASN1ObjectIdentifier("1.3.9999.7.8");
     /** 2.16.840.1.114027.80.8.1.11 OQS_OID_MLDSA87_p384 */
@@ -358,6 +364,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mldsa87_bp384 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.12");
     /** 2.16.840.1.114027.80.8.1.13 OQS_OID_MLDSA87_ed448 */
     ASN1ObjectIdentifier mldsa87_ed448 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.13");
+
     /*
      * Rainbow
      */
@@ -410,7 +417,6 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mceliece6960119f_r3 = pqc_kem_mceliece.branch("8");
     ASN1ObjectIdentifier mceliece8192128_r3 = pqc_kem_mceliece.branch("9");
     ASN1ObjectIdentifier mceliece8192128f_r3 = pqc_kem_mceliece.branch("10");
-
 
     /**
      * Frodo

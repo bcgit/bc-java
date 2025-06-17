@@ -442,18 +442,13 @@ public class JcaTlsCrypto
     {
         if (NamedGroup.refersToAnXDHCurve(namedGroup))
         {
-            switch (namedGroup)
-            {
             /*
-             * TODO Return AlgorithmParameters to check against disabled algorithms
+             * TODO Return AlgorithmParameters to check against disabled algorithms?
              *
              * NOTE: The JDK doesn't even support AlgorithmParameters for XDH, so SunJSSE also winds
              * up using null AlgorithmParameters when checking algorithm constraints.
              */
-            case NamedGroup.x25519:
-            case NamedGroup.x448:
-                return null;
-            }
+            return null;
         }
         else if (NamedGroup.refersToAnECDSACurve(namedGroup))
         {
@@ -465,8 +460,12 @@ public class JcaTlsCrypto
         }
         else if (NamedGroup.refersToASpecificKem(namedGroup))
         {
-            //Note: There is no AlgorithmParametersSpi for ML-KEM
-            return KemUtil.getAlgorithmParameters(this, NamedGroup.getKemName(namedGroup));
+            /*
+             * TODO Return AlgorithmParameters to check against disabled algorithms?
+             *
+             * NOTE: See what the JDK/SunJSSE implementation does.
+             */
+            return null;
         }
 
         throw new IllegalArgumentException("NamedGroup not supported: " + NamedGroup.getText(namedGroup));
@@ -811,6 +810,11 @@ public class JcaTlsCrypto
     public boolean hasSRPAuthentication()
     {
         return true;
+    }
+
+    public TlsSecret createHybridSecret(TlsSecret s1, TlsSecret s2)
+    {
+        return adoptLocalSecret(Arrays.concatenate(s1.extract(), s2.extract()));
     }
 
     public TlsSecret createSecret(byte[] data)

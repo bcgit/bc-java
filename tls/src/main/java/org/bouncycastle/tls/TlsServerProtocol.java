@@ -10,9 +10,6 @@ import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
-import org.bouncycastle.tls.crypto.TlsDHConfig;
-import org.bouncycastle.tls.crypto.TlsECConfig;
-import org.bouncycastle.tls.crypto.TlsKemConfig;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
@@ -219,7 +216,7 @@ public class TlsServerProtocol
             }
             this.retryCookie = null;
 
-            clientShare = TlsUtils.selectKeyShare(clientShares, retryGroup);
+            clientShare = TlsUtils.getRetryKeyShare(clientShares, retryGroup);
             if (null == clientShare)
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
@@ -296,38 +293,24 @@ public class TlsServerProtocol
 
             int[] clientSupportedGroups = securityParameters.getClientSupportedGroups();
             int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+            boolean useServerOrder = tlsServer.preferLocalSupportedGroups();
 
-            clientShare = TlsUtils.selectKeyShare(crypto, serverVersion, clientShares, clientSupportedGroups,
-                serverSupportedGroups);
+            int selectedGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
+                serverSupportedGroups, useServerOrder);
+            if (selectedGroup < 0)
+            {
+                throw new TlsFatalAlert(AlertDescription.handshake_failure);
+            }
+
+            clientShare = TlsUtils.findEarlyKeyShare(clientShares, selectedGroup);
 
             if (null == clientShare)
             {
-                this.retryGroup = TlsUtils.selectKeyShareGroup(crypto, serverVersion, clientSupportedGroups,
-                    serverSupportedGroups);
-                if (retryGroup < 0)
-                {
-                    throw new TlsFatalAlert(AlertDescription.handshake_failure);
-                }
+                this.retryGroup = selectedGroup;
 
                 this.retryCookie = tlsServerContext.getNonceGenerator().generateNonce(16);
 
                 return generate13HelloRetryRequest(clientHello);
-            }
-
-            if (clientShare.getNamedGroup() != serverSupportedGroups[0])
-            {
-                /*
-                 * TODO[tls13] RFC 8446 4.2.7. As of TLS 1.3, servers are permitted to send the
-                 * "supported_groups" extension to the client. Clients MUST NOT act upon any
-                 * information found in "supported_groups" prior to successful completion of the
-                 * handshake but MAY use the information learned from a successfully completed
-                 * handshake to change what groups they use in their "key_share" extension in
-                 * subsequent connections. If the server has a group it prefers to the ones in the
-                 * "key_share" extension but is still willing to accept the ClientHello, it SHOULD
-                 * send "supported_groups" to update the client's view of its preferences; this
-                 * extension SHOULD contain all groups the server supports, regardless of whether
-                 * they are currently supported by the client.
-                 */
             }
         }
 
@@ -336,6 +319,25 @@ public class TlsServerProtocol
         Hashtable serverEncryptedExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(tlsServer.getServerExtensions());
 
         tlsServer.getServerExtensionsForConnection(serverEncryptedExtensions);
+
+        /*
+         * RFC 8446 4.2.7. As of TLS 1.3, servers are permitted to send the "supported_groups" extension to
+         * the client. [..] If the server has a group it prefers to the ones in the "key_share" extension
+         * but is still willing to accept the ClientHello, it SHOULD send "supported_groups" to update the
+         * client's view of its preferences; this extension SHOULD contain all groups the server supports,
+         * regardless of whether they are currently supported by the client.
+         */
+        if (!afterHelloRetryRequest)
+        {
+            int[] serverSupportedGroups = securityParameters.getServerSupportedGroups();
+
+            if (!TlsUtils.isNullOrEmpty(serverSupportedGroups) &&
+                clientShare.getNamedGroup() != serverSupportedGroups[0] &&
+                !serverEncryptedExtensions.containsKey(TlsExtensionsUtils.EXT_supported_groups))
+            {
+                TlsExtensionsUtils.addSupportedGroupsExtension(serverEncryptedExtensions, serverSupportedGroups);
+            }
+        }
 
         ProtocolVersion serverLegacyVersion = ProtocolVersion.TLSv12;
         TlsExtensionsUtils.addSupportedVersionsExtensionServer(serverHelloExtensions, serverVersion);
@@ -396,21 +398,9 @@ public class TlsServerProtocol
         TlsSecret sharedSecret;
         {
             int namedGroup = clientShare.getNamedGroup();
-    
-            TlsAgreement agreement;
-            if (NamedGroup.refersToAnECDHCurve(namedGroup))
-            {
-                agreement = crypto.createECDomain(new TlsECConfig(namedGroup)).createECDH();
-            }
-            else if (NamedGroup.refersToASpecificFiniteField(namedGroup))
-            {
-                agreement = crypto.createDHDomain(new TlsDHConfig(namedGroup, true)).createDH();
-            }
-            else if (NamedGroup.refersToASpecificKem(namedGroup))
-            {
-                agreement = crypto.createKemDomain(new TlsKemConfig(namedGroup, true)).createKem();
-            }
-            else
+
+            TlsAgreement agreement = TlsUtils.createKeyShare(crypto, namedGroup, true);
+            if (agreement == null)
             {
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }

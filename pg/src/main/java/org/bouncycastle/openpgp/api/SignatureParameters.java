@@ -1,11 +1,10 @@
 package org.bouncycastle.openpgp.api;
 
+import java.util.Date;
+
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.util.Arrays;
-
-import java.util.Date;
-import java.util.Objects;
 
 /**
  * Parameters for signature generation.
@@ -37,14 +36,14 @@ public class SignatureParameters
      * @param policy algorithm policy
      * @return parameters
      * @see <a href="https://sequoia-pgp.gitlab.io/sequoia-wot/#name-certifications-and-delegati">
-     *     OpenPGP Web-of-Trust</a>
+     * OpenPGP Web-of-Trust</a>
      */
     public static SignatureParameters directKeySignature(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.DIRECT_KEY)
-                .setSignatureType(PGPSignature.DIRECT_KEY)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.DIRECT_KEY)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -60,9 +59,9 @@ public class SignatureParameters
     public static SignatureParameters keyRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.KEY_REVOCATION)
-                .setSignatureType(PGPSignature.KEY_REVOCATION)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.KEY_REVOCATION)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -80,13 +79,13 @@ public class SignatureParameters
     public static SignatureParameters certification(OpenPGPPolicy policy)
     {
         return new SignatureParameters(
-                PGPSignature.DEFAULT_CERTIFICATION,
-                PGPSignature.NO_CERTIFICATION,
-                PGPSignature.CASUAL_CERTIFICATION,
-                PGPSignature.POSITIVE_CERTIFICATION)
-                .setSignatureType(PGPSignature.POSITIVE_CERTIFICATION)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            PGPSignature.DEFAULT_CERTIFICATION,
+            PGPSignature.NO_CERTIFICATION,
+            PGPSignature.CASUAL_CERTIFICATION,
+            PGPSignature.POSITIVE_CERTIFICATION)
+            .setSignatureType(PGPSignature.POSITIVE_CERTIFICATION)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -98,9 +97,9 @@ public class SignatureParameters
     public static SignatureParameters subkeyBinding(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.SUBKEY_BINDING)
-                .setSignatureType(PGPSignature.SUBKEY_BINDING)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.SUBKEY_BINDING)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -112,9 +111,9 @@ public class SignatureParameters
     public static SignatureParameters subkeyRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.SUBKEY_REVOCATION)
-                .setSignatureType(PGPSignature.SUBKEY_REVOCATION)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.SUBKEY_REVOCATION)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -126,9 +125,9 @@ public class SignatureParameters
     public static SignatureParameters primaryKeyBinding(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.PRIMARYKEY_BINDING)
-                .setSignatureType(PGPSignature.PRIMARYKEY_BINDING)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.PRIMARYKEY_BINDING)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -140,9 +139,9 @@ public class SignatureParameters
     public static SignatureParameters certificationRevocation(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.CERTIFICATION_REVOCATION)
-                .setSignatureType(PGPSignature.CERTIFICATION_REVOCATION)
-                .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.CERTIFICATION_REVOCATION)
+            .setSignatureHashAlgorithm(policy.getDefaultCertificationSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -156,9 +155,9 @@ public class SignatureParameters
     public static SignatureParameters dataSignature(OpenPGPPolicy policy)
     {
         return new SignatureParameters(PGPSignature.BINARY_DOCUMENT, PGPSignature.CANONICAL_TEXT_DOCUMENT)
-                .setSignatureType(PGPSignature.BINARY_DOCUMENT)
-                .setSignatureHashAlgorithm(policy.getDefaultDocumentSignatureHashAlgorithm())
-                .setSignatureCreationTime(new Date());
+            .setSignatureType(PGPSignature.BINARY_DOCUMENT)
+            .setSignatureHashAlgorithm(policy.getDefaultDocumentSignatureHashAlgorithm())
+            .setSignatureCreationTime(new Date());
     }
 
     /**
@@ -200,8 +199,13 @@ public class SignatureParameters
      */
     public SignatureParameters setSignatureCreationTime(Date signatureCreationTime)
     {
-        this.signatureCreationTime = Objects.requireNonNull(signatureCreationTime,
-                "Signature creation time cannot be null.");
+        if (signatureCreationTime == null)
+        {
+             throw new NullPointerException("Signature creation time cannot be null.");
+        }
+        
+        this.signatureCreationTime = signatureCreationTime;
+
         return this;
     }
 
@@ -309,23 +313,26 @@ public class SignatureParameters
             return parameters;
         }
 
-        /**
-         * Shortcut method returning a {@link Callback} which only applies the given
-         * {@link SignatureSubpacketsFunction} to the hashed signature subpacket area of a signature.
-         *
-         * @param function signature subpackets function to apply to the hashed area
-         * @return callback
-         */
-        static Callback modifyHashedSubpackets(SignatureSubpacketsFunction function)
+        static class Util
         {
-            return new Callback()
+            /**
+             * Shortcut method returning a {@link Callback} which only applies the given
+             * {@link SignatureSubpacketsFunction} to the hashed signature subpacket area of a signature.
+             *
+             * @param function signature subpackets function to apply to the hashed area
+             * @return callback
+             */
+            public static Callback modifyHashedSubpackets(SignatureSubpacketsFunction function)
             {
-                @Override
-                public SignatureParameters apply(SignatureParameters parameters)
+                return new Callback()
                 {
-                    return parameters.setHashedSubpacketsFunction(function);
-                }
-            };
+                    @Override
+                    public SignatureParameters apply(SignatureParameters parameters)
+                    {
+                        return parameters.setHashedSubpacketsFunction(function);
+                    }
+                };
+            }
         }
     }
 }

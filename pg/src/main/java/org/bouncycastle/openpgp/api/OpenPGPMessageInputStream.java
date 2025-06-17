@@ -124,8 +124,9 @@ public class OpenPGPMessageInputStream
         while ((next = objectFactory.nextObject()) != null)
         {
             boolean handled = false;
-            for (PacketHandler handler : closeHandlers)
+            for (Iterator it = closeHandlers.iterator(); it.hasNext();)
             {
+                PacketHandler handler = (PacketHandler)it.next();
                 if (handler.canHandle(next))
                 {
                     handler.close(next);
@@ -198,7 +199,7 @@ public class OpenPGPMessageInputStream
 
     public static class Result
     {
-        private final List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<>();
+        private final List<OpenPGPSignature.OpenPGPDocumentSignature> documentSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
         private OpenPGPCertificate.OpenPGPComponentKey decryptionKey;
         private char[] decryptionPassphrase;
         private PGPSessionKey sessionKey;
@@ -288,12 +289,12 @@ public class OpenPGPMessageInputStream
 
         public List<OpenPGPSignature.OpenPGPDocumentSignature> getSignatures()
         {
-            return new ArrayList<>(documentSignatures);
+            return new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>(documentSignatures);
         }
 
         static class Builder
         {
-            private final List<Layer> layers = new ArrayList<>();
+            private final List<Layer> layers = new ArrayList<Layer>();
 
             private Builder()
             {
@@ -407,7 +408,7 @@ public class OpenPGPMessageInputStream
                     return;
                 }
 
-                last.signatures = new ArrayList<>();
+                last.signatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
                 last.signatures.addAll(last.onePassSignatures.verify(processor));
                 last.signatures.addAll(last.prefixedSignatures.verify(processor));
 //                last.signatures.addAll(last.onePassVerifier.verify(processor));
@@ -718,9 +719,9 @@ public class OpenPGPMessageInputStream
 
     static class OnePassSignatures
     {
-        private final List<PGPOnePassSignature> onePassSignatures = new ArrayList<>();
-        private final List<PGPSignature> signatures = new ArrayList<>();
-        private final Map<PGPOnePassSignature, OpenPGPCertificate.OpenPGPComponentKey> issuers = new HashMap<>();
+        private final List<PGPOnePassSignature> onePassSignatures = new ArrayList<PGPOnePassSignature>();
+        private final List<PGPSignature> signatures = new ArrayList<PGPSignature>();
+        private final Map<PGPOnePassSignature, OpenPGPCertificate.OpenPGPComponentKey> issuers = new HashMap<PGPOnePassSignature, OpenPGPCertificate.OpenPGPComponentKey>();
 
         OnePassSignatures()
         {
@@ -729,16 +730,18 @@ public class OpenPGPMessageInputStream
 
         void addOnePassSignatures(PGPOnePassSignatureList onePassSignatures)
         {
-            for (PGPOnePassSignature ops : onePassSignatures)
+            for (Iterator it = onePassSignatures.iterator(); it.hasNext();)
             {
+                PGPOnePassSignature ops = (PGPOnePassSignature)it.next();
                 this.onePassSignatures.add(ops);
             }
         }
 
         void addSignatures(PGPSignatureList signatures)
         {
-            for (PGPSignature signature : signatures)
+            for (Iterator it = signatures.iterator(); it.hasNext();)
             {
+                PGPSignature signature = (PGPSignature)it.next();
                 this.signatures.add(signature);
             }
         }
@@ -746,8 +749,9 @@ public class OpenPGPMessageInputStream
         void init(OpenPGPMessageProcessor processor)
         {
 
-            for (PGPOnePassSignature ops : onePassSignatures)
+            for (Iterator it = onePassSignatures.iterator(); it.hasNext();)
             {
+                PGPOnePassSignature ops = (PGPOnePassSignature)it.next();
                 KeyIdentifier identifier = ops.getKeyIdentifier();
                 OpenPGPCertificate cert = processor.provideCertificate(identifier);
                 if (cert == null)
@@ -771,8 +775,9 @@ public class OpenPGPMessageInputStream
 
         void update(int i)
         {
-            for (PGPOnePassSignature onePassSignature : onePassSignatures)
+            for (Iterator it = onePassSignatures.iterator(); it.hasNext();)
             {
+                PGPOnePassSignature onePassSignature = (PGPOnePassSignature)it.next();
                 if (issuers.containsKey(onePassSignature))
                 {
                     onePassSignature.update((byte) i);
@@ -782,8 +787,9 @@ public class OpenPGPMessageInputStream
 
         void update(byte[] b, int off, int len)
         {
-            for (PGPOnePassSignature onePassSignature : onePassSignatures)
+            for (Iterator it = onePassSignatures.iterator(); it.hasNext();)
             {
+                PGPOnePassSignature onePassSignature = (PGPOnePassSignature)it.next();
                 if (issuers.containsKey(onePassSignature))
                 {
                     onePassSignature.update(b, off, len);
@@ -795,7 +801,7 @@ public class OpenPGPMessageInputStream
             OpenPGPMessageProcessor processor)
         {
             OpenPGPPolicy policy = processor.getImplementation().policy();
-            List<OpenPGPSignature.OpenPGPDocumentSignature> dataSignatures = new ArrayList<>();
+            List<OpenPGPSignature.OpenPGPDocumentSignature> dataSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
             int num = onePassSignatures.size();
             for (int i = 0; i < signatures.size(); i++)
             {
@@ -840,8 +846,8 @@ public class OpenPGPMessageInputStream
 
     static class PrefixedSignatures
     {
-        private final List<PGPSignature> prefixedSignatures = new ArrayList<>();
-        private final List<OpenPGPSignature.OpenPGPDocumentSignature> dataSignatures = new ArrayList<>();
+        private final List<PGPSignature> prefixedSignatures = new ArrayList<PGPSignature>();
+        private final List<OpenPGPSignature.OpenPGPDocumentSignature> dataSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
 
         PrefixedSignatures()
         {
@@ -850,16 +856,18 @@ public class OpenPGPMessageInputStream
 
         void addAll(PGPSignatureList signatures)
         {
-            for (PGPSignature signature : signatures)
+            for (Iterator it = signatures.iterator(); it.hasNext();)
             {
+                PGPSignature signature = (PGPSignature)it.next();
                 this.prefixedSignatures.add(signature);
             }
         }
 
         void init(OpenPGPMessageProcessor processor)
         {
-            for (PGPSignature sig : prefixedSignatures)
+            for (Iterator it = prefixedSignatures.iterator(); it.hasNext();)
             {
+                PGPSignature sig = (PGPSignature)it.next();
                 KeyIdentifier identifier = OpenPGPSignature.getMostExpressiveIdentifier(sig.getKeyIdentifiers());
                 if (identifier == null)
                 {
@@ -891,26 +899,29 @@ public class OpenPGPMessageInputStream
 
         void update(int i)
         {
-            for(PGPSignature signature : prefixedSignatures)
+            for (Iterator it = prefixedSignatures.iterator(); it.hasNext();)
             {
+                PGPSignature signature = (PGPSignature)it.next();
                 signature.update((byte) i);
             }
         }
 
         void update(byte[] buf, int off, int len)
         {
-            for (PGPSignature signature : prefixedSignatures)
+            for (Iterator it = prefixedSignatures.iterator(); it.hasNext();)
             {
+                PGPSignature signature = (PGPSignature)it.next();
                 signature.update(buf, off, len);
             }
         }
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> verify(OpenPGPMessageProcessor processor)
         {
-            List<OpenPGPSignature.OpenPGPDocumentSignature> verifiedSignatures = new ArrayList<>();
+            List<OpenPGPSignature.OpenPGPDocumentSignature> verifiedSignatures = new ArrayList<OpenPGPSignature.OpenPGPDocumentSignature>();
             OpenPGPPolicy policy = processor.getImplementation().policy();
-            for (OpenPGPSignature.OpenPGPDocumentSignature sig : dataSignatures)
+            for (Iterator it = dataSignatures.iterator(); it.hasNext();)
             {
+                OpenPGPSignature.OpenPGPDocumentSignature sig = (OpenPGPSignature.OpenPGPDocumentSignature)it.next();
                 try
                 {
                     sig.sanitize(sig.issuer, policy);

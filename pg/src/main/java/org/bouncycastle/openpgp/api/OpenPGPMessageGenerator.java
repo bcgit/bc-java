@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
@@ -53,8 +52,8 @@ public class OpenPGPMessageGenerator
 
     private boolean isArmored = true;
     public boolean isAllowPadding = true;
-    private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<>();
-    private final List<char[]> messagePassphrases = new ArrayList<>();
+    private final List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
+    private final List<char[]> messagePassphrases = new ArrayList<char[]>();
 
     // Literal Data metadata
     private Date fileModificationDate = null;
@@ -414,11 +413,11 @@ public class OpenPGPMessageGenerator
      */
     private void applyLiteralDataWrap(OpenPGPMessageOutputStream.Builder builder)
     {
-        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        final PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
         builder.literalData(new OpenPGPMessageOutputStream.OutputStreamFactory()
         {
             @Override
-            public OutputStream get(OutputStream o)
+            public OutputStream get(final OutputStream o)
                 throws PGPException, IOException
             {
                 try
@@ -457,7 +456,7 @@ public class OpenPGPMessageGenerator
         public List<OpenPGPCertificate.OpenPGPComponentKey> select(OpenPGPCertificate certificate,
                                                                    OpenPGPPolicy policy)
         {
-            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<>();
+            List<OpenPGPCertificate.OpenPGPComponentKey> result = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = certificate.getEncryptionKeys().iterator(); it.hasNext(); )
             {
                 OpenPGPCertificate.OpenPGPComponentKey key = it.next();
@@ -491,8 +490,8 @@ public class OpenPGPMessageGenerator
 //                .distinct()
 //                .collect(Collectors.toList());
 
-            List<OpenPGPCertificate> certificates = new ArrayList<>();
-            Set<OpenPGPCertificate> uniqueCertificates = new HashSet<>(); // For distinctness
+            List<OpenPGPCertificate> certificates = new ArrayList<OpenPGPCertificate>();
+            Set<OpenPGPCertificate> uniqueCertificates = new HashSet<OpenPGPCertificate>(); // For distinctness
 
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = encryptionKeys.iterator(); it.hasNext(); )
             {
@@ -571,7 +570,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setPasswordBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pbeNegotiator)
     {
-        this.passwordBasedEncryptionNegotiator = Objects.requireNonNull(pbeNegotiator);
+        if (pbeNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.passwordBasedEncryptionNegotiator = pbeNegotiator;
         return this;
     }
 
@@ -584,7 +587,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setPublicKeyBasedEncryptionNegotiator(OpenPGPEncryptionNegotiator pkbeNegotiator)
     {
-        this.publicKeyBasedEncryptionNegotiator = Objects.requireNonNull(pkbeNegotiator);
+        if (pkbeNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.publicKeyBasedEncryptionNegotiator = pkbeNegotiator;
         return this;
     }
 
@@ -598,7 +605,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setEncryptionKeySelector(SubkeySelector encryptionKeySelector)
     {
-        this.encryptionKeySelector = Objects.requireNonNull(encryptionKeySelector);
+        if (encryptionKeySelector == null)
+        {
+            throw new NullPointerException();
+        }
+        this.encryptionKeySelector = encryptionKeySelector;
         return this;
     }
 
@@ -612,7 +623,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setCompressionNegotiator(CompressionNegotiator compressionNegotiator)
     {
-        this.compressionNegotiator = Objects.requireNonNull(compressionNegotiator);
+        if (compressionNegotiator == null)
+        {
+            throw new NullPointerException();
+        }
+        this.compressionNegotiator = compressionNegotiator;
         return this;
     }
 
@@ -624,7 +639,11 @@ public class OpenPGPMessageGenerator
      */
     public OpenPGPMessageGenerator setArmorStreamFactory(ArmoredOutputStreamFactory factory)
     {
-        this.armorStreamFactory = Objects.requireNonNull(factory);
+        if (factory == null)
+        {
+            throw new NullPointerException();
+        }
+        this.armorStreamFactory = factory;
         return this;
     }
 

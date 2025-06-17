@@ -414,7 +414,7 @@ public class GMSSRootSig
                 test--;
             }
             if (test == 0)
-            { // if all hashes done copy result to siganture
+            { // if all hashes done copy result to signature
                 // array
                 System.arraycopy(privateKeyOTS, 0, sign, counter * mdsize,
                     mdsize);
@@ -477,7 +477,7 @@ public class GMSSRootSig
                 test--;
             }
             if (test == 0)
-            { // if all hashes done copy result to siganture
+            { // if all hashes done copy result to signature
                 // array
                 System.arraycopy(privateKeyOTS, 0, sign, counter * mdsize,
                     mdsize);
@@ -542,7 +542,7 @@ public class GMSSRootSig
                 test8--;
             }
             if (test8 == 0)
-            { // if all hashes done copy result to siganture
+            { // if all hashes done copy result to signature
                 // array
                 System.arraycopy(privateKeyOTS, 0, sign, counter * mdsize,
                     mdsize);

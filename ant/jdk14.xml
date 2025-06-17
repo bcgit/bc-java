@@ -31,7 +31,7 @@
                 <exclude name="**/rainbow/*.java"/>
                 <exclude name="**/Rainbow*.java"/>
                 <exclude name="**/PhotonBeetle*.java"/>
-                <exclude name="**/ISAP*.java"/>
+                <exclude name="**/ISAPEngine*.java"/>
                 <exclude name="**/Xoodyak*.java"/>
                 <exclude name="**/Elephant*.java"/>
                 <exclude name="**/Sparkle*.java"/>
@@ -41,10 +41,14 @@
             </fileset>
             <fileset dir="pg/src/main/java">
                 <exclude name="**/keybox/**/*.java"/>
+                <exclude name="**/api/*.java"/>
+                <exclude name="**/api/**/*.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
                 <exclude name="**/JceKeyTransAuthEnvelopedRecipient.java"/>
+                <exclude name="**/BcHssLmsContentSignerB*.java"/>
+                <exclude name="**/BcHssLmsContentVerifierProviderBuilder.java"/>
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/est/**/*.java"/>
                 <exclude name="**/pkix/jcajce/*.java"/>
@@ -132,10 +136,14 @@
             <fileset dir="pg/src/test/java">
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/gpg/test/*.java"/>
+                <exclude name="**/api/test/*.java"/>
                 <exclude name="**/BcImplProviderTest.java"/>
                 <exclude name="**/OperatorJcajceTest.java"/>
                 <exclude name="**/AEADWithArgon2Test.java"/>
                 <exclude name="**/AEADProtectedPGPSecretKeyTest.java"/>
+                <exclude name="**/OpenPGPKeyEditorTest.java"/>
+                <exclude name="**/OpenPGPMessageGeneratorTest.java"/>
+                <exclude name="**/OpenPGPKeyReaderTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
@@ -157,6 +165,7 @@
 	    </fileset>
             <fileset dir="prov/src/test/java">
                 <exclude name="**/AEADTest.java"/>
+                <exclude name="**/PQCDHTest.java"/>
                 <exclude name="**/ECEncodingTest.java"/>
                 <exclude name="**/jce/provider/test/ChaCha20Poly1305Test.java"/>
                 <exclude name="**/DetDSATest.java"/>
@@ -211,7 +220,9 @@
             <fileset dir="pg/src/main/javadoc"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">
-            <fileset dir="pg/src/main/jdk1.5" includes="**/*.java"/>
+            <fileset dir="pg/src/main/jdk1.5">
+                <exclude name="**/api/**/*.java"/>
+            </fileset>
             <fileset dir="prov/src/test/jdk1.5" includes="**/*.java"/>
         </copy>
         <copy todir="${src.dir}" overwrite="true">

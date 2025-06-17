@@ -1489,7 +1489,7 @@ public class DSTU7624Test
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping encryption");
         }
 
         bc.init(false, param);
@@ -1499,7 +1499,7 @@ public class DSTU7624Test
 
         if (!areEqual(expected, Arrays.copyOfRange(data, offset, offset + expected.length)))
         {
-            fail("failed to overlapping of encryption");
+            fail("failed for overlapping decryption");
         }
     }
 }

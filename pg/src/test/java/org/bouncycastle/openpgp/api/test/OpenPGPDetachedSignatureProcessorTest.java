@@ -3,7 +3,6 @@ package org.bouncycastle.openpgp.api.test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 
@@ -36,6 +35,9 @@ public class OpenPGPDetachedSignatureProcessorTest
     protected void performTestWith(OpenPGPApi api)
             throws PGPException, IOException
     {
+        String javaVersion = System.getProperty("java.version");
+        boolean oldJDK = javaVersion.startsWith("1.5") || javaVersion.startsWith("1.6");
+
         createVerifyV4Signature(api);
         createVerifyV6Signature(api);
 
@@ -43,7 +45,11 @@ public class OpenPGPDetachedSignatureProcessorTest
         keyPassphrasesArePairedUpProperly_passphraseAddedFirst(api);
 
         missingPassphraseThrows(api);
-        wrongPassphraseThrows(api);
+
+        if (!oldJDK)
+        {
+            wrongPassphraseThrows(api);
+        }
 
         withoutSigningSubkeyFails(api);
         nonSigningSubkeyFails(api);
@@ -56,7 +62,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         gen.addSigningKey(
                 api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY));
 
-        byte[] plaintext = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] plaintext = Strings.toUTF8ByteArray("Hello, World!\n");
         ByteArrayInputStream plaintextIn = new ByteArrayInputStream(plaintext);
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
@@ -83,7 +89,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         gen.addSigningKey(
                 api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY));
 
-        byte[] plaintext = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
+        byte[] plaintext = Strings.toUTF8ByteArray("Hello, World!\n");
         ByteArrayInputStream plaintextIn = new ByteArrayInputStream(plaintext);
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
@@ -103,39 +109,37 @@ public class OpenPGPDetachedSignatureProcessorTest
         isTrue(verified.get(0).isValid());
     }
 
-    private void missingPassphraseThrows(OpenPGPApi api)
+    private void missingPassphraseThrows(final OpenPGPApi api)
     {
         isNotNull(testException(
                 "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {
                         api.createDetachedSignature()
                                 .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
-                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                                .sign(new ByteArrayInputStream(Strings.toUTF8ByteArray("Test Data")));
                     }
                 }));
     }
 
-    private void wrongPassphraseThrows(OpenPGPApi api)
+    private void wrongPassphraseThrows(final OpenPGPApi api)
     {
         isNotNull(testException(
                 "Cannot unlock primary key CB186C4F0609A697E4D52DFA6C722B0C1F1E27C18A56708F6525EC27BAD9ACC9: Exception decrypting key",
                 "KeyPassphraseException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {
                         api.createDetachedSignature()
                                 .addKeyPassphrase("thisIsWrong".toCharArray())
                                 .addSigningKey(api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.V6_KEY_LOCKED))
-                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                                .sign(new ByteArrayInputStream(Strings.toUTF8ByteArray("Test Data")));
                     }
                 }));
     }
@@ -154,7 +158,7 @@ public class OpenPGPDetachedSignatureProcessorTest
         gen.addKeyPassphrase("password".toCharArray());
         gen.addKeyPassphrase("beluga".toCharArray());
 
-        byte[] plaintext = "arctic\ndeep sea\nice field\n".getBytes(StandardCharsets.UTF_8);
+        byte[] plaintext = Strings.toUTF8ByteArray("arctic\ndeep sea\nice field\n");
         InputStream plaintextIn = new ByteArrayInputStream(plaintext);
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
@@ -176,17 +180,17 @@ public class OpenPGPDetachedSignatureProcessorTest
 
         gen.addSigningKey(key);
 
-        byte[] plaintext = "jungle\ntropics\nswamp\n".getBytes(StandardCharsets.UTF_8);
+        byte[] plaintext = Strings.toUTF8ByteArray("jungle\ntropics\nswamp\n");
         InputStream plaintextIn = new ByteArrayInputStream(plaintext);
 
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = gen.sign(plaintextIn);
         isEquals(1, signatures.size());
     }
 
-    private void withoutSigningSubkeyFails(OpenPGPApi api)
+    private void withoutSigningSubkeyFails(final OpenPGPApi api)
             throws PGPException
     {
-        OpenPGPKey noSigningKey = api.generateKey()
+        final OpenPGPKey noSigningKey = api.generateKey()
                 .withPrimaryKey(
                         new KeyPairGeneratorCallback() {
                             @Override
@@ -195,10 +199,9 @@ public class OpenPGPDetachedSignatureProcessorTest
                                 return generator.generatePrimaryKey();
                             }
                         },
-                        SignatureParameters.Callback.modifyHashedSubpackets(
+                        SignatureParameters.Callback.Util.modifyHashedSubpackets(
                                 new SignatureSubpacketsFunction()
                                 {
-                                    @Override
                                     public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
                                     {
                                         subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
@@ -215,21 +218,20 @@ public class OpenPGPDetachedSignatureProcessorTest
                 "InvalidSigningKeyException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {
                         api.createDetachedSignature()
                                 .addSigningKey(noSigningKey)
-                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                                .sign(new ByteArrayInputStream(Strings.toUTF8ByteArray("Test Data")));
                     }
                 }));
     }
 
-    private void nonSigningSubkeyFails(OpenPGPApi api)
+    private void nonSigningSubkeyFails(final OpenPGPApi api)
             throws PGPException
     {
-        OpenPGPKey noSigningKey = api.generateKey()
+        final OpenPGPKey noSigningKey = api.generateKey()
                 .withPrimaryKey(
                         new KeyPairGeneratorCallback() {
                             @Override
@@ -238,10 +240,9 @@ public class OpenPGPDetachedSignatureProcessorTest
                                 return generator.generatePrimaryKey();
                             }
                         },
-                        SignatureParameters.Callback.modifyHashedSubpackets(
+                        SignatureParameters.Callback.Util.modifyHashedSubpackets(
                                 new SignatureSubpacketsFunction()
                                 {
-                                    @Override
                                     public PGPSignatureSubpacketGenerator apply(PGPSignatureSubpacketGenerator subpackets)
                                     {
                                         subpackets.removePacketsOfType(SignatureSubpacketTags.KEY_FLAGS);
@@ -258,13 +259,12 @@ public class OpenPGPDetachedSignatureProcessorTest
                 "InvalidSigningKeyException",
                 new TestExceptionOperation()
                 {
-                    @Override
                     public void operation()
                             throws Exception
                     {
                         api.createDetachedSignature()
                                 .addSigningKey(noSigningKey.getPrimarySecretKey(), (char[])null, null)
-                                .sign(new ByteArrayInputStream("Test Data".getBytes(StandardCharsets.UTF_8)));
+                                .sign(new ByteArrayInputStream(Strings.toUTF8ByteArray("Test Data")));
                     }
                 }));
     }
