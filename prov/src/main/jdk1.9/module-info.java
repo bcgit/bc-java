@@ -14,6 +14,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.falcon to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.dilithium to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.mayo to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.mirath to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.snova to java.base;
 
     exports org.bouncycastle;
@@ -157,6 +158,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.lms;
     exports org.bouncycastle.pqc.jcajce.provider.mayo;
     exports org.bouncycastle.pqc.jcajce.provider.mceliece;
+    exports org.bouncycastle.pqc.jcajce.provider.mirath;
     exports org.bouncycastle.pqc.jcajce.provider.ntru;
     exports org.bouncycastle.pqc.jcajce.provider.ntruprime;
     exports org.bouncycastle.pqc.jcajce.provider.newhope;
