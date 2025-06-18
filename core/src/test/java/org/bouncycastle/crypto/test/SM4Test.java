@@ -5,6 +5,7 @@ import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
+import org.bouncycastle.crypto.modes.CCMModeCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMModeCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
@@ -114,8 +115,8 @@ public class SM4Test
                              + "ED31A2F04476C18BB40C84A74B97DC5B");
         byte[] tag = Hex.decode("fe26a58f94552a8d533b5b6b261c9cd8");
 
-        CCMBlockCipher encCipher = new CCMBlockCipher(new SM4Engine());
-        CCMBlockCipher  decCipher = new CCMBlockCipher(new SM4Engine());
+        CCMModeCipher encCipher = CCMBlockCipher.newInstance(new SM4Engine());
+        CCMModeCipher  decCipher = CCMBlockCipher.newInstance(new SM4Engine());
 
         checkTestCase(encCipher, decCipher, "2", key, iv, aad, pt, ct, tag);
     }
