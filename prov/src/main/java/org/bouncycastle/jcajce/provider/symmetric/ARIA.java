@@ -102,7 +102,7 @@ public final class ARIA
     {
         public GCM()
         {
-            super(new GCMBlockCipher(new ARIAEngine()));
+            super(GCMBlockCipher.newInstance(new ARIAEngine()));
         }
     }
 
@@ -138,7 +138,7 @@ public final class ARIA
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new ARIAEngine())));
+            super(new GMac(GCMBlockCipher.newInstance(new ARIAEngine())));
         }
     }
 
