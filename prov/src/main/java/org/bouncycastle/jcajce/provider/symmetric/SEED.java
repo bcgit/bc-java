@@ -90,7 +90,7 @@ public final class SEED
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new SEEDEngine())));
+            super(new GMac(GCMBlockCipher.newInstance(new SEEDEngine())));
         }
     }
 

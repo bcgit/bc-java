@@ -57,7 +57,7 @@ public final class Noekeon
     {
         public GMAC()
         {
-            super(new GMac(new GCMBlockCipher(new NoekeonEngine())));
+            super(new GMac(GCMBlockCipher.newInstance(new NoekeonEngine())));
         }
     }
 
