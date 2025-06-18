@@ -60,6 +60,24 @@ public class CrossSigner
         byte[] proof;
         byte[] path;
         Response0[] resp_0 = new Response0[t - w];
+        if (params.rsdp)
+        {
+            for (int i = 0; i < resp_0.length; ++i)
+            {
+                resp_0[i] = new Response0();
+                resp_0[i].y = new byte[params.getDenselyPackedFpVecSize()];
+                resp_0[i].v_bar = new byte[params.getDenselyPackedFzVecSize()];
+            }
+        }
+        else
+        {
+            for (int i = 0; i < resp_0.length; ++i)
+            {
+                resp_0[i] = new Response0();
+                resp_0[i].y = new byte[params.getDenselyPackedFpVecSize()];
+                resp_0[i].v_G_bar = new byte[params.getDenselyPackedFzRsdpGVecSize()];
+            }
+        }
         byte[][] resp_1 = new byte[t - w][params.getHashDigestLength()];
 
         // Key material expansion
@@ -184,11 +202,11 @@ public class CrossSigner
             CrossEngine.packFpSyn(cmt_0_i_input, s_prime, params);
             if (params.rsdp)
             {
-                CrossEngine.packFzVec(cmt_0_i_input, v_bar[i], params);
+                CrossEngine.packFzVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_bar[i], params);
             }
             else
             {
-                CrossEngine.packFzRsdpGVec(cmt_0_i_input, v_G_bar[i], params);
+                CrossEngine.packFzRsdpGVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_G_bar[i], params);
             }
 
             // Compute commitments
@@ -196,7 +214,7 @@ public class CrossSigner
             CrossEngine.hash(cmt_0[i], cmt_0_i_input, domain_sep_hash, params);
 
             System.arraycopy(round_seeds, i * params.getSeedLengthBytes(), cmt_1_i_input, 0, params.getSeedLengthBytes());
-            CrossEngine.hash(cmt_1, cmt_1_i_input, domain_sep_hash, params);
+            CrossEngine.hash(cmt_1, i * params.getHashDigestLength(), cmt_1_i_input, domain_sep_hash, params);
         }
 
         // Compute root digests
@@ -245,14 +263,12 @@ public class CrossSigner
 
         // Pack y vectors and compute second challenge
         int packedYSize = params.getT() * params.getDenselyPackedFpVecSize();
-        byte[] y_packed = new byte[packedYSize];
+        byte[] y_digest_chall_1 = new byte[packedYSize + digest_chall_1.length];
         for (int i = 0; i < params.getT(); i++)
         {
-            CrossEngine.packFpVec(y_packed, y[i], params);
+            CrossEngine.packFpVec(y_digest_chall_1, i * params.getDenselyPackedFpVecSize(),y[i], params);
         }
 
-        byte[] y_digest_chall_1 = new byte[packedYSize + digest_chall_1.length];
-        System.arraycopy(y_packed, 0, y_digest_chall_1, 0, packedYSize);
         System.arraycopy(digest_chall_1, 0, y_digest_chall_1, packedYSize, digest_chall_1.length);
 
         CrossEngine.hash(digest_chall_2, y_digest_chall_1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
@@ -290,11 +306,11 @@ public class CrossSigner
                 CrossEngine.packFpVec(resp_0[published_rsps].y, y[i], params);
                 if (params.rsdp)
                 {
-                    CrossEngine.packFzVec(resp_0[published_rsps].v_bar, v_bar[i], params);
+                    CrossEngine.packFzVec(resp_0[published_rsps].v_bar, 0, v_bar[i], params);
                 }
                 else
                 {
-                    CrossEngine.packFzRsdpGVec(resp_0[published_rsps].v_G_bar, v_G_bar[i], params);
+                    CrossEngine.packFzRsdpGVec(resp_0[published_rsps].v_G_bar, 0, v_G_bar[i], params);
                 }
                 System.arraycopy(cmt_1, i * params.getHashDigestLength(),
                     resp_1[published_rsps], 0, params.getHashDigestLength());

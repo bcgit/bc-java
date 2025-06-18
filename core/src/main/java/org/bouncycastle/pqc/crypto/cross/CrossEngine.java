@@ -635,6 +635,77 @@ class CrossEngine
         }
     }
 
+    private static void genericPack7Bit(byte[] out, int outOff, byte[] in)
+    {
+        int inlen = in.length;
+        int fullBlocks = inlen / 8;
+        int i;
+
+        for (i = 0; i < fullBlocks; i++)
+        {
+            int baseIn = i * 8;
+            int baseOut = outOff + i * 7;
+
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 6] = (byte)(((in[baseIn + 6] & 0xFF) >>> 6) | ((in[baseIn + 7] & 0x7F) << 1));
+        }
+
+        int remaining = inlen % 8;
+        int baseIn = i * 8;
+        int baseOut = outOff + i * 7;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = in[baseIn];
+            break;
+        case 2:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)((in[baseIn + 1] & 0xFF) >>> 1);
+            break;
+        case 3:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)((in[baseIn + 2] & 0xFF) >>> 2);
+            break;
+        case 4:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)((in[baseIn + 3] & 0xFF) >>> 3);
+            break;
+        case 5:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)((in[baseIn + 4] & 0xFF) >>> 4);
+            break;
+        case 6:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)((in[baseIn + 5] & 0xFF) >>> 5);
+            break;
+        case 7:
+            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 6] = (byte)((in[baseIn + 6] & 0xFF) >>> 6);
+            break;
+        }
+    }
+
     // Packs 9-bit elements (for P=509)
     private static void genericPack9Bit(byte[] out, short[] in)
     {
@@ -661,6 +732,86 @@ class CrossEngine
         int remaining = inlen % 8;
         int baseIn = i * 8;
         int baseOut = i * 9;
+
+        switch (remaining)
+        {
+        case 1:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)(in[baseIn] >>> 8);
+            break;
+        case 2:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)(in[baseIn + 1] >>> 7);
+            break;
+        case 3:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)(in[baseIn + 2] >>> 6);
+            break;
+        case 4:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)(in[baseIn + 3] >>> 5);
+            break;
+        case 5:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)(in[baseIn + 4] >>> 4);
+            break;
+        case 6:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)(in[baseIn + 5] >>> 3);
+            break;
+        case 7:
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 7] = (byte)(in[baseIn + 6] >>> 2);
+            break;
+        }
+    }
+
+    private static void genericPack9Bit(byte[] out, int outOff, short[] in)
+    {
+        int inlen = in.length;
+        int fullBlocks = inlen / 8;
+        int i;
+
+        for (i = 0; i < fullBlocks; i++)
+        {
+            int baseIn = i * 8;
+            int baseOut = outOff + i * 9;
+
+            out[baseOut] = (byte)in[baseIn];
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 7] = (byte)((in[baseIn + 6] >>> 2) | ((in[baseIn + 7] & 0x7F) << 1));
+            out[baseOut + 8] = (byte)(in[baseIn + 7] >>> 1);
+        }
+
+        int remaining = inlen % 8;
+        int baseIn = i * 8;
+        int baseOut = outOff + i * 9;
 
         switch (remaining)
         {
@@ -1054,34 +1205,34 @@ class CrossEngine
     }
 
     // Pack FZ vector into byte array
-    public static void packFzVec(byte[] out, byte[] in, CrossParameters params)
+    public static void packFzVec(byte[] out, int outOff, byte[] in, CrossParameters params)
     {
         int n = params.getN();
         int z = params.getZ();
         int packedSize = params.getDenselyPackedFzVecSize();
-        genericPackFz(out, in, z, packedSize, n);
+        genericPackFz(out, outOff, in, z, packedSize, n);
     }
 
     // Pack FZ RSDPG vector into byte array
-    public static void packFzRsdpGVec(byte[] out, byte[] in, CrossParameters params)
+    public static void packFzRsdpGVec(byte[] out, int outOff, byte[] in, CrossParameters params)
     {
         int m = params.getM();
         int z = params.getZ();
         int bitsForZ = bitsToRepresent(z - 1);
         int packedSize = params.getDenselyPackedFzRsdpGVecSize();
-        genericPackFz(out, in, packedSize, m, bitsForZ);
+        genericPackFz(out, outOff, in, packedSize, m, bitsForZ);
     }
 
     // Generic packing for FZ vectors
-    public static void genericPackFz(byte[] out, byte[] in, int Z, int outlen, int inlen)
+    public static void genericPackFz(byte[] out, int outOff, byte[] in, int Z, int outlen, int inlen)
     {
         if (Z == 127)
         {
-            genericPack7Bit(out, in, outlen, inlen);
+            genericPack7Bit(out, outOff, in, outlen, inlen);
         }
         else if (Z == 7)
         {
-            genericPack3Bit(out, in, outlen, inlen);
+            genericPack3Bit(out, outOff, in, outlen, inlen);
         }
         else
         {
@@ -1089,12 +1240,12 @@ class CrossEngine
         }
     }
 
-    public static void genericPack3Bit(byte[] out, byte[] in, int outlen, int inlen)
+    public static void genericPack3Bit(byte[] out, int outOff, byte[] in, int outlen, int inlen)
     {
         // Clear output array
         for (int i = 0; i < outlen; i++)
         {
-            out[i] = 0;
+            out[outOff + i] = 0;
         }
 
         int fullBlocks = inlen / 8;
@@ -1104,7 +1255,7 @@ class CrossEngine
         for (i = 0; i < fullBlocks; i++)
         {
             int baseIn = i * 8;
-            int baseOut = i * 3;
+            int baseOut = outOff + i * 3;
 
             out[baseOut] = (byte)(
                 (in[baseIn] & 0x07) |
@@ -1128,7 +1279,7 @@ class CrossEngine
 
         // Process remaining elements (1-7)
         int baseIn = i * 8;
-        int baseOut = i * 3;
+        int baseOut = outOff + i * 3;
         int remaining = inlen % 8;
 
         switch (remaining)
@@ -1207,12 +1358,12 @@ class CrossEngine
         }
     }
 
-    public static void genericPack7Bit(byte[] out, byte[] in, int outlen, int inlen)
+    public static void genericPack7Bit(byte[] out, int outOff, byte[] in, int outlen, int inlen)
     {
         // Clear output array
         for (int i = 0; i < outlen; i++)
         {
-            out[i] = 0;
+            out[outOff + i] = 0;
         }
 
         int fullBlocks = inlen / 8;
@@ -1222,7 +1373,7 @@ class CrossEngine
         for (i = 0; i < fullBlocks; i++)
         {
             int baseIn = i * 8;
-            int baseOut = i * 7;
+            int baseOut = outOff + i * 7;
 
             out[baseOut] = (byte)(
                 (in[baseIn] & 0x7F) |
@@ -1262,7 +1413,7 @@ class CrossEngine
 
         // Process remaining elements (1-7)
         int baseIn = i * 8;
-        int baseOut = i * 7;
+        int baseOut = outOff + i * 7;
         int remaining = inlen % 8;
 
         switch (remaining)
@@ -1405,6 +1556,36 @@ class CrossEngine
         shake.doFinal(digest, 0, digestLength);
     }
 
+    public static void hash(byte[] digest, int outOff, byte[] m, int dsc, CrossParameters params)
+    {
+        int securityLambda = params.getSecMarginLambda();
+        int digestLength = params.getHashDigestLength();
+
+        // Initialize SHAKE digest based on security level
+        SHAKEDigest shake;
+        if (securityLambda <= 128)
+        {
+            shake = new SHAKEDigest(128);
+        }
+        else
+        {
+            shake = new SHAKEDigest(256);
+        }
+
+        // Process message
+        shake.update(m, 0, m.length);
+
+        // Process domain separation constant (little-endian)
+        byte[] dscBytes = new byte[]{
+            (byte)(dsc & 0xFF),
+            (byte)((dsc >> 8) & 0xFF)
+        };
+        shake.update(dscBytes, 0, 2);
+
+        // Finalize and extract digest
+        shake.doFinal(digest, outOff, digestLength);
+    }
+
     public int[] csprngFpVecChall1(CrossParameters params)
     {
         int t = params.getT();
@@ -1530,6 +1711,27 @@ class CrossEngine
                 inShort[i] = (short)(in[i] & 0xFF);
             }
             genericPack9Bit(out, inShort);
+        }
+    }
+
+    public static void packFpVec(byte[] out, int outOff, byte[] in, CrossParameters params)
+    {
+        int p = params.getP();
+        int packedSize = params.getDenselyPackedFpVecSize();
+
+        if (p == 127)
+        {
+            genericPack7Bit(out, outOff, in);
+        }
+        else
+        { // p == 509
+            // Convert to short[] for 9-bit packing
+            short[] inShort = new short[in.length];
+            for (int i = 0; i < in.length; i++)
+            {
+                inShort[i] = (short)(in[i] & 0xFF);
+            }
+            genericPack9Bit(out, outOff, inShort);
         }
     }
 
@@ -1774,7 +1976,11 @@ class CrossEngine
             int startIndex = leavesStartIndices[i];
             for (int j = 0; j < consecutiveLeaves[i]; j++)
             {
-                flagTree[startIndex + j] = indicesToPublish[cnt++];
+                if (indicesToPublish[cnt] == 0)
+                {
+                    flagTree[startIndex + j] = 1;
+                }
+                cnt++;
             }
         }
     }
