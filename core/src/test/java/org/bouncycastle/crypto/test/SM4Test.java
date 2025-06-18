@@ -6,6 +6,7 @@ import org.bouncycastle.crypto.engines.SM4Engine;
 import org.bouncycastle.crypto.modes.AEADBlockCipher;
 import org.bouncycastle.crypto.modes.CCMBlockCipher;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.modes.GCMModeCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.encoders.Hex;
@@ -91,8 +92,8 @@ public class SM4Test
                              + "A56834CBCF98C397B4024A2691233B8D");
         byte[] tag = Hex.decode("83DE3541E4C2B58177E065A9BF7B62EC");
 
-        GCMBlockCipher encCipher = new GCMBlockCipher(new SM4Engine());
-        GCMBlockCipher  decCipher = new GCMBlockCipher(new SM4Engine());
+        GCMModeCipher encCipher = GCMBlockCipher.newInstance(new SM4Engine());
+        GCMModeCipher decCipher = GCMBlockCipher.newInstance(new SM4Engine());
 
         checkTestCase(encCipher, decCipher, "1", key, iv, aad, pt, ct, tag);
     }
