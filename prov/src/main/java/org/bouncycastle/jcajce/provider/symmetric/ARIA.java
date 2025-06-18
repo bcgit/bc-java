@@ -93,7 +93,7 @@ public final class ARIA
     {
         public CCM()
         {
-            super(new CCMBlockCipher(new ARIAEngine()), false, 12);
+            super(CCMBlockCipher.newInstance(new ARIAEngine()), false, 12);
         }
     }
 

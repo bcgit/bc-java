@@ -714,7 +714,7 @@ public class BcTlsCrypto
 
     protected AEADBlockCipher createCCMMode(BlockCipher engine)
     {
-        return new CCMBlockCipher(engine);
+        return CCMBlockCipher.newInstance(engine);
     }
 
     protected AEADBlockCipher createGCMMode(BlockCipher engine)
