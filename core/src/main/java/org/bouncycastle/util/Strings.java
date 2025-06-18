@@ -47,13 +47,7 @@ public final class Strings
 
     public static String fromUTF8ByteArray(byte[] bytes)
     {
-        char[] chars = new char[bytes.length];
-        int len = UTF8.transcodeToUTF16(bytes, chars);
-        if (len < 0)
-        {
-            throw new IllegalArgumentException("Invalid UTF-8 input");
-        }
-        return new String(chars, 0, len);
+        return fromUTF8ByteArray(bytes, 0, bytes.length);
     }
 
     public static String fromUTF8ByteArray(byte[] bytes, int off, int length)
@@ -74,11 +68,16 @@ public final class Strings
 
     public static byte[] toUTF8ByteArray(char[] string)
     {
+        return toUTF8ByteArray(string, 0, string.length);
+    }
+
+    public static byte[] toUTF8ByteArray(char[] cs, int csOff, int csLen)
+    {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         try
         {
-            toUTF8ByteArray(string, bOut);
+            toUTF8ByteArray(cs, csOff, csLen, bOut);
         }
         catch (IOException e)
         {
@@ -91,7 +90,13 @@ public final class Strings
     public static void toUTF8ByteArray(char[] string, OutputStream sOut)
         throws IOException
     {
-        if (string.length < 1)
+        toUTF8ByteArray(string, 0, string.length, sOut);
+    }
+
+    public static void toUTF8ByteArray(char[] cs, int csOff, int csLen, OutputStream sOut)
+            throws IOException
+    {
+        if (csLen < 1)
         {
             return;
         }
@@ -101,35 +106,35 @@ public final class Strings
         int bufPos = 0, i = 0;
         do
         {
-            int ch = string[i++];
+            int c = cs[csOff + i++];
 
-            if (ch < 0x0080)
+            if (c < 0x0080)
             {
-                buf[bufPos++] = (byte)ch;
+                buf[bufPos++] = (byte)c;
             }
-            else if (ch < 0x0800)
+            else if (c < 0x0800)
             {
-                buf[bufPos++] = (byte)(0xC0 | (ch >> 6));
-                buf[bufPos++] = (byte)(0x80 | (ch & 0x3F));
+                buf[bufPos++] = (byte)(0xC0 | (c >> 6));
+                buf[bufPos++] = (byte)(0x80 | (c & 0x3F));
             }
             // surrogate pair
-            else if (ch >= 0xD800 && ch <= 0xDFFF)
+            else if (c >= 0xD800 && c <= 0xDFFF)
             {
                 /*
                  * Various checks that shouldn't fail unless the Java String class has a bug.
                  */
-                int W1 = ch;
+                int W1 = c;
                 if (W1 > 0xDBFF)
                 {
                     throw new IllegalStateException("invalid UTF-16 high surrogate");
                 }
 
-                if (i >= string.length)
+                if (i >= csLen)
                 {
                     throw new IllegalStateException("invalid UTF-16 codepoint (truncated surrogate pair)");
                 }
 
-                int W2 = string[i++];
+                int W2 = cs[csOff + i++];
                 if (W2 < 0xDC00 || W2 > 0xDFFF)
                 {
                     throw new IllegalStateException("invalid UTF-16 low surrogate");
@@ -143,9 +148,9 @@ public final class Strings
             }
             else
             {
-                buf[bufPos++] = (byte)(0xE0 | (ch >> 12));
-                buf[bufPos++] = (byte)(0x80 | ((ch >> 6) & 0x3F));
-                buf[bufPos++] = (byte)(0x80 | (ch & 0x3F));
+                buf[bufPos++] = (byte)(0xE0 | (c >> 12));
+                buf[bufPos++] = (byte)(0x80 | ((c >> 6) & 0x3F));
+                buf[bufPos++] = (byte)(0x80 | (c & 0x3F));
             }
 
             if (bufPos + 4 > buf.length)
@@ -154,7 +159,7 @@ public final class Strings
                 bufPos = 0;
             }
         }
-        while (i < string.length);
+        while (i < csLen);
 
         if (bufPos > 0)
         {

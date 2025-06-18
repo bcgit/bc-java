@@ -97,15 +97,23 @@ public class Base64
      *
      * @return a byte array representing the decoded data.
      */
-    public static byte[] decode(
-        byte[] data)
+    public static byte[] decode(byte[] data)
     {
-        int len = data.length / 4 * 3;
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream(len);
+        return decode(data, 0, data.length);
+    }
+
+    /**
+     * decode the base 64 encoded input data. It is assumed the input data is valid.
+     *
+     * @return a byte array representing the decoded data.
+     */
+    public static byte[] decode(byte[] data, int off, int length)
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream(length / 4 * 3);
 
         try
         {
-            encoder.decode(data, 0, data.length, bOut);
+            encoder.decode(data, off, length, bOut);
         }
         catch (Exception e)
         {
