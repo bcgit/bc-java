@@ -2153,4 +2153,126 @@ class CrossEngine
             }
         }
     }
+
+    /**
+     * Rebuild leaves (NO_TREES variant)
+     *
+     * @param roundsSeeds      Output array for reconstructed seeds (T * seedLength)
+     * @param indicesToPublish Array indicating which seeds to publish (T elements)
+     * @param seedStorage      Stored seeds to copy from
+     * @param seedLength       Length of each seed in bytes
+     * @return Always true (success)
+     */
+    public static boolean rebuildLeaves(byte[] roundsSeeds, byte[] indicesToPublish,
+                                        byte[] seedStorage, int seedLength)
+    {
+        int published = 0;
+        int T = indicesToPublish.length;
+
+        for (int i = 0; i < T; i++)
+        {
+            if (indicesToPublish[i] == TO_PUBLISH)
+            {
+                System.arraycopy(
+                    seedStorage, published * seedLength,
+                    roundsSeeds, i * seedLength,
+                    seedLength
+                );
+                published++;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Rebuild full seed tree
+     *
+     * @param seedTree         Output seed tree (numNodes * seedLength)
+     * @param indicesToPublish Array indicating which leaves to publish (T elements)
+     * @param storedSeeds      Stored seeds to copy into the tree
+     * @param salt             Salt used in CSPRNG initialization
+     * @param params           Algorithm parameters
+     * @return true if reconstruction successful, false if unused bytes non-zero
+     */
+    public boolean rebuildTree(byte[] seedTree, byte[] indicesToPublish,
+                               byte[] storedSeeds, byte[] salt,
+                               CrossParameters params)
+    {
+        int seedLength = params.getSeedLengthBytes();
+        int numNodes = params.getNumNodesSeedTree();
+        byte[] flagsTree = new byte[numNodes];
+        computeSeedsToPublish(flagsTree, indicesToPublish, params);
+
+        // Prepare CSPRNG input (seed + salt)
+        byte[] csprngInput = new byte[seedLength + salt.length];
+        System.arraycopy(salt, 0, csprngInput, seedLength, salt.length);
+
+        // Tree structure parameters
+        int[] off = params.getTreeOffsets();
+        int[] npl = params.getTreeNodesPerLevel();
+        int[] lpl = params.getTreeLeavesPerLevel();
+        int logT = off.length - 1;
+
+        int nodesUsed = 0;
+        int startNode = 1;  // Skip root (index 0)
+
+        for (int level = 1; level <= logT; level++)
+        {
+            for (int nodeInLevel = 0; nodeInLevel < npl[level]; nodeInLevel++)
+            {
+                int currentNode = startNode + nodeInLevel;
+                int fatherNode = parent(currentNode, level - 1, off);
+                int leftChild = leftChild(currentNode) - off[level];
+
+                // Copy stored seeds into tree
+                if (flagsTree[currentNode] == TO_PUBLISH &&
+                    flagsTree[fatherNode] == NOT_TO_PUBLISH)
+                {
+                    System.arraycopy(
+                        storedSeeds, nodesUsed * seedLength,
+                        seedTree, currentNode * seedLength,
+                        seedLength
+                    );
+                    nodesUsed++;
+                }
+
+                // Expand children for non-leaf nodes
+                if (flagsTree[currentNode] == TO_PUBLISH &&
+                    nodeInLevel < npl[level] - lpl[level])
+                {
+                    // Prepare CSPRNG input: current seed + salt
+                    System.arraycopy(
+                        seedTree, currentNode * seedLength,
+                        csprngInput, 0, seedLength
+                    );
+
+                    // Initialize CSPRNG with domain separation
+                    int domainSep = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + currentNode;
+                    init(csprngInput, csprngInput.length, domainSep);
+
+                    // Expand children
+                    byte[] children = new byte[2 * seedLength];
+                    randomBytes(children, children.length);
+                    System.arraycopy(
+                        children, 0,
+                        seedTree, leftChild * seedLength,
+                        children.length
+                    );
+                }
+            }
+            startNode += npl[level];
+        }
+
+        // Verify unused storage bytes are zero
+        int storedBytesUsed = nodesUsed * seedLength;
+        int storedBytesTotal = params.getTreeNodesToStore() * seedLength;
+        for (int i = storedBytesUsed; i < storedBytesTotal; i++)
+        {
+            if (storedSeeds[i] != 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
 }
