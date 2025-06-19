@@ -297,7 +297,7 @@ public class CrossSigner
         int published_rsps = 0;
         for (int i = 0; i < params.getT(); i++)
         {
-            if (chall_2[i] == CrossEngine.TO_PUBLISH)
+            if (chall_2[i] == 0)
             {
                 if (published_rsps >= params.getT() - params.getW())
                 {
@@ -318,8 +318,11 @@ public class CrossSigner
             }
         }
         byte[] sm = new byte[params.getSignatureSize() + message.length];
-        //sm = Arrays.concatenate(salt, digest_cmt, digest_chall_2, path, proof, resp_1, resp_1, resp_0)
         int pos = 0;
+        System.arraycopy(message, 0, sm, pos, message.length);
+        pos += message.length;
+        //sm = Arrays.concatenate(salt, digest_cmt, digest_chall_2, path, proof, resp_1, resp_1, resp_0)
+
         System.arraycopy(salt, 0, sm, pos, salt.length);
         pos += salt.length;
         System.arraycopy(digest_cmt, 0, sm, pos, digest_cmt.length);
@@ -355,7 +358,7 @@ public class CrossSigner
                 pos += resp_0[i].v_G_bar.length;
             }
         }
-        System.arraycopy(message, 0, sm, pos, message.length);
+
         return sm;
     }
 

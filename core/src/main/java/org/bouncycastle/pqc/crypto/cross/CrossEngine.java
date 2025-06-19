@@ -1858,7 +1858,7 @@ class CrossEngine
         byte[] flagTree = new byte[numNodes];
         Arrays.fill(flagTree, NOT_COMPUTED);
 
-        labelLeaves(flagTree, leavesToReveal, params);
+        labelLeavesMerkle(flagTree, leavesToReveal, params);
 
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -1940,7 +1940,7 @@ class CrossEngine
 
     private static void computeSeedsToPublish(byte[] flagsTree, byte[] indicesToPublish, CrossParameters params)
     {
-        labelLeaves(flagsTree, indicesToPublish, params);
+        labelLeavesSeedTree(flagsTree, indicesToPublish, params);
 
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
@@ -1964,7 +1964,7 @@ class CrossEngine
         }
     }
 
-    private static void labelLeaves(byte[] flagTree, byte[] indicesToPublish, CrossParameters params)
+    private static void labelLeavesMerkle(byte[] flagTree, byte[] indicesToPublish, CrossParameters params)
     {
         int cnt = 0;
         int[] leavesStartIndices = params.getTreeLeavesStartIndices();
@@ -1980,6 +1980,24 @@ class CrossEngine
                 {
                     flagTree[startIndex + j] = 1;
                 }
+                cnt++;
+            }
+        }
+    }
+
+    private static void labelLeavesSeedTree(byte[] flagTree, byte[] indicesToPublish, CrossParameters params)
+    {
+        int cnt = 0;
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
+        int subroots = params.getTreeSubroots();
+
+        for (int i = 0; i < subroots; i++)
+        {
+            int startIndex = leavesStartIndices[i];
+            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            {
+                flagTree[startIndex + j] = indicesToPublish[cnt];
                 cnt++;
             }
         }
