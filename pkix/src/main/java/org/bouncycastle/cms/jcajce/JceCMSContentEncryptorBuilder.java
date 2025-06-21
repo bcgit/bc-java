@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -377,7 +378,7 @@ public class JceCMSContentEncryptorBuilder
                 algId = algorithmIdentifier;
             }
 
-            if (algorithmIdentifier.getAlgorithm().equals(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305))
+            if (CMSAlgorithm.ChaCha20Poly1305.equals(algorithmIdentifier.getAlgorithm()))
             {
                 macOut = new MacCaptureStream(dOut, 16);
             }
