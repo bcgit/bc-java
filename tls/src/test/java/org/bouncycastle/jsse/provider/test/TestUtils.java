@@ -40,6 +40,7 @@ import javax.net.ssl.SSLSocket;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
@@ -70,6 +71,8 @@ import org.bouncycastle.jsse.BCSSLParameters;
 import org.bouncycastle.jsse.BCSSLSocket;
 import org.bouncycastle.jsse.java.security.BCAlgorithmConstraints;
 import org.bouncycastle.jsse.java.security.BCCryptoPrimitive;
+import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 
 /**
  * Test Utils
@@ -84,6 +87,10 @@ class TestUtils
 
     private static Map<String, AlgorithmIdentifier> createAlgIDs()
     {
+        ASN1ObjectIdentifier id_sha256 = NISTObjectIdentifiers.id_sha256;
+        AlgorithmIdentifier sha256Identifier = new AlgorithmIdentifier(id_sha256, DERNull.INSTANCE);
+        int sha256OutputSize = TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha256);
+
         HashMap<String, AlgorithmIdentifier> algIDs = new HashMap<String, AlgorithmIdentifier>();
 
         algIDs.put("SHA1withDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.id_dsa_with_sha1));
@@ -92,12 +99,13 @@ class TestUtils
         algIDs.put("SHA1withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha1WithRSAEncryption, DERNull.INSTANCE));
         algIDs.put("SHA224withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha224WithRSAEncryption, DERNull.INSTANCE));
         algIDs.put("SHA256withRSA", new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE));
-        algIDs.put("SHA256withRSAandMGF1",
-            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS,
-                new RSASSAPSSparams(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
-                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1,
-                        new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)),
-                    new ASN1Integer(32), new ASN1Integer(1))));
+        algIDs.put("SHA256withRSAandMGF1", new AlgorithmIdentifier(
+            PKCSObjectIdentifiers.id_RSASSA_PSS,
+            new RSASSAPSSparams(
+                sha256Identifier,
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, sha256Identifier),
+                new ASN1Integer(sha256OutputSize),
+                RSASSAPSSparams.DEFAULT_TRAILER_FIELD)));
         algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
         algIDs.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));

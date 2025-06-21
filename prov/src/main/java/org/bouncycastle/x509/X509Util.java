@@ -134,7 +134,7 @@ class X509Util
             hashAlgId,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, hashAlgId),
             new ASN1Integer(saltSize),
-            new ASN1Integer(1));
+            RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
     }
 
     static ASN1ObjectIdentifier getAlgorithmOID(
