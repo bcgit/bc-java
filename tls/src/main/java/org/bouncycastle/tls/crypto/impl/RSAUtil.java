@@ -47,7 +47,7 @@ public class RSAUtil
         ASN1Integer sha384Size = new ASN1Integer(TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha384));
         ASN1Integer sha512Size = new ASN1Integer(TlsCryptoUtils.getHashOutputSize(CryptoHashAlgorithm.sha512));
 
-        ASN1Integer trailerField = new ASN1Integer(1);
+        ASN1Integer trailerField = RSASSAPSSparams.DEFAULT_TRAILER_FIELD;
 
         try
         {
