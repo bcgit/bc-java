@@ -570,7 +570,7 @@ public abstract class TlsProtocol
                 throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
             applicationDataQueue.addData(buf, off, len);
-            processApplicationDataQueue();
+//            processApplicationDataQueue();
             break;
         }
         case ContentType.change_cipher_spec:
@@ -714,15 +714,6 @@ public abstract class TlsProtocol
 
             handleHandshakeMessage(type, buf);
         }
-    }
-
-    private void processApplicationDataQueue()
-    {
-        /*
-         * There is nothing we need to do here.
-         * 
-         * This function could be used for callbacks when application data arrives in the future.
-         */
     }
 
     private void processAlertQueue()
