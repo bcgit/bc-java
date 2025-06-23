@@ -91,7 +91,7 @@ public class NotationData
 
     public boolean isHumanReadable()
     {
-        return data[0] == (byte)0x80;
+        return (data[0] & 0x80) != 0;
     }
 
     public String getNotationName()
