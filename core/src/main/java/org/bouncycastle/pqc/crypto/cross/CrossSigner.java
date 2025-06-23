@@ -266,7 +266,7 @@ public class CrossSigner
         byte[] y_digest_chall_1 = new byte[packedYSize + digest_chall_1.length];
         for (int i = 0; i < params.getT(); i++)
         {
-            CrossEngine.packFpVec(y_digest_chall_1, i * params.getDenselyPackedFpVecSize(),y[i], params);
+            CrossEngine.packFpVec(y_digest_chall_1, i * params.getDenselyPackedFpVecSize(), y[i], params);
         }
 
         System.arraycopy(digest_chall_1, 0, y_digest_chall_1, packedYSize, digest_chall_1.length);
@@ -362,17 +362,311 @@ public class CrossSigner
         return sm;
     }
 
-    public static class Response0
+    @Override
+    public boolean verifySignature(byte[] message, byte[] signature)
+    {
+        int t = params.getT();
+        int K = params.getK();
+        int N = params.getN();
+        int M = params.getM();
+        int w = params.getW();
+        int hashDigestLength = params.getHashDigestLength();
+        int saltLength = params.getSaltLengthBytes();
+        int seedLength = params.getSeedLengthBytes();
+
+        // Expand public key based on variant
+        Object V_tr = null;
+        byte[][] W_mat = null;
+        byte[] publicKey = pubKey.getEncoded();
+        byte[] seedSk = Arrays.copyOf(publicKey, params.getKeypairSeedLengthBytes());
+        int pos = message.length;
+        byte[] path, proof;
+        if (params.variant == CrossParameters.FAST)
+        {
+            proof = new byte[(params.getT() - params.getW()) * params.getHashDigestLength()];
+            path = new byte[(params.getT() - params.getW()) * params.getSeedLengthBytes()];
+        }
+        else
+        {
+            proof = new byte[params.getHashDigestLength() * params.getTreeNodesToStore()];
+            path = new byte[params.getTreeNodesToStore() * params.getSeedLengthBytes()];
+        }
+
+        // Fixed-length components
+        byte[] salt = extract(signature, pos, params.getSaltLengthBytes());
+        pos += params.getSaltLengthBytes();
+
+        byte[] digest_cmt = extract(signature, pos, params.getHashDigestLength());
+        pos += params.getHashDigestLength();
+
+        byte[] digestChall2 = extract(signature, pos, params.getHashDigestLength());
+        pos += params.getHashDigestLength();
+
+        path = extract(signature, pos, path.length);
+        pos += path.length;
+
+        proof = extract(signature, pos, proof.length);
+        pos += proof.length;
+
+        // resp_1: T elements of hash digest length
+        byte[][] resp_1 = new byte[t - w][];
+        for (int i = 0; i < resp_1.length; i++)
+        {
+            resp_1[i] = extract(signature, pos, params.getHashDigestLength());
+            pos += params.getHashDigestLength();
+        }
+
+        // resp_0: Variable number of elements (tau) based on remaining bytes
+        int blockSize = params.rsdp
+            ? params.getDenselyPackedFpVecSize() + params.getDenselyPackedFzVecSize()
+            : params.getDenselyPackedFpVecSize() + params.getDenselyPackedFzRsdpGVecSize();
+
+        int remainingBytes = signature.length - pos;
+        if (remainingBytes % blockSize != 0)
+        {
+            throw new IllegalArgumentException("Invalid signature length");
+        }
+
+        int tau = remainingBytes / blockSize;
+        Response0[] resp0 = new Response0[tau];
+
+        for (int i = 0; i < tau; i++)
+        {
+            Response0 resp = new Response0();
+            resp.y = extract(signature, pos, params.getDenselyPackedFpVecSize());
+            pos += params.getDenselyPackedFpVecSize();
+
+            if (params.rsdp)
+            {
+                resp.v_bar = extract(signature, pos, params.getDenselyPackedFzVecSize());
+                pos += params.getDenselyPackedFzVecSize();
+            }
+            else
+            {
+                resp.v_G_bar = extract(signature, pos, params.getDenselyPackedFzRsdpGVecSize());
+                pos += params.getDenselyPackedFzRsdpGVecSize();
+            }
+            resp0[i] = resp;
+        }
+
+        if (params.rsdp)
+        {
+            byte[][] vTr = new byte[K][N - K];
+            engine.expandPk(params, vTr, seedSk);
+            V_tr = vTr;
+        }
+        else
+        {
+            short[][] vTr = new short[K][N - K];
+            W_mat = new byte[M][N - M];
+            engine.expandPk(params, vTr, W_mat, seedSk);
+            V_tr = vTr;
+        }
+
+        // Unpack syndrome
+        byte[] s = new byte[N - K];
+        boolean isPaddKeyOk = CrossEngine.unpackFpSyn(s, Arrays.copyOfRange(publicKey, seedSk.length, publicKey.length), params);
+
+        // Compute digest_msg_cmt_salt
+        byte[] digestMsgCmtSalt = new byte[2 * hashDigestLength + saltLength];
+        byte[] tempHash = new byte[hashDigestLength];
+        CrossEngine.hash(tempHash, message, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        System.arraycopy(tempHash, 0, digestMsgCmtSalt, 0, hashDigestLength);
+        System.arraycopy(digest_cmt, 0, digestMsgCmtSalt, hashDigestLength, hashDigestLength);
+        System.arraycopy(salt, 0, digestMsgCmtSalt, 2 * hashDigestLength, saltLength);
+
+        // Compute digest_chall_1
+        byte[] digestChall1 = new byte[hashDigestLength];
+        CrossEngine.hash(digestChall1, digestMsgCmtSalt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+
+        // Generate challenge 1 vector
+        int[] chall1 = engine.csprngFpVecChall1(params);
+
+        // Expand challenge 2 to fixed weight
+        byte[] chall2 = new byte[t];
+        engine.expandDigestToFixedWeight(chall2, digestChall2, params);
+
+        // Rebuild seed tree
+        byte[] roundSeeds = new byte[t * seedLength];
+        boolean isStreePaddingOk;
+        if (params.variant == CrossParameters.FAST)
+        {
+            isStreePaddingOk = CrossEngine.rebuildLeaves(roundSeeds, chall2, path, seedLength);
+        }
+        else
+        {
+            int numNodes = params.getNumNodesSeedTree();
+            byte[] seedTree = new byte[numNodes * seedLength];
+            isStreePaddingOk = engine.rebuildTree(seedTree, chall2, path, salt, params);
+            CrossEngine.seedLeavesTree(params, roundSeeds, seedTree);
+        }
+
+        // Prepare buffers for commitments
+        int packedFpSynSize = params.getDenselyPackedFpSynSize();
+        int packedFzVecSize = params.getDenselyPackedFzVecSize();
+        int packedFzRsdpGVecSize = params.getDenselyPackedFzRsdpGVecSize();
+        int cmt0InputSize = packedFpSynSize + (params.rsdp ? packedFzVecSize : packedFzRsdpGVecSize) + saltLength;
+        int saltOffset = cmt0InputSize - saltLength;
+
+        byte[] cmt0_i_input = new byte[cmt0InputSize];
+        System.arraycopy(salt, 0, cmt0_i_input, saltOffset, saltLength);
+
+        byte[] cmt1_i_input = new byte[seedLength + saltLength];
+        System.arraycopy(salt, 0, cmt1_i_input, seedLength, saltLength);
+
+        byte[][] cmt0 = new byte[t][hashDigestLength];
+        byte[] cmt1 = new byte[t * hashDigestLength];
+
+        byte[] e_bar_prime = new byte[N];
+        byte[] u_prime = new byte[N];
+        byte[] y_prime = new byte[N];
+        byte[] y_prime_H = new byte[N - K];
+        byte[] s_prime = new byte[N - K];
+
+        byte[][] y = new byte[t][N];
+        int usedRsps = 0;
+        boolean isSignatureOk = true;
+        boolean isPackedPaddOk = true;
+
+        for (int i = 0; i < t; i++)
+        {
+            int domainSepCsprng = CrossEngine.CSPRNG_DOMAIN_SEP_CONST + i + (2 * t - 1);
+            int domainSepHash = CrossEngine.HASH_DOMAIN_SEP_CONST + i + (2 * t - 1);
+
+            if (chall2[i] == 1)
+            {
+                // Round with challenge=1
+                System.arraycopy(roundSeeds, i * seedLength, cmt1_i_input, 0, seedLength);
+                CrossEngine.hash(cmt1, i * hashDigestLength, cmt1_i_input, domainSepHash, params);
+
+                byte[] csprngInput = new byte[seedLength + saltLength];
+                System.arraycopy(roundSeeds, i * seedLength, csprngInput, 0, seedLength);
+                System.arraycopy(salt, 0, csprngInput, seedLength, saltLength);
+
+                engine.init(csprngInput, csprngInput.length, domainSepCsprng);
+                if (params.rsdp)
+                {
+                    engine.csprngFzVec(e_bar_prime, params);
+                }
+                else
+                {
+                    byte[] e_G_bar_prime = new byte[M];
+                    engine.csprngFzInfW(e_G_bar_prime, params);
+                    CrossEngine.fzInfWByFzMatrix(e_bar_prime, e_G_bar_prime, W_mat, params);
+                    CrossEngine.fzDzNormN(e_bar_prime);
+                }
+
+                engine.csprngFpVec(u_prime, params);
+                CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime, chall1[i], u_prime, params);
+                CrossEngine.fpDzNorm(y[i], params);
+            }
+            else
+            {
+                // Round with challenge=0
+                byte[] resp1 = resp_1[usedRsps];
+
+                isPackedPaddOk &= CrossEngine.unpackFpVec(y[i], resp0[usedRsps].y, params);
+                System.arraycopy(resp1, 0, cmt1, i * hashDigestLength, hashDigestLength);
+
+                if (params.rsdp)
+                {
+                    byte[] v_bar = new byte[N];
+                    isPackedPaddOk &= CrossEngine.unpackFzVec(v_bar, resp0[usedRsps].v_bar, params);
+                    isSignatureOk &= CrossEngine.isFzVecInRestrGroupN(v_bar, params);
+
+                    byte[] v = new byte[N];
+                    CrossEngine.convertRestrVecToFp(v, v_bar, params);
+                    CrossEngine.fpVecByFpVecPointwise(y_prime, v, y[i], params);
+                    CrossEngine.fpVecByFpMatrix(y_prime_H, y_prime, (byte[][])V_tr, params);
+                    CrossEngine.fpDzNormSynd(y_prime_H, params);
+                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, y_prime_H, (byte)chall1[i], s, params);
+                    CrossEngine.fpDzNormSynd(s_prime, params);
+
+                    CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
+                    System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzVecSize);
+                }
+                else
+                {
+                    byte[] v_G_bar = new byte[M];
+                    isPackedPaddOk &= CrossEngine.unpackFzRsdpGVec(v_G_bar, resp0[usedRsps].v_G_bar, params);
+                    isSignatureOk &= CrossEngine.isFzVecInRestrGroupM(v_G_bar, params.getZ(), params.getM());
+
+                    byte[] v_bar = new byte[N];
+                    CrossEngine.fzInfWByFzMatrix(v_bar, v_G_bar, W_mat, params);
+                    byte[] v = new byte[N];
+                    CrossEngine.convertRestrVecToFp(v, v_bar, params);
+                    CrossEngine.fpVecByFpVecPointwise(y_prime, v, y[i], params);
+                    //TODO: (short[][])
+                    CrossEngine.fpVecByFpMatrix(y_prime_H, y_prime, (byte[][])V_tr, params);
+                    CrossEngine.fpDzNormSynd(y_prime_H, params);
+                    //TODO: short?
+                    CrossEngine.fpSyndMinusFpVecScaled(s_prime, y_prime_H, (byte)chall1[i], s, params);
+                    CrossEngine.fpDzNormSynd(s_prime, params);
+
+                    CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
+                    System.arraycopy(resp0[usedRsps].v_G_bar, 0, cmt0_i_input, packedFpSynSize, packedFzRsdpGVecSize);
+                }
+
+                CrossEngine.hash(cmt0[i], 0, cmt0_i_input, domainSepHash, params);
+                usedRsps++;
+            }
+        }
+
+        // Recompute Merkle root
+        byte[] digestCmt0Cmt1 = new byte[2 * hashDigestLength];
+        boolean isMtreePaddingOk;
+        if (params.variant == CrossParameters.FAST)
+        {
+            isMtreePaddingOk = engine.recomputeRootSpeed(digestCmt0Cmt1, cmt0, proof, chall2, params);
+        }
+        else
+        {
+            isMtreePaddingOk = CrossEngine.recomputeRootTreeBased(digestCmt0Cmt1, cmt0, proof, chall2, params);
+        }
+
+
+        byte[] cmt1Hash = new byte[hashDigestLength];
+        CrossEngine.hash(cmt1Hash, cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+        System.arraycopy(cmt1Hash, 0, digestCmt0Cmt1, hashDigestLength, hashDigestLength);
+
+        byte[] digestCmtPrime = new byte[hashDigestLength];
+        CrossEngine.hash(digestCmtPrime, digestCmt0Cmt1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+
+        // Compute challenge 2 prime
+        int packedFpVecSize = params.getDenselyPackedFpVecSize();
+        byte[] yDigestChall1 = new byte[t * packedFpVecSize + hashDigestLength];
+        for (int i = 0; i < t; i++)
+        {
+            byte[] packedY = new byte[packedFpVecSize];
+            CrossEngine.packFpVec(packedY, y[i], params);
+            System.arraycopy(packedY, 0, yDigestChall1, i * packedFpVecSize, packedFpVecSize);
+        }
+        System.arraycopy(digestChall1, 0, yDigestChall1, t * packedFpVecSize, hashDigestLength);
+
+        byte[] digestChall2Prime = new byte[hashDigestLength];
+        CrossEngine.hash(digestChall2Prime, yDigestChall1, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+
+        // Final checks
+        boolean doesDigestCmtMatch = Arrays.constantTimeAreEqual(digestCmtPrime, digest_cmt);
+        boolean doesDigestChall2Match = Arrays.constantTimeAreEqual(digestChall2Prime, digestChall2);
+
+        isSignatureOk = isSignatureOk && doesDigestCmtMatch && doesDigestChall2Match &&
+            isMtreePaddingOk && isStreePaddingOk && isPaddKeyOk && isPackedPaddOk;
+
+        return isSignatureOk;
+    }
+
+    private byte[] extract(byte[] source, int start, int length)
+    {
+        byte[] result = new byte[length];
+        System.arraycopy(source, start, result, 0, length);
+        return result;
+    }
+
+    private static class Response0
     {
         public byte[] y;
         public byte[] v_bar; // For RSDP
         public byte[] v_G_bar; // For RSDPG
-    }
-
-
-    @Override
-    public boolean verifySignature(byte[] message, byte[] signature)
-    {
-        return false;
     }
 }

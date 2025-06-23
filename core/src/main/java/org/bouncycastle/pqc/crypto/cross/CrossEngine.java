@@ -2275,4 +2275,625 @@ class CrossEngine
         }
         return true;
     }
+
+    /**
+     * Recompute root (NO_TREES/SPEED variant)
+     *
+     * @param root             Output root hash
+     * @param recomputedLeaves Output reconstructed leaves
+     * @param mtp              Merkle proof data
+     * @param leavesToReveal   Array indicating leaves to reveal
+     * @param params           Algorithm parameters
+     * @return true if successful
+     */
+    public boolean recomputeRootSpeed(byte[] root, byte[][] recomputedLeaves,
+                                      byte[] mtp, byte[] leavesToReveal,
+                                      CrossParameters params)
+    {
+        int T = params.getT();
+        int hashDigestLength = params.getHashDigestLength();
+        int published = 0;
+
+        // Reconstruct leaves from proof
+        for (int i = 0; i < T; i++)
+        {
+            if (leavesToReveal[i] == TO_PUBLISH)
+            {
+                System.arraycopy(
+                    mtp, published * hashDigestLength,
+                    recomputedLeaves[i], 0,
+                    hashDigestLength
+                );
+                published++;
+            }
+        }
+
+        // Compute root from reconstructed leaves
+        treeRootSpeed(root, recomputedLeaves, params);
+        return true;
+    }
+
+    /**
+     * Recompute root (Tree-based variants)
+     *
+     * @param root             Output root hash
+     * @param recomputedLeaves Output reconstructed leaves
+     * @param mtp              Merkle proof data
+     * @param leavesToReveal   Array indicating leaves to reveal
+     * @param params           Algorithm parameters
+     * @return true if successful, false if unused bytes non-zero
+     */
+    public static boolean recomputeRootTreeBased(byte[] root, byte[][] recomputedLeaves,
+                                                 byte[] mtp, byte[] leavesToReveal,
+                                                 CrossParameters params)
+    {
+        int hashDigestLength = params.getHashDigestLength();
+        int numNodes = params.getNumNodesMerkleTree();
+        byte[] tree = new byte[numNodes * hashDigestLength];
+        byte[] flagTree = new byte[numNodes];
+        Arrays.fill(flagTree, NOT_COMPUTED);
+
+        // Place commitments in tree
+        placeCmtOnLeaves(tree, recomputedLeaves, params);
+        labelLeaves(flagTree, leavesToReveal, params);
+
+        // Tree structure parameters
+        int[] off = params.getTreeOffsets();
+        int[] npl = params.getTreeNodesPerLevel();
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int logT = off.length - 1;
+        ;
+        int treeSubroots = params.getTreeSubroots();
+
+        int published = 0;
+        int startNode = leavesStartIndices[0];
+        byte[] hashInput = new byte[2 * hashDigestLength];
+
+        for (int level = logT; level > 0; level--)
+        {
+            for (int i = npl[level] - 2; i >= 0; i -= 2)
+            {
+                int currentNode = startNode + i;
+                int parentNode = parent(currentNode, level - 1, off);
+                int siblingNode = sibling(currentNode);
+
+                // Skip if both siblings unused
+                if (flagTree[currentNode] == NOT_COMPUTED &&
+                    flagTree[siblingNode] == NOT_COMPUTED)
+                {
+                    continue;
+                }
+
+                // Process left sibling (current node)
+                if (flagTree[currentNode] == COMPUTED)
+                {
+                    System.arraycopy(
+                        tree, currentNode * hashDigestLength,
+                        hashInput, 0, hashDigestLength
+                    );
+                }
+                else
+                {
+                    System.arraycopy(
+                        mtp, published * hashDigestLength,
+                        hashInput, 0, hashDigestLength
+                    );
+                    published++;
+                }
+
+                // Process right sibling
+                if (flagTree[siblingNode] == COMPUTED)
+                {
+                    System.arraycopy(
+                        tree, siblingNode * hashDigestLength,
+                        hashInput, hashDigestLength, hashDigestLength
+                    );
+                }
+                else
+                {
+                    System.arraycopy(
+                        mtp, published * hashDigestLength,
+                        hashInput, hashDigestLength, hashDigestLength
+                    );
+                    published++;
+                }
+
+                // Hash siblings and store at parent
+                byte[] parentHash = new byte[hashDigestLength];
+                hash(parentHash, hashInput, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
+                System.arraycopy(
+                    parentHash, 0,
+                    tree, parentNode * hashDigestLength, hashDigestLength
+                );
+                flagTree[parentNode] = COMPUTED;
+            }
+            startNode -= npl[level - 1];
+        }
+
+        // Root is at index 0
+        System.arraycopy(tree, 0, root, 0, hashDigestLength);
+
+        // Verify unused proof bytes are zero
+        int bytesUsed = published * hashDigestLength;
+        int totalProofBytes = params.getTreeNodesToStore() * hashDigestLength;
+        for (int i = bytesUsed; i < totalProofBytes; i++)
+        {
+            if (mtp[i] != 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Helper: Place commitments in tree
+    private static void placeCmtOnLeaves(byte[] tree, byte[][] leaves,
+                                         CrossParameters params)
+    {
+        int hashDigestLength = params.getHashDigestLength();
+        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int treeSubroots = params.getTreeSubroots();
+
+        int cnt = 0;
+        for (int i = 0; i < treeSubroots; i++)
+        {
+            int startIdx = leavesStartIndices[i];
+            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            {
+                int treePos = (startIdx + j) * hashDigestLength;
+                System.arraycopy(leaves[cnt], 0, tree, treePos, hashDigestLength);
+                cnt++;
+            }
+        }
+    }
+
+    // Helper: Label leaves in flag tree
+    private static void labelLeaves(byte[] flagTree, byte[] leavesToReveal,
+                                    CrossParameters params)
+    {
+        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
+        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
+        int treeSubroots = params.getTreeSubroots();
+
+        int cnt = 0;
+        for (int i = 0; i < treeSubroots; i++)
+        {
+            int startIdx = leavesStartIndices[i];
+            for (int j = 0; j < consecutiveLeaves[i]; j++)
+            {
+                flagTree[startIdx + j] = leavesToReveal[cnt++];
+            }
+        }
+    }
+
+    public static boolean unpackFpSyn(byte[] out, byte[] in, CrossParameters params)
+    {
+        int n_k = params.getN() - params.getK();
+        int packedSize = params.getDenselyPackedFpSynSize();
+        if (params.getP() == 127)
+        {
+            return genericUnpack7Bit(out, in, n_k, packedSize);
+        }
+        else if (params.getP() == 509)
+        {
+            // For P=509, we use short[] to hold 9-bit values
+            throw new IllegalArgumentException("Use short[] output for P=509");
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus P: " + params.getP());
+        }
+    }
+
+    public static boolean unpackFpSyn(short[] out, byte[] in, CrossParameters params)
+    {
+        int n_k = params.getN() - params.getK();
+        int packedSize = params.getDenselyPackedFpSynSize();
+        if (params.getP() == 509)
+        {
+            return genericUnpack9Bit(out, in, n_k, packedSize);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Use byte[] output for P=127");
+        }
+    }
+
+    public static boolean genericUnpack7Bit(byte[] out, byte[] in, int outlen, int inlen)
+    {
+        boolean isPackedPaddOk = true;
+        int i;
+        // Process full blocks (8 elements per 7 bytes)
+        for (i = 0; i < outlen / 8; i++)
+        {
+            int inBase = i * 7;
+            int outBase = i * 8;
+            out[outBase] = (byte)(in[inBase] & 0x7F);
+            out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+            out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+            out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+            out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
+            out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
+            out[outBase + 6] = (byte)(((in[inBase + 5] >>> 2) & 0x3F) | ((in[inBase + 6] & 0x7F) << 6));
+            out[outBase + 7] = (byte)(in[inBase + 6] >>> 1);
+        }
+
+        // Handle remainder elements (1-7)
+        int nRemainder = outlen % 8;
+        if (nRemainder > 0)
+        {
+            int inBase = i * 7;
+            int outBase = i * 8;
+            switch (nRemainder)
+            {
+            case 1:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                break;
+            case 2:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                break;
+            case 3:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                break;
+            case 4:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+                break;
+            case 5:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
+                break;
+            case 6:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
+                out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
+                break;
+            case 7:
+                out[outBase] = (byte)(in[inBase] & 0x7F);
+                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
+                out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
+                out[outBase + 6] = (byte)(((in[inBase + 5] >>> 2) & 0x3F) | ((in[inBase + 6] & 0x7F) << 6));
+                break;
+            }
+            // Check padding bits in last byte
+            int unusedBits = 8 - nRemainder;
+            int lastByte = in[inlen - 1];
+            if ((lastByte & (0xFF << unusedBits)) != 0)
+            {
+                isPackedPaddOk = false;
+            }
+        }
+        return isPackedPaddOk;
+    }
+
+    public static boolean genericUnpack9Bit(short[] out, byte[] in, int outlen, int inlen)
+    {
+        boolean isPackedPaddOk = true;
+        int i;
+        // Process full blocks (8 elements per 9 bytes)
+        for (i = 0; i < outlen / 8; i++)
+        {
+            int inBase = i * 9;
+            int outBase = i * 8;
+            out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+            out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+            out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+            out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+            out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
+            out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
+            out[outBase + 6] = (short)((in[inBase + 6] >>> 6) | ((in[inBase + 7] & 0x7F) << 2));
+            out[outBase + 7] = (short)((in[inBase + 7] >>> 7) | (in[inBase + 8] << 1));
+        }
+
+        // Handle remainder elements (1-7)
+        int nRemainder = outlen % 8;
+        if (nRemainder > 0)
+        {
+            int inBase = i * 9;
+            int outBase = i * 8;
+            switch (nRemainder)
+            {
+            case 1:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                break;
+            case 2:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                break;
+            case 3:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                break;
+            case 4:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+                break;
+            case 5:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
+                break;
+            case 6:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
+                out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
+                break;
+            case 7:
+                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
+                out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
+                out[outBase + 6] = (short)((in[inBase + 6] >>> 6) | ((in[inBase + 7] & 0x7F) << 2));
+                break;
+            }
+            // Check padding bits in last byte
+            int lastByte = in[inlen - 1];
+            if ((lastByte & (0xFF << nRemainder)) != 0)
+            {
+                isPackedPaddOk = false;
+            }
+        }
+        return isPackedPaddOk;
+    }
+
+    // Unpacks a finite field vector (FP)
+    public static boolean unpackFpVec(byte[] out, byte[] in, CrossParameters params)
+    {
+        int packedSize = params.getDenselyPackedFpVecSize();
+        int n = params.getN();
+
+        if (params.getP() == 127)
+        {
+            return genericUnpack7Bit(out, in, n, packedSize);
+        }
+        else if (params.getP() == 509)
+        {
+            // For P=509, use short[] to hold 9-bit elements
+            throw new IllegalArgumentException("Use short[] output for P=509");
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus: " + params.getP());
+        }
+    }
+
+    // Unpacks a finite ring vector (FZ)
+    public static boolean unpackFzVec(byte[] out, byte[] in, CrossParameters params)
+    {
+        int packedSize = params.getDenselyPackedFzVecSize();
+        int n = params.getN();
+
+        if (params.getZ() == 7)
+        {
+            return genericUnpack3Bit(out, in, n, packedSize);
+        }
+        else if (params.getZ() == 127)
+        {
+            return genericUnpack7Bit(out, in, n, packedSize);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus Z: " + params.getZ());
+        }
+    }
+
+    // Checks if all elements in an FZ vector are within [0, Z-1]
+    public static boolean isFzVecInRestrGroupN(byte[] vec, CrossParameters params)
+    {
+        int z = params.getZ();
+        for (byte element : vec)
+        {
+            // Convert to unsigned integer for comparison
+            int unsignedVal = element & 0xFF;
+            if (unsignedVal >= z)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Computes: res = synd - (s * chall_1) mod P
+    public static void fpSyndMinusFpVecScaled(
+        byte[] res,
+        byte[] synd,
+        byte chall_1,
+        byte[] s,
+        CrossParameters params)
+    {
+        int p = params.getP();
+        int n_k = params.getN() - params.getK();
+
+        for (int j = 0; j < n_k; j++)
+        {
+            // Multiply s[j] * chall_1
+            int product = (s[j] & 0xFF) * (chall_1 & 0xFF);
+
+            // Reduce product mod P
+            int tmp;
+            if (p == 127)
+            {
+                tmp = CrossEngine.fpRedDouble(product);
+                tmp = CrossEngine.fzDoubleZeroNorm(tmp);
+            }
+            else
+            { // P=509
+                tmp = product % p;
+            }
+
+            // Compute negative equivalent mod P
+            int negative = (p - tmp) % p;
+
+            // res[j] = synd[j] + negative mod P
+            int value = (synd[j] & 0xFF) + negative;
+            res[j] = (byte)(value % p);
+        }
+    }
+
+    public static boolean unpackFzRsdpGVec(byte[] out, byte[] in, CrossParameters params)
+    {
+        int m = params.getM();
+        int packedSize = params.getDenselyPackedFzRsdpGVecSize();
+        return genericUnpackFz(out, in, m, packedSize, params.getZ());
+    }
+
+    private static boolean genericUnpackFz(byte[] out, byte[] in,
+                                           int outlen, int inlen, int z)
+    {
+        if (z == 127)
+        {
+            return genericUnpack7Bit(out, in, outlen, inlen);
+        }
+        else if (z == 7)
+        {
+            return genericUnpack3Bit(out, in, outlen, inlen);
+        }
+        else
+        {
+            throw new IllegalArgumentException("Unsupported modulus Z: " + z);
+        }
+    }
+
+    private static boolean genericUnpack3Bit(byte[] out, byte[] in,
+                                             int outlen, int inlen)
+    {
+        boolean isPackedPaddOk = true;
+        int i;
+
+        // Clear output array
+        for (i = 0; i < outlen; i++)
+        {
+            out[i] = 0;
+        }
+
+        // Process full blocks (8 elements per 3 bytes)
+        for (i = 0; i < outlen / 8; i++)
+        {
+            int inBase = i * 3;
+            int outBase = i * 8;
+
+            out[outBase] = (byte)(in[inBase] & 0x07);
+            out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+            out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+            out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
+            out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
+            out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+            out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
+            out[outBase + 7] = (byte)((in[inBase + 2] >>> 5) & 0x07);
+        }
+
+        // Handle remainder elements (1-7)
+        int nRemainder = outlen % 8;
+        if (nRemainder > 0)
+        {
+            int inBase = i * 3;
+            int outBase = i * 8;
+
+            switch (nRemainder)
+            {
+            case 1:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                break;
+            case 2:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                break;
+            case 3:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                break;
+            case 4:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
+                break;
+            case 5:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
+                out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
+                break;
+            case 6:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
+                out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
+                out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+                break;
+            case 7:
+                out[outBase] = (byte)(in[inBase] & 0x07);
+                out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
+                out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
+                out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+                out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
+                break;
+            }
+
+            // Check padding bits in last byte
+            int lastByte = in[inBase + (nRemainder * 3 + 7) / 8 - 1];
+            int usedBits = (nRemainder * 3) % 8;
+            int unusedBits = usedBits == 0 ? 0 : 8 - usedBits;
+            int paddingMask = (0xFF << unusedBits) & 0xFF;
+
+            if (unusedBits > 0 && (lastByte & paddingMask) != 0)
+            {
+                isPackedPaddOk = false;
+            }
+        }
+
+        return isPackedPaddOk;
+    }
+
+    /**
+     * Checks if all elements in the FZ vector are within [0, Z-1]
+     *
+     * @param vec Finite ring vector to validate
+     * @param z   Modulus value (upper bound for valid elements)
+     * @param m   Number of elements to check (first M elements)
+     * @return 1 if all elements are valid, 0 otherwise
+     */
+    public static boolean isFzVecInRestrGroupM(byte[] vec, int z, int m)
+    {
+        for (int i = 0; i < m; i++)
+        {
+            // Convert byte to unsigned integer
+            int value = vec[i] & 0xFF;
+            if (value >= z)
+            {
+                return false;  // Found invalid element
+            }
+        }
+        return true;  // All elements valid
+    }
 }
