@@ -408,7 +408,7 @@ public class TlsClientProtocol
                  * NOTE: Certificate processing (including authentication) is delayed to allow for a
                  * possible CertificateStatus message.
                  */
-                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
+                this.authentication = TlsUtils.receiveServerCertificate(tlsClientContext, tlsClient, buf);
                 break;
             }
             default:
@@ -1532,7 +1532,6 @@ public class TlsClientProtocol
 
 
         final SecurityParameters securityParameters = tlsClientContext.getSecurityParametersHandshake();
-        final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
         securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(serverExtensions);
         securityParameters.applicationProtocolSet = true;
@@ -1610,7 +1609,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf, serverExtensions);
+        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();

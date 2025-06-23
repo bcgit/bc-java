@@ -725,7 +725,7 @@ public class DTLSClientProtocol
         throws IOException
     {
         state.authentication = TlsUtils.receiveServerCertificate(state.clientContext, state.client,
-            new ByteArrayInputStream(body), state.serverExtensions);
+            new ByteArrayInputStream(body));
     }
 
     protected void processServerHello(ClientHandshakeState state, byte[] body)

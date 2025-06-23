@@ -26,4 +26,16 @@ public class PskKeyExchangeMode
     {
         return getName(pskKeyExchangeMode) + "(" + pskKeyExchangeMode + ")";
     }
+
+    public static boolean isRecognized(short pskKeyExchangeMode)
+    {
+        switch (pskKeyExchangeMode)
+        {
+        case psk_ke:
+        case psk_dhe_ke:
+            return true;
+        default:
+            return false;
+        }
+    }    
 }
