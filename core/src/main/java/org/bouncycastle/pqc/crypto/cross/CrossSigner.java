@@ -478,7 +478,7 @@ public class CrossSigner
         // Compute digest_chall_1
         byte[] digestChall1 = new byte[hashDigestLength];
         CrossEngine.hash(digestChall1, digestMsgCmtSalt, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
-
+        engine.init(digestChall1, digestChall1.length, CrossEngine.CSPRNG_DOMAIN_SEP_CONST + (3 * t - 1));
         // Generate challenge 1 vector
         int[] chall1 = engine.csprngFpVecChall1(params);
 
@@ -572,6 +572,7 @@ public class CrossSigner
                 {
                     byte[] v_bar = new byte[N];
                     isPackedPaddOk &= CrossEngine.unpackFzVec(v_bar, resp0[usedRsps].v_bar, params);
+                    System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzVecSize);
                     isSignatureOk &= CrossEngine.isFzVecInRestrGroupN(v_bar, params);
 
                     byte[] v = new byte[N];
@@ -583,7 +584,7 @@ public class CrossSigner
                     CrossEngine.fpDzNormSynd(s_prime, params);
 
                     CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
-                    System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzVecSize);
+
                 }
                 else
                 {

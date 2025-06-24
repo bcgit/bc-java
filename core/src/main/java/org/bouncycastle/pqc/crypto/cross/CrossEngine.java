@@ -2335,14 +2335,14 @@ class CrossEngine
 
         // Place commitments in tree
         placeCmtOnLeaves(tree, recomputedLeaves, params);
-        labelLeaves(flagTree, leavesToReveal, params);
+        labelLeavesMerkle(flagTree, leavesToReveal, params);
 
         // Tree structure parameters
         int[] off = params.getTreeOffsets();
         int[] npl = params.getTreeNodesPerLevel();
         int[] leavesStartIndices = params.getTreeLeavesStartIndices();
         int logT = off.length - 1;
-        ;
+
         int treeSubroots = params.getTreeSubroots();
 
         int published = 0;
@@ -2367,44 +2367,29 @@ class CrossEngine
                 // Process left sibling (current node)
                 if (flagTree[currentNode] == COMPUTED)
                 {
-                    System.arraycopy(
-                        tree, currentNode * hashDigestLength,
-                        hashInput, 0, hashDigestLength
-                    );
+                    System.arraycopy(tree, currentNode * hashDigestLength, hashInput, 0, hashDigestLength);
                 }
                 else
                 {
-                    System.arraycopy(
-                        mtp, published * hashDigestLength,
-                        hashInput, 0, hashDigestLength
-                    );
+                    System.arraycopy(mtp, published * hashDigestLength, hashInput, 0, hashDigestLength);
                     published++;
                 }
 
                 // Process right sibling
                 if (flagTree[siblingNode] == COMPUTED)
                 {
-                    System.arraycopy(
-                        tree, siblingNode * hashDigestLength,
-                        hashInput, hashDigestLength, hashDigestLength
-                    );
+                    System.arraycopy(tree, siblingNode * hashDigestLength, hashInput, hashDigestLength, hashDigestLength);
                 }
                 else
                 {
-                    System.arraycopy(
-                        mtp, published * hashDigestLength,
-                        hashInput, hashDigestLength, hashDigestLength
-                    );
+                    System.arraycopy(mtp, published * hashDigestLength, hashInput, hashDigestLength, hashDigestLength);
                     published++;
                 }
 
                 // Hash siblings and store at parent
                 byte[] parentHash = new byte[hashDigestLength];
                 hash(parentHash, hashInput, CrossEngine.HASH_DOMAIN_SEP_CONST, params);
-                System.arraycopy(
-                    parentHash, 0,
-                    tree, parentNode * hashDigestLength, hashDigestLength
-                );
+                System.arraycopy(parentHash, 0, tree, parentNode * hashDigestLength, hashDigestLength);
                 flagTree[parentNode] = COMPUTED;
             }
             startNode -= npl[level - 1];
@@ -2444,25 +2429,6 @@ class CrossEngine
                 int treePos = (startIdx + j) * hashDigestLength;
                 System.arraycopy(leaves[cnt], 0, tree, treePos, hashDigestLength);
                 cnt++;
-            }
-        }
-    }
-
-    // Helper: Label leaves in flag tree
-    private static void labelLeaves(byte[] flagTree, byte[] leavesToReveal,
-                                    CrossParameters params)
-    {
-        int[] consecutiveLeaves = params.getTreeConsecutiveLeaves();
-        int[] leavesStartIndices = params.getTreeLeavesStartIndices();
-        int treeSubroots = params.getTreeSubroots();
-
-        int cnt = 0;
-        for (int i = 0; i < treeSubroots; i++)
-        {
-            int startIdx = leavesStartIndices[i];
-            for (int j = 0; j < consecutiveLeaves[i]; j++)
-            {
-                flagTree[startIdx + j] = leavesToReveal[cnt++];
             }
         }
     }
@@ -2799,10 +2765,10 @@ class CrossEngine
 
             out[outBase] = (byte)(in[inBase] & 0x07);
             out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-            out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+            out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
             out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
             out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-            out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+            out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
             out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
             out[outBase + 7] = (byte)((in[inBase + 2] >>> 5) & 0x07);
         }
@@ -2826,36 +2792,36 @@ class CrossEngine
             case 3:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 break;
             case 4:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 break;
             case 5:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
                 break;
             case 6:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-                out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+                out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
                 break;
             case 7:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)(((in[inBase] >>> 6) | ((in[inBase + 1] & 0x03) << 2)) & 0x07);
+                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-                out[outBase + 5] = (byte)(((in[inBase + 1] >>> 7) | ((in[inBase + 2] & 0x01) << 1)) & 0x07);
+                out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
                 out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
                 break;
             }
