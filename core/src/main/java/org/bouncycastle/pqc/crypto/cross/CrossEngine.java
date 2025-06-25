@@ -2476,13 +2476,13 @@ class CrossEngine
             int inBase = i * 7;
             int outBase = i * 8;
             out[outBase] = (byte)(in[inBase] & 0x7F);
-            out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-            out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
-            out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
-            out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
-            out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
-            out[outBase + 6] = (byte)(((in[inBase + 5] >>> 2) & 0x3F) | ((in[inBase + 6] & 0x7F) << 6));
-            out[outBase + 7] = (byte)(in[inBase + 6] >>> 1);
+            out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+            out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
+            out[outBase + 3] = (byte)(((in[inBase + 2] & 0xff) >>> 5) | ((in[inBase + 3] << 3) & 0x7F));
+            out[outBase + 4] = (byte)(((in[inBase + 3] & 0xff) >>> 4) | ((in[inBase + 4] << 4) & 0x7F));
+            out[outBase + 5] = (byte)(((in[inBase + 4] & 0xff) >>> 3) | ((in[inBase + 5] << 5) & 0x7F));
+            out[outBase + 6] = (byte)(((in[inBase + 5] & 0xff) >>> 2) | ((in[inBase + 6] << 6) & 0x7F));
+            out[outBase + 7] = (byte)((in[inBase + 6] & 0xff) >>> 1);
         }
 
         // Handle remainder elements (1-7)
@@ -2498,42 +2498,42 @@ class CrossEngine
                 break;
             case 2:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
                 break;
             case 3:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+                out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
                 break;
             case 4:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
-                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+                out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
+                out[outBase + 3] = (byte)(((in[inBase + 2] & 0xff) >>> 5) | ((in[inBase + 3] << 3) & 0x7F));
                 break;
             case 5:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
-                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
-                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+                out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
+                out[outBase + 3] = (byte)(((in[inBase + 2] & 0xff) >>> 5) | ((in[inBase + 3] << 3) & 0x7F));
+                out[outBase + 4] = (byte)(((in[inBase + 3] & 0xff) >>> 4) | ((in[inBase + 4] << 4) & 0x7F));
                 break;
             case 6:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
-                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
-                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
-                out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+                out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
+                out[outBase + 3] = (byte)(((in[inBase + 2] & 0xff) >>> 5) | ((in[inBase + 3] << 3) & 0x7F));
+                out[outBase + 4] = (byte)(((in[inBase + 3] & 0xff) >>> 4) | ((in[inBase + 4] << 4) & 0x7F));
+                out[outBase + 5] = (byte)(((in[inBase + 4] & 0xff) >>> 3) | ((in[inBase + 5] << 5) & 0x7F));
                 break;
             case 7:
                 out[outBase] = (byte)(in[inBase] & 0x7F);
-                out[outBase + 1] = (byte)(((in[inBase] >>> 7) & 0x01) | ((in[inBase + 1] & 0x7F) << 1));
-                out[outBase + 2] = (byte)(((in[inBase + 1] >>> 6) & 0x03) | ((in[inBase + 2] & 0x7F) << 2));
-                out[outBase + 3] = (byte)(((in[inBase + 2] >>> 5) & 0x07) | ((in[inBase + 3] & 0x7F) << 3));
-                out[outBase + 4] = (byte)(((in[inBase + 3] >>> 4) & 0x0F) | ((in[inBase + 4] & 0x7F) << 4));
-                out[outBase + 5] = (byte)(((in[inBase + 4] >>> 3) & 0x1F) | ((in[inBase + 5] & 0x7F) << 5));
-                out[outBase + 6] = (byte)(((in[inBase + 5] >>> 2) & 0x3F) | ((in[inBase + 6] & 0x7F) << 6));
+                out[outBase + 1] = (byte)(((in[inBase] & 0xff) >>> 7) | ((in[inBase + 1] << 1) & 0x7F));
+                out[outBase + 2] = (byte)(((in[inBase + 1] & 0xff) >>> 6) | ((in[inBase + 2] << 2) & 0x7F));
+                out[outBase + 3] = (byte)(((in[inBase + 2] & 0xff) >>> 5) | ((in[inBase + 3] << 3) & 0x7F));
+                out[outBase + 4] = (byte)(((in[inBase + 3] & 0xff) >>> 4) | ((in[inBase + 4] << 4) & 0x7F));
+                out[outBase + 5] = (byte)(((in[inBase + 4] & 0xff) >>> 3) | ((in[inBase + 5] << 5) & 0x7F));
+                out[outBase + 6] = (byte)(((in[inBase + 5] & 0xff) >>> 2) | ((in[inBase + 6] << 6) & 0x7F));
                 break;
             }
             // Check padding bits in last byte
@@ -2556,18 +2556,18 @@ class CrossEngine
         {
             int inBase = i * 9;
             int outBase = i * 8;
-            out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-            out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-            out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
-            out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
-            out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
-            out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
-            out[outBase + 6] = (short)((in[inBase + 6] >>> 6) | ((in[inBase + 7] & 0x7F) << 2));
-            out[outBase + 7] = (short)((in[inBase + 7] >>> 7) | (in[inBase + 8] << 1));
+            out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+            out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+            out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+            out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
+            out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
+            out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
+            out[outBase + 6] = (short)(((in[inBase + 6] >>> 6) | (in[inBase + 7] << 2)) & 0x1FF);
+            out[outBase + 7] = (short)(((in[inBase + 7] >>> 7) | (in[inBase + 8] << 1)) & 0x1FF);
         }
 
         // Handle remainder elements (1-7)
-        int nRemainder = outlen % 8;
+        int nRemainder = outlen & 7;
         if (nRemainder > 0)
         {
             int inBase = i * 9;
@@ -2575,46 +2575,46 @@ class CrossEngine
             switch (nRemainder)
             {
             case 1:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
                 break;
             case 2:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
                 break;
             case 3:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
                 break;
             case 4:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
-                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
                 break;
             case 5:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
-                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
-                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
+                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
                 break;
             case 6:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
-                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
-                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
-                out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
+                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
+                out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
                 break;
             case 7:
-                out[outBase] = (short)((in[inBase] & 0xFF) | ((in[inBase + 1] & 0x01) << 8));
-                out[outBase + 1] = (short)((in[inBase + 1] >>> 1) | ((in[inBase + 2] & 0x03) << 7));
-                out[outBase + 2] = (short)((in[inBase + 2] >>> 2) | ((in[inBase + 3] & 0x07) << 6));
-                out[outBase + 3] = (short)((in[inBase + 3] >>> 3) | ((in[inBase + 4] & 0x0F) << 5));
-                out[outBase + 4] = (short)((in[inBase + 4] >>> 4) | ((in[inBase + 5] & 0x1F) << 4));
-                out[outBase + 5] = (short)((in[inBase + 5] >>> 5) | ((in[inBase + 6] & 0x3F) << 3));
-                out[outBase + 6] = (short)((in[inBase + 6] >>> 6) | ((in[inBase + 7] & 0x7F) << 2));
+                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
+                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
+                out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
+                out[outBase + 6] = (short)(((in[inBase + 6] >>> 6) | (in[inBase + 8] << 1)) & 0x1FF);
                 break;
             }
             // Check padding bits in last byte
@@ -2656,7 +2656,7 @@ class CrossEngine
 
         if (params.getZ() == 7)
         {
-            return genericUnpack3Bit(out, in, n, packedSize);
+            return genericUnpack3Bit(out, in, n);
         }
         else if (params.getZ() == 127)
         {
@@ -2737,7 +2737,7 @@ class CrossEngine
         }
         else if (z == 7)
         {
-            return genericUnpack3Bit(out, in, outlen, inlen);
+            return genericUnpack3Bit(out, in, outlen);
         }
         else
         {
@@ -2745,8 +2745,7 @@ class CrossEngine
         }
     }
 
-    private static boolean genericUnpack3Bit(byte[] out, byte[] in,
-                                             int outlen, int inlen)
+    private static boolean genericUnpack3Bit(byte[] out, byte[] in, int outlen)
     {
         boolean isPackedPaddOk = true;
         int i;
@@ -2765,10 +2764,10 @@ class CrossEngine
 
             out[outBase] = (byte)(in[inBase] & 0x07);
             out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-            out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+            out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
             out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
             out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-            out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
+            out[outBase + 5] = (byte)(((in[inBase + 1] & 0xff) >>> 7) | (in[inBase + 2] << 1) & 0x07);
             out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
             out[outBase + 7] = (byte)((in[inBase + 2] >>> 5) & 0x07);
         }
@@ -2792,36 +2791,36 @@ class CrossEngine
             case 3:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 break;
             case 4:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 break;
             case 5:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
                 break;
             case 6:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-                out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
+                out[outBase + 5] = (byte)(((in[inBase + 1] & 0xff) >>> 7) | (in[inBase + 2] << 1) & 0x07);
                 break;
             case 7:
                 out[outBase] = (byte)(in[inBase] & 0x07);
                 out[outBase + 1] = (byte)((in[inBase] >>> 3) & 0x07);
-                out[outBase + 2] = (byte)((in[inBase] >>> 6) | (in[inBase + 1] << 2) & 0x07);
+                out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-                out[outBase + 5] = (byte)((in[inBase + 1] >>> 7) | (in[inBase + 2] << 1) & 0x07);
+                out[outBase + 5] = (byte)(((in[inBase + 1]) & 0xff >>> 7) | (in[inBase + 2] << 1) & 0x07);
                 out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
                 break;
             }

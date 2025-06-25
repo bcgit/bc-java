@@ -570,6 +570,9 @@ public class CrossSigner
 
                 if (params.rsdp)
                 {
+                    if(i==462){
+                        System.out.println("break");
+                    }
                     byte[] v_bar = new byte[N];
                     isPackedPaddOk &= CrossEngine.unpackFzVec(v_bar, resp0[usedRsps].v_bar, params);
                     System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzVecSize);
@@ -584,6 +587,9 @@ public class CrossSigner
                     CrossEngine.fpDzNormSynd(s_prime, params);
 
                     CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
+                    if(i==462){
+                        System.out.println("break");
+                    }
 
                 }
                 else
@@ -606,6 +612,10 @@ public class CrossSigner
 
                     CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
                     System.arraycopy(resp0[usedRsps].v_G_bar, 0, cmt0_i_input, packedFpSynSize, packedFzRsdpGVecSize);
+                }
+                if (i == 462)
+                {
+                    System.out.println("break");
                 }
 
                 CrossEngine.hash(cmt0[i], 0, cmt0_i_input, domainSepHash, params);
