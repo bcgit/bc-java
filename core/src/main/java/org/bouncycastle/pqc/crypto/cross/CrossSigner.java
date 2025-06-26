@@ -196,10 +196,10 @@ public class CrossSigner
             byte[] u = new byte[params.getN()];
             CrossEngine.fpVecByFpVecPointwise(u, v, u_prime[i], params);
             CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
-            CrossEngine.fpDzNormSynd(s_prime, params);
+            CrossEngine.fpDzNormSynd(s_prime);
 
             // Build cmt_0 input
-            CrossEngine.packFpSyn(cmt_0_i_input, s_prime, params);
+            CrossEngine.packFpSyn(cmt_0_i_input, s_prime);
             if (params.rsdp)
             {
                 CrossEngine.packFzVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_bar[i], params);
@@ -280,8 +280,8 @@ public class CrossSigner
         // Generate Merkle proofs
         if (params.variant == CrossParameters.FAST)
         {
-            proof = new byte[(params.getT() - params.getW()) * params.getHashDigestLength()];
-            path = new byte[(params.getT() - params.getW()) * params.getSeedLengthBytes()];
+            proof = new byte[params.getW() * params.getHashDigestLength()];
+            path = new byte[params.getW() * params.getSeedLengthBytes()];
             CrossEngine.treeProofSpeed(proof, cmt_0, chall_2, params.getHashDigestLength());
             CrossEngine.seedPathSpeed(path, round_seeds, chall_2, params.getSeedLengthBytes());
         }
@@ -383,8 +383,8 @@ public class CrossSigner
         byte[] path, proof;
         if (params.variant == CrossParameters.FAST)
         {
-            proof = new byte[(params.getT() - params.getW()) * params.getHashDigestLength()];
-            path = new byte[(params.getT() - params.getW()) * params.getSeedLengthBytes()];
+            proof = new byte[w * params.getHashDigestLength()];
+            path = new byte[w * params.getSeedLengthBytes()];
         }
         else
         {
@@ -570,9 +570,6 @@ public class CrossSigner
 
                 if (params.rsdp)
                 {
-                    if(i==462){
-                        System.out.println("break");
-                    }
                     byte[] v_bar = new byte[N];
                     isPackedPaddOk &= CrossEngine.unpackFzVec(v_bar, resp0[usedRsps].v_bar, params);
                     System.arraycopy(resp0[usedRsps].v_bar, 0, cmt0_i_input, packedFpSynSize, packedFzVecSize);
@@ -582,15 +579,11 @@ public class CrossSigner
                     CrossEngine.convertRestrVecToFp(v, v_bar, params);
                     CrossEngine.fpVecByFpVecPointwise(y_prime, v, y[i], params);
                     CrossEngine.fpVecByFpMatrix(y_prime_H, y_prime, (byte[][])V_tr, params);
-                    CrossEngine.fpDzNormSynd(y_prime_H, params);
+                    CrossEngine.fpDzNormSynd(y_prime_H);
                     CrossEngine.fpSyndMinusFpVecScaled(s_prime, y_prime_H, (byte)chall1[i], s, params);
-                    CrossEngine.fpDzNormSynd(s_prime, params);
+                    CrossEngine.fpDzNormSynd(s_prime);
 
-                    CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
-                    if(i==462){
-                        System.out.println("break");
-                    }
-
+                    CrossEngine.packFpSyn(cmt0_i_input, s_prime);
                 }
                 else
                 {
@@ -605,17 +598,13 @@ public class CrossSigner
                     CrossEngine.fpVecByFpVecPointwise(y_prime, v, y[i], params);
                     //TODO: (short[][])
                     CrossEngine.fpVecByFpMatrix(y_prime_H, y_prime, (byte[][])V_tr, params);
-                    CrossEngine.fpDzNormSynd(y_prime_H, params);
+                    CrossEngine.fpDzNormSynd(y_prime_H);
                     //TODO: short?
                     CrossEngine.fpSyndMinusFpVecScaled(s_prime, y_prime_H, (byte)chall1[i], s, params);
-                    CrossEngine.fpDzNormSynd(s_prime, params);
+                    CrossEngine.fpDzNormSynd(s_prime);
 
-                    CrossEngine.packFpSyn(cmt0_i_input, s_prime, params);
+                    CrossEngine.packFpSyn(cmt0_i_input, s_prime);
                     System.arraycopy(resp0[usedRsps].v_G_bar, 0, cmt0_i_input, packedFpSynSize, packedFzRsdpGVecSize);
-                }
-                if (i == 462)
-                {
-                    System.out.println("break");
                 }
 
                 CrossEngine.hash(cmt0[i], 0, cmt0_i_input, domainSepHash, params);

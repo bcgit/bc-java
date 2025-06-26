@@ -52,9 +52,9 @@ public class CrossKeyPairGenerator
             // Step 6: Compute syndrome
             byte[] s = new byte[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
-            CrossEngine.fpDzNormSynd(s, params);
+            CrossEngine.fpDzNormSynd(s);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            CrossEngine.packFpSyn(packedS, s, params);
+            CrossEngine.packFpSyn(packedS, s);
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
@@ -79,11 +79,11 @@ public class CrossKeyPairGenerator
             // Step 6: Compute syndrome
             short[] s = new short[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
+
             // For P=509, normalization is identity so we skip explicit call
+            // CrossEngine.fpDzNormSynd(s);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            byte[] bs = new byte[s.length << 1];
-            Pack.shortToLittleEndian(s, 0, s.length, bs, 0);
-            CrossEngine.packFpSyn(packedS, bs, params);
+            CrossEngine.packFpSyn(packedS, s);
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),

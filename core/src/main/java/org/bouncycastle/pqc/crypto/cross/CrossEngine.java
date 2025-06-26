@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.cross;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 class CrossEngine
 {
@@ -259,11 +260,7 @@ class CrossEngine
         byte[] CSPRNG_buffer = new byte[bufferSize];
         randomBytes(CSPRNG_buffer, bufferSize);
 
-        long subBuffer = 0;
-        for (int i = 0; i < 8; i++)
-        {
-            subBuffer |= ((long)(CSPRNG_buffer[i] & 0xFF)) << (8 * i);
-        }
+        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
         int bitsInSubBuf = 64;
         int posInBuf = 8;
@@ -309,11 +306,7 @@ class CrossEngine
         byte[] CSPRNG_buffer = new byte[bufferSize];
         randomBytes(CSPRNG_buffer, bufferSize);
 
-        long subBuffer = 0;
-        for (int i = 0; i < 8; i++)
-        {
-            subBuffer |= ((long)(CSPRNG_buffer[i] & 0xFF)) << (8 * i);
-        }
+        long subBuffer = Pack.littleEndianToLong(CSPRNG_buffer, 0);
 
         int bitsInSubBuf = 64;
         int posInBuf = 8;
@@ -436,29 +429,29 @@ class CrossEngine
         return (byte)(RESTR_G_TABLE >>> (8 * x));
     }
 
-//    public static short restrToVal(byte x)
-//    {
-//        int xInt = x & 0xFF; // Convert to unsigned integer
-//        int res1 = cmov((xInt >> 0) & 1, RESTR_G_GEN_1, 1);
-//        int res2 = cmov((xInt >> 1) & 1, RESTR_G_GEN_2, 1);
-//        int res3 = cmov((xInt >> 2) & 1, RESTR_G_GEN_4, 1);
-//        int res4 = cmov((xInt >> 3) & 1, RESTR_G_GEN_8, 1);
-//        int res5 = cmov((xInt >> 4) & 1, RESTR_G_GEN_16, 1);
-//        int res6 = cmov((xInt >> 5) & 1, RESTR_G_GEN_32, 1);
-//        int res7 = cmov((xInt >> 6) & 1, RESTR_G_GEN_64, 1);
-//
-//        // Multiply pairs with reduction
-//        int prod1 = fpRedSingle(res1 * res2);
-//        int prod2 = fpRedSingle(res3 * res4);
-//        int prod3 = fpRedSingle(res5 * res6);
-//
-//        // Combine results
-//        int prod12 = fpRedSingle(prod1 * prod2);
-//        int prod123 = fpRedSingle(prod12 * prod3);
-//        int finalProd = fpRedSingle(prod123 * res7);
-//
-//        return (short)finalProd;
-//    }
+    public static short restrToValRsdpg(byte x)
+    {
+        int xInt = x & 0xFF; // Convert to unsigned integer
+        int res1 = cmov((xInt >> 0) & 1, RESTR_G_GEN_1, 1);
+        int res2 = cmov((xInt >> 1) & 1, RESTR_G_GEN_2, 1);
+        int res3 = cmov((xInt >> 2) & 1, RESTR_G_GEN_4, 1);
+        int res4 = cmov((xInt >> 3) & 1, RESTR_G_GEN_8, 1);
+        int res5 = cmov((xInt >> 4) & 1, RESTR_G_GEN_16, 1);
+        int res6 = cmov((xInt >> 5) & 1, RESTR_G_GEN_32, 1);
+        int res7 = cmov((xInt >> 6) & 1, RESTR_G_GEN_64, 1);
+
+        // Multiply pairs with reduction
+        int prod1 = fpRedSingle(res1 * res2);
+        int prod2 = fpRedSingle(res3 * res4);
+        int prod3 = fpRedSingle(res5 * res6);
+
+        // Combine results
+        int prod12 = fpRedSingle(prod1 * prod2);
+        int prod123 = fpRedSingle(prod12 * prod3);
+        int finalProd = fpRedSingle(prod123 * res7);
+
+        return (short)finalProd;
+    }
 
     public static void restrVecByFpMatrix(byte[] res, byte[] e, byte[][] V_tr, CrossParameters params)
     {
@@ -505,13 +498,13 @@ class CrossEngine
         // Initialize res with restricted values from the last n-k elements of e
         for (int i = k; i < n; i++)
         {
-            res[i - k] = (byte)restrToVal(e[i]);
+            res[i - k] = restrToValRsdpg(e[i]);
         }
 
         // Accumulate matrix-vector product
         for (int i = 0; i < k; i++)
         {
-            short e_val = (short)restrToVal(e[i]);
+            short e_val = restrToValRsdpg(e[i]);
             for (int j = 0; j < nMinusK; j++)
             {
                 int current = res[j] & 0xFFFF;
@@ -525,116 +518,28 @@ class CrossEngine
 
 
     // Normalizes a syndrome vector of finite field elements
-    public static void fpDzNormSynd(byte[] v, CrossParameters params)
+    public static void fpDzNormSynd(byte[] v)
     {
-        int p = params.getP();
-        if (p == 127)
+        for (int i = 0; i < v.length; i++)
         {
-            for (int i = 0; i < v.length; i++)
-            {
-                int val = v[i] & 0xFF;
-                v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
-            }
+            int val = v[i] & 0xFF;
+            v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
-        // For P=509, no normalization is needed (identity operation)
     }
 
+
     // Packs a syndrome vector of finite field elements into a byte array
-    public static void packFpSyn(byte[] out, byte[] in, CrossParameters params)
+    public static void packFpSyn(byte[] out, byte[] in)
     {
-        int p = params.getP();
-        if (p == 127)
-        {
-            genericPack7Bit(out, in);
-        }
-        else if (p == 509)
-        {
-            // Convert byte[] to short[] for 9-bit packing
-            short[] inShort = new short[in.length];
-            for (int i = 0; i < in.length; i++)
-            {
-                inShort[i] = (short)(in[i] & 0xFF);
-            }
-            genericPack9Bit(out, inShort);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported modulus: " + p);
-        }
+        genericPack7Bit(out, 0, in);
+    }
+
+    public static void packFpSyn(byte[] out, short[] in)
+    {
+        genericPack9Bit(out, 0, in);
     }
 
     // Packs 7-bit elements (for P=127)
-    private static void genericPack7Bit(byte[] out, byte[] in)
-    {
-        int inlen = in.length;
-        int fullBlocks = inlen / 8;
-        int i;
-
-        for (i = 0; i < fullBlocks; i++)
-        {
-            int baseIn = i * 8;
-            int baseOut = i * 7;
-
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
-            out[baseOut + 6] = (byte)(((in[baseIn + 6] & 0xFF) >>> 6) | ((in[baseIn + 7] & 0x7F) << 1));
-        }
-
-        int remaining = inlen % 8;
-        int baseIn = i * 8;
-        int baseOut = i * 7;
-
-        switch (remaining)
-        {
-        case 1:
-            out[baseOut] = in[baseIn];
-            break;
-        case 2:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)((in[baseIn + 1] & 0xFF) >>> 1);
-            break;
-        case 3:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)((in[baseIn + 2] & 0xFF) >>> 2);
-            break;
-        case 4:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 3] = (byte)((in[baseIn + 3] & 0xFF) >>> 3);
-            break;
-        case 5:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 4] = (byte)((in[baseIn + 4] & 0xFF) >>> 4);
-            break;
-        case 6:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 5] = (byte)((in[baseIn + 5] & 0xFF) >>> 5);
-            break;
-        case 7:
-            out[baseOut] = (byte)(in[baseIn] | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0x3F) << 2));
-            out[baseOut + 6] = (byte)((in[baseIn + 6] & 0xFF) >>> 6);
-            break;
-        }
-    }
-
     private static void genericPack7Bit(byte[] out, int outOff, byte[] in)
     {
         int inlen = in.length;
@@ -707,86 +612,6 @@ class CrossEngine
     }
 
     // Packs 9-bit elements (for P=509)
-    private static void genericPack9Bit(byte[] out, short[] in)
-    {
-        int inlen = in.length;
-        int fullBlocks = inlen / 8;
-        int i;
-
-        for (i = 0; i < fullBlocks; i++)
-        {
-            int baseIn = i * 8;
-            int baseOut = i * 9;
-
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
-            out[baseOut + 7] = (byte)((in[baseIn + 6] >>> 2) | ((in[baseIn + 7] & 0x7F) << 1));
-            out[baseOut + 8] = (byte)(in[baseIn + 7] >>> 1);
-        }
-
-        int remaining = inlen % 8;
-        int baseIn = i * 8;
-        int baseOut = i * 9;
-
-        switch (remaining)
-        {
-        case 1:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)(in[baseIn] >>> 8);
-            break;
-        case 2:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)(in[baseIn + 1] >>> 7);
-            break;
-        case 3:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)(in[baseIn + 2] >>> 6);
-            break;
-        case 4:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)(in[baseIn + 3] >>> 5);
-            break;
-        case 5:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)(in[baseIn + 4] >>> 4);
-            break;
-        case 6:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 6] = (byte)(in[baseIn + 5] >>> 3);
-            break;
-        case 7:
-            out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
-            out[baseOut + 7] = (byte)(in[baseIn + 6] >>> 2);
-            break;
-        }
-    }
-
     private static void genericPack9Bit(byte[] out, int outOff, short[] in)
     {
         int inlen = in.length;
@@ -799,13 +624,13 @@ class CrossEngine
             int baseOut = outOff + i * 9;
 
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
-            out[baseOut + 7] = (byte)((in[baseIn + 6] >>> 2) | ((in[baseIn + 7] & 0x7F) << 1));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | (in[baseIn + 5] << 5));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
+            out[baseOut + 7] = (byte)((in[baseIn + 6] >>> 2) | (in[baseIn + 7] << 7));
             out[baseOut + 8] = (byte)(in[baseIn + 7] >>> 1);
         }
 
@@ -821,47 +646,47 @@ class CrossEngine
             break;
         case 2:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
             out[baseOut + 2] = (byte)(in[baseIn + 1] >>> 7);
             break;
         case 3:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
             out[baseOut + 3] = (byte)(in[baseIn + 2] >>> 6);
             break;
         case 4:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
             out[baseOut + 4] = (byte)(in[baseIn + 3] >>> 5);
             break;
         case 5:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
             out[baseOut + 5] = (byte)(in[baseIn + 4] >>> 4);
             break;
         case 6:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
             out[baseOut + 6] = (byte)(in[baseIn + 5] >>> 3);
             break;
         case 7:
             out[baseOut] = (byte)in[baseIn];
-            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | ((in[baseIn + 1] & 0x01) << 7));
-            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | ((in[baseIn + 2] & 0x03) << 6));
-            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | ((in[baseIn + 3] & 0x07) << 5));
-            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | ((in[baseIn + 4] & 0x0F) << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | ((in[baseIn + 5] & 0x1F) << 3));
-            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | ((in[baseIn + 6] & 0x3F) << 2));
+            out[baseOut + 1] = (byte)((in[baseIn] >>> 8) | (in[baseIn + 1] << 1));
+            out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
+            out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
+            out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
+            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
+            out[baseOut + 6] = (byte)((in[baseIn + 6] >>> 2) | (in[baseIn + 7] << 7));
             out[baseOut + 7] = (byte)(in[baseIn + 6] >>> 2);
             break;
         }
@@ -1219,8 +1044,7 @@ class CrossEngine
         int m = params.getM();
         int z = params.getZ();
         int bitsForZ = bitsToRepresent(z - 1);
-        int packedSize = params.getDenselyPackedFzRsdpGVecSize();
-        genericPackFz(out, outOff, in, packedSize, m, bitsForZ);
+        genericPackFz(out, outOff, in, z, m, bitsForZ);
     }
 
     // Generic packing for FZ vectors
@@ -1700,7 +1524,7 @@ class CrossEngine
 
         if (p == 127)
         {
-            genericPack7Bit(out, in);
+            genericPack7Bit(out, 0, in);
         }
         else
         { // p == 509
@@ -1710,7 +1534,7 @@ class CrossEngine
             {
                 inShort[i] = (short)(in[i] & 0xFF);
             }
-            genericPack9Bit(out, inShort);
+            genericPack9Bit(out, 0, inShort);
         }
     }
 
@@ -2820,18 +2644,16 @@ class CrossEngine
                 out[outBase + 2] = (byte)(((in[inBase] & 0xff) >>> 6) | (in[inBase + 1] << 2) & 0x07);
                 out[outBase + 3] = (byte)((in[inBase + 1] >>> 1) & 0x07);
                 out[outBase + 4] = (byte)((in[inBase + 1] >>> 4) & 0x07);
-                out[outBase + 5] = (byte)(((in[inBase + 1]) & 0xff >>> 7) | (in[inBase + 2] << 1) & 0x07);
+                out[outBase + 5] = (byte)(((in[inBase + 1] & 0xff) >>> 7) | (in[inBase + 2] << 1) & 0x07);
                 out[outBase + 6] = (byte)((in[inBase + 2] >>> 2) & 0x07);
                 break;
             }
 
             // Check padding bits in last byte
             int lastByte = in[inBase + (nRemainder * 3 + 7) / 8 - 1];
-            int usedBits = (nRemainder * 3) % 8;
-            int unusedBits = usedBits == 0 ? 0 : 8 - usedBits;
-            int paddingMask = (0xFF << unusedBits) & 0xFF;
+            int paddingMask = 0xFF << (nRemainder * 3) & 7;
 
-            if (unusedBits > 0 && (lastByte & paddingMask) != 0)
+            if ((lastByte & paddingMask) != 0)
             {
                 isPackedPaddOk = false;
             }

@@ -26,9 +26,9 @@ public class CrossTest
 
     private static final CrossParameters[] PARAMETER_SETS = new CrossParameters[]
         {
-//            CrossParameters.cross_rsdpg_1_small,
-//            CrossParameters.cross_rsdpg_1_balanced,
-//            CrossParameters.cross_rsdpg_1_fast,
+            CrossParameters.cross_rsdpg_1_small,
+            CrossParameters.cross_rsdpg_1_balanced,
+            CrossParameters.cross_rsdpg_1_fast,
             CrossParameters.cross_rsdp_1_small,
             CrossParameters.cross_rsdp_1_balanced,
             CrossParameters.cross_rsdp_1_fast,
@@ -47,9 +47,9 @@ public class CrossTest
         };
 
     private static final String[] files = new String[]{
-//        "PQCsignKAT_54_8960.rsp",
-//        "PQCsignKAT_54_9120.rsp",
-//        "PQCsignKAT_54_11980.rsp",
+        "PQCsignKAT_54_8960.rsp",
+        "PQCsignKAT_54_9120.rsp",
+        "PQCsignKAT_54_11980.rsp",
         "PQCsignKAT_77_12432.rsp",
         "PQCsignKAT_77_13152.rsp",
         "PQCsignKAT_77_18432.rsp",
@@ -77,9 +77,12 @@ public class CrossTest
         {
             entropyInput[i] = (byte)i;
         }
-        final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
-        TestUtils.testTestVector(false, false, false, "pqc/crypto/Cross", files, new TestUtils.KeyGenerationOperation()
+        //NOTE: Cross uses a special SecureRandom so that it does not support sampleOnly option (and seed is useless).
+        // We need to wait until the authors of Cross change their SecureRandom to NISTSecureRandom
+        final boolean sampleOnly = false;
+        TestUtils.testTestVector(sampleOnly, false, false, "pqc/crypto/Cross", files, new TestUtils.KeyGenerationOperation()
         {
+            final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
             {
