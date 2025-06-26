@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.ParametersWithContext;
+import org.bouncycastle.crypto.params.ParametersWithDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.DigestUtils;
 
@@ -31,6 +32,16 @@ public class HashMLDSASigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        if (param instanceof ParametersWithDigest)
+        {
+            ParametersWithDigest withDigest = (ParametersWithDigest) param;
+            param = withDigest.getParameters();
+            digest = withDigest.getDigest();
+        }
+        else
+        {
+            digest = engine.shake256Digest;
+        }
         byte[] ctx = EMPTY_CONTEXT;
         if (param instanceof ParametersWithContext)
         {
@@ -74,7 +85,8 @@ public class HashMLDSASigner
             engine = parameters.getEngine(null);
             engine.initVerify(pubKey.rho, pubKey.t1, true, ctx);
         }
-        digest = engine.shake256Digest;
+
+
         byte[] digestOIDEncoding;
         try
         {
@@ -136,21 +148,5 @@ public class HashMLDSASigner
 //        MLDSAEngine engine = pubKey.getParameters().getEngine(random);
 //
 //        return engine.verifyInternal(signature, signature.length, message, message.length, pubKey.rho, pubKey.t1);
-//    }
-
-//    private static Digest createDigest(MLDSAParameters parameters)
-//    {
-    //TODO: MLDSA44 may use SHA2-256, SHA3-256, SHAKE128
-    //      MLDSA65 may use SHA3-384, SHA2-512
-    //      MLDSA44/65/87 may use SHA2-512, SHA3-512, SHAKE256
-
-//        switch (parameters.getType())
-//        {
-//        case MLDSAParameters.TYPE_PURE:
-//        case MLDSAParameters.TYPE_SHA2_512:
-//            return new SHAKEDigest(256);
-//        default:
-//            throw new IllegalArgumentException("unknown parameters type");
-//        }
 //    }
 }
