@@ -15,6 +15,16 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.ParametersWithDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.mldsa.HashMLDSASigner;
 import org.bouncycastle.pqc.crypto.mldsa.MLDSAKeyGenerationParameters;
@@ -465,6 +475,72 @@ public class MLDSATest
             if (a > -1)
             {
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+    }
+
+    public void testHashMLDSA()
+        throws Exception
+    {
+        Digest[] digests = new Digest[] {
+                new SHA1Digest(),
+                new SHA224Digest(),
+                new SHA256Digest(),
+                new SHA384Digest(),
+                new SHA512Digest(),
+                new SHA512tDigest(224),
+                new SHA512tDigest(256),
+                new SHA3Digest(224),
+                new SHA3Digest(256),
+                new SHA3Digest(384),
+                new SHA3Digest(512),
+                new SHAKEDigest(128),
+                new SHAKEDigest(256),
+        };
+        SecureRandom random = new SecureRandom();
+
+        MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
+
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
+        {
+            MLDSAParameters parameters = PARAMETER_SETS[idx];
+            kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
+
+            int msgSize = 0;
+            for (Digest digest :digests )
+            {
+
+                do
+                {
+                    byte[] msg = new byte[msgSize];
+
+                    for (int i = 0; i < 2; ++i)
+                    {
+                        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+                        HashMLDSASigner signer = new HashMLDSASigner();
+
+                        for (int j = 0; j < 2; ++j)
+                        {
+                            random.nextBytes(msg);
+
+                            // sign
+                            signer.init(true, new ParametersWithDigest(kp.getPrivate(), digest));
+                            signer.update(msg, 0, msg.length);
+                            byte[] signature = signer.generateSignature();
+
+                            // verify
+                            signer.init(false, new ParametersWithDigest(kp.getPublic(), digest));
+                            signer.update(msg, 0, msg.length);
+                            boolean shouldVerify = signer.verifySignature(signature);
+
+                            assertTrue("count = " + i, shouldVerify);
+                        }
+                    }
+
+                    msgSize += msgSize < 128 ? 1 : 17;
+                }
+                while (msgSize <= 256);
             }
         }
     }
