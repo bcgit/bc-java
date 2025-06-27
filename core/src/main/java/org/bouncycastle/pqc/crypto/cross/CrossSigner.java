@@ -120,7 +120,7 @@ public class CrossSigner
         // Prepare arrays for T rounds
         byte[][] e_bar_prime = new byte[params.getT()][];
         byte[][] v_bar = new byte[params.getT()][];
-        byte[][] u_prime = new byte[params.getT()][];
+        Object u_prime;
         byte[] s_prime = new byte[params.getN() - params.getK()];
         byte[][] e_G_bar_prime = null;
         byte[][] v_G_bar = null;
@@ -132,12 +132,14 @@ public class CrossSigner
             cmt0InputSize = params.getDenselyPackedFpSynSize() +
                 params.getDenselyPackedFzVecSize() +
                 params.getSaltLengthBytes();
+            u_prime = new byte[params.getT()][];
         }
         else
         {
             cmt0InputSize = params.getDenselyPackedFpSynSize() +
                 params.getDenselyPackedFzRsdpGVecSize() +
                 params.getSaltLengthBytes();
+            u_prime = new short[params.getT()][];
             e_G_bar_prime = new byte[params.getT()][];
             v_G_bar = new byte[params.getT()][];
         }
@@ -170,6 +172,26 @@ public class CrossSigner
             if (params.rsdp)
             {
                 engine.csprngFzVec(e_bar_prime[i], params);
+                // Compute v_bar
+                CrossEngine.fzVecSubN(v_bar[i], e_bar, e_bar_prime[i], params);
+                byte[] v = new byte[params.getN()];
+                CrossEngine.convertRestrVecToFp(v, v_bar[i], params);
+                CrossEngine.fzDzNormN(v_bar[i]);
+
+                // Convert to FP and compute u_prime
+
+                ((byte[][])u_prime)[i] = new byte[params.getN()];
+                engine.csprngFpVec(((byte[][])u_prime)[i], params);
+
+                // Compute s_prime
+                byte[] u = new byte[params.getN()];
+                CrossEngine.fpVecByFpVecPointwise(u, v, ((byte[][])u_prime)[i], params);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
+                CrossEngine.fpDzNormSynd(s_prime);
+
+                // Build cmt_0 input
+                CrossEngine.packFpSyn(cmt_0_i_input, s_prime);
+                CrossEngine.packFzVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_bar[i], params);
             }
             else
             {
@@ -180,34 +202,28 @@ public class CrossSigner
                 CrossEngine.fzDzNormM(v_G_bar[i], m);
                 CrossEngine.fzInfWByFzMatrix(e_bar_prime[i], e_G_bar_prime[i], W_mat, params);
                 CrossEngine.fzDzNormN(e_bar_prime[i]);
-            }
+                // Compute v_bar
+                CrossEngine.fzVecSubN(v_bar[i], e_bar, e_bar_prime[i], params);
+                short[] v = new short[params.getN()];
+                CrossEngine.convertRestrVecToFp(v, v_bar[i], params);
+                CrossEngine.fzDzNormN(v_bar[i]);
 
-            // Compute v_bar
-            CrossEngine.fzVecSubN(v_bar[i], e_bar, e_bar_prime[i], params);
-            CrossEngine.fzDzNormN(v_bar[i]);
+                // Convert to FP and compute u_prime
 
-            // Convert to FP and compute u_prime
-            byte[] v = new byte[params.getN()];
-            CrossEngine.convertRestrVecToFp(v, v_bar[i], params);
-            u_prime[i] = new byte[params.getN()];
-            engine.csprngFpVec(u_prime[i], params);
+                ((short[][])u_prime)[i] = new short[params.getN()];
+                engine.csprngFpVec(((short[][])u_prime)[i], params);
 
-            // Compute s_prime
-            byte[] u = new byte[params.getN()];
-            CrossEngine.fpVecByFpVecPointwise(u, v, u_prime[i], params);
-            CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
-            CrossEngine.fpDzNormSynd(s_prime);
+                // Compute s_prime
+                byte[] u = new byte[params.getN()];
+                CrossEngine.fpVecByFpVecPointwise(u, v, ((short[][])u_prime)[i], params);
+                CrossEngine.fpVecByFpMatrix(s_prime, u, V_tr, params);
+                CrossEngine.fpDzNormSynd(s_prime);
 
-            // Build cmt_0 input
-            CrossEngine.packFpSyn(cmt_0_i_input, s_prime);
-            if (params.rsdp)
-            {
-                CrossEngine.packFzVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_bar[i], params);
-            }
-            else
-            {
+                // Build cmt_0 input
+                CrossEngine.packFpSyn(cmt_0_i_input, s_prime);
                 CrossEngine.packFzRsdpGVec(cmt_0_i_input, params.getDenselyPackedFpSynSize(), v_G_bar[i], params);
             }
+
 
             // Compute commitments
             int domain_sep_hash = CrossEngine.HASH_DOMAIN_SEP_CONST + i + (2 * params.getT() - 1);
@@ -255,10 +271,21 @@ public class CrossSigner
 
         // Compute first round responses
         byte[][] y = new byte[params.getT()][params.getN()];
-        for (int i = 0; i < params.getT(); i++)
+        if (params.rsdp)
         {
-            CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], u_prime[i], params);
-            CrossEngine.fpDzNorm(y[i], params);
+            for (int i = 0; i < params.getT(); i++)
+            {
+                CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], ((byte[][])u_prime)[i], params);
+                CrossEngine.fpDzNorm(y[i], params);
+            }
+        }
+        else
+        {
+            for (int i = 0; i < params.getT(); i++)
+            {
+                CrossEngine.fpVecByRestrVecScaled(y[i], e_bar_prime[i], chall_1[i], ((short[][])u_prime)[i], params);
+                CrossEngine.fpDzNorm(y[i], params);
+            }
         }
 
         // Pack y vectors and compute second challenge

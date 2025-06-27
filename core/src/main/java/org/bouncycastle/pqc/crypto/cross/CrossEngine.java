@@ -441,14 +441,14 @@ class CrossEngine
         int res7 = cmov((xInt >> 6) & 1, RESTR_G_GEN_64, 1);
 
         // Multiply pairs with reduction
-        int prod1 = fpRedSingle(res1 * res2);
-        int prod2 = fpRedSingle(res3 * res4);
-        int prod3 = fpRedSingle(res5 * res6);
+        int prod1 = res1 * res2;
+        int prod2 = res3 * res4;
+        int prod3 = res5 * res6;
 
         // Combine results
         int prod12 = fpRedSingle(prod1 * prod2);
-        int prod123 = fpRedSingle(prod12 * prod3);
-        int finalProd = fpRedSingle(prod123 * res7);
+        int prod34 = fpRedSingle(prod3 * res7);
+        int finalProd = fpRedSingle(prod12 * prod34);
 
         return (short)finalProd;
     }
@@ -676,7 +676,7 @@ class CrossEngine
             out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
             out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
             out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | (in[baseIn + 5] << 5));
             out[baseOut + 6] = (byte)(in[baseIn + 5] >>> 3);
             break;
         case 7:
@@ -685,8 +685,8 @@ class CrossEngine
             out[baseOut + 2] = (byte)((in[baseIn + 1] >>> 7) | (in[baseIn + 2] << 2));
             out[baseOut + 3] = (byte)((in[baseIn + 2] >>> 6) | (in[baseIn + 3] << 3));
             out[baseOut + 4] = (byte)((in[baseIn + 3] >>> 5) | (in[baseIn + 4] << 4));
-            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
-            out[baseOut + 6] = (byte)((in[baseIn + 6] >>> 2) | (in[baseIn + 7] << 7));
+            out[baseOut + 5] = (byte)((in[baseIn + 4] >>> 4) | (in[baseIn + 5] << 5));
+            out[baseOut + 6] = (byte)((in[baseIn + 5] >>> 3) | (in[baseIn + 6] << 6));
             out[baseOut + 7] = (byte)(in[baseIn + 6] >>> 2);
             break;
         }
@@ -841,7 +841,7 @@ class CrossEngine
     public static byte fzRedSingle(byte x)
     {
         int val = x & 0xFF;
-        return (byte)((val & 0x7F) + (val >>> 7));
+        return (byte)((val & 0x7F) + ((val >>> 7) & 0xff));
     }
 
     public static byte fzRedDouble(byte x)
@@ -889,7 +889,7 @@ class CrossEngine
         for (int i = 0; i < n; i++)
         {
             int aVal = a[i] & 0xFF;
-            int bVal = b[i] & 0xFF;
+            int bVal;
 
             if (z == 7)
             {
@@ -908,19 +908,19 @@ class CrossEngine
     public static void convertRestrVecToFp(byte[] fpOut, byte[] fzIn, CrossParameters params)
     {
         int n = params.getN();
-        int p = params.getP();
+        for (int j = 0; j < n; j++)
+        {
+            fpOut[j] = restrToVal(fzIn[j]);
+        }
+    }
+
+    public static void convertRestrVecToFp(short[] fpOut, byte[] fzIn, CrossParameters params)
+    {
+        int n = params.getN();
 
         for (int j = 0; j < n; j++)
         {
-            if (p == 127)
-            {
-                fpOut[j] = restrToVal(fzIn[j]);
-            }
-            else
-            { // p == 509
-                short val = restrToVal(fzIn[j]);
-                fpOut[j] = (byte)val; // Note: may need to handle 16-bit values
-            }
+            fpOut[j] = restrToValRsdpg(fzIn[j]);
         }
     }
 
@@ -973,26 +973,78 @@ class CrossEngine
         }
     }
 
+    public void csprngFpVec(short[] res, CrossParameters params)
+    {
+        int n = params.getN();
+        int p = params.getP();
+        int bitsForP = bitsToRepresent(p - 1);
+        long mask = (1L << bitsForP) - 1;
+        int bufferSize = roundUp(params.getBitsNFpCtRng(), 8) / 8;
+        byte[] CSPRNG_buffer = new byte[bufferSize];
+        randomBytes(CSPRNG_buffer, bufferSize);
+
+        long subBuffer = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            subBuffer |= ((long)(CSPRNG_buffer[i] & 0xFF)) << (8 * i);
+        }
+
+        int bitsInSubBuf = 64;
+        int posInBuf = 8;
+        int posRemaining = bufferSize - posInBuf;
+        int placed = 0;
+
+        while (placed < n)
+        {
+            if (bitsInSubBuf <= 32 && posRemaining > 0)
+            {
+                int refreshAmount = Math.min(4, posRemaining);
+                long refreshBuf = 0;
+                for (int i = 0; i < refreshAmount; i++)
+                {
+                    refreshBuf |= ((long)(CSPRNG_buffer[posInBuf + i] & 0xFF)) << (8 * i);
+                }
+                posInBuf += refreshAmount;
+                posRemaining -= refreshAmount;
+                subBuffer |= refreshBuf << bitsInSubBuf;
+                bitsInSubBuf += 8 * refreshAmount;
+            }
+
+            long elementLong = subBuffer & mask;
+            if (elementLong < p)
+            {
+                res[placed] = (byte)elementLong;
+                placed++;
+            }
+            subBuffer >>>= bitsForP; // Unsigned right shift
+            bitsInSubBuf -= bitsForP;
+        }
+    }
+
     // Pointwise vector multiplication: res = in1 * in2 (mod P)
     public static void fpVecByFpVecPointwise(byte[] res, byte[] in1, byte[] in2, CrossParameters params)
     {
         int n = params.getN();
-        int p = params.getP();
 
         for (int i = 0; i < n; i++)
         {
             int val1 = in1[i] & 0xFF;
             int val2 = in2[i] & 0xFF;
             long product = (long)val1 * val2;
+            res[i] = (byte)fpRedDouble((int)product);
+        }
+    }
 
-            if (p == 127)
-            {
-                res[i] = (byte)fpRedDouble((int)product);
-            }
-            else
-            { // p == 509
-                res[i] = (byte)fpRedSingle((int)product);
-            }
+    public static void fpVecByFpVecPointwise(byte[] res, short[] in1, short[] in2, CrossParameters params)
+    {
+        int n = params.getN();
+
+        for (int i = 0; i < n; i++)
+        {
+            int val1 = in1[i] & 0xFF;
+            int val2 = in2[i] & 0xFF;
+            long product = (long)val1 * val2;
+            res[i] = (byte)fpRedSingle((int)product);
         }
     }
 
@@ -1041,10 +1093,9 @@ class CrossEngine
     // Pack FZ RSDPG vector into byte array
     public static void packFzRsdpGVec(byte[] out, int outOff, byte[] in, CrossParameters params)
     {
-        int m = params.getM();
         int z = params.getZ();
         int bitsForZ = bitsToRepresent(z - 1);
-        genericPackFz(out, outOff, in, z, m, bitsForZ);
+        genericPackFz(out, outOff, in, z, params.getDenselyPackedFzRsdpGVecSize(), bitsForZ);
     }
 
     // Generic packing for FZ vectors
@@ -1485,14 +1536,32 @@ class CrossEngine
             long product = (long)eVal * chall_1;
             long sum = uPrimeVal + product;
 
+            res[i] = (byte)fpRedDouble((int)sum);
+        }
+    }
+
+    public static void fpVecByRestrVecScaled(byte[] res, byte[] e, int chall_1,
+                                             short[] u_prime, CrossParameters params)
+    {
+        int n = params.getN();
+        int p = params.getP();
+
+        for (int i = 0; i < n; i++)
+        {
+            int eVal;
             if (p == 127)
             {
-                res[i] = (byte)fpRedDouble((int)sum);
+                eVal = restrToVal(e[i]) & 0xFF;
             }
             else
             { // p == 509
-                res[i] = (byte)fpRedSingle((int)sum);
+                eVal = restrToVal(e[i]) & 0xFFFF;
             }
+
+            int uPrimeVal = u_prime[i] & 0xFF;
+            long product = (long)eVal * chall_1;
+            long sum = uPrimeVal + product;
+            res[i] = (byte)fpRedSingle((int)sum);
         }
     }
 
@@ -1541,7 +1610,6 @@ class CrossEngine
     public static void packFpVec(byte[] out, int outOff, byte[] in, CrossParameters params)
     {
         int p = params.getP();
-        int packedSize = params.getDenselyPackedFpVecSize();
 
         if (p == 127)
         {
