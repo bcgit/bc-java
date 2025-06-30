@@ -1164,7 +1164,7 @@ public class PGPPublicKey
         }
 
         // key signatures
-        joinPgpSignatureList(copy.keySigs, keySigs, true, true);
+        joinPgpSignatureList(copy.keySigs, keySigs, false, true);
 
         // user-ids and id sigs
         for (int idIdx = 0; idIdx < copy.ids.size(); idIdx++)
