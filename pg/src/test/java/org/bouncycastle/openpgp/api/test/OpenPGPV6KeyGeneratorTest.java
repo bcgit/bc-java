@@ -581,7 +581,7 @@ public class OpenPGPV6KeyGeneratorTest
     {
         OpenPGPKey key = api.generateKey()
                 .withPrimaryKey(
-                        KeyPairGeneratorCallback.primaryKey(),
+                        KeyPairGeneratorCallback.Util.primaryKey(),
                         // No direct-key sig
                         new SignatureParameters.Callback()
                         {
@@ -591,7 +591,7 @@ public class OpenPGPV6KeyGeneratorTest
                             }
                         })
                 .addSigningSubkey(
-                        KeyPairGeneratorCallback.signingKey(),
+                        KeyPairGeneratorCallback.Util.signingKey(),
                         // No subkey binding sig
                         new SignatureParameters.Callback()
                         {
@@ -611,7 +611,7 @@ public class OpenPGPV6KeyGeneratorTest
                             }
                         })
                 .addEncryptionSubkey(
-                        KeyPairGeneratorCallback.encryptionKey(),
+                        KeyPairGeneratorCallback.Util.encryptionKey(),
                         // No subkey binding sig
                         new SignatureParameters.Callback()
                         {
