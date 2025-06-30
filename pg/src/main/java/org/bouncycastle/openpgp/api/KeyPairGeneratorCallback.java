@@ -19,7 +19,8 @@ public interface KeyPairGeneratorCallback
     PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
         throws PGPException;
 
-    static class Util {
+    static class Util
+    {
         public static KeyPairGeneratorCallback primaryKey()
         {
             return new KeyPairGeneratorCallback()
