@@ -707,44 +707,58 @@ class CrossEngine
         randomBytes(seedESeedPk[0], keypairSeedLen);
         randomBytes(seedESeedPk[1], keypairSeedLen);
 
-        if (params.getP() == 127)
-        { // RSDP
-            // Step 3: Expand public key matrix
-            expandPk(params, V_tr, seedESeedPk[1]);
+        // RSDP
+        // Step 3: Expand public key matrix
+        expandPk(params, V_tr, seedESeedPk[1]);
 
-            // Step 4: Generate error vector
-            int dscCsprngSeedE = (3 * params.getT() + 3);
+        // Step 4: Generate error vector
+        int dscCsprngSeedE = (3 * params.getT() + 3);
 
-            init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-            csprngFzVec(e_bar, params);
-        }
-        else if (params.getP() == 509)
-        { // RSDPG
-            // Step 3: Expand public key matrices
-            short[][] V_tr_short = new short[params.getK()][params.getN() - params.getK()];
-            expandPk(params, V_tr_short, W_mat, seedESeedPk[1]);
+        init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
+        csprngFzVec(e_bar, params);
 
-            // Convert to byte arrays for consistency
-            for (int i = 0; i < V_tr_short.length; i++)
+    }
+
+    public void expandSk(CrossParameters params, byte[] seedSk,
+                         byte[] e_bar, byte[] e_G_bar,
+                         short[][] V_tr, byte[][] W_mat)
+    {
+        int keypairSeedLen = params.getKeypairSeedLengthBytes();
+        byte[][] seedESeedPk = new byte[2][keypairSeedLen];
+
+        // Step 1: Initialize CSPRNG for secret key expansion
+        int dscCsprngSeedSk = (3 * params.getT() + 1); // CSPRNG_DOMAIN_SEP_CONST = 0
+        init(seedSk, seedSk.length, dscCsprngSeedSk);
+
+        // Step 2: Generate seeds for error vector and public key
+        randomBytes(seedESeedPk[0], keypairSeedLen);
+        randomBytes(seedESeedPk[1], keypairSeedLen);
+
+        // RSDPG
+        // Step 3: Expand public key matrices
+        short[][] V_tr_short = new short[params.getK()][params.getN() - params.getK()];
+        expandPk(params, V_tr_short, W_mat, seedESeedPk[1]);
+
+        // Convert to byte arrays for consistency
+        for (int i = 0; i < V_tr_short.length; i++)
+        {
+            for (int j = 0; j < V_tr_short[i].length; j++)
             {
-                for (int j = 0; j < V_tr_short[i].length; j++)
-                {
-                    V_tr[i][j] = (byte)V_tr_short[i][j];
-                }
+                V_tr[i][j] = V_tr_short[i][j];
             }
-
-            // Step 4: Generate error information word
-            int dscCsprngSeedE = (3 * params.getT() + 3);
-
-            init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
-            csprngFzInfW(e_G_bar, params);
-
-            // Step 5: Compute full error vector
-            fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
-
-            // Step 6: Normalize error vector
-            fzDzNormN(e_bar);
         }
+
+        // Step 4: Generate error information word
+        int dscCsprngSeedE = (3 * params.getT() + 3);
+
+        init(seedESeedPk[0], seedESeedPk[0].length, dscCsprngSeedE);
+        csprngFzInfW(e_G_bar, params);
+
+        // Step 5: Compute full error vector
+        fzInfWByFzMatrix(e_bar, e_G_bar, W_mat, params);
+
+        // Step 6: Normalize error vector
+        fzDzNormN(e_bar);
     }
 
     // Vector normalization for RSDP (Z=7)
@@ -1013,7 +1027,7 @@ class CrossEngine
             long elementLong = subBuffer & mask;
             if (elementLong < p)
             {
-                res[placed] = (byte)elementLong;
+                res[placed] = (short)elementLong;
                 placed++;
             }
             subBuffer >>>= bitsForP; // Unsigned right shift
@@ -1035,16 +1049,16 @@ class CrossEngine
         }
     }
 
-    public static void fpVecByFpVecPointwise(byte[] res, short[] in1, short[] in2, CrossParameters params)
+    public static void fpVecByFpVecPointwise(short[] res, short[] in1, short[] in2, CrossParameters params)
     {
         int n = params.getN();
 
         for (int i = 0; i < n; i++)
         {
-            int val1 = in1[i] & 0xFF;
-            int val2 = in2[i] & 0xFF;
+            int val1 = in1[i] & 0xFFFF;
+            int val2 = in2[i] & 0xFFFF;
             long product = (long)val1 * val2;
-            res[i] = (byte)fpRedSingle((int)product);
+            res[i] = (short)fpRedSingle((int)product);
         }
     }
 
@@ -1068,15 +1082,33 @@ class CrossEngine
                 int current = res[j] & 0xFF;
                 long product = (long)eVal * vVal;
                 long sum = current + product;
+                res[j] = (byte)fpRedDouble((int)sum);
 
-                if (params.getP() == 127)
-                {
-                    res[j] = (byte)fpRedDouble((int)sum);
-                }
-                else
-                { // p == 509
-                    res[j] = (byte)fpRedSingle((int)sum);
-                }
+            }
+        }
+    }
+
+    public static void fpVecByFpMatrix(short[] res, short[] e, short[][] V_tr, CrossParameters params)
+    {
+        int n = params.getN();
+        int k = params.getK();
+        int nMinusK = n - k;
+
+        // Initialize with last n-k elements of e
+        System.arraycopy(e, k, res, 0, nMinusK);
+
+        // Compute matrix-vector product
+        for (int i = 0; i < k; i++)
+        {
+            for (int j = 0; j < nMinusK; j++)
+            {
+                int eVal = e[i] & 0xFFFF;
+                int vVal = V_tr[i][j] & 0xFFFF;
+                int current = res[j] & 0xFFFF;
+                long product = (long)eVal * vVal;
+                long sum = current + product;
+
+                res[j] = (short)fpRedSingle((int)sum);
             }
         }
     }
@@ -1094,8 +1126,7 @@ class CrossEngine
     public static void packFzRsdpGVec(byte[] out, int outOff, byte[] in, CrossParameters params)
     {
         int z = params.getZ();
-        int bitsForZ = bitsToRepresent(z - 1);
-        genericPackFz(out, outOff, in, z, params.getDenselyPackedFzRsdpGVecSize(), bitsForZ);
+        genericPackFz(out, outOff, in, z, params.getDenselyPackedFzRsdpGVecSize(), params.getM());
     }
 
     // Generic packing for FZ vectors
@@ -1249,41 +1280,13 @@ class CrossEngine
         {
             int baseIn = i * 8;
             int baseOut = outOff + i * 7;
-
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-
-            out[baseOut + 2] = (byte)(
-                ((in[baseIn + 2] >>> 2) & 0x1F) |
-                    ((in[baseIn + 3] & 0x07) << 5)
-            );
-
-            out[baseOut + 3] = (byte)(
-                ((in[baseIn + 3] >>> 3) & 0x0F) |
-                    ((in[baseIn + 4] & 0x0F) << 4)
-            );
-
-            out[baseOut + 4] = (byte)(
-                ((in[baseIn + 4] >>> 4) & 0x07) |
-                    ((in[baseIn + 5] & 0x1F) << 3)
-            );
-
-            out[baseOut + 5] = (byte)(
-                ((in[baseIn + 5] >>> 5) & 0x03) |
-                    ((in[baseIn + 6] & 0x3F) << 2)
-            );
-
-            out[baseOut + 6] = (byte)(
-                ((in[baseIn + 6] >>> 6) & 0x01) |
-                    ((in[baseIn + 7] & 0x7F) << 1)
-            );
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0xFF) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0xFF) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0xFF) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0xFF) << 2));
+            out[baseOut + 6] = (byte)(((in[baseIn + 6] & 0xFF) >>> 6) | ((in[baseIn + 7] & 0xFF) << 1));
         }
 
         // Process remaining elements (1-7)
@@ -1294,109 +1297,46 @@ class CrossEngine
         switch (remaining)
         {
         case 1:
-            out[baseOut] = (byte)(in[baseIn] & 0x7F);
+            out[baseOut] = (byte)(in[baseIn] & 0xFF);
             break;
         case 2:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)((in[baseIn + 1] >>> 1) & 0x3F);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)((in[baseIn + 1] & 0xFF) >>> 1);
             break;
         case 3:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-            out[baseOut + 2] = (byte)((in[baseIn + 2] >>> 2) & 0x1F);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)((in[baseIn + 2] & 0xFF) >>> 2);
             break;
         case 4:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-            out[baseOut + 2] = (byte)(
-                ((in[baseIn + 2] >>> 2) & 0x1F) |
-                    ((in[baseIn + 3] & 0x07) << 5)
-            );
-            out[baseOut + 3] = (byte)((in[baseIn + 3] >>> 3) & 0x0F);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0xFF) << 5));
+            out[baseOut + 3] = (byte)((in[baseIn + 3] & 0xFF) >>> 3);
             break;
         case 5:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-            out[baseOut + 2] = (byte)(
-                ((in[baseIn + 2] >>> 2) & 0x1F) |
-                    ((in[baseIn + 3] & 0x07) << 5)
-            );
-            out[baseOut + 3] = (byte)(
-                ((in[baseIn + 3] >>> 3) & 0x0F) |
-                    ((in[baseIn + 4] & 0x0F) << 4)
-            );
-            out[baseOut + 4] = (byte)((in[baseIn + 4] >>> 4) & 0x07);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0xFF) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0xFF) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4));
             break;
         case 6:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-            out[baseOut + 2] = (byte)(
-                ((in[baseIn + 2] >>> 2) & 0x1F) |
-                    ((in[baseIn + 3] & 0x07) << 5)
-            );
-            out[baseOut + 3] = (byte)(
-                ((in[baseIn + 3] >>> 3) & 0x0F) |
-                    ((in[baseIn + 4] & 0x0F) << 4)
-            );
-            out[baseOut + 4] = (byte)(
-                ((in[baseIn + 4] >>> 4) & 0x07) |
-                    ((in[baseIn + 5] & 0x1F) << 3)
-            );
-            out[baseOut + 5] = (byte)((in[baseIn + 5] >>> 5) & 0x03);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0xFF) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0xFF) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0xFF) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5));
             break;
         case 7:
-            out[baseOut] = (byte)(
-                (in[baseIn] & 0x7F) |
-                    ((in[baseIn + 1] & 0x01) << 7)
-            );
-            out[baseOut + 1] = (byte)(
-                ((in[baseIn + 1] >>> 1) & 0x3F) |
-                    ((in[baseIn + 2] & 0x03) << 6)
-            );
-            out[baseOut + 2] = (byte)(
-                ((in[baseIn + 2] >>> 2) & 0x1F) |
-                    ((in[baseIn + 3] & 0x07) << 5)
-            );
-            out[baseOut + 3] = (byte)(
-                ((in[baseIn + 3] >>> 3) & 0x0F) |
-                    ((in[baseIn + 4] & 0x0F) << 4)
-            );
-            out[baseOut + 4] = (byte)(
-                ((in[baseIn + 4] >>> 4) & 0x07) |
-                    ((in[baseIn + 5] & 0x1F) << 3)
-            );
-            out[baseOut + 5] = (byte)(
-                ((in[baseIn + 5] >>> 5) & 0x03) |
-                    ((in[baseIn + 6] & 0x3F) << 2)
-            );
-            out[baseOut + 6] = (byte)((in[baseIn + 6] >>> 6) & 0x01);
+            out[baseOut] = (byte)((in[baseIn] & 0xFF) | ((in[baseIn + 1] & 0xFF) << 7));
+            out[baseOut + 1] = (byte)(((in[baseIn + 1] & 0xFF) >>> 1) | ((in[baseIn + 2] & 0xFF) << 6));
+            out[baseOut + 2] = (byte)(((in[baseIn + 2] & 0xFF) >>> 2) | ((in[baseIn + 3] & 0xFF) << 5));
+            out[baseOut + 3] = (byte)(((in[baseIn + 3] & 0xFF) >>> 3) | ((in[baseIn + 4] & 0xFF) << 4));
+            out[baseOut + 4] = (byte)(((in[baseIn + 4] & 0xFF) >>> 4) | ((in[baseIn + 5] & 0xFF) << 3));
+            out[baseOut + 5] = (byte)(((in[baseIn + 5] & 0xFF) >>> 5) | ((in[baseIn + 6] & 0xFF) << 2));
+            out[baseOut + 6] = (byte)(((in[baseIn + 6] & 0xFF) >>> 6));
             break;
         }
     }
@@ -1522,16 +1462,7 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int eVal;
-            if (p == 127)
-            {
-                eVal = restrToVal(e[i]) & 0xFF;
-            }
-            else
-            { // p == 509
-                eVal = restrToVal(e[i]) & 0xFFFF;
-            }
-
+            int eVal = restrToVal(e[i]) & 0xFF;
             int uPrimeVal = u_prime[i] & 0xFF;
             long product = (long)eVal * chall_1;
             long sum = uPrimeVal + product;
@@ -1540,7 +1471,7 @@ class CrossEngine
         }
     }
 
-    public static void fpVecByRestrVecScaled(byte[] res, byte[] e, int chall_1,
+    public static void fpVecByRestrVecScaled(short[] res, byte[] e, int chall_1,
                                              short[] u_prime, CrossParameters params)
     {
         int n = params.getN();
@@ -1548,20 +1479,11 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int eVal;
-            if (p == 127)
-            {
-                eVal = restrToVal(e[i]) & 0xFF;
-            }
-            else
-            { // p == 509
-                eVal = restrToVal(e[i]) & 0xFFFF;
-            }
-
+            int eVal = restrToVal(e[i]) & 0xFFFF;
             int uPrimeVal = u_prime[i] & 0xFF;
             long product = (long)eVal * chall_1;
             long sum = uPrimeVal + product;
-            res[i] = (byte)fpRedSingle((int)sum);
+            res[i] = (short)fpRedSingle((int)sum);
         }
     }
 
@@ -1569,62 +1491,23 @@ class CrossEngine
     public static void fpDzNorm(byte[] v, CrossParameters params)
     {
         int n = params.getN();
-        int p = params.getP();
 
         for (int i = 0; i < n; i++)
         {
             int val = v[i] & 0xFF;
-            if (p == 127)
-            {
-                v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
-            }
-            else
-            { // p == 509 (identity)
-                // No normalization needed for P=509
-            }
+            v[i] = (byte)((val + ((val + 1) >> 7)) & 0x7F);
         }
     }
 
     // Pack FP vector
-    public static void packFpVec(byte[] out, byte[] in, CrossParameters params)
+    public static void packFpVec(byte[] out, int outOff, byte[] in)
     {
-        int p = params.getP();
-        int packedSize = params.getDenselyPackedFpVecSize();
-
-        if (p == 127)
-        {
-            genericPack7Bit(out, 0, in);
-        }
-        else
-        { // p == 509
-            // Convert to short[] for 9-bit packing
-            short[] inShort = new short[in.length];
-            for (int i = 0; i < in.length; i++)
-            {
-                inShort[i] = (short)(in[i] & 0xFF);
-            }
-            genericPack9Bit(out, 0, inShort);
-        }
+        genericPack7Bit(out, outOff, in);
     }
 
-    public static void packFpVec(byte[] out, int outOff, byte[] in, CrossParameters params)
+    public static void packFpVec(byte[] out, int outOff, short[] in)
     {
-        int p = params.getP();
-
-        if (p == 127)
-        {
-            genericPack7Bit(out, outOff, in);
-        }
-        else
-        { // p == 509
-            // Convert to short[] for 9-bit packing
-            short[] inShort = new short[in.length];
-            for (int i = 0; i < in.length; i++)
-            {
-                inShort[i] = (short)(in[i] & 0xFF);
-            }
-            genericPack9Bit(out, outOff, inShort);
-        }
+        genericPack9Bit(out, outOff, in);
     }
 
     // Generate fixed-weight binary string
