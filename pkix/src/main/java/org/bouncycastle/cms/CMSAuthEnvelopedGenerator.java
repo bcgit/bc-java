@@ -1,10 +1,6 @@
 package org.bouncycastle.cms;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.bouncycastle.asn1.cms.OriginatorInfo;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
 /**
  * General class for generating a CMS enveloped-data message.
@@ -12,9 +8,13 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 public class CMSAuthEnvelopedGenerator
     extends CMSEnvelopedGenerator
 {
-    public static final String  AES128_GCM = NISTObjectIdentifiers.id_aes128_GCM.getId();
-    public static final String  AES192_GCM = NISTObjectIdentifiers.id_aes192_GCM.getId();
-    public static final String  AES256_GCM = NISTObjectIdentifiers.id_aes256_GCM.getId();
+    public static final String  AES128_CCM = CMSAlgorithm.AES128_CCM.getId();
+    public static final String  AES192_CCM = CMSAlgorithm.AES192_CCM.getId();
+    public static final String  AES256_CCM = CMSAlgorithm.AES256_CCM.getId();
+    public static final String  AES128_GCM = CMSAlgorithm.AES128_GCM.getId();
+    public static final String  AES192_GCM = CMSAlgorithm.AES192_GCM.getId();
+    public static final String  AES256_GCM = CMSAlgorithm.AES256_GCM.getId();
+    public static final String  ChaCha20Poly1305 = CMSAlgorithm.ChaCha20Poly1305.getId();
 
     protected CMSAttributeTableGenerator authAttrsGenerator = null;
     protected CMSAttributeTableGenerator unauthAttrsGenerator = null;
