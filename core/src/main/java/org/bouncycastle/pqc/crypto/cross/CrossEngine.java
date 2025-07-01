@@ -1479,8 +1479,8 @@ class CrossEngine
 
         for (int i = 0; i < n; i++)
         {
-            int eVal = restrToVal(e[i]) & 0xFFFF;
-            int uPrimeVal = u_prime[i] & 0xFF;
+            int eVal = restrToValRsdpg(e[i]) & 0xFFFF;
+            int uPrimeVal = u_prime[i] & 0xFFFF;
             long product = (long)eVal * chall_1;
             long sum = uPrimeVal + product;
             res[i] = (short)fpRedSingle((int)sum);
@@ -2212,33 +2212,14 @@ class CrossEngine
     {
         int n_k = params.getN() - params.getK();
         int packedSize = params.getDenselyPackedFpSynSize();
-        if (params.getP() == 127)
-        {
-            return genericUnpack7Bit(out, in, n_k, packedSize);
-        }
-        else if (params.getP() == 509)
-        {
-            // For P=509, we use short[] to hold 9-bit values
-            throw new IllegalArgumentException("Use short[] output for P=509");
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported modulus P: " + params.getP());
-        }
+        return genericUnpack7Bit(out, in, n_k, packedSize);
     }
 
     public static boolean unpackFpSyn(short[] out, byte[] in, CrossParameters params)
     {
         int n_k = params.getN() - params.getK();
         int packedSize = params.getDenselyPackedFpSynSize();
-        if (params.getP() == 509)
-        {
-            return genericUnpack9Bit(out, in, n_k, packedSize);
-        }
-        else
-        {
-            throw new IllegalArgumentException("Use byte[] output for P=127");
-        }
+        return genericUnpack9Bit(out, in, n_k, packedSize);
     }
 
     public static boolean genericUnpack7Bit(byte[] out, byte[] in, int outlen, int inlen)
@@ -2331,14 +2312,14 @@ class CrossEngine
         {
             int inBase = i * 9;
             int outBase = i * 8;
-            out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-            out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-            out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
-            out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
-            out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
-            out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
-            out[outBase + 6] = (short)(((in[inBase + 6] >>> 6) | (in[inBase + 7] << 2)) & 0x1FF);
-            out[outBase + 7] = (short)(((in[inBase + 7] >>> 7) | (in[inBase + 8] << 1)) & 0x1FF);
+            out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+            out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+            out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
+            out[outBase + 3] = (short)((((in[inBase + 3] & 0xFF) >>> 3) | ((in[inBase + 4] & 0xFF) << 5)) & 0x1FF);
+            out[outBase + 4] = (short)((((in[inBase + 4] & 0xFF) >>> 4) | ((in[inBase + 5] & 0xFF) << 4)) & 0x1FF);
+            out[outBase + 5] = (short)((((in[inBase + 5] & 0xFF) >>> 5) | ((in[inBase + 6] & 0xFF) << 3)) & 0x1FF);
+            out[outBase + 6] = (short)((((in[inBase + 6] & 0xFF) >>> 6) | ((in[inBase + 7] & 0xFF) << 2)) & 0x1FF);
+            out[outBase + 7] = (short)((((in[inBase + 7] & 0xFF) >>> 7) | ((in[inBase + 8] & 0xFF) << 1)) & 0x1FF);
         }
 
         // Handle remainder elements (1-7)
@@ -2350,46 +2331,46 @@ class CrossEngine
             switch (nRemainder)
             {
             case 1:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
                 break;
             case 2:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
                 break;
             case 3:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+                out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
                 break;
             case 4:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
-                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+                out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
+                out[outBase + 3] = (short)((((in[inBase + 3] & 0xFF) >>> 3) | ((in[inBase + 4] & 0xFF) << 5)) & 0x1FF);
                 break;
             case 5:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
-                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
-                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+                out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
+                out[outBase + 3] = (short)((((in[inBase + 3] & 0xFF) >>> 3) | ((in[inBase + 4] & 0xFF) << 5)) & 0x1FF);
+                out[outBase + 4] = (short)((((in[inBase + 4] & 0xFF) >>> 4) | ((in[inBase + 5] & 0xFF) << 4)) & 0x1FF);
                 break;
             case 6:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
-                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
-                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
-                out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+                out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
+                out[outBase + 3] = (short)((((in[inBase + 3] & 0xFF) >>> 3) | ((in[inBase + 4] & 0xFF) << 5)) & 0x1FF);
+                out[outBase + 4] = (short)((((in[inBase + 4] & 0xFF) >>> 4) | ((in[inBase + 5] & 0xFF) << 4)) & 0x1FF);
+                out[outBase + 5] = (short)((((in[inBase + 5] & 0xFF) >>> 5) | ((in[inBase + 6] & 0xFF) << 3)) & 0x1FF);
                 break;
             case 7:
-                out[outBase] = (short)(((in[inBase] & 0xFF) | (in[inBase + 1] << 8)) & 0x1FF);
-                out[outBase + 1] = (short)(((in[inBase + 1] >>> 1) | (in[inBase + 2] << 7)) & 0x1FF);
-                out[outBase + 2] = (short)(((in[inBase + 2] >>> 2) | (in[inBase + 3] << 6)) & 0x1FF);
-                out[outBase + 3] = (short)(((in[inBase + 3] >>> 3) | (in[inBase + 4] << 5)) & 0x1FF);
-                out[outBase + 4] = (short)(((in[inBase + 4] >>> 4) | (in[inBase + 5] << 4)) & 0x1FF);
-                out[outBase + 5] = (short)(((in[inBase + 5] >>> 5) | (in[inBase + 6] << 3)) & 0x1FF);
-                out[outBase + 6] = (short)(((in[inBase + 6] >>> 6) | (in[inBase + 8] << 1)) & 0x1FF);
+                out[outBase] = (short)(((in[inBase] & 0xFF) | ((in[inBase + 1] & 0xFF) << 8)) & 0x1FF);
+                out[outBase + 1] = (short)((((in[inBase + 1] & 0xFF) >>> 1) | ((in[inBase + 2] & 0xFF) << 7)) & 0x1FF);
+                out[outBase + 2] = (short)((((in[inBase + 2] & 0xFF) >>> 2) | ((in[inBase + 3] & 0xFF) << 6)) & 0x1FF);
+                out[outBase + 3] = (short)((((in[inBase + 3] & 0xFF) >>> 3) | ((in[inBase + 4] & 0xFF) << 5)) & 0x1FF);
+                out[outBase + 4] = (short)((((in[inBase + 4] & 0xFF) >>> 4) | ((in[inBase + 5] & 0xFF) << 4)) & 0x1FF);
+                out[outBase + 5] = (short)((((in[inBase + 5] & 0xFF) >>> 5) | ((in[inBase + 6] & 0xFF) << 3)) & 0x1FF);
+                out[outBase + 6] = (short)((((in[inBase + 6] & 0xFF) >>> 6) | ((in[inBase + 7] & 0xFF) << 2)) & 0x1FF);
                 break;
             }
             // Check padding bits in last byte
@@ -2407,20 +2388,14 @@ class CrossEngine
     {
         int packedSize = params.getDenselyPackedFpVecSize();
         int n = params.getN();
+        return genericUnpack7Bit(out, in, n, packedSize);
+    }
 
-        if (params.getP() == 127)
-        {
-            return genericUnpack7Bit(out, in, n, packedSize);
-        }
-        else if (params.getP() == 509)
-        {
-            // For P=509, use short[] to hold 9-bit elements
-            throw new IllegalArgumentException("Use short[] output for P=509");
-        }
-        else
-        {
-            throw new IllegalArgumentException("Unsupported modulus: " + params.getP());
-        }
+    public static boolean unpackFpVec(short[] out, byte[] in, CrossParameters params)
+    {
+        int packedSize = params.getDenselyPackedFpVecSize();
+        int n = params.getN();
+        return genericUnpack9Bit(out, in, n, packedSize);
     }
 
     // Unpacks a finite ring vector (FZ)
@@ -2476,16 +2451,8 @@ class CrossEngine
             int product = (s[j] & 0xFF) * (chall_1 & 0xFF);
 
             // Reduce product mod P
-            int tmp;
-            if (p == 127)
-            {
-                tmp = CrossEngine.fpRedDouble(product);
-                tmp = CrossEngine.fzDoubleZeroNorm(tmp);
-            }
-            else
-            { // P=509
-                tmp = product % p;
-            }
+            int tmp = CrossEngine.fpRedDouble(product);
+            tmp = CrossEngine.fzDoubleZeroNorm(tmp);
 
             // Compute negative equivalent mod P
             int negative = (p - tmp) % p;
@@ -2493,6 +2460,33 @@ class CrossEngine
             // res[j] = synd[j] + negative mod P
             int value = (synd[j] & 0xFF) + negative;
             res[j] = (byte)(value % p);
+        }
+    }
+
+    public static void fpSyndMinusFpVecScaled(
+        short[] res,
+        short[] synd,
+        short chall_1,
+        short[] s,
+        CrossParameters params)
+    {
+        int p = params.getP();
+        int n_k = params.getN() - params.getK();
+
+        for (int j = 0; j < n_k; j++)
+        {
+            // Multiply s[j] * chall_1
+            int product = (s[j] & 0xFFFF) * (chall_1 & 0xFFFF);
+
+            // Reduce product mod P
+            int tmp = product % p;
+
+            // Compute negative equivalent mod P
+            int negative = (p - tmp) % p;
+
+            // res[j] = synd[j] + negative mod P
+            int value = (synd[j] & 0xFFFF) + negative;
+            res[j] = (short)(value % p);
         }
     }
 

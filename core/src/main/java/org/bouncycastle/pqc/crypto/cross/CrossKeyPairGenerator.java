@@ -1,21 +1,22 @@
 package org.bouncycastle.pqc.crypto.cross;
 
+import java.security.SecureRandom;
+
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Pack;
 
 public class CrossKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {
     private CrossParameters params;
-    private CsprngSecureRandom random;
+    private SecureRandom random;
 
     public void init(KeyGenerationParameters param)
     {
         this.params = ((CrossKeyGenerationParameters)param).getParameters();
-        this.random = (CsprngSecureRandom)param.getRandom();
+        this.random = param.getRandom();
     }
 
     @Override
@@ -23,7 +24,6 @@ public class CrossKeyPairGenerator
     {
         // Step 1: Generate random seed for secret key
         byte[] seedSk = new byte[params.getKeypairSeedLengthBytes()];
-        random.init(params.category, new byte[2]);
         random.nextBytes(seedSk);
 
         // Step 2: Initialize CSPRNG for key generation
@@ -80,8 +80,6 @@ public class CrossKeyPairGenerator
             short[] s = new short[params.getN() - params.getK()];
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
 
-            // For P=509, normalization is identity so we skip explicit call
-            // CrossEngine.fpDzNormSynd(s);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
             CrossEngine.packFpSyn(packedS, s);
 

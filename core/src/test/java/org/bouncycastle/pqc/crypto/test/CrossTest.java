@@ -2,9 +2,11 @@ package org.bouncycastle.pqc.crypto.test;
 
 import java.security.SecureRandom;
 
+import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.pqc.crypto.cross.CrossKeyGenerationParameters;
@@ -13,9 +15,10 @@ import org.bouncycastle.pqc.crypto.cross.CrossParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.cross.CrossSigner;
-import org.bouncycastle.pqc.crypto.cross.CsprngSecureRandom;
+import org.bouncycastle.util.Arrays;
 
 public class CrossTest
+    extends TestCase
 {
     public static void main(String[] args)
         throws Exception
@@ -56,12 +59,12 @@ public class CrossTest
         "PQCsignKAT_83_20452.rsp",
         "PQCsignKAT_83_22464.rsp",
         "PQCsignKAT_83_26772.rsp",
-        "PQCsignKAT_106_36454.rsp",
-        "PQCsignKAT_106_40100.rsp",
-        "PQCsignKAT_106_48102.rsp",
         "PQCsignKAT_115_28391.rsp",
         "PQCsignKAT_115_29853.rsp",
         "PQCsignKAT_115_41406.rsp",
+        "PQCsignKAT_106_36454.rsp",
+        "PQCsignKAT_106_40100.rsp",
+        "PQCsignKAT_106_48102.rsp",
         "PQCsignKAT_153_50818.rsp",
         "PQCsignKAT_153_53527.rsp",
         "PQCsignKAT_153_74590.rsp",
@@ -83,6 +86,7 @@ public class CrossTest
         TestUtils.testTestVector(sampleOnly, false, false, "pqc/crypto/Cross", files, new TestUtils.KeyGenerationOperation()
         {
             final CsprngSecureRandom random = new CsprngSecureRandom(entropyInput);
+
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
             {
@@ -93,7 +97,7 @@ public class CrossTest
             public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
             {
                 CrossParameters parameters = PARAMETER_SETS[fileIndex];
-
+                this.random.init(parameters.getCategory());
                 CrossKeyPairGenerator kpGen = new CrossKeyPairGenerator();
                 kpGen.init(new CrossKeyGenerationParameters(random, parameters));
                 return kpGen;
@@ -125,5 +129,48 @@ public class CrossTest
         });
         long end = System.currentTimeMillis();
         System.out.println("time cost: " + (end - start) + "\n");
+    }
+
+    class CsprngSecureRandom
+        extends SecureRandom
+    {
+        byte[] seed;
+        private SHAKEDigest digest;
+        int count;
+        int files;
+
+        public CsprngSecureRandom(byte[] seed)
+        {
+            this.seed = Arrays.clone(seed);
+//            digest = new SHAKEDigest(256);//category == 1 ? 128 : 256
+//            digest.update(seed, 0, seed.length);
+//            digest.update(new byte[2], 0, 2);
+//            count = 0;
+//            files = 0;
+        }
+
+        public void init(int category)
+        {
+            if (count % 100 == 0)
+            {
+                digest = new SHAKEDigest(category == 1 ? 128 : 256);
+                digest.update(seed, 0, seed.length);
+                digest.update(new byte[2], 0, 2);
+                count = 0;
+            }
+            count++;
+        }
+
+        public void setSeed(byte[] seed, byte[] dsc)
+        {
+            digest.update(seed, 0, seed.length);
+            digest.update(dsc, 0, 2);
+        }
+
+        @Override
+        public void nextBytes(byte[] x)
+        {
+            digest.doOutput(x, 0, x.length);
+        }
     }
 }

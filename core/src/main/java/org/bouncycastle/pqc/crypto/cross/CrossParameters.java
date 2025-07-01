@@ -10,9 +10,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         128, 127, 76, 0, 157, 82, 16,
-        16, 32, 32, 32,
+        16, 32, 32,
         157, 313, 157, 313,
-        0,
         new int[]{0, 0, 0, 0, 0, 2, 2, 58, 58},
         new int[]{1, 2, 4, 8, 16, 30, 60, 64, 128},
         new int[]{0, 0, 0, 0, 1, 0, 28, 0, 128},
@@ -28,9 +27,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         128, 127, 76, 0, 256, 215, 16,
-        16, 32, 32, 32,
+        16, 32, 32,
         256, 511, 256, 511,
-        0,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 256},
@@ -46,9 +44,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         128, 127, 76, 0, 520, 488, 16,
-        16, 32, 32, 32,
+        16, 32, 32,
         520, 1039, 520, 1039,
-        0,
         new int[]{0, 0, 0, 0, 0, 16, 16, 16, 16, 16, 16},
         new int[]{1, 2, 4, 8, 16, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 8, 0, 0, 0, 0, 0, 512},
@@ -65,9 +62,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         192, 187, 111, 0, 239, 125, 16,
-        24, 48, 48, 48,
+        24, 48, 48,
         239, 477, 239, 477,
-        0,
         new int[]{0, 0, 0, 0, 0, 0, 0, 2, 30},
         new int[]{1, 2, 4, 8, 16, 32, 64, 126, 224},
         new int[]{0, 0, 0, 0, 0, 0, 1, 14, 224},
@@ -83,9 +79,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         192, 187, 111, 0, 384, 321, 16,
-        24, 48, 48, 48,
+        24, 48, 48,
         384, 767, 384, 767,
-        0,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 256},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 128, 256},
@@ -101,9 +96,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         192, 187, 111, 0, 580, 527, 16,
-        24, 48, 48, 48,
+        24, 48, 48,
         580, 1159, 580, 1159,
-        0,
         new int[]{0, 0, 0, 0, 0, 8, 8, 8, 8, 136, 136},
         new int[]{1, 2, 4, 8, 16, 24, 48, 96, 192, 256, 512},
         new int[]{0, 0, 0, 0, 4, 0, 0, 0, 64, 0, 512},
@@ -120,9 +114,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         256, 251, 150, 0, 321, 167, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         321, 641, 321, 641,
-        0,
         new int[]{0, 0, 0, 2, 2, 2, 2, 2, 2, 130},
         new int[]{1, 2, 4, 6, 12, 24, 48, 96, 192, 256},
         new int[]{0, 0, 1, 0, 0, 0, 0, 0, 64, 256},
@@ -138,9 +131,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         256, 251, 150, 0, 512, 427, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         512, 1023, 512, 1023,
-        0,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -156,9 +148,8 @@ public class CrossParameters
         127,
         1, 2, 4,
         256, 251, 150, 0, 832, 762, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         832, 1663, 832, 1663,
-        0,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 128, 128},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 384, 768},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 64, 0, 768},
@@ -171,13 +162,12 @@ public class CrossParameters
 
     // RSDPG Category 1
     public static final CrossParameters cross_rsdpg_1_fast = new CrossParameters(
-        "CROSS-RSDPG-1-FAST", true, 1, FAST,
+        "CROSS-RSDPG-1-FAST", false, 1, FAST,
         509,
         1, 4, 4,
         128, 55, 36, 25, 147, 76, 8,
-        16, 32, 32, 32,
+        16, 32, 32,
         147, 293, 147, 293,
-        25,
         new int[]{0, 0, 0, 0, 2, 6, 6, 38, 38},
         new int[]{1, 2, 4, 8, 14, 24, 48, 64, 128},
         new int[]{0, 0, 0, 1, 2, 0, 16, 0, 128},
@@ -193,9 +183,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         128, 55, 36, 25, 256, 220, 8,
-        16, 32, 32, 32,
+        16, 32, 32,
         256, 511, 256, 511,
-        25,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 256},
@@ -211,9 +200,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         128, 55, 36, 25, 512, 484, 16,
-        16, 32, 32, 32,
+        16, 32, 32,
         512, 1023, 512, 1023,
-        25,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -230,9 +218,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         192, 79, 48, 40, 224, 119, 8,
-        24, 48, 48, 48,
+        24, 48, 48,
         224, 447, 224, 447,
-        40,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 64},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 192},
         new int[]{0, 0, 0, 0, 0, 0, 0, 32, 192},
@@ -248,9 +235,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         192, 79, 48, 40, 268, 196, 8,
-        24, 48, 48, 48,
+        24, 48, 48,
         268, 535, 268, 535,
-        40,
         new int[]{0, 0, 0, 0, 0, 8, 24, 24, 24, 24},
         new int[]{1, 2, 4, 8, 16, 24, 32, 64, 128, 256},
         new int[]{0, 0, 0, 0, 4, 8, 0, 0, 0, 256},
@@ -266,9 +252,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         192, 79, 48, 40, 512, 463, 16,
-        24, 48, 48, 48,
+        24, 48, 48,
         512, 1023, 512, 1023,
-        40,
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
         new int[]{1, 2, 4, 8, 16, 32, 64, 128, 256, 512},
         new int[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 512},
@@ -285,9 +270,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         256, 106, 69, 48, 300, 153, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         300, 599, 300, 599,
-        48,
         new int[]{0, 0, 0, 0, 0, 0, 8, 24, 88, 88},
         new int[]{1, 2, 4, 8, 16, 32, 56, 96, 128, 256},
         new int[]{0, 0, 0, 0, 0, 4, 8, 32, 0, 256},
@@ -303,9 +287,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         256, 106, 69, 48, 356, 258, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         356, 711, 356, 711,
-        48,
         new int[]{0, 0, 0, 0, 0, 0, 8, 8, 8, 200},
         new int[]{1, 2, 4, 8, 16, 32, 56, 112, 224, 256},
         new int[]{0, 0, 0, 0, 0, 4, 0, 0, 96, 256},
@@ -321,9 +304,8 @@ public class CrossParameters
         509,
         1, 4, 4,
         256, 106, 69, 48, 642, 575, 16,
-        32, 64, 64, 64,
+        32, 64, 64,
         642, 1283, 642, 1283,
-        48,
         new int[]{0, 0, 0, 0, 4, 4, 4, 4, 4, 4, 260},
         new int[]{1, 2, 4, 8, 12, 24, 48, 96, 192, 384, 512},
         new int[]{0, 0, 0, 2, 0, 0, 0, 0, 0, 128, 512},
@@ -331,7 +313,7 @@ public class CrossParameters
         new int[]{771, 643, 13},
         new int[]{512, 128, 2},
         220,
-        1431, 6597, 24192, 679, 15140, 35454
+        1431, 6597, 24192, 679, 15140, 36454
     );
 
     private final String name;
@@ -385,10 +367,9 @@ public class CrossParameters
                             int fpElemSize, int fzElemSize, int fpDoublePrecSize, int fpTriplePrecSize,
                             int secMarginLambda, int n, int k, int m, int t, int w,
                             int positionInFWStringTBits,
-                            int seedLengthBytes, int keypairSeedLengthBytes, int hashDigestLength,
+                            int seedLengthBytes, int hashDigestLength,
                             int saltLengthBytes, int numLeavesMerkleTree, int numNodesMerkleTree,
                             int numLeavesSeedTree, int numNodesSeedTree,
-                            int denselyPackedFzRsdpGVecSize,
                             int[] treeOffsets, int[] treeNodesPerLevel, int[] treeLeavesPerLevel,
                             int treeSubroots, int[] treeLeavesStartIndices, int[] treeConsecutiveLeaves,
                             int treeNodesToStore, int bitsNFpCtRng, int bitsChall1FpstarCtRng,
@@ -431,6 +412,20 @@ public class CrossParameters
                 throw new IllegalArgumentException("Invalid NIST category level");
             }
         }
+        switch (category)
+        {
+        case 1:
+            this.keypairSeedLengthBytes = 32;
+            break;
+        case 3:
+            this.keypairSeedLengthBytes = 48;
+            break;
+        case 5:
+            this.keypairSeedLengthBytes = 64;
+            break;
+        default:
+            throw new IllegalArgumentException("Invalid NIST category level");
+        }
         this.fpElemSize = fpElemSize;
         this.fzElemSize = fzElemSize;
         this.fpDoublePrecSize = fpDoublePrecSize;
@@ -443,7 +438,6 @@ public class CrossParameters
         this.w = w;
         this.positionInFWStringTBits = positionInFWStringTBits;
         this.seedLengthBytes = seedLengthBytes;
-        this.keypairSeedLengthBytes = keypairSeedLengthBytes;
         this.hashDigestLength = hashDigestLength;
         this.saltLengthBytes = saltLengthBytes;
         this.numLeavesMerkleTree = numLeavesMerkleTree;
@@ -689,5 +683,10 @@ public class CrossParameters
     public int getSignatureSize()
     {
         return signatureSize;
+    }
+
+    public int getCategory()
+    {
+        return category;
     }
 }
