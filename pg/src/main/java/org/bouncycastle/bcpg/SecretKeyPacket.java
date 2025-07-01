@@ -195,7 +195,7 @@ public class SecretKeyPacket
         if (s2kUsage == USAGE_AEAD)
         {
             iv = new byte[AEADUtils.getIVLength(aeadAlgorithm)];
-            Streams.readFully(in, iv);
+            in.readFully(iv);
         }
         else
         {
