@@ -54,7 +54,7 @@ public class CrossKeyPairGenerator
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
             CrossEngine.fpDzNormSynd(s);
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            CrossEngine.packFpSyn(packedS, s);
+            Utils.genericPack7Bit(packedS, 0, s, s.length);
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
@@ -81,7 +81,7 @@ public class CrossKeyPairGenerator
             CrossEngine.restrVecByFpMatrix(s, e_bar, V_tr, params);
 
             byte[] packedS = new byte[params.getDenselyPackedFpSynSize()];
-            CrossEngine.packFpSyn(packedS, s);
+            Utils.genericPack9Bit(packedS, 0, s);
 
             return new AsymmetricCipherKeyPair(
                 new CrossPublicKeyParameters(params, Arrays.concatenate(seedPk, packedS)),
